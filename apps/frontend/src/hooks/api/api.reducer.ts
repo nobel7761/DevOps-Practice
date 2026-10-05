@@ -5,21 +5,21 @@ import {
   SET_LOADING,
 } from "./api.action-types";
 
-interface ApiState<ResponseType, ErrorType> {
+export interface ApiState<ResponseType, ErrorType> {
   data: ResponseType | null;
   error: ErrorType | null;
   loading: boolean;
   loaded: boolean;
 }
 
-interface ApiAction<ResponseType, ErrorType> {
+export interface ApiAction<ResponseType, ErrorType> {
   action: string;
   payload?: Partial<ApiState<ResponseType, ErrorType>>;
 }
 
 function ApiReducer<ResponseType, ErrorType>(
   state: ApiState<ResponseType, ErrorType>,
-  action: ApiAction<ResponseType, ErrorType>
+  action: ApiAction<ResponseType, ErrorType>,
 ): ApiState<ResponseType, ErrorType> {
   switch (action.action) {
     case SET_LOADING:

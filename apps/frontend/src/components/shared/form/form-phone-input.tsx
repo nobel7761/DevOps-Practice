@@ -7,7 +7,7 @@ import {
   ListboxOptions,
 } from "@headlessui/react";
 import * as FlagIcons from "country-flag-icons/react/3x2";
-import type { SVGProps } from "react";
+import type { ReactElement, SVGProps } from "react";
 import { useController, useFormContext } from "react-hook-form";
 import { FormField } from "./form-field";
 import { cn } from "./utils";
@@ -23,7 +23,7 @@ type CountryOption = {
 
 const FLAGS = FlagIcons as unknown as Record<
   string,
-  (props: SVGProps<SVGSVGElement>) => JSX.Element
+  (props: SVGProps<SVGSVGElement>) => ReactElement
 >;
 
 type FormPhoneInputProps = {

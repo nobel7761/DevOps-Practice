@@ -2,7 +2,7 @@
 
 import { AxiosError, AxiosRequestConfig } from "axios";
 import { useRouter } from "next/navigation";
-import { Reducer, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   RESET,
@@ -10,7 +10,7 @@ import {
   SET_ERROR,
   SET_LOADING,
 } from "./api.action-types";
-import ApiReducer from "./api.reducer";
+import ApiReducer, { ApiAction, ApiState } from "./api.reducer";
 import client from "@/lib/api/client";
 
 interface ApiCallConfig {
@@ -19,12 +19,7 @@ interface ApiCallConfig {
 }
 
 type RequestNonObjectValueType =
-  | string
-  | number
-  | boolean
-  | File
-  | Array<string | number | File>
-  | null;
+  string | number | boolean | File | Array<string | number | File> | null;
 
 type ValidationErrorMessageType = string[];
 
@@ -73,7 +68,7 @@ function useAPI<
     message?: string;
   },
 >(
-  config: AxiosRequestConfig<RequestType> & ApiCallConfig & { lazy: true }
+  config: AxiosRequestConfig<RequestType> & ApiCallConfig & { lazy: true },
 ): ApiReturnWithCallApi<ResponseType, RequestType, ErrorType>;
 
 function useAPI<
@@ -91,7 +86,7 @@ function useAPI<
   config: AxiosRequestConfig<RequestType> &
     ApiCallConfig & {
       method: "POST" | "PUT" | "PATCH" | "DELETE";
-    }
+    },
 ): ApiReturnWithCallApi<ResponseType, RequestType, ErrorType>;
 
 function useAPI<
@@ -106,7 +101,7 @@ function useAPI<
     message?: string;
   },
 >(
-  config: AxiosRequestConfig<RequestType> & ApiCallConfig
+  config: AxiosRequestConfig<RequestType> & ApiCallConfig,
 ): BaseApiReturn<ResponseType, ErrorType>;
 
 // Implementation
@@ -130,23 +125,8 @@ function useAPI<
   ...rest
 }: AxiosRequestConfig<RequestType> & ApiCallConfig) {
   const [state, dispatch] = useReducer<
-    Reducer<
-      {
-        data: ResponseType | null;
-        error: ErrorType | null;
-        loading: boolean;
-        loaded: boolean;
-      },
-      {
-        action: string;
-        payload?: Partial<{
-          data: ResponseType | null;
-          error: ErrorType | null;
-          loading: boolean;
-          loaded: boolean;
-        }>;
-      }
-    >
+    ApiState<ResponseType, ErrorType>,
+    [ApiAction<ResponseType, ErrorType>]
   >(ApiReducer<ResponseType, ErrorType>, {
     loading: false,
     loaded: false,

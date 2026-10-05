@@ -7,12 +7,12 @@ import {
   ListboxOptions,
 } from "@headlessui/react";
 import * as FlagIcons from "country-flag-icons/react/3x2";
-import type { SVGProps } from "react";
+import type { ReactElement, SVGProps } from "react";
 import { PHONE_COUNTRIES_SORTED_AZ } from "@/lib/phone-countries";
 
 const FLAGS = FlagIcons as unknown as Record<
   string,
-  (props: SVGProps<SVGSVGElement>) => JSX.Element
+  (props: SVGProps<SVGSVGElement>) => ReactElement
 >;
 
 export const PLAIN_PHONE_COUNTRY_OPTIONS = PHONE_COUNTRIES_SORTED_AZ.map(

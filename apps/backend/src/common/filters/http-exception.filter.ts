@@ -61,13 +61,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const mongoError = exception as MongoError & { code?: number };
 
       switch (mongoError.code) {
-        case 11000: // Duplicate key error
+        case 11000: {
+          // Duplicate key error
           const field = Object.keys(
             (exception as MongoDuplicateKeyError).keyPattern || {},
           )[0];
           message = `${field} already exists`;
           error = 'Duplicate Entry';
           break;
+        }
         case 11001:
           message = 'Duplicate entry detected';
           error = 'Duplicate Entry';
