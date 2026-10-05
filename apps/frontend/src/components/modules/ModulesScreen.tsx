@@ -8,7 +8,13 @@ import {
 import MilestoneSection from "@/components/modules/MilestoneSection";
 import { masteringAwsDevopsSeason4 } from "@/lib/data/course-modules";
 
-export default function ModulesScreen() {
+export default function ModulesScreen({
+  defaultMilestoneId,
+  defaultModuleId,
+}: {
+  defaultMilestoneId?: string;
+  defaultModuleId?: string;
+}) {
   const { courseTitle, milestones } = masteringAwsDevopsSeason4;
 
   return (
@@ -22,9 +28,17 @@ export default function ModulesScreen() {
           </p>
         </CardHeader>
         <CardContent>
-          <Accordion type="multiple" className="w-full">
+          <Accordion
+            type="multiple"
+            className="w-full"
+            defaultValue={defaultMilestoneId ? [defaultMilestoneId] : undefined}
+          >
             {milestones.map((milestone) => (
-              <MilestoneSection key={milestone.id} milestone={milestone} />
+              <MilestoneSection
+                key={milestone.id}
+                milestone={milestone}
+                defaultModuleId={defaultModuleId}
+              />
             ))}
           </Accordion>
         </CardContent>

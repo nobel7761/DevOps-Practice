@@ -40,6 +40,36 @@ export interface CourseSummary {
   milestones: CourseMilestone[];
 }
 
+export interface CourseLocation {
+  milestone: CourseMilestone;
+  module: CourseModule;
+}
+
+export function findModuleLocation(moduleId: string): CourseLocation | null {
+  for (const milestone of masteringAwsDevopsSeason4.milestones) {
+    const courseModule = milestone.modules.find(
+      (candidate) => candidate.id === moduleId,
+    );
+    if (courseModule) return { milestone, module: courseModule };
+  }
+  return null;
+}
+
+export function findLabLocation(labId: string): CourseLocation | null {
+  for (const milestone of masteringAwsDevopsSeason4.milestones) {
+    for (const courseModule of milestone.modules) {
+      if (
+        courseModule.contents.some(
+          (content) => content.type === "lab" && content.labId === labId,
+        )
+      ) {
+        return { milestone, module: courseModule };
+      }
+    }
+  }
+  return null;
+}
+
 export const masteringAwsDevopsSeason4: CourseSummary = {
   courseTitle: "MASTERING AWS & DEVOPS SEASON 4",
   milestones: [

@@ -8,8 +8,10 @@ import type { CourseMilestone } from "@/lib/data/course-modules";
 
 export default function MilestoneSection({
   milestone,
+  defaultModuleId,
 }: {
   milestone: CourseMilestone;
+  defaultModuleId?: string;
 }) {
   return (
     <AccordionItem value={milestone.id}>
@@ -24,7 +26,11 @@ export default function MilestoneSection({
       <AccordionContent>
         <ul className="flex flex-col gap-3">
           {milestone.modules.map((module) => (
-            <ModuleRow key={module.id} module={module} />
+            <ModuleRow
+              key={module.id}
+              module={module}
+              defaultOpen={module.id === defaultModuleId}
+            />
           ))}
         </ul>
       </AccordionContent>
