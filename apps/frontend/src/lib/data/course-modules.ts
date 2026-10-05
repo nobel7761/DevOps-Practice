@@ -15,6 +15,10 @@ export interface CourseContentItem {
   completed: boolean;
   /** Only set for type "lab" with published content; null means not yet provisioned by poridhi.io. */
   labId?: string | null;
+  /** The content item's own id on poridhi.io. Only set where populated (currently video items, used to route to their video page). */
+  contentId?: string;
+  /** Direct HLS (.m3u8) manifest URL, set for "live_class"/"pre_class" items with a recorded video. */
+  videoUrl?: string | null;
 }
 
 export interface CourseModule {
@@ -70,6 +74,24 @@ export function findLabLocation(labId: string): CourseLocation | null {
   return null;
 }
 
+export interface CourseContentLocation extends CourseLocation {
+  content: CourseContentItem;
+}
+
+export function findContentLocation(
+  contentId: string,
+): CourseContentLocation | null {
+  for (const milestone of masteringAwsDevopsSeason4.milestones) {
+    for (const courseModule of milestone.modules) {
+      const content = courseModule.contents.find(
+        (candidate) => candidate.contentId === contentId,
+      );
+      if (content) return { milestone, module: courseModule, content };
+    }
+  }
+  return null;
+}
+
 export const masteringAwsDevopsSeason4: CourseSummary = {
   courseTitle: "MASTERING AWS & DEVOPS SEASON 4",
   milestones: [
@@ -90,16 +112,29 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
           },
           progress: { completed: 7, total: 13, percentage: 54 },
           contents: [
-            { type: "live_class", title: "Orientation Class", completed: true },
+            {
+              type: "live_class",
+              title: "Orientation Class",
+              completed: true,
+              contentId: "8a09cdd5-d87e-44d2-9179-8ddd047c1fdb",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/b4f52def-fd3d-431b-a1ce-47d0d728644f/playlist.m3u8",
+            },
             {
               type: "live_class",
               title: "Linux File System Basics & Navigation",
               completed: true,
+              contentId: "9451f3d0-31d1-46e4-916e-2c1bb002da59",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/de7a08fc-1dfa-4c1d-aee3-f642961638f7/playlist.m3u8",
             },
             {
               type: "live_class",
               title: "Linux User Management",
               completed: true,
+              contentId: "a3740d91-c9e8-4edc-9fc6-6f027c4414c1",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/c6c87f7c-ba35-44f5-becf-ddd9ca6169c8/playlist.m3u8",
             },
             {
               type: "lab",

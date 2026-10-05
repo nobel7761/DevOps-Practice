@@ -29,6 +29,9 @@ export default function ModuleContentItemRow({
   );
 
   const isUnprovisionedLab = item.type === "lab" && !item.labId;
+  const isVideo =
+    (item.type === "live_class" || item.type === "pre_class") &&
+    Boolean(item.videoUrl && item.contentId);
   const status = isUnprovisionedLab ? (
     <span className="shrink-0 text-xs italic text-muted-foreground">
       Coming soon
@@ -37,11 +40,18 @@ export default function ModuleContentItemRow({
     <span className="shrink-0 text-xs text-muted-foreground">Done</span>
   ) : null;
 
-  if (item.type === "lab" && item.labId) {
+  const href =
+    item.type === "lab" && item.labId
+      ? `/module/lab/${item.labId}`
+      : isVideo
+        ? `/module/video/${item.contentId}`
+        : null;
+
+  if (href) {
     return (
       <li className="text-sm">
         <Link
-          href={`/module/lab/${item.labId}`}
+          href={href}
           className="-mx-1 flex items-center justify-between gap-3 rounded-md px-1 py-0.5 hover:bg-accent hover:underline"
         >
           {label}
