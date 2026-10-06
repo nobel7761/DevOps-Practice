@@ -1,0 +1,184 @@
+{
+  "title": "LAB EXAM: System Logging and Monitoring",
+  "passPercent": 95,
+  "intro": "AppTrack crash করেছে — নিজের log, systemd-এর journal, আর logrotate দিয়ে পুরো তদন্ত। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🏗️ পর্ব ১: /var/log ঘুরে দেখা",
+        "note": "যেকোনো ইনসিডেন্টের প্রথম গন্তব্য।"
+      },
+      "prompt": "/var/log-এর ভেতরটা (বিস্তারিত, মানুষ-পড়া সাইজে) দেখাও।",
+      "check": {
+        "require": ["ls", "-lh"],
+        "ref": "ls -lh /var/log"
+      }
+    },
+    {
+      "id": "t02",
+      "points": 5,
+      "prompt": "AppTrack-এর log ফাইলে মোট কতগুলো লাইন আছে দেখাও।",
+      "check": {
+        "require": ["wc", "-l"],
+        "ref": "wc -l /var/log/apptrack/apptrack.log"
+      }
+    },
+    {
+      "id": "t03",
+      "points": 5,
+      "section": {
+        "title": "📖 পর্ব ২: নিজের log পড়ো",
+        "note": "crash-এর ঠিক আগে কী ঘটেছিল, সেটাই আসল গল্প।"
+      },
+      "prompt": "log ফাইলের শেষ ১৫ লাইন দেখাও — crash-এর ঠিক আগের মুহূর্তগুলো।",
+      "check": {
+        "require": ["tail"],
+        "ref": "tail -15 /var/log/apptrack/apptrack.log"
+      }
+    },
+    {
+      "id": "t04",
+      "points": 5,
+      "prompt": "শুধু ERROR লেভেলের লাইনগুলো বের করো।",
+      "check": {
+        "require": ["grep"],
+        "ref": "grep ERROR /var/log/apptrack/apptrack.log"
+      }
+    },
+    {
+      "id": "t05",
+      "points": 4,
+      "prompt": "মোট কতগুলো ERROR লাইন আছে, শুধু সংখ্যাটা দেখাও।",
+      "check": {
+        "require": ["grep", "-c"],
+        "ref": "grep -c ERROR /var/log/apptrack/apptrack.log"
+      }
+    },
+    {
+      "id": "t06",
+      "points": 8,
+      "prompt": "CRITICAL লাইনগুলোর আগের ৩ আর পরের ২ লাইনসহ পুরো context দেখাও — চূড়ান্ত মুহূর্তের পুরো ছবি।",
+      "check": {
+        "require": ["grep", "-B", "-A"],
+        "ref": "grep -B 3 -A 2 CRITICAL /var/log/apptrack/apptrack.log"
+      },
+      "hints": ["grep -B 3 -A 2 \"CRITICAL\" — আগের লেসনের context flag"]
+    },
+    {
+      "id": "t07",
+      "points": 5,
+      "prompt": "'memory' শব্দটা (বড়/ছোট হাত না মিলিয়ে) কোন কোন লাইনে আছে দেখাও।",
+      "check": {
+        "require": ["grep", "-i"],
+        "ref": "grep -i memory /var/log/apptrack/apptrack.log"
+      }
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "section": {
+        "title": "📝 পর্ব ৩: systemd journal-এ এন্ট্রি যোগ করো",
+        "note": "নিজের log ফাইল ছাড়াও, সিস্টেম-লেভেল journal-এ ঘটনাটা নথিভুক্ত করা ভালো অভ্যাস।"
+      },
+      "prompt": "journal-এ একটা error entry যোগ করো — tag apptrack, priority daemon.err, message: AppTrack service crashed - exit code 137 (OOM kill)",
+      "check": {
+        "require": ["logger", "-t", "apptrack", "-p", "daemon.err"]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 5,
+      "prompt": "আরেকটা entry যোগ করো — tag apptrack, priority daemon.warn, message: AppTrack memory limit exceeded before shutdown",
+      "check": {
+        "require": ["logger", "-t", "apptrack", "-p", "daemon.warn"]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "prompt": "শুধু apptrack ট্যাগের journal entry-গুলো দেখাও।",
+      "check": {
+        "require": ["journalctl", "-t"],
+        "ref": "journalctl -t apptrack"
+      }
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "শুধু err priority-র entry-গুলো দেখাও।",
+      "check": {
+        "require": ["journalctl", "-p"],
+        "ref": "journalctl -p err"
+      }
+    },
+    {
+      "id": "t12",
+      "points": 4,
+      "prompt": "journal মোট কতটা ডিস্ক জায়গা নিচ্ছে দেখাও।",
+      "check": {
+        "require": ["journalctl", "--disk-usage"],
+        "ref": "journalctl --disk-usage"
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "section": {
+        "title": "🔄 পর্ব ৪: logrotate — log যেন সীমাহীন বড় না হয়",
+        "note": "প্রতিদিনের সবচেয়ে অবহেলিত কিন্তু গুরুত্বপূর্ণ অভ্যাস।"
+      },
+      "prompt": "সিস্টেমের ডিফল্ট logrotate নিয়ম (main config) দেখাও।",
+      "check": {
+        "require": ["cat"],
+        "ref": "cat /etc/logrotate.conf"
+      }
+    },
+    {
+      "id": "t14",
+      "points": 8,
+      "prompt": "/etc/logrotate.d/apptrack ফাইলে AppTrack-এর নিজস্ব rotation নিয়ম লেখো (এক লাইনে): /var/log/apptrack/apptrack.log { daily rotate 7 }",
+      "check": {
+        "require": ["echo", "|", "tee"],
+        "paths": [
+          {
+            "path": "/etc/logrotate.d/apptrack",
+            "type": "file",
+            "content": "/var/log/apptrack/apptrack.log { daily rotate 7 }"
+          }
+        ]
+      },
+      "hints": [
+        "echo \"/var/log/apptrack/apptrack.log { daily rotate 7 }\" | sudo tee /etc/logrotate.d/apptrack"
+      ]
+    },
+    {
+      "id": "t15",
+      "points": 5,
+      "prompt": "নতুন নিয়মটা debug mode-এ যাচাই করো (আসলে কিছু বদলাবে না, শুধু দেখাবে কী হতো)।",
+      "check": {
+        "require": ["logrotate", "--debug"]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 6,
+      "prompt": "এবার জোর করে rotation ঘটাও — যদিও এখনো rotate করার সময় হয়নি।",
+      "check": {
+        "require": ["logrotate", "--force"]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 8,
+      "prompt": "যাচাই করো — apptrack.log এখন ফাঁকা, আর পুরোনো কন্টেন্ট .1 ফাইলে সরে গেছে তো?",
+      "check": {
+        "require": ["ls", "-lh"],
+        "ref": "ls -lh /var/log/apptrack/"
+      }
+    }
+  ],
+  "labId": "69b1d5334a49372ba7883052"
+}

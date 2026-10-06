@@ -1,0 +1,281 @@
+{
+  "title": "LAB EXAM: Understanding /etc/skel/",
+  "passPercent": 95,
+  "intro": "একটা টেমপ্লেট, চারজন user, চার রকম ফলাফল — customize করলে কী হয়, মুছলে কী হারায়, ম্যানুয়ালি দিলে কী লাগে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর।",
+  "targets": [
+    {
+      "path": "/home/testuser5/.bashrc",
+      "type": "file",
+      "owner": "testuser5",
+      "group": "testuser5"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 3,
+      "section": {
+        "title": "🏗️ পর্ব ১: skel নিজে দেখো",
+        "note": "প্রতিটা distro-তে ডিফল্ট তিনটা ফাইল থাকে — এগুলোই নতুন user-দের 'জন্মগত' কনফিগ।"
+      },
+      "prompt": "/etc/skel-এর ভেতরে কী কী আছে (হিডেন ফাইলসহ, বিস্তারিত) দেখাও।",
+      "check": {
+        "require": ["ls"],
+        "ref": "ls -la /etc/skel"
+      }
+    },
+    {
+      "id": "t02",
+      "points": 3,
+      "prompt": ".bashrc-এর ভেতরে কী লেখা আছে দেখাও।",
+      "check": {
+        "require": ["cat"],
+        "ref": "cat /etc/skel/.bashrc"
+      }
+    },
+    {
+      "id": "t03",
+      "points": 4,
+      "prompt": "testuser নামে একজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "testuser",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 4,
+      "prompt": "testuser-এর home-এর ভেতরটা (বিস্তারিত, হিডেনসহ) দেখাও — skel-এর ফাইলগুলো কপি হয়ে এসেছে কিনা যাচাই করো।",
+      "check": {
+        "require": ["ls"],
+        "ref": "ls -la /home/testuser"
+      }
+    },
+    {
+      "id": "t05",
+      "points": 9,
+      "section": {
+        "title": "🎨 পর্ব ২: টেমপ্লেট customize করো",
+        "note": "skel-এ একবার বদল আনলে, তারপর থেকে জন্মানো সব user-ই সেটা পাবে — আগের কেউ পাবে না।"
+      },
+      "prompt": "/etc/skel-এ welcome.txt নামে একটা ফাইল বানাও, ভেতরে লেখো: Welcome to GolpoTech! (echo আর pipe দিয়ে, ফাইলে লেখার একটা নতুন কমান্ড দিয়ে)",
+      "check": {
+        "require": ["echo", "|", "tee"],
+        "paths": [
+          {
+            "path": "/etc/skel/welcome.txt",
+            "type": "file",
+            "content": "Welcome to GolpoTech!"
+          }
+        ]
+      },
+      "hints": [
+        "echo \"...\" | tee /etc/skel/welcome.txt — tee ফাইলে লেখে, আর pipe দিয়ে stdout-এও দেখায়"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 4,
+      "prompt": "testuser2 নামে আরেকজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "testuser2",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 4,
+      "prompt": "testuser2-এর welcome.txt-এ কী লেখা আছে দেখাও — নতুন টেমপ্লেট পেয়েছে কিনা প্রমাণ করো।",
+      "check": {
+        "require": ["cat"],
+        "ref": "cat /home/testuser2/welcome.txt"
+      }
+    },
+    {
+      "id": "t08",
+      "points": 8,
+      "prompt": "/etc/skel/.bashrc-এর শেষে একটা নতুন লাইন যোগ করো (মুছে না, শুধু যোগ): alias myinfo='echo Custom User Info' — vim বাস্তবে ব্যবহার হতো, এখানে একই ফলাফলের জন্য অন্য একটা কমান্ড আছে যেটা ফাইলের শেষে যোগ করে (মুছে ফেলে না)।",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "/etc/skel/.bashrc",
+            "type": "file",
+            "content": "# ~/.bashrc: executed by bash for non-login shells\nexport PS1='\\u@\\h:\\w\\$ '\nalias ll='ls -la'\nalias grep='grep --color=auto'\nalias myinfo='echo Custom User Info'"
+          }
+        ]
+      },
+      "hints": ["> মুছে লেখে, >> যোগ করে — আগের লেসনেই শিখেছিলে এই তফাত"]
+    },
+    {
+      "id": "t09",
+      "points": 4,
+      "prompt": "testuser3 নামে একজনকে বানাও — home-সহ, shell /bin/bash।",
+      "check": {
+        "require": ["useradd", "-m", "-s"],
+        "usersState": [
+          {
+            "name": "testuser3",
+            "hasHome": true,
+            "shell": "/bin/bash"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 4,
+      "prompt": "testuser3 identity-তে সুইচ করো (login shell হিসেবে)।",
+      "check": {
+        "require": ["su", "-"],
+        "ref": "su - testuser3"
+      }
+    },
+    {
+      "id": "t11",
+      "points": 4,
+      "prompt": "এই মুহূর্তে নিজের .bashrc-এর ভেতরটা দেখাও — নতুন alias-টা আছে তো?",
+      "check": {
+        "require": ["cat", ".bashrc"],
+        "ref": "cat .bashrc"
+      }
+    },
+    {
+      "id": "t12",
+      "points": 3,
+      "prompt": "root-এ ফিরে এসো।",
+      "check": {
+        "require": ["exit"]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "section": {
+        "title": "🧹 পর্ব ৩: টেমপ্লেট থেকে বাদ দিলে কী হারায়",
+        "note": "instructor-এর Scenario 1 — একটা ফাইল সরিয়ে দেখো, পরের user সেটা পায় না।"
+      },
+      "prompt": "/etc/skel থেকে welcome.txt মুছে ফেলো।",
+      "check": {
+        "require": ["rm"]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 4,
+      "prompt": "testuser4 নামে একজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "testuser4",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 5,
+      "prompt": "testuser4-এর home-এর ভেতরটা দেখাও — welcome.txt না থাকলেও বাকি সব (bashrc-সহ) ঠিকই আছে তো, প্রমাণ করো।",
+      "check": {
+        "require": ["ls"],
+        "ref": "ls /home/testuser4"
+      }
+    },
+    {
+      "id": "t16",
+      "points": 4,
+      "section": {
+        "title": "🔧 পর্ব ৪: -m ছাড়া বানালে, ম্যানুয়ালি টেমপ্লেট দাও",
+        "note": "instructor-এর Scenario 2 — useradd-এ -m ভুলে গেলে (বা ইচ্ছাকৃত না দিলে) কী করার আছে, সেটাই এখন।"
+      },
+      "prompt": "testuser5 নামে একজনকে বানাও — এবার home ছাড়া (ইচ্ছাকৃতভাবে)।",
+      "check": {
+        "require": ["useradd"],
+        "forbid": ["-m"],
+        "usersState": [
+          {
+            "name": "testuser5",
+            "hasHome": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 4,
+      "prompt": "testuser5-এর জন্য /home/testuser5 directory-টা ম্যানুয়ালি বানাও।",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [
+          {
+            "path": "/home/testuser5",
+            "type": "dir"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 4,
+      "prompt": "যাচাই করো — এই ঘর এখনো একদম খালি তো (বিস্তারিত, হিডেনসহ)?",
+      "check": {
+        "require": ["ls"],
+        "ref": "ls -la /home/testuser5"
+      }
+    },
+    {
+      "id": "t19",
+      "points": 9,
+      "prompt": "/etc/skel-এর ভেতরের সবকিছু (নিজেকে না, শুধু ভেতরেরটুকু) /home/testuser5-এ কপি করো।",
+      "check": {
+        "require": ["cp", "-r"],
+        "paths": [
+          {
+            "path": "/home/testuser5/.bashrc",
+            "type": "file"
+          }
+        ]
+      },
+      "hints": [
+        "cp -r /etc/skel/. /home/testuser5/ — শেষের /. মানে 'ভেতরেরটুকু', /etc/skel নিজে একটা সাব-ফোল্ডার হিসেবে না বসুক"
+      ]
+    },
+    {
+      "id": "t20",
+      "points": 5,
+      "prompt": "এখন /home/testuser5-এর সবকিছুর মালিকানা testuser5:testuser5 করে দাও (recursive)।",
+      "check": {
+        "require": ["chown", "-R"],
+        "pathModes": [
+          {
+            "path": "/home/testuser5/.bashrc",
+            "owner": "testuser5",
+            "group": "testuser5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t21",
+      "points": 7,
+      "prompt": "শেষবার যাচাই করো — testuser5-এর ঘর এখন পুরোপুরি সাজানো, সঠিক মালিকানাসহ।",
+      "check": {
+        "require": ["ls"],
+        "ref": "ls -la /home/testuser5"
+      }
+    }
+  ],
+  "labId": "69b1d5184a49372ba788301e"
+}

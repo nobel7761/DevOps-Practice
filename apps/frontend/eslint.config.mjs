@@ -16,6 +16,13 @@ const eslintConfig = [
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/purity": "off",
       "react-hooks/incompatible-library": "off",
+      // "module" is this app's own core domain noun (course modules), so a
+      // local `module`/`for (const module of ...)` keeps coming up naturally
+      // and keeps tripping this rule. It guards against shadowing the
+      // CommonJS `module` global in webpack builds; this app is plain
+      // ESM/Turbopack React code that never touches `module.exports`, so the
+      // risk it protects against doesn't apply here.
+      "@next/next/no-assign-module-variable": "off",
     },
   },
 ];

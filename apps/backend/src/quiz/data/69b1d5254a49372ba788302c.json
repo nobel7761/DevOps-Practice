@@ -1,0 +1,196 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 6,
+    "medium": 7,
+    "hard": 4
+  },
+  "questions": [
+    {
+      "id": "69b1d5254a49372ba788302c-01",
+      "difficulty": "easy",
+      "question": "umask কী নিয়ন্ত্রণ করে?",
+      "options": [
+        "existing ফাইলের permission",
+        "নতুন তৈরি হওয়া ফাইল/ফোল্ডারের ডিফল্ট permission",
+        "কে sudo চালাতে পারবে",
+        "group-এর সদস্যপদ"
+      ],
+      "answerIndex": 1,
+      "explanation": "umask নতুন ফাইল/ফোল্ডার তৈরি হওয়ার মুহূর্তে তার ডিফল্ট permission কত হবে সেটা ঠিক করে — existing ফাইল বদলায় না।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-02",
+      "difficulty": "easy",
+      "question": "ডিফল্ট umask 022-এ, নতুন ফাইল সাধারণত কোন permission পায়?",
+      "options": ["777", "666", "644", "600"],
+      "answerIndex": 2,
+      "explanation": "ফাইলের base 666 থেকে umask 022 বাদ দিলে 644 (rw-r--r--) হয়।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-03",
+      "difficulty": "easy",
+      "question": "setfacl দিয়ে কী করা হয়?",
+      "options": [
+        "নতুন user বানানো",
+        "chmod-এর owner/group/other-এর বাইরে নির্দিষ্ট user/group-কে আলাদা অনুমতি (ACL) দেওয়া",
+        "password lock করা",
+        "disk usage দেখা"
+      ],
+      "answerIndex": 1,
+      "explanation": "setfacl দিয়ে base permission (owner/group/other) না বদলিয়ে, নির্দিষ্ট একজন user বা group-কে বাড়তি (বা ভিন্ন) অনুমতি দেওয়া যায়।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-04",
+      "difficulty": "easy",
+      "question": "getfacl কমান্ড কী দেখায়?",
+      "options": [
+        "একটা ফাইল/ফোল্ডারের সব ACL entry, owner, group",
+        "সব user-এর তালিকা",
+        "disk space",
+        "কোন process চলছে"
+      ],
+      "answerIndex": 0,
+      "explanation": "getfacl <path> — সেই path-এর owner, group, আর সব named ACL entry (user:/group:) দেখায়।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-05",
+      "difficulty": "easy",
+      "question": "setfacl -m g:ops:rx file — এখানে 'g' মানে কী?",
+      "options": [
+        "group entry — একটা group-এর জন্য ACL",
+        "generic — যেকোনো user",
+        "global — সব ফাইলে প্রযোজ্য",
+        "guest — অতিথি ব্যবহারকারী"
+      ],
+      "answerIndex": 0,
+      "explanation": "g: মানে group-ভিত্তিক ACL entry; u: হলে user-ভিত্তিক।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-06",
+      "difficulty": "easy",
+      "question": "sudo -u dev_user1 cat file — এই কমান্ড আসলে কী করে?",
+      "options": [
+        "root হিসেবে ফাইল দেখায়",
+        "dev_user1-এর পরিচয়ে (identity) কমান্ডটা চালায় — root হিসেবে না",
+        "dev_user1-কে delete করে",
+        "শুধু dev_user1-এর ফাইল খোঁজে"
+      ],
+      "answerIndex": 1,
+      "explanation": "-u <user> দিলে sudo সেই user-এর পরিচয়ে কমান্ড চালায় — root-এর পরিবর্তে, যাতে সত্যিকারের অ্যাক্সেস যাচাই করা যায়।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-07",
+      "difficulty": "medium",
+      "question": "ProjectX/src-এর মালিক dev_user1:dev, permission 770। ops_user1 (dev group-এ নেই) সেখানে ঢুকতে/পড়তে চাইলে chmod দিয়ে কীভাবে দেওয়া যাবে, base permission না বদলিয়ে?",
+      "options": [
+        "chmod 777 দিয়ে সবার জন্য খুলে দেওয়া",
+        "ops_user1-কে dev group-এ যোগ করে দেওয়া",
+        "setfacl দিয়ে ops group-কে আলাদা ACL entry দেওয়া — base 770 same থাকবে",
+        "কোনোভাবেই সম্ভব না"
+      ],
+      "answerIndex": 2,
+      "explanation": "chmod শুধু owner/group/other তিনটা স্তর বোঝে — চতুর্থ কোনো group-কে আলাদা অনুমতি দিতে হলে setfacl-ই একমাত্র উপায়, base permission অক্ষত রেখে।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-08",
+      "difficulty": "medium",
+      "question": "umask 027 সেট করার পর তৈরি হওয়া ফাইলের permission কী হবে?",
+      "options": ["644", "640", "600", "755"],
+      "answerIndex": 1,
+      "explanation": "666 (base) থেকে 027 বাদ দিলে 640 (rw-r-----) — group পড়তে পারবে, other কিছুই না।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-09",
+      "difficulty": "medium",
+      "question": "একটা directory-তে +x (execute) permission না থাকলে কী হয়?",
+      "options": [
+        "ভেতরের ফাইলের নাম দেখা যাবে না (ls কাজ করবে না)",
+        "সেই directory-তে ঢোকা (traverse/cd) বা ভেতরের কোনো ফাইলে পৌঁছানো যাবে না, এমনকি ফাইলের নাম জানা থাকলেও",
+        "শুধু নতুন ফাইল বানানো যাবে না",
+        "কোনো প্রভাব নেই, +x শুধু script চালানোর জন্য"
+      ],
+      "answerIndex": 1,
+      "explanation": "directory-তে +x মানে 'ভেতরে ঢোকা/traverse করা' — এটা ছাড়া সেই ফোল্ডারের ভেতরের কোনো ফাইলেই পৌঁছানো যায় না, path জানা থাকলেও।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-10",
+      "difficulty": "medium",
+      "question": "setfacl -R -m g:ops:rx ProjectX/src চালানোর পর, src-এর ভেতরে নতুন তৈরি হওয়া ফাইল কি automatically ops group-এর এই ACL পাবে?",
+      "options": [
+        "হ্যাঁ, -R দিলে ভবিষ্যতের ফাইলও পায়",
+        "না — -R (recursive) শুধু এই মুহূর্তে existing ফাইল/সাব-ফোল্ডারে প্রযোজ্য; ভবিষ্যতের ফাইলে ACL 'default' (setfacl -d) না দিলে পাবে না",
+        "হ্যাঁ, কিন্তু শুধু ৭ দিনের জন্য",
+        "না, -R মানে শুধু ফোল্ডারে, কোনো ফাইলেই কাজ করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "-R মানে recursive — এখন যা আছে সবকিছুতে প্রয়োগ হয়। ভবিষ্যতে তৈরি হওয়া ফাইল স্বয়ংক্রিয়ভাবে এই ACL পাওয়ার জন্য directory-তে default ACL (-d flag) লাগবে।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-11",
+      "difficulty": "medium",
+      "question": "chown dev_user1:dev file আর chmod 770 file — এই দুইয়ের ভূমিকা কীভাবে আলাদা?",
+      "options": [
+        "দুটোই একই কাজ করে",
+        "chown ঠিক করে ফাইলটা কার (owner) আর কোন group-এর; chmod ঠিক করে সেই owner/group/other কে কী করতে পারবে",
+        "chown permission বদলায়, chmod মালিকানা বদলায়",
+        "chown শুধু root চালাতে পারে, chmod সবাই"
+      ],
+      "answerIndex": 1,
+      "explanation": "chown = 'কার' (identity), chmod = 'কী করতে পারবে' (capability) — দুটো আলাদা মাত্রা, একসাথে মিলিয়েই পূর্ণাঙ্গ access-control।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-12",
+      "difficulty": "hard",
+      "question": "একটা ফাইলের mode 644 (rw-r--r--), owner root, group root। একটা non-root, non-sudo user (কোনো ACL entry ছাড়াই) সেই ফাইল পড়তে পারবে কি?",
+      "options": [
+        "না, root-only ফাইল",
+        "হ্যাঁ — 'other' বিভাগে read (r) অনুমতি আছে (644-এর শেষ অংক 4), তাই যে কেউ পড়তে পারবে",
+        "শুধু root-এর sudo group-এর সদস্যরা পারবে",
+        "নির্ভর করে ফাইলের নামের উপর"
+      ],
+      "answerIndex": 1,
+      "explanation": "644-এর তিন অংক owner(6)/group(4)/other(4) — শেষ অংক 4 মানে other-দেরও read আছে। ফলে owner/group না হয়েও যে কেউ পড়তে পারবে, যদি directory traverse-ও করতে পারে।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-13",
+      "difficulty": "hard",
+      "question": "একজন user owner না, কিন্তু ফাইলের group-এর সদস্যও না — অথচ সেই group-এর জন্য একটা named ACL entry (setfacl দিয়ে) দেওয়া আছে যেটা তাকে সরাসরি (u:name:...) ম্যাচ করে। কোনটা প্রাধান্য পাবে — base group bits, নাকি named ACL?",
+      "options": [
+        "সবসময় base group bits প্রাধান্য পায়",
+        "named ACL entry (user বা group-ভিত্তিক) সাধারণত base owning-group bits-এর চেয়ে বেশি নির্দিষ্ট/প্রাধান্যপ্রাপ্ত হিসেবে গণ্য হয়",
+        "দুটো সবসময় সমান, conflict হলে error দেয়",
+        "যেটা আগে সেট হয়েছে সেটাই থাকে"
+      ],
+      "answerIndex": 1,
+      "explanation": "POSIX ACL-এর নিয়মে, নির্দিষ্ট (named) user/group ACL entry base owning-group-এর চেয়ে বেশি নির্দিষ্ট বিবেচিত হয় এবং effective permission নির্ধারণে প্রাধান্য পায় (mask-এর সাপেক্ষে)।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-14",
+      "difficulty": "hard",
+      "question": "একটা automation script সাময়িকভাবে umask 027 সেট করে কিছু sensitive ফাইল বানায়, কিন্তু script শেষে umask আবার 022-এ ফেরত না আনলে কী ঝুঁকি থাকে?",
+      "options": [
+        "কোনো ঝুঁকি নেই, umask প্রতি কমান্ডে reset হয়ে যায়",
+        "সেই শেল সেশনের বাকি সময়ে তৈরি হওয়া সব নতুন ফাইল/ফোল্ডার অপ্রত্যাশিতভাবে বেশি কড়া (বা এক্ষেত্রে বেশি বন্ধ) permission নিয়ে জন্মাবে, যা পরের স্বাভাবিক কাজে সমস্যা করতে পারে",
+        "umask sudo-র ক্ষমতা বাতিল করে দেয়",
+        "umask শুধু directory-তে প্রভাব ফেলে, ফাইলে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "umask session-ভিত্তিক (persist করে যতক্ষণ না বদলানো হয় বা শেল বন্ধ হয়) — script-এ সাময়িক পরিবর্তনের পর মূল মানে ফিরিয়ে না আনলে, তার পরের সব ফাইল/ফোল্ডার অপ্রত্যাশিত permission নিয়ে তৈরি হবে।"
+    },
+    {
+      "id": "69b1d5254a49372ba788302c-15",
+      "difficulty": "hard",
+      "question": "src ডিরেক্টরির mode 770 (owner dev_user1, group dev), আর ops group-কে r-x ACL দেওয়া আছে। ops group-এর একজন সদস্য src-এর ভেতরে একটা নতুন ফাইল বানাতে পারবে কি?",
+      "options": [
+        "হ্যাঁ, r-x থাকলেই যথেষ্ট",
+        "না — নতুন ফাইল বানাতে directory-তে write (w) অনুমতি লাগে; ops-এর ACL শুধু r-x (read+execute/traverse), write নেই",
+        "হ্যাঁ, কারণ base group dev হলেও ACL সবসময় full access দেয়",
+        "নির্ভর করে ফাইলের নামের উপর"
+      ],
+      "answerIndex": 1,
+      "explanation": "directory-তে নতুন ফাইল তৈরি করতে সেই directory-র উপর write (w) অনুমতি লাগে। ops-এর ACL শুধু r-x (read, execute/traverse) — write নেই, তাই নতুন ফাইল বানানো যাবে না, শুধু existing ফাইল পড়া/দেখা যাবে।"
+    }
+  ],
+  "labId": "69b1d5254a49372ba788302c"
+}

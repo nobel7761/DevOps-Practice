@@ -1,0 +1,186 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 6,
+    "medium": 6,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69b1d50523b200e2a40fbddb-01",
+      "difficulty": "easy",
+      "question": "নিজের identity বদলে আরেকজন user হয়ে যাওয়ার কমান্ড কোনটা?",
+      "options": [
+        "su - <user>",
+        "usermod -u <user>",
+        "chuser <user>",
+        "passwd <user>"
+      ],
+      "answerIndex": 0,
+      "explanation": "su - <user> — এখন থেকে টার্মিনাল সেই user হিসেবে চলবে। ফিরতে exit।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-02",
+      "difficulty": "easy",
+      "question": "su দিয়ে অন্য user হয়ে যাওয়ার পর নিজের আগের identity-তে ফিরতে কী কমান্ড?",
+      "options": ["exit", "back", "su root", "logout --self"],
+      "answerIndex": 0,
+      "explanation": "exit — যে su দিয়ে ঢুকেছিলে, সেই session থেকে বেরিয়ে আগের user-এ ফিরে যায়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-03",
+      "difficulty": "easy",
+      "question": "user account সাময়িকভাবে লক করতে passwd-এর কোন flag?",
+      "options": ["-l", "-u", "-S", "-d"],
+      "answerIndex": 0,
+      "explanation": "passwd -l <user> — password-এর সামনে ! বসিয়ে লগইন বন্ধ করে দেয়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-04",
+      "difficulty": "easy",
+      "question": "লক করা account আনলক করতে passwd-এর কোন flag?",
+      "options": ["-u", "-l", "-x", "-r"],
+      "answerIndex": 0,
+      "explanation": "passwd -u <user> — লক খুলে দেয়, আগের মতো লগইন করা যায়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-05",
+      "difficulty": "easy",
+      "question": "user-এর home directory বদলাতে usermod-এর কোন flag?",
+      "options": ["-d", "-s", "-c", "-e"],
+      "answerIndex": 0,
+      "explanation": "usermod -d <path> <user> — /etc/passwd-এর home ফিল্ড বদলায়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-06",
+      "difficulty": "easy",
+      "question": "একজনকে sudo group-এ যোগ করার সঠিক কমান্ড কোনটা (আগের সব supplementary group রেখে)?",
+      "options": [
+        "usermod -aG sudo <user>",
+        "usermod -G sudo <user>",
+        "usermod -g sudo <user>",
+        "groupadd sudo <user>"
+      ],
+      "answerIndex": 0,
+      "explanation": "-aG = append + Groups — আগের সব supplementary অক্ষত রেখে sudo যোগ করে। -a ছাড়া -G সব replace করে দিত।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-07",
+      "difficulty": "medium",
+      "question": "joker-এর home directory তখনো তৈরি হয়নি, এমন অবস্থায় su - joker চালালে কী হয়?",
+      "options": [
+        "su ব্যর্থ হয়, login-ই হয় না",
+        "একটা warning দেখায় (directory change করতে ব্যর্থ), কিন্তু joker হিসেবে login তবুও হয়ে যায়",
+        "নিজে থেকেই home directory বানিয়ে ফেলে",
+        "root-এর home-এ নিয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "su শুধু cd করতে ব্যর্থ হয় (home নেই বলে) আর সেটা জানিয়ে দেয় — কিন্তু user switch তবুও সফল হয়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-08",
+      "difficulty": "medium",
+      "question": "joker sudo group-এর সদস্য না হলে, joker হিসেবে sudo cat /etc/shadow চালালে কী হবে?",
+      "options": [
+        "স্বাভাবিকভাবেই চলবে, sudo সবার জন্য উন্মুক্ত",
+        "\"is not in the sudoers file\" জাতীয় বার্তা দিয়ে আটকে যাবে",
+        "শুধু /etc/shadow-এর প্রথম লাইন দেখাবে",
+        "root-এ পাল্টে যাবে চিরতরে"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudo group-এ না থাকলে sudo নিজেই আটকে দেয় — \"user is not in the sudoers file. This incident will be reported.\""
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-09",
+      "difficulty": "medium",
+      "question": "login joker চালানোর পর যদি joker locked থাকে, কী দেখানোর কথা?",
+      "options": [
+        "সরাসরি joker-এর শেলে ঢুকিয়ে দেয়",
+        "\"Login incorrect\" — password সঠিক দিলেও ঢুকতে দেয় না",
+        "account নিজে থেকেই unlock হয়ে যায়",
+        "\"user does not exist\" বার্তা"
+      ],
+      "answerIndex": 1,
+      "explanation": "locked account-এর ক্ষেত্রে authentication-ই সফল হতে দেয় না — password সঠিক হলেও \"Login incorrect\"।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-10",
+      "difficulty": "medium",
+      "question": "/home/shiyanlou বানানোর পর chmod 700 করার কারণ কী?",
+      "options": [
+        "যাতে সবাই পড়তে পারে",
+        "যাতে শুধু owner (joker) নিজেই পড়া/লেখা/ঢোকা করতে পারে, অন্য কেউ না",
+        "যাতে group-এর সবাই ঢুকতে পারে",
+        "700 মানে ফাইলটা read-only"
+      ],
+      "answerIndex": 1,
+      "explanation": "700 = owner-এর জন্য rwx (7), group ও other-এর জন্য কিছুই না (0,0) — personal home/​.ssh-এর জন্য standard, নিরাপদ setting।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-11",
+      "difficulty": "medium",
+      "question": ".ssh directory-টা কেন দরকার হলো এই লেসনে?",
+      "options": [
+        "শুধু নাম দেখতে ভালো লাগে বলে",
+        "SSH agent symbolic link বানানোর চেষ্টা করে, home-এর ভেতরে .ssh না থাকলে সেটা ব্যর্থ হয়",
+        "sudo group-এর জন্য .ssh বাধ্যতামূলক",
+        "password এখানে সংরক্ষিত থাকে"
+      ],
+      "answerIndex": 1,
+      "explanation": "su করার সময় SSH agent socket-এর জন্য symlink বানানোর চেষ্টা হয় home/.ssh-এর ভেতরে — directory না থাকলে সেই ধাপও ব্যর্থ হয়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-12",
+      "difficulty": "medium",
+      "question": "usermod -d দিয়ে home বদলানোর পর grep -w 'joker' /etc/passwd করলে কোন ফিল্ডে পরিবর্তন দেখবে?",
+      "options": [
+        "UID ফিল্ডে",
+        "shell ফিল্ডে (৭ নম্বর)",
+        "home ফিল্ডে (৬ নম্বর)",
+        "comment ফিল্ডে"
+      ],
+      "answerIndex": 2,
+      "explanation": "/etc/passwd-এর ৬ নম্বর ঘর home directory — usermod -d সেটাই বদলায়।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-13",
+      "difficulty": "hard",
+      "question": "usermod -aG sudo joker আর groupadd sudo — এই দুটোর মধ্যে পার্থক্য কী?",
+      "options": [
+        "একই কাজ, দুটোই group বানায়",
+        "usermod একজন existing user-কে existing sudo group-এ যোগ করে; groupadd নতুন একটা group তৈরি করে (sudo group তো আগে থেকেই আছে)",
+        "groupadd দিয়ে user-ও তৈরি হয়ে যায়",
+        "usermod দিয়ে group তৈরি হয়, groupadd দিয়ে user যোগ হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudo group সিস্টেমে জন্ম থেকেই থাকে (default GID 27) — শুধু membership দরকার, নতুন group বানানোর দরকার নেই।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-14",
+      "difficulty": "hard",
+      "question": "root নিজে যদি sudo cat /etc/shadow চালায়, sudoers যাচাই লাগে কি?",
+      "options": [
+        "হ্যাঁ, root-কেও sudoers-এ থাকতে হয়",
+        "না — root ইতিমধ্যেই সর্বোচ্চ ক্ষমতাধর, sudo-র অনুমতি লাগার প্রশ্নই নেই",
+        "root sudo ব্যবহারই করতে পারে না",
+        "root-এর জন্য আলাদা sudoers.d ফাইল লাগে"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudo group membership check শুধু non-root user-দের জন্য প্রযোজ্য — root সবসময় সব করতে পারে, কোনো যাচাইয়ের দরকার নেই।"
+    },
+    {
+      "id": "69b1d50523b200e2a40fbddb-15",
+      "difficulty": "hard",
+      "question": "joker-কে userdel দিয়ে না মুছে passwd -l দিয়ে lock করার সুবিধা কী?",
+      "options": [
+        "lock করলে UID খালি হয়ে যায়, পরে পুনর্ব্যবহার করা যায়",
+        "joker-এর home, group-membership, ফাইল সব অক্ষত থাকে — শুধু login বন্ধ হয়, দরকারে unlock করে ফিরিয়ে আনা যায়",
+        "lock করলে sudo ক্ষমতা বেড়ে যায়",
+        "কোনো পার্থক্য নেই, দুটোই একই কাজ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "lock (passwd -l বা usermod -L) শুধু authentication বন্ধ করে — data/membership সব থাকে। userdel স্থায়ী, ফিরে আসার পথ নেই (-r দিলে data-ও শেষ)।"
+    }
+  ],
+  "labId": "69b1d50523b200e2a40fbddb"
+}

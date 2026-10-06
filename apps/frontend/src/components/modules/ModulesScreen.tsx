@@ -1,12 +1,30 @@
+import CourseHero from "@/components/modules/CourseHero";
+import MilestoneTabsSection from "@/components/modules/MilestoneTabsSection";
 import {
-  Accordion,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/shared/shadcn";
-import MilestoneSection from "@/components/modules/MilestoneSection";
-import { masteringAwsDevopsSeason4 } from "@/lib/data/course-modules";
+  masteringAwsDevopsSeason4,
+  type CourseMilestone,
+} from "@/lib/data/course-modules";
+
+function findContinueHref(milestones: CourseMilestone[]): string | null {
+  for (const milestone of milestones) {
+    for (const courseModule of milestone.modules) {
+      for (const content of courseModule.contents) {
+        if (content.completed) continue;
+        if (content.type === "lab" && content.labId) {
+          return `/module/lab/${content.labId}`;
+        }
+        if (
+          (content.type === "live_class" || content.type === "pre_class") &&
+          content.videoUrl &&
+          content.contentId
+        ) {
+          return `/module/video/${content.contentId}`;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 export default function ModulesScreen({
   defaultMilestoneId,
@@ -16,33 +34,27 @@ export default function ModulesScreen({
   defaultModuleId?: string;
 }) {
   const { courseTitle, milestones } = masteringAwsDevopsSeason4;
+  const totalModules = milestones.reduce((sum, m) => sum + m.modules.length, 0);
+  const allContents = milestones.flatMap((m) =>
+    m.modules.flatMap((mod) => mod.contents),
+  );
+  const completedCount = allContents.filter((item) => item.completed).length;
 
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{courseTitle}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {milestones.length} milestones ·{" "}
-            {milestones.reduce((sum, m) => sum + m.modules.length, 0)} modules
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Accordion
-            type="multiple"
-            className="w-full"
-            defaultValue={defaultMilestoneId ? [defaultMilestoneId] : undefined}
-          >
-            {milestones.map((milestone) => (
-              <MilestoneSection
-                key={milestone.id}
-                milestone={milestone}
-                defaultModuleId={defaultModuleId}
-              />
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
+    <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12">
+      <CourseHero
+        courseTitle={courseTitle}
+        milestoneCount={milestones.length}
+        moduleCount={totalModules}
+        completedCount={completedCount}
+        totalCount={allContents.length}
+        continueHref={findContinueHref(milestones)}
+      />
+      <MilestoneTabsSection
+        milestones={milestones}
+        defaultMilestoneId={defaultMilestoneId}
+        defaultModuleId={defaultModuleId}
+      />
     </main>
   );
 }

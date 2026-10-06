@@ -1,0 +1,461 @@
+{
+  "title": "LAB EXAM: Mastering Linux File Permissions",
+  "passPercent": 95,
+  "intro": "ProjectX-এর তিনটা টিম, তিন রকম অ্যাক্সেস — umask থেকে শুরু করে chmod হয়ে setfacl পর্যন্ত। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর।",
+  "targets": [
+    {
+      "path": "/home/poridhian/code/projects/ProjectX/src",
+      "type": "dir",
+      "mode": "770",
+      "owner": "dev_user1",
+      "group": "dev"
+    },
+    {
+      "path": "/home/poridhian/code/projects/ProjectX/config",
+      "type": "dir",
+      "mode": "770",
+      "owner": "dev_user1",
+      "group": "dev"
+    },
+    {
+      "path": "/home/poridhian/code/projects/ProjectX/tests",
+      "type": "dir",
+      "mode": "775",
+      "owner": "dev_user1",
+      "group": "dev"
+    }
+  ],
+  "groupTargets": [
+    {
+      "group": "dev",
+      "users": ["dev_user1"]
+    },
+    {
+      "group": "ops",
+      "users": ["ops_user1"]
+    },
+    {
+      "group": "qa",
+      "users": ["qa_user1"]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 3,
+      "section": {
+        "title": "🏗️ পর্ব ১: তিনটা টিম বানাও",
+        "note": "তিনটা group, তিনজন সদস্য — একজন করে, প্রতিনিধিস্বরূপ।"
+      },
+      "prompt": "dev নামে একটা group বানাও।",
+      "check": {
+        "require": ["groupadd"],
+        "groupsExist": ["dev"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 3,
+      "prompt": "ops নামে একটা group বানাও।",
+      "check": {
+        "require": ["groupadd"],
+        "groupsExist": ["ops"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 3,
+      "prompt": "qa নামে একটা group বানাও।",
+      "check": {
+        "require": ["groupadd"],
+        "groupsExist": ["qa"]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 3,
+      "prompt": "dev_user1 নামে একজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "dev_user1",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 3,
+      "prompt": "dev_user1-কে dev group-এ যোগ করো।",
+      "check": {
+        "require": ["usermod", "-a", "-G"],
+        "usersState": [
+          {
+            "name": "dev_user1",
+            "inGroups": ["dev"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 3,
+      "prompt": "ops_user1 নামে একজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "ops_user1",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 3,
+      "prompt": "ops_user1-কে ops group-এ যোগ করো।",
+      "check": {
+        "require": ["usermod", "-a", "-G"],
+        "usersState": [
+          {
+            "name": "ops_user1",
+            "inGroups": ["ops"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 3,
+      "prompt": "qa_user1 নামে একজনকে বানাও — home-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "qa_user1",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 3,
+      "prompt": "qa_user1-কে qa group-এ যোগ করো।",
+      "check": {
+        "require": ["usermod", "-a", "-G"],
+        "usersState": [
+          {
+            "name": "qa_user1",
+            "inGroups": ["qa"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 3,
+      "prompt": "প্রজেক্টের কাঠামো বানাও — /home/poridhian/code/projects/ProjectX/src (মাঝের সব directory-সহ, এখনো কিছুই নেই)।",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src",
+            "type": "dir"
+          }
+        ]
+      },
+      "hints": ["মাঝের সব ধাপ একসাথে বানানোর flag-টা মনে আছে তো?"]
+    },
+    {
+      "id": "t11",
+      "points": 3,
+      "prompt": "একইভাবে বানাও: .../ProjectX/config",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/config",
+            "type": "dir"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 3,
+      "prompt": "একইভাবে বানাও: .../ProjectX/tests",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/tests",
+            "type": "dir"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "section": {
+        "title": "🎭 পর্ব ২: umask — নতুন ফাইলের ডিফল্ট তালা",
+        "note": "chmod পুরনো ফাইল বদলায়, umask ঠিক করে নতুন ফাইল কী নিয়ে জন্মাবে।"
+      },
+      "prompt": "এই মুহূর্তে umask-এর মান কত, দেখাও।",
+      "check": {
+        "require": ["umask"],
+        "ref": "umask"
+      }
+    },
+    {
+      "id": "t14",
+      "points": 4,
+      "prompt": "umask বদলে 027 করো — এখন থেকে নতুন ফাইল অন্যদের (other) জন্য একদম বন্ধ থাকবে।",
+      "check": {
+        "require": ["umask", "027"]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 2,
+      "prompt": "/tmp-এ testfile027 নামে একটা খালি ফাইল বানাও, তারপর তার permission (বিস্তারিত) দেখাও — নতুন umask-এর প্রভাব চোখে পড়বে।",
+      "check": {
+        "require": ["touch"],
+        "paths": [
+          {
+            "path": "/tmp/testfile027",
+            "type": "file",
+            "mode": "640"
+          }
+        ]
+      },
+      "hints": [
+        "প্রথমে touch দিয়ে বানাও, তারপর ls -l দিয়ে verify — দুই কমান্ড লাগবে, একটার পর একটা"
+      ]
+    },
+    {
+      "id": "t15b",
+      "points": 3,
+      "prompt": "umask আবার ডিফল্ট 022-এ ফিরিয়ে আনো — পরের কাজে (নতুন ফাইল তৈরি) এই কড়াকড়ি যেন প্রভাব না ফেলে।",
+      "check": {
+        "require": ["umask", "022"]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 4,
+      "section": {
+        "title": "🔐 পর্ব ৩: মালিকানা আর base permission",
+        "note": "প্রথমে পুরো প্রজেক্টের মালিকানা dev টিমকে দাও, তারপর প্রতিটা ফোল্ডারে আলাদা কড়াকড়ি।"
+      },
+      "prompt": "পুরো ProjectX (সব ফোল্ডারসহ) dev_user1:dev-এর মালিকানায় দিয়ে দাও।",
+      "check": {
+        "require": ["chown", "-R"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src",
+            "owner": "dev_user1",
+            "group": "dev"
+          },
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/config",
+            "owner": "dev_user1",
+            "group": "dev"
+          },
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/tests",
+            "owner": "dev_user1",
+            "group": "dev"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 4,
+      "prompt": "src-এর permission 770 করো — owner আর group পূর্ণ ক্ষমতা, বাকি সবাই শূন্য।",
+      "check": {
+        "require": ["chmod", "770"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src",
+            "mode": "770"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 4,
+      "prompt": "config-এরও permission 770 করো।",
+      "check": {
+        "require": ["chmod", "770"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/config",
+            "mode": "770"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "points": 4,
+      "prompt": "tests-এর permission 775 করো — এটা একটু বেশি খোলা রাখো (other-ও পড়তে পারবে)।",
+      "check": {
+        "require": ["chmod", "775"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/tests",
+            "mode": "775"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t20",
+      "points": 4,
+      "section": {
+        "title": "🎯 পর্ব ৪: setfacl — নির্দিষ্ট দলের জন্য বিশেষ ছাড়",
+        "note": "base permission (770) না বদলিয়েই, ops আর qa-কে src পড়ার-চালানোর অনুমতি দাও — chmod দিয়ে এটা সম্ভব না, কারণ base group এমনিতেই dev।"
+      },
+      "prompt": "src-এ (এবং তার ভেতরের সবকিছুতে) ops group-কে read+execute (rx) ACL দাও।",
+      "check": {
+        "require": ["setfacl", "-R", "-m"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src",
+            "acl": [
+              {
+                "kind": "g",
+                "name": "ops",
+                "perms": "r-x"
+              }
+            ]
+          }
+        ]
+      },
+      "hints": ["setfacl -R -m g:ops:rx <path> — g: মানে group-entry"]
+    },
+    {
+      "id": "t21",
+      "points": 4,
+      "prompt": "src-এ qa group-কেও একই read+execute (rx) ACL দাও।",
+      "check": {
+        "require": ["setfacl", "-R", "-m"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src",
+            "acl": [
+              {
+                "kind": "g",
+                "name": "qa",
+                "perms": "r-x"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t22",
+      "points": 4,
+      "prompt": "config-এ ops group-কে পূর্ণ ক্ষমতা (rwx) ACL দাও — ops-কে config বদলাতেও হয় মাঝেমধ্যে।",
+      "check": {
+        "require": ["setfacl", "-R", "-m"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/config",
+            "acl": [
+              {
+                "kind": "g",
+                "name": "ops",
+                "perms": "rwx"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t23",
+      "points": 4,
+      "prompt": "tests-এ qa group-কে পূর্ণ ক্ষমতা (rwx) ACL দাও — টেস্ট লেখা/চালানো দুটোই qa-র কাজ।",
+      "check": {
+        "require": ["setfacl", "-R", "-m"],
+        "pathModes": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/tests",
+            "acl": [
+              {
+                "kind": "g",
+                "name": "qa",
+                "perms": "rwx"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "t24",
+      "points": 4,
+      "prompt": "src-এর সব ACL-সহ পুরো তালিকা দেখাও, যাচাই করতে।",
+      "check": {
+        "require": ["getfacl"],
+        "ref": "getfacl /home/poridhian/code/projects/ProjectX/src"
+      }
+    },
+    {
+      "id": "t25",
+      "points": 7,
+      "section": {
+        "title": "🧪 পর্ব ৫: নিজেই প্রমাণ করো — কে কী পারে",
+        "note": "root হয়ে না, সরাসরি সেই user-এর পরিচয়ে চালিয়ে দেখো।"
+      },
+      "prompt": "dev_user1 হিসেবে src-এ main.c বানাও, ভেতরে লেখো: // Main application logic",
+      "check": {
+        "require": ["sudo", "-u", "dev_user1"],
+        "paths": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/src/main.c",
+            "type": "file",
+            "content": "// Main application logic"
+          }
+        ]
+      },
+      "hints": [
+        "sudo -u dev_user1 bash -c '...' — bash -c-এর ভেতরে পুরো echo ... > path লিখতে হবে"
+      ]
+    },
+    {
+      "id": "t26",
+      "points": 4,
+      "prompt": "ops_user1 হিসেবে main.c পড়তে পারে কিনা যাচাই করো (শুধু cat, sudo -u দিয়ে)।",
+      "check": {
+        "require": ["sudo", "-u", "ops_user1", "cat"],
+        "ref": "sudo -u ops_user1 cat /home/poridhian/code/projects/ProjectX/src/main.c"
+      }
+    },
+    {
+      "id": "t27",
+      "points": 4,
+      "prompt": "qa_user1 হিসেবে tests-এ test1.txt বানাও, ভেতরে লেখো: test_case_1: pass — ACL সত্যিই কাজ করে কিনা প্রমাণ হবে।",
+      "check": {
+        "require": ["sudo", "-u", "qa_user1"],
+        "paths": [
+          {
+            "path": "/home/poridhian/code/projects/ProjectX/tests/test1.txt",
+            "type": "file",
+            "content": "test_case_1: pass"
+          }
+        ]
+      }
+    }
+  ],
+  "labId": "69b1d5254a49372ba788302c"
+}

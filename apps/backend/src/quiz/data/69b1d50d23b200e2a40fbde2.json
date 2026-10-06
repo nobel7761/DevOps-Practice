@@ -1,0 +1,201 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 6,
+    "medium": 7,
+    "hard": 4
+  },
+  "questions": [
+    {
+      "id": "69b1d50d23b200e2a40fbde2-01",
+      "difficulty": "easy",
+      "question": "/etc/sudoers সরাসরি সম্পাদনা না করে কোন কমান্ড দিয়ে করা উচিত?",
+      "options": ["nano", "vim", "visudo", "gedit"],
+      "answerIndex": 2,
+      "explanation": "visudo save করার আগে সিনট্যাক্স যাচাই করে — সরাসরি editor দিয়ে খুললে একটা ভুলে পুরো sudo সিস্টেম অচল হয়ে যেতে পারে।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-02",
+      "difficulty": "easy",
+      "question": "%superadmin ALL=(ALL) ALL — এই লাইনে % চিহ্নের মানে কী?",
+      "options": [
+        "একটা comment",
+        "এটা একটা user না, একটা group-এর জন্য নিয়ম",
+        "percentage/শতাংশ",
+        "wildcard, সব user"
+      ],
+      "answerIndex": 1,
+      "explanation": "% দিয়ে বোঝানো হয় এটা group-ভিত্তিক নিয়ম — %superadmin মানে superadmin group-এর প্রতিটা সদস্যের জন্য প্রযোজ্য।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-03",
+      "difficulty": "easy",
+      "question": "একটা সার্ভিস restart করার কমান্ড কোনটা?",
+      "options": [
+        "service restart",
+        "systemctl restart <name>",
+        "restart <name>",
+        "reboot <name>"
+      ],
+      "answerIndex": 1,
+      "explanation": "systemctl restart <service> — আধুনিক systemd-ভিত্তিক distro-তে সার্ভিস পুনরায় চালু করার standard কমান্ড।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-04",
+      "difficulty": "easy",
+      "question": "pidof sshd কমান্ড কী দেখায়?",
+      "options": [
+        "sshd সার্ভিসের কনফিগ ফাইল",
+        "sshd প্রসেসের PID (চলমান থাকলে)",
+        "sshd কতবার restart হয়েছে",
+        "sshd-এর log ফাইলের path"
+      ],
+      "answerIndex": 1,
+      "explanation": "pidof <name> — সেই নামের প্রসেস চলমান থাকলে তার PID (Process ID) দেখায়, না থাকলে কিছুই না।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-05",
+      "difficulty": "easy",
+      "question": "নিজের নাম দিয়ে (individual user rule না) একজনকে narrow sudo access দিতে সাধারণত কোথায় নিয়ম লেখা ভালো অভ্যাস?",
+      "options": [
+        "সরাসরি /etc/sudoers-এর মূল ফাইলে",
+        "/etc/sudoers.d/ ফোল্ডারে আলাদা ফাইলে",
+        "/etc/passwd-এ",
+        "/home/<user>/.sudoers-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "/etc/sudoers.d/-তে আলাদা ফাইলে নিয়ম রাখলে distro-র মূল sudoers ফাইল অক্ষত থাকে, আর ভুল হলে শুধু ওই ছোট ফাইলটা মুছলেই মুক্তি।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-06",
+      "difficulty": "easy",
+      "question": "ps -eo pid,etime,cmd কমান্ডটা কী দেখায়?",
+      "options": [
+        "শুধু error message",
+        "সব চলমান প্রসেসের PID, চলার সময়কাল, আর কমান্ড",
+        "শুধু root-এর প্রসেস",
+        "disk space ব্যবহার"
+      ],
+      "answerIndex": 1,
+      "explanation": "-eo দিয়ে নির্দিষ্ট কলাম বেছে দেখানো যায় — এখানে PID, elapsed time, আর command।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-07",
+      "difficulty": "medium",
+      "question": "serviceop ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart sshd — এই নিয়মে serviceop কি systemctl status sshd চালাতে পারবে?",
+      "options": [
+        "হ্যাঁ, restart পারলে status-ও পারবে",
+        "না — নিয়মে শুধু 'restart sshd' লেখা, 'status sshd' আলাদা কমান্ড হিসেবে গণ্য, আলাদা করে অনুমতি না থাকলে চলবে না",
+        "হ্যাঁ, কারণ status কম ক্ষমতার কাজ",
+        "নির্ভর করে সময়ের উপর"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudoers প্রতিটা কমান্ড আলাদা আলাদা হিসেবে গণ্য করে — হুবহু মিললে তবেই অনুমতি। 'restart' আর 'status' সম্পূর্ণ আলাদা arguments, একটা allow করলে অন্যটা এমনিতেই আসে না।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-08",
+      "difficulty": "medium",
+      "question": "NOPASSWD: এই keyword-টা sudoers rule-এ কী করে?",
+      "options": [
+        "user-এর কোনো password-ই সেট করা যাবে না",
+        "এই নির্দিষ্ট কমান্ডের জন্য sudo চালানোর সময় password চাইবে না",
+        "root-এর password মুছে দেয়",
+        "শুধু প্রথমবার password চায়, পরে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "NOPASSWD: থাকলে সেই নির্দিষ্ট কমান্ডের জন্য sudo password ছাড়াই চলে — automation script-এ প্রায়ই দরকার হয় (interactive prompt দেওয়ার উপায় নেই বলে)।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-09",
+      "difficulty": "medium",
+      "question": "সার্ভিস restart করার আগে আর পরে pidof দিয়ে PID চেক করার উদ্দেশ্য কী?",
+      "options": [
+        "শুধু কৌতূহল মেটানো",
+        "প্রমাণ করা যে restart সত্যিই ঘটেছে — restart-এর পর সাধারণত নতুন PID বরাদ্দ হয় (পুরনো process বন্ধ হয়ে নতুন একটা শুরু হয়)",
+        "PID কখনো বদলায় না, তাই এটা অর্থহীন চেক",
+        "শুধু error থাকলে PID বদলায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "restart মানে পুরনো process বন্ধ করে নতুন একটা শুরু করা — তাই PID সাধারণত বদলে যায়, এটাই restart সত্যিই ঘটার প্রমাণ।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-10",
+      "difficulty": "medium",
+      "question": "একজন user superadmin group-এর সদস্য হলো, আর /etc/sudoers-এ %superadmin ALL=(ALL) ALL আছে — কিন্তু সে group-এ যোগ হওয়ার আগে থেকেই একটা terminal session খোলা ছিল। সেই পুরনো session-এ কি নতুন ক্ষমতা সাথে সাথে কাজ করবে?",
+      "options": [
+        "হ্যাঁ, তাৎক্ষণিকভাবে কাজ করবে",
+        "বাস্তব Linux-এ সাধারণত না — group membership নতুন login/session-এই কার্যকর হয়, চলমান session-এ পুরনো তথ্যই থাকে",
+        "শুধু root-এর session-এ কাজ করবে",
+        "group membership কখনোই session-নির্ভর না"
+      ],
+      "answerIndex": 1,
+      "explanation": "বাস্তব Linux-এ group membership কার্যকর হয় নতুন login-এ — চলমান shell session তার পুরনো group-তালিকা নিয়েই চলতে থাকে, নতুন সদস্যপদ পেতে re-login/su দরকার হয়।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-11",
+      "difficulty": "medium",
+      "question": "একজনকে superadmin group-এর সদস্য বানানো, আর sudoers-এ %superadmin ALL=(ALL) ALL লেখা — দুটোর মধ্যে কোনটা আগে করলে/না করলে কী হবে?",
+      "options": [
+        "ক্রম কোনো ব্যাপার না",
+        "শুধু group-এ যোগ করলেই যথেষ্ট, sudoers-এ কিছু লেখা লাগে না",
+        "দুটোই লাগবে — group থাকা মানেই ক্ষমতা না, sudoers-এ সেই group-কে ক্ষমতা দেওয়ার নিয়মও থাকতে হবে",
+        "শুধু sudoers-এ লিখলেই যথেষ্ট, group লাগে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "group membership আর sudoers-এর নিয়ম — দুটো আলাদা স্তর। group শুধু classification, ক্ষমতা আসে sudoers-এর entry থেকে — দুটো মিলিয়েই কার্যকর হয়।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-12",
+      "difficulty": "hard",
+      "question": "serviceop-এর sudoers.d ফাইলে শুধু 'systemctl restart sshd' আর 'systemctl status sshd' লেখা। সে যদি sudo systemctl restart nginx চালাতে চায়, কী হবে?",
+      "options": [
+        "চলবে, কারণ systemctl-এর অনুমতি আছে",
+        "আটকে যাবে — নিয়মে হুবহু 'restart sshd' লেখা, 'restart nginx' আলাদা service name বলে ম্যাচ করবে না",
+        "চলবে, কারণ restart action-এর অনুমতি আছে যেকোনো সার্ভিসে",
+        "প্রথমবার চলবে, দ্বিতীয়বার আটকাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudoers rule হুবহু (exact) কমান্ড-স্ট্রিং মেলায় — 'systemctl restart sshd' আর 'systemctl restart nginx' সম্পূর্ণ আলাদা স্ট্রিং, একটার অনুমতি অন্যটায় কাজ করে না।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-13",
+      "difficulty": "hard",
+      "question": "কেন serviceop-এর মতো automation/service account-দের জন্য NOPASSWD সহ narrow sudoers.d rule একটা ভালো security practice?",
+      "options": [
+        "কারণ এতে password মনে রাখতে হয় না, সুবিধাজনক শুধু",
+        "কারণ script/automation interactive password prompt দিতে পারে না, আর narrow scope মানে সেই account হ্যাক হলেও ক্ষতি সীমিত থাকে (Principle of Least Privilege)",
+        "কারণ এতে সার্ভার দ্রুত চলে",
+        "কারণ এতে root password বদলানোর দরকার হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "দুটো কারণ একসাথে: (১) automation-এ interactive password prompt অচল, তাই NOPASSWD দরকার; (২) scope সংকীর্ণ রাখলে সেই account compromise হলেও attacker শুধু ওই একটা কমান্ডই চালাতে পারবে, পুরো root ক্ষমতা না — এটাই Least Privilege।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-14",
+      "difficulty": "hard",
+      "question": "root নিজে sudo systemctl restart sshd চালালে সুদোয়ার্স rule যাচাই করার দরকার হয় কি?",
+      "options": [
+        "হ্যাঁ, root-কেও সব নিয়ম মানতে হয়",
+        "না — root ইতিমধ্যেই সর্বোচ্চ ক্ষমতাধর, sudoers rule যাচাইয়ের প্রশ্নই আসে না",
+        "শুধু NOPASSWD rule থাকলে যাচাই লাগে না",
+        "root sudo চালাতেই পারে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "sudoers-এর permission-check শুধু non-root user-দের জন্য প্রযোজ্য — root সবসময় সব করতে পারে, কোনো rule যাচাইয়ের দরকার নেই।"
+    },
+    {
+      "id": "69b1d50d23b200e2a40fbde2-15",
+      "difficulty": "hard",
+      "question": "একই কাজের (nginx restart) জন্য ভবিষ্যতে আরও ৫ জন service account লাগবে বলে মনে হচ্ছে — সবচেয়ে স্কেলেবল উপায় কোনটা?",
+      "options": [
+        "প্রতি account-এর জন্য /etc/sudoers.d/-এ আলাদা আলাদা ফাইলে একই নিয়ম বারবার লেখা",
+        "একটা group (যেমন nginx-operators) বানিয়ে, sudoers.d-তে %nginx-operators-কে অনুমতি দিয়ে, নতুন প্রতিটা account-কে শুধু সেই group-এ যোগ করা",
+        "সব account-কে sudo group-এ ঢুকিয়ে পূর্ণ ক্ষমতা দেওয়া, সহজ সমাধান",
+        "প্রতিবার root-এর password শেয়ার করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "group-ভিত্তিক নিয়ম স্কেলেবল — নতুন account লাগলে শুধু group-এ যোগ করলেই হয়, sudoers ফাইল বারবার এডিট করা লাগে না। এটাই User Management লেসনের 'user ক্ষমতা পায় group-এর মাধ্যমে' নীতির প্রয়োগ।"
+    }
+  ],
+  "labId": "69b1d50d23b200e2a40fbde2"
+}

@@ -1,0 +1,196 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 6,
+    "medium": 6,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69b1d5184a49372ba788301e-01",
+      "difficulty": "easy",
+      "question": "/etc/skel আসলে কী?",
+      "options": [
+        "root user-এর home directory",
+        "নতুন user-এর জন্য টেমপ্লেট — useradd -m চালালে এখান থেকে ফাইল কপি হয়",
+        "system log রাখার জায়গা",
+        "backup ফাইলের ফোল্ডার"
+      ],
+      "answerIndex": 1,
+      "explanation": "/etc/skel (skeleton) হলো নতুন user-এর 'জন্মগত' ফাইলের টেমপ্লেট — useradd -m চালানোর মুহূর্তে এর ভেতরের সবকিছু নতুন home-এ কপি হয়।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-02",
+      "difficulty": "easy",
+      "question": "ডিফল্টে /etc/skel-এ সাধারণত কোন ফাইলগুলো থাকে?",
+      "options": [
+        ".bashrc, .profile, .bash_logout",
+        "passwd, shadow, group",
+        "sudoers, hosts, fstab",
+        "syslog, auth.log"
+      ],
+      "answerIndex": 0,
+      "explanation": "এই তিনটা ফাইল ডিফল্টে skel-এ থাকে — bash-এর কনফিগারেশন আর logout-এর সময় চলা স্ক্রিপ্ট।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-03",
+      "difficulty": "easy",
+      "question": "useradd testuser (কোনো -m ছাড়া) চালালে /etc/skel-এর প্রভাব কী হবে?",
+      "options": [
+        "স্বাভাবিকভাবেই কপি হবে",
+        "কোনো প্রভাব নেই — home-ই তৈরি হয়নি, তাই কপি করারও কিছু নেই",
+        "শুধু .bashrc কপি হবে",
+        "error দেবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "-m ছাড়া home directory-ই তৈরি হয় না — skel copy করার প্রশ্নই আসে না।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-04",
+      "difficulty": "easy",
+      "question": "একটা folder-এর ভেতরের 'সবকিছু' (নিজেকে না) আরেকটায় কপি করতে cp-তে কী ব্যবহার করা হয়?",
+      "options": [
+        "cp -a",
+        "cp -r <src>/. <dest>/",
+        "cp --all",
+        "cp -R --self-exclude"
+      ],
+      "answerIndex": 1,
+      "explanation": "src-এর শেষে /. দিলে সেটা 'এই ফোল্ডারের ভেতরের সবকিছু' বোঝায় — ফোল্ডারটা নিজে একটা সাব-ফোল্ডার হিসেবে বসে না।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-05",
+      "difficulty": "easy",
+      "question": "একটা ফাইল স্থায়ীভাবে মুছে ফেলার কমান্ড কোনটা?",
+      "options": ["del", "rm", "erase", "clear"],
+      "answerIndex": 1,
+      "explanation": "rm (remove) — ফাইল মুছে ফেলে; directory মুছতে -r লাগে।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-06",
+      "difficulty": "easy",
+      "question": "pipe-এর মাঝপথে একটা কপি ফাইলে লিখতে (আর স্ক্রিনেও দেখাতে) কোন কমান্ড?",
+      "options": ["tee", "cat", "split", "fork"],
+      "answerIndex": 0,
+      "explanation": "cmd | tee file — cmd-এর output একসাথে ফাইলেও লেখে, স্ক্রিনেও দেখায়।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-07",
+      "difficulty": "medium",
+      "question": "/etc/skel-এ একটা নতুন ফাইল যোগ করার পর, আগে থেকে তৈরি হওয়া user-দের home-এ কি সেই ফাইল automatically চলে আসবে?",
+      "options": [
+        "হ্যাঁ, সব existing user-এর home-এ আসবে",
+        "না — skel শুধু useradd -m চালানোর মুহূর্তেই কপি হয়, আগে থেকে থাকা user-দের প্রভাবিত করে না",
+        "শুধু root-এর home-এ আসবে",
+        "শুধু sudo group-এর সদস্যদের home-এ আসবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "skel একটা 'জন্মের মুহূর্তের' টেমপ্লেট — পরে বদলালে শুধু ভবিষ্যতে তৈরি হওয়া user-রাই সেটা পাবে, আগেরদের home-এ retroactively কিছু বসে না।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-08",
+      "difficulty": "medium",
+      "question": "/etc/skel থেকে একটা ফাইল মুছে ফেলার পর নতুন user বানালে কী হবে?",
+      "options": [
+        "নতুন user সেই ফাইল ছাড়াই বাকি সব ফাইল পাবে",
+        "নতুন user বানানোই যাবে না",
+        "সব ফাইল বাদ পড়বে, শুধু ওই একটাই আসবে",
+        "পুরনো ফাইলটা নিজে থেকে আবার তৈরি হয়ে যাবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "যা মুছে ফেলা হয়েছে, সেটা আর কপি হওয়ার কিছু থাকে না — বাকি ফাইলগুলো (যা এখনো skel-এ আছে) স্বাভাবিকভাবেই কপি হয়।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-09",
+      "difficulty": "medium",
+      "question": "useradd testuser5 (-m ছাড়া) বানানোর পর, তাকে skel-টেমপ্লেট ম্যানুয়ালি দিতে কোন ধাপগুলো লাগবে?",
+      "options": [
+        "শুধু usermod -m testuser5",
+        "mkdir দিয়ে home বানানো, cp -r দিয়ে skel-এর কনটেন্ট কপি করা, chown -R দিয়ে মালিকানা ঠিক করা",
+        "শুধু passwd testuser5",
+        "কিছুই লাগবে না, স্বয়ংক্রিয়ভাবে হয়ে যাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "-m ছাড়া বানানো user-এর জন্য home directory, তার ভেতরের কনটেন্ট, আর সঠিক owner — তিনটাই ম্যানুয়ালি করতে হয়।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-10",
+      "difficulty": "medium",
+      "question": "cp -r /etc/skel/. /home/testuser5/ চালানোর পর কপি হওয়া ফাইলগুলোর owner কে হবে (ডিফল্টে)?",
+      "options": [
+        "যে user cp কমান্ডটা চালাচ্ছে (এখানে সাধারণত root), skel-এর আসল owner (root) না বদলিয়েও",
+        "সবসময় testuser5, স্বয়ংক্রিয়ভাবে",
+        "সবসময় /etc/skel-এর মূল owner অক্ষত থাকে",
+        "owner ফাঁকা থাকে, chown ছাড়া কেউ owner হয় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "cp ডিফল্টে যে চালাচ্ছে তাকেই owner বানায় (--preserve না দিলে) — তাই cp-এর পরও আলাদা করে chown -R দিয়ে testuser5-কে owner বানাতে হয়।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-11",
+      "difficulty": "medium",
+      "question": "> আর >> — .bashrc-এ নতুন alias যোগ করার সময় কোনটা ব্যবহার করা উচিত?",
+      "options": [
+        ">, কারণ এটা দ্রুত",
+        ">>, কারণ > আগের পুরো ফাইলের কনটেন্ট মুছে নতুন করে লিখে দেয় — শুধু যোগ করতে হলে >> লাগবে",
+        "দুটোই একই কাজ করে",
+        "কোনোটাই না, শুধু vim দিয়েই করা যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "> ফাইলের আগের সব কনটেন্ট মুছে নতুন লেখে — .bashrc-এর মতো ফাইলে এটা চালালে আগের সব alias/setting হারিয়ে যাবে। >> নিরাপদে শেষে যোগ করে।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-12",
+      "difficulty": "hard",
+      "question": "একটা bastion server-এ ১২ জন DevOps engineer আছে, নতুন নিয়ম: সবার টার্মিনালে একটা audit-logging script থাকতে হবে। ১৩ নম্বর engineer জয়েন করলে কী করতে হবে সবচেয়ে কম কাজে?",
+      "options": [
+        "১৩ নম্বর জনের home-এ ম্যানুয়ালি গিয়ে script বসাতে হবে",
+        "logging script-টা /etc/skel-এ রাখলেই যথেষ্ট — useradd -m চালানোর মুহূর্তেই script তার home-এ চলে আসবে, আলাদা কিছু করা লাগবে না",
+        "সবাইকে আবার নতুন করে useradd করতে হবে",
+        "sudoers ফাইলে script-এর path যোগ করতে হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটাই /etc/skel-এর আসল শক্তি — একবার টেমপ্লেটে রাখলে, ভবিষ্যতের প্রতিটা নতুন user স্বয়ংক্রিয়ভাবে সেটা পায়, কারো জন্য আলাদা কাজ লাগে না।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-13",
+      "difficulty": "hard",
+      "question": "instructor বলেছেন /etc/skel হলো OOP-র 'Class', নতুন user-এর home হলো তার 'Object' — এই উপমার সীমাবদ্ধতা কোথায়?",
+      "options": [
+        "কোনো সীমাবদ্ধতা নেই, পুরোপুরি ঠিক",
+        "OOP-তে object তার class-এর সাথে live-linked থাকে (class বদলালে সব object বদলায়), কিন্তু skel-copy একবারই হয় — পরে skel বদলালে আগের 'object'-রা (existing home) কিছুই টের পায় না",
+        "Class-এর মতো skel-ও runtime-এ বদলানো যায় না",
+        "Object-এর মতো home directory কখনো মুছে ফেলা যায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "উপমাটা copy-on-creation বোঝাতে ভালো, কিন্তু বাস্তব OOP-তে object-class সম্পর্ক প্রায়ই dynamic (live) হয় — skel-এর কপি সম্পূর্ণ static, শুধু creation-এর মুহূর্তের snapshot।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-14",
+      "difficulty": "hard",
+      "question": "/etc/skel/.bashrc-এ কোনো ভুল সিনট্যাক্স (যেমন অসম্পূর্ণ quote) থেকে গেলে, এর প্রভাব কতদূর ছড়াবে?",
+      "options": [
+        "শুধু root-এর নিজের shell-এ সমস্যা হবে",
+        "এখন থেকে তৈরি হওয়া প্রতিটা নতুন user-এর .bashrc-তেও একই ভুল কপি হয়ে যাবে — প্রতিটা নতুন login-এ সমস্যা দেখা দিতে পারে",
+        "কোনো প্রভাব নেই, .bashrc syntax-check ছাড়াই কপি হয় বলে সমস্যা হয় না",
+        "শুধু sudo ব্যবহারকারীদের প্রভাবিত করবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "skel-এর ফাইল হুবহু কপি হয় — ভুল থাকলে সেই ভুলও প্রতিটা নতুন user-এর কাছে চলে যায়। তাই skel বদলানোর আগে সবসময় সিনট্যাক্স যাচাই জরুরি।"
+    },
+    {
+      "id": "69b1d5184a49372ba788301e-15",
+      "difficulty": "hard",
+      "question": "cp -r /etc/skel/. /home/testuser5/ আর cp -r /etc/skel /home/testuser5/ — এই দুইয়ের ফলাফলে পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "প্রথমটা skel-এর ভেতরের ফাইলগুলো সরাসরি testuser5-এর ভেতরে বসায়; দ্বিতীয়টা /home/testuser5/skel/ নামে একটা নতুন সাব-ফোল্ডার বানিয়ে তার ভেতরে বসায়",
+        "দ্বিতীয়টা দ্রুত চলে",
+        "প্রথমটা শুধু হিডেন ফাইল কপি করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "শেষের /. না থাকলে cp পুরো source folder-টাকেই (নাম-সহ) destination-এর ভেতরে একটা সাব-ফোল্ডার হিসেবে বসায় — ফলে ফাইলগুলো ভুল জায়গায় (একধাপ বেশি গভীরে) চলে যাবে।"
+    }
+  ],
+  "labId": "69b1d5184a49372ba788301e"
+}

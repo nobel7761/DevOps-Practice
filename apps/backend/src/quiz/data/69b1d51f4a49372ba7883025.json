@@ -1,0 +1,225 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 5,
+    "medium": 7,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69b1d51f4a49372ba7883025-01",
+      "difficulty": "easy",
+      "question": "user-এর default shell বদলাতে usermod-এর কোন flag?",
+      "options": ["-s", "-g", "-c", "-e"],
+      "answerIndex": 0,
+      "explanation": "usermod -s <shell> <user> — login shell বদলায়, যেমন /bin/bash।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-02",
+      "difficulty": "easy",
+      "question": "username বদলাতে (login name change) usermod-এর কোন flag?",
+      "options": ["-u", "-l", "-d", "-m"],
+      "answerIndex": 1,
+      "explanation": "usermod -l <newname> <oldname> — শুধু login name বদলায়।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-03",
+      "difficulty": "easy",
+      "question": "user-এর UID বদলাতে usermod-এর কোন flag?",
+      "options": ["-u", "-g", "-l", "-s"],
+      "answerIndex": 0,
+      "explanation": "usermod -u <newuid> <user> — User ID বদলায়।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-04",
+      "difficulty": "easy",
+      "question": "একজন user-এর পুরো password-aging তথ্য (last change, max days, warning...) দেখতে কোন কমান্ড?",
+      "options": [
+        "chage -l <user>",
+        "passwd -l <user>",
+        "usermod -l <user>",
+        "id -l <user>"
+      ],
+      "answerIndex": 0,
+      "explanation": "chage -l <user> — password aging-এর পুরো তালিকা দেখায়: last change, expiry, min/max/warning days।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-05",
+      "difficulty": "easy",
+      "question": "একটা group স্থায়ীভাবে মুছে ফেলার কমান্ড কোনটা?",
+      "options": [
+        "groupdel <name>",
+        "userdel <name>",
+        "usermod -G <name>",
+        "rm -g <name>"
+      ],
+      "answerIndex": 0,
+      "explanation": "groupdel <name> — group মুছে ফেলে, ঠিক userdel-এর group-ভার্সন।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-06",
+      "difficulty": "easy",
+      "question": "account expiration date সেট করতে usermod-এর কোন flag?",
+      "options": ["-e", "-x", "-t", "-a"],
+      "answerIndex": 0,
+      "explanation": "usermod -e YYYY-MM-DD <user> — নির্দিষ্ট তারিখে account expire করে।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-07",
+      "difficulty": "easy",
+      "question": "একজন user-এর জন্য নতুন password সেট করতে কোন কমান্ড?",
+      "options": [
+        "passwd <user>",
+        "usermod -p <user>",
+        "chage -p <user>",
+        "useradd -p <user>"
+      ],
+      "answerIndex": 0,
+      "explanation": "passwd <user> — সেই user-এর password সেট/বদলায় (interactive prompt দিয়ে)।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-08",
+      "difficulty": "medium",
+      "question": "shajal-এর username বদলে shajal2 করা হলো — sudo usermod -l shajal2 shajal। এরপর তার home directory কী দেখাবে (আলাদাভাবে -d না দিলে)?",
+      "options": [
+        "/home/shajal2 — automatically বদলে যায়",
+        "/home/shajal — আগেরটাই থেকে যায়, -l home ছোঁয় না",
+        "কোনো home-ই থাকে না",
+        "/home/ — ফাঁকা"
+      ],
+      "answerIndex": 1,
+      "explanation": "-l শুধু login name বদলায় — home directory-র path বদলাতে আলাদাভাবে usermod -d লাগবে। এটাই এই লেসনের সবচেয়ে কমন ফাঁদ।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-09",
+      "difficulty": "medium",
+      "question": "home directory বদলে নতুন path-এ পুরনো ফাইলও সরিয়ে নিতে কোন কম্বিনেশন লাগে?",
+      "options": [
+        "usermod -d <path> <user>",
+        "usermod -d <path> -m <user>",
+        "usermod -m <path> <user>",
+        "usermod -c <path> <user>"
+      ],
+      "answerIndex": 1,
+      "explanation": "-d একা শুধু নতুন path রেকর্ড করে, ফাইল সরায় না। -m সাথে দিলে পুরনো ঘরের সবকিছু নতুন path-এ move হয়।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-10",
+      "difficulty": "medium",
+      "question": "usermod -d /home/newpath <user> — শুধু এটুকু চালালে (-m ছাড়া) কী ঘটে?",
+      "options": [
+        "ফাইলসহ পুরো ঘর নতুন জায়গায় সরে যায়",
+        "শুধু রেকর্ডেড home path বদলায়, পুরনো ফাইলগুলো আগের জায়গাতেই পড়ে থাকে",
+        "error দেয় — -m ছাড়া চলবেই না",
+        "user-টা মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "real usermod-এও ঠিক এটাই ঘটে — -d একা শুধু /etc/passwd-এর home ফিল্ড বদলায়, আসল ফাইল move করে না।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-11",
+      "difficulty": "medium",
+      "question": "chage -d 0 <user> চালালে কী হয়?",
+      "options": [
+        "user-এর password অবিলম্বে মুছে যায়",
+        "user-কে পরের বার login-এ বাধ্য করে password বদলাতে",
+        "account সাথে সাথে lock হয়ে যায়",
+        "কিছুই হয় না, শুধু তথ্য দেখায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "-d 0 last-password-change দিনগণনা শূন্যে নামিয়ে দেয় — ফলে সিস্টেম ধরে নেয় password 'must be changed', পরের login-এই বদলাতে বাধ্য করে।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-12",
+      "difficulty": "medium",
+      "question": "passwd -S <user> আউটপুটে 'L' মানে কী?",
+      "options": [
+        "Locked — login বন্ধ",
+        "Latest — সদ্য তৈরি",
+        "Local — local account",
+        "Limited — সীমিত ক্ষমতা"
+      ],
+      "answerIndex": 0,
+      "explanation": "L = Locked (usermod -L করা হয়েছে); P = password আছে, সচল।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-13",
+      "difficulty": "medium",
+      "question": "usermod-এর -c flag কী সেট করে?",
+      "options": [
+        "comment/GECOS ফিল্ড (পুরো নাম/বর্ণনা)",
+        "user-এর current shell",
+        "user-এর সব supplementary group",
+        "password-এর max age"
+      ],
+      "answerIndex": 0,
+      "explanation": "-c \"<text>\" — /etc/passwd-এর ５ নম্বর ঘর, শুধু মানুষ পড়ার জন্য (Linux নিজে ব্যবহার করে না)।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-14",
+      "difficulty": "medium",
+      "question": "chage -M <days> <user> কী নিয়ন্ত্রণ করে?",
+      "options": [
+        "password-এর সর্বোচ্চ বয়স (কত দিন পর বদলাতে হবে)",
+        "account expiration date",
+        "user-এর maximum login সংখ্যা",
+        "সর্বোচ্চ কতজন supplementary group-এ থাকতে পারবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "-M = Maximum days — এত দিন পার হলে password বদলানো বাধ্যতামূলক হয়ে যায়।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-15",
+      "difficulty": "hard",
+      "question": "একজন user-কে একই কমান্ডে home-সহ বানাতে, primary group 'users' দিতে, আর supplementary 'sudo'-তে ঢোকাতে চাও — সঠিক combo কোনটা?",
+      "options": [
+        "useradd -m -g users -G sudo <user>",
+        "useradd -m -aG users -g sudo <user>",
+        "usermod -m -g users -G sudo <user>",
+        "useradd -m -G users,sudo <user>"
+      ],
+      "answerIndex": 0,
+      "explanation": "creation-এর সময় ছোট -g দিয়ে primary, বড় -G দিয়ে supplementary — এখানে -a লাগে না, কারণ নতুন user-এর তখনো কোনো পুরনো তালিকাই নেই।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-16",
+      "difficulty": "hard",
+      "question": "useradd-এ -G ব্যবহার করার সময় -a লেখা লাগে না, কিন্তু usermod-এ supplementary যোগ করতে -aG-ই লেখা লাগে — কেন?",
+      "options": [
+        "-a আসলে কোনো কাজই করে না, দুই জায়গায়ই optional",
+        "useradd creation-এর সময় user-এর পুরনো কোনো supplementary তালিকাই থাকে না, তাই 'replace' করার প্রশ্ন ওঠে না; usermod-এ আগে থেকেই তালিকা থাকতে পারে, তাই -a ছাড়া পুরোটা replace হয়ে যাবে",
+        "useradd-এ -a ব্যবহার করলে error দেয়, তাই বাদ",
+        "-a শুধু primary group বদলাতে লাগে"
+      ],
+      "answerIndex": 1,
+      "explanation": "useradd-এ -G মানেই 'এই দলগুলো দিয়ে শুরু করো' — শূন্য থেকে। usermod-এ -a ছাড়া -G existing supplementary তালিকা মুছে replace করে দেয় — সেই কারণেই -aG-র প্রয়োজন সেখানে।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-17",
+      "difficulty": "hard",
+      "question": "userdel দিয়ে user মোছার পর তার private group (যেমন testuser নামের group)-এর কী হয়?",
+      "options": [
+        "সবসময় থেকে যায়, ম্যানুয়ালি groupdel লাগে",
+        "যদি সেটা এখনো কারো primary group না থাকে, তাহলে userdel নিজেই সেটা মুছে দেয়",
+        "সাথে সাথে সব member-সহ অন্য একটা group-এ merge হয়ে যায়",
+        "private group কখনো মোছা যায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "real userdel behavior: user-private group যদি অন্য কারো primary না হয়ে থাকে, delete হওয়ার সময় সেটাও নিজে থেকে মুছে যায় — আলাদা groupdel লাগে না।"
+    },
+    {
+      "id": "69b1d51f4a49372ba7883025-18",
+      "difficulty": "hard",
+      "question": "chage -l <user> আউটপুটে 'Password expires: never' দেখাচ্ছে — এর মানে কী?",
+      "options": [
+        "password-এর কোনো max age set করা নেই (default 99999 দিন)",
+        "account-টা কখনো expire করবে না",
+        "user lock করা আছে",
+        "password এখনো সেট করাই হয়নি"
+      ],
+      "answerIndex": 0,
+      "explanation": "'Password expires' নির্ভর করে max days-এর উপর — default 99999 দিন এত বড় যে বাস্তবে 'never'-ই দেখায়। এটা account expiration (chage -E বা usermod -e)-এর থেকে আলাদা জিনিস।"
+    }
+  ],
+  "labId": "69b1d51f4a49372ba7883025"
+}

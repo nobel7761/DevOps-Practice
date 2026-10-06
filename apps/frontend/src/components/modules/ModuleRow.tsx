@@ -23,17 +23,17 @@ export default function ModuleRow({
   const hasCommands = getModuleCommands(module.id).length > 0;
 
   return (
-    <li className="rounded-lg border border-border p-4">
+    <li className="h-fit rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <Collapsible defaultOpen={defaultOpen}>
-        <CollapsibleTrigger className="flex w-full flex-col gap-2 text-left">
+        <CollapsibleTrigger className="flex w-full flex-col gap-2.5 text-left">
           <div className="flex items-center justify-between gap-4">
-            <h4 className="text-sm font-medium">{module.title}</h4>
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {completed}/{total} done
+            <h4 className="text-sm font-semibold">{module.title}</h4>
+            <span className="shrink-0 text-xs font-medium text-muted-foreground">
+              {completed}/{total}
             </span>
           </div>
           <ModuleContentBadges contents={module.contents} />
-          <Progress value={percentage} />
+          <Progress value={percentage} className="h-1.5" />
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3 border-t border-border pt-3">
           {hasCommands && (

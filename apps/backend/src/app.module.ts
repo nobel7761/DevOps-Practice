@@ -6,6 +6,7 @@ import { existsSync } from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
+import { QuizModule } from './quiz/quiz.module';
 
 // Resolve .env file path - try multiple locations
 const getEnvPath = (): string => {
@@ -71,6 +72,7 @@ if (!existsSync(envPath)) {
       inject: [ConfigService],
     }),
     UsersModule,
+    QuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],

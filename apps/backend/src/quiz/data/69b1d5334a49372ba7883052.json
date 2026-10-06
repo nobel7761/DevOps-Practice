@@ -1,0 +1,201 @@
+{
+  "passPercent": 95,
+  "sample": {
+    "easy": 6,
+    "medium": 7,
+    "hard": 4
+  },
+  "questions": [
+    {
+      "id": "69b1d5334a49372ba7883052-01",
+      "difficulty": "easy",
+      "question": "কোনো ইনসিডেন্টের প্রথম গন্তব্য (log খুঁজতে) সাধারণত কোন directory?",
+      "options": ["/etc", "/var/log", "/usr/bin", "/home"],
+      "answerIndex": 1,
+      "explanation": "প্রায় সব সার্ভিসের log ফাইল /var/log-এর ভেতরে জমা হয় — bug/crash খোঁজার প্রথম জায়গা।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-02",
+      "difficulty": "easy",
+      "question": "journalctl আসলে কী?",
+      "options": [
+        "একটা টেক্সট এডিটর",
+        "systemd-এর কেন্দ্রীয় log দেখার কমান্ড",
+        "নতুন user বানানোর কমান্ড",
+        "network কনফিগার করার টুল"
+      ],
+      "answerIndex": 1,
+      "explanation": "journalctl systemd-এর journal (কেন্দ্রীয় log সিস্টেম) থেকে entry দেখায় — kernel, সার্ভিস, সব একজায়গায়।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-03",
+      "difficulty": "easy",
+      "question": "journalctl -t <tag> কী করে?",
+      "options": [
+        "নির্দিষ্ট tag/সার্ভিসের entry-গুলো ফিল্টার করে দেখায়",
+        "নতুন tag তৈরি করে",
+        "সব log মুছে ফেলে",
+        "শুধু error entry দেখায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "-t দিয়ে নির্দিষ্ট service/tag-এর entry-তে ফিল্টার করা যায় — অন্য সার্ভিসের noise বাদ পড়ে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-04",
+      "difficulty": "easy",
+      "question": "logger কমান্ডটা কী কাজে লাগে?",
+      "options": [
+        "নিজে থেকে systemd journal-এ একটা entry লেখা",
+        "log ফাইল মুছে ফেলা",
+        "user login করানো",
+        "disk space মাপা"
+      ],
+      "answerIndex": 0,
+      "explanation": "logger দিয়ে script/কমান্ড-লাইন থেকে সরাসরি journal-এ একটা এন্ট্রি যোগ করা যায় — alert/script-এর নিজস্ব log তৈরির উপায়।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-05",
+      "difficulty": "easy",
+      "question": "logrotate-এর মূল কাজ কী?",
+      "options": [
+        "log ফাইল sort করা",
+        "log ফাইল সীমাহীন বড় হতে না দিয়ে, নিয়ম করে পুরোনোটা সরিয়ে নতুন করে শুরু করা",
+        "log ফাইল থেকে user বানানো",
+        "log ফাইল encrypt করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "logrotate পুরোনো log আর্কাইভ (দরকারে compress) করে, নতুন খালি ফাইল দিয়ে শুরু করায় — ডিস্ক ভরে যাওয়া ঠেকায়।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-06",
+      "difficulty": "easy",
+      "question": "grep -B 3 -A 2 \"CRITICAL\" file — এই কমান্ড কী দেখাবে?",
+      "options": [
+        "শুধু CRITICAL শব্দ থাকা লাইনগুলো",
+        "CRITICAL লাইনের আগের ৩ আর পরের ২ লাইনসহ পুরো context",
+        "প্রথম ৩ আর শেষ ২ লাইন",
+        "শুধু ৫টা CRITICAL লাইন"
+      ],
+      "answerIndex": 1,
+      "explanation": "-B (Before) আর -A (After) মিলিয়ে matched লাইনের আশেপাশের context দেখায় — log-debugging-এ অত্যন্ত দরকারি।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-07",
+      "difficulty": "medium",
+      "question": "AppTrack crash হয়েছে exit code 137 দিয়ে — এটা কীসের ইঙ্গিত দেয়?",
+      "options": [
+        "সফল সমাপ্তি",
+        "OOM (Out Of Memory) killer দ্বারা জোর করে বন্ধ করা হয়েছে — 137 = 128 + SIGKILL(9)",
+        "disk space শেষ",
+        "network সমস্যা"
+      ],
+      "answerIndex": 1,
+      "explanation": "exit code 137 মানে process-টা SIGKILL (সংকেত ৯) পেয়ে বন্ধ হয়েছে (128+9=137) — সাধারণত OOM killer-এর কাজ, আগের Performance লেসনেই এটা দেখেছিলে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-08",
+      "difficulty": "medium",
+      "question": "নিজের অ্যাপ্লিকেশনের log ফাইল (/var/log/apptrack/apptrack.log) থাকা সত্ত্বেও journalctl-এ আলাদা করে entry রাখার সুবিধা কী?",
+      "options": [
+        "কোনো সুবিধা নেই, একই জিনিস দুইবার",
+        "journal কেন্দ্রীয়ভাবে সব সার্ভিসের log এক জায়গায় রাখে, priority/tag দিয়ে সহজে ফিল্টার করা যায়, আর সিস্টেম-লেভেল টুলিং (alerting ইত্যাদি) journal-ই পড়ে",
+        "journalctl দ্রুত, কিন্তু অ্যাপ-লগ ধীর",
+        "journal শুধু error-ই রাখে"
+      ],
+      "answerIndex": 1,
+      "explanation": "journal একটা কেন্দ্রীয়, standardized জায়গা — বিভিন্ন সার্ভিসের log একসাথে priority/tag দিয়ে ফিল্টার করে দেখা যায়, আর অনেক monitoring/alerting টুল সরাসরি journal-ই পড়ে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-09",
+      "difficulty": "medium",
+      "question": "logrotate.conf-এ 'rotate 4' লাইনের মানে কী?",
+      "options": [
+        "প্রতি ৪ ঘণ্টায় rotate হবে",
+        "৪টা পুরোনো rotated কপি রাখা হবে, তার বেশি পুরোনো মুছে ফেলা হবে",
+        "৪টা আলাদা সার্ভিসের log rotate হবে",
+        "৪ দিন পর প্রথমবার rotate হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "rotate N মানে N-টা পুরোনো generation (log.1, log.2...) রাখা হবে — তার বেশি পুরোনো স্বয়ংক্রিয়ভাবে মুছে যায়, ডিস্ক সীমাহীন ভরে না।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-10",
+      "difficulty": "medium",
+      "question": "logrotate --debug আর logrotate --force-এর পার্থক্য কী?",
+      "options": [
+        "দুটোই একই কাজ করে",
+        "--debug শুধু দেখায় কী হতো, কিছুই বদলায় না; --force সত্যিই এখনই rotation ঘটায়, যদিও এখনো সময় না হয়ে থাকে",
+        "--debug দ্রুত, --force ধীর",
+        "--force শুধু error দেখায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "--debug একটা 'dry run' — safe প্রিভিউ। --force আসলেই rotation ঘটিয়ে দেয়, নির্ধারিত সময়সূচি (daily/weekly) উপেক্ষা করে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-11",
+      "difficulty": "medium",
+      "question": "/etc/logrotate.d/-তে আলাদা ফাইলে নিজের সার্ভিসের rotation নিয়ম রাখার সুবিধা কী (main logrotate.conf-এ সরাসরি না লিখে)?",
+      "options": [
+        "কোনো সুবিধা নেই",
+        "distro-র main config অক্ষত থাকে, নিজের সার্ভিসের নিয়ম আলাদা, পরিষ্কার, আর প্যাকেজ আপডেটে হারায় না",
+        "logrotate.d-এর ফাইল দ্রুত পড়া হয়",
+        "শুধু root এই ফোল্ডার পড়তে পারে"
+      ],
+      "answerIndex": 1,
+      "explanation": "/etc/sudoers.d/-এর মতোই দর্শন — নিজের নিয়ম আলাদা, ছোট ফাইলে রাখলে distro-র মূল কনফিগ স্পর্শ করা লাগে না, package upgrade-এও নিরাপদ থাকে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-12",
+      "difficulty": "hard",
+      "question": "একটা log ফাইলে ৩০ দিনের ডেটা আছে, প্রতিদিন ৫MB করে বাড়ে। rotate না থাকলে ১ বছরে কী সমস্যা হতে পারে?",
+      "options": [
+        "কোনো সমস্যা নেই, ডিস্ক অসীম বড়",
+        "log ফাইল ক্রমাগত বেড়ে ডিস্ক স্পেস শেষ করে ফেলতে পারে (disk full), যা পুরো সার্ভিস/সার্ভার ডাউন করে দিতে পারে",
+        "log ফাইল নিজে থেকেই মুছে যাবে",
+        "শুধু log পড়া ধীর হবে, আর কিছু না"
+      ],
+      "answerIndex": 1,
+      "explanation": "rotate ছাড়া log ফাইল সীমাহীন বাড়তে থাকে — ডিস্ক পূর্ণ হয়ে গেলে নতুন লেখা ব্যর্থ হয়, এমনকি অসম্পর্কিত সার্ভিসও (একই ডিস্কে) ডাউন হয়ে যেতে পারে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-13",
+      "difficulty": "hard",
+      "question": "wc -l app.log আর grep -c \"\" app.log — এই দুইয়ের ফলাফল সাধারণত কেমন?",
+      "options": [
+        "সম্পূর্ণ ভিন্ন, তুলনা করা যায় না",
+        "প্রায় একই — দুটোই কার্যত মোট লাইন সংখ্যা গোনে (grep -c \"\" ফাঁকা pattern দিয়ে প্রতিটা লাইনেই মেলে)",
+        "wc সবসময় ছোট সংখ্যা দেয়",
+        "grep -c শুধু error লাইন গোনে"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা ফাঁকা pattern (\"\") প্রতিটা লাইনেই মেলে, তাই grep -c \"\" কার্যত মোট লাইন সংখ্যাই দেয় — wc -l-এর সমতুল্য ফলাফল, ভিন্ন পথে।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-14",
+      "difficulty": "hard",
+      "question": "একটা incident-এর সময় grep দিয়ে ERROR খুঁজে পাওয়া গেল, কিন্তু কেন crash হলো বুঝতে -B/-A দরকার হলো কেন?",
+      "options": [
+        "শুধু ভালো দেখানোর জন্য",
+        "একটা বিচ্ছিন্ন ERROR লাইন 'কী হয়েছিল' বলে, কিন্তু 'কেন হয়েছিল' বোঝা যায় তার ঠিক আগের ঘটনাক্রম (warning-গুলো, resource exhaustion) দেখে — context ছাড়া root cause বোঝা কঠিন",
+        "-B/-A ছাড়া grep চলেই না",
+        "ERROR লাইন সবসময় মিথ্যা তথ্য দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "log analysis-এ একটা লাইন শুধু 'লক্ষণ' দেখায়; root cause বুঝতে তার আগের ঘটনাক্রম (গ্রাজুয়াল memory বৃদ্ধি, queue depth বাড়া) জানা দরকার — এটাই context (-B/-A)-এর আসল মূল্য।"
+    },
+    {
+      "id": "69b1d5334a49372ba7883052-15",
+      "difficulty": "hard",
+      "question": "journalctl --disk-usage আর du -sh /var/log/journal — এই দুটো একই তথ্য দিলেও journalctl --disk-usage কেন বেশি ব্যবহারযোগ্য?",
+      "options": [
+        "দুটোই একদম আলাদা তথ্য দেয়",
+        "journalctl --disk-usage বিশেষভাবে systemd journal-এর জন্য ডিজাইন করা — journal-এর নিজস্ব internal ফরম্যাট/rotation বিবেচনা করে সঠিক হিসাব দেয়, সাধারণ du কমান্ডে সেই context থাকে না",
+        "du কমান্ড journal ফোল্ডার পড়তেই পারে না",
+        "journalctl সবসময় দ্রুত চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "journalctl --disk-usage journal-এর নিজস্ব storage backend বোঝে (compressed/archived/active অংশ) — generic du শুধু raw ফাইল সাইজ দেখে, journal-এর অভ্যন্তরীণ কাঠামোর প্রেক্ষাপট থাকে না।"
+    }
+  ],
+  "labId": "69b1d5334a49372ba7883052"
+}

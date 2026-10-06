@@ -1,0 +1,319 @@
+{
+  "title": "LAB EXAM: Linux User Modification",
+  "passPercent": 95,
+  "intro": "একজন user-এর পুরো জীবনচক্র — জন্ম থেকে বিদায় পর্যন্ত। প্রতিটা কমান্ড তোমার নিজের হাতে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর।",
+  "targets": [
+    {
+      "path": "/home/testuser",
+      "type": "dir"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🏗️ পর্ব ১: user আর group বানাও",
+        "note": "শুরুটা চেনা — একজন user, একটা group, তারপর বাঁধা।"
+      },
+      "prompt": "testuser নামে একটা user বানাও — home directory-সহ।",
+      "check": {
+        "require": ["useradd", "-m"],
+        "usersState": [
+          {
+            "name": "testuser",
+            "hasHome": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 4,
+      "prompt": "testgroup নামে একটা group বানাও।",
+      "check": {
+        "require": ["groupadd"],
+        "groupsExist": ["testgroup"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 5,
+      "prompt": "testuser-কে testgroup-এ যোগ করো — supplementary হিসেবে (আগের primary অক্ষত রেখে)।",
+      "check": {
+        "require": ["usermod", "-a", "-G"],
+        "usersState": [
+          {
+            "name": "testuser",
+            "inGroups": ["testgroup"]
+          }
+        ]
+      },
+      "hints": ["আগের লেসনের সেই জোড়া অক্ষরের flag — append + বড় G"]
+    },
+    {
+      "id": "t04",
+      "points": 4,
+      "section": {
+        "title": "⚙️ পর্ব ২: attribute বদলাও",
+        "note": "একজনের shell, নাম, ঘর, UID — সব বদলানো যায়, কিন্তু আলাদা আলাদা flag দিয়ে।"
+      },
+      "prompt": "testuser-এর shell বদলে /bin/bash করো।",
+      "check": {
+        "require": ["usermod", "-s"],
+        "usersState": [
+          {
+            "name": "testuser",
+            "shell": "/bin/bash"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 5,
+      "prompt": "testuser-এর username বদলে newuser করো।",
+      "check": {
+        "require": ["usermod", "-l"],
+        "usersState": [
+          {
+            "name": "testuser",
+            "exists": false
+          },
+          {
+            "name": "newuser"
+          }
+        ]
+      },
+      "hints": ["ছোট হাতের l — login name বদলানোর flag"]
+    },
+    {
+      "id": "t06",
+      "points": 5,
+      "prompt": "newuser-এর home directory পাল্টে /home/newuser করো — পুরনো ঘরের ফাইলগুলোও সরিয়ে নিয়ে।",
+      "check": {
+        "require": ["usermod", "-d", "-m"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "home": "/home/newuser"
+          }
+        ]
+      },
+      "hints": [
+        "-l শুধু নাম বদলায়, ঘর বদলায় না — এটা মনে রাখতে বলা হয়েছিল",
+        "নতুন path দাও -d দিয়ে, আর ফাইল সরাতে সাথে -m"
+      ]
+    },
+    {
+      "id": "t07",
+      "points": 4,
+      "prompt": "newuser-এর জন্য একটা password সেট করো।",
+      "check": {
+        "require": ["passwd"],
+        "forbid": ["-S"],
+        "ref": "passwd newuser"
+      }
+    },
+    {
+      "id": "t08",
+      "points": 4,
+      "prompt": "newuser-এর account 2025-12-31 তারিখে expire হওয়ার ব্যবস্থা করো।",
+      "check": {
+        "require": ["usermod", "-e"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "expire": "2025-12-31"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 4,
+      "prompt": "newuser-এর UID বদলে 1100 করো।",
+      "check": {
+        "require": ["usermod", "-u"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "uid": 1100
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 4,
+      "section": {
+        "title": "🔒 পর্ব ৩: lock, aging, comment",
+        "note": "আগের লেসনের lock (-L/-U) আজ ফিরে এলো, সাথে নতুন অতিথি chage — password-এর বয়স।"
+      },
+      "prompt": "newuser-এর account লক করো।",
+      "check": {
+        "require": ["usermod", "-L"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "locked": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 4,
+      "prompt": "newuser সত্যিই লক আছে কিনা — status-টা দেখাও (passwd-এর একটা flag আছে)।",
+      "check": {
+        "require": ["passwd", "-S"],
+        "ref": "passwd -S newuser"
+      },
+      "hints": ["passwd -S — Status"]
+    },
+    {
+      "id": "t12",
+      "points": 4,
+      "prompt": "newuser-এর তালা খুলে দাও।",
+      "check": {
+        "require": ["usermod", "-U"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "prompt": "আবার status দেখাও — এবার unlocked দেখানোর কথা।",
+      "check": {
+        "require": ["passwd", "-S"],
+        "ref": "passwd -S newuser"
+      }
+    },
+    {
+      "id": "t14",
+      "points": 5,
+      "prompt": "newuser-কে পরের বার login করার সময়ই password বদলাতে বাধ্য করো।",
+      "check": {
+        "require": ["chage", "-d"],
+        "ref": "chage -d 0 newuser"
+      },
+      "hints": ["chage -d 0 — day count শূন্যে নামিয়ে দাও"]
+    },
+    {
+      "id": "t15",
+      "points": 5,
+      "prompt": "newuser-এর password-এর সর্বোচ্চ বয়স (max days) 90 দিন বেঁধে দাও।",
+      "check": {
+        "require": ["chage", "-M"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "maxDays": 90
+          }
+        ]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 4,
+      "prompt": "newuser-এর পুরো password-aging তথ্য (list) দেখাও।",
+      "check": {
+        "require": ["chage", "-l"],
+        "ref": "chage -l newuser"
+      }
+    },
+    {
+      "id": "t17",
+      "points": 5,
+      "prompt": "newuser-এর comment/GECOS ফিল্ডে লেখো: Test User Account",
+      "check": {
+        "require": ["usermod", "-c"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "comment": "Test User Account"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 4,
+      "section": {
+        "title": "🧹 পর্ব ৪: বিদায়",
+        "note": "আজকের গল্পের newuser আর testgroup — দুজনেরই বিদায়ের পালা।"
+      },
+      "prompt": "newuser-কে home directory-সহ মুছে ফেলো।",
+      "check": {
+        "require": ["userdel", "-r"],
+        "usersState": [
+          {
+            "name": "newuser",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "points": 4,
+      "prompt": "testgroup-টাও মুছে ফেলো।",
+      "check": {
+        "require": ["groupdel"],
+        "groupsNotExist": ["testgroup"]
+      },
+      "hints": ["group মোছার কমান্ডটা userdel-এর মতোই, শুধু group- দিয়ে শুরু"]
+    },
+    {
+      "id": "t20",
+      "points": 8,
+      "section": {
+        "title": "🚀 পর্ব ৫: এক কমান্ডে সব",
+        "note": "এতক্ষণ ধাপে ধাপে যা শিখলে, সবকিছু একসাথে এক কমান্ডে করাও সম্ভব।"
+      },
+      "prompt": "customuser নামে একজনকে বানাও — এক কমান্ডে: home-সহ, shell /bin/bash, primary group users, supplementary sudo, comment \"Custom User\", আর expire 2025-12-31।",
+      "check": {
+        "require": ["useradd", "-m", "-d", "-s", "-g", "-G", "-c", "-e"],
+        "usersState": [
+          {
+            "name": "customuser",
+            "primary": "users",
+            "inGroups": ["sudo"],
+            "shell": "/bin/bash",
+            "comment": "Custom User",
+            "expire": "2025-12-31",
+            "hasHome": true
+          }
+        ]
+      },
+      "hints": [
+        "useradd-এর প্রতিটা flag-ই এতক্ষণ আলাদা আলাদা দেখেছো — এবার সবগুলো এক লাইনে",
+        "-d দিয়ে home path নিজে বেছে দাও: /home/customuser"
+      ]
+    },
+    {
+      "id": "t21",
+      "points": 5,
+      "prompt": "customuser-এর পুরো পরিচয় (UID, primary, সব group) দেখাও।",
+      "check": {
+        "require": ["id"],
+        "ref": "id customuser"
+      }
+    },
+    {
+      "id": "t22",
+      "points": 5,
+      "prompt": "customuser-এর password-aging তথ্যও যাচাই করো (list)।",
+      "check": {
+        "require": ["chage", "-l"],
+        "ref": "chage -l customuser"
+      }
+    }
+  ],
+  "labId": "69b1d51f4a49372ba7883025"
+}
