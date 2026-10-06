@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import {
   BadRequestException,
@@ -14,7 +14,17 @@ import {
 } from './schemas/quiz-attempt.schema';
 import { QuizBank, QuizDifficulty, QuizQuestion } from './quiz.types';
 
-const DATA_DIR = join(__dirname, 'data');
+// nest-cli's watch-mode asset copy can race with the initial `dist` wipe and
+// leave `dist/quiz/data` empty (see https://github.com/nestjs/nest-cli/issues/3509).
+// Fall back to the source JSON so `nest start --watch` stays reliable even when that happens.
+const DIST_DATA_DIR = join(__dirname, 'data');
+const SRC_DATA_DIR = join(__dirname, '..', '..', 'src', 'quiz', 'data');
+
+function resolveDataDir(): string {
+  return existsSync(DIST_DATA_DIR) && readdirSync(DIST_DATA_DIR).length > 0
+    ? DIST_DATA_DIR
+    : SRC_DATA_DIR;
+}
 
 @Injectable()
 export class QuizService {
@@ -33,7 +43,7 @@ export class QuizService {
   }
 
   private loadBank(labId: string): QuizBank {
-    const filePath = join(DATA_DIR, `${labId}.json`);
+    const filePath = join(resolveDataDir(), `${labId}.json`);
     if (!existsSync(filePath)) {
       throw new NotFoundException(
         `এই lab-এর জন্য কোনো quiz এখনো নেই: ${labId}`,
