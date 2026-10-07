@@ -1,10 +1,5 @@
 import { BookOpenText, ListChecks, SquareTerminal } from "lucide-react";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-} from "@/components/shared/shadcn";
+import { Card, CardContent, CardHeader } from "@/components/shared/shadcn";
 import LabHeader from "@/components/modules/lab/LabHeader";
 import LabInstructions from "@/components/modules/lab/LabInstructions";
 import LabCommandsDrawer from "@/components/modules/lab/LabCommandsDrawer";
@@ -45,10 +40,10 @@ export default function LabDetailScreen({
         {/* Left: original poridhi.io lab content, unmodified. */}
         <Card className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)]">
           <CardHeader className="shrink-0">
-            <LabHeader lab={lab} />
-            <CardAction>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <LabHeader lab={lab} />
               <LabCommandsDrawer commands={commands} />
-            </CardAction>
+            </div>
           </CardHeader>
           <CardContent className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <LabInstructions markdown={lab.markdown} />

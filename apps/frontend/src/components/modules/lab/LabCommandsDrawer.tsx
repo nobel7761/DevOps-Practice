@@ -29,7 +29,7 @@ export default function LabCommandsDrawer({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button size="sm">
           <Terminal /> Commands ({commands.length})
         </Button>
       </SheetTrigger>

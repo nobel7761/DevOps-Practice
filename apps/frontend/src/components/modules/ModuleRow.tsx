@@ -41,7 +41,7 @@ export default function ModuleRow({
               <ModuleCommandsLink moduleId={module.id} />
             </div>
           )}
-          <ModuleContentList contents={module.contents} />
+          <ModuleContentList contents={module.contents} moduleId={module.id} />
         </CollapsibleContent>
       </Collapsible>
     </li>

@@ -3,8 +3,10 @@ import type { CourseContentItem } from "@/lib/data/course-modules";
 
 export default function ModuleContentList({
   contents,
+  moduleId,
 }: {
   contents: CourseContentItem[];
+  moduleId: string;
 }) {
   if (contents.length === 0) {
     return <p className="text-xs text-muted-foreground">No content yet</p>;
@@ -13,7 +15,11 @@ export default function ModuleContentList({
   return (
     <ul className="flex flex-col gap-1.5">
       {contents.map((item, index) => (
-        <ModuleContentItemRow key={`${item.type}-${index}`} item={item} />
+        <ModuleContentItemRow
+          key={`${item.type}-${index}`}
+          item={item}
+          moduleId={moduleId}
+        />
       ))}
     </ul>
   );

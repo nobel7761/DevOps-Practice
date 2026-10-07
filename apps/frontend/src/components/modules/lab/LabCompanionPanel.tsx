@@ -29,15 +29,24 @@ export default function LabCompanionPanel({
   return (
     <Tabs defaultValue="golpo">
       <TabsList className="sticky top-0 z-10 w-full bg-background">
-        <TabsTrigger value="golpo">
+        <TabsTrigger
+          value="golpo"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+        >
           <BookOpenText className="size-4" />
           Golpo Lesson
         </TabsTrigger>
-        <TabsTrigger value="quiz">
+        <TabsTrigger
+          value="quiz"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+        >
           <ListChecks className="size-4" />
           Quiz
         </TabsTrigger>
-        <TabsTrigger value="terminal">
+        <TabsTrigger
+          value="terminal"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+        >
           <SquareTerminal className="size-4" />
           Terminal
         </TabsTrigger>

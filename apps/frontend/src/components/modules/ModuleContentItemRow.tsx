@@ -4,6 +4,7 @@ import type {
   CourseContentItem,
   CourseContentType,
 } from "@/lib/data/course-modules";
+import { hasInterview } from "@/lib/data/interview-modules";
 
 const TYPE_LABELS: Record<CourseContentType, string> = {
   lab: "Lab",
@@ -16,8 +17,10 @@ const TYPE_LABELS: Record<CourseContentType, string> = {
 
 export default function ModuleContentItemRow({
   item,
+  moduleId,
 }: {
   item: CourseContentItem;
+  moduleId: string;
 }) {
   const label = (
     <div className="flex min-w-0 items-center gap-2">
@@ -45,7 +48,9 @@ export default function ModuleContentItemRow({
       ? `/module/lab/${item.labId}`
       : isVideo
         ? `/module/video/${item.contentId}`
-        : null;
+        : item.type === "ai_interview" && hasInterview(moduleId)
+          ? `/module/interview/${moduleId}`
+          : null;
 
   if (href) {
     return (

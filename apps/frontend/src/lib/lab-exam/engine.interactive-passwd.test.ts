@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createShell, execute, isAwaitingInput, submitInput } from "./engine";
+import {
+  createShell,
+  evaluateCheck,
+  execute,
+  isAwaitingInput,
+  submitInput,
+} from "./engine";
 
 function shellWithJoker() {
   const created = execute(createShell(), "useradd joker");
@@ -43,5 +49,19 @@ describe("interactive passwd prompting", () => {
     expect(afterConfirm.output).toContain("do not match");
     expect(isAwaitingInput(afterConfirm.state)).toBe(false);
     expect(afterConfirm.state.users.joker.passwordSet).toBeFalsy();
+  });
+
+  it('still grades a `ref: "passwd joker"` task correctly once the real flow completes', () => {
+    const prevState = shellWithJoker();
+    const afterPrompt = execute(prevState, "passwd joker");
+    const afterFirstEntry = submitInput(afterPrompt.state, "s3cret!");
+    const result = submitInput(afterFirstEntry.state, "s3cret!");
+
+    const check = evaluateCheck(
+      { require: ["passwd"], forbid: ["-l", "-u", "-S"], ref: "passwd joker" },
+      { input: "passwd joker", prevState, result },
+    );
+
+    expect(check.pass).toBe(true);
   });
 });

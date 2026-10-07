@@ -147,6 +147,16 @@ export interface UserRec {
   warnDays?: number;
   /** true after `chage -d 0` — chage -l then shows "password must be changed" */
   mustChangePassword?: boolean;
+  /** true once a `passwd` prompt has been completed successfully for this user */
+  passwordSet?: boolean;
+}
+
+/** An in-progress multi-step prompt (e.g. `passwd`'s two masked entries). */
+export interface PendingInput {
+  kind: "passwd";
+  targetUser: string;
+  stage: "new" | "confirm";
+  firstValue?: string;
 }
 
 /** Resolves a user's home directory, honoring a custom `-d` path. */
@@ -174,6 +184,8 @@ export interface ShellState {
   umask: string;
   /** fake systemd service registry, e.g. { sshd: { running: true, pid: 742 } } */
   services: Record<string, { running: boolean; pid: number }>;
+  /** set while a multi-step prompt (e.g. `passwd`) is waiting on the next typed line */
+  pendingInput?: PendingInput;
   /** which stress-ng scenario is "active" — drives canned perf-tool output */
   perfLoad: "idle" | "cpu" | "mem" | "mem-critical" | "disk" | "net";
   /** journal entries appended via `logger`, newest last */
@@ -996,6 +1008,50 @@ function extractRedirections(tokens: Token[]): { rest: Token[]; redir: Redir } {
   return { rest: kept, redir };
 }
 
+/** True while a multi-step prompt (e.g. `passwd`) is waiting on the next typed line. */
+export function isAwaitingInput(state: ShellState): boolean {
+  return !!state.pendingInput;
+}
+
+/**
+ * Continues an in-progress multi-step prompt with the next typed line (e.g.
+ * the new/retyped password for `passwd`). Call this instead of `execute()`
+ * whenever `isAwaitingInput()` is true; `value` should be masked in the UI
+ * since it's a simulated password entry, not a command.
+ */
+export function submitInput(prev: ShellState, value: string): ExecResult {
+  const pending = prev.pendingInput;
+  if (!pending) return { state: prev, output: "", error: true };
+
+  const state: ShellState = JSON.parse(JSON.stringify(prev));
+
+  if (pending.kind === "passwd") {
+    if (pending.stage === "new") {
+      state.pendingInput = { ...pending, stage: "confirm", firstValue: value };
+      return { state, output: "Retype new password: ", error: false };
+    }
+    state.pendingInput = undefined;
+    if (value !== pending.firstValue) {
+      return {
+        state,
+        output:
+          "Sorry, passwords do not match.\npasswd: Authentication token manipulation error\npasswd: password unchanged",
+        error: true,
+      };
+    }
+    const user = state.users[pending.targetUser];
+    if (user) user.passwordSet = true;
+    return {
+      state,
+      output: "passwd: password updated successfully",
+      error: false,
+    };
+  }
+
+  state.pendingInput = undefined;
+  return { state, output: "", error: true };
+}
+
 /**
  * Executes a full command line, including `cmd1 | cmd2 | cmd3` pipelines —
  * each stage's stdout becomes the next stage's stdin (as plain text; stages
@@ -1435,9 +1491,8 @@ function executeOne(
         user.locked = false;
         return ok(`passwd: password expiry information changed.`);
       }
-      return ok(
-        "New password: \nRetype new password: \npasswd: password updated successfully",
-      );
+      state.pendingInput = { kind: "passwd", targetUser: name, stage: "new" };
+      return ok("New password: ");
     }
 
     case "chage": {
@@ -2793,6 +2848,21 @@ export interface CheckContext {
   result: ExecResult;
 }
 
+/**
+ * Runs a command to completion for `check.ref` comparisons, auto-answering
+ * any interactive prompt it opens (e.g. `passwd`) with a fixed placeholder —
+ * only used to compute the expected output, never for the learner's own
+ * typed command, so the exact value doesn't matter as long as both entries
+ * match and the flow actually completes.
+ */
+function executeToCompletion(state: ShellState, cmd: string): ExecResult {
+  let result = execute(state, cmd);
+  while (isAwaitingInput(result.state)) {
+    result = submitInput(result.state, "refpass123");
+  }
+  return result;
+}
+
 export function evaluateCheck(
   check: LabExamCheck,
   ctx: CheckContext,
@@ -2869,7 +2939,7 @@ export function evaluateCheck(
       return { pass: false, reason: "ঠিক জায়গায় পৌঁছাওনি — pwd মিলছে না" };
   }
   if (check.ref) {
-    const refRes = execute(ctx.prevState, check.ref);
+    const refRes = executeToCompletion(ctx.prevState, check.ref);
     if (ctx.result.output.trim() !== refRes.output.trim())
       return { pass: false, reason: "output-টা প্রত্যাশার সাথে মিলছে না" };
   }
