@@ -1,13 +1,5 @@
-import ModulesScreen from "@/components/modules/ModulesScreen";
+import CourseListScreen from "@/components/courses/CourseListScreen";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ milestone?: string; module?: string }>;
-}) {
-  const { milestone, module } = await searchParams;
-
-  return (
-    <ModulesScreen defaultMilestoneId={milestone} defaultModuleId={module} />
-  );
+export default function Home() {
+  return <CourseListScreen />;
 }

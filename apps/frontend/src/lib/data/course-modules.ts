@@ -7,7 +7,8 @@ export type CourseContentType =
   | "live_class"
   | "ai_interview"
   | "ai_exam"
-  | "project_submission";
+  | "project_submission"
+  | "udemy_lecture";
 
 export interface CourseContentItem {
   type: CourseContentType;
@@ -19,12 +20,16 @@ export interface CourseContentItem {
   contentId?: string;
   /** Direct HLS (.m3u8) manifest URL, set for "live_class"/"pre_class" items with a recorded video. */
   videoUrl?: string | null;
+  /** Link to open for content hosted on another platform (e.g. a Udemy lecture), opened externally instead of an in-app route. */
+  externalUrl?: string | null;
+  /** Human-readable duration label for display when there's no in-app player to show a real progress bar for, e.g. "12:28". */
+  durationLabel?: string | null;
 }
 
 export interface CourseModule {
   id: string;
   title: string;
-  contentCounts: Record<CourseContentType, number>;
+  contentCounts: Partial<Record<CourseContentType, number>>;
   progress: {
     completed: number;
     total: number;

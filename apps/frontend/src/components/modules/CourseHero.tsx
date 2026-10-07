@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, GraduationCap } from "lucide-react";
+import { ArrowRight, ExternalLink, GraduationCap } from "lucide-react";
 import StatTile from "@/components/modules/StatTile";
 
 export default function CourseHero({
@@ -9,6 +9,7 @@ export default function CourseHero({
   completedCount,
   totalCount,
   continueHref,
+  externalUrl,
 }: {
   courseTitle: string;
   milestoneCount: number;
@@ -16,6 +17,7 @@ export default function CourseHero({
   completedCount: number;
   totalCount: number;
   continueHref: string | null;
+  externalUrl?: string;
 }) {
   const overallPercent = totalCount
     ? Math.round((completedCount / totalCount) * 100)
@@ -37,14 +39,26 @@ export default function CourseHero({
           <p className="mt-2 text-sm text-muted-foreground">
             {milestoneCount} milestones · {moduleCount} modules
           </p>
-          {continueHref && (
-            <Link
-              href={continueHref}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03]"
-            >
-              Continue Learning <ArrowRight className="size-4" />
-            </Link>
-          )}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            {continueHref && (
+              <Link
+                href={continueHref}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03]"
+              >
+                Continue Learning <ArrowRight className="size-4" />
+              </Link>
+            )}
+            {externalUrl && (
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:bg-accent"
+              >
+                View on Udemy <ExternalLink className="size-4" />
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">

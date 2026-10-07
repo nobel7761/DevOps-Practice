@@ -1,9 +1,6 @@
 import CourseHero from "@/components/modules/CourseHero";
 import MilestoneTabsSection from "@/components/modules/MilestoneTabsSection";
-import {
-  masteringAwsDevopsSeason4,
-  type CourseMilestone,
-} from "@/lib/data/course-modules";
+import type { CourseMilestone, CourseSummary } from "@/lib/data/course-modules";
 
 function findContinueHref(milestones: CourseMilestone[]): string | null {
   for (const milestone of milestones) {
@@ -27,13 +24,17 @@ function findContinueHref(milestones: CourseMilestone[]): string | null {
 }
 
 export default function ModulesScreen({
+  course,
+  externalUrl,
   defaultMilestoneId,
   defaultModuleId,
 }: {
+  course: CourseSummary;
+  externalUrl?: string;
   defaultMilestoneId?: string;
   defaultModuleId?: string;
 }) {
-  const { courseTitle, milestones } = masteringAwsDevopsSeason4;
+  const { courseTitle, milestones } = course;
   const totalModules = milestones.reduce((sum, m) => sum + m.modules.length, 0);
   const allContents = milestones.flatMap((m) =>
     m.modules.flatMap((mod) => mod.contents),
@@ -49,6 +50,7 @@ export default function ModulesScreen({
         completedCount={completedCount}
         totalCount={allContents.length}
         continueHref={findContinueHref(milestones)}
+        externalUrl={externalUrl}
       />
       <MilestoneTabsSection
         milestones={milestones}

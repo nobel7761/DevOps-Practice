@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { QuizModule } from './quiz/quiz.module';
 import { InterviewModule } from './interview/interview.module';
+import { NotesModule } from './notes/notes.module';
 
 // Resolve .env file path - try multiple locations
 const getEnvPath = (): string => {
@@ -75,6 +76,7 @@ if (!existsSync(envPath)) {
     UsersModule,
     QuizModule,
     InterviewModule,
+    NotesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

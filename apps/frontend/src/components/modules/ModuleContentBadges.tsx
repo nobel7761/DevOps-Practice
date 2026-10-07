@@ -11,6 +11,7 @@ const CONTENT_LABELS: Record<CourseContentType, string> = {
   ai_interview: "AI interview",
   ai_exam: "AI exam",
   project_submission: "Project",
+  udemy_lecture: "Lecture",
 };
 
 export default function ModuleContentBadges({
