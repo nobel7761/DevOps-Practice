@@ -1983,4 +1983,3262 @@ export const commandGlossary: Record<string, CommandEntry> = {
     ],
     tip: '💡 Tip: rotate হওয়ার পর পুরনো log আর্কাইভ হয়ে যায় (যেমন "apptrack.log.1" বা compress হলে "apptrack.log.1.gz"), আর "apptrack.log" নামে একটা নতুন খালি ফাইল তৈরি হয় — এভাবে log ফাইল কখনো অসীম বড় হয়ে ডিস্ক ভরে ফেলে না।',
   },
+  "sdn-control-data-plane": {
+    id: "sdn-control-data-plane",
+    command: "Control Plane বনাম Data Plane",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো একটা restaurant — Data Plane হলো ওয়েটার, যে শুধু অর্ডার অনুযায়ী খাবার টেবিলে পৌঁছে দেয় (packet forward করে), নিজে কোনো সিদ্ধান্ত নেয় না। আর Control Plane হলো manager/head chef, যে ঠিক করে কোন অর্ডার কীভাবে handle হবে। Traditional network-এ প্রতিটা switch/router নিজেই দুটো কাজ একসাথে করে (নিজের মধ্যে ওয়েটার আর manager দুটোই)। SDN এই দুটোকে আলাদা করে ফেলে — একটা central controller-ই পুরো network-এর জন্য manager হয়ে যায়, আর switch-গুলো শুধু ওয়েটারের কাজ (data forward) করে।",
+    tokens: [
+      {
+        token: "Data Plane",
+        meaning:
+          "আসল packet forward করার কাজ — কে কোথায় পাঠানো হবে সেটা execute করে, decide করে না",
+      },
+      {
+        token: "Control Plane",
+        meaning:
+          "সিদ্ধান্ত নেওয়ার জায়গা — কোন packet কোথায় যাবে, কোন rule apply হবে, সেটা ঠিক করে",
+      },
+    ],
+    tip: "💡 Traditional network-এ control plane প্রতিটা device-এ আলাদা আলাদা থাকে (distributed), SDN-এ এটা centralize হয়ে যায় — এই centralization-ই SDN-এর মূল ধারণা।",
+  },
+  "sdn-packet-in-flow-mod": {
+    id: "sdn-packet-in-flow-mod",
+    command: "packet-in → controller decision → flow-mod",
+    category: "Software-Defined Networking",
+    story:
+      "একটা নতুন ধরনের packet switch-এ এলে, আর switch-এর flow table-এ তার জন্য কোনো rule না থাকলে, switch নিজে কিছু না ভেবে controller-কে জিজ্ঞেস করে — এটাকে বলে 'packet-in message', অনেকটা নতুন কর্মচারী কোনো অপরিচিত situation-এ supervisor-কে ফোন করার মতো। Controller তখন ঠিক করে দেয় কী করতে হবে, আর সেই সিদ্ধান্তটা 'flow-mod message' আকারে switch-এ পাঠিয়ে দেয় — পরের বার একই ধরনের packet এলে switch নিজেই (controller-কে না জিজ্ঞেস করেই) সেই rule মনে রেখে কাজ করতে পারে।",
+    tokens: [
+      {
+        token: "packet-in",
+        meaning:
+          "switch থেকে controller-কে পাঠানো বার্তা — 'এই packet-টার জন্য কোনো rule নেই, কী করবো?'",
+      },
+      {
+        token: "flow-mod",
+        meaning:
+          "controller থেকে switch-কে পাঠানো বার্তা — নতুন flow rule install করার নির্দেশ",
+      },
+    ],
+    tip: "⚡ একবার flow rule install হয়ে গেলে, সেই একই ধরনের পরবর্তী packet-গুলোর জন্য আর controller-কে জিজ্ঞেস করতে হয় না — এটাই performance-এর জন্য গুরুত্বপূর্ণ, প্রতিটা packet-এর জন্য controller-কে জিজ্ঞেস করলে পুরো network ধীর হয়ে যেত।",
+  },
+  "sdn-architecture-layers": {
+    id: "sdn-architecture-layers",
+    command: "Application → Control → Infrastructure (SDN-এর ৩টা layer)",
+    category: "Software-Defined Networking",
+    story:
+      "SDN architecture-কে একটা company-র organizational structure হিসেবে ভাবা যায়। সবচেয়ে উপরে Application layer — এগুলো হলো বিভিন্ন policy/feature (যেমন firewall, load balancer), অনেকটা company-র বিভিন্ন department-এর মতো যারা নিজেদের চাহিদা জানায়। মাঝখানে Control layer — এখানে SDN Controller (যেমন OpenDaylight, Ryu, ONOS) বসে, এটাই পুরো company-র central management, যে পুরো network-এর global view রাখে আর সিদ্ধান্ত নেয়। সবচেয়ে নিচে Infrastructure layer — আসল OpenFlow-enabled switch-গুলো, যারা শুধু controller-এর নির্দেশ অনুযায়ী কাজ execute করে, অনেকটা ground-level কর্মীদের মতো।",
+    tokens: [
+      {
+        token: "Application Layer",
+        meaning:
+          "নেটওয়ার্ক policy/feature তৈরি করার জায়গা (firewall, load balancing ইত্যাদি)",
+      },
+      {
+        token: "Control Layer",
+        meaning:
+          "SDN Controller — পুরো network-এর centralized সিদ্ধান্ত-গ্রহণকারী",
+      },
+      {
+        token: "Infrastructure Layer",
+        meaning:
+          "আসল OpenFlow switch/router — controller-এর নির্দেশ execute করে",
+      },
+    ],
+  },
+  "flowcfg-apt-install-mininet": {
+    id: "flowcfg-apt-install-mininet",
+    command: "sudo apt-get update && sudo apt-get install mininet",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো তুমি নতুন একটা app phone-এ install করার আগে app store-টা refresh (update) করো, যাতে latest version দেখা যায় — তারপর app-টা install করো। `apt-get update` ঠিক সেই refresh-টা করে (package list নতুন করে আনে), আর `apt-get install mininet` সেই নির্দিষ্ট tool-টা (Mininet) আসলে নামিয়ে বসিয়ে দেয়।",
+    tokens: [
+      {
+        token: "sudo",
+        meaning: "administrator (root) হিসেবে command চালানোর অনুমতি",
+      },
+      {
+        token: "apt-get update",
+        meaning:
+          "system-এর package list (কোন package-এর কোন version পাওয়া যায়) নতুন/latest করে নেয়",
+      },
+      {
+        token: "apt-get install mininet",
+        meaning: '"mininet" নামের package/tool download করে install করে',
+      },
+    ],
+    tip: "Ubuntu/Debian-based system-এ apt-get দিয়ে package manage হয়; install শেষ হলে terminal-এ `mn` কমান্ড পাওয়া যাবে।",
+  },
+  "flowcfg-mn-topo-single3": {
+    id: "flowcfg-mn-topo-single3",
+    command: "sudo mn --topo=single,3 --controller=none --mac",
+    category: "Software-Defined Networking",
+    story:
+      "কল্পনা করো একটা ক্লাসরুম, যেখানে একটাই central switchboard (switch) আছে আর তার সাথে সরাসরি ৩ জন student (host) বসা। কিন্তু এবার ক্লাসে কোনো শিক্ষক (controller) নেই যে বলে দেবে কে কার সাথে কথা বলতে পারবে — তোমাকে (admin) নিজেই switchboard-এ সব নিয়ম লিখে দিতে হবে।",
+    tokens: [
+      {
+        token: "sudo mn",
+        meaning:
+          "root privilege নিয়ে Mininet-এর virtual network topology চালু করার মূল command",
+      },
+      {
+        token: "--topo=single,3",
+        meaning:
+          "একটা মাত্র switch (single) তৈরি হবে, তার সাথে সরাসরি ৩টা host যুক্ত থাকবে",
+      },
+      {
+        token: "--controller=none",
+        meaning:
+          "কোনো SDN controller connect করা হবে না — flow rule manually দিতে হবে",
+      },
+      {
+        token: "--mac",
+        meaning:
+          "প্রতিটা host-কে সহজে চেনার জন্য simplified/predictable MAC address assign করে",
+      },
+    ],
+    tip: "⚠️ `--controller=none` দেওয়ার সাথে সাথে switch-এর flow table একদম খালি থাকে — flow rule না বসানো পর্যন্ত কোনো host-ই একে অপরের সাথে কথা বলতে পারবে না।",
+  },
+  "flowcfg-mn-dump": {
+    id: "flowcfg-mn-dump",
+    command: "mininet> dump",
+    category: "Software-Defined Networking",
+    story:
+      "স্কুলে roll-call ডাকার মতো — শিক্ষক প্রতিটা student-এর নাম ধরে ডেকে তার অবস্থা (হাজির/অনুপস্থিত, কোথায় বসে আছে) check করে। `dump` কমান্ড ঠিক তেমনি Mininet-এর প্রতিটা node (host, switch)-এর নাম ধরে তার interface, IP, এবং process id-র বিস্তারিত অবস্থা দেখায়।",
+    tokens: [
+      {
+        token: "dump",
+        meaning:
+          "topology-র সব host আর switch-এর বিস্তারিত status (interface name, IP address, process id) একসাথে দেখায়",
+      },
+    ],
+    tip: "`dump` flow rule বা connectivity দেখায় না — এটা শুধু node গুলোর নিজস্ব অবস্থা দেখায়।",
+  },
+  "flowcfg-mn-net": {
+    id: "flowcfg-mn-net",
+    command: "mininet> net",
+    category: "Software-Defined Networking",
+    story:
+      "একটা বিল্ডিংয়ের wiring diagram-এর মতো ভাবো, যেখানে দেখা যায় কোন ঘরের switch কোন ঘরের বাতির সাথে তার দিয়ে যুক্ত। `net` কমান্ড ঠিক সেই wiring diagram-টা দেখায় — কোন host-এর কোন interface, switch-এর কোন port-এর সাথে physically (virtually) যুক্ত।",
+    tokens: [
+      {
+        token: "net",
+        meaning:
+          "topology-র node গুলোর মধ্যে connection/wiring mapping (কোন interface কার সাথে যুক্ত) দেখায়",
+      },
+    ],
+    tip: "💡 `net`-এর আউটপুট দেখেই বোঝা যায় কোন host কোন switch port (যেমন s1-eth1, s1-eth2) দিয়ে connected — এটা পরে `ovs-ofctl` দিয়ে port-ভিত্তিক rule বসানোর সময় কাজে লাগে।",
+  },
+  "flowcfg-ovs-ofctl-show": {
+    id: "flowcfg-ovs-ofctl-show",
+    command: "mininet> sh ovs-ofctl show s1",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো তুমি একটা নতুন কেনা router/machine-এর spec sheet (datapath ID, কয়টা port, কী কী feature সাপোর্ট করে) চেক করছো। `ovs-ofctl show` ঠিক সেই spec sheet-টা দেখায় — switch `s1` আসলে কী করতে পারে।",
+    tokens: [
+      {
+        token: "sh",
+        meaning:
+          "Mininet CLI থেকে সরাসরি host OS-এর shell command চালানোর জন্য ব্যবহৃত হয়",
+      },
+      {
+        token: "ovs-ofctl",
+        meaning:
+          "Open vSwitch control করার command-line tool — switch query/manage করতে ব্যবহার হয়",
+      },
+      {
+        token: "show",
+        meaning: "switch-এর feature, port list, capability — সব তথ্য দেখায়",
+      },
+      {
+        token: "s1",
+        meaning: "যে switch-কে query করা হচ্ছে তার নাম",
+      },
+    ],
+    tip: "আউটপুটে dpid (switch-এর unique ID), n_tables (সর্বোচ্চ flow table সংখ্যা), capabilities, এবং সমর্থিত actions (output, mod_dl_src, mod_nw_src ইত্যাদি)-এর তালিকা দেখা যায়।",
+  },
+  "flowcfg-ovs-ofctl-add-flow-normal": {
+    id: "flowcfg-ovs-ofctl-add-flow-normal",
+    command: "mininet> sh ovs-ofctl add-flow s1 action=normal",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তুমি একটা নতুন কর্মচারীকে (switch) কোনো বিশেষ নির্দেশ না দিয়ে শুধু বলছো "তুমি একজন অভিজ্ঞ পুরনো দারোয়ানের মতোই কাজ করো" — অর্থাৎ MAC address মনে রেখে স্বাভাবিক নিয়মেই packet পাঠাও। `action=normal` ঠিক সেই পুরনো, traditional Ethernet switch-এর মতো আচরণ করতে বলে।',
+    tokens: [
+      {
+        token: "add-flow",
+        meaning:
+          "switch-এর flow table-এ নতুন একটা rule (match + action) যোগ করার কমান্ড",
+      },
+      {
+        token: "s1",
+        meaning: "target switch, যেখানে rule-টা বসবে",
+      },
+      {
+        token: "action=normal",
+        meaning:
+          "switch-কে বলে দেয় traditional L2 learning switch logic (MAC শিখে forward) ব্যবহার করতে, কোনো custom rule ছাড়াই",
+      },
+    ],
+    tip: '`action=normal` দিলে fine-grained control পাওয়া যায় না — এটা শুধু একটা "default, dumb-switch মতো আচরণ করো" rule।',
+  },
+  "flowcfg-mn-pingall": {
+    id: "flowcfg-mn-pingall",
+    command: "mininet> pingall",
+    category: "Software-Defined Networking",
+    story:
+      "অফিসের সবার ফোন লাইন একসাথে টেস্ট করার মতো — প্রত্যেকে প্রত্যেককে কল করে দেখে লাইন ঠিকঠাক কাজ করছে কিনা। `pingall` ঠিক তাই করে — topology-র প্রতিটা host থেকে বাকি সব host-এ ping পাঠিয়ে পুরো নেটওয়ার্কের connectivity একবারে test করে।",
+    tokens: [
+      {
+        token: "pingall",
+        meaning:
+          "সব host-থেকে-সব host-এ ping পাঠিয়ে সম্পূর্ণ network connectivity একসাথে verify করে",
+      },
+    ],
+    tip: "⚠️ flow rule না থাকলে (বা ভুল in_port/action দিলে) `pingall`-এর কোনো pair-ই সফল হবে না, যদিও physical wiring একদম ঠিক থাকে — এটাই data plane আর control plane আলাদা থাকার সবচেয়ে ভালো প্রমাণ।",
+  },
+  "flowcfg-ovs-ofctl-dump-flows": {
+    id: "flowcfg-ovs-ofctl-dump-flows",
+    command: "mininet> sh ovs-ofctl dump-flows s1",
+    category: "Software-Defined Networking",
+    story:
+      "একটা notice board-এ এই মুহূর্তে কী কী নিয়ম (rule) টাঙানো আছে তা পড়ার মতো। `dump-flows` ঠিক সেই নোটিশ বোর্ড দেখায় — switch-এ এখন কী কী flow rule active আছে, তাদের priority, match condition আর action সহ।",
+    tokens: [
+      {
+        token: "dump-flows",
+        meaning:
+          "switch-এর flow table-এ বর্তমানে যত rule আছে, সব priority/match/action সহ দেখায়",
+      },
+      {
+        token: "s1",
+        meaning: "যে switch-এর flow table দেখা হচ্ছে",
+      },
+    ],
+    tip: "💡 নতুন rule add করার পর বা rule কাজ না করলে সবার আগে `dump-flows` দিয়ে check করো সেটা আসলে বসেছে কিনা এবং priority/match ঠিক আছে কিনা।",
+  },
+  "flowcfg-ovs-ofctl-del-flows": {
+    id: "flowcfg-ovs-ofctl-del-flows",
+    command: "mininet> sh ovs-ofctl del-flows s1",
+    category: "Software-Defined Networking",
+    story:
+      "একটা notice board থেকে সব পুরনো নোটিশ ছিঁড়ে ফেলার মতো — board (switch) খালি হয়ে যায়, কেউ কোনো নিয়ম জানে না। `del-flows` চালালে switch-এর flow table থেকে সব rule মুছে যায়, ফলে switch আর বুঝতে পারে না কোন packet কোথায় পাঠাতে হবে।",
+    tokens: [
+      {
+        token: "del-flows",
+        meaning: "switch-এর flow table-এ থাকা সব flow entry একবারে মুছে ফেলে",
+      },
+      {
+        token: "s1",
+        meaning: "যে switch-এর flow table খালি করা হচ্ছে",
+      },
+    ],
+    tip: "⚠️ `del-flows`-এর পর `pingall` চালালে সব ping fail করবে — physical connection অক্ষত থাকলেও কোনো forwarding rule না থাকায় switch সব packet drop করে দেয়।",
+  },
+  "flowcfg-ovs-add-flow-port1-to-2": {
+    id: "flowcfg-ovs-add-flow-port1-to-2",
+    command: "sh ovs-ofctl add-flow s1 priority=500,in_port=1,actions=output:2",
+    category: "Software-Defined Networking",
+    story:
+      "একটা office-এ ধরো তুমি desk 1 থেকে desk 2-তে একটা one-way সরাসরি ফোন লাইন টেনে দিলে — desk 1 থেকে কিছু বললে সেটা সরাসরি শুধু desk 2-তে যায়, আর কোথাও না।",
+    tokens: [
+      {
+        token: "priority=500",
+        meaning:
+          "এই rule-এর গুরুত্ব/অগ্রাধিকার — একাধিক rule match করলে বেশি priority-র rule আগে প্রযোজ্য হয়",
+      },
+      {
+        token: "in_port=1",
+        meaning:
+          "match condition — switch-এর port 1 (h1-এর দিক) দিয়ে আসা packet-এর জন্যই এই rule প্রযোজ্য",
+      },
+      {
+        token: "actions=output:2",
+        meaning: "match হওয়া packet-টা port 2 (h2-এর দিক) দিয়ে বের করে দাও",
+      },
+    ],
+    tip: "এই একটা rule শুধু h1 → h2 দিকের traffic handle করে — উল্টো দিক (h2 → h1)-এর জন্য আলাদা rule লাগবে।",
+  },
+  "flowcfg-ovs-add-flow-port2-to-1": {
+    id: "flowcfg-ovs-add-flow-port2-to-1",
+    command: "sh ovs-ofctl add-flow s1 priority=500,in_port=2,actions=output:1",
+    category: "Software-Defined Networking",
+    story:
+      "আগের rule-টার ঠিক উল্টো দিক — desk 2 থেকে desk 1-এ ফেরার লাইন টানা হলো, যাতে দুইজনেই একে অপরের সাথে কথা বলতে পারে (দুইটা one-way rule মিলে কার্যত two-way communication তৈরি করে)।",
+    tokens: [
+      {
+        token: "priority=500",
+        meaning: "flow rule-এর priority, আগের rule-এর সমান",
+      },
+      {
+        token: "in_port=2",
+        meaning:
+          "match condition — switch-এর port 2 (h2-এর দিক) দিয়ে আসা packet-এর জন্য",
+      },
+      {
+        token: "actions=output:1",
+        meaning: "match হওয়া packet-টা port 1 (h1-এর দিক) দিয়ে বের করে দাও",
+      },
+    ],
+    tip: "h1↔h2-এর মধ্যে সম্পূর্ণ (bi-directional) ping কাজ করার জন্য এই দুইটা one-way rule-ই (port1→2 আর port2→1) একসাথে লাগে।",
+  },
+  "flowcfg-host-ping-c2": {
+    id: "flowcfg-host-ping-c2",
+    command: "h1 ping -c2 h2",
+    category: "Software-Defined Networking",
+    story:
+      "একটা নির্দিষ্ট ফোন লাইন ঠিকঠাক কাজ করছে কিনা তা check করতে তুমি নির্দিষ্ট সংখ্যক (যেমন ২ বার) call করে দেখো, লাইন অনন্তকাল খোলা রাখো না। `ping -c2` ঠিক সেটাই করে — ঠিক ২টা ping packet পাঠিয়ে connectivity test করে, তারপর নিজে থেকে থেমে যায়।",
+    tokens: [
+      {
+        token: "h1",
+        meaning:
+          "source host — Mininet CLI থেকে সরাসরি এই host-এর context-এ command চালানো হচ্ছে",
+      },
+      {
+        token: "ping",
+        meaning: "দুই host-এর মধ্যে network connectivity test করার command",
+      },
+      {
+        token: "-c2",
+        meaning:
+          "ঠিক কয়টা ping packet পাঠানো হবে তা নির্দিষ্ট করে (count = 2); না দিলে ping অনন্তকাল চলতেই থাকে",
+      },
+      {
+        token: "h2",
+        meaning: "destination host, যাকে ping করা হচ্ছে",
+      },
+    ],
+    tip: '⚠️ এই কমান্ডের ফলাফল সম্পূর্ণ নির্ভর করে switch-এ উপযুক্ত flow rule আছে কিনা তার উপর — physical topology ঠিক থাকলেও matching rule না থাকলে "Destination Host Unreachable" আসবে।',
+  },
+  "flowcfg-ovs-add-flow-port3-to-1-2": {
+    id: "flowcfg-ovs-add-flow-port3-to-1-2",
+    command:
+      "sh ovs-ofctl add-flow s1 priority=500,in_port=3,actions=output:1,2",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো এতদিন desk 3 (h3) পুরো office network থেকে বিচ্ছিন্ন ছিল (ওর কোনো ফোন লাইনই ছিল না), এবার একসাথে desk 1 আর desk 2 — দুই জায়গাতেই লাইন টেনে দেওয়া হলো, যাতে desk 3 দুইজনের সাথেই কথা বলতে পারে।",
+    tokens: [
+      {
+        token: "priority=500",
+        meaning: "flow rule-এর অগ্রাধিকার",
+      },
+      {
+        token: "in_port=3",
+        meaning:
+          "match condition — switch-এর port 3 (h3-এর দিক) দিয়ে আসা packet-এর জন্য",
+      },
+      {
+        token: "actions=output:1,2",
+        meaning:
+          "একাধিক output port — match হওয়া packet port 1 আর port 2, দুই জায়গাতেই পাঠিয়ে দাও",
+      },
+    ],
+    tip: "`output:1,2`-এর মতো comma দিয়ে একাধিক port দিলে, সেই packet-এর আলাদা copy প্রতিটা উল্লেখিত port দিয়ে বের হয় — এটা নির্দিষ্ট কিছু port-এ selective forwarding, পুরো broadcast না।",
+  },
+  "flowcfg-ovs-add-flow-port1-to-2-3": {
+    id: "flowcfg-ovs-add-flow-port1-to-2-3",
+    command:
+      "sh ovs-ofctl add-flow s1 priority=500,in_port=1,actions=output:2,3",
+    category: "Software-Defined Networking",
+    story:
+      "আগে desk 1 শুধু desk 2-এর সাথে লাইনে যুক্ত ছিল; এবার সেই পুরনো নিয়মটাই বদলে (replace করে) desk 1-কে desk 2 আর desk 3 — দুই জায়গাতেই connect করে দেওয়া হলো, যাতে সবাই সবার সাথে কথা বলতে পারে।",
+    tokens: [
+      {
+        token: "priority=500",
+        meaning: "flow rule-এর অগ্রাধিকার, আগের in_port=1 rule-এর মতোই",
+      },
+      {
+        token: "in_port=1",
+        meaning: "match condition — একই match field আগের in_port=1 rule-এর মতো",
+      },
+      {
+        token: "actions=output:2,3",
+        meaning: "match হওয়া packet port 2 আর port 3 — দুইটাতেই forward করো",
+      },
+    ],
+    tip: "⚠️ একই match field (এখানে in_port=1, একই priority)-এর জন্য আবার add-flow দিলে, OVS আগের rule-কে পুরোপুরি replace করে দেয় — দুইটা rule আলাদা করে active থাকে না, নতুনটাই শেষ কথা।",
+  },
+  "flowcfg-ovs-add-flow-port2-to-1-3": {
+    id: "flowcfg-ovs-add-flow-port2-to-1-3",
+    command:
+      "sh ovs-ofctl add-flow s1 priority=500,in_port=2,actions=output:1,3",
+    category: "Software-Defined Networking",
+    story:
+      "একইভাবে desk 2-এর পুরনো এক-মুখী লাইনটাও বদলে দেওয়া হলো, এবার desk 2 থেকে desk 1 আর desk 3 — দুই জায়গাতেই লাইন যায়। তিনটা rule মিলিয়ে এখন প্রতিটা desk বাকি দুইটার সাথেই সরাসরি কথা বলতে পারে — পুরো office-এ full mesh connectivity।",
+    tokens: [
+      {
+        token: "priority=500",
+        meaning: "flow rule-এর অগ্রাধিকার",
+      },
+      {
+        token: "in_port=2",
+        meaning:
+          "match condition — port 2 (h2-এর দিক) দিয়ে আসা packet-এর জন্য",
+      },
+      {
+        token: "actions=output:1,3",
+        meaning: "match হওয়া packet port 1 আর port 3 — দুইটাতেই forward করো",
+      },
+    ],
+    tip: "💡 শেষমেশ প্রতিটা in_port-এর জন্য একটা করে rule (মোট ৩টা), যেখানে actions বাকি দুই port-এ output করে — এই pattern দিয়েই ৩-host full mesh connectivity অর্জন করা হয়েছে, কোনো controller ছাড়াই।",
+  },
+  "l2fwd-mn-start": {
+    id: "l2fwd-mn-start",
+    command: "sudo mn --topo=single,3 --controller=none --mac",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তুমি একটা ছোট্ট toy network বানাতে চাও — একটা switch, আর তার সাথে যুক্ত তিনটা computer। স্বাভাবিক নেটওয়ার্কে একটা "মাথা" (controller) থাকে যে switch-কে বলে দেয় কী করতে হবে, কিন্তু এখানে আমরা ইচ্ছা করে সেই মাথাটা বাদ দিচ্ছি (--controller=none) — switch একদম ফাঁকা মাথা নিয়ে বসে থাকবে, আর পরে আমরা নিজেরাই হাতে করে ওকে প্রতিটা সিদ্ধান্ত (flow rule) শিখিয়ে দেব।',
+    tokens: [
+      {
+        token: "mn",
+        meaning:
+          "Mininet টুল চালু করার command — এটা দিয়ে virtual switch আর host দিয়ে একটা network emulate করা যায়",
+      },
+      {
+        token: "--topo=single,3",
+        meaning:
+          'টপোলজি নির্ধারণ করে — "single" মানে একটামাত্র switch, আর "3" মানে তার সাথে ৩টা host যুক্ত থাকবে',
+      },
+      {
+        token: "--controller=none",
+        meaning:
+          "কোনো external SDN controller (যেমন POX/Ryu) থাকবে না — switch নিজে থেকে কোনো সিদ্ধান্ত নেবে না, flow rule ম্যানুয়ালি বসাতে হবে",
+      },
+      {
+        token: "--mac",
+        meaning:
+          "host-গুলোর MAC address predictable, ছোট আকারে সেট করে দেয় (00:00:00:00:00:01, ...02, ...), যাতে পরে flow rule লেখা সহজ হয়",
+      },
+    ],
+    tip: "sudo লাগে কারণ Mininet kernel-level virtual network namespace/interface তৈরি করে, যার জন্য root প্রিভিলেজ দরকার।",
+  },
+  "l2fwd-ifconfig": {
+    id: "l2fwd-ifconfig",
+    command: "mininet> h1 ifconfig",
+    category: "Software-Defined Networking",
+    story:
+      'প্রতিটা host-কে তুমি জিজ্ঞেস করছো "তোমার ঠিকানা (IP) আর তোমার ID card নম্বর (MAC address) কী?" — ঠিক যেমন কাউকে ID card দেখাতে বললে সে নিজের পরিচয় জানায়, ifconfig host-টা নিজের network পরিচয় জানিয়ে দেয়।',
+    tokens: [
+      {
+        token: "h1",
+        meaning:
+          "Mininet prompt-এ কোন host-এর ভেতরে গিয়ে command চালানো হবে তা বলে দেয় — এখানে h1",
+      },
+      {
+        token: "ifconfig",
+        meaning:
+          "সেই host-এর network interface-এর তথ্য (IP address, MAC address) দেখানোর command",
+      },
+    ],
+    tip: "h2 ifconfig, h3 ifconfig লিখলেও একই কাজ হবে, শুধু host বদলে যাবে — পরের flow rule লেখার আগে প্রতিটা host-এর MAC address জেনে নেওয়া জরুরি।",
+  },
+  "l2fwd-flow-mac": {
+    id: "l2fwd-flow-mac",
+    command:
+      "mininet> sh ovs-ofctl add-flow s1 dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:02,actions=output:2",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো একটা ডাকঘরের ক্লার্ক-কে তুমি হাতে লেখা একটা নিয়ম দিয়ে বললে — "যদি কোনো চিঠির প্রেরক হয় X আর প্রাপক হয় Y, তাহলে সেটা সরাসরি বাক্স নম্বর ২-তে রেখে দিও।" switch (s1)-এর নিজের কোনো বুদ্ধি নেই (controller=none), তাই এই rule-টা তুমি ম্যানুয়ালি তার flow table-এ ঢুকিয়ে দিচ্ছো, ঠিক যেমন পোস্ট অফিসের ক্লার্ক-কে হাতে লেখা নির্দেশ দেওয়া হয়।',
+    tokens: [
+      {
+        token: "sh",
+        meaning:
+          "Mininet prompt-এর ভেতর থেকে shell-level command চালানোর জন্য ব্যবহার হয় (এখানে ovs-ofctl একটা shell tool)",
+      },
+      {
+        token: "ovs-ofctl",
+        meaning: "Open vSwitch-এর flow table manage করার command-line tool",
+      },
+      {
+        token: "add-flow s1",
+        meaning: "s1 নামের switch-এ একটা নতুন flow rule (entry) যোগ করে",
+      },
+      {
+        token: "dl_src=00:00:00:00:00:01",
+        meaning:
+          "match field — প্যাকেটের source MAC address h1 হলে এই rule apply হবে (dl = data link layer)",
+      },
+      {
+        token: "dl_dst=00:00:00:00:00:02",
+        meaning:
+          "match field — প্যাকেটের destination MAC address h2 হলে এই rule apply হবে",
+      },
+      {
+        token: "actions=output:2",
+        meaning:
+          "match মিললে প্যাকেটটা switch-এর port 2 (যেখানে h2 যুক্ত) দিয়ে পাঠিয়ে দাও",
+      },
+    ],
+    tip: "h2 থেকে h1-এ reply পাঠাতে হলে উল্টো দিকের rule-ও লাগবে — dl_src আর dl_dst বদলে, actions=output:1 দিয়ে আরেকটা add-flow চালাতে হয়; নাহলে one-way traffic-ই চলবে, কারণ প্রতিটা rule শুধু একটা নির্দিষ্ট দিক match করে।",
+  },
+  "l2fwd-pingall": {
+    id: "l2fwd-pingall",
+    command: "mininet> pingall",
+    category: "Software-Defined Networking",
+    story:
+      'ক্লাসরুমে roll call-এর মতো — প্রতিটা student (host) একে একে বাকি সবাইকে "হ্যালো, তুমি কি আমার কথা শুনতে পাচ্ছো?" বলে জিজ্ঞেস করছে, আর উত্তর এলে নোট রাখা হচ্ছে কে কার সাথে যোগাযোগ করতে পারলো।',
+    tokens: [
+      {
+        token: "pingall",
+        meaning:
+          "Mininet-এর built-in command — প্রতিটা host থেকে বাকি সব host-এ ping করে connectivity test করে, কোন কোন জোড়া host পরস্পর যোগাযোগ করতে পারছে তার summary দেখায়",
+      },
+    ],
+    tip: "pingall fail করলে এর মানে এই না যে flow rule ভুল — ARP broadcast ঠিকমতো না গেলেও ping fail করতে পারে, কারণ ping শুরুর আগে ARP দিয়ে MAC address resolve করা লাগে।",
+  },
+  "l2fwd-flow-arp-flood": {
+    id: "l2fwd-flow-arp-flood",
+    command:
+      "mininet> sh ovs-ofctl add-flow s1 dl_type=0x806,nw_proto=1,action=flood",
+    category: "Software-Defined Networking",
+    story:
+      'ARP broadcast অনেকটা একটা বড় ঘরে দাঁড়িয়ে জোরে চিৎকার করে জিজ্ঞেস করার মতো — "এই IP-টা কার?" আগের rule-গুলো শুধু নির্দিষ্ট প্রেরক-প্রাপক জানা থাকলেই কাজ করে, কিন্তু এই চিৎকারের কোনো নির্দিষ্ট প্রাপক নেই — তাই flood action দিয়ে বলা হচ্ছে "ঘরে যে যে আছে, সবাইকেই শুনিয়ে দাও।"',
+    tokens: [
+      {
+        token: "dl_type=0x806",
+        meaning:
+          "match field — Ethernet frame type 0x806 মানে এই প্যাকেটটা ARP প্যাকেট",
+      },
+      {
+        token: "nw_proto=1",
+        meaning: "ARP-এর মধ্যেও নির্দিষ্টভাবে ARP request প্যাকেট match করে",
+      },
+      {
+        token: "action=flood",
+        meaning:
+          "match মিললে প্যাকেটটা switch-এর সব port দিয়ে (incoming port বাদে) broadcast করে পাঠায়, ঠিক hub-এর মতো আচরণ করে",
+      },
+    ],
+    tip: "আগের dl_src/dl_dst rule শুধু normal (unicast) traffic handle করে — ARP-এর জন্য আলাদা rule না দিলে host একে অপরের MAC address-ই জানতে পারবে না, তাই pingall শুরুতে fail করেছিল।",
+  },
+  "l3fwd-flow-subnet-normal": {
+    id: "l3fwd-flow-subnet-normal",
+    command:
+      "mininet> sh ovs-ofctl add-flow s1 priority=500,dl_type=0x800,nw_src=10.0.0.0/24,nw_dst=10.0.0.0/24,actions=normal",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো একটা পুরো এলাকার (subnet) জন্য একটা সাধারণ ট্রাফিক নিয়ম বানানো হলো — "এই এলাকার ভেতরে যেকোনো গাড়ি (IP) থেকে এই এলাকার ভেতরে যেকোনো গাড়িতে গেলে, স্বাভাবিক ট্রাফিক পুলিশ (switch-এর নিজস্ব MAC-learning logic) সামলে নেবে।" এখানে আর MAC address ধরে ধরে rule লেখা হচ্ছে না (যেমন আগের L2 lab-এ), বরং IP address আর subnet দিয়ে সিদ্ধান্ত নেওয়া হচ্ছে — এটাই Layer 3 forwarding-এর মূল পার্থক্য।',
+    tokens: [
+      {
+        token: "priority=500",
+        meaning:
+          "rule-টার অগ্রাধিকার সংখ্যা — flow table-এ একাধিক rule মিললে, বেশি priority-র rule আগে/প্রধানত apply হয়",
+      },
+      {
+        token: "dl_type=0x800",
+        meaning:
+          "match field — Ethernet type 0x800 মানে IPv4 প্যাকেট (ARP থেকে আলাদা করতে)",
+      },
+      {
+        token: "nw_src=10.0.0.0/24",
+        meaning:
+          "match field — source IP যদি 10.0.0.0/24 subnet-এর ভেতরে হয় (nw = network layer, Layer 3)",
+      },
+      {
+        token: "nw_dst=10.0.0.0/24",
+        meaning: "match field — destination IP-ও একই subnet-এর ভেতরে হতে হবে",
+      },
+      {
+        token: "actions=normal",
+        meaning:
+          "switch-এর নিজস্ব স্বাভাবিক (traditional) MAC-learning switching behavior অনুযায়ী প্যাকেট ফরওয়ার্ড করো, বিশেষ কোনো OpenFlow রুট ছাড়াই",
+      },
+    ],
+    tip: "এই lab-এ dl_src/dl_dst-এর বদলে nw_src/nw_dst ব্যবহার হচ্ছে — এটাই মূল পার্থক্য Layer 2 বনাম Layer 3 forwarding-এর মধ্যে: MAC address না দেখে IP address দেখে decision নেওয়া হচ্ছে।",
+  },
+  "l3fwd-flow-priority-dscp": {
+    id: "l3fwd-flow-priority-dscp",
+    command:
+      "mininet> sh ovs-ofctl add-flow s1 priority=800,dl_type=0x800,nw_src=10.0.0.3,nw_dst=10.0.0.0/24,actions=mod_nw_tos:184,normal",
+    category: "Software-Defined Networking",
+    story:
+      "এয়ারপোর্টের VIP লাইনের মতো — h3-এর ট্রাফিককে একটা বিশেষ ট্যাগ (priority boarding pass) দেওয়া হচ্ছে, আর এই গেটের নিয়মটা (priority 800) সাধারণ গেটের (priority 500) চেয়ে বেশি গুরুত্বপূর্ণ, তাই h3-এর ক্ষেত্রে এটাই আগে চেক হবে।",
+    tokens: [
+      {
+        token: "priority=800",
+        meaning:
+          "আগের general rule-এর (priority 500) চেয়ে বেশি priority, তাই h3 থেকে আসা ট্র্যাফিকের ক্ষেত্রে এই rule-টাই জিতে যাবে",
+      },
+      {
+        token: "nw_src=10.0.0.3",
+        meaning:
+          "শুধু h3 (source IP 10.0.0.3) থেকে আসা প্যাকেটের জন্য এই rule প্রযোজ্য",
+      },
+      {
+        token: "actions=mod_nw_tos:184,normal",
+        meaning:
+          "প্রথমে IP header-এর TOS field-এ মান 184 বসিয়ে দাও (DSCP 46 / Expedited Forwarding বোঝায়), তারপর normal switching দিয়ে forward করো",
+      },
+      {
+        token: "mod_nw_tos:184",
+        meaning:
+          "একটা action যা প্যাকেটের TOS byte পরিবর্তন করে — নেটওয়ার্কে এই প্যাকেটকে higher-priority/QoS traffic হিসেবে চিহ্নিত করার জন্য",
+      },
+    ],
+    tip: "184 সংখ্যাটা ম্যাজিক না — DSCP 46 (বাইনারি 101110)-কে 2 bit বামে shift করলে 10111000 = 184 হয়, কারণ TOS byte-এর প্রথম 6 bit-ই DSCP-এর জায়গা, বাকি 2 bit ECN-এর জন্য।",
+  },
+  "l3fwd-flow-arp-port": {
+    id: "l3fwd-flow-arp-port",
+    command:
+      "mininet> sh ovs-ofctl add-flow s1 arp,nw_dst=10.0.0.1,actions=output:1",
+    category: "Software-Defined Networking",
+    story:
+      "আগের L2 lab-এ ARP-এর জন্য পুরো ঘরে চিৎকার করে (flood) সবাইকে জিজ্ঞেস করা হতো, কিন্তু এবার তোমার কাছে রিসেপশনিস্টের ডেস্ক নম্বরটাই জানা আছে — তাই পুরো অফিসে চিৎকার না করে সরাসরি সেই ডেস্কে (নির্দিষ্ট port-এ) গিয়ে জিজ্ঞেস করা যাচ্ছে।",
+    tokens: [
+      {
+        token: "arp",
+        meaning:
+          "match field শর্টকাট — শুধু ARP প্যাকেট match করে (dl_type=0x806 লেখার বদলে সরাসরি 'arp' keyword ব্যবহার করা যায়)",
+      },
+      {
+        token: "nw_dst=10.0.0.1",
+        meaning:
+          "এই ARP request-টা কোন IP address-এর জন্য (কাকে খোঁজা হচ্ছে), সেটা দিয়ে match করে",
+      },
+      {
+        token: "actions=output:1",
+        meaning:
+          "flood না করে সরাসরি নির্দিষ্ট port-এ (এখানে port 1, যেখানে h1 যুক্ত) পাঠিয়ে দাও",
+      },
+    ],
+    tip: "h2 আর h3-এর জন্যও একই প্যাটার্নে আলাদা rule লাগবে (nw_dst=10.0.0.2→output:2, nw_dst=10.0.0.3→output:3) — flood-এর চেয়ে এটা বড় নেটওয়ার্কে বেশি efficient, কারণ অযথা সব port-এ ARP পাঠানো হয় না।",
+  },
+  "l3fwd-ping-host": {
+    id: "l3fwd-ping-host",
+    command: "mininet> h3 ping h1",
+    category: "Software-Defined Networking",
+    story:
+      "pingall দিয়ে একসাথে সবাইকে জিজ্ঞেস করার বদলে, এবার নির্দিষ্ট একজনকে সরাসরি ফোন করে জিজ্ঞেস করা হচ্ছে — h3-এর জন্য যে বিশেষ priority rule বসানো হয়েছে, সেটা ঠিকমতো কাজ করছে কিনা তা যাচাই করতে নির্দিষ্ট পথে (h3 থেকে h1) একটা targeted test চালানো হচ্ছে।",
+    tokens: [
+      {
+        token: "h3",
+        meaning:
+          "Mininet prompt-এ উৎস host নির্ধারণ করে — h3 থেকে command চালানো হচ্ছে",
+      },
+      {
+        token: "ping h1",
+        meaning:
+          "h1-এর IP address-এ ICMP ping পাঠিয়ে connectivity পরীক্ষা করা হচ্ছে",
+      },
+    ],
+    tip: "pingall সব জোড়া host test করে, কিন্তু নির্দিষ্ট কোনো flow rule (যেমন h3-এর priority rule) ঠিকমতো কাজ করছে কিনা যাচাই করতে চাইলে h3 ping h1-এর মতো single, targeted ping চালানো বেশি কাজের।",
+  },
+  "l4fwd-mn-start": {
+    id: "l4fwd-mn-start",
+    command: "sudo mn --topo=single,3 --controller=none --mac",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তুমি একটা ছোট অফিস খুলছো — ১টা reception desk (switch) আর তার সাথে সরাসরি যুক্ত ৩টা ডেস্ক (host)। "--topo=single,3" লিখলেই Mininet নিজে থেকে পুরো ছোট অফিসটা বানিয়ে দেয়। কিন্তু "--controller=none" দেওয়ার মানে হলো — এই অফিসের কোনো central manager (SDN controller) থাকছে না, তাই reception desk নিজে থেকে কোনো সিদ্ধান্তই জানে না, যতক্ষণ না আমরা নিজেরাই গিয়ে তাকে নিয়ম (rule) শিখিয়ে দিই।',
+    tokens: [
+      {
+        token: "sudo",
+        meaning:
+          "root permission দরকার, কারণ Mininet kernel-level virtual network namespace/interface তৈরি করে",
+      },
+      {
+        token: "mn",
+        meaning: "Mininet network emulator চালু করার CLI command",
+      },
+      {
+        token: "--topo=single,3",
+        meaning:
+          'built-in "single" topology template — ১টা switch-এর সাথে সরাসরি ৩টা host কানেক্টেড থাকবে',
+      },
+      {
+        token: "--controller=none",
+        meaning:
+          "কোনো external SDN controller থাকবে না; switch নিজে থেকে কোনো rule না জানলে প্যাকেট ড্রপ করবে, যতক্ষণ না আমরা নিজে ovs-ofctl দিয়ে rule বসাই",
+      },
+      {
+        token: "--mac",
+        meaning:
+          "host-দের MAC address random না হয়ে predictable/sequential হবে, যা debugging সহজ করে",
+      },
+    ],
+    tip: "⚠️ controller=none মানে এই না যে network কাজ করবে না — এর মানে হলো, এখন switch-কে কী করতে হবে তা আমাদের manually ovs-ofctl দিয়ে বলে দিতে হবে, যেটা এই পুরো ল্যাবের মূল বিষয়।",
+  },
+  "l4fwd-http-server": {
+    id: "l4fwd-http-server",
+    command: "h3 python -m SimpleHTTPServer 80 &",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো h3 একটা নির্দিষ্ট ঠিকানায় (port 80) একটা ছোট দোকান খুলছে, যেখানে কেউ এসে (HTTP request পাঠালে) জিনিস পাবে। শেষের "&" চিহ্নটা মানে এই দোকান খুলেই তুমি কাউন্টার ছেড়ে চলে যেতে পারো (background-এ চলতে থাকবে), আর টার্মিনালে অন্য কাজ করতে পারবে।',
+    tokens: [
+      {
+        token: "h3",
+        meaning:
+          "Mininet CLI-তে কোন host-এর namespace-এর ভেতরে command চালানো হবে তার prefix",
+      },
+      {
+        token: "python -m SimpleHTTPServer 80",
+        meaning:
+          "Python-এর built-in simple HTTP server module চালু, port 80 (HTTP-র default port)-তে শোনার জন্য",
+      },
+      {
+        token: "&",
+        meaning:
+          "command-টা background-এ চালানো, যাতে টার্মিনাল ব্লক না হয়ে পরের command চালানো যায়",
+      },
+    ],
+    tip: '💡 Python 2-এ module-এর নাম "SimpleHTTPServer", কিন্তু Python 3-এ এটা "http.server" (python3 -m http.server 80) — পুরনো ল্যাব ম্যাটেরিয়ালে এই পার্থক্যটা খেয়াল রাখা দরকার।',
+  },
+  "l4fwd-arp-normal": {
+    id: "l4fwd-arp-normal",
+    command: "sh ovs-ofctl add-flow s1 arp,actions=normal",
+    category: "Software-Defined Networking",
+    story:
+      'ARP হলো নেটওয়ার্কের একটা লাউডস্পিকার ঘোষণা — "এই IP-টা কার?" জিজ্ঞেস করে সবার কাছে। এই rule-টা switch-কে বলে দেয়, এই ধরনের ঘোষণা (ARP প্যাকেট) আটকে না রেখে স্বাভাবিক নিয়মেই (normal) সবার কাছে পৌঁছে দাও — নইলে কেউ কারো MAC address-ই জানতে পারবে না, আর IP দিয়ে কথা বলাই শুরু হবে না।',
+    tokens: [
+      {
+        token: "sh",
+        meaning:
+          "Mininet CLI থেকে command সরাসরি underlying host OS-এর shell-এ চালানোর prefix (কোনো virtual host namespace-এ না গিয়ে)",
+      },
+      {
+        token: "ovs-ofctl",
+        meaning:
+          "Open vSwitch-এর flow table (OpenFlow rule) manage করার CLI টুল",
+      },
+      {
+        token: "add-flow",
+        meaning: "switch-এ নতুন একটা OpenFlow rule (flow entry) যোগ করা",
+      },
+      {
+        token: "s1",
+        meaning: "কোন switch-এ rule বসবে, তার নাম",
+      },
+      {
+        token: "arp",
+        meaning: "match করার শর্ত — শুধু ARP প্রোটোকলের প্যাকেট",
+      },
+      {
+        token: "actions=normal",
+        meaning:
+          "matched প্যাকেট switch-এর স্বাভাবিক L2 learning/forwarding logic দিয়ে হ্যান্ডেল হবে (MAC table অনুযায়ী forward বা flood)",
+      },
+    ],
+    tip: "⚠️ এই rule না থাকলে host-রা একে অপরের MAC address-ই resolve করতে পারবে না, ফলে এরপরের কোনো IP-ভিত্তিক rule-ই আদৌ কাজে আসবে না — ARP হ্যান্ডলিং সবসময় সবার আগে দরকার।",
+  },
+  "l4fwd-http-flow": {
+    id: "l4fwd-http-flow",
+    command:
+      "sh ovs-ofctl add-flow s1 priority=500,dl_type=0x800,nw_proto=6,tp_dst=80,actions=output:3",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো একটা মেইল সর্টিং অফিস শুধু ঠিকানা (IP, Layer 3) দেখে না, এনভেলাপের গায়ে লেখা নির্দিষ্ট "রুম নম্বর" (port, Layer 4) দেখেও চিঠি বাছাই করে — "port 80 লেখা সব HTTP চিঠি, কে পাঠিয়েছে তা না দেখেই, সরাসরি h3-এর রুমে (port 3) পাঠিয়ে দাও।" এটাই Layer 4 forwarding-এর মূল কথা — শুধু গন্তব্য না, গন্তব্যের ভেতরের "সার্ভিস" দেখেও সিদ্ধান্ত নেওয়া।',
+    tokens: [
+      {
+        token: "priority=500",
+        meaning:
+          "এই rule-টার priority/গুরুত্ব — একাধিক rule match করলে বেশি priority-র rule আগে জিতবে",
+      },
+      {
+        token: "dl_type=0x800",
+        meaning: "data-link type match — 0x800 মানে IPv4 প্যাকেট (EtherType)",
+      },
+      {
+        token: "nw_proto=6",
+        meaning: "network protocol number match — 6 মানে TCP (UDP হলে 17 হতো)",
+      },
+      {
+        token: "tp_dst=80",
+        meaning:
+          'transport-layer (Layer 4) destination port match — 80 মানে HTTP; এটাই "Layer 4 forwarding"-এর মূল কথা, IP না দেখে port দেখে decision নেওয়া',
+      },
+      {
+        token: "actions=output:3",
+        meaning:
+          "matched প্যাকেট সরাসরি switch-এর 3 নম্বর পোর্ট দিয়ে পাঠানো হবে (যেখানে h3 কানেক্টেড)",
+      },
+    ],
+    tip: "💡 একই port নম্বর TCP ও UDP দুই প্রোটোকলেই থাকতে পারে, তাই শুধু tp_dst দিলেই যথেষ্ট না — nw_proto দিয়ে নিশ্চিত করতে হয় যে এটা TCP ট্রাফিক।",
+  },
+  "l4fwd-normal-flow": {
+    id: "l4fwd-normal-flow",
+    command:
+      "sh ovs-ofctl add-flow s1 priority=800,ip,nw_src=10.0.0.3,actions=normal",
+    category: "Software-Defined Networking",
+    story:
+      'এটা একটা "রিটার্ন মেইল" rule — h3 যখন কারো reply পাঠায়, সেটা যেন ঠিকমতো প্রকৃত প্রাপকের কাছে ফিরে যায়, তার জন্য এই rule। source IP h3 থেকে আসা সব IP ট্রাফিককে switch-এর স্বাভাবিক নিয়মে (normal) ফরওয়ার্ড হতে দাও। আগের rule-টা শুধু h3-এর দিকে যাওয়া HTTP ট্রাফিক নিয়ন্ত্রণ করত, এটা তার উল্টো দিকটা (h3 থেকে বের হওয়া ট্রাফিক) সামলায়।',
+    tokens: [
+      {
+        token: "priority=800",
+        meaning:
+          "আগের rule (priority=500)-এর চেয়ে বেশি priority — তবে dl_type ভিন্ন হওয়ায় সাধারণত একে অপরের সাথে conflict করে না",
+      },
+      {
+        token: "ip",
+        meaning: "match করার শর্ত — যেকোনো IPv4 প্যাকেট (প্রোটোকল নির্বিশেষে)",
+      },
+      {
+        token: "nw_src=10.0.0.3",
+        meaning:
+          "network source address match — শুধু h3 (10.0.0.3) থেকে আসা প্যাকেট",
+      },
+      {
+        token: "actions=normal",
+        meaning:
+          "normal L2/L3 forwarding logic দিয়ে হ্যান্ডেল, যাতে reply সঠিক destination-এ (h1/h2) পৌঁছায়",
+      },
+    ],
+    tip: "⚠️ priority=500-এর tp_dst=80 rule শুধু h3-মুখী (incoming) ট্রাফিক কভার করে, কিন্তু h3 থেকে বের হওয়া (outgoing) response-এর জন্য এই আলাদা rule ছাড়া সেটা default-এ ড্রপ হয়ে যেতে পারত।",
+  },
+  "l4fwd-curl-test": {
+    id: "l4fwd-curl-test",
+    command: "h1 curl h3",
+    category: "Software-Defined Networking",
+    story:
+      'এটা একদম সাধারণ একটা কাস্টমার-এর মতো — h1 হচ্ছে কাস্টমার, যে h3-এর দোকানে (HTTP server) গিয়ে একটা রিকোয়েস্ট করছে "তোমার কাছে কী আছে দেখাও"। এই একটা command দিয়েই পুরো আগের সব flow rule একসাথে টেস্ট হয়ে যায় — ARP, forward rule, আর return rule।',
+    tokens: [
+      {
+        token: "h1",
+        meaning: "h1 namespace-এ command চালানোর prefix",
+      },
+      {
+        token: "curl",
+        meaning:
+          "HTTP client টুল — একটা URL/host-এ request পাঠিয়ে response দেখায়",
+      },
+      {
+        token: "h3",
+        meaning:
+          "destination hostname (Mininet নিজে থেকে এটাকে h3-এর IP 10.0.0.3-তে resolve করে request পাঠায়)",
+      },
+    ],
+    tip: "💡 curl সফল হওয়ার মানে শুধু একটা rule ঠিক আছে তা না — এটা প্রমাণ করে ARP, forward rule, আর return rule — তিনটাই একসাথে ঠিকমতো কাজ করছে।",
+  },
+  "l4fwd-dump-flows": {
+    id: "l4fwd-dump-flows",
+    command: "sh ovs-ofctl dump-flows s1",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো তুমি চেক করতে চাও তোমার অফিসের রুলবুকে এখন ঠিক কোন কোন নিয়ম লেখা আছে, আর প্রতিটা নিয়ম এ পর্যন্ত কতবার ব্যবহার হয়েছে। এই command-টা ঠিক সেটাই দেখায় — switch-এ এই মুহূর্তে বসানো সব flow rule, আর প্রতিটার packet/byte counter।",
+    tokens: [
+      {
+        token: "dump-flows",
+        meaning:
+          "switch-এ এই মুহূর্তে ইনস্টল করা সব OpenFlow rule, packet count, এবং byte count দেখানোর command",
+      },
+      {
+        token: "s1",
+        meaning: "কোন switch-এর flow table দেখা হবে",
+      },
+    ],
+    tip: "💡 packet count 0 হলে বুঝতে হবে সেই rule এখনো কোনো প্যাকেটের সাথে match করেনি — এটা দিয়ে কোন rule আসলে কাজ করছে, কোনটা করছে না তা সহজেই যাচাই করা যায়।",
+  },
+  "subnet-addswitch": {
+    id: "subnet-addswitch",
+    command:
+      "br0 = self.addSwitch('br0', cls=OVSKernelSwitch, failMode='standalone')",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো তুমি একটা অফিসের জন্য একটা central reception desk বানাচ্ছো, যেটার কোনো বড় ম্যানেজারের (external controller) নির্দেশ ছাড়াই নিজে নিজে চলতে পারে। \"failMode='standalone'\" ঠিক এটাই বোঝায় — কোনো SDN controller সংযুক্ত না থাকলেও এই switch নিজে থেকেই একটা সাধারণ switch-এর মতো কাজ করে যাবে, Lab 1-এর মতো manually ovs-ofctl rule বসানোর দরকার হবে না।",
+    tokens: [
+      {
+        token: "self.addSwitch(...)",
+        meaning:
+          "কাস্টম Topo ক্লাসের ভেতরে topology-তে নতুন একটা switch যোগ করার method",
+      },
+      {
+        token: "'br0'",
+        meaning: "switch-এর নাম (bridge 0)",
+      },
+      {
+        token: "cls=OVSKernelSwitch",
+        meaning:
+          "কোন ধরনের switch implementation ব্যবহার হবে — kernel-space Open vSwitch",
+      },
+      {
+        token: "failMode='standalone'",
+        meaning:
+          "কোনো external SDN controller না থাকলেও switch নিজে থেকেই normal L2 switch-এর মতো কাজ করবে",
+      },
+    ],
+    tip: "💡 এই lab-এর standalone mode, l4fwd lab-এর controller=none + manual ovs-ofctl rule পদ্ধতির ঠিক বিপরীত — এখানে switch নিজেই স্বাধীনভাবে normal forwarding করে, আলাদা করে কোনো rule বসাতে হয় না।",
+  },
+  "subnet-addhost": {
+    id: "subnet-addhost",
+    command: "h20 = self.addHost('h20', ip='192.168.1.20/24')",
+    category: "Software-Defined Networking",
+    story:
+      "ধরো তুমি একটা নতুন flat-এর বাসিন্দাকে তার বাসার ঠিকানা আর কোন এলাকা/ব্লক (subnet) তার, সেটা তৈরির সময়েই লিখে দিচ্ছো। addHost-এর ip প্যারামিটার দিয়ে host তৈরির মুহূর্তেই তাকে একটা static IP address আর subnet range (CIDR /24) বলে দেওয়া হচ্ছে।",
+    tokens: [
+      {
+        token: "self.addHost(...)",
+        meaning:
+          "কাস্টম topology-তে নতুন একটা host (ভার্চুয়াল মেশিনের মতো) যোগ করা",
+      },
+      {
+        token: "'h20'",
+        meaning: "host-এর নাম",
+      },
+      {
+        token: "ip='192.168.1.20/24'",
+        meaning:
+          "host-কে static IP address ও subnet mask (/24 মানে 255.255.255.0) সরাসরি তৈরির সময়েই অ্যাসাইন করে দেওয়া",
+      },
+    ],
+    tip: "⚠️ /24 মানে প্রথম ২৪ বিট network prefix — তাই 192.168.1.x আর 192.168.0.x একই অক্টেট ভিন্ন হওয়ায় দুইটা সম্পূর্ণ আলাদা subnet, যদিও দেখতে খুবই কাছাকাছি।",
+  },
+  "subnet-addlink": {
+    id: "subnet-addlink",
+    command: "self.addLink(h20, br0)",
+    category: "Software-Defined Networking",
+    story:
+      "এটা ঠিক একটা physical ethernet cable টানার মতো — একটা host আর switch-এর মধ্যে একটা ভার্চুয়াল সংযোগ তৈরি হচ্ছে, যাতে তারা একে অপরের সাথে প্যাকেট আদান-প্রদান করতে পারে।",
+    tokens: [
+      {
+        token: "self.addLink(...)",
+        meaning:
+          "দুইটা node (host-switch বা switch-switch)-এর মধ্যে virtual link/cable তৈরি করা",
+      },
+      {
+        token: "h20, br0",
+        meaning: "কোন দুইটা node-এর মধ্যে link বসবে",
+      },
+    ],
+    tip: "💡 এই ল্যাবে প্রতিটা host-ই আলাদা addLink call দিয়ে সরাসরি br0-এর সাথে যুক্ত — অর্থাৎ ৪টা host, ৪টা পৃথক link, সবাই একই central switch-এ মিলিত।",
+  },
+  "subnet-mininet-init": {
+    id: "subnet-mininet-init",
+    command: "net = Mininet(topo=topo, switch=OVSKernelSwitch)",
+    category: "Software-Defined Networking",
+    story:
+      "এটা ব্লুপ্রিন্ট থেকে একটা আসল network object তৈরি করার ধাপ — আগে শুধু কাগজে (TwoSubnetTopo ক্লাসে) প্ল্যান করা হয়েছিল, এখন সেই প্ল্যান দিয়ে একটা বাস্তব, চালানোর উপযোগী Mininet network instance বানানো হচ্ছে।",
+    tokens: [
+      {
+        token: "Mininet(...)",
+        meaning:
+          "মূল Mininet network object তৈরি করা, যেটা পুরো emulated network manage করবে",
+      },
+      {
+        token: "topo=topo",
+        meaning:
+          "আগে define করা TwoSubnetTopo থেকে বানানো topology object pass করা",
+      },
+      {
+        token: "switch=OVSKernelSwitch",
+        meaning:
+          "ডিফল্টভাবে কোন switch implementation ব্যবহার হবে তা পুরো network object-কে বলে দেওয়া",
+      },
+    ],
+    tip: "💡 Topo ক্লাসের cls=OVSKernelSwitch আর এখানকার switch=OVSKernelSwitch — দুইটা আলাদা জায়গায় লেখা হলেও উদ্দেশ্য একই, consistency বজায় রাখা।",
+  },
+  "subnet-net-start": {
+    id: "subnet-net-start",
+    command: "net.start()",
+    category: "Software-Defined Networking",
+    story:
+      "এটা একদম ইঞ্জিন স্টার্ট করার চাবি ঘোরানোর মতো — আগে define করা সব virtual host, switch, link এতক্ষণ শুধু কোডে লেখা ছিল, net.start() কল করলে সেগুলো আসলেই চালু/বুট হয়ে যায়।",
+    tokens: [
+      {
+        token: "net.start()",
+        meaning: "তৈরি করা সব virtual host, switch, link আসলেই চালু/বুট করা",
+      },
+    ],
+    tip: "⚠️ net.start() না করলে শুধু topology define-ই হয়ে থাকবে, কোনো virtual network আসলে চালু হবে না।",
+  },
+  "subnet-cli": {
+    id: "subnet-cli",
+    command: "CLI(net)",
+    category: "Software-Defined Networking",
+    story:
+      "নেটওয়ার্ক চালু হওয়ার পর এটা যেন একটা control room-এর দরজা খুলে দেওয়ার মতো — এখন থেকে ব্যবহারকারী নিজে হাতে ping, ifconfig-এর মতো command দিয়ে নেটওয়ার্কটা interact করতে পারবে।",
+    tokens: [
+      {
+        token: "CLI(net)",
+        meaning:
+          "Mininet-এর interactive command-line interface চালু করা, যাতে ব্যবহারকারী ping/ifconfig ইত্যাদি command চালাতে পারে এই network-এর উপর",
+      },
+    ],
+    tip: '💡 CLI(net) লাইনটা script-কে blocking করে রাখে — যতক্ষণ না ব্যবহারকারী CLI থেকে "exit" করে বের হয়, ততক্ষণ পরের লাইন (net.stop()) চলবে না।',
+  },
+  "subnet-net-stop": {
+    id: "subnet-net-stop",
+    command: "net.stop()",
+    category: "Software-Defined Networking",
+    story:
+      "অফিস বন্ধ করার সময় যেমন সব লাইট-ফ্যান বন্ধ করে দরজা তালা দিতে হয়, net.stop() ঠিক তেমনি CLI থেকে বের হওয়ার পর সব virtual host/switch/link বন্ধ ও পরিষ্কার করে দেয়।",
+    tokens: [
+      {
+        token: "net.stop()",
+        meaning:
+          "CLI থেকে বের হওয়ার পর সব virtual host/switch/link বন্ধ ও clean up করা",
+      },
+    ],
+    tip: '⚠️ net.stop() ঠিকমতো না চললে virtual interface/namespace অবশিষ্ট থেকে যেতে পারে, যার জন্য পরের বার "mn -c" দিয়ে manually cleanup করতে হতে পারে।',
+  },
+  "subnet-run-script": {
+    id: "subnet-run-script",
+    command: "python3 simple_topo.py",
+    category: "Software-Defined Networking",
+    story:
+      "পুরো blueprint ফাইলটা (addSwitch, addHost, addLink, net.start(), CLI, net.stop() — সব মিলিয়ে) একসাথে চালানোর command এটাই — পুরো custom network তৈরি ও চালু হয়ে যায় এক command-এই।",
+    tokens: [
+      {
+        token: "python3",
+        meaning: "Python 3 interpreter দিয়ে script চালানো",
+      },
+      {
+        token: "simple_topo.py",
+        meaning: "আমাদের লেখা কাস্টম topology script-এর filename",
+      },
+    ],
+    tip: "💡 Mininet CLI-তে `mn --topo=...`-এর মতো built-in shortcut না দিয়ে, নিজের Python script চালানোর এই পদ্ধতি তখনই দরকার হয় যখন টপোলজি built-in template-এর চেয়ে বেশি কাস্টমাইজড হয় — যেমন এখানে দুই ভিন্ন subnet-এর host।",
+  },
+  "subnet-ping-same": {
+    id: "subnet-ping-same",
+    command: "h20 ping -c 3 h21",
+    category: "Software-Defined Networking",
+    story:
+      "একই বিল্ডিং ব্লকের দুই প্রতিবেশী একে অপরকে সরাসরি ডাকছে — কোনো router বা মধ্যস্থতাকারী ছাড়াই, কারণ তারা একই subnet-এ আছে। এটা তাই সবসময় সফল হওয়া উচিত।",
+    tokens: [
+      {
+        token: "h20",
+        meaning: "কোন host থেকে command চালানো হচ্ছে",
+      },
+      {
+        token: "ping",
+        meaning:
+          "আরেকটা host reachable কিনা, ICMP echo request/reply দিয়ে যাচাই করা",
+      },
+      {
+        token: "-c 3",
+        meaning:
+          "ঠিক ৩টা ping packet পাঠিয়ে থেমে যাবে (না হলে ping অনন্তকাল চলতেই থাকবে)",
+      },
+      {
+        token: "h21",
+        meaning: "destination host (একই subnet, 192.168.1.0/24)",
+      },
+    ],
+    tip: "💡 -c না দিলে ping Ctrl+C না করা পর্যন্ত চলতেই থাকবে — তাই টেস্টের সময় -c দিয়ে একটা নির্দিষ্ট সংখ্যায় থামানো সুবিধাজনক।",
+  },
+  "subnet-ping-cross": {
+    id: "subnet-ping-cross",
+    command: "h20 ping h10",
+    category: "Software-Defined Networking",
+    story:
+      "এটা একদম অন্য ব্লকের একজনকে ফোন করার চেষ্টার মতো, কিন্তু কোনো router (operator) ছাড়া কল connect-ই হয় না — h20-এর IP স্ট্যাক বুঝে ফেলে h10 তার নিজের subnet-এর বাইরে, আর কোনো default gateway না থাকায় প্যাকেট পাঠানোরই উপায় থাকে না।",
+    tokens: [
+      {
+        token: "h20",
+        meaning: "source host (subnet 192.168.1.0/24)",
+      },
+      {
+        token: "ping h10",
+        meaning:
+          "destination host, কিন্তু ভিন্ন subnet-এ (192.168.0.0/24) — -c না দেওয়ায় এটা Ctrl+C না করা পর্যন্ত চলতেই থাকবে, reply না পেয়েই",
+      },
+    ],
+    tip: "⚠️ এই ব্যর্থতা হয় কারণ br0 একটা Layer 2 device, কোনো router/L3 configuration ছাড়া দুই আলাদা subnet-এর মধ্যে route করতে পারে না — এটাই এই পুরো ল্যাবের মূল শিক্ষা।",
+  },
+  "subnet-ifconfig": {
+    id: "subnet-ifconfig",
+    command: "h20 ifconfig",
+    category: "Software-Defined Networking",
+    story:
+      "নিজের বাসার নামফলক চেক করার মতো — কোন host-এর কী IP address, কী MAC address বরাদ্দ হয়েছে তা দেখতে।",
+    tokens: [
+      {
+        token: "h20",
+        meaning: "কোন host-এর ভেতরে command চালানো হবে",
+      },
+      {
+        token: "ifconfig",
+        meaning:
+          "সেই host-এর network interface-গুলোর IP address, MAC address ইত্যাদি তথ্য দেখানোর command",
+      },
+    ],
+    tip: "💡 h20 আর h10-এ ifconfig চালিয়ে compare করলে স্পষ্ট দেখা যায় তারা দুই আলাদা subnet রেঞ্জে (192.168.1.x বনাম 192.168.0.x) আছে।",
+  },
+  "subnet-net-links": {
+    id: "subnet-net-links",
+    command: "net",
+    category: "Software-Defined Networking",
+    story:
+      'এটা "কে কার সাথে তার দিয়ে যুক্ত" তার একটা সংক্ষিপ্ত ম্যাপ দেখার মতো — পুরো টপোলজির overview।',
+    tokens: [
+      {
+        token: "net",
+        meaning:
+          "Mininet CLI-এর বিল্ট-ইন command, পুরো network-এ কোন node কোন node-এর সাথে (কোন interface দিয়ে) কানেক্টেড তার summary দেখায়",
+      },
+    ],
+    tip: "💡 এই command দিয়ে সহজেই যাচাই করা যায় যে সত্যিই ৪টা host-ই আলাদা আলাদাভাবে br0-এর সাথে সরাসরি কানেক্টেড কিনা।",
+  },
+  "subnet-pingall": {
+    id: "subnet-pingall",
+    command: "pingall",
+    category: "Software-Defined Networking",
+    story:
+      "এটা একটা বড় ফায়ার-ড্রিল রোল-কলের মতো — নেটওয়ার্কের প্রতিটা host জোড়ার মধ্যে একসাথে ping চালিয়ে দেখা হয় কে কাকে শুনতে পাচ্ছে (reachable) আর কে পাচ্ছে না।",
+    tokens: [
+      {
+        token: "pingall",
+        meaning:
+          "Mininet CLI-এর বিল্ট-ইন command — network-এর প্রতিটা host-pair-এর মধ্যে ping চালিয়ে পুরো connectivity matrix (কে কার সাথে reachable) একসাথে দেখায়",
+      },
+    ],
+    tip: "⚠️ এই ল্যাবে pingall-এর output মিশ্র (partial) হবে — একই subnet-এর জোড়াগুলো সফল, কিন্তু ভিন্ন subnet-এর জোড়াগুলো routing না থাকায় ব্যর্থ হবে।",
+  },
+  "arp-chmod-x-topo": {
+    id: "arp-chmod-x-topo",
+    command: "chmod +x arp_topo.py",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তুমি একটা লিখিত রেসিপি/নির্দেশিকা (script) লিখেছো, কিন্তু সেটা এখনো শুধু কাগজের লেখা — নিজে থেকে কিছু করতে পারে না। "chmod +x" ঠিক সেই লেখাকে একটা "কাজ করতে পারা রোবট"-এ রূপান্তর করার permission (execute permission) দেয়, যাতে Linux ওটাকে শুধু text file না ভেবে, সরাসরি চালানোর মতো একটা program হিসেবে ট্রিট করে।',
+    tokens: [
+      {
+        token: "chmod",
+        meaning: '"change mode" — file/folder-এর permission বদলানোর command',
+      },
+      {
+        token: "+x",
+        meaning:
+          'existing permission-এ "execute" (চালানোর) ক্ষমতা যোগ করে — owner/group/others সবার জন্যই যোগ হয়, আগের permission মুছে যায় না',
+      },
+      {
+        token: "arp_topo.py",
+        meaning:
+          "Mininet টপোলজি সংজ্ঞায়িত করা Python script, যার permission বদলানো হচ্ছে",
+      },
+    ],
+    tip: "💡 Tip: এই lab-এ script-টা আসলে `sudo python3 arp_topo.py` দিয়েই চালানো হয়েছে, তাই +x টেকনিক্যালি বাধ্যতামূলক না — কিন্তু convention হিসেবে +x দেওয়া থাকলে পরে `./arp_topo.py` দিয়েও সরাসরি (shebang ব্যবহার করে) চালানো যায়।",
+  },
+  "arp-run-topo": {
+    id: "arp-run-topo",
+    command: "sudo python3 arp_topo.py",
+    category: "Software-Defined Networking",
+    story:
+      'Mininet যখন চলে, তখন সে Linux kernel-এর ভেতরে একদম নতুন করে virtual switch, virtual host, virtual link তৈরি করে — অনেকটা একজন পরিচালক শূন্য থেকে একটা মিনি-শহর বানানোর মতো, যেখানে প্রতিটা বাড়ি (host) আর রাস্তা (link) আগে থেকে ছিলই না। এরকম kernel-level virtual device বানাতে admin (root) ক্ষমতা লাগে, তাই "sudo" দিয়ে চালাতে হয়।',
+    tokens: [
+      {
+        token: "sudo",
+        meaning:
+          "root/super-user হিসেবে command চালানো — kernel network namespace/interface তৈরি করতে admin ক্ষমতা লাগে বলে দরকার",
+      },
+      {
+        token: "python3",
+        meaning: "script চালানোর জন্য Python 3 interpreter",
+      },
+      {
+        token: "arp_topo.py",
+        meaning:
+          "টপোলজি define করা script — চালালে Mininet নেটওয়ার্ক শুরু হয়ে তার নিজস্ব CLI (mininet>) খুলে যায়",
+      },
+    ],
+    tip: '💡 Tip: script সফলভাবে চললে prompt বদলে "mininet>" হয়ে যায় — এখান থেকেই h1, h2-এর মতো host-এর নাম লিখে সরাসরি তাদের ভেতরে কমান্ড চালানো যায়।',
+  },
+  "arp-n": {
+    id: "arp-n",
+    command: "h1 arp -n",
+    category: "Software-Defined Networking",
+    story:
+      'প্রতিটা host নিজের একটা ছোট্ট "notebook" (ARP cache) রাখে, যেখানে সে আগে যাদের বাসার নম্বর (MAC address) একবার জিজ্ঞেস করে জেনেছে, তাদের IP-র পাশে সেটা টুকে রাখে। "arp -n" মানে হলো সেই notebook-টা দেখতে চাওয়া — আর "-n" বলে দেয় "সুন্দর নাম খোঁজার জন্য সময় নষ্ট কোরো না, শুধু raw সংখ্যাগুলোই (IP) দেখাও"। এছাড়া Mininet CLI-তে যেকোনো কমান্ডের আগে host-এর নাম লিখলে (যেমন এখানে h1) সেটা ঠিক সেই host-এর ভেতরেই চলে, অন্য কোনো host-এ না।',
+    tokens: [
+      {
+        token: "h1",
+        meaning:
+          'Mininet CLI syntax — "<host> <command>" লিখলে command-টা শুধু h1-এর namespace-এর ভেতরে চলে',
+      },
+      {
+        token: "arp",
+        meaning: "ARP cache দেখা/পরিবর্তন করার command",
+      },
+      {
+        token: "-n",
+        meaning:
+          '"numeric" — hostname resolve করার চেষ্টা না করে সরাসরি সংখ্যায় IP address দেখায় (দ্রুত হয়)',
+      },
+    ],
+    tip: "⚠️ শুরুতে h1-এর ARP cache খালি থাকবে, কারণ এখনো কোনো communication হয়নি — ping করার পরই এখানে নতুন entry যোগ হবে।",
+  },
+  "arp-ping-c1": {
+    id: "arp-ping-c1",
+    command: "h1 ping -c1 10.0.0.2",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তুমি কারো বাসার দরজায় একবার মাত্র টোকা দিয়ে দেখছো সে বাসায় আছে কিনা, বারবার না দিয়ে। "ping -c1" ঠিক তাই করে — মাত্র একটা ICMP echo request পাঠিয়ে থেমে যায়। কিন্তু h1 এখনো h2-এর MAC address জানে না, তাই kernel নিজে থেকেই এই ping-এর আগে একটা ARP request পাঠিয়ে h2-এর MAC খুঁজে নেয় — ping-টা শুধু সেই ARP resolution-কে trigger করার উপলক্ষ্য।',
+    tokens: [
+      {
+        token: "h1",
+        meaning: "কোন host থেকে ping পাঠানো হচ্ছে (Mininet CLI syntax)",
+      },
+      {
+        token: "ping",
+        meaning:
+          "ICMP echo request/reply দিয়ে connectivity টেস্ট করার command",
+      },
+      {
+        token: "-c1",
+        meaning:
+          "count 1 — মাত্র ১টা echo request পাঠিয়ে থেমে যাবে (-c আর সংখ্যার মাঝে space লাগা বাধ্যতামূলক না)",
+      },
+      {
+        token: "10.0.0.2",
+        meaning: "destination IP — এখানে h2-এর address",
+      },
+    ],
+    tip: '💡 Tip: ping নিজে ARP resolve করে না — এটা শুধু kernel-কে বলে "এই IP-তে packet পাঠাও"; MAC না জানা থাকলে kernel স্বয়ংক্রিয়ভাবে একটা ARP request পাঠিয়ে সেটা resolve করে নেয়, তারপরই আসল ping যায়।',
+  },
+  "arp-ip-neigh-flush": {
+    id: "arp-ip-neigh-flush",
+    command: "h1 ip neigh flush all",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো তোমার ঠিকানার notebook-টা পুরোপুরি মুছে একদম নতুন, সাদা পাতা থেকে আবার শুরু করতে চাও। "ip neigh flush all" ঠিক সেটাই করে — h1-এর শেখা সব ARP entry (IP-to-MAC mapping) একসাথে মুছে দেয়, যাতে পরের বার communicate করার সময় আবার নতুন করে ARP resolution দেখা যায়।',
+    tokens: [
+      {
+        token: "ip",
+        meaning:
+          "modern iproute2 command suite — পুরনো net-tools (ifconfig/arp)-এর replacement",
+      },
+      {
+        token: "neigh",
+        meaning:
+          '"neighbor table" — Linux kernel-এর ভাষায় ARP cache-কেই বোঝায় (IPv6-এর neighbor discovery-ও এর অংশ)',
+      },
+      {
+        token: "flush",
+        meaning: "entry মুছে ফেলার সাব-কমান্ড",
+      },
+      {
+        token: "all",
+        meaning: "নির্দিষ্ট একটা entry না, বরং পুরো neighbor table-ই মুছে দেয়",
+      },
+    ],
+    tip: '💡 Tip: এটা পুরনো "arp -d <ip>" (একটা একটা করে entry মোছা)-এর বদলে একবারেই সব মুছে ফেলার modern উপায় — পরে `h1 arp -n` চালালে dekha jabe cache আবার খালি।',
+  },
+  "arp-ifconfig": {
+    id: "arp-ifconfig",
+    command: "h2 ifconfig",
+    category: "Software-Defined Networking",
+    story:
+      'ARP cache ঘুরিয়ে জিজ্ঞেস করার বদলে, এখানে সরাসরি h2-কে বলা হচ্ছে "তোমার নিজের ID card (interface info) দেখাও" — এতে h2-এর নিজের MAC address (HWaddr) সরাসরি দেখা যায়, অন্য host-এর ARP resolution-এর উপর নির্ভর না করেই।',
+    tokens: [
+      {
+        token: "h2",
+        meaning: "কোন host-এর interface info দেখানো হচ্ছে",
+      },
+      {
+        token: "ifconfig",
+        meaning:
+          "legacy (net-tools) network interface কনফিগারেশন/তথ্য দেখানোর command — IP, MAC (HWaddr/ether), statistics দেখায়",
+      },
+    ],
+    tip: "⚠️ ifconfig deprecated হলেও Mininet-এর light-weight host image-এ এখনো default থাকে — modern system-এ এর বদলে `ip addr` / `ip link` ব্যবহার করা হয়।",
+  },
+  "arp-s-static": {
+    id: "arp-s-static",
+    command: "h1 arp -s 10.0.0.2 <h2-mac-address>",
+    category: "Software-Defined Networking",
+    story:
+      'সাধারণত কারো বাসার নম্বর জানতে হলে আগে তাকে জিজ্ঞেস করতে হয় (ARP request/reply) — কিন্তু "arp -s" দিয়ে তুমি নিজেই সরাসরি notebook-এ একটা নম্বর স্থায়ীভাবে লিখে দিচ্ছো, কাউকে জিজ্ঞেস না করেই। এই entry আর কখনো নিজে থেকে পুরনো (expire) হয়ে যায় না, যতক্ষণ না ম্যানুয়ালি মুছে ফেলা হয়।',
+    tokens: [
+      {
+        token: "arp",
+        meaning: "ARP cache ম্যানেজ করার command",
+      },
+      {
+        token: "-s",
+        meaning:
+          '"static" — dynamic ARP resolution-এর অপেক্ষা না করে ম্যানুয়ালি একটা স্থায়ী entry যোগ করা',
+      },
+      {
+        token: "10.0.0.2",
+        meaning: "যে IP-র জন্য entry যোগ হচ্ছে",
+      },
+      {
+        token: "<h2-mac-address>",
+        meaning:
+          "সেই IP-র সাথে বেঁধে দেওয়া MAC address — আগের `h2 ifconfig` থেকে পাওয়া",
+      },
+    ],
+    tip: "💡 Interview tip: static ARP entry ARP spoofing/poisoning attack ঠেকাতে সাহায্য করতে পারে, কারণ কোনো forged ARP reply দিয়ে এই mapping overwrite করা যায় না — critical host-এর জন্য এটা একটা security practice।",
+  },
+  "arp-mn-c": {
+    id: "arp-mn-c",
+    command: "sudo mn -c",
+    category: "Software-Defined Networking",
+    story:
+      'নাটক শেষে stage crew যেমন মঞ্চের সব props/set সরিয়ে পরের শো-এর জন্য জায়গা খালি করে দেয়, "mn -c" ঠিক তেমনি আগের Mininet session-এর রেখে যাওয়া virtual switch, interface, namespace, process — সব পরিষ্কার করে ফেলে, যাতে নতুন করে পরিষ্কার মঞ্চ থেকে আরেকটা simulation শুরু করা যায়।',
+    tokens: [
+      {
+        token: "sudo",
+        meaning:
+          "kernel network namespace/interface পরিষ্কার করতে root ক্ষমতা লাগে",
+      },
+      {
+        token: "mn",
+        meaning:
+          "Mininet-এর নিজস্ব command-line utility — Python API থেকে আলাদা, সরাসরি terminal থেকে চালানো যায়",
+      },
+      {
+        token: "-c",
+        meaning:
+          '"clean" — আগের যেকোনো Mininet run-এর leftover virtual device/process মুছে ফেলে',
+      },
+    ],
+    tip: '⚠️ Tip: আগের session Ctrl-C বা crash দিয়ে বন্ধ হলে প্রায়ই পরের বার "device already exists" error আসে — তার আগেই `sudo mn -c` চালানো ভালো অভ্যাস।',
+  },
+  "vlan-ifconfig-inet-0": {
+    id: "vlan-ifconfig-inet-0",
+    command: "ifconfig h1-eth0 inet 0",
+    category: "Software-Defined Networking",
+    story:
+      'VLAN tag বসানোর আগে host-এর পুরনো "ID card" (plain IP address) ফেরত নিয়ে নিতে হয় — ঠিক যেমন কাউকে নতুন department-specific ID card দেওয়ার আগে তার পুরনো সাধারণ ID card জমা নিতে হয়। এই command দিয়ে default interface থেকে IP সরিয়ে ফেলা হচ্ছে, যাতে আসল IP শুধু পরে তৈরি হতে যাওয়া VLAN-tagged sub-interface-এই বসে।',
+    tokens: [
+      {
+        token: "ifconfig",
+        meaning: "legacy (net-tools) network interface কনফিগারেশন tool",
+      },
+      {
+        token: "h1-eth0",
+        meaning:
+          "host-এর default (parent) network interface — Mininet প্রতিটা host-কে স্বয়ংক্রিয়ভাবে এই নামে interface দেয়",
+      },
+      {
+        token: "inet 0",
+        meaning:
+          'interface-এর IPv4 address "0" সেট করা, যা কার্যত এর থেকে existing IP সরিয়ে দেয়',
+      },
+    ],
+    tip: "💡 Tip: এই তিনটা ধাপ (IP সরানো → VLAN sub-interface বানানো → নতুন interface-এ IP বসানো) একসাথেই VLANHost ক্লাসের config() method-এ স্বয়ংক্রিয়ভাবে চলে, প্রতিবার নতুন host তৈরি হওয়ার সময়।",
+  },
+  "vlan-vconfig-add": {
+    id: "vlan-vconfig-add",
+    command: "vconfig add h1-eth0 100",
+    category: "Software-Defined Networking",
+    story:
+      'ধরো একটা অফিসের envelope-এ রঙিন স্টিকার লাগিয়ে দেওয়া হয়, যাতে mail room বুঝতে পারে এটা কোন department-এর জন্য। "vconfig add" ঠিক সেই কাজটাই করে — parent interface-এর উপর একটা নতুন "VLAN sub-interface" তৈরি করে, যেটা দিয়ে বের হওয়া প্রতিটা packet স্বয়ংক্রিয়ভাবে নির্দিষ্ট VLAN ID-র ট্যাগ পরে বের হয়, যাতে switch পরে সেটা সঠিক VLAN-এ আলাদা করতে পারে।',
+    tokens: [
+      {
+        token: "vconfig",
+        meaning:
+          '802.1Q VLAN configuration utility — "vlan" package দিয়ে install হয়',
+      },
+      {
+        token: "add",
+        meaning: "নতুন একটা VLAN-tagged sub-interface তৈরি করার সাব-কমান্ড",
+      },
+      {
+        token: "h1-eth0",
+        meaning:
+          "parent/base interface, যার উপরে নতুন VLAN interface বসানো হচ্ছে",
+      },
+      {
+        token: "100",
+        meaning:
+          "VLAN ID — এই sub-interface দিয়ে যাওয়া প্রতিটা frame-এর 802.1Q tag-এ এই সংখ্যাই বসবে",
+      },
+    ],
+    tip: '💡 Tip: নতুন তৈরি হওয়া interface-এর নাম হয় "parent.vlanid" ফরম্যাটে, অর্থাৎ এখানে h1-eth0.100 — এরপরের সব কনফিগারেশন (যেমন IP বসানো) এই নতুন নামেই করতে হয়।',
+  },
+  "vlan-ifconfig-tagged-inet": {
+    id: "vlan-ifconfig-tagged-inet",
+    command: "ifconfig h1-eth0.100 inet 10.0.0.1",
+    category: "Software-Defined Networking",
+    story:
+      "VLAN-tagged sub-interface তৈরি হয়ে যাওয়ার পর, এবার তাকে একটা আসল ঠিকানা (IP) দেওয়া হচ্ছে — ঠিক যেমন কোন department-এ কেউ belong করে সেটা ঠিক হওয়ার পরই তাকে সেই department-এর ঠিকানা/room number দেওয়া হয়। এই IP থেকে পাঠানো প্রতিটা frame এখন থেকেই স্বয়ংক্রিয়ভাবে VLAN 100-এর tag নিয়ে বের হবে।",
+    tokens: [
+      {
+        token: "ifconfig",
+        meaning: "interface configuration tool",
+      },
+      {
+        token: "h1-eth0.100",
+        meaning:
+          "নতুন তৈরি হওয়া VLAN-tagged sub-interface (parent.vlanid নামে)",
+      },
+      {
+        token: "inet 10.0.0.1",
+        meaning: "এই tagged interface-এ নির্দিষ্ট IPv4 address বসানো হচ্ছে",
+      },
+    ],
+    tip: '⚠️ Tip: এই IP আর parent interface (h1-eth0)-এর কোনো সম্পর্ক নেই — parent interface-এর IP আগেই "inet 0" দিয়ে সরিয়ে ফেলা হয়েছিল, তাই সব traffic এখন শুধু tagged sub-interface দিয়েই যায়।',
+  },
+  "vlan-apt-install": {
+    id: "vlan-apt-install",
+    command: "sudo apt-get install vlan",
+    category: "Software-Defined Networking",
+    story:
+      'একজন কাঠমিস্ত্রি নির্দিষ্ট একটা কাজ করার আগে প্রথমে সেই বিশেষ hand-tool-টা কিনে আনে — "vconfig" command আর VLAN tagging ক্ষমতা by default Linux-এ থাকে না, তাই কাজ শুরুর আগে "vlan" নামের package install করে নিতে হয়।',
+    tokens: [
+      {
+        token: "sudo",
+        meaning: "system-level package install করতে root ক্ষমতা লাগে",
+      },
+      {
+        token: "apt-get install",
+        meaning:
+          "Debian/Ubuntu-এর package manager দিয়ে নতুন software install করার command",
+      },
+      {
+        token: "vlan",
+        meaning:
+          "নির্দিষ্ট package-এর নাম — এটাই vconfig utility আর 802.1Q (8021q) kernel module সাপোর্ট দেয়",
+      },
+    ],
+    tip: "⚠️ Tip: এই package install না থাকলে vlanhost.py-এর ভেতরের self.cmd('vconfig add ...') কলগুলো silently fail করবে, আর পুরো টপোলজি বানানো ভেঙে যাবে — তাই এটা সবার আগে করতে হয়।",
+  },
+  "vlan-run-topo": {
+    id: "vlan-run-topo",
+    command: "sudo python3 simulate_vlan_network.py",
+    category: "Software-Defined Networking",
+    story:
+      'এই command দিয়েই Mininet একটামাত্র switch-এর নিচে দুইটা আলাদা "department" (VLAN 100 ও VLAN 101) তৈরি করে — প্রতিটা host বানানোর সময় ভেতরে ভেতরে স্বয়ংক্রিয়ভাবে উপরের তিনটা VLAN tagging কমান্ড চলে যায়, তারপর testing-এর জন্য Mininet CLI খুলে যায়।',
+    tokens: [
+      {
+        token: "sudo",
+        meaning:
+          "virtual network device তৈরি ও vconfig/ifconfig কল করতে root ক্ষমতা লাগে",
+      },
+      {
+        token: "python3",
+        meaning: "script চালানোর জন্য Python 3 interpreter",
+      },
+      {
+        token: "simulate_vlan_network.py",
+        meaning: "VLANStarTopo import করে Mininet শুরু করা ও CLI খোলা script",
+      },
+    ],
+    tip: '💡 Tip: prompt "mininet>" হয়ে গেলে বোঝা যাবে সব host সফলভাবে তাদের VLAN tagged interface নিয়ে চালু হয়ে গেছে — এখান থেকেই connectivity টেস্ট শুরু করা যায়।',
+  },
+  "vlan-ping-c3": {
+    id: "vlan-ping-c3",
+    command: "h1_100 ping -c 3 h2_100",
+    category: "Software-Defined Networking",
+    story:
+      "একই department-এ (VLAN 100) বসা দুইজন সহকর্মী সরাসরি একে অপরকে ফোন করতে পারে — কিন্তু এই একই command যদি অন্য department-এর (VLAN 101) কাউকে ফোন করতে চায়, অফিসের internal phone system (switch) সেই call-ই connect করবে না, কোনো error ছাড়াই শুধু response আসবে না।",
+    tokens: [
+      {
+        token: "h1_100",
+        meaning:
+          'source host — নামের "_100" অংশ দিয়ে বোঝানো হচ্ছে এটা VLAN 100-এর সদস্য',
+      },
+      {
+        token: "ping",
+        meaning: "ICMP echo দিয়ে connectivity টেস্ট করার command",
+      },
+      {
+        token: "-c 3",
+        meaning:
+          "count 3 — মোট ৩টা echo request পাঠিয়ে থামবে (এখানে -c আর সংখ্যার মাঝে space আছে, উভয় ফরম্যাটই valid)",
+      },
+      {
+        token: "h2_100",
+        meaning:
+          "destination host — একই VLAN 100-এর সদস্য হলে ping succeed করে, অন্য VLAN-এর host হলে (যেমন h1_101) fail করে",
+      },
+    ],
+    tip: "⚠️ Tip: ঠিক একই command-এ শুধু destination host বদলে (h1_101) cross-VLAN পিং করলে কোনো error message আসে না — শুধু timeout/packet loss হয়, কারণ switch tagged-100 traffic কখনো tagged-101 port-এ forward করে না।",
+  },
+  "vlan-pingall": {
+    id: "vlan-pingall",
+    command: "pingall",
+    category: "Software-Defined Networking",
+    story:
+      'একের পর এক প্রতিটা জোড়া host আলাদা করে টেস্ট করার বদলে, একটা একসাথে "roll call" করে ফেলা — "pingall" network-এর প্রতিটা host-কে বাকি সবার সাথে একবার করে ping করিয়ে পুরো network-এর reachability এক নজরে দেখিয়ে দেয়।',
+    tokens: [
+      {
+        token: "pingall",
+        meaning:
+          "Mininet CLI-এর নিজস্ব built-in command (কোনো host prefix লাগে না) — network-এর প্রতিটা host জোড়ায় জোড়ায় একবার করে ping করে",
+      },
+    ],
+    tip: '💡 Tip: এই lab-এ output-এ "66% dropped (4/12 received)" দেখা গেলে এটাই প্রমাণ করে VLAN isolation ঠিকমতো কাজ করছে — শুধু same-VLAN জোড়াগুলোই (4টা) succeed করেছে, বাকি cross-VLAN জোড়াগুলো ব্লক হয়ে গেছে।',
+  },
+  "echo-append": {
+    id: "echo-append",
+    command:
+      'echo "DB_HOST=staging-db.poridhi.io" >> deploylab/configs/api.conf',
+    category: "File & Directory Management",
+    story:
+      'আগে "echo ... > file" দিয়ে শিখেছিলে কীভাবে file-এর পুরনো content মুছে নতুন করে লেখা যায়। কিন্তু এখানে একটা config file-এ একটার পর একটা line যোগ করতে হচ্ছে — প্রতিবার ">" দিলে আগের সব line মুছে যাবে! তাই ">>" ব্যবহার করা হয় — এটা একটা double arrow, যেটা বলে দেয় "আগের লেখা অক্ষত রেখে, শেষে নতুন line জুড়ে দাও", ঠিক যেমন ডায়েরির পুরনো পাতা না ছিঁড়ে পরের পাতায় নতুন entry লেখা।',
+    tokens: [
+      {
+        token: "echo",
+        meaning: "terminal-এ লেখা print করার command",
+      },
+      {
+        token: '"DB_HOST=staging-db.poridhi.io"',
+        meaning: "যে line/text টা file-এর শেষে যোগ হবে",
+      },
+      {
+        token: ">>",
+        meaning:
+          '"append" redirect operator — file-এর আগের সব content রেখে দিয়ে, শেষে নতুন line জুড়ে দেয় (file না থাকলে নতুন বানিয়ে নেয়)',
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file-এ append হবে",
+      },
+    ],
+    tip: '⚠️ খালি string append করতে চাইলে (ফাঁকা লাইন যোগ করতে) "echo "" >> file" ব্যবহার করা যায় — quote-এর ভেতরে কিছু না লিখলে শুধু একটা newline যোগ হয়।',
+  },
+  "sed-s-basic": {
+    id: "sed-s-basic",
+    command: "sed 's/staging/prod/' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'sed হচ্ছে একজন নিখুঁত proof-reader, যে একটা বই (file) না বদলেই, পড়ার সময় চোখের সামনে শব্দ বদলে দেখায়। "s/old/new/" হলো তার সবচেয়ে basic নির্দেশ — "old" শব্দটা খুঁজে "new" দিয়ে বদলে দাও। কিন্তু মনে রাখা জরুরি, এটা প্রতি লাইনে শুধু প্রথমবার যে match পাবে সেটাই বদলাবে, আর আসল file-এ কিছু লেখে না — শুধু terminal-এ ফলাফল দেখায়।',
+    tokens: [
+      {
+        token: "sed",
+        meaning:
+          '"Stream EDitor" — text stream/file line-by-line পড়ে, pattern অনুযায়ী বদলানোর command',
+      },
+      {
+        token: "'s/staging/prod/'",
+        meaning:
+          '"substitute" command — "s/খুঁজবো কী/বদলে কী বসাবো/" ফরম্যাটে লেখা হয়; "/" দিয়ে তিনটা অংশ আলাদা করা থাকে',
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file-এ pattern apply হবে",
+      },
+    ],
+    tip: '⚠️ Interview trap: "g" flag ছাড়া sed s/// প্রতি লাইনে শুধু প্রথম match-টাই বদলায়, বাকিগুলো অক্ষত থাকে — একই লাইনে একাধিক "staging" থাকলে সবগুলো বদলাতে "g" flag লাগবে।',
+  },
+  "sed-s-g": {
+    id: "sed-s-g",
+    command: "sed 's/staging/prod/g' deploylab/demo.txt",
+    category: "Text Processing",
+    story:
+      'আগের entry-তে দেখেছিলে sed প্রতি লাইনে শুধু প্রথম match বদলায়। কিন্তু demo.txt-এর একই লাইনে "staging" শব্দটা তিনবার আছে — সবগুলো বদলাতে চাইলে "g" (global) flag যোগ করতে হয়, যেটা বলে দেয় "শুধু প্রথমটা না, পুরো লাইনে যতবার পাবে ততবারই বদলাও"।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "'s/staging/prod/g'",
+        meaning:
+          '"substitute" command; শেষের "g" (global) flag — প্রতি লাইনে সব match বদলাবে, শুধু প্রথমটা না',
+      },
+      {
+        token: "deploylab/demo.txt",
+        meaning: "কোন file-এ apply হবে",
+      },
+    ],
+    tip: '💡 Tip: "g" ছাড়া sed s/// শুধু প্রথম occurrence বদলায় — একই লাইনে বারবার থাকা শব্দ পুরোপুরি বদলাতে "g" flag অবশ্যই লাগবে।',
+  },
+  "sed-line-addr": {
+    id: "sed-line-addr",
+    command: "sed '2s/staging/prod/' deploylab/configs/worker.conf",
+    category: "Text Processing",
+    story:
+      'পুরো file জুড়ে না বদলে, যদি শুধু একটা নির্দিষ্ট লাইনেই বদল করতে চাও — যেমন একটা বইয়ের শুধু ২ নম্বর পাতাতেই দাগ দেওয়া — তাহলে "s///" কমান্ডের আগে লাইন নম্বর (address) বসিয়ে দাও। "2s/.../" মানে "শুধু ২ নম্বর লাইনে এই substitution চালাও, বাকি লাইন স্পর্শও করো না"।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "2",
+        meaning:
+          "address — কোন লাইনে substitution চালানো হবে (এখানে শুধু লাইন ২)",
+      },
+      {
+        token: "s/staging/prod/",
+        meaning:
+          "address-এর পরে বসানো substitute command — শুধু ওই address-এর লাইনেই চলবে",
+      },
+      {
+        token: "deploylab/configs/worker.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: "💡 Tip: address ছাড়া sed s/// পুরো file-এর প্রতিটা লাইনে চলে; address দিলে শুধু সেই address-এ scope সীমাবদ্ধ হয়ে যায়।",
+  },
+  "sed-range-addr": {
+    id: "sed-range-addr",
+    command: "sed '4,6s/staging/prod/' deploylab/configs/worker.conf",
+    category: "Text Processing",
+    story:
+      'একটা লাইন না, বরং কয়েকটা লাইনের একটা রেঞ্জ (যেমন বইয়ের ৪ থেকে ৬ পাতা)-তেই বদল চালাতে চাইলে, দুইটা লাইন নম্বর কমা দিয়ে লিখে দাও। "4,6" মানে "৪ নম্বর লাইন থেকে ৬ নম্বর লাইন পর্যন্ত — শুধু এই রেঞ্জেই substitution চালাও"।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "4,6",
+        meaning:
+          'range address — "শুরুর লাইন,শেষের লাইন" ফরম্যাটে, এই দুই লাইনের মধ্যবর্তী (দুইটাসহ) সব লাইনে command চলবে',
+      },
+      {
+        token: "s/staging/prod/",
+        meaning: "range address-এর পরে বসানো substitute command",
+      },
+      {
+        token: "deploylab/configs/worker.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '💡 Tip: single line address (যেমন "2s/.../") আর range address ("4,6s/.../") — দুটোই একই নিয়মে কাজ করে, শুধু address অংশটা ভিন্ন।',
+  },
+  "sed-dollar-addr": {
+    id: "sed-dollar-addr",
+    command: "sed '$s/4/8/' deploylab/configs/worker.conf",
+    category: "Text Processing",
+    story:
+      'ফাইলে মোট কয়টা লাইন আছে না জেনেও, "শেষ লাইনে" বদল করতে চাইলে "$" symbol ব্যবহার করা হয় — ঠিক যেমন বইয়ের last page-কে নির্দিষ্ট number না বলে শুধু "শেষ পাতা" বলা। "$" মানে "যেটাই শেষ লাইন হোক, সেখানেই এই command চালাও"।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "$",
+        meaning: '"last line" address — ফাইলের শেষ লাইন বোঝানোর বিশেষ symbol',
+      },
+      {
+        token: "s/4/8/",
+        meaning: "শেষ লাইনে চালানো হবে এমন substitute command",
+      },
+      {
+        token: "deploylab/configs/worker.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '💡 Tip: "$" sed-এ "শেষ লাইন" বোঝায়, কিন্তু regex-এর ভেতরে (যেমন grep "poridhi.io$") এটা "লাইনের শেষ" বোঝায় — দুটো আলাদা জায়গায় ব্যবহার হলেও concept একই: "শেষ"।',
+  },
+  "sed-pattern-addr": {
+    id: "sed-pattern-addr",
+    command: "sed '/^DB_/s/staging/prod/' deploylab/configs/worker.conf",
+    category: "Text Processing",
+    story:
+      'লাইন নম্বর মুখস্থ না রেখেও, যদি "যেসব লাইন একটা নির্দিষ্ট শব্দ/pattern দিয়ে শুরু হয়" সেগুলোতেই বদল করতে চাও — regex pattern-কেই address বানানো যায়। "/^DB_/" মানে "যে লাইন DB_ দিয়ে শুরু হয়েছে" — sed শুধু সেই লাইনগুলো বেছে নিয়ে তাতেই substitution চালাবে।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "/^DB_/",
+        meaning:
+          'pattern address — regex দিয়ে বলে দেয় কোন লাইনগুলোতে command চলবে ("^" মানে লাইনের শুরু, তাই এটা "DB_ দিয়ে শুরু হওয়া লাইন" বোঝায়)',
+      },
+      {
+        token: "s/staging/prod/",
+        meaning: "pattern address-এর পরে বসানো substitute command",
+      },
+      {
+        token: "deploylab/configs/worker.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '💡 Tip: লাইন নম্বর (2, 4,6) আর pattern ("/^DB_/") — দুটোই sed-এর address, শুধু একটা fixed position বোঝায় আরেকটা content-ভিত্তিক বাছাই করে।',
+  },
+  "sed-d-prefix": {
+    id: "sed-d-prefix",
+    command: "sed '/^DEBUG=/d' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'কখনো পুরো একটা লাইনই ফেলে দিতে হয়, বদলানো না — যেমন একটা draft থেকে একটা পুরো paragraph কেটে ফেলা। "d" (delete) command ঠিক সেটাই করে। "/^DEBUG=/d" মানে "যে লাইন DEBUG= দিয়ে শুরু, সেই পুরো লাইনটাই বাদ দাও"।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "/^DEBUG=/",
+        meaning: '"DEBUG=" দিয়ে শুরু হওয়া লাইন বেছে নেওয়া pattern address',
+      },
+      {
+        token: "d",
+        meaning:
+          '"delete" command — address-এ match করা লাইনটা সম্পূর্ণ বাদ দিয়ে দেয়',
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '⚠️ Interview tip: "s///" বদলায় (আংশিক পরিবর্তন), "d" পুরো লাইনটাই উড়িয়ে দেয় — দুটো সম্পূর্ণ আলাদা কাজ, একই address-syntax দিয়ে ব্যবহার করা যায়।',
+  },
+  "sed-d-blank": {
+    id: "sed-d-blank",
+    command: "sed '/^$/d' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'config file-এ readability-র জন্য রাখা ফাঁকা (blank) লাইনগুলো অনেক সময় processing-এর আগে সরিয়ে ফেলতে হয়। "^$" একটা বিশেষ regex — "^" (লাইনের শুরু) আর "$" (লাইনের শেষ) পাশাপাশি বসালে মানে দাঁড়ায় "শুরু আর শেষের মাঝে কিছুই নেই" — অর্থাৎ পুরোপুরি ফাঁকা লাইন।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "/^$/",
+        meaning:
+          '"^" (শুরু) আর "$" (শেষ) একসাথে বসিয়ে সম্পূর্ণ ফাঁকা লাইন বোঝানো pattern address',
+      },
+      {
+        token: "d",
+        meaning: "delete command — match করা (ফাঁকা) লাইন বাদ দেয়",
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '💡 Tip: "^$" regex-এর একটা খুব common idiom — "blank line" বোঝাতে প্রায় সব tool-এই (grep, sed, awk) এটা একইভাবে কাজ করে।',
+  },
+  "sed-d-comment": {
+    id: "sed-d-comment",
+    command: "sed '/^#/d' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'config file-এর "#" দিয়ে শুরু হওয়া লাইনগুলো সাধারণত মানুষের জন্য লেখা comment/note — program এগুলো পড়ে না। deploy করার আগে এই "noise" সরিয়ে শুধু আসল config রাখতে "/^#/d" ব্যবহার হয় — "#" দিয়ে শুরু হওয়া প্রতিটা লাইন বাদ।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "/^#/",
+        meaning:
+          '"#" দিয়ে শুরু হওয়া (comment) লাইন বেছে নেওয়া pattern address',
+      },
+      {
+        token: "d",
+        meaning: "delete command",
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '💡 Tip: এই একই "/pattern/d" idiom দিয়েই আগের দুই entry-তে blank line আর নির্দিষ্ট prefix-এর লাইন বাদ দিয়েছিলে — শুধু pattern-টাই বদলায়, mechanism একই থাকে।',
+  },
+  "sed-n-p": {
+    id: "sed-n-p",
+    command: "sed -n '/^#/p' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'sed default ভাবে প্রতিটা লাইন auto-print করে (তুমি বদল করো বা না করো)। "-n" দিলে সেই auto-print বন্ধ হয়ে যায় — তখন "p" (print) command ছাড়া কিছুই দেখা যাবে না। এভাবে "-n" + pattern address + "p" মিলিয়ে শুধু match হওয়া লাইনগুলোই বেছে বেছে দেখানো যায় — অনেকটা grep-এর মতো, কিন্তু sed দিয়ে।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "-n",
+        meaning:
+          '"no-autoprint" — sed-এর default (প্রতি লাইন auto-print করা) আচরণ বন্ধ করে দেয়',
+      },
+      {
+        token: "/^#/p",
+        meaning:
+          '"#" দিয়ে শুরু হওয়া লাইন বেছে "p" (print) দিয়ে explicitly print করা',
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: '⚠️ Interview trap: "-n" ছাড়া "sed \\\'/pattern/p\\\' file" চালালে match হওয়া লাইনগুলো দুইবার দেখাবে (একবার auto-print থেকে, একবার "p" থেকে) — তাই "-n" ছাড়া "p" ব্যবহার করলে duplicate output হয়, এটা খুব common ভুল।',
+  },
+  "sed-pipe-sed": {
+    id: "sed-pipe-sed",
+    command:
+      "sed 's/staging/prod/g' deploylab/configs/worker.conf | sed -n '/prod/p'",
+    category: "Text Processing",
+    story:
+      'একটা sed একসাথে দুইটা কাজ (বদলানো আর filter করা) সবসময় সহজে করতে পারে না — তাই দুইটা sed-কে pipe দিয়ে চেইন করা হয়: প্রথম sed পুরো file-এ "staging"-কে "prod" বদলে দেয়, তারপর সেই বদলানো output দ্বিতীয় sed-এর কাছে যায়, যে শুধু "prod" থাকা লাইনগুলোই filter করে দেখায়।',
+    tokens: [
+      {
+        token: "sed 's/staging/prod/g'",
+        meaning:
+          'প্রথম sed — পুরো file-এ সব "staging"-কে "prod" দিয়ে বদলে stdout-এ output দেয়',
+      },
+      {
+        token: "|",
+        meaning:
+          "pipe — প্রথম sed-এর output সরাসরি দ্বিতীয় sed-এর input হিসেবে পাঠায়",
+      },
+      {
+        token: "sed -n '/prod/p'",
+        meaning:
+          'দ্বিতীয় sed — আগের output-এর মধ্যে থেকে শুধু "prod" থাকা লাইনগুলো filter করে দেখায়',
+      },
+    ],
+    tip: "💡 Tip: এভাবে একাধিক sed/grep/awk কে pipe দিয়ে চেইন করা Linux-এর একটা মূল দর্শন — প্রতিটা tool একটা ছোট কাজ ভালোভাবে করে, আর pipe দিয়ে জোড়া লাগিয়ে জটিল কাজ করা হয়।",
+  },
+  "sed-i-g": {
+    id: "sed-i-g",
+    command: "sed -i 's/staging/prod/g' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'এতক্ষণ sed শুধু terminal-এ বদলানো output দেখাচ্ছিল, আসল file-টা অক্ষতই ছিল। কিন্তু "-i" (in-place) flag দিলে sed নিজেই file-টা সরাসরি edit করে ফেলে — ঠিক যেমন একটা document-এ "Find & Replace" চেপে সরাসরি save করে ফেলা, আলাদা করে আর "Save As" করতে হয় না।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "-i",
+        meaning:
+          '"in-place" — output terminal-এ না দেখিয়ে, সরাসরি file-টাই edit করে ফেলে',
+      },
+      {
+        token: "'s/staging/prod/g'",
+        meaning:
+          '"staging"-এর সব occurrence "prod" দিয়ে বদলে দেওয়া substitute command',
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file সরাসরি edit হবে",
+      },
+    ],
+    tip: '⚠️ Interview tip: "-i" মানে আসল file চিরস্থায়ীভাবে বদলে যাচ্ছে — এই flag ব্যবহারের আগে সবসময় একবার "-i" ছাড়া চালিয়ে output যাচাই করে নেওয়া ভালো অভ্যাস, নাহলে ভুল substitution-এ original data হারানোর ঝুঁকি থাকে।',
+  },
+  "sed-i-multi-delete": {
+    id: "sed-i-multi-delete",
+    command:
+      "sed -i '/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d' deploylab/configs/api.conf",
+    category: "Text Processing",
+    story:
+      'একটার পর একটা sed command আলাদা করে না চালিয়ে, সেমিকোলন (;) দিয়ে একাধিক command একসাথে এক sed call-এ চালানো যায় — ঠিক যেমন একটা checklist-এর চারটা কাজ একসাথে শেষ করা। এখানে DEBUG=, LOG_LEVEL= দিয়ে শুরু হওয়া লাইন, blank লাইন, আর comment লাইন — চারটাই এক কমান্ডে, "-i" দিয়ে সরাসরি file থেকে মুছে ফেলা হচ্ছে।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "-i",
+        meaning: "in-place — সরাসরি file edit করে",
+      },
+      {
+        token: ";",
+        meaning: "সেমিকোলন — একাধিক sed expression-কে একই কমান্ডে আলাদা করে",
+      },
+      {
+        token: "/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d",
+        meaning:
+          "চারটা আলাদা delete expression — যথাক্রমে DEBUG= দিয়ে শুরু, LOG_LEVEL= দিয়ে শুরু, ফাঁকা, আর comment লাইন বাদ দেয়",
+      },
+      {
+        token: "deploylab/configs/api.conf",
+        meaning: "কোন file",
+      },
+    ],
+    tip: "💡 Tip: সেমিকোলনের বদলে প্রতিটা expression-এর আগে আলাদা \"-e\" flag দিয়েও (sed -e '...' -e '...') একই কাজ করা যায় — দুটোই সমান valid, সেমিকোলন শুধু সংক্ষিপ্ত।",
+  },
+  "sed-i-glob": {
+    id: "sed-i-glob",
+    command: "sed -i 's/staging/prod/g' deploylab/configs/*.conf",
+    category: "Text Processing",
+    story:
+      'একটা একটা করে তিনটা file-এ আলাদা sed command না চালিয়ে, shell-এর wildcard "*" ব্যবহার করে এক কমান্ডেই configs/ folder-এর সবগুলো .conf file-এ (api, worker, scheduler) substitution চালানো হচ্ছে — "-i" থাকায় প্রতিটা file সরাসরি edit হয়ে যাবে।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "-i",
+        meaning: "in-place edit flag",
+      },
+      {
+        token: "'s/staging/prod/g'",
+        meaning: "global substitute command",
+      },
+      {
+        token: "deploylab/configs/*.conf",
+        meaning:
+          '"*" wildcard — configs/ folder-এর ভেতরের যেকোনো নামের .conf file; shell নিজেই এটাকে তিনটা আলাদা filename-এর list-এ বদলে sed-কে দেয়',
+      },
+    ],
+    tip: '⚠️ Interview tip: এখানে "*.conf" wildcard-টা shell নিজেই expand করে — sed নিজে multiple file বোঝে না, সে শুধু একের পর এক filename argument পায় আর প্রতিটায় আলাদাভাবে "-i" দিয়ে edit করে।',
+  },
+  "sed-i-multi-glob": {
+    id: "sed-i-multi-glob",
+    command:
+      "sed -i '/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d' deploylab/configs/*.conf",
+    category: "Text Processing",
+    story:
+      "আগের দুইটা concept একসাথে — একাধিক delete-pattern (সেমিকোলন দিয়ে চেইন করা) আর wildcard দিয়ে একাধিক file, দুটোই মিলিয়ে, এক কমান্ডেই configs/ folder-এর সবগুলো .conf file থেকে DEBUG=, LOG_LEVEL=, blank, আর comment লাইন মুছে ফেলা হচ্ছে।",
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "-i",
+        meaning: "in-place edit flag",
+      },
+      {
+        token: "/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d",
+        meaning: "সেমিকোলন দিয়ে জোড়া চারটা delete expression",
+      },
+      {
+        token: "deploylab/configs/*.conf",
+        meaning: "wildcard দিয়ে একসাথে সবগুলো .conf file",
+      },
+    ],
+    tip: "💡 Tip: এটা পুরো লাবে শেখা সব concept-এর মিলন — address, delete, chaining (;), in-place (-i), আর wildcard — সবগুলো একসাথে একটা real-world bulk-cleanup কমান্ডে ব্যবহার হচ্ছে।",
+  },
+  "wc-l-multi": {
+    id: "wc-l-multi",
+    command: "wc -l ~/regexlab/contacts.txt ~/regexlab/events.log",
+    category: "Search",
+    story:
+      'একটা না, দুইটা ফাইলের লাইন সংখ্যা একসাথে জানতে চাইলে "wc -l"-কে একাধিক filename দেওয়া যায় — এটা প্রতিটা file-এর জন্য আলাদা করে লাইন সংখ্যা দেখায়, আর সবশেষে দুটোর যোগফল (total) একটা আলাদা লাইনে দেখিয়ে দেয়, ঠিক যেমন একাধিক রসিদ একসাথে ধরলে একটা grand total বের হয়।',
+    tokens: [
+      {
+        token: "wc",
+        meaning: "word count command",
+      },
+      {
+        token: "-l",
+        meaning: "শুধু লাইন সংখ্যা গোনো",
+      },
+      {
+        token: "~/regexlab/contacts.txt ~/regexlab/events.log",
+        meaning:
+          'একাধিক filename — space দিয়ে আলাদা করে দিলে প্রতিটার জন্য আলাদা count, এবং শেষে "total" লাইন দেখায়',
+      },
+    ],
+    tip: "💡 Tip: single file দিলে শুধু একটা সংখ্যা দেখায়, কিন্তু একাধিক file দিলে প্রতিটার count-এর পাশে filename-ও দেখায়, আর শেষে combined total — দ্রুত বোঝা যায় কোন ফাইল কত বড়।",
+  },
+  "grep-E-dot": {
+    id: "grep-E-dot",
+    command: 'grep -E "lo.ged" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      'Regular expression-এ "." (dot) মানে "যেকোনো একটা character" (letter, digit, space — যাই হোক)। এখানে "lo.ged" মানে "lo", তারপর যেকোনো একটা character, তারপর "ged" — এটা "logged" শব্দের ঠিক মাঝের "g"-এর জায়গাটা একটা wildcard slot বানিয়ে দিচ্ছে, যাতে সামান্য বানান-ভিন্নতাও ধরা পড়ে।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning:
+          '"Extended regex" — এই flag দিলে grep বেশি শক্তিশালী regex metacharacter ( +, ?, |, {} ইত্যাদি) সরাসরি বুঝতে পারে, backslash দিয়ে escape করতে হয় না',
+      },
+      {
+        token: '"lo.ged"',
+        meaning:
+          '"." মানে "ঠিক একটা, যেকোনো character" — তাই এই pattern "lo" + (যেকোনো ১টা char) + "ged" এর সাথে match করবে',
+      },
+    ],
+    tip: '⚠️ Interview trap: "." নিজে একটা literal dot বোঝায় না — এটা "যেকোনো একটা character" বোঝায়। literal dot খুঁজতে হলে escape করতে হয়: "\\."।',
+  },
+  "grep-E-star": {
+    id: "grep-E-star",
+    command: 'grep -E "ERROR.*failed" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      '".*" মানে "zero বা তার বেশি যেকোনো character" — মাঝে কতটুকু আর কী আছে তা নিয়ে grep মাথা ঘামায় না। "ERROR.*failed" মানে "লাইনে কোথাও ERROR আছে, আর তার পরে (মাঝে যত কম-বেশি লেখাই থাকুক না কেন) কোথাও failed আছে" — মাঝে যতই অন্য শব্দ থাকুক, দুইটা শব্দ একটার পরে আরেকটা থাকলেই match।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: '"ERROR.*failed"',
+        meaning:
+          '"." = যেকোনো ১টা character, "*" = আগেরটা শূন্য বা তার বেশি বার — একসাথে ".*" মানে "মাঝে যেকোনো কিছু (এমনকি কিছুই না)"',
+      },
+    ],
+    tip: '💡 Tip: ".*" খুবই common কিন্তু "greedy" — এটা যতদূর সম্ভব বেশি match করার চেষ্টা করে, যা অনেক সময় প্রত্যাশার চেয়ে বেশি অংশ ধরে ফেলতে পারে।',
+  },
+  "grep-E-caret": {
+    id: "grep-E-caret",
+    command: 'grep -E "^Alice" ~/regexlab/contacts.txt',
+    category: "Text Processing",
+    story:
+      '"^" symbol regex-এ লাইনের একদম "শুরু" বোঝায়। "^Alice" মানে "Alice" শব্দটা লাইনের মাঝখানে বা শেষে থাকলে চলবে না — এটা লাইনের একদম প্রথম অক্ষর থেকেই "Alice" দিয়ে শুরু হতে হবে, ঠিক যেমন কারো নাম একটা attendance list-এর প্রথম position-এ খোঁজা।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: '"^Alice"',
+        meaning:
+          '"^" = লাইনের শুরু বোঝানোর anchor; তাই এই pattern শুধু "Alice" দিয়ে শুরু হওয়া লাইনের সাথে match করবে',
+      },
+    ],
+    tip: '⚠️ Interview tip: "^" আর "$" কে "anchor" বলা হয় — এরা নিজেরা কোনো character match করে না, বরং position (শুরু/শেষ) নির্দেশ করে।',
+  },
+  "grep-E-dollar-escaped": {
+    id: "grep-E-dollar-escaped",
+    command: 'grep -E "poridhi\\.io$" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      '"$" symbol লাইনের "শেষ" বোঝায় — "^" যেমন শুরু বোঝায়, এটা ঠিক তার বিপরীত। আর এখানে "." কে backslash ("\\.") দিয়ে escape করা হয়েছে, কারণ আগে শিখেছিলে "." মানে "যেকোনো character" — কিন্তু এখানে ঠিক literal dot-ই (ডট চিহ্নটাই) খোঁজা দরকার, তাই escape করে বলা হচ্ছে "এটা wildcard না, আসল dot"।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: '"poridhi\\.io$"',
+        meaning:
+          '"\\." = literal dot (escape করা, wildcard না); "$" = লাইনের শেষ anchor — একসাথে মানে লাইনটা ঠিক "poridhi.io" দিয়েই শেষ হতে হবে',
+      },
+    ],
+    tip: '⚠️ এই লাবের সবচেয়ে common ভুল: "." কে escape না করা। "poridhi.io" (escape ছাড়া) লিখলে সেটা "poridhiXio" (যেকোনো character X)-এর সাথেও match করে ফেলবে — ভুলভাবে বেশি কিছু ধরে ফেলার ঝুঁকি থাকে।',
+  },
+  "grep-E-charclass": {
+    id: "grep-E-charclass",
+    command: 'grep -E "[0-9]%" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      '"[0-9]" একটা character class — মানে "0 থেকে 9-এর মধ্যে যেকোনো একটা digit"। এটা অনেকটা একটা "বাস্কেটের" মতো, যার ভেতরে যেকোনো একটা জিনিস (এখানে একটা digit) থাকলেই match গণনা হবে। "[0-9]%" মানে "একটা digit-এর ঠিক পরেই % চিহ্ন" — যেমন "85%"।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "[0-9]",
+        meaning:
+          "character class — 0 থেকে 9 পর্যন্ত যেকোনো একটা digit-কে বোঝায়",
+      },
+      {
+        token: "%",
+        meaning:
+          "literal percent character (কোনো বিশেষ regex মানে নেই, সরাসরি % চিহ্নই খোঁজে)",
+      },
+    ],
+    tip: '💡 Tip: "[0-9]" standard grep-এ digit বোঝানোর সবচেয়ে common উপায় ("[[:digit:]]"-ও একই কাজ করে)।',
+  },
+  "grep-E-negated-class": {
+    id: "grep-E-negated-class",
+    command: 'grep -E "@[^p]" ~/regexlab/contacts.txt',
+    category: "Text Processing",
+    story:
+      '"[^p]" মানে "p ছাড়া যেকোনো একটা character" — "^" এখানে character class-এর ভেতরে বসলে "না" (negation) বোঝায়, লাইনের শুরু না। "@[^p]" মানে "@ চিহ্নের ঠিক পরের character যেন p না হয়" — অর্থাৎ যাদের email "poridhi.io" domain-এ (@p দিয়ে শুরু) না, সেই বাইরের email গুলো ধরা।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "@",
+        meaning: 'literal "@" character',
+      },
+      {
+        token: "[^p]",
+        meaning:
+          '"^" এখানে class-এর ভেতরে প্রথমে বসায় "p বাদে অন্য যেকোনো character" বোঝানো negated character class',
+      },
+    ],
+    tip: '⚠️ Interview trap: "^" দুই জায়গায় দুই রকম মানে বহন করে — লাইনের বাইরে থাকলে "anchor" (লাইনের শুরু), আর "[...]"-এর ভেতরে প্রথম character হলে "negation" (না)। এই দুইটা গুলিয়ে ফেলা common ভুল।',
+  },
+  "grep-E-plus-ip": {
+    id: "grep-E-plus-ip",
+    command:
+      'grep -E "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      'একটা IP address (যেমন 192.168.1.10) চারটা সংখ্যার দল, প্রতিটা দলের ডিজিটের সংখ্যা ভিন্ন হতে পারে, আর মাঝে literal dot দিয়ে আলাদা। "[0-9]+" মানে "এক বা তার বেশি digit" (একটা না হয়ে, পুরো দল ধরবে), আর এই পুরো প্যাটার্নটা চারবার (মাঝে escape করা dot সহ) পাশাপাশি বসিয়ে পুরো IP shape বোঝানো হয়েছে।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "[0-9]+",
+        meaning:
+          '"+" quantifier — আগের character class ("[0-9]") এক বা তার বেশি বার থাকতে পারবে (শুধু একটা digit না, পুরো সংখ্যা)',
+      },
+      {
+        token: "\\.",
+        meaning: "escape করা literal dot",
+      },
+    ],
+    tip: '💡 Tip: এই pattern একদম perfect IP-validation না (255-এর বেশি সংখ্যাও match করবে) — শুধু "shape" (চারটা number group dot দিয়ে আলাদা) মেলায়, actual validity check না।',
+  },
+  "grep-E-optional": {
+    id: "grep-E-optional",
+    command: 'grep -E "\\(?555" ~/regexlab/contacts.txt',
+    category: "Text Processing",
+    story:
+      'কারো phone number area code বন্ধনীতে আছে "(555)", কারো নেই, শুধু "555"। "?" quantifier মানে "আগের character থাকতেও পারে, নাও থাকতে পারে (০ অথবা ১ বার)"। "\\(?555" মানে "একটা opening bracket থাকতে পারে অথবা নাও থাকতে পারে, তারপরই 555" — দুই রকম format-ই একসাথে ধরা পড়ে যায়।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "\\(?",
+        meaning:
+          'escape করা literal "(" + "?" quantifier — এই bracket থাকা আর না-থাকা দুটোই match করবে (optional)',
+      },
+      {
+        token: "555",
+        meaning: "literal সংখ্যা — এরপর থেকেই phone number শুরু",
+      },
+    ],
+    tip: '💡 Tip: "?" quantifier "একটা জিনিস optional" বোঝাতে খুবই useful — যখন data-তে একই জিনিসের দুই রকম format থাকতে পারে, তখন একটা pattern দিয়েই দুটোই ধরা যায়।',
+  },
+  "grep-E-interval": {
+    id: "grep-E-interval",
+    command: 'grep -E "[A-Z]{5}" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      'severity level-গুলোর শব্দের length ভিন্ন — INFO (৪ অক্ষর), WARN (৪ অক্ষর), ERROR (৫ অক্ষর)। "{5}" quantifier দিয়ে ঠিক exactly ৫টা uppercase letter পরপর আছে এমন জায়গা খোঁজা হচ্ছে, যা শুধু "ERROR"-কেই আলাদা করে ধরে ফেলবে — অন্য কোনো flag/substring ছাড়াই, শুধু length দিয়ে বাছাই।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "[A-Z]",
+        meaning:
+          "character class — A থেকে Z পর্যন্ত যেকোনো একটা uppercase letter",
+      },
+      {
+        token: "{5}",
+        meaning: "exact-count quantifier — ঠিক আগেরটা ৫ বার পরপর থাকতে হবে",
+      },
+    ],
+    tip: '💡 Tip: "{n}" দিয়ে exact count, "{n,}" দিয়ে "কমপক্ষে n বার", আর "{n,m}" দিয়ে "n থেকে m বারের মধ্যে" বোঝানো যায় — এগুলো সবই "interval" quantifier পরিবারের সদস্য।',
+  },
+  "grep-E-alternation": {
+    id: "grep-E-alternation",
+    command: 'grep -E "WARN|ERROR" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      '"|" (pipe symbol regex-এর ভেতরে) মানে "OR" — এটা বা ওটা, দুটোর যেকোনো একটা match করলেই চলবে। "WARN|ERROR" মানে "যে লাইনে WARN আছে, অথবা যে লাইনে ERROR আছে — দুই ধরনের লাইনই দেখাও"।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: '"WARN|ERROR"',
+        meaning:
+          '"|" = alternation (OR) — দুইটা pattern-এর মধ্যে যেকোনো একটা match করলেই যথেষ্ট',
+      },
+    ],
+    tip: '⚠️ Interview tip: এখানে "|" terminal-এর pipe operator না — regex-এর ভেতরে "|" আলাদা জিনিস বোঝায় (OR), আর command-এর মাঝে quote-এর বাইরের "|" pipe operator বোঝায়। Context অনুযায়ী মানে বদলায়।',
+  },
+  "grep-E-group-alternation": {
+    id: "grep-E-group-alternation",
+    command: 'grep -E "@(gmail|yahoo|outlook)\\." ~/regexlab/contacts.txt',
+    category: "Text Processing",
+    story:
+      '"()" দিয়ে কয়েকটা option-কে একসাথে group করা যায়, যাতে alternation ("|") শুধু সেই group-এর ভেতরেই কাজ করে। "@(gmail|yahoo|outlook)\\." মানে "@ চিহ্নের পরে gmail অথবা yahoo অথবা outlook — এই তিনটার যেকোনো একটা, তারপর একটা literal dot" — তিনটা আলাদা pattern না লিখে একটাতেই সব কভার হয়ে যায়।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "()",
+        meaning: '"|" (OR)-এর scope-কে সীমাবদ্ধ রাখা grouping',
+      },
+      {
+        token: "gmail|yahoo|outlook",
+        meaning: "group-এর ভেতরে তিনটা option, যেকোনো একটা match করলেই চলবে",
+      },
+      {
+        token: "\\.",
+        meaning: "group-এর পরের literal (escaped) dot",
+      },
+    ],
+    tip: '💡 Tip: group ছাড়া শুধু "@gmail|yahoo|outlook" লিখলে পুরো pattern-টাই ভুল হয়ে যেত — "@gmail" OR "yahoo" OR "outlook" (পুরো আলাদা তিনটা pattern) হয়ে যেত, "@" শুধু প্রথম অংশে থাকতো। "()" দিয়ে group করাটাই এটাকে সঠিক করে।',
+  },
+  "grep-pipe-grep-vE": {
+    id: "grep-pipe-grep-vE",
+    command:
+      'grep "failed login" ~/regexlab/events.log | grep -vE "from (192\\.168|10\\.0)\\."',
+    category: "Text Processing",
+    story:
+      'দুই ধাপে filter করা হচ্ছে — প্রথম grep দিয়ে শুধু "failed login" থাকা লাইনগুলো বের করা হলো, তারপর সেই ফলাফল দ্বিতীয় grep-এ pipe করা হলো, যেটা internal network IP (192.168.x বা 10.0.x) থেকে আসা লাইনগুলো "-v" দিয়ে বাদ দিয়ে দিচ্ছে — শেষে শুধু বাইরের (external) network থেকে আসা failed login থেকে যাচ্ছে।',
+    tokens: [
+      {
+        token: 'grep "failed login" events.log',
+        meaning: "প্রথম ধাপ — শুধু failed login লাইনগুলো বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe — প্রথম grep-এর output দ্বিতীয় grep-এর input হয়",
+      },
+      {
+        token: 'grep -vE "from (192\\.168|10\\.0)\\."',
+        meaning:
+          '"-v" (invert) দিয়ে internal IP prefix দিয়ে শুরু হওয়া লাইনগুলো বাদ দেয়, "-E" দিয়ে group+alternation regex ব্যবহার করা হয়েছে',
+      },
+    ],
+    tip: '💡 Tip: "-v" (invert) আর alternation "(a|b)" একসাথে ব্যবহার করে "এই দুইটার কোনোটাই না" টাইপের শর্ত সহজে লেখা যায় — দুটো আলাদা grep -v আলাদা করে না লিখে।',
+  },
+  "sed-E-backreference-preview": {
+    id: "sed-E-backreference-preview",
+    command:
+      "sed -E 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\\3-\\2-\\1/' ~/regexlab/events.log | head -n 3",
+    category: "Text Processing",
+    story:
+      '"()" দিয়ে regex-এর অংশগুলোকে "capture group" বানানো যায় — year, month, day আলাদা আলাদা group-এ ধরে রাখা হচ্ছে। তারপর replacement অংশে "\\1", "\\2", "\\3" দিয়ে সেই group গুলোকে উল্টো ক্রমে (day-month-year) আবার বসানো হচ্ছে — তিনটা পাজল-টুকরা আলাদা করে তুলে নিয়ে উল্টো ক্রমে আবার জোড়া লাগানোর মতো। পুরো file না দেখিয়ে শেষে "head -n 3" দিয়ে শুধু প্রথম ৩ লাইন preview হিসেবে দেখানো হচ্ছে।',
+    tokens: [
+      {
+        token: "sed -E",
+        meaning:
+          "extended regex mode — capture group ()-কে backslash ছাড়াই লেখা যায়",
+      },
+      {
+        token: "([0-9]{4})-([0-9]{2})-([0-9]{2})",
+        meaning:
+          "তিনটা capture group — যথাক্রমে ৪-digit year, ২-digit month, ২-digit day, মাঝে literal dash দিয়ে আলাদা",
+      },
+      {
+        token: "\\3-\\2-\\1",
+        meaning:
+          'replacement অংশ — "\\N" দিয়ে N-নম্বর capture group-এর মান বসানো হয়; এখানে group ৩ (day), ২ (month), ১ (year) ক্রমে বসিয়ে DD-MM-YYYY বানানো হয়েছে',
+      },
+      {
+        token: "| head -n 3",
+        meaning:
+          "পুরো output না দেখিয়ে শুধু প্রথম ৩ লাইন preview হিসেবে দেখায়",
+      },
+    ],
+    tip: '⚠️ Interview tip: "head -n 3" দিয়ে এখানে শুধু preview দেখানো হচ্ছে, আসল file-এ কিছু বদলাচ্ছে না — "-i" flag ছাড়া sed সবসময় শুধু output দেখায়, file touch করে না।',
+  },
+  "sed-E-i-backreference": {
+    id: "sed-E-i-backreference",
+    command:
+      "sed -E -i 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\\3-\\2-\\1/' ~/regexlab/events.log",
+    category: "Text Processing",
+    story:
+      'আগের কমান্ডে শুধু preview দেখানো হয়েছিল ("head -n 3" দিয়ে), এখন ঠিক একই capture-group logic ব্যবহার করে, কিন্তু "-i" যোগ করে সরাসরি file-টাই স্থায়ীভাবে বদলে ফেলা হচ্ছে — পুরো events.log-এর date ফরম্যাট YYYY-MM-DD থেকে DD-MM-YYYY-তে চিরস্থায়ীভাবে বদলে যাচ্ছে।',
+    tokens: [
+      {
+        token: "sed -E -i",
+        meaning: "extended regex mode + in-place edit, একসাথে",
+      },
+      {
+        token: "s/([0-9]{4})-([0-9]{2})-([0-9]{2})/\\3-\\2-\\1/",
+        meaning:
+          "আগের মতোই capture group দিয়ে date-এর অংশ ধরে উল্টো ক্রমে বসানো হচ্ছে",
+      },
+      {
+        token: "~/regexlab/events.log",
+        meaning: "কোন file সরাসরি edit হবে",
+      },
+    ],
+    tip: '⚠️ Interview tip: "-E" আর "-i" flag-এর ক্রম (sed -E -i বা sed -i -E) কোনো ফারাক আনে না — দুটোই independent flag, কিন্তু দুটোই একসাথে থাকা দরকার (একটা regex syntax-এর জন্য, আরেকটা file সরাসরি বদলানোর জন্য)।',
+  },
+  "awk-match-regex": {
+    id: "awk-match-regex",
+    command: "awk -F',' 'NR>1 && $2 ~ /poridhi\\.io$/' ~/regexlab/contacts.txt",
+    category: "Text Processing",
+    story:
+      'awk-এর নিজস্ব একটা regex-match operator আছে: "~"। "$2 ~ /poridhi\\.io$/" মানে "ফিল্ড ২ (email)-এর ভেতরে poridhi.io দিয়ে শেষ হওয়া pattern আছে কিনা চেক করো"। এখানে {print} ব্লক লেখা হয়নি — awk-এ condition সত্যি হলে এবং কোনো action/{} না দিলে, ডিফল্ট আচরণ হলো পুরো লাইনটাই print করে দেওয়া।',
+    tokens: [
+      {
+        token: "awk -F','",
+        meaning: "field separator কমা সেট করা",
+      },
+      {
+        token: "NR>1",
+        meaning: "header লাইন (লাইন ১) বাদ দেওয়া",
+      },
+      {
+        token: "$2 ~ /poridhi\\.io$/",
+        meaning:
+          '"~" হলো awk-এর regex-match operator; এখানে ফিল্ড ২ (email)-এর মান "poridhi.io" দিয়ে শেষ হচ্ছে কিনা regex দিয়ে চেক করা হচ্ছে',
+      },
+    ],
+    tip: '💡 Tip: কোনো {action} ব্লক না দিলে awk ধরে নেয় তুমি চাও "condition সত্যি হলে পুরো লাইন print করো" — এটাই awk-এর default behavior, grep-এর মতোই আচরণ করে।',
+  },
+  "awk-not-match-regex": {
+    id: "awk-not-match-regex",
+    command:
+      "awk -F',' 'NR>1 && $2 !~ /poridhi\\.io$/' ~/regexlab/contacts.txt",
+    category: "Text Processing",
+    story:
+      'আগের entry-র "~" এর ঠিক উল্টো — "!~" মানে "match করে না"। "$2 !~ /poridhi\\.io$/" মানে "ফিল্ড ২ (email) poridhi.io দিয়ে শেষ হচ্ছে না এমন লাইন বাছো" — অর্থাৎ company domain বাদে বাইরের (external) email থাকা কর্মীদের বের করা।',
+    tokens: [
+      {
+        token: "awk -F','",
+        meaning: "field separator কমা",
+      },
+      {
+        token: "NR>1",
+        meaning: "header বাদ",
+      },
+      {
+        token: "$2 !~ /poridhi\\.io$/",
+        meaning:
+          '"!~" = negated regex-match — ফিল্ড ২ pattern-টার সাথে match করে না এমন লাইন বাছে',
+      },
+    ],
+    tip: '💡 Tip: "~" আর "!~" — grep আর grep -v-এর awk সংস্করণ — একই logic, শুধু নির্দিষ্ট ফিল্ডের ওপর apply হয়, পুরো লাইনে না।',
+  },
+  "grep-E-interval-range": {
+    id: "grep-E-interval-range",
+    command: 'grep -E "[0-9]{1,3}$" ~/regexlab/events.log',
+    category: "Text Processing",
+    story:
+      '"{1,3}" মানে "কমপক্ষে ১টা, বেশি হলে ৩টা পর্যন্ত" — একটা range। "[0-9]{1,3}$" মানে "লাইনের একদম শেষে ১ থেকে ৩ digit-এর একটা ছোট সংখ্যা আছে" — যেমন "120ms"-এর "120" অংশ, কিন্তু IP address-এর মতো বড় কিছু এতে ধরা পড়বে না কারণ "$" anchor নিশ্চিত করছে এটাই একদম লাইনের শেষ।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-E",
+        meaning: "extended regex flag",
+      },
+      {
+        token: "[0-9]{1,3}",
+        meaning: "১ থেকে ৩টা digit (range quantifier)",
+      },
+      {
+        token: "$",
+        meaning: "লাইনের শেষ anchor — নিশ্চিত করে সংখ্যাটা একদম শেষে",
+      },
+    ],
+    tip: '💡 Tip: "{1,3}" না দিয়ে শুধু "[0-9]+" লিখলেও কাছাকাছি result আসতো, কিন্তু "{1,3}" দিয়ে স্পষ্টভাবে সর্বোচ্চ কত digit চাও তা বেঁধে দেওয়া যায় — বড় কোনো সংখ্যা ভুলবশত match হওয়া থেকে রক্ষা করে।',
+  },
+  "sed-extract-capture-pipe": {
+    id: "sed-extract-capture-pipe",
+    command:
+      "sed -n -E '/for [a-z_]+ from/p' ~/regexlab/events.log | sed -E 's/^.*for ([a-z_]+) from.*$/\\1/'",
+    category: "Text Processing",
+    story:
+      'দুই ধাপে একটা নির্দিষ্ট অংশ (username) বের করা হচ্ছে — প্রথমে "sed -n \\\'/pattern/p\\\'" দিয়ে শুধু "for ... from" আকৃতির matching লাইনগুলো আলাদা করা হলো। তারপর দ্বিতীয় sed-এ (এবার "-n" ছাড়া, তাই default auto-print চলছে) পুরো লাইনটাকেই capture group দিয়ে ধরা username অংশ ("\\1") দিয়ে replace করা হচ্ছে — অর্থাৎ পুরো লাইনের জায়গায় শুধু username-টাই থেকে যাচ্ছে।',
+    tokens: [
+      {
+        token: "sed -n -E '/for [a-z_]+ from/p'",
+        meaning:
+          '"for ... from" ফরম্যাটের matching লাইনগুলো filter করে বের করে',
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "sed -E 's/^.*for ([a-z_]+) from.*$/\\1/'",
+        meaning:
+          '"-n" ছাড়া (auto-print চালু থাকা অবস্থায়) পুরো লাইনটাকে capture group "\\1" (username অংশ) দিয়ে replace করে — ফলে শুধু username-টাই অবশিষ্ট থাকে',
+      },
+    ],
+    tip: '⚠️ Interview tip: দ্বিতীয় sed-এ এখানে ইচ্ছাকৃতভাবে "-n" ব্যবহার হয়নি — কারণ আগের ধাপেই সব লাইন filter হয়ে গেছে, তাই এখানে শুধু auto-print-এর ওপর ভরসা করে প্রতিটা (substituted) লাইন দেখানো যথেষ্ট।',
+  },
+  "grep-redirect-overwrite": {
+    id: "grep-redirect-overwrite",
+    command:
+      'grep "500" ~/pipeline/data/access.log > ~/pipeline/reports/errors.txt',
+    category: "Text Processing",
+    story:
+      'grep সাধারণত terminal-এ ফলাফল দেখায়, কিন্তু সেই output-কেও ঠিক "echo"-এর মতোই ">" দিয়ে একটা নতুন ফাইলে redirect করা যায়। এখানে access.log-এ status code 500 থাকা লাইনটা খুঁজে বের করে, সরাসরি terminal-এ না দেখিয়ে errors.txt ফাইলে লিখে ফেলা হচ্ছে — একটা নতুন "error report" ফাইল তৈরি হচ্ছে।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: '"500"',
+        meaning: "কোন pattern খোঁজা হচ্ছে",
+      },
+      {
+        token: "~/pipeline/data/access.log",
+        meaning: "কোন ফাইলে খোঁজা হবে",
+      },
+      {
+        token: ">",
+        meaning:
+          "redirect operator — grep-এর output terminal-এর বদলে ফাইলে লেখে (ফাইল আগে থেকে থাকলে তার content মুছে নতুন করে লেখে)",
+      },
+      {
+        token: "~/pipeline/reports/errors.txt",
+        meaning: "output কোন ফাইলে যাবে",
+      },
+    ],
+    tip: '💡 Tip: যেকোনো command-এর output-ই ">" দিয়ে ফাইলে redirect করা যায় — শুধু echo না, grep/awk/sed সবকিছুর ক্ষেত্রেই এটা একইভাবে কাজ করে।',
+  },
+  "grep-redirect-append": {
+    id: "grep-redirect-append",
+    command:
+      'grep "403" ~/pipeline/data/access.log >> ~/pipeline/reports/errors.txt',
+    category: "Text Processing",
+    story:
+      'আগের কমান্ডে errors.txt-এ status 500-এর লাইন লেখা হয়েছিল ">" দিয়ে। এবার status 403-এর লাইনও একই ফাইলে যোগ করতে হবে, কিন্তু ">" দিলে আগের 500-এর লাইনটা মুছে যেত! তাই ">>" ব্যবহার করে, আগের content অক্ষত রেখে নতুন ফলাফল শেষে জুড়ে দেওয়া হচ্ছে — এভাবে errors.txt-এ ধাপে ধাপে একাধিক grep-এর ফলাফল জমা করা যায়।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: '"403"',
+        meaning: "কোন pattern খোঁজা হচ্ছে",
+      },
+      {
+        token: "~/pipeline/data/access.log",
+        meaning: "কোন ফাইলে খোঁজা হবে",
+      },
+      {
+        token: ">>",
+        meaning: "append redirect — আগের content রেখে, ফলাফল শেষে জুড়ে দেয়",
+      },
+      {
+        token: "~/pipeline/reports/errors.txt",
+        meaning: "কোন ফাইলে append হবে",
+      },
+    ],
+    tip: '⚠️ Interview trap: এখানে ভুলে ">" ব্যবহার করলে প্রথম grep-এর (500) ফলাফল মুছে শুধু এই দ্বিতীয়টাই (403) থেকে যেত — ধাপে ধাপে ফলাফল জমাতে চাইলে প্রথমটার পর থেকে সবসময় ">>" ব্যবহার করতে হয়।',
+  },
+  "cat-pipe-grep": {
+    id: "cat-pipe-grep",
+    command: 'cat ~/pipeline/data/mixed.log | grep "ERROR"',
+    category: "Text Processing",
+    story:
+      '"cat" একটা ফাইলের পুরো content terminal-এ দেখায়। কিন্তু "|" (pipe) দিয়ে সেই output সরাসরি terminal-এ না দেখিয়ে পরের command-এর input বানিয়ে দেওয়া যায় — এখানে cat-এর output pipe দিয়ে grep-এর কাছে যাচ্ছে, যে তার মধ্যে থেকে শুধু "ERROR" থাকা লাইনগুলো ছেঁকে বের করছে। এটা একজনের হাত থেকে জিনিস নিয়ে আরেকজনকে সরাসরি দিয়ে দেওয়ার মতো, জিনিসটা স্ক্রিনে না রেখেই।',
+    tokens: [
+      {
+        token: "cat",
+        meaning: "ফাইলের পুরো content দেখানোর command (concatenate)",
+      },
+      {
+        token: "~/pipeline/data/mixed.log",
+        meaning: "কোন ফাইল পড়া হবে",
+      },
+      {
+        token: "|",
+        meaning:
+          "pipe operator — আগের command-এর output পরের command-এর input বানিয়ে দেয়",
+      },
+      {
+        token: 'grep "ERROR"',
+        meaning: "pipe থেকে পাওয়া লাইনগুলোর মধ্যে থেকে ERROR filter করে",
+      },
+    ],
+    tip: '⚠️ Interview tip: এই কমান্ডটা "Useless Use of Cat" (UUOC)-এর একটা ক্লাসিক উদাহরণ — grep নিজেই সরাসরি ফাইল পড়তে পারে ("grep "ERROR" mixed.log"), মাঝে "cat |" আসলে দরকার নেই। তবে বড় multi-stage pipeline শেখার সময় এই প্যাটার্নটা concept বোঝার জন্য খুবই common।',
+  },
+  "grep-pipe-wc": {
+    id: "grep-pipe-wc",
+    command: 'grep "INFO" ~/pipeline/data/mixed.log | wc -l',
+    category: "Text Processing",
+    story:
+      'কতগুলো লাইনে "INFO" আছে তা জানতে চাইলে, grep-এর ফলাফল (matching লাইনগুলো) গুনে দেখাতে হবে। তাই তার output সরাসরি "wc -l"-এ pipe করা হচ্ছে, যে শুধু কতগুলো লাইন এলো তা গুনে একটা সংখ্যা দেয় — filename ছাড়াই, কারণ এখানে wc ফাইল পড়ছে না, pipe থেকে (stdin থেকে) data নিচ্ছে।',
+    tokens: [
+      {
+        token: 'grep "INFO" mixed.log',
+        meaning: "INFO থাকা লাইনগুলো বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "wc -l",
+        meaning:
+          "filename ছাড়া — pipe থেকে আসা লাইনগুলো গোনে (stdin থেকে input নেয়)",
+      },
+    ],
+    tip: '💡 Tip: "wc -l file" আর "command | wc -l" — দুটোই লাইন গোনে, কিন্তু প্রথমটা ফাইল থেকে সরাসরি, দ্বিতীয়টা অন্য কোনো command-এর output থেকে। filename না দিলে wc বুঝে নেয় data pipe (stdin) থেকে আসবে।',
+  },
+  "pipe-grep-sed": {
+    id: "pipe-grep-sed",
+    command:
+      "cat ~/pipeline/data/mixed.log | grep \"ERROR\" | sed 's/ERROR/ISSUE/'",
+    category: "Text Processing",
+    story:
+      'তিনটা tool-কে একসাথে chain করা হচ্ছে — cat ফাইল পড়ে, grep শুধু ERROR লাইনগুলো ছেঁকে বের করে, আর সেই ফলাফল শেষে sed-এর কাছে যায়, যে প্রতিটা লাইনে "ERROR" শব্দটাকে "ISSUE" দিয়ে বদলে দেয়। প্রতিটা tool একটা করে ছোট কাজ করছে, আর pipe দিয়ে একটার output আরেকটার input হয়ে পুরো কাজটা ধাপে ধাপে শেষ হচ্ছে।',
+    tokens: [
+      {
+        token: "cat mixed.log",
+        meaning: "ফাইলের content বের করে",
+      },
+      {
+        token: '| grep "ERROR"',
+        meaning: "শুধু ERROR লাইনগুলো ছেঁকে বের করে",
+      },
+      {
+        token: "| sed 's/ERROR/ISSUE/'",
+        meaning: "সেই লাইনগুলোতে ERROR শব্দটাকে ISSUE দিয়ে বদলায়",
+      },
+    ],
+    tip: '💡 Tip: এই তিন-ধাপের chain-ই Linux-এর "small tools, combined with pipes" দর্শনের সবচেয়ে ভালো উদাহরণ — প্রতিটা ধাপ আলাদাভাবে টেস্ট করা যায়, এবং দরকার হলে মাঝে আরেকটা tool জুড়ে দেওয়া যায়।',
+  },
+  "grep-pipe-awk-field": {
+    id: "grep-pipe-awk-field",
+    command: "grep \"ERROR\" ~/pipeline/data/mixed.log | awk '{print $2}'",
+    category: "Text Processing",
+    story:
+      'grep দিয়ে প্রথমে ERROR লাইনগুলো বের করা হলো, তারপর সেই লাইনগুলো awk-এর কাছে pipe করা হলো — awk প্রতিটা লাইনকে space দিয়ে আলাদা আলাদা "field"-এ ভাগ করে ফেলে, আর "{print $2}" দিয়ে বলা হচ্ছে "শুধু ২ নম্বর field-টাই print করো" — যেমন "ERROR failed to connect" লাইনে $2 হবে "failed"।',
+    tokens: [
+      {
+        token: 'grep "ERROR" mixed.log',
+        meaning: "ERROR থাকা লাইনগুলো বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "awk '{print $2}'",
+        meaning:
+          "প্রতিটা লাইনকে space দিয়ে field-এ ভাগ করে, শুধু ২ নম্বর field print করে",
+      },
+    ],
+    tip: "💡 Tip: awk default ভাবে space/tab (whitespace) দিয়ে field আলাদা করে — CSV-এর মতো অন্য delimiter (যেমন কমা) দিয়ে ভাগ করা ফাইলের জন্য \"-F','\" দিতে হয়।",
+  },
+  "pipe-grep-redirect": {
+    id: "pipe-grep-redirect",
+    command:
+      'cat ~/pipeline/data/access.log | grep "200" > ~/pipeline/reports/success.txt',
+    category: "Text Processing",
+    story:
+      'pipe (|) আর redirect (>) — দুটো আলাদা জিনিস একসাথে ব্যবহার হচ্ছে। প্রথমে cat-এর output pipe দিয়ে grep-এ যাচ্ছে (status 200 filter করতে), তারপর grep-এর চূড়ান্ত ফলাফল ">" দিয়ে terminal-এ না দেখিয়ে success.txt ফাইলে সেভ হয়ে যাচ্ছে — pipe মাঝের ধাপগুলোর জন্য, redirect শেষ ফলাফল সংরক্ষণের জন্য।',
+    tokens: [
+      {
+        token: 'cat access.log | grep "200"',
+        meaning:
+          "cat-এর output pipe করে grep-এ পাঠানো হচ্ছে, যা status 200-এর লাইন ছেঁকে বের করে",
+      },
+      {
+        token: ">",
+        meaning: "redirect — grep-এর চূড়ান্ত output ফাইলে লেখে (overwrite)",
+      },
+      {
+        token: "~/pipeline/reports/success.txt",
+        meaning: "output কোথায় সেভ হবে",
+      },
+    ],
+    tip: '💡 Tip: "|" সবসময় দুইটা command-এর মাঝে বসে (process থেকে process), আর ">"/">>" সবসময় command-এর শেষে বসে (process থেকে file) — এই দুইটার জায়গা ও কাজ গুলিয়ে ফেলা একটা common ভুল।',
+  },
+  "grep-v-pipe-wc": {
+    id: "grep-v-pipe-wc",
+    command: 'cat ~/pipeline/data/access.log | grep -v "200" | wc -l',
+    category: "Text Processing",
+    story:
+      'কতগুলো request-এর status code 200 "না" (অর্থাৎ ভিন্ন কিছু) তা জানতে হবে। "-v" (invert) flag দিলে grep তার normal কাজের উল্টোটা করে — match হওয়া লাইন না দেখিয়ে, যে লাইনগুলোতে pattern-টা নেই সেগুলো দেখায়। তারপর সেই non-200 লাইনগুলো "wc -l"-এ pipe করে গুনে ফেলা হচ্ছে।',
+    tokens: [
+      {
+        token: "cat access.log",
+        meaning: "ফাইলের content বের করে",
+      },
+      {
+        token: 'grep -v "200"',
+        meaning:
+          '"-v" = invert match — "200" নেই এমন লাইনগুলো বের করে, যেগুলোতে আছে সেগুলো বাদ দেয়',
+      },
+      {
+        token: "| wc -l",
+        meaning: "সেই non-200 লাইনগুলো গোনে",
+      },
+    ],
+    tip: '⚠️ Interview tip: "grep -v" প্রায়ই interview-তে জিজ্ঞেস করা হয় — এটা normal grep-এর সম্পূর্ণ বিপরীত (inverse), "match না করা" লাইন বের করে, "match করা" লাইন না।',
+  },
+  "head-n-pipe-grep": {
+    id: "head-n-pipe-grep",
+    command: 'head -n 2 ~/pipeline/data/access.log | grep "200"',
+    category: "Text Processing",
+    story:
+      'পুরো ফাইল না দেখে, শুধু ফাইলের শুরুর কয়েকটা লাইন নিয়ে কাজ করতে চাইলে "head -n" ব্যবহার হয় — ঠিক "tail"-এর বিপরীত, যেটা শেষের লাইন দেখায়। এখানে প্রথমে access.log-এর শুধু প্রথম ২ লাইন "head"-এ বের করা হচ্ছে, তারপর সেই সীমিত অংশের মধ্যেই grep দিয়ে status 200 খোঁজা হচ্ছে — পুরো ফাইলে না খুঁজে শুধু একটা sample-এর মধ্যে।',
+    tokens: [
+      {
+        token: "head -n 2",
+        meaning: "ফাইলের শুরুর ২টা লাইন বের করে",
+      },
+      {
+        token: "~/pipeline/data/access.log",
+        meaning: "কোন ফাইল",
+      },
+      {
+        token: '| grep "200"',
+        meaning: "শুধু সেই প্রথম ২ লাইনের মধ্যেই status 200 খোঁজে",
+      },
+    ],
+    tip: '💡 Tip: "head" আর "tail" জোড়া কমান্ড — "head" শুরুর অংশ দেখায়, "tail" শেষের অংশ দেখায়, দুটোই একই রকম "-n" flag নেয়।',
+  },
+  "grep-cw": {
+    id: "grep-cw",
+    command: 'grep -cw "inactive" textlab/data/employees.csv',
+    category: "Search",
+    story:
+      'একাধিক flag যেমন "-l" আর "-a" জোড়া লাগানো যায় (ls -la), ঠিক তেমনি grep-এর flag-ও জোড়া লাগানো যায়। "-cw" মানে "-c" (count) আর "-w" (whole word) একসাথে — "inactive" শব্দটা ঠিক একটা সম্পূর্ণ শব্দ হিসেবে (substring না) আছে এমন লাইন কয়টা, তার সংখ্যা গুনে দেখায়।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-c",
+        meaning: '"count" — matching লাইনের সংখ্যা দেখায়, লাইনগুলো নিজে না',
+      },
+      {
+        token: "-w",
+        meaning:
+          '"whole word" — শুধু সম্পূর্ণ শব্দ হিসেবে match করলেই গণনা করে, substring বাদ',
+      },
+      {
+        token: '"inactive"',
+        meaning: "কোন শব্দ গোনা হচ্ছে",
+      },
+    ],
+    tip: '💡 Tip: "-c" আর "-w" একসাথে জোড়া লাগিয়ে "-cw" (বা "-wc", ক্রম কোনো ব্যাপার না) লেখা যায় — single-letter flag একসাথে combine করা bash-এর একটা common convention।',
+  },
+  "grep-v": {
+    id: "grep-v",
+    command: 'grep -v "active" textlab/data/employees.csv',
+    category: "Search",
+    story:
+      '"-v" (invert) flag grep-এর কাজ উল্টে দেয় — pattern match করা লাইন বাদ দিয়ে, বাকি লাইন দেখায়। কিন্তু এখানে একটা ফাঁদ আছে: "active" কে substring হিসেবে খোঁজা হচ্ছে, আর "inactive" শব্দের ভেতরেও ঠিক "active" লেখা আছে! ফলে "-v "active""  active আর inactive — দুই রকম status-ই বাদ দিয়ে ফেলবে, কারণ দুটোতেই substring হিসেবে "active" match করে।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: "-v",
+        meaning:
+          "invert match — pattern match করা লাইন বাদ দেয়, বাকিগুলো দেখায়",
+      },
+      {
+        token: '"active"',
+        meaning: 'substring হিসেবে খোঁজা হচ্ছে — "inactive"-এর ভেতরেও এটা আছে',
+      },
+    ],
+    tip: '⚠️ এই লাবের সবচেয়ে গুরুত্বপূর্ণ ফাঁদ: "-w" (whole word) ছাড়া grep substring match করে। তাই "grep -v "active"" শুধু exact "active" status-ই বাদ দেয় না, "inactive"-কেও বাদ দিয়ে দেয় (কারণ ওর ভেতরে substring হিসেবে "active" আছে) — দুই ধরনের status-ই উধাও হয়ে যায়। এড়াতে "-vw" (invert + whole word) দরকার হয়।',
+  },
+  "sed-s-gI": {
+    id: "sed-s-gI",
+    command: "sed 's/marketing/Marketing/gI' textlab/data/employees.csv",
+    category: "Text Processing",
+    story:
+      'data-তে "MARKETING", "marketing" — দুই রকম casing-ই আছে। শুধু "g" দিলে exact-case "marketing"-ই বদলাতো, "MARKETING" বাদ থেকে যেত। "I" flag (uppercase) দিলে sed casing উপেক্ষা করে — দুই রকম casing-ই একসাথে এক কমান্ডে "Marketing" দিয়ে বদলে যায়।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: "s/marketing/Marketing/",
+        meaning: "substitute command — pattern আর replacement",
+      },
+      {
+        token: "g",
+        meaning: "global — লাইনের সব occurrence বদলায়",
+      },
+      {
+        token: "I",
+        meaning:
+          '(uppercase) "case-insensitive" — casing উপেক্ষা করে match করে, যদিও replacement-এর casing ঠিক যা লেখা আছে তাই বসে',
+      },
+    ],
+    tip: '⚠️ Interview trap: "I" flag (uppercase) আর grep-এর "-i" flag একই জিনিস বোঝায় (case-insensitive), কিন্তু sed-এ এটা command-এর ভেতরে flag হিসেবে বসে ("s/.../.../gI"), আলাদা command-line option হিসেবে না।',
+  },
+  "sed-multi-s-gI": {
+    id: "sed-multi-s-gI",
+    command:
+      "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv",
+    category: "Text Processing",
+    story:
+      'একটা না, তিনটা department name-ই (engineering, marketing, sales) normalize করতে হবে, প্রতিটার casing আলাদা আলাদা হতে পারে। তিনবার আলাদা sed command না চালিয়ে, সেমিকোলন (;) দিয়ে তিনটা "s///gI" expression একসাথে এক কমান্ডেই চালানো হচ্ছে — প্রতিটা লাইন একবারেই তিনটা নিয়মের মধ্য দিয়ে যায়।',
+    tokens: [
+      {
+        token: "sed",
+        meaning: "stream editor command",
+      },
+      {
+        token: ";",
+        meaning: "সেমিকোলন — একাধিক sed expression-কে একই কমান্ডে আলাদা করে",
+      },
+      {
+        token:
+          "s/engineering/Engineering/gI, s/marketing/Marketing/gI, s/sales/Sales/gI",
+        meaning:
+          "তিনটা আলাদা case-insensitive, global substitution — একটার পর একটা, প্রতিটা লাইনে প্রয়োগ হয়",
+      },
+    ],
+    tip: "💡 Tip: এভাবে সেমিকোলন দিয়ে চেইন করা expression-গুলো বাম থেকে ডানে ক্রমানুসারে চলে — প্রতিটা expression আগের expression-এর ফলাফলের ওপর কাজ করে, একই লাইনে।",
+  },
+  "sed-multi-redirect": {
+    id: "sed-multi-redirect",
+    command:
+      "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv > textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      'আগের কমান্ডের মতোই তিনটা normalize-rule একসাথে চালানো হচ্ছে, কিন্তু এবার ফলাফল terminal-এ না দেখিয়ে ">" দিয়ে একটা সম্পূর্ণ নতুন ফাইলে (employees_clean.csv) সেভ করা হচ্ছে — মূল (messy) ফাইলটা অক্ষত থাকছে, আর "clean" সংস্করণটা আলাদাভাবে সংরক্ষিত হচ্ছে পরের ধাপের জন্য।',
+    tokens: [
+      {
+        token: "sed 's/.../gI; .../gI; .../gI'",
+        meaning: "তিনটা normalize substitution একসাথে",
+      },
+      {
+        token: "textlab/data/employees.csv",
+        meaning: "মূল (messy) input ফাইল",
+      },
+      {
+        token: ">",
+        meaning: "redirect — output terminal-এর বদলে নতুন ফাইলে লেখে",
+      },
+      {
+        token: "textlab/data/employees_clean.csv",
+        meaning: "normalize করা output কোথায় সেভ হবে — নতুন ফাইল",
+      },
+    ],
+    tip: '💡 Tip: "-i" দিয়ে মূল ফাইল সরাসরি বদলানো যেত, কিন্তু এখানে ইচ্ছাকৃতভাবে ">" দিয়ে আলাদা নতুন ফাইলে রাখা হচ্ছে — messy মূল data আর clean data দুটোই আলাদা রেখে দেওয়া একটা ভালো practice।',
+  },
+  "awk-F-nr-print": {
+    id: "awk-F-nr-print",
+    command:
+      "awk -F',' 'NR > 1 {print $2, $3}' textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      'awk প্রতিটা লাইনকে field-এ ভাগ করে কাজ করে — CSV ফাইলের জন্য "-F\\\',\\\'" দিয়ে বলে দিতে হয় "কমা দিয়ে field আলাদা করো" (default whitespace না)। "NR > 1" মানে "লাইন নম্বর ১-এর বেশি হলে" — অর্থাৎ header (লাইন ১) বাদ দিয়ে বাকি সব ডেটা-লাইনে কাজ করো। "{print $2, $3}" দিয়ে শুধু ২য় আর ৩য় field (নাম, department) দেখানো হচ্ছে।',
+    tokens: [
+      {
+        token: "awk -F','",
+        meaning: "field separator কমা (,) সেট করা হচ্ছে, CSV ফাইলের জন্য",
+      },
+      {
+        token: "NR > 1",
+        meaning:
+          '"Number of Records" — বর্তমান লাইন নম্বর; "> 1" দিয়ে প্রথম (header) লাইন বাদ দেওয়া হচ্ছে',
+      },
+      {
+        token: "{print $2, $3}",
+        meaning:
+          "action block — ২য় আর ৩য় field একসাথে print করো (কমা দিলে মাঝে space বসে)",
+      },
+    ],
+    tip: '💡 Tip: "NR > 1" হলো header-skip করার সবচেয়ে common awk idiom — CSV বা TSV যেকোনো ফাইলে প্রথম লাইন বাদ দিতে এটা ব্যবহার হয়।',
+  },
+  "awk-field-eq-condition": {
+    id: "awk-field-eq-condition",
+    command:
+      "awk -F',' '$3 == \"Engineering\" {print $2, $4}' textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      'awk-এ "condition {action}" ফরম্যাটে লেখা যায় — "condition" সত্যি হলেই শুধু সেই লাইনে "action" চলে। "$3 == "Engineering"" মানে "৩ নম্বর field-টা ঠিক exactly "Engineering" হলে" — এই শর্ত সত্যি হলে তবেই সেই লাইনের নাম আর salary (field ২, ৪) print হবে, বাকি department-এর লাইন চুপচাপ বাদ পড়ে যাবে।',
+    tokens: [
+      {
+        token: "awk -F','",
+        meaning: "field separator কমা",
+      },
+      {
+        token: '$3 == "Engineering"',
+        meaning:
+          '৩ নম্বর field-এর মান exactly "Engineering" কিনা চেক করা condition (string equality)',
+      },
+      {
+        token: "{print $2, $4}",
+        meaning: "শর্ত সত্যি হলে এই action চলে — নাম আর salary print করে",
+      },
+    ],
+    tip: '⚠️ Interview tip: "==" string বা number উভয়ের জন্যই সমান ব্যবহার হয় awk-এ (আলাদা কোনো ".equals()" লাগে না), awk নিজেই context বুঝে তুলনা করে।',
+  },
+  "awk-multi-condition": {
+    id: "awk-multi-condition",
+    command:
+      "awk -F',' 'NR > 1 && $5 == \"active\" && $4 > 80000 {print $2, $3, $4}' textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      '"&&" (AND) দিয়ে একাধিক শর্ত একসাথে জোড়া লাগানো যায় — সবগুলো শর্ত সত্যি হলে তবেই action চলবে। এখানে তিনটা শর্ত: header না হওয়া (NR > 1), status "active" হওয়া (string equality), আর salary ৮০,০০০-এর বেশি হওয়া (numeric comparison) — তিনটাই একসাথে সত্যি হলে তবেই নাম, department, salary print হয়।',
+    tokens: [
+      {
+        token: "NR > 1",
+        meaning: "header বাদ দেওয়া",
+      },
+      {
+        token: '$5 == "active"',
+        meaning: 'status field exactly "active" কিনা (string comparison)',
+      },
+      {
+        token: "$4 > 80000",
+        meaning: "salary field ৮০,০০০-এর বেশি কিনা (numeric comparison)",
+      },
+      {
+        token: "&&",
+        meaning: "AND operator — সবগুলো শর্ত একসাথে সত্যি হতে হবে",
+      },
+      {
+        token: "{print $2, $3, $4}",
+        meaning: "সব শর্ত সত্যি হলে এই action চলে",
+      },
+    ],
+    tip: '💡 Tip: awk একই field-কে context অনুযায়ী string ("active") বা number (80000) হিসেবে compare করতে পারে — "==" string-এর জন্য, ">" numeric-এর জন্য, একই field-এ দুটোই আলাদা শর্তে ব্যবহার করা যায়।',
+  },
+  "awk-assoc-array-count": {
+    id: "awk-assoc-array-count",
+    command:
+      "awk -F',' 'NR > 1 {count[$3]++} END {for (dept in count) print count[dept], dept}' textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      'awk-এ array-এর index number না হয়ে text-ও হতে পারে (associative array) — "count[$3]++" মানে "department-এর নামটাকে key বানিয়ে, প্রতিবার দেখা পেলে তার counter ১ বাড়াও"। পুরো ফাইল পড়া শেষ হলে "END" ব্লক চলে, যেখানে "for (dept in count)" দিয়ে প্রতিটা department-এর জমে থাকা count একে একে print করা হয় — ভোট গণনার পর প্রতিটা candidate-এর মোট ভোট ঘোষণা করার মতো।',
+    tokens: [
+      {
+        token: "count[$3]++",
+        meaning:
+          "associative array — department-এর নাম (field ৩) কে key বানিয়ে প্রতিটা লাইনে তার counter বাড়ায়",
+      },
+      {
+        token: "END { }",
+        meaning: "পুরো ফাইল পড়া শেষ হওয়ার পর শুধু একবার চলে এমন ব্লক",
+      },
+      {
+        token: "for (dept in count)",
+        meaning: "array-এর প্রতিটা key (department name) ঘুরে ঘুরে দেখার loop",
+      },
+      {
+        token: "print count[dept], dept",
+        meaning: "প্রতিটা department আর তার মোট count print করে",
+      },
+    ],
+    tip: '💡 Tip: "count[$3]++" লেখার আগে কোথাও ০ দিয়ে initialize করতে হয় না — awk নতুন key দেখলে নিজে থেকেই ০ ধরে শুরু করে, সরাসরি "++" করলেই কাজ হয়।',
+  },
+  "awk-sum-avg-printf": {
+    id: "awk-sum-avg-printf",
+    command:
+      "awk -F',' 'NR > 1 && $5 == \"active\" {sum += $4; n++} END {printf \"Average salary: $%.0f\", sum/n}' textlab/data/employees_clean.csv",
+    category: "Text Processing",
+    story:
+      'গড় (average) বের করতে দুইটা জিনিস জমাতে হয় — মোট যোগফল (sum) আর মোট সংখ্যা (n)। active কর্মীদের প্রতিটা লাইনে salary "sum"-এ যোগ হচ্ছে আর "n" ১ করে বাড়ছে। পুরো ফাইল পড়া শেষে "END" ব্লকে "sum/n" দিয়ে গড় বের করে, "printf" দিয়ে সুন্দর ফরম্যাটে ("$" sign আর দশমিকের পর ০ ঘর) দেখানো হচ্ছে।',
+    tokens: [
+      {
+        token: "sum += $4",
+        meaning:
+          "প্রতিটা matching লাইনের salary (field ৪) ক্রমানুসারে যোগ হচ্ছে একটা variable-এ",
+      },
+      {
+        token: "n++",
+        meaning: "কতগুলো লাইন গণনায় এলো তার counter",
+      },
+      {
+        token: "END { }",
+        meaning: "সব লাইন পড়া শেষ হওয়ার পর একবার চলে",
+      },
+      {
+        token: 'printf "Average salary: $%.0f", sum/n',
+        meaning:
+          '"%.0f" মানে দশমিক point-এর পর ০ ঘর দেখানো একটা floating-point number — sum/n (গড়) এর জায়গায় বসে',
+      },
+    ],
+    tip: '⚠️ Interview tip: "print" আর "printf" এক না — "print" নিজে থেকে newline যোগ করে, "printf" করে না এবং format string দিয়ে precision control করা যায়, যেমন এখানে "%.0f" দিয়ে দশমিকের পর সংখ্যা সীমিত রাখা হয়েছে।',
+  },
+  "grep-pipe-awk-F-field": {
+    id: "grep-pipe-awk-F-field",
+    command:
+      "grep \"Sales\" textlab/data/employees_clean.csv | awk -F',' '{print $2}'",
+    category: "Text Processing",
+    story:
+      'grep দিয়ে প্রথমে Sales department-এর লাইনগুলো বের করা হলো, তারপর সেই output pipe দিয়ে awk-এ যাচ্ছে — awk কমা দিয়ে field আলাদা করে ($2 = নাম) print করছে। grep আর awk দুটো টুল একসাথে ব্যবহার করে "filter তারপর extract" — এই দুই-ধাপের pattern CSV data প্রসেসিং-এ খুবই common।',
+    tokens: [
+      {
+        token: 'grep "Sales" file',
+        meaning: "Sales department-এর লাইনগুলো ছেঁকে বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "awk -F',' '{print $2}'",
+        meaning: "কমা দিয়ে field ভাগ করে, শুধু ২য় field (নাম) print করে",
+      },
+    ],
+    tip: "💡 Tip: এখানে grep শুধু filtering করছে (কোন লাইন রাখবো), আর awk extraction করছে (লাইন থেকে কোন অংশ বের করবো) — দুটো আলাদা দায়িত্ব, একসাথে কাজ করছে pipe দিয়ে।",
+  },
+  "grep-pipe-awk-condition": {
+    id: "grep-pipe-awk-condition",
+    command:
+      "grep -w \"active\" textlab/data/employees_clean.csv | awk -F',' '$3 == \"Sales\" {print $4}'",
+    category: "Text Processing",
+    story:
+      'প্রথমে grep "-w" (whole word) দিয়ে ঠিক "active" status-এর লাইনগুলো বের করা হলো (inactive বাদ), তারপর সেই লাইনগুলো awk-এ pipe হলো, যেখানে আরেকটা শর্ত ($3 == "Sales") যোগ হচ্ছে — department ঠিক "Sales" হলে তবেই salary (field ৪) print হবে। দুই ধাপে দুই রকম filter একসাথে কাজ করছে।',
+    tokens: [
+      {
+        token: 'grep -w "active" file',
+        meaning: 'ঠিক "active" status-এর লাইন বের করে (whole word match)',
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "awk -F',' '$3 == \"Sales\" {print $4}'",
+        meaning: 'সেই লাইনগুলোর মধ্যে department "Sales" হলে salary print করে',
+      },
+    ],
+    tip: "💡 Tip: grep আর awk-এর filtering একসাথে ব্যবহার করলে প্রতিটা ধাপে আলাদা আলাদা শর্ত বসানো যায় — একটা বিশাল জটিল awk script লেখার বদলে ছোট ছোট ধাপে ভাগ করে কাজ করা সহজ হয়।",
+  },
+  "awk-pipe-grep": {
+    id: "awk-pipe-grep",
+    command:
+      "awk -F',' 'NR > 1 {print $3, $4}' textlab/data/employees_clean.csv | grep \"Engineering\"",
+    category: "Text Processing",
+    story:
+      'এবার উল্টো ক্রম — প্রথমে awk দিয়ে প্রতিটা লাইনের department আর salary (field ৩, ৪) বের করা হলো (header বাদ দিয়ে), তারপর সেই output grep-এ pipe করে শুধু "Engineering" থাকা লাইনগুলো ছেঁকে রাখা হলো। awk প্রথমে data কে "reshape" করছে, তারপর grep তার ওপর সাধারণ text-search চালাচ্ছে।',
+    tokens: [
+      {
+        token: "awk -F',' 'NR > 1 {print $3, $4}'",
+        meaning:
+          "প্রতিটা লাইনের department আর salary field বের করে (header বাদে)",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: 'grep "Engineering"',
+        meaning:
+          '্সেই reshaped output-এর মধ্যে শুধু "Engineering" থাকা লাইন রাখে',
+      },
+    ],
+    tip: "💡 Tip: awk আগে না grep আগে — এই ক্রম গুরুত্বপূর্ণ! awk আগে দিলে awk পুরো ফাইল reshape করে, grep শুধু সেই নতুন ফরম্যাটে text খোঁজে — original ফাইলের field structure-এর চেয়ে ভিন্ন result দিতে পারে।",
+  },
+  "awk-pipe-grep-v": {
+    id: "awk-pipe-grep-v",
+    command:
+      "awk -F',' 'NR > 1 && $5 == \"active\" {print $2, $3}' textlab/data/employees_clean.csv | grep -v \"Engineering\"",
+    category: "Text Processing",
+    story:
+      'awk দিয়ে প্রথমে active কর্মীদের নাম আর department বের করা হলো, তারপর সেই output "grep -v" দিয়ে filter করে Engineering department বাদ দেওয়া হলো — শেষ ফলাফলে থাকছে active কিন্তু Engineering-এ না, এমন কর্মীরাই।',
+    tokens: [
+      {
+        token: "awk -F',' 'NR > 1 && $5 == \"active\" {print $2, $3}'",
+        meaning: "active কর্মীদের নাম আর department বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: 'grep -v "Engineering"',
+        meaning: "Engineering থাকা লাইন বাদ দিয়ে বাকিগুলো রাখে",
+      },
+    ],
+    tip: '💡 Tip: একই কাজ শুধু awk দিয়েও করা যেত ("$3 != "Engineering"" condition যোগ করে), কিন্তু pipe দিয়ে grep -v ব্যবহার করলে প্রতিটা ধাপ আলাদাভাবে পড়তে ও debug করতে সহজ হয়।',
+  },
+  "sed-pipe-grep": {
+    id: "sed-pipe-grep",
+    command:
+      "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep \"Marketing\"",
+    category: "Text Processing",
+    story:
+      'মূল (messy, inconsistent casing) ফাইল থেকে শুরু করে — প্রথমে sed দিয়ে department casing normalize করা হচ্ছে, সেই normalize করা output সরাসরি grep-এ pipe হচ্ছে, যা শুধু "Marketing" থাকা লাইনগুলো বের করছে। আগে data "clean" করে তারপর তার ওপর search চালানো — দুইটা আলাদা ফাইল না বানিয়েই।',
+    tokens: [
+      {
+        token: "sed 's/.../gI; .../gI; .../gI'",
+        meaning: "department casing normalize করে (মূল messy ফাইলে)",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: 'grep "Marketing"',
+        meaning: "normalize করা output-এ শুধু Marketing-এর লাইন খোঁজে",
+      },
+    ],
+    tip: '💡 Tip: মূল messy ফাইলটা এখানে কখনো সরাসরি বদলায় না ("-i" ব্যবহার হয়নি) — শুধু pipe-এর মধ্য দিয়ে একটা সাময়িক (temporary) clean ভার্সন তৈরি হয়ে পরের command-এ যায়।',
+  },
+  "sed-pipe-awk-avg": {
+    id: "sed-pipe-awk-avg",
+    command:
+      "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | awk -F',' '$3 == \"Engineering\" {sum += $4; n++} END {printf \"Average Engineering salary: $%.0f\", sum/n}'",
+    category: "Text Processing",
+    story:
+      "তিনটা টুল একসাথে চেইন হচ্ছে — sed দিয়ে মূল messy ফাইলের casing normalize করা হচ্ছে, সেই clean output pipe দিয়ে awk-এ যাচ্ছে, যেখানে শুধু Engineering department-এর salary যোগ করে গড় বের করা হচ্ছে। মূল ফাইল কখনো বদলায়নি, কিন্তু চূড়ান্ত হিসাবটা (average) সঠিকভাবে আসছে, কারণ প্রথমে casing ঠিক করে নেওয়া হয়েছে।",
+    tokens: [
+      {
+        token: "sed 's/.../gI; ...'",
+        meaning: "casing normalize করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token:
+          "awk -F',' '$3 == \"Engineering\" {sum += $4; n++} END {printf ...}'",
+        meaning:
+          "normalize করা data থেকে শুধু Engineering-এর salary যোগ করে গড় বের করে",
+      },
+    ],
+    tip: '⚠️ Interview tip: normalize (sed) আগে না করে সরাসরি messy ফাইলে এই awk চালানো হলে, "ENGINEERING" বা "engineering" (অন্য casing) লাইনগুলো "$3 == "Engineering""-এর সাথে match করতো না, আর গড়টা ভুল আসতো — এটাই এই পুরো chain-এর আসল কারণ।',
+  },
+  "sed-grep-awk-pipeline": {
+    id: "sed-grep-awk-pipeline",
+    command:
+      "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep -w \"active\" | awk -F',' '{count[$3]++} END {for (dept in count) print count[dept], dept}'",
+    category: "Text Processing",
+    story:
+      "পুরো লাবে শেখা তিনটা টুলই এক কমান্ডে একসাথে — sed দিয়ে casing normalize, তারপর grep -w দিয়ে শুধু active কর্মীদের ছেঁকে বের করা, তারপর awk দিয়ে প্রতিটা department-এ কতজন active কর্মী আছে তা associative array দিয়ে গুনে বের করা। তিনটা tool, তিনটা আলাদা দায়িত্ব, একটা single pipeline-এ।",
+    tokens: [
+      {
+        token: "sed 's/.../gI; ...'",
+        meaning: "department casing normalize করে",
+      },
+      {
+        token: '| grep -w "active"',
+        meaning: 'শুধু ঠিক "active" status-এর লাইন রাখে',
+      },
+      {
+        token:
+          "| awk -F',' '{count[$3]++} END {for (dept in count) print count[dept], dept}'",
+        meaning:
+          "প্রতিটা department-এ (normalize করা, active) কর্মী কতজন তা গুনে print করে",
+      },
+    ],
+    tip: "💡 Tip: এই ধরনের multi-stage pipeline লেখার সময় প্রতিটা ধাপ আলাদাভাবে (একটা একটা করে pipe যোগ করে) টেস্ট করে নেওয়া ভালো অভ্যাস — পুরোটা এক শটে লিখে fail করলে কোন ধাপে ভুল তা বের করা কঠিন হয়ে যায়।",
+  },
+  "awk-pipe-grep-cE": {
+    id: "awk-pipe-grep-cE",
+    command:
+      "awk -F',' 'NR > 1 {print $4}' textlab/data/employees_clean.csv | grep -cE \"^9\"",
+    category: "Text Processing",
+    story:
+      'প্রথমে awk দিয়ে শুধু salary column (field ৪) বের করা হলো, header বাদ দিয়ে। তারপর সেই সংখ্যাগুলোর মধ্যে কয়টা "9" দিয়ে শুরু (অর্থাৎ ৯০,০০০-এর ঘরে) তা "grep -cE "^9"" দিয়ে গুনে বের করা হচ্ছে — "^9" মানে লাইনের শুরুতেই digit "9", আর "-c" দিয়ে শুধু সংখ্যাটাই (কতগুলো লাইন) বের হচ্ছে।',
+    tokens: [
+      {
+        token: "awk -F',' 'NR > 1 {print $4}'",
+        meaning: "শুধু salary column বের করে, header বাদে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: 'grep -cE "^9"',
+        meaning:
+          '"-E" extended regex, "^9" মানে লাইনের শুরুতেই digit 9; "-c" দিয়ে কতগুলো লাইন match করলো তার সংখ্যা দেখায়',
+      },
+    ],
+    tip: '💡 Tip: "^9" দিয়ে "৯ দিয়ে শুরু হওয়া সংখ্যা" বোঝানো হচ্ছে, যা ৯০,০০০-৯৯,৯৯৯ রেঞ্জের salary ধরবে — এটা একটা approximate filter, exact range check (যেমন "> 90000") না, কিন্তু quick regex দিয়ে কাছাকাছি ফলাফল পাওয়ার common trick।',
+  },
+  "grep-spaced-word": {
+    id: "grep-spaced-word",
+    command: 'grep " ERROR " loglab/app.log',
+    category: "Search",
+    story:
+      'log-এর প্রতিটা লাইনে timestamp, severity (INFO/WARN/ERROR), আর message থাকে, সবগুলো space দিয়ে আলাদা। শুধু "ERROR" লিখে খুঁজলে এটা কোনো message-এর ভেতরের "ERROR" শব্দকেও ধরে ফেলতে পারতো। তাই "ERROR"-এর দুই পাশে space রেখে (" ERROR ") খোঁজা হচ্ছে — এতে নিশ্চিত হয় এটা ঠিক একটা standalone শব্দ, কোনো বড় শব্দের অংশ না।',
+    tokens: [
+      {
+        token: "grep",
+        meaning: "pattern খোঁজার command",
+      },
+      {
+        token: '" ERROR "',
+        meaning:
+          '"ERROR" একটা আলাদা শব্দ হিসেবে match হচ্ছে তা নিশ্চিত করা আগে-পরে space সহ pattern',
+      },
+      {
+        token: "loglab/app.log",
+        meaning: "কোন ফাইলে খোঁজা হবে",
+      },
+    ],
+    tip: '💡 Tip: এভাবে space দিয়ে "word boundary" বানানো একটা সহজ trick, আরো reliable উপায় হলো grep-এর নিজস্ব "-w" (whole word) flag ব্যবহার করা — এখানে field-ভিত্তিক log format-এ space দিয়েই কাজ চলে যায়।',
+  },
+  "awk-print-field": {
+    id: "awk-print-field",
+    command: "awk '{print $2}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'এখানে "-F" flag দেওয়া হয়নি, তাই awk তার default field-separator (space/tab, যেকোনো whitespace) ব্যবহার করছে। log-এর প্রতিটা লাইন "timestamp severity message..." ফরম্যাটে space দিয়ে আলাদা, তাই "$2" মানে দ্বিতীয় word — যেটা হলো severity level (INFO/WARN/ERROR)।',
+    tokens: [
+      {
+        token: "awk",
+        meaning: "field-ভিত্তিক text processing command",
+      },
+      {
+        token: "{print $2}",
+        meaning: "প্রতিটা লাইনের ২য় field (space দিয়ে আলাদা করা) print করে",
+      },
+      {
+        token: "loglab/app.log",
+        meaning: "কোন ফাইল",
+      },
+    ],
+    tip: '💡 Tip: "-F" flag না দিলে awk default ভাবে এক বা একাধিক space/tab-কে field separator ধরে — CSV-এর মতো কমা-separated data না হলে এই default-ই যথেষ্ট।',
+  },
+  "awk-regex-pattern-print": {
+    id: "awk-regex-pattern-print",
+    command: "awk '/logged in/{print}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'awk-এ condition-এর জায়গায় সরাসরি regex ("/pattern/") বসানো যায় — কোনো field-এর সাথে তুলনা না করে, পুরো লাইনে সেই pattern আছে কিনা চেক করে। "/logged in/{print}" মানে "যে লাইনে \'logged in\' আছে, সেই পুরো লাইনটা print করো" — অনেকটা grep-এর মতোই আচরণ, কিন্তু awk দিয়ে লেখা।',
+    tokens: [
+      {
+        token: "awk",
+        meaning: "field-ভিত্তিক text processing command",
+      },
+      {
+        token: "/logged in/",
+        meaning:
+          "regex pattern হিসেবে condition — পুরো লাইনে এই pattern থাকলেই সত্যি ধরা হয়",
+      },
+      {
+        token: "{print}",
+        meaning:
+          "(কোনো argument ছাড়া) শর্ত সত্যি হলে পুরো current লাইনটাই print করে",
+      },
+    ],
+    tip: '💡 Tip: "{print}" আর শুধু condition দিয়ে কিছু না লেখা — দুটোই একই কাজ করে, কারণ action না দিলে awk ধরে নেয় তুমি "print" ই চাও।',
+  },
+  "awk-field-eq-whitespace": {
+    id: "awk-field-eq-whitespace",
+    command: "awk '$2==\"ERROR\"{print}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'grep দিয়ে " ERROR " space-trick ব্যবহার করে ঠিক শব্দটা match করা যায়, কিন্তু awk দিয়ে আরো নির্ভরযোগ্যভাবে করা যায় — কারণ awk জানে কোনটা exactly "২য় field"। "$2=="ERROR"" মানে "শুধু ২ নম্বর field (severity) ঠিক "ERROR" হলে" — আশেপাশে space লাগানোর দরকারই নেই, field নিজেই সুনির্দিষ্ট।',
+    tokens: [
+      {
+        token: "awk",
+        meaning: "field-ভিত্তিক text processing command",
+      },
+      {
+        token: '$2=="ERROR"',
+        meaning:
+          '২ নম্বর field (severity) ঠিক "ERROR" কিনা (exact string match) — condition',
+      },
+      {
+        token: "{print}",
+        meaning: "শর্ত সত্যি হলে পুরো লাইন print করে",
+      },
+    ],
+    tip: '⚠️ Interview tip: grep-এর " ERROR " space-trick আর awk-এর "$2=="ERROR"" — দুটোই একই উদ্দেশ্যে (false substring match এড়ানো), কিন্তু awk-এর ভার্সনটা বেশি নির্ভরযোগ্য, কারণ এটা structure (field position) বোঝে, শুধু text pattern না।',
+  },
+  "awk-field-eq-print-field": {
+    id: "awk-field-eq-print-field",
+    command: "awk '$2==\"WARN\"{print $3}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'আগের entry-র মতোই field ২ (severity) দিয়ে filter করা হচ্ছে, কিন্তু এবার পুরো লাইন না, শুধু field ৩ (message-এর প্রথম শব্দ) print করা হচ্ছে — "condition দিয়ে বাছাই, কিন্তু action-এ ভিন্ন field দেখানো" এই প্যাটার্নটাই awk-কে শক্তিশালী করে তোলে।',
+    tokens: [
+      {
+        token: "awk",
+        meaning: "field-ভিত্তিক text processing command",
+      },
+      {
+        token: '$2=="WARN"',
+        meaning: 'severity field ঠিক "WARN" কিনা — condition',
+      },
+      {
+        token: "{print $3}",
+        meaning:
+          "শর্ত সত্যি হলে ৩ নম্বর field (message-এর প্রথম শব্দ) print করে — পুরো লাইন না",
+      },
+    ],
+    tip: "💡 Tip: condition আর action-এ আলাদা আলাদা field ব্যবহার করা যায় — filter একটা field দিয়ে, output অন্য field দিয়ে। এটাই awk-কে শুধু grep-এর চেয়ে বেশি নমনীয় করে তোলে।",
+  },
+  "grep-pipe-awk-regex-field": {
+    id: "grep-pipe-awk-regex-field",
+    command: "grep \" ERROR \" loglab/app.log | awk '/Database/{print $1}'",
+    category: "Text Processing",
+    story:
+      'প্রথমে grep দিয়ে সব ERROR লাইন বের করা হলো, তারপর সেই output awk-এ pipe হলো, যেখানে আরেকটা regex condition ("/Database/") দিয়ে আরও সংকীর্ণ করে শুধু "Database" শব্দ থাকা ERROR লাইনগুলো বাছাই করা হলো, আর field ১ (timestamp) print করা হলো — দুই ধাপে দুই রকম filter চালিয়ে শেষে নির্দিষ্ট একটা field বের করা।',
+    tokens: [
+      {
+        token: 'grep " ERROR " app.log',
+        meaning: "সব ERROR লাইন বের করে",
+      },
+      {
+        token: "|",
+        meaning: "pipe operator",
+      },
+      {
+        token: "awk '/Database/{print $1}'",
+        meaning:
+          '"Database" শব্দ আছে এমন ERROR লাইনগুলো থেকে শুধু timestamp (field ১) print করে',
+      },
+    ],
+    tip: "💡 Tip: grep দিয়ে coarse (মোটা দাগের) filter, তারপর awk দিয়ে fine (সূক্ষ্ম) filter + field extraction — এই combo দিয়ে ধাপে ধাপে ডেটা সংকুচিত করে ঠিক যা দরকার তা বের করা যায়।",
+  },
+  "awk-counter-var": {
+    id: "awk-counter-var",
+    command: "awk '$2!=\"INFO\"{c++} END{print c}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'associative array ছাড়াও, awk-এ একটা সাধারণ variable দিয়েও গোনা যায়। "$2!="INFO"" মানে "severity INFO না হলে" (অর্থাৎ WARN বা ERROR) — প্রতিবার এই শর্ত সত্যি হলে "c" variable ১ বাড়ে। পুরো ফাইল পড়া শেষে "END" ব্লকে সেই চূড়ান্ত সংখ্যাটা print হয় — একটামাত্র সংখ্যা, breakdown ছাড়া।',
+    tokens: [
+      {
+        token: '$2!="INFO"',
+        meaning:
+          'severity field "INFO" না হলে — condition (not-equal operator "!=")',
+      },
+      {
+        token: "c++",
+        meaning:
+          "একটা সাধারণ counter variable, প্রতিবার শর্ত সত্যি হলে ১ বাড়ে",
+      },
+      {
+        token: "END{print c}",
+        meaning: "সব লাইন পড়া শেষে, জমে থাকা মোট count print করে",
+      },
+    ],
+    tip: '💡 Tip: "count[$2]++" (associative array, প্রতিটা আলাদা severity-র জন্য আলাদা count) আর "c++" (একটামাত্র simple variable, সব মিলিয়ে এক count) — দুটোই একই idea-র ভিন্ন প্রয়োগ, দরকার অনুযায়ী বেছে নেওয়া যায়।',
+  },
+  "awk-assoc-array-printf": {
+    id: "awk-assoc-array-printf",
+    command:
+      "awk '{count[$2]++} END {for (k in count) printf \"%s: %d\", k, count[k]}' loglab/app.log",
+    category: "Text Processing",
+    story:
+      'আগে শেখা associative-array-counting-এর ঠিক একই logic, কিন্তু output এবার "print" দিয়ে না, "printf" দিয়ে সুন্দর ফরম্যাটে দেখানো হচ্ছে — "%s: %d" মানে "একটা text, তারপর colon, তারপর একটা সংখ্যা" এই নির্দিষ্ট প্যাটার্নে, যেমন "ERROR: 5"।',
+    tokens: [
+      {
+        token: "count[$2]++",
+        meaning:
+          "severity level-কে key বানিয়ে প্রতিটা দেখায় তার counter বাড়ায়",
+      },
+      {
+        token: 'END {for (k in count) printf "%s: %d", k, count[k]}',
+        meaning:
+          'শেষে প্রতিটা severity আর তার count "severity: সংখ্যা" ফরম্যাটে print করে',
+      },
+      {
+        token: "%s",
+        meaning:
+          "format specifier — একটা string (এখানে severity level) বসানোর জায়গা",
+      },
+      {
+        token: "%d",
+        meaning:
+          "format specifier — একটা পূর্ণসংখ্যা (integer, এখানে count) বসানোর জায়গা",
+      },
+    ],
+    tip: '⚠️ Interview tip: "printf" নিজে থেকে newline যোগ করে না — একাধিক key-এর জন্য loop চালালে প্রতিটা আলাদা লাইনে দেখাতে চাইলে format string-এর শেষে নিজেই "\\n" যোগ করতে হয় (এই exercise-এ ইচ্ছাকৃতভাবে বাদ দেওয়া হয়েছে, output একটানা দেখানোর জন্য)।',
+  },
 };

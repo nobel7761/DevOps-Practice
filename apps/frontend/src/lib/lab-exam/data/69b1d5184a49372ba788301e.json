@@ -22,7 +22,8 @@
       "check": {
         "require": ["ls"],
         "ref": "ls -la /etc/skel"
-      }
+      },
+      "answer": "ls -la /etc/skel"
     },
     {
       "id": "t02",
@@ -31,7 +32,8 @@
       "check": {
         "require": ["cat"],
         "ref": "cat /etc/skel/.bashrc"
-      }
+      },
+      "answer": "cat /etc/skel/.bashrc"
     },
     {
       "id": "t03",
@@ -45,7 +47,8 @@
             "hasHome": true
           }
         ]
-      }
+      },
+      "answer": "useradd -m testuser"
     },
     {
       "id": "t04",
@@ -54,7 +57,8 @@
       "check": {
         "require": ["ls"],
         "ref": "ls -la /home/testuser"
-      }
+      },
+      "answer": "ls -la /home/testuser"
     },
     {
       "id": "t05",
@@ -74,6 +78,7 @@
           }
         ]
       },
+      "answer": "echo \"Welcome to GolpoTech!\" | tee /etc/skel/welcome.txt",
       "hints": [
         "echo \"...\" | tee /etc/skel/welcome.txt — tee ফাইলে লেখে, আর pipe দিয়ে stdout-এও দেখায়"
       ]
@@ -90,7 +95,8 @@
             "hasHome": true
           }
         ]
-      }
+      },
+      "answer": "useradd -m testuser2"
     },
     {
       "id": "t07",
@@ -99,14 +105,14 @@
       "check": {
         "require": ["cat"],
         "ref": "cat /home/testuser2/welcome.txt"
-      }
+      },
+      "answer": "cat /home/testuser2/welcome.txt"
     },
     {
       "id": "t08",
       "points": 8,
       "prompt": "/etc/skel/.bashrc-এর শেষে একটা নতুন লাইন যোগ করো (মুছে না, শুধু যোগ): alias myinfo='echo Custom User Info' — vim বাস্তবে ব্যবহার হতো, এখানে একই ফলাফলের জন্য অন্য একটা কমান্ড আছে যেটা ফাইলের শেষে যোগ করে (মুছে ফেলে না)।",
       "check": {
-        "require": ["echo", ">>"],
         "paths": [
           {
             "path": "/etc/skel/.bashrc",
@@ -115,6 +121,7 @@
           }
         ]
       },
+      "answer": "echo \"alias myinfo='echo Custom User Info'\" >> /etc/skel/.bashrc",
       "hints": ["> মুছে লেখে, >> যোগ করে — আগের লেসনেই শিখেছিলে এই তফাত"]
     },
     {
@@ -130,7 +137,8 @@
             "shell": "/bin/bash"
           }
         ]
-      }
+      },
+      "answer": "useradd -m -s /bin/bash testuser3"
     },
     {
       "id": "t10",
@@ -139,7 +147,8 @@
       "check": {
         "require": ["su", "-"],
         "ref": "su - testuser3"
-      }
+      },
+      "answer": "su - testuser3"
     },
     {
       "id": "t11",
@@ -148,7 +157,8 @@
       "check": {
         "require": ["cat", ".bashrc"],
         "ref": "cat .bashrc"
-      }
+      },
+      "answer": "cat .bashrc"
     },
     {
       "id": "t12",
@@ -156,7 +166,8 @@
       "prompt": "root-এ ফিরে এসো।",
       "check": {
         "require": ["exit"]
-      }
+      },
+      "answer": "exit"
     },
     {
       "id": "t13",
@@ -168,7 +179,8 @@
       "prompt": "/etc/skel থেকে welcome.txt মুছে ফেলো।",
       "check": {
         "require": ["rm"]
-      }
+      },
+      "answer": "rm /etc/skel/welcome.txt"
     },
     {
       "id": "t14",
@@ -182,7 +194,8 @@
             "hasHome": true
           }
         ]
-      }
+      },
+      "answer": "useradd -m testuser4"
     },
     {
       "id": "t15",
@@ -190,8 +203,9 @@
       "prompt": "testuser4-এর home-এর ভেতরটা দেখাও — welcome.txt না থাকলেও বাকি সব (bashrc-সহ) ঠিকই আছে তো, প্রমাণ করো।",
       "check": {
         "require": ["ls"],
-        "ref": "ls /home/testuser4"
-      }
+        "ref": "ls -la /home/testuser4"
+      },
+      "answer": "ls -la /home/testuser4"
     },
     {
       "id": "t16",
@@ -210,7 +224,8 @@
             "hasHome": false
           }
         ]
-      }
+      },
+      "answer": "useradd testuser5"
     },
     {
       "id": "t17",
@@ -224,7 +239,8 @@
             "type": "dir"
           }
         ]
-      }
+      },
+      "answer": "mkdir /home/testuser5"
     },
     {
       "id": "t18",
@@ -233,7 +249,8 @@
       "check": {
         "require": ["ls"],
         "ref": "ls -la /home/testuser5"
-      }
+      },
+      "answer": "ls -la /home/testuser5"
     },
     {
       "id": "t19",
@@ -248,6 +265,7 @@
           }
         ]
       },
+      "answer": "cp -r /etc/skel/. /home/testuser5/",
       "hints": [
         "cp -r /etc/skel/. /home/testuser5/ — শেষের /. মানে 'ভেতরেরটুকু', /etc/skel নিজে একটা সাব-ফোল্ডার হিসেবে না বসুক"
       ]
@@ -265,7 +283,8 @@
             "group": "testuser5"
           }
         ]
-      }
+      },
+      "answer": "chown -R testuser5:testuser5 /home/testuser5"
     },
     {
       "id": "t21",
@@ -274,7 +293,8 @@
       "check": {
         "require": ["ls"],
         "ref": "ls -la /home/testuser5"
-      }
+      },
+      "answer": "ls -la /home/testuser5"
     }
   ],
   "labId": "69b1d5184a49372ba788301e"

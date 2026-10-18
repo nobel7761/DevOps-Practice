@@ -9,6 +9,9 @@ import { UsersModule } from './users/users.module';
 import { QuizModule } from './quiz/quiz.module';
 import { InterviewModule } from './interview/interview.module';
 import { NotesModule } from './notes/notes.module';
+import { TranslateModule } from './translate/translate.module';
+import { AskModule } from './ask/ask.module';
+import { ProgressModule } from './progress/progress.module';
 
 // Resolve .env file path - try multiple locations
 const getEnvPath = (): string => {
@@ -77,6 +80,9 @@ if (!existsSync(envPath)) {
     QuizModule,
     InterviewModule,
     NotesModule,
+    TranslateModule,
+    AskModule,
+    ProgressModule,
   ],
   controllers: [AppController],
   providers: [AppService],

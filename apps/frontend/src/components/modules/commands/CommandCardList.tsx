@@ -15,14 +15,19 @@ export default function CommandCardList({
 
   return (
     <div className="flex flex-col gap-3">
-      {entries.map((entry) => (
-        <CommandCard
-          key={entry.id}
-          entry={entry}
-          revealed={!quizMode || revealedIds.has(entry.id)}
-          onReveal={() => setRevealedIds((prev) => new Set(prev).add(entry.id))}
-        />
-      ))}
+      {entries.map((entry, index) => {
+        const revealKey = `${entry.id}-${index}`;
+        return (
+          <CommandCard
+            key={revealKey}
+            entry={entry}
+            revealed={!quizMode || revealedIds.has(revealKey)}
+            onReveal={() =>
+              setRevealedIds((prev) => new Set(prev).add(revealKey))
+            }
+          />
+        );
+      })}
     </div>
   );
 }

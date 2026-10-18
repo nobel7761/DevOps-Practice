@@ -1,0 +1,834 @@
+{
+  "labId": "69c4e57723b200e2a411dddc",
+  "title": "Bulk File Editing with sed",
+  "passPercent": 95,
+  "intro": "Poridhi.io-র DevOps team release-এর আগে তিনটা staging config file production-এর জন্য পরিষ্কার করছে — sed দিয়ে bulk substitution, line deletion, আর in-place editing শিখবে এই ল্যাবে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর। ৯৫% = PASSED।",
+  "targets": [
+    { "path": "~/deploylab", "type": "dir" },
+    { "path": "~/deploylab/configs", "type": "dir" },
+    {
+      "path": "~/deploylab/configs/api.conf",
+      "type": "file",
+      "content": "HOST=prod-host.poridhi.io\nPORT=8080\nDB_HOST=prod-db.poridhi.io\nMAX_CONNECTIONS=50"
+    },
+    {
+      "path": "~/deploylab/configs/worker.conf",
+      "type": "file",
+      "content": "HOST=prod-host.poridhi.io\nPORT=9000\nDB_HOST=prod-db.poridhi.io\nWORKER_THREADS=4"
+    },
+    {
+      "path": "~/deploylab/configs/scheduler.conf",
+      "type": "file",
+      "content": "HOST=prod-host.poridhi.io\nPORT=9500\nDB_HOST=prod-db.poridhi.io\nMAX_RETRIES=3"
+    },
+    {
+      "path": "~/deploylab/demo.txt",
+      "type": "file",
+      "content": "staging staging staging"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 1,
+      "section": {
+        "title": "🏗️ Lab Setup",
+        "note": "প্রথমে practice environment বানাবে — deploylab/configs ফোল্ডারে তিনটা service-এর config file, প্রতিটাতে staging hostname, debug flag, ফাঁকা লাইন, আর comment লাইন আছে, ঠিক production-এর আগে real-world config যেমন থাকে। এই terminal multi-line heredoc সাপোর্ট করে না, তাই প্রতিটা লাইন আলাদা আলাদা command দিয়ে বানাতে হবে।"
+      },
+      "prompt": "deploylab/configs — পুরো path-টা এক কমান্ডে বানাও (মাঝের deploylab directory-ও এখনো নেই)।",
+      "answer": "mkdir -p deploylab/configs",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [{ "path": "~/deploylab/configs", "type": "dir" }]
+      },
+      "hints": ["মাঝের ধাপগুলো (parents) একসাথে বানানোর জন্য একটা flag আছে…"]
+    },
+    {
+      "id": "t02",
+      "points": 1,
+      "prompt": "deploylab/configs/api.conf ফাইলটা বানাও, প্রথম লাইনে লেখা থাকবে: # Poridhi.io API Service Configuration (এক কমান্ডে, editor ছাড়া)।",
+      "answer": "echo \"# Poridhi.io API Service Configuration\" > deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 1,
+      "prompt": "api.conf-এর পরের লাইনে (আগের content মুছে না ফেলে, append করে) যোগ করো: # Environment: staging",
+      "answer": "echo \"# Environment: staging\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging"
+          }
+        ]
+      },
+      "hints": [
+        "আগের লেখা না মুছে নতুন লাইন জোড়া লাগাতে একটা আলাদা redirect operator লাগে…"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 1,
+      "prompt": "এবার একটা ফাঁকা (empty) লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 1,
+      "prompt": "append করো: HOST=staging-host.poridhi.io",
+      "answer": "echo \"HOST=staging-host.poridhi.io\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 1,
+      "prompt": "append করো: PORT=8080",
+      "answer": "echo \"PORT=8080\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 1,
+      "prompt": "append করো: DB_HOST=staging-db.poridhi.io",
+      "answer": "echo \"DB_HOST=staging-db.poridhi.io\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080\nDB_HOST=staging-db.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 1,
+      "prompt": "append করো: DEBUG=true",
+      "answer": "echo \"DEBUG=true\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080\nDB_HOST=staging-db.poridhi.io\nDEBUG=true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 1,
+      "prompt": "append করো: LOG_LEVEL=debug",
+      "answer": "echo \"LOG_LEVEL=debug\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 1,
+      "prompt": "আরেকটা ফাঁকা লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 1,
+      "prompt": "শেষ লাইন append করো: MAX_CONNECTIONS=50 — api.conf setup শেষ!",
+      "answer": "echo \"MAX_CONNECTIONS=50\" >> deploylab/configs/api.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=8080\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nMAX_CONNECTIONS=50"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 1,
+      "prompt": "একইভাবে deploylab/configs/worker.conf বানাও, প্রথম লাইন: # Poridhi.io Worker Service Configuration",
+      "answer": "echo \"# Poridhi.io Worker Service Configuration\" > deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 1,
+      "prompt": "append করো: # Environment: staging",
+      "answer": "echo \"# Environment: staging\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 1,
+      "prompt": "ফাঁকা লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 1,
+      "prompt": "append করো: HOST=staging-host.poridhi.io",
+      "answer": "echo \"HOST=staging-host.poridhi.io\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 1,
+      "prompt": "append করো: PORT=9000",
+      "answer": "echo \"PORT=9000\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 1,
+      "prompt": "append করো: DB_HOST=staging-db.poridhi.io",
+      "answer": "echo \"DB_HOST=staging-db.poridhi.io\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000\nDB_HOST=staging-db.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 1,
+      "prompt": "append করো: DEBUG=true",
+      "answer": "echo \"DEBUG=true\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000\nDB_HOST=staging-db.poridhi.io\nDEBUG=true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "points": 1,
+      "prompt": "append করো: LOG_LEVEL=debug",
+      "answer": "echo \"LOG_LEVEL=debug\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t20",
+      "points": 1,
+      "prompt": "আরেকটা ফাঁকা লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t21",
+      "points": 1,
+      "prompt": "শেষ লাইন append করো: WORKER_THREADS=4 — worker.conf setup শেষ!",
+      "answer": "echo \"WORKER_THREADS=4\" >> deploylab/configs/worker.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9000\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nWORKER_THREADS=4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t22",
+      "points": 1,
+      "prompt": "একইভাবে deploylab/configs/scheduler.conf বানাও, প্রথম লাইন: # Poridhi.io Scheduler Service Configuration",
+      "answer": "echo \"# Poridhi.io Scheduler Service Configuration\" > deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t23",
+      "points": 1,
+      "prompt": "append করো: # Environment: staging",
+      "answer": "echo \"# Environment: staging\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t24",
+      "points": 1,
+      "prompt": "ফাঁকা লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t25",
+      "points": 1,
+      "prompt": "append করো: HOST=staging-host.poridhi.io",
+      "answer": "echo \"HOST=staging-host.poridhi.io\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t26",
+      "points": 1,
+      "prompt": "append করো: PORT=9500",
+      "answer": "echo \"PORT=9500\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t27",
+      "points": 1,
+      "prompt": "append করো: DB_HOST=staging-db.poridhi.io",
+      "answer": "echo \"DB_HOST=staging-db.poridhi.io\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500\nDB_HOST=staging-db.poridhi.io"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t28",
+      "points": 1,
+      "prompt": "append করো: DEBUG=true",
+      "answer": "echo \"DEBUG=true\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500\nDB_HOST=staging-db.poridhi.io\nDEBUG=true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t29",
+      "points": 1,
+      "prompt": "append করো: LOG_LEVEL=debug",
+      "answer": "echo \"LOG_LEVEL=debug\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t30",
+      "points": 1,
+      "prompt": "আরেকটা ফাঁকা লাইন append করো।",
+      "answer": "echo \"\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t31",
+      "points": 1,
+      "prompt": "শেষ লাইন append করো: MAX_RETRIES=3 — তিনটা config file-ই রেডি, setup শেষ! গাছটা সবুজ হওয়ার কথা।",
+      "answer": "echo \"MAX_RETRIES=3\" >> deploylab/configs/scheduler.conf",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: staging\n\nHOST=staging-host.poridhi.io\nPORT=9500\nDB_HOST=staging-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nMAX_RETRIES=3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t32",
+      "points": 1,
+      "prompt": "শেষে deploylab/demo.txt বানাও, একই লাইনে (space দিয়ে আলাদা করে) তিনবার staging শব্দটা লেখো: staging staging staging — এটা পরে একটা জিনিস দেখানোর জন্য লাগবে।",
+      "answer": "echo \"staging staging staging\" > deploylab/demo.txt",
+      "check": {
+        "require": ["echo", ">"],
+        "paths": [
+          {
+            "path": "~/deploylab/demo.txt",
+            "type": "file",
+            "content": "staging staging staging"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t33",
+      "points": 3,
+      "section": {
+        "title": "✍️ Exercise 1: sed দিয়ে Basic Substitution",
+        "note": "sed-এর সবচেয়ে common ব্যবহার হলো s/pattern/replacement/ — pattern খুঁজে replacement দিয়ে বদলে দেয়। flag ছাড়া sed প্রতিটা লাইনে শুধু প্রথম মিলটাই বদলায়, আর -i ছাড়া ফাইল নিজে বদলায় না — আউটপুট শুধু স্ক্রিনে আসে, preview হিসেবে।"
+      },
+      "prompt": "deploylab/configs/api.conf ফাইলে যেখানে যেখানে 'staging' শব্দটা আছে, সেটা 'prod' দিয়ে বদলে ফলাফলটা শুধু স্ক্রিনে দেখাও — ফাইলটা এখনো অপরিবর্তিত থাকা উচিত।",
+      "answer": "sed 's/staging/prod/' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed 's/staging/prod/' deploylab/configs/api.conf"
+      },
+      "hints": ["sed-এর মূল গঠন মনে করো: sed 's/খুঁজবে/বদলাবে/' filename"]
+    },
+    {
+      "id": "t34",
+      "points": 3,
+      "section": {
+        "title": "🔁 Exercise 2: g Flag দিয়ে সব Occurrence বদলানো",
+        "note": "একই লাইনে pattern একাধিকবার থাকলে, flag ছাড়া sed শুধু প্রথমটাই বদলায়। পুরো লাইনের সবগুলো occurrence বদলাতে replacement-এর পরে একটা global flag বসাতে হয়: s/pattern/replacement/g।"
+      },
+      "prompt": "deploylab/demo.txt-এ একই লাইনে 'staging' শব্দটা তিনবার আছে। তিনটাই 'prod' দিয়ে বদলে ফলাফল দেখাও — শুধু প্রথমটা না, পুরো লাইনের সবগুলো occurrence।",
+      "answer": "sed 's/staging/prod/g' deploylab/demo.txt",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed 's/staging/prod/g' deploylab/demo.txt"
+      },
+      "hints": [
+        "flag ছাড়া sed প্রথম মিলেই থেমে যায় — global replacement বোঝাতে এক-অক্ষরের একটা flag আছে"
+      ]
+    },
+    {
+      "id": "t35",
+      "points": 4,
+      "section": {
+        "title": "🎯 Exercise 3: Address দিয়ে নির্দিষ্ট লাইনে কাজ করা",
+        "note": "sed-কে বলে দেওয়া যায় ঠিক কোন লাইনে অপারেশন চালাতে হবে — address। address হতে পারে একটা লাইন নম্বর, একটা range, ফাইলের শেষ লাইন, অথবা একটা pattern-ভিত্তিক address — command-এর একদম শুরুতে, s///-এর ঠিক আগে বসে।"
+      },
+      "prompt": "deploylab/configs/worker.conf-এর শুধু ২ নম্বর লাইনে (# Environment: staging) 'staging'-কে 'prod' দিয়ে বদলাও — বাকি লাইনের staging অপরিবর্তিত থাকবে। ফলাফল স্ক্রিনে দেখাও।",
+      "answer": "sed '2s/staging/prod/' deploylab/configs/worker.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '2s/staging/prod/' deploylab/configs/worker.conf"
+      },
+      "hints": [
+        "address বসে pattern-এর ঠিক আগে, quote-এর ভেতরে — যেমন: sed 'N s/.../.../' — এখানে N একটা লাইন নম্বর"
+      ]
+    },
+    {
+      "id": "t36",
+      "points": 4,
+      "prompt": "এবার ৪ থেকে ৬ নম্বর লাইনের মধ্যে যেখানে 'staging' আছে সেটা 'prod' দিয়ে বদলাও — এই range-এর বাইরের লাইন (যেমন ২ নম্বর) অপরিবর্তিত থাকবে। স্ক্রিনে দেখাও।",
+      "answer": "sed '4,6s/staging/prod/' deploylab/configs/worker.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '4,6s/staging/prod/' deploylab/configs/worker.conf"
+      },
+      "hints": [
+        "দুইটা লাইন নম্বরের মাঝে কমা বসালে সেটা একটা range address হয়ে যায়"
+      ]
+    },
+    {
+      "id": "t37",
+      "points": 4,
+      "prompt": "এবার ফাইলের একদম শেষ লাইনে (WORKER_THREADS=4) গিয়ে শুধু ওই লাইনেই '4'-কে '8'-এ বদলাও — sed-এ 'শেষ লাইন' বোঝানোর জন্য একটা বিশেষ address আছে। ফলাফল দেখাও।",
+      "answer": "sed '$s/4/8/' deploylab/configs/worker.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '$s/4/8/' deploylab/configs/worker.conf"
+      },
+      "hints": [
+        "এটা regex না, একটা ছোট্ট চিহ্ন যেটা মানে 'শেষ লাইন' — ডলার সাইনের কথা মনে পড়ছে?"
+      ]
+    },
+    {
+      "id": "t38",
+      "points": 4,
+      "prompt": "এবার লাইন নম্বর ছাড়া, শুধু যেসব লাইন 'DB_' দিয়ে শুরু হয় (pattern-ভিত্তিক address), সেই লাইনগুলোতেই 'staging'-কে 'prod' দিয়ে বদলাও — অন্য লাইনের staging অপরিবর্তিত থাকবে। স্ক্রিনে দেখাও।",
+      "answer": "sed '/^DB_/s/staging/prod/' deploylab/configs/worker.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '/^DB_/s/staging/prod/' deploylab/configs/worker.conf"
+      },
+      "hints": [
+        "লাইন নম্বরের বদলে address হিসেবে একটা regex-ও বসানো যায়, /pattern/ আকারে"
+      ]
+    },
+    {
+      "id": "t39",
+      "points": 4,
+      "section": {
+        "title": "🗑️ Exercise 4: লাইন বাদ দেওয়া",
+        "note": "sed দিয়ে শুধু বদলানো না, পুরো লাইনও বাদ দেওয়া যায় — address-এর পরে একটা delete কমান্ড বসালে, মিল পাওয়া লাইনটা output থেকে বাদ পড়ে যায়। pattern দিয়ে বাছাই করলে লাইন নম্বর যেখানেই থাকুক, সঠিকভাবে খুঁজে বাদ দেয়।"
+      },
+      "prompt": "deploylab/configs/api.conf থেকে যে লাইনটা 'DEBUG=' দিয়ে শুরু হয়, সেটা বাদ দিয়ে বাকি সব লাইন দেখাও (ফাইল এখনো বদলাবে না)।",
+      "answer": "sed '/^DEBUG=/d' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '/^DEBUG=/d' deploylab/configs/api.conf"
+      },
+      "hints": [
+        "pattern-এর পরে (/pattern/-এর পর) একটা এক-অক্ষরের কমান্ড বসালে সেই লাইনটা মুছে যায়"
+      ]
+    },
+    {
+      "id": "t40",
+      "points": 4,
+      "prompt": "এবার api.conf-এর সব ফাঁকা (blank) লাইন বাদ দিয়ে দেখাও — regex দিয়ে এমন লাইন বোঝাও যেখানে শুরু থেকে শেষ পর্যন্ত কোনো character-ই নেই।",
+      "answer": "sed '/^$/d' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '/^$/d' deploylab/configs/api.conf"
+      },
+      "hints": [
+        "^ মানে লাইনের শুরু, $ মানে লাইনের শেষ — মাঝে কিছু না থাকলে লাইনটা খালি"
+      ]
+    },
+    {
+      "id": "t41",
+      "points": 5,
+      "prompt": "api.conf থেকে comment লাইনগুলো (# দিয়ে শুরু হওয়া লাইন) বাদ দিয়ে বাকি অংশ দেখাও।",
+      "answer": "sed '/^#/d' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["-i"],
+        "ref": "sed '/^#/d' deploylab/configs/api.conf"
+      }
+    },
+    {
+      "id": "t42",
+      "points": 5,
+      "section": {
+        "title": "🔇 Exercise 5: বেছে বেছে লাইন দেখানো",
+        "note": "sed স্বাভাবিকভাবে প্রতিটা লাইন নিজে থেকেই দেখায় (auto-print)। একটা flag দিলে এই auto-print বন্ধ হয়ে যায় — তখন শুধু যেসব লাইনে explicit একটা print কমান্ড চলে, সেগুলোই দেখা যায়। এভাবে পুরো ফাইল না দেখিয়ে শুধু দরকারি লাইন আলাদা করে বের করা যায়।"
+      },
+      "prompt": "api.conf-এর মধ্যে থেকে শুধু comment লাইনগুলো (# দিয়ে শুরু) বেছে বেছে দেখাও — বাকি কোনো লাইন screen-এ আসা উচিত না।",
+      "answer": "sed -n '/^#/p' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed", "-n"],
+        "forbid": ["-i"],
+        "ref": "sed -n '/^#/p' deploylab/configs/api.conf"
+      },
+      "hints": [
+        "auto-print বন্ধ করতে একটা flag লাগবে (quiet mode)",
+        "তারপর address-এর পরে print-এর কমান্ডটা বসাও: /^#/-এর পর একটা অক্ষর"
+      ]
+    },
+    {
+      "id": "t43",
+      "points": 5,
+      "prompt": "worker.conf-এ 'staging'-কে 'prod'-এ বদলে, তারপর শুধু যেসব লাইনে এখন 'prod' আছে — সেই লাইনগুলোই আলাদাভাবে বের করে দেখাও। দুইটা ধাপ এক লাইনে জোড়া লাগাতে হবে (ফাইল এখনো বদলাবে না)।",
+      "answer": "sed 's/staging/prod/g' deploylab/configs/worker.conf | sed -n '/prod/p'",
+      "check": {
+        "require": ["sed", "-n", "|"],
+        "forbid": ["-i"],
+        "ref": "sed 's/staging/prod/g' deploylab/configs/worker.conf | sed -n '/prod/p'"
+      },
+      "hints": [
+        "প্রথম sed-এর output দ্বিতীয় sed-এর input বানাতে কোন চিহ্ন লাগে?"
+      ]
+    },
+    {
+      "id": "t44",
+      "points": 5,
+      "section": {
+        "title": "💾 Exercise 6: in-place-এ সরাসরি ফাইল বদলানো",
+        "note": "এতক্ষণ শুধু preview দেখেছ, ফাইল বদলায়নি। একটা flag দিলে sed নিজের output সরাসরি ফাইলেই লিখে দেয় — আলাদা কোনো নতুন ফাইল বা redirect ছাড়াই, একে বলে in-place editing। যেহেতু in-place edit-এ কোনো output screen-এ আসে না, তাই cat দিয়ে verify করতে হয় ফলাফল ঠিক আছে কিনা।"
+      },
+      "prompt": "এবার সত্যিকারভাবে ফাইল বদলাও — deploylab/configs/api.conf-এর সব 'staging'-কে 'prod' দিয়ে সরাসরি ফাইলের ভেতরেই (in-place) বদলে ফেলো। preview না, এবার আসল ফাইল।",
+      "answer": "sed -i 's/staging/prod/g' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed", "-i"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "# Poridhi.io API Service Configuration\n# Environment: prod\n\nHOST=prod-host.poridhi.io\nPORT=8080\nDB_HOST=prod-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nMAX_CONNECTIONS=50"
+          }
+        ]
+      },
+      "hints": [
+        "আগের মতোই pattern, শুধু sed-এর নামের ঠিক পরে এমন একটা flag বসাও যেটা ফলাফল সরাসরি ফাইলে লিখে দেয়"
+      ]
+    },
+    {
+      "id": "t45",
+      "points": 6,
+      "prompt": "একই api.conf-এ এখনো DEBUG=, LOG_LEVEL= লাইন, সব ফাঁকা লাইন, আর comment লাইন আছে — এই চারটা ধরনের লাইন একসাথে, এক কমান্ডেই in-place মুছে ফেলো (প্রতিটা pattern সেমিকোলন (;) দিয়ে আলাদা করে একই sed কমান্ডে দাও)। ফলাফল cat দিয়ে verify করবে।",
+      "answer": "sed -i '/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d' deploylab/configs/api.conf",
+      "check": {
+        "require": ["sed", "-i"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "HOST=prod-host.poridhi.io\nPORT=8080\nDB_HOST=prod-db.poridhi.io\nMAX_CONNECTIONS=50"
+          }
+        ]
+      },
+      "hints": [
+        "একাধিক sed অপারেশন একই কমান্ডে একসাথে চালাতে প্রতিটার মাঝে ; বসাও — প্রতিটা অংশ নিজের মতো /pattern/d আকারে থাকবে"
+      ]
+    },
+    {
+      "id": "t46",
+      "points": 6,
+      "prompt": "এখন configs/ ফোল্ডারের সবগুলো .conf ফাইলে (api, worker, scheduler — একটার পর একটা আলাদা কমান্ড না চালিয়ে, সবগুলো একসাথে) 'staging'-কে 'prod' দিয়ে in-place বদলাও।",
+      "answer": "sed -i 's/staging/prod/g' deploylab/configs/*.conf",
+      "check": {
+        "require": ["sed", "-i", "*"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "HOST=prod-host.poridhi.io\nPORT=8080\nDB_HOST=prod-db.poridhi.io\nMAX_CONNECTIONS=50"
+          },
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "# Poridhi.io Worker Service Configuration\n# Environment: prod\n\nHOST=prod-host.poridhi.io\nPORT=9000\nDB_HOST=prod-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nWORKER_THREADS=4"
+          },
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "# Poridhi.io Scheduler Service Configuration\n# Environment: prod\n\nHOST=prod-host.poridhi.io\nPORT=9500\nDB_HOST=prod-db.poridhi.io\nDEBUG=true\nLOG_LEVEL=debug\n\nMAX_RETRIES=3"
+          }
+        ]
+      },
+      "hints": [
+        "wildcard (*) দিয়ে একাধিক ফাইল এক কমান্ডে পাস করা যায়",
+        "configs/*.conf লিখলে ফোল্ডারের সবগুলো .conf ফাইল ধরবে — এক ফাইলের নাম আলাদা করে লেখার দরকার নেই"
+      ]
+    },
+    {
+      "id": "t47",
+      "points": 6,
+      "section": {
+        "title": "⚔️ Final Challenge: পুরো Release Cleanup",
+        "note": "ল্যাবের শেষ চ্যালেঞ্জ — এতক্ষণের সব কৌশল (substitution, delete, in-place, wildcard) একসাথে কাজে লাগিয়ে বাকি config file-গুলো production-ready বানাও।"
+      },
+      "prompt": "বাকি থাকা DEBUG=, LOG_LEVEL=, ফাঁকা লাইন, আর comment লাইন — এই চারটাই সবগুলো .conf ফাইল থেকে একসাথে, এক কমান্ডে, wildcard ব্যবহার করে in-place মুছে ফেলো (যে ফাইলগুলো আগেই পরিষ্কার হয়ে গেছে, সেগুলোতে আবার চালালেও সমস্যা নেই)।",
+      "answer": "sed -i '/^DEBUG=/d; /^LOG_LEVEL=/d; /^$/d; /^#/d' deploylab/configs/*.conf",
+      "check": {
+        "require": ["sed", "-i", "*"],
+        "paths": [
+          {
+            "path": "~/deploylab/configs/api.conf",
+            "type": "file",
+            "content": "HOST=prod-host.poridhi.io\nPORT=8080\nDB_HOST=prod-db.poridhi.io\nMAX_CONNECTIONS=50"
+          },
+          {
+            "path": "~/deploylab/configs/worker.conf",
+            "type": "file",
+            "content": "HOST=prod-host.poridhi.io\nPORT=9000\nDB_HOST=prod-db.poridhi.io\nWORKER_THREADS=4"
+          },
+          {
+            "path": "~/deploylab/configs/scheduler.conf",
+            "type": "file",
+            "content": "HOST=prod-host.poridhi.io\nPORT=9500\nDB_HOST=prod-db.poridhi.io\nMAX_RETRIES=3"
+          }
+        ]
+      },
+      "hints": [
+        "এটা ঠিক আগের একটা task-এর মতোই pattern, শুধু একটা ফাইলের নামের জায়গায় wildcard বসাও"
+      ]
+    },
+    {
+      "id": "t48",
+      "points": 5,
+      "prompt": "শেষ ধাপ: configs/ ফোল্ডারের কোনো .conf ফাইলে 'staging' শব্দটা এখনো বাকি আছে কিনা, পুরো ফোল্ডার জুড়ে (recursively) খুঁজে verify করো।",
+      "answer": "grep -r \"staging\" deploylab/configs",
+      "check": {
+        "require": ["grep", "-r"],
+        "ref": "grep -r \"staging\" deploylab/configs"
+      },
+      "hints": [
+        "এটা sed না — folder-এর ভেতরে text pattern খুঁজতে আগের একটা ল্যাবের কমান্ড মনে করো"
+      ]
+    }
+  ]
+}

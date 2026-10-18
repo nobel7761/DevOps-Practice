@@ -20,11 +20,13 @@ export default function LabCompanionPanel({
   labTitle,
   commands,
   labExamSpec,
+  topicEssayMarkdown,
 }: {
   labId: string;
   labTitle: string;
   commands: CommandEntry[];
   labExamSpec: LabExamSpec;
+  topicEssayMarkdown?: string | null;
 }) {
   return (
     <Tabs defaultValue="golpo">
@@ -54,7 +56,11 @@ export default function LabCompanionPanel({
       <TabsContent value="golpo">
         <Card>
           <CardContent>
-            <LabGolpoLesson labTitle={labTitle} commands={commands} />
+            <LabGolpoLesson
+              labTitle={labTitle}
+              commands={commands}
+              topicEssayMarkdown={topicEssayMarkdown}
+            />
           </CardContent>
         </Card>
       </TabsContent>

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import {
   BadRequestException,
@@ -13,17 +13,22 @@ import {
   QuizAttemptDocument,
 } from './schemas/quiz-attempt.schema';
 import { QuizBank, QuizDifficulty, QuizQuestion } from './quiz.types';
+import {
+  ContentProgress,
+  ContentProgressDocument,
+} from '../progress/schemas/content-progress.schema';
 
-// nest-cli's watch-mode asset copy can race with the initial `dist` wipe and
-// leave `dist/quiz/data` empty (see https://github.com/nestjs/nest-cli/issues/3509).
-// Fall back to the source JSON so `nest start --watch` stays reliable even when that happens.
+// nest-cli's watch-mode asset copy can race with the initial `dist` wipe, or
+// simply never re-run for a file added after the last copy pass, leaving
+// `dist/quiz/data` stale or empty (see https://github.com/nestjs/nest-cli/issues/3509).
+// Resolve per-file (not per-directory) so a bank added after the last copy
+// still resolves correctly even when older banks already exist in dist.
 const DIST_DATA_DIR = join(__dirname, 'data');
 const SRC_DATA_DIR = join(__dirname, '..', '..', 'src', 'quiz', 'data');
 
-function resolveDataDir(): string {
-  return existsSync(DIST_DATA_DIR) && readdirSync(DIST_DATA_DIR).length > 0
-    ? DIST_DATA_DIR
-    : SRC_DATA_DIR;
+function resolveDataFile(labId: string): string {
+  const distPath = join(DIST_DATA_DIR, `${labId}.json`);
+  return existsSync(distPath) ? distPath : join(SRC_DATA_DIR, `${labId}.json`);
 }
 
 @Injectable()
@@ -31,7 +36,17 @@ export class QuizService {
   constructor(
     @InjectModel(QuizAttempt.name)
     private readonly quizAttemptModel: Model<QuizAttemptDocument>,
+    @InjectModel(ContentProgress.name)
+    private readonly contentProgressModel: Model<ContentProgressDocument>,
   ) {}
+
+  /** Most recent saved attempt for this lab, so the frontend can show "you already took this" instead of a blank quiz. */
+  async getLatestAttempt(labId: string) {
+    return this.quizAttemptModel
+      .findOne({ labId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
 
   private shuffle<T>(items: T[]): T[] {
     const arr = [...items];
@@ -43,7 +58,7 @@ export class QuizService {
   }
 
   private loadBank(labId: string): QuizBank {
-    const filePath = join(resolveDataDir(), `${labId}.json`);
+    const filePath = resolveDataFile(labId);
     if (!existsSync(filePath)) {
       throw new NotFoundException(
         `এই lab-এর জন্য কোনো quiz এখনো নেই: ${labId}`,
@@ -134,6 +149,19 @@ export class QuizService {
       wrongQuestionIds,
       timeSpentSec: dto.timeSpentSec ?? 0,
     });
+
+    // Every attempt is recorded above regardless of outcome; course
+    // completion only advances on an actual pass (>= passPercent, 95% for
+    // every bank right now) — a failed attempt must never flip this on.
+    if (passed) {
+      await this.contentProgressModel
+        .findOneAndUpdate(
+          { key: labId, type: 'quiz' },
+          { key: labId, type: 'quiz', completed: true, score },
+          { upsert: true },
+        )
+        .exec();
+    }
 
     return {
       labId,

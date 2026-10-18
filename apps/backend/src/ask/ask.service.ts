@@ -1,0 +1,69 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import type OpenAI from 'openai';
+import { withRetry } from '../common/with-retry';
+import { OPENAI_CLIENT } from '../openai/openai-client.provider';
+import { buildSystemPrompt } from './build-system-prompt';
+import { AskQuestionDto } from './dto/ask-question.dto';
+import {
+  AskConversation,
+  AskConversationDocument,
+  AskMessage,
+} from './schemas/ask-conversation.schema';
+
+@Injectable()
+export class AskService {
+  constructor(
+    @Inject(OPENAI_CLIENT) private readonly openai: OpenAI,
+    @InjectModel(AskConversation.name)
+    private readonly conversationModel: Model<AskConversationDocument>,
+  ) {}
+
+  /** Previously-saved messages for this video, so a tab switch or page reload never loses the conversation. */
+  async getHistory(contentId: string): Promise<AskMessage[]> {
+    const conversation = await this.conversationModel
+      .findOne({ contentId })
+      .exec();
+    return conversation?.messages ?? [];
+  }
+
+  async ask(
+    contentId: string,
+    dto: AskQuestionDto,
+  ): Promise<{ answer: string }> {
+    const history = await this.getHistory(contentId);
+
+    const systemPrompt = buildSystemPrompt(dto.context);
+
+    const completion = await withRetry(() =>
+      this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...history.map((m) => ({ role: m.role, content: m.content })),
+          { role: 'user', content: dto.question },
+        ],
+      }),
+    );
+
+    const answer = completion.choices[0]?.message?.content ?? '';
+
+    await this.conversationModel
+      .findOneAndUpdate(
+        { contentId },
+        {
+          contentId,
+          messages: [
+            ...history,
+            { role: 'user', content: dto.question },
+            { role: 'assistant', content: answer },
+          ],
+        },
+        { upsert: true },
+      )
+      .exec();
+
+    return { answer };
+  }
+}

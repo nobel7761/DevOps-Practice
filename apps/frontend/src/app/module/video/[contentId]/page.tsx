@@ -18,6 +18,7 @@ export default async function VideoPage({
     <VideoDetailScreen
       milestone={location.milestone}
       module={location.module}
+      contentId={contentId}
       title={location.content.title ?? "Video"}
       videoUrl={location.content.videoUrl}
     />

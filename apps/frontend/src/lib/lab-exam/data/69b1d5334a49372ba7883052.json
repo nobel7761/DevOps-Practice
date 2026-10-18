@@ -15,7 +15,8 @@
       "check": {
         "require": ["ls", "-lh"],
         "ref": "ls -lh /var/log"
-      }
+      },
+      "answer": "ls -lh /var/log"
     },
     {
       "id": "t02",
@@ -24,7 +25,8 @@
       "check": {
         "require": ["wc", "-l"],
         "ref": "wc -l /var/log/apptrack/apptrack.log"
-      }
+      },
+      "answer": "wc -l /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t03",
@@ -37,7 +39,8 @@
       "check": {
         "require": ["tail"],
         "ref": "tail -15 /var/log/apptrack/apptrack.log"
-      }
+      },
+      "answer": "tail -15 /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t04",
@@ -46,7 +49,8 @@
       "check": {
         "require": ["grep"],
         "ref": "grep ERROR /var/log/apptrack/apptrack.log"
-      }
+      },
+      "answer": "grep ERROR /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t05",
@@ -55,7 +59,8 @@
       "check": {
         "require": ["grep", "-c"],
         "ref": "grep -c ERROR /var/log/apptrack/apptrack.log"
-      }
+      },
+      "answer": "grep -c ERROR /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t06",
@@ -65,7 +70,8 @@
         "require": ["grep", "-B", "-A"],
         "ref": "grep -B 3 -A 2 CRITICAL /var/log/apptrack/apptrack.log"
       },
-      "hints": ["grep -B 3 -A 2 \"CRITICAL\" — আগের লেসনের context flag"]
+      "hints": ["grep -B 3 -A 2 \"CRITICAL\" — আগের লেসনের context flag"],
+      "answer": "grep -B 3 -A 2 CRITICAL /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t07",
@@ -74,7 +80,8 @@
       "check": {
         "require": ["grep", "-i"],
         "ref": "grep -i memory /var/log/apptrack/apptrack.log"
-      }
+      },
+      "answer": "grep -i memory /var/log/apptrack/apptrack.log"
     },
     {
       "id": "t08",
@@ -86,7 +93,8 @@
       "prompt": "journal-এ একটা error entry যোগ করো — tag apptrack, priority daemon.err, message: AppTrack service crashed - exit code 137 (OOM kill)",
       "check": {
         "require": ["logger", "-t", "apptrack", "-p", "daemon.err"]
-      }
+      },
+      "answer": "logger -t apptrack -p daemon.err \"AppTrack service crashed - exit code 137 (OOM kill)\""
     },
     {
       "id": "t09",
@@ -94,7 +102,8 @@
       "prompt": "আরেকটা entry যোগ করো — tag apptrack, priority daemon.warn, message: AppTrack memory limit exceeded before shutdown",
       "check": {
         "require": ["logger", "-t", "apptrack", "-p", "daemon.warn"]
-      }
+      },
+      "answer": "logger -t apptrack -p daemon.warn \"AppTrack memory limit exceeded before shutdown\""
     },
     {
       "id": "t10",
@@ -103,7 +112,8 @@
       "check": {
         "require": ["journalctl", "-t"],
         "ref": "journalctl -t apptrack"
-      }
+      },
+      "answer": "journalctl -t apptrack"
     },
     {
       "id": "t11",
@@ -112,7 +122,8 @@
       "check": {
         "require": ["journalctl", "-p"],
         "ref": "journalctl -p err"
-      }
+      },
+      "answer": "journalctl -p err"
     },
     {
       "id": "t12",
@@ -121,7 +132,8 @@
       "check": {
         "require": ["journalctl", "--disk-usage"],
         "ref": "journalctl --disk-usage"
-      }
+      },
+      "answer": "journalctl --disk-usage"
     },
     {
       "id": "t13",
@@ -134,7 +146,8 @@
       "check": {
         "require": ["cat"],
         "ref": "cat /etc/logrotate.conf"
-      }
+      },
+      "answer": "cat /etc/logrotate.conf"
     },
     {
       "id": "t14",
@@ -152,7 +165,8 @@
       },
       "hints": [
         "echo \"/var/log/apptrack/apptrack.log { daily rotate 7 }\" | sudo tee /etc/logrotate.d/apptrack"
-      ]
+      ],
+      "answer": "echo \"/var/log/apptrack/apptrack.log { daily rotate 7 }\" | sudo tee /etc/logrotate.d/apptrack"
     },
     {
       "id": "t15",
@@ -160,7 +174,8 @@
       "prompt": "নতুন নিয়মটা debug mode-এ যাচাই করো (আসলে কিছু বদলাবে না, শুধু দেখাবে কী হতো)।",
       "check": {
         "require": ["logrotate", "--debug"]
-      }
+      },
+      "answer": "logrotate --debug /etc/logrotate.d/apptrack"
     },
     {
       "id": "t16",
@@ -168,7 +183,8 @@
       "prompt": "এবার জোর করে rotation ঘটাও — যদিও এখনো rotate করার সময় হয়নি।",
       "check": {
         "require": ["logrotate", "--force"]
-      }
+      },
+      "answer": "logrotate --force /etc/logrotate.d/apptrack"
     },
     {
       "id": "t17",
@@ -177,7 +193,8 @@
       "check": {
         "require": ["ls", "-lh"],
         "ref": "ls -lh /var/log/apptrack/"
-      }
+      },
+      "answer": "ls -lh /var/log/apptrack/"
     }
   ],
   "labId": "69b1d5334a49372ba7883052"

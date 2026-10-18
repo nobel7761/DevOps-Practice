@@ -1,14 +1,25 @@
+import Markdown from "@/components/shared/Markdown";
 import type { CommandEntry } from "@/lib/data/commands";
 
 export default function LabGolpoLesson({
   labTitle,
   commands,
+  hasTerminal = true,
+  topicEssayMarkdown,
 }: {
   labTitle: string;
   commands: CommandEntry[];
+  hasTerminal?: boolean;
+  topicEssayMarkdown?: string | null;
 }) {
   return (
     <div className="flex flex-col gap-6">
+      {topicEssayMarkdown && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <Markdown>{topicEssayMarkdown}</Markdown>
+        </div>
+      )}
+
       <p className="text-sm leading-relaxed text-muted-foreground">
         <strong className="text-foreground">{labTitle}</strong> lab-টা শুরু থেকে
         শেষ পর্যন্ত, প্রতিটা command যে ক্রমে ব্যবহার হয়েছে ঠিক সেই ক্রমে, গল্প
@@ -17,7 +28,7 @@ export default function LabGolpoLesson({
 
       <ol className="flex flex-col gap-5">
         {commands.map((entry, index) => (
-          <li key={entry.id} className="flex gap-3">
+          <li key={`${entry.id}-${index}`} className="flex gap-3">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
               {index + 1}
             </span>
@@ -38,8 +49,10 @@ export default function LabGolpoLesson({
 
       <p className="text-sm leading-relaxed text-muted-foreground">
         এই ছিল <strong className="text-foreground">{labTitle}</strong>-এর পুরো
-        journey! এবার Terminal tab-এ নিজে হাতে practice করো, আর Quiz দিয়ে যাচাই
-        করে নাও কতটা মনে থাকলো।
+        journey!{" "}
+        {hasTerminal
+          ? "এবার Terminal tab-এ নিজে হাতে practice করো, আর Quiz দিয়ে যাচাই করে নাও কতটা মনে থাকলো।"
+          : "এবার Quiz দিয়ে যাচাই করে নাও কতটা মনে থাকলো।"}
       </p>
     </div>
   );

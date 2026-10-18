@@ -1,0 +1,351 @@
+{
+  "labId": "69c284a9bfa7b7946e189979",
+  "title": "LAB EXAM: Linux Pipes and I/O Redirection",
+  "passPercent": 95,
+  "intro": "Poridhi-র stdin/stdout/pipe ল্যাবটা হাতে-কলমে — Setup থেকে Closing Challenge পর্যন্ত, প্রতিটা command নিজের হাতে টাইপ করবে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর। ৯৫% = PASSED।",
+  "targets": [
+    {
+      "path": "~/pipeline",
+      "type": "dir"
+    },
+    {
+      "path": "~/pipeline/data",
+      "type": "dir"
+    },
+    {
+      "path": "~/pipeline/data/access.log",
+      "type": "file",
+      "content": "192.168.1.10 GET /api/users 200\n192.168.1.11 POST /api/upload 500\n192.168.1.12 DELETE /api/session 403\n192.168.1.13 GET /api/reports 200"
+    },
+    {
+      "path": "~/pipeline/data/mixed.log",
+      "type": "file",
+      "content": "INFO service started successfully\nERROR failed to connect to database\nINFO health check passed\nERROR disk usage above 90"
+    },
+    {
+      "path": "~/pipeline/reports",
+      "type": "dir"
+    },
+    {
+      "path": "~/pipeline/reports/errors.txt",
+      "type": "file",
+      "content": "192.168.1.11 POST /api/upload 500\n192.168.1.12 DELETE /api/session 403"
+    },
+    {
+      "path": "~/pipeline/reports/success.txt",
+      "type": "file",
+      "content": "192.168.1.10 GET /api/users 200\n192.168.1.13 GET /api/reports 200"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 3,
+      "section": {
+        "title": "🏗️ Lab Setup",
+        "note": "প্রথমে practice environment বানাবে — একটা access log আর একটা mixed log file, কয়েক লাইন করে। ডানের গাছটাই টার্গেট।"
+      },
+      "prompt": "~/pipeline/data — পুরো path-টা এক কমান্ডে বানাও (মাঝের pipeline directory-ও এখনো নেই)।",
+      "answer": "mkdir -p ~/pipeline/data",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [{ "path": "~/pipeline/data", "type": "dir" }]
+      },
+      "hints": ["মাঝের ধাপগুলো (parents) একসাথে বানানোর একটা flag আছে…"]
+    },
+    {
+      "id": "t02",
+      "points": 3,
+      "prompt": "একইভাবে বানাও: ~/pipeline/reports",
+      "answer": "mkdir -p ~/pipeline/reports",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [{ "path": "~/pipeline/reports", "type": "dir" }]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 3,
+      "prompt": "pipeline/data-এর ভেতরে access.log বানাও — প্রথম লাইনে লেখো: 192.168.1.10 GET /api/users 200 (editor ছাড়া, এক কমান্ডে)।",
+      "answer": "echo \"192.168.1.10 GET /api/users 200\" > ~/pipeline/data/access.log",
+      "check": {
+        "require": ["echo", ">"],
+        "forbid": [">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/access.log",
+            "type": "file",
+            "content": "192.168.1.10 GET /api/users 200"
+          }
+        ]
+      },
+      "hints": [
+        "echo-র output স্ক্রিনে না পাঠিয়ে ফাইলে ঘুরিয়ে দাও — নতুন ফাইল, তাই overwrite redirect লাগবে…"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 3,
+      "prompt": "access.log-এ দ্বিতীয় লাইন যোগ করো (append, overwrite না): 192.168.1.11 POST /api/upload 500",
+      "answer": "echo \"192.168.1.11 POST /api/upload 500\" >> ~/pipeline/data/access.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/access.log",
+            "type": "file",
+            "content": "192.168.1.10 GET /api/users 200\n192.168.1.11 POST /api/upload 500"
+          }
+        ]
+      },
+      "hints": [
+        "আগের লাইনটা মুছে ফেলা যাবে না — append করার operator-টা ব্যবহার করো…"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 3,
+      "prompt": "আরেকটা লাইন append করো: 192.168.1.12 DELETE /api/session 403",
+      "answer": "echo \"192.168.1.12 DELETE /api/session 403\" >> ~/pipeline/data/access.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/access.log",
+            "type": "file",
+            "content": "192.168.1.10 GET /api/users 200\n192.168.1.11 POST /api/upload 500\n192.168.1.12 DELETE /api/session 403"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 3,
+      "prompt": "শেষ লাইনটা append করো: 192.168.1.13 GET /api/reports 200 — access.log সম্পূর্ণ হবে।",
+      "answer": "echo \"192.168.1.13 GET /api/reports 200\" >> ~/pipeline/data/access.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/access.log",
+            "type": "file",
+            "content": "192.168.1.10 GET /api/users 200\n192.168.1.11 POST /api/upload 500\n192.168.1.12 DELETE /api/session 403\n192.168.1.13 GET /api/reports 200"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 3,
+      "prompt": "এবার pipeline/data-এর ভেতরে mixed.log বানাও — প্রথম লাইনে লেখো: INFO service started successfully",
+      "answer": "echo \"INFO service started successfully\" > ~/pipeline/data/mixed.log",
+      "check": {
+        "require": ["echo", ">"],
+        "forbid": [">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/mixed.log",
+            "type": "file",
+            "content": "INFO service started successfully"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 3,
+      "prompt": "append করো: ERROR failed to connect to database",
+      "answer": "echo \"ERROR failed to connect to database\" >> ~/pipeline/data/mixed.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/mixed.log",
+            "type": "file",
+            "content": "INFO service started successfully\nERROR failed to connect to database"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 3,
+      "prompt": "append করো: INFO health check passed",
+      "answer": "echo \"INFO health check passed\" >> ~/pipeline/data/mixed.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/mixed.log",
+            "type": "file",
+            "content": "INFO service started successfully\nERROR failed to connect to database\nINFO health check passed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 3,
+      "prompt": "শেষ লাইনটা append করো: ERROR disk usage above 90 — mixed.log সম্পূর্ণ, setup শেষ! গাছটা পুরো সবুজ হওয়ার কথা।",
+      "answer": "echo \"ERROR disk usage above 90\" >> ~/pipeline/data/mixed.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/data/mixed.log",
+            "type": "file",
+            "content": "INFO service started successfully\nERROR failed to connect to database\nINFO health check passed\nERROR disk usage above 90"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "section": {
+        "title": "🔀 Exercise 1: stdin, stdout আর redirect (> / >>)",
+        "note": "প্রতিটা command-এর default input (stdin) হলো keyboard, আর default output (stdout) হলো screen। redirect operator এই default রুট বদলে দেয় — > দিয়ে output একটা file-এ পাঠানো যায় (file আগে থেকে থাকলে ওভাররাইট হয়ে যায়), আর >> দিয়ে append হয় (পুরনো content অক্ষত থেকে নতুন content শেষে যোগ হয়)।"
+      },
+      "prompt": "access.log থেকে status code 500 থাকা লাইনটা খুঁজে বের করে ~/pipeline/reports/errors.txt নামে একটা নতুন ফাইলে সেভ করো (filter করার কমান্ড + redirect, এক লাইনে)।",
+      "answer": "grep \"500\" ~/pipeline/data/access.log > ~/pipeline/reports/errors.txt",
+      "check": {
+        "require": ["grep", ">"],
+        "forbid": [">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/reports/errors.txt",
+            "type": "file",
+            "content": "192.168.1.11 POST /api/upload 500"
+          }
+        ]
+      },
+      "hints": [
+        "grep দিয়ে filter করে output সরাসরি redirect করো — নতুন ফাইল বানাতে overwrite operator লাগবে…"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 6,
+      "prompt": "এবার status code 403-এর লাইনটাও একই errors.txt-এ যোগ করো — কিন্তু আগের লাইনটা যেন মুছে না যায় (append)।",
+      "answer": "grep \"403\" ~/pipeline/data/access.log >> ~/pipeline/reports/errors.txt",
+      "check": {
+        "require": ["grep", ">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/reports/errors.txt",
+            "type": "file",
+            "content": "192.168.1.11 POST /api/upload 500\n192.168.1.12 DELETE /api/session 403"
+          }
+        ]
+      },
+      "hints": ["overwrite না, append-এর operator-টা মনে করো…"]
+    },
+    {
+      "id": "t13",
+      "points": 8,
+      "section": {
+        "title": "🔧 Exercise 2: Pipe (|) দিয়ে দুইটা command জোড়া লাগানো",
+        "note": "pipe (|) একটা command-এর stdout সরাসরি পরের command-এর stdin-এর সাথে জুড়ে দেয় — মাঝখানে কোনো intermediate file ছাড়াই। প্রথম command-এর output দ্বিতীয় command-এর input হয়ে যায়।"
+      },
+      "prompt": "mixed.log-এর পুরো content বের করে, সেটা সরাসরি pipe দিয়ে পরের command-এ পাঠাও যাতে শুধু ERROR লাইনগুলো বাছাই হয় — grep-কে আলাদা filename না দিয়ে।",
+      "answer": "cat ~/pipeline/data/mixed.log | grep \"ERROR\"",
+      "check": {
+        "require": ["cat", "|", "grep"],
+        "ref": "cat ~/pipeline/data/mixed.log | grep \"ERROR\""
+      },
+      "hints": [
+        "cat দিয়ে পুরো file বের করে, pipe দিয়ে সেই output grep-এর input বানাও…"
+      ]
+    },
+    {
+      "id": "t14",
+      "points": 8,
+      "section": {
+        "title": "🔢 Exercise 3: Pipe-এর শেষে wc -l দিয়ে গোনা",
+        "note": "pipe chain-এর একদম শেষে wc -l বসালে, আগের command-এর matching ফলাফল ঠিক কয় লাইন সেটা সংখ্যায় বের করা যায় — আলাদাভাবে গুনতে হয় না।"
+      },
+      "prompt": "mixed.log-এ কয়টা লাইনে INFO আছে — grep-এর output সরাসরি pipe দিয়ে wc -l-এ পাঠিয়ে সংখ্যাটা বের করো।",
+      "answer": "grep \"INFO\" ~/pipeline/data/mixed.log | wc -l",
+      "check": {
+        "require": ["grep", "|", "wc"],
+        "ref": "grep \"INFO\" ~/pipeline/data/mixed.log | wc -l"
+      }
+    },
+    {
+      "id": "t15",
+      "points": 8,
+      "section": {
+        "title": "⛓️ Exercise 4: তিন ধাপের Pipe",
+        "note": "pipe যতগুলো stage দরকার ততগুলো জোড়া লাগানো যায় — প্রতিটা stage ঠিক আগেরটার output-কেই নিজের input হিসেবে পায়, একদম বাম থেকে ডানে।"
+      },
+      "prompt": "mixed.log থেকে ERROR লাইনগুলো বাছাই করে, তারপর সেই লাইনগুলোতে ERROR শব্দটাকে ISSUE দিয়ে বদলে দাও — cat, grep আর আরেকটা command, তিনটাই এক লাইনে pipe দিয়ে জোড়া লাগিয়ে।",
+      "answer": "cat ~/pipeline/data/mixed.log | grep \"ERROR\" | sed 's/ERROR/ISSUE/'",
+      "check": {
+        "require": ["cat", "|", "grep", "|", "sed"],
+        "ref": "cat ~/pipeline/data/mixed.log | grep \"ERROR\" | sed 's/ERROR/ISSUE/'"
+      },
+      "hints": [
+        "শব্দ বদলানোর জন্য sed-এর s/pattern/replacement/ গঠনটা মনে করো…"
+      ]
+    },
+    {
+      "id": "t16",
+      "points": 8,
+      "prompt": "mixed.log-এর ERROR লাইনগুলো থেকে শুধু ২য় শব্দটা (কারণের প্রথম শব্দ) বের করো — grep দিয়ে বাছাই করে, সেই output pipe দিয়ে column-ভিত্তিক filter-এ পাঠিয়ে।",
+      "answer": "grep \"ERROR\" ~/pipeline/data/mixed.log | awk '{print $2}'",
+      "check": {
+        "require": ["grep", "|", "awk"],
+        "ref": "grep \"ERROR\" ~/pipeline/data/mixed.log | awk '{print $2}'"
+      },
+      "hints": [
+        "awk-এ $1 প্রথম শব্দ, $2 দ্বিতীয় শব্দ — সেভাবেই column বাছাই হয়…"
+      ]
+    },
+    {
+      "id": "t17",
+      "points": 10,
+      "section": {
+        "title": "💾 Exercise 5: Pipe-এর শেষ ফলাফল File-এ Save করা",
+        "note": "pipe আর redirect একসাথেও ব্যবহার করা যায় — পুরো pipeline-এর একদম শেষে > বসালে, পুরো chain-এর চূড়ান্ত output একটা file-এ সেভ হয়ে যায় (স্ক্রিনে আর দেখা যায় না)।"
+      },
+      "prompt": "access.log-এর পুরো content বের করে, তার মধ্যে থেকে status code 200 থাকা লাইনগুলো বাছাই করে, সরাসরি একটা নতুন ফাইলে — ~/pipeline/reports/success.txt — সেভ করো, সব এক লাইনে।",
+      "answer": "cat ~/pipeline/data/access.log | grep \"200\" > ~/pipeline/reports/success.txt",
+      "check": {
+        "require": ["cat", "|", "grep", ">"],
+        "forbid": [">>"],
+        "paths": [
+          {
+            "path": "~/pipeline/reports/success.txt",
+            "type": "file",
+            "content": "192.168.1.10 GET /api/users 200\n192.168.1.13 GET /api/reports 200"
+          }
+        ]
+      },
+      "hints": ["pipe দিয়ে filter করে, শেষ stage-এর output-টাই redirect করো…"]
+    },
+    {
+      "id": "t18",
+      "points": 9,
+      "section": {
+        "title": "⚔️ Closing Challenge",
+        "note": "ল্যাবের ফাইনাল challenge — কোনো নির্দেশনা ছাড়া, এতক্ষণের সব অস্ত্র (pipe, grep, wc, head) তোমার হাতে।"
+      },
+      "prompt": "Challenge 1: access.log-এ কয়টা request-এর status code ঠিক 200 না (অর্থাৎ অন্য কিছু) — একটা pipe chain দিয়ে সরাসরি সংখ্যাটা বের করো।",
+      "answer": "cat ~/pipeline/data/access.log | grep -v \"200\" | wc -l",
+      "check": {
+        "require": ["grep", "-v", "|", "wc"],
+        "ref": "cat ~/pipeline/data/access.log | grep -v \"200\" | wc -l"
+      }
+    },
+    {
+      "id": "t19",
+      "points": 7,
+      "prompt": "Challenge 2 (শেষ!): access.log-এর প্রথম দুইটা লাইনের মধ্যে কোনটায় status code 200 আছে সেটা বের করো — প্রথমে প্রথম ২ লাইন নাও, তারপর সেটার মধ্যে থেকে filter করো।",
+      "answer": "head -n 2 ~/pipeline/data/access.log | grep \"200\"",
+      "check": {
+        "require": ["head", "|", "grep"],
+        "ref": "head -n 2 ~/pipeline/data/access.log | grep \"200\""
+      }
+    }
+  ]
+}

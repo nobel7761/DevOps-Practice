@@ -4,9 +4,11 @@ import { NotesService } from './notes.service';
 function mockNoteModel({
   findOneResult = null,
   findOneAndUpdateResult = null,
+  findResult = [],
 }: {
   findOneResult?: unknown;
   findOneAndUpdateResult?: unknown;
+  findResult?: unknown[];
 }) {
   return {
     findOne: jest.fn().mockReturnValue({
@@ -14,6 +16,9 @@ function mockNoteModel({
     }),
     findOneAndUpdate: jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(findOneAndUpdateResult),
+    }),
+    find: jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(findResult),
     }),
   };
 }
@@ -67,6 +72,39 @@ describe('NotesService', () => {
       const result = await service.saveNote('lecture-1', 'নতুন নোট');
 
       expect(result).toEqual({ contentId: 'lecture-1', content: 'নতুন নোট' });
+    });
+  });
+
+  describe('getContentIdsWithNotes', () => {
+    it('returns only the content ids whose saved note has non-whitespace content', async () => {
+      const model = mockNoteModel({
+        findResult: [
+          { contentId: 'lecture-1', content: 'আমার নোট' },
+          { contentId: 'lecture-2', content: '   ' },
+        ],
+      });
+      const service = new NotesService(model as any);
+
+      const result = await service.getContentIdsWithNotes([
+        'lecture-1',
+        'lecture-2',
+        'lecture-3',
+      ]);
+
+      expect(model.find).toHaveBeenCalledWith(
+        { contentId: { $in: ['lecture-1', 'lecture-2', 'lecture-3'] } },
+        'contentId content',
+      );
+      expect(result).toEqual(['lecture-1']);
+    });
+
+    it('returns an empty array when none of the given content ids have a note', async () => {
+      const model = mockNoteModel({ findResult: [] });
+      const service = new NotesService(model as any);
+
+      const result = await service.getContentIdsWithNotes(['lecture-9']);
+
+      expect(result).toEqual([]);
     });
   });
 });

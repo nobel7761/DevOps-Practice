@@ -1,7 +1,23 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
+const getApiBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+
+    if (hostname === "192.168.0.102") {
+      return "http://192.168.0.102:3001/api";
+    }
+
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+    }
+  }
+
+  return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`;
+};
+
 const client: AxiosInstance = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api`,
+  baseURL: getApiBaseUrl(),
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

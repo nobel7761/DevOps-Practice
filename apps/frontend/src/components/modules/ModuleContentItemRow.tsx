@@ -30,6 +30,10 @@ export default function ModuleContentItemRow({
   moduleId: string;
 }) {
   const [showNotes, setShowNotes] = useState(false);
+  // Overrides `item.hasNote` the moment a save completes, so the icon
+  // updates instantly without waiting on a refetch of the bulk notes check.
+  const [hasNoteOverride, setHasNoteOverride] = useState<boolean | null>(null);
+  const hasNote = hasNoteOverride ?? item.hasNote ?? false;
 
   const label = (
     <div className="flex min-w-0 items-center gap-2">
@@ -71,6 +75,7 @@ export default function ModuleContentItemRow({
   const notesToggle = canHaveNotes && (
     <CustomButton
       variant="icon"
+      iconColor={hasNote ? "green" : "slate"}
       className="shrink-0"
       aria-label={showNotes ? "Hide notes" : "Show notes"}
       onClick={() => setShowNotes((prev) => !prev)}
@@ -112,7 +117,12 @@ export default function ModuleContentItemRow({
         {row}
         {notesToggle}
       </div>
-      {canHaveNotes && showNotes && <NoteEditor contentId={item.contentId!} />}
+      {canHaveNotes && showNotes && (
+        <NoteEditor
+          contentId={item.contentId!}
+          onSaved={(hasContent) => setHasNoteOverride(hasContent)}
+        />
+      )}
     </li>
   );
 }

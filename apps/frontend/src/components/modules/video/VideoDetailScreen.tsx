@@ -1,26 +1,27 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/shared/shadcn";
 import ModuleBreadcrumb from "@/components/modules/ModuleBreadcrumb";
-import VideoPlayer from "@/components/shared/VideoPlayer";
+import VideoWithCompanion from "@/components/modules/video/VideoWithCompanion";
 import type { CourseMilestone, CourseModule } from "@/lib/data/course-modules";
+import { getVideoAskContext } from "@/lib/data/video-ask-context";
+import { getVideoGolpo } from "@/lib/data/video-golpo";
 
 export default function VideoDetailScreen({
   milestone,
   module,
+  contentId,
   title,
   videoUrl,
 }: {
   milestone: CourseMilestone;
   module: CourseModule;
+  contentId: string;
   title: string;
   videoUrl: string;
 }) {
+  const golpo = getVideoGolpo(contentId);
+  const askContext = getVideoAskContext(contentId);
+
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
       <ModuleBreadcrumb
         items={[
           { label: "Home", href: "/" },
@@ -32,14 +33,15 @@ export default function VideoDetailScreen({
           { label: title },
         ]}
       />
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <VideoPlayer src={videoUrl} title={title} />
-        </CardContent>
-      </Card>
+      <VideoWithCompanion
+        contentId={contentId}
+        title={title}
+        videoUrl={videoUrl}
+        golpoMarkdown={golpo?.markdown ?? null}
+        labs={askContext.labs}
+        moduleId={askContext.moduleId}
+        hasInterview={askContext.hasInterview}
+      />
     </main>
   );
 }

@@ -48,6 +48,12 @@ export default function VideoPlayer({
   const [volume, setVolume] = useState(1);
   const [rate, setRate] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
+  const [mouseActive, setMouseActive] = useState(true);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState(0);
+  const hideControlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -112,11 +118,35 @@ export default function VideoPlayer({
   useEffect(() => {
     const onFullscreenChange = () => {
       setFullscreen(document.fullscreenElement === containerRef.current);
+      setMouseActive(true);
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
+
+  // In fullscreen, controls fade/slide away after a few seconds of no mouse
+  // movement (but never while paused) — outside fullscreen they stay on
+  // simple CSS :hover, which doesn't need this timer.
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseMove = () => {
+    setMouseActive(true);
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+    }
+    if (fullscreen) {
+      hideControlsTimeoutRef.current = setTimeout(() => {
+        setMouseActive(false);
+      }, 2500);
+    }
+  };
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -180,12 +210,28 @@ export default function VideoPlayer({
     muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
   const bufferedPercent = duration ? (bufferedEnd / duration) * 100 : 0;
+  // Outside fullscreen, controls stay on plain CSS :hover. In fullscreen
+  // that's replaced by this JS-driven state so a stationary-but-idle cursor
+  // (still technically :hover) doesn't keep controls pinned on screen.
+  const controlsVisible = !fullscreen || mouseActive || !playing;
+  const overlayVisibilityClass = fullscreen
+    ? controlsVisible
+      ? "opacity-100 translate-y-0"
+      : "pointer-events-none opacity-0 translate-y-3"
+    : "opacity-0 translate-y-0 group-hover:opacity-100";
 
   return (
     <AspectRatio
       ratio={16 / 9}
-      className="group relative overflow-hidden rounded-xl border border-border bg-black shadow-lg"
+      className="relative overflow-hidden rounded-xl border border-border bg-black shadow-lg"
     >
+      {/*
+        "group" lives on this div, not the AspectRatio wrapper above: this is
+        the element that actually becomes the fullscreen element (see
+        toggleFullscreen), and fullscreen detaches it from its ancestors for
+        hover hit-testing — group-hover on an ancestor stops matching in
+        fullscreen even while the pointer is genuinely over the content.
+      */}
       {/* Click anywhere on the video, or press Space while focused, to toggle play/pause — like YouTube. */}
       <div
         ref={containerRef}
@@ -193,18 +239,27 @@ export default function VideoPlayer({
         tabIndex={0}
         aria-label={playing ? "Pause video" : "Play video"}
         onClick={togglePlay}
+        onMouseMove={handleMouseMove}
         onKeyDown={(e) => {
           if (e.code === "Space") {
             e.preventDefault();
             togglePlay();
+          } else if (e.code === "ArrowRight") {
+            e.preventDefault();
+            skip(5);
+          } else if (e.code === "ArrowLeft") {
+            e.preventDefault();
+            skip(-5);
           }
         }}
-        className="relative h-full w-full cursor-pointer bg-black outline-none"
+        className="group relative h-full w-full cursor-pointer bg-black outline-none"
       >
         <video ref={videoRef} className="h-full w-full" aria-label={title} />
 
-        {/* Top gradient + title, revealed on hover */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 bg-linear-to-b from-black/70 to-transparent px-4 py-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        {/* Top gradient + title, revealed on hover (fades/slides away on its own in fullscreen) */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-b from-black/70 to-transparent px-4 py-3 transition-all duration-300 ${overlayVisibilityClass}`}
+        >
           <p className="truncate text-sm font-medium text-white drop-shadow">
             {title}
           </p>
@@ -227,10 +282,30 @@ export default function VideoPlayer({
         {/* Bottom control bar */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute inset-x-0 bottom-0 flex cursor-default flex-col gap-1.5 bg-linear-to-t from-black/90 via-black/50 to-transparent px-3 pt-10 pb-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          className={`absolute inset-x-0 bottom-0 flex cursor-default flex-col gap-1.5 bg-linear-to-t from-black/90 via-black/50 to-transparent px-3 pt-10 pb-2 transition-all duration-300 ${overlayVisibilityClass}`}
         >
           {/* Seek bar with buffered + played progress */}
-          <div className="group/seek relative flex h-3 items-center">
+          <div
+            className="group/seek relative flex h-3 items-center"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.min(
+                Math.max((e.clientX - rect.left) / rect.width, 0),
+                1,
+              );
+              setHoverTime(ratio * (duration || 0));
+              setHoverX(e.clientX - rect.left);
+            }}
+            onMouseLeave={() => setHoverTime(null)}
+          >
+            {hoverTime !== null && (
+              <div
+                className="pointer-events-none absolute bottom-full mb-2 -translate-x-1/2 rounded bg-black/90 px-2 py-1 text-xs tabular-nums text-white shadow"
+                style={{ left: hoverX }}
+              >
+                {formatTime(hoverTime)}
+              </div>
+            )}
             <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/25 transition-[height] group-hover/seek:h-1.5">
               <div
                 className="absolute inset-y-0 left-0 bg-white/40"

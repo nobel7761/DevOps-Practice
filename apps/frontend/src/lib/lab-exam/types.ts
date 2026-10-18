@@ -88,6 +88,8 @@ export interface LabExamTask {
    * literal answer command.
    */
   hints?: string[];
+  /** The literal correct command — only ever shown after 10 failed attempts. */
+  answer?: string;
   /** Starts a new lab section: shown as a header + explanation above the task */
   section?: { title: string; note?: string };
 }

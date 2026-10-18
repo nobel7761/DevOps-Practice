@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import ModulesScreen from "@/components/modules/ModulesScreen";
+import CourseWithLiveProgress from "@/components/modules/CourseWithLiveProgress";
 import { getCourseEntry } from "@/lib/data/courses/registry";
 
 export default async function CoursePage({
@@ -18,7 +18,7 @@ export default async function CoursePage({
   }
 
   return (
-    <ModulesScreen
+    <CourseWithLiveProgress
       course={entry.course}
       externalUrl={entry.externalUrl}
       defaultMilestoneId={milestone}

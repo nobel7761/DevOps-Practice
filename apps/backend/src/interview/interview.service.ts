@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import {
   BadGatewayException,
@@ -9,16 +9,18 @@ import {
 import type OpenAI from 'openai';
 import { GradeAnswerDto } from './dto/grade-answer.dto';
 import { GradeResult, InterviewSpec } from './interview.types';
-import { OPENAI_CLIENT } from './openai-client.provider';
+import { OPENAI_CLIENT } from '../openai/openai-client.provider';
 
-// Mirrors QuizService's dist/src fallback — see that file for why.
+// Mirrors QuizService's dist/src fallback — see that file for why this is
+// resolved per-file rather than per-directory.
 const DIST_DATA_DIR = join(__dirname, 'data');
 const SRC_DATA_DIR = join(__dirname, '..', '..', 'src', 'interview', 'data');
 
-function resolveDataDir(): string {
-  return existsSync(DIST_DATA_DIR) && readdirSync(DIST_DATA_DIR).length > 0
-    ? DIST_DATA_DIR
-    : SRC_DATA_DIR;
+function resolveDataFile(moduleId: string): string {
+  const distPath = join(DIST_DATA_DIR, `${moduleId}.json`);
+  return existsSync(distPath)
+    ? distPath
+    : join(SRC_DATA_DIR, `${moduleId}.json`);
 }
 
 @Injectable()
@@ -26,7 +28,7 @@ export class InterviewService {
   constructor(@Inject(OPENAI_CLIENT) private readonly openai: OpenAI) {}
 
   private loadSpec(moduleId: string): InterviewSpec {
-    const filePath = join(resolveDataDir(), `${moduleId}.json`);
+    const filePath = resolveDataFile(moduleId);
     if (!existsSync(filePath)) {
       throw new NotFoundException(
         `এই module-এর জন্য কোনো AI interview এখনো নেই: ${moduleId}`,

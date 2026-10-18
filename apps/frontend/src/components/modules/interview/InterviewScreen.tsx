@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, CardContent } from "@/components/shared/shadcn";
 import InterviewQuestionCard from "@/components/modules/interview/InterviewQuestionCard";
 import InterviewSummary from "@/components/modules/interview/InterviewSummary";
 import type {
   GradeResult,
+  InterviewQuestion,
   InterviewSpec,
 } from "@/components/modules/interview/interview.types";
 import ModuleBreadcrumb from "@/components/modules/ModuleBreadcrumb";
+import { useLanguage } from "@/contexts/LanguageContext";
 import useAPI from "@/hooks/api/useAPI";
 import client from "@/lib/api/client";
 import type { CourseMilestone, CourseModule } from "@/lib/data/course-modules";
@@ -25,12 +27,38 @@ export default function InterviewScreen({
   const { data: spec, loading } = useAPI<InterviewSpec>({
     url: `/interview/${moduleId}`,
   });
+  const { language } = useLanguage();
 
   const [index, setIndex] = useState(0);
   const [commands, setCommands] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, GradeResult>>({});
   const [finished, setFinished] = useState(false);
   const [grading, setGrading] = useState(false);
+  const [translatedQuestions, setTranslatedQuestions] = useState<
+    InterviewQuestion[] | null
+  >(null);
+  const [translating, setTranslating] = useState(false);
+
+  useEffect(() => {
+    if (language !== "bn" || !spec || translatedQuestions) return;
+    let cancelled = false;
+    setTranslating(true);
+    client
+      .post<{ questions: InterviewQuestion[] }>(
+        `/translate/interview/${moduleId}`,
+        { questions: spec.questions },
+        { timeout: 120000 },
+      )
+      .then((res) => {
+        if (!cancelled) setTranslatedQuestions(res.data.questions);
+      })
+      .finally(() => {
+        if (!cancelled) setTranslating(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [language, spec, moduleId, translatedQuestions]);
 
   const handleSubmit = async (questionId: string, command: string) => {
     setCommands((prev) => ({ ...prev, [questionId]: command }));
@@ -54,7 +82,11 @@ export default function InterviewScreen({
     );
   }
 
-  const question = spec.questions[index];
+  const displayQuestions =
+    language === "bn" && translatedQuestions
+      ? translatedQuestions
+      : spec.questions;
+  const question = displayQuestions[index];
   const answeredCount = Object.keys(results).length;
 
   return (
@@ -90,9 +122,15 @@ export default function InterviewScreen({
         )}
       </div>
 
+      {language === "bn" && translating && !translatedQuestions && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          বাংলায় অনুবাদ হচ্ছে...
+        </p>
+      )}
+
       {finished ? (
         <InterviewSummary
-          questions={spec.questions}
+          questions={displayQuestions}
           results={results}
           onRetake={() => {
             setIndex(0);
@@ -108,7 +146,7 @@ export default function InterviewScreen({
               key={question.id}
               question={question}
               index={index}
-              total={spec.questions.length}
+              total={displayQuestions.length}
               command={commands[question.id] ?? ""}
               result={results[question.id] ?? null}
               submitting={grading}

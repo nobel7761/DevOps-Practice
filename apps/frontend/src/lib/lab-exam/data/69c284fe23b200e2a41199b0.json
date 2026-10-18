@@ -1,0 +1,488 @@
+{
+  "labId": "69c284fe23b200e2a41199b0",
+  "title": "Text Processing with grep, sed, and awk",
+  "passPercent": 95,
+  "intro": "Poridhi.io-র HR টিমের employee data পরিষ্কার করার কাজ — grep দিয়ে filter, sed দিয়ে clean, awk দিয়ে report, আর তিনটাকেই pipe দিয়ে একসাথে চেইন করা শিখবে। Setup থেকে শুরু করে ফাইনাল Multi-Tool Challenge পর্যন্ত, প্রতিটা কমান্ড তোমার নিজের হাতে টাইপ করতে হবে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর। ৯৫% = PASSED।",
+  "targets": [
+    { "path": "~/textlab", "type": "dir" },
+    { "path": "~/textlab/data", "type": "dir" },
+    {
+      "path": "~/textlab/data/employees.csv",
+      "type": "file",
+      "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,ENGINEERING,88000,active\nE006,Frank Miller,marketing,71000,inactive\nE007,Grace Lee,SALES,93000,active"
+    },
+    {
+      "path": "~/textlab/data/employees_clean.csv",
+      "type": "file",
+      "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,Marketing,72000,active\nE003,Carol White,Engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,Engineering,88000,active\nE006,Frank Miller,Marketing,71000,inactive\nE007,Grace Lee,Sales,93000,active"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 2,
+      "section": {
+        "title": "🏗️ Lab Setup",
+        "note": "Poridhi.io-র HR টিম তিনটা regional office থেকে employee record একটা ফাইলে এক্সপোর্ট করেছে — কিন্তু department-এর নাম এলোমেলো casing-এ (Engineering/engineering/ENGINEERING)। প্রথমে সেই sample ফাইলটাই বানাবে, লাইন বাই লাইন।"
+      },
+      "prompt": "কাজের directory বানাও — textlab/data (মাঝের textlab directory-ও এখনো নেই), এক কমান্ডে।",
+      "answer": "mkdir -p textlab/data",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [
+          { "path": "~/textlab", "type": "dir" },
+          { "path": "~/textlab/data", "type": "dir" }
+        ]
+      },
+      "hints": ["মাঝের directory-গুলো (parents) একসাথে বানানোর flag-টা কী ছিল?"]
+    },
+    {
+      "id": "t02",
+      "points": 2,
+      "prompt": "employees.csv ফাইলের header লাইনটা লেখো (নতুন ফাইল, overwrite mode): id,name,department,salary,status",
+      "answer": "echo \"id,name,department,salary,status\" > textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">"],
+        "forbid": [">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status"
+          }
+        ]
+      },
+      "hints": [
+        "echo-র output ফাইলে পাঠাতে কোন চিহ্ন লাগবে (overwrite mode-এ)?"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 2,
+      "prompt": "পরের লাইনটা যোগ করো (append করে, overwrite না করে): E001,Alice Johnson,Engineering,85000,active",
+      "answer": "echo \"E001,Alice Johnson,Engineering,85000,active\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 2,
+      "prompt": "যোগ করো: E002,Bob Smith,MARKETING,72000,active (খেয়াল করো — department সব বড় হাতের অক্ষরে)",
+      "answer": "echo \"E002,Bob Smith,MARKETING,72000,active\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 2,
+      "prompt": "যোগ করো: E003,Carol White,engineering,91000,inactive (department এবার সব ছোট হাতের)",
+      "answer": "echo \"E003,Carol White,engineering,91000,inactive\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 2,
+      "prompt": "যোগ করো: E004,Dave Brown,Sales,65000,active",
+      "answer": "echo \"E004,Dave Brown,Sales,65000,active\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 2,
+      "prompt": "যোগ করো: E005,Eve Davis,ENGINEERING,88000,active",
+      "answer": "echo \"E005,Eve Davis,ENGINEERING,88000,active\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,ENGINEERING,88000,active"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 2,
+      "prompt": "যোগ করো: E006,Frank Miller,marketing,71000,inactive",
+      "answer": "echo \"E006,Frank Miller,marketing,71000,inactive\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,ENGINEERING,88000,active\nE006,Frank Miller,marketing,71000,inactive"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 2,
+      "prompt": "শেষ লাইন — যোগ করো: E007,Grace Lee,SALES,93000,active — setup শেষ! মোট ৭ জন কর্মীর record, department-এর casing সবগুলোই এলোমেলো।",
+      "answer": "echo \"E007,Grace Lee,SALES,93000,active\" >> textlab/data/employees.csv",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,MARKETING,72000,active\nE003,Carol White,engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,ENGINEERING,88000,active\nE006,Frank Miller,marketing,71000,inactive\nE007,Grace Lee,SALES,93000,active"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 2,
+      "section": {
+        "title": "🔎 Exercise 1: grep দিয়ে Filtering (Review)",
+        "note": "এই ল্যাবের বাকি অংশে grep, sed, awk-কে একসাথে chain করবে — তাই আগে একা একা প্রতিটার basics ঝালিয়ে নাও। শুরুটা grep দিয়ে, সরাসরি messy employees.csv-এর ওপর।"
+      },
+      "prompt": "employees.csv-এ ঠিক 'Engineering' (এই exact casing-এ) লেখা department-এর লাইনটা খুঁজে বের করো। (অন্য casing variant মিস হবে — সেটাই দেখার কথা।)",
+      "answer": "grep \"Engineering\" textlab/data/employees.csv",
+      "check": {
+        "require": ["grep"],
+        "forbid": ["sed", "awk", "-i"],
+        "ref": "grep \"Engineering\" textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t11",
+      "points": 2,
+      "prompt": "এবার casing নির্বিশেষে (case-insensitive) — Engineering, ENGINEERING, engineering — তিনটা variant-ই একসাথে বের করো।",
+      "answer": "grep -i \"engineering\" textlab/data/employees.csv",
+      "check": {
+        "require": ["grep", "-i"],
+        "forbid": ["sed", "awk"],
+        "ref": "grep -i \"engineering\" textlab/data/employees.csv"
+      },
+      "hints": ["casing উপেক্ষা করে match করতে grep-এর কোন flag লাগবে?"]
+    },
+    {
+      "id": "t12",
+      "points": 2,
+      "prompt": "যারা এখনো active (শুধু active, inactive বাদে) তাদের লাইনগুলো বের করো — whole-word match ব্যবহার করে, যেন 'inactive'-এর ভেতরের 'active' ভুলভাবে ধরা না পড়ে।",
+      "answer": "grep -w \"active\" textlab/data/employees.csv",
+      "check": {
+        "require": ["grep", "-w"],
+        "forbid": ["sed", "awk"],
+        "ref": "grep -w \"active\" textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t13",
+      "points": 3,
+      "prompt": "inactive কর্মীর সংখ্যা গুনে বের করো — লাইন না, শুধু একটা সংখ্যা।",
+      "answer": "grep -cw \"inactive\" textlab/data/employees.csv",
+      "check": {
+        "require": ["grep", "-c", "-w"],
+        "forbid": ["sed", "awk"],
+        "ref": "grep -cw \"inactive\" textlab/data/employees.csv"
+      },
+      "hints": ["শুধু সংখ্যা চাইলে কোন flag line-এর বদলে count দেয়?"]
+    },
+    {
+      "id": "t14",
+      "points": 3,
+      "prompt": "-v দিয়ে invert match করে, যেসব লাইনে 'active' শব্দটা (substring হিসেবে) নেই সেগুলো বের করো। (খেয়াল করো — inactive-ও বাদ পড়ে যাবে, কারণ ওর ভেতরেও 'active' লেখা আছে। এটাই -w ছাড়া grep -v-এর ফাঁদ।)",
+      "answer": "grep -v \"active\" textlab/data/employees.csv",
+      "check": {
+        "require": ["grep", "-v"],
+        "forbid": ["sed", "awk"],
+        "ref": "grep -v \"active\" textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t15",
+      "points": 2,
+      "section": {
+        "title": "✂️ Exercise 2: sed দিয়ে Transform করা (Review)",
+        "note": "sed দিয়ে substitution (s///), delete (d), আর print (p) ঝালিয়ে নাও। employees.csv এখনো messy — এটাই এবার ঠিক করব।"
+      },
+      "prompt": "সব বড় হাতের 'MARKETING'-কে ঠিক করে 'Marketing' বানাও — শুধু exact uppercase variant ধরে, আউটপুট শুধু terminal-এ দেখাও (ফাইলে সেভ না করেই)।",
+      "answer": "sed 's/MARKETING/Marketing/g' textlab/data/employees.csv",
+      "check": {
+        "require": ["sed"],
+        "forbid": ["grep", "awk"],
+        "ref": "sed 's/MARKETING/Marketing/g' textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t16",
+      "points": 3,
+      "prompt": "এবার casing নির্বিশেষে — MARKETING আর marketing দুটোই — এক কমান্ডে 'Marketing' বানাও।",
+      "answer": "sed 's/marketing/Marketing/gI' textlab/data/employees.csv",
+      "check": {
+        "require": ["sed", "I"],
+        "forbid": ["grep", "awk"],
+        "ref": "sed 's/marketing/Marketing/gI' textlab/data/employees.csv"
+      },
+      "hints": [
+        "case নির্বিশেষে match করতে sed-এর substitution flag-এ g-এর পাশে আর কী যোগ করবে?"
+      ]
+    },
+    {
+      "id": "t17",
+      "points": 3,
+      "prompt": "একসাথে তিনটা department normalize করো — engineering, marketing, sales — প্রতিটা Capitalized হিসেবে, একই sed কমান্ডে একাধিক rule ; দিয়ে আলাদা করে। (এখনো শুধু preview, সেভ না করে।)",
+      "answer": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv",
+      "check": {
+        "require": ["sed", ";"],
+        "forbid": ["grep", "awk"],
+        "ref": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t18",
+      "points": 4,
+      "prompt": "ঠিক একই normalize করা আউটপুটটা এবার নতুন ফাইলে সেভ করো: textlab/data/employees_clean.csv (মূল employees.csv অপরিবর্তিত থাকবে)।",
+      "answer": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv > textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["sed", ">"],
+        "forbid": ["grep", "awk"],
+        "paths": [
+          {
+            "path": "~/textlab/data/employees_clean.csv",
+            "type": "file",
+            "content": "id,name,department,salary,status\nE001,Alice Johnson,Engineering,85000,active\nE002,Bob Smith,Marketing,72000,active\nE003,Carol White,Engineering,91000,inactive\nE004,Dave Brown,Sales,65000,active\nE005,Eve Davis,Engineering,88000,active\nE006,Frank Miller,Marketing,71000,inactive\nE007,Grace Lee,Sales,93000,active"
+          }
+        ]
+      },
+      "hints": ["Terminal-এ দেখানো output-টা ফাইলে সেভ করতে কী ব্যবহার করবে?"]
+    },
+    {
+      "id": "t19",
+      "points": 3,
+      "prompt": "sed-এর ভেতরেই regex address আর p flag ব্যবহার করে (grep ছাড়া, sed দিয়েই) — শুধু যেসব লাইনে 'inactive' আছে সেগুলো বের করো, মূল employees.csv থেকে।",
+      "answer": "sed -n '/inactive/p' textlab/data/employees.csv",
+      "check": {
+        "require": ["sed", "-n"],
+        "forbid": ["grep", "awk"],
+        "ref": "sed -n '/inactive/p' textlab/data/employees.csv"
+      }
+    },
+    {
+      "id": "t20",
+      "points": 3,
+      "section": {
+        "title": "📊 Exercise 3: awk দিয়ে Field Extraction (Review)",
+        "note": "awk প্রতিটা লাইনকে field-এ ভাগ করে কাজ করে — $N, NR, -F, condition দিয়ে filtering, আর associative array দিয়ে aggregate করা ঝালিয়ে নাও। এখন থেকে clean ফাইল (employees_clean.csv) ব্যবহার করব।"
+      },
+      "prompt": "employees_clean.csv থেকে প্রতিটা কর্মীর নাম আর department (ফিল্ড ২ আর ৩) বের করো — header বাদ দিয়ে (NR ব্যবহার করে), comma-কে field separator ধরে।",
+      "answer": "awk -F',' 'NR > 1 {print $2, $3}' textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["awk", "NR"],
+        "forbid": ["grep", "sed"],
+        "ref": "awk -F',' 'NR > 1 {print $2, $3}' textlab/data/employees_clean.csv"
+      }
+    },
+    {
+      "id": "t21",
+      "points": 3,
+      "prompt": "শুধু Engineering department-এর কর্মীদের নাম আর salary (ফিল্ড ২, ৪) বের করো — field 3 অনুযায়ী ফিল্টার করে। (header নিজে থেকেই বাদ পড়ে যাবে, আলাদা করে NR চেক না করলেও চলবে।)",
+      "answer": "awk -F',' '$3 == \"Engineering\" {print $2, $4}' textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["awk"],
+        "forbid": ["grep", "sed"],
+        "ref": "awk -F',' '$3 == \"Engineering\" {print $2, $4}' textlab/data/employees_clean.csv"
+      }
+    },
+    {
+      "id": "t22",
+      "points": 4,
+      "prompt": "active আছে এবং salary ৮০,০০০-এর বেশি — এমন কর্মীদের নাম, department, আর salary (ফিল্ড ২,৩,৪) বের করো — একসাথে দুইটা condition (&&) আর header বাদ দিয়ে।",
+      "answer": "awk -F',' 'NR > 1 && $5 == \"active\" && $4 > 80000 {print $2, $3, $4}' textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["awk", "NR"],
+        "forbid": ["grep", "sed"],
+        "ref": "awk -F',' 'NR > 1 && $5 == \"active\" && $4 > 80000 {print $2, $3, $4}' textlab/data/employees_clean.csv"
+      }
+    },
+    {
+      "id": "t23",
+      "points": 4,
+      "prompt": "প্রতিটা department-এ কতজন কর্মী আছে গুনে বের করো — associative array আর END block ব্যবহার করে।",
+      "answer": "awk -F',' 'NR > 1 {count[$3]++} END {for (dept in count) print count[dept], dept}' textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["awk", "NR", "END"],
+        "forbid": ["grep", "sed"],
+        "ref": "awk -F',' 'NR > 1 {count[$3]++} END {for (dept in count) print count[dept], dept}' textlab/data/employees_clean.csv"
+      },
+      "hints": [
+        "প্রতিটা department-এর জন্য আলাদা counter রাখতে awk-এর associative array (count[$3]) আর END block ব্যবহার করো।"
+      ]
+    },
+    {
+      "id": "t24",
+      "points": 4,
+      "prompt": "active কর্মীদের গড় (average) salary বের করো — END block-এ printf দিয়ে, '$' আর পূর্ণসংখ্যা (whole number, %.0f) ফরম্যাটে প্রিন্ট করে। (printf-এ \\n ব্যবহার কোরো না — এখানে সাপোর্টেড না।)",
+      "answer": "awk -F',' 'NR > 1 && $5 == \"active\" {sum += $4; n++} END {printf \"Average salary: $%.0f\", sum/n}' textlab/data/employees_clean.csv",
+      "check": {
+        "require": ["awk", "END"],
+        "forbid": ["grep", "sed"],
+        "ref": "awk -F',' 'NR > 1 && $5 == \"active\" {sum += $4; n++} END {printf \"Average salary: $%.0f\", sum/n}' textlab/data/employees_clean.csv"
+      }
+    },
+    {
+      "id": "t25",
+      "points": 4,
+      "section": {
+        "title": "🔗 Exercise 4: grep + awk — আগে Filter, পরে Extract",
+        "note": "এখন থেকে দুইটা টুল একসাথে — pipe (|) দিয়ে প্রথমটার output দ্বিতীয়টার input বানাবে। শুরুতে grep দিয়ে filter, তারপর সেই output awk-কে দিয়ে field বের করবে।"
+      },
+      "prompt": "প্রথমে grep দিয়ে Sales department-এর লাইনগুলো বের করো, pipe করে সেটা awk-এ দাও, আর awk দিয়ে শুধু নাম (ফিল্ড ২) বের করো — employees_clean.csv থেকে।",
+      "answer": "grep \"Sales\" textlab/data/employees_clean.csv | awk -F',' '{print $2}'",
+      "check": {
+        "require": ["grep", "awk", "|"],
+        "forbid": ["sed"],
+        "ref": "grep \"Sales\" textlab/data/employees_clean.csv | awk -F',' '{print $2}'"
+      },
+      "hints": [
+        "দুইটা কমান্ড একসাথে চালাতে, প্রথমটার output দ্বিতীয়টার input বানাতে কোন চিহ্ন ব্যবহার করবে?"
+      ]
+    },
+    {
+      "id": "t26",
+      "points": 4,
+      "prompt": "grep দিয়ে প্রথমে active কর্মীদের বের করো (whole-word), pipe করে awk দিয়ে এর মধ্যে থেকে শুধু Sales department-এর salary (ফিল্ড ৪) বের করো।",
+      "answer": "grep -w \"active\" textlab/data/employees_clean.csv | awk -F',' '$3 == \"Sales\" {print $4}'",
+      "check": {
+        "require": ["grep", "-w", "awk", "|"],
+        "forbid": ["sed"],
+        "ref": "grep -w \"active\" textlab/data/employees_clean.csv | awk -F',' '$3 == \"Sales\" {print $4}'"
+      }
+    },
+    {
+      "id": "t27",
+      "points": 4,
+      "section": {
+        "title": "🔗 Exercise 5: awk + grep — আগে Extract, পরে Filter",
+        "note": "এবার উল্টো দিক থেকে — প্রথমে awk দিয়ে field বের করবে, pipe করে সেই output grep দিয়ে filter করবে।"
+      },
+      "prompt": "প্রথমে awk দিয়ে department আর salary (ফিল্ড ৩,৪) বের করো (header বাদ দিয়ে), pipe করে সেই output থেকে grep দিয়ে শুধু Engineering-সংশ্লিষ্ট লাইনগুলো বের করো।",
+      "answer": "awk -F',' 'NR > 1 {print $3, $4}' textlab/data/employees_clean.csv | grep \"Engineering\"",
+      "check": {
+        "require": ["awk", "NR", "grep", "|"],
+        "forbid": ["sed"],
+        "ref": "awk -F',' 'NR > 1 {print $3, $4}' textlab/data/employees_clean.csv | grep \"Engineering\""
+      }
+    },
+    {
+      "id": "t28",
+      "points": 4,
+      "prompt": "awk দিয়ে active কর্মীদের নাম আর department (ফিল্ড ২,৩) বের করো, pipe করে grep -v দিয়ে Engineering বাদ দিয়ে বাকিগুলো বের করো।",
+      "answer": "awk -F',' 'NR > 1 && $5 == \"active\" {print $2, $3}' textlab/data/employees_clean.csv | grep -v \"Engineering\"",
+      "check": {
+        "require": ["awk", "NR", "grep", "-v", "|"],
+        "forbid": ["sed"],
+        "ref": "awk -F',' 'NR > 1 && $5 == \"active\" {print $2, $3}' textlab/data/employees_clean.csv | grep -v \"Engineering\""
+      }
+    },
+    {
+      "id": "t29",
+      "points": 4,
+      "section": {
+        "title": "🧵 Exercise 6: sed + grep/awk — আগে Clean, পরে Query",
+        "note": "এবার sed-কে combo-তে আনবে — মূল messy employees.csv ফাইল থেকেই শুরু করে, sed দিয়ে casing ঠিক করে, সেই output pipe করে grep বা awk-এ দেবে — আলাদা clean ফাইল ব্যবহার না করেই।"
+      },
+      "prompt": "মূল (messy) employees.csv থেকে sed দিয়ে department casing normalize করো, pipe করে grep দিয়ে শুধু Marketing department-এর লাইনগুলো বের করো — employees_clean.csv ব্যবহার না করে, সরাসরি messy ফাইল থেকেই।",
+      "answer": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep \"Marketing\"",
+      "check": {
+        "require": ["sed", "grep", "|"],
+        "forbid": ["awk", "employees_clean"],
+        "ref": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep \"Marketing\""
+      }
+    },
+    {
+      "id": "t30",
+      "points": 5,
+      "prompt": "messy employees.csv থেকে sed দিয়ে normalize করো, pipe করে awk দিয়ে Engineering কর্মীদের গড় salary বের করো — clean ফাইল ছাড়াই, সরাসরি মূল ফাইল থেকে।",
+      "answer": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | awk -F',' '$3 == \"Engineering\" {sum += $4; n++} END {printf \"Average Engineering salary: $%.0f\", sum/n}'",
+      "check": {
+        "require": ["sed", "awk", "|"],
+        "forbid": ["grep", "employees_clean"],
+        "ref": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | awk -F',' '$3 == \"Engineering\" {sum += $4; n++} END {printf \"Average Engineering salary: $%.0f\", sum/n}'"
+      }
+    },
+    {
+      "id": "t31",
+      "points": 4,
+      "section": {
+        "title": "⚔️ Multi-Tool Challenge",
+        "note": "ল্যাবের ফাইনাল challenge — তিনটা প্রশ্ন, কোনো নির্দিষ্ট নির্দেশনা ছাড়া কোন tool/combo লাগবে সেটা তোমাকেই ঠিক করতে হবে। এতক্ষণের grep + sed + awk — সবকিছুই হাতে আছে।"
+      },
+      "prompt": "Challenge 1: Sales department-এর active কর্মীদের মধ্যে যাদের salary ৭০,০০০-এর বেশি, শুধু তাদের নাম বের করো — employees_clean.csv থেকে।",
+      "answer": "grep \"Sales\" textlab/data/employees_clean.csv | awk -F',' '$5 == \"active\" && $4 > 70000 {print $2}'",
+      "check": {
+        "require": ["grep", "awk", "|"],
+        "forbid": ["sed"],
+        "ref": "grep \"Sales\" textlab/data/employees_clean.csv | awk -F',' '$5 == \"active\" && $4 > 70000 {print $2}'"
+      }
+    },
+    {
+      "id": "t32",
+      "points": 4,
+      "prompt": "Challenge 2: মূল (messy) employees.csv থেকে শুরু করে — department casing ঠিক করো, শুধু active কর্মীদের রাখো, আর department অনুযায়ী কতজন আছে গুনে বের করো — তিনটা টুলই লাগবে, দুইটা pipe দিয়ে চেইন করে।",
+      "answer": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep -w \"active\" | awk -F',' '{count[$3]++} END {for (dept in count) print count[dept], dept}'",
+      "check": {
+        "require": ["sed", "grep", "awk", "|"],
+        "forbid": ["employees_clean"],
+        "ref": "sed 's/engineering/Engineering/gI; s/marketing/Marketing/gI; s/sales/Sales/gI' textlab/data/employees.csv | grep -w \"active\" | awk -F',' '{count[$3]++} END {for (dept in count) print count[dept], dept}'"
+      },
+      "hints": [
+        "তিনটা টুলই লাগবে — একটার output পরেরটার input, পরপর দুইটা pipe দিয়ে চেইন করে।"
+      ]
+    },
+    {
+      "id": "t33",
+      "points": 4,
+      "prompt": "Challenge 3 (শেষ!): employees_clean.csv-এর salary column (ফিল্ড ৪) বের করো, pipe করে grep দিয়ে — regex anchor ব্যবহার করে — যেসব salary '9' দিয়ে শুরু (অর্থাৎ ৯০,০০০+) সেগুলোর সংখ্যা গুনে বের করো।",
+      "answer": "awk -F',' 'NR > 1 {print $4}' textlab/data/employees_clean.csv | grep -cE \"^9\"",
+      "check": {
+        "require": ["awk", "grep", "-c", "-E", "|"],
+        "forbid": ["sed"],
+        "ref": "awk -F',' 'NR > 1 {print $4}' textlab/data/employees_clean.csv | grep -cE \"^9\""
+      },
+      "hints": [
+        "regex anchor (^) কে literal character না বানিয়ে আসল regex হিসেবে কাজ করাতে grep-এর কোন flag দরকার?"
+      ]
+    }
+  ]
+}

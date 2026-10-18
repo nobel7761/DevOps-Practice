@@ -24,6 +24,8 @@ export interface CourseContentItem {
   externalUrl?: string | null;
   /** Human-readable duration label for display when there's no in-app player to show a real progress bar for, e.g. "12:28". */
   durationLabel?: string | null;
+  /** Set once this item's note (keyed by contentId) is known to have non-empty saved content. */
+  hasNote?: boolean;
 }
 
 export interface CourseModule {
@@ -219,21 +221,33 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
               type: "live_class",
               title: "Introduction To Linux Pipes & Grep",
               completed: false,
+              contentId: "58b619fd-3cc5-4fc7-87e2-ebcad450a866",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/bbc466d9-69e9-4bd8-83d3-ef9f8a65e922/playlist.m3u8",
             },
             {
               type: "live_class",
               title: "Introduction To Text Processing",
               completed: false,
+              contentId: "c5d7979e-e65e-42a3-8348-6979505d7240",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/192b1523-03f9-44a9-963c-7e526442a344/playlist.m3u8",
             },
             {
               type: "live_class",
               title: "Introduction To sed",
               completed: false,
+              contentId: "9bbcdcdb-8c5d-4121-bccd-9b7ee05ef355",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/68c74cda-72e5-498e-8c8d-513101150286/playlist.m3u8",
             },
             {
               type: "live_class",
               title: "Introduction To awk",
               completed: false,
+              contentId: "a8978919-6f76-458e-b153-ee48deda7f15",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/d8da26fb-15eb-4415-b9d6-07db3b0f3c2c/playlist.m3u8",
             },
             {
               type: "lab",
@@ -289,45 +303,69 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
               type: "pre_class",
               title: "Software Defined Networking (SDN)",
               completed: false,
+              contentId: "8088f145-43c1-44ac-9f98-8b2e70c98b76",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/9dccb16c-b9fe-40ac-82ef-203d7b4e2c0c/playlist.m3u8",
             },
             {
               type: "pre_class",
               title: "Configure and Manage Network Flows at Different Layers",
               completed: false,
+              contentId: "e6d5ba1f-f229-426c-94e5-ca97ac328276",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/5496c7ac-946a-41ed-b3f2-32068b7fc3bc/playlist.m3u8",
             },
             {
               type: "pre_class",
               title:
                 "Layer 2 Traffic Forwarding Setup in Mininet with OpenFlow",
               completed: false,
+              contentId: "0074d264-9bd2-42bc-acf8-7b45034ba440",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/6615c1c2-624d-4a71-a943-1722ef0166d2/playlist.m3u8",
             },
             {
               type: "pre_class",
               title:
                 "Layer 3 Traffic Forwarding Setup in Mininet with OpenFlow",
               completed: false,
+              contentId: "b2d066f4-fd57-4c95-aa2e-f8b003aa4aff",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/d7e03287-f117-4740-a4ee-5f08d9744d6a/playlist.m3u8",
             },
             {
               type: "pre_class",
               title:
                 "Layer 4 Traffic Forwarding Setup in Mininet with OpenFlow",
               completed: false,
+              contentId: "a39c90bb-e8cd-4b1a-b165-23cac019204f",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/9c8d9359-9346-4874-9d5e-66b1eb1ed2ab/playlist.m3u8",
             },
             {
               type: "pre_class",
               title:
                 "Simulating a Two-Subnet Network Topology in Mininet with One Switch",
               completed: false,
+              contentId: "0e0c5ca6-901d-4076-809e-c65d639e52a4",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/597d7222-2c70-4182-adbb-dfd62647d7c0/playlist.m3u8",
             },
             {
               type: "pre_class",
               title: "ARP Fundamentals and Advanced Topologies with Mininet",
               completed: false,
+              contentId: "4ff39b16-374d-4877-9fd0-f57d7b928e11",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/da272300-bd2d-4bde-aa79-bb3b93e25126/playlist.m3u8",
             },
             {
               type: "pre_class",
               title: "Simulating VLAN Networks with Mininet",
               completed: false,
+              contentId: "1f5af84e-c49b-4bed-9f2e-1cf46840389e",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/8731d144-3f13-45e0-a076-b4c3b7e832cf/playlist.m3u8",
             },
             {
               type: "lab",

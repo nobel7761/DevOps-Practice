@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { OpenAiModule } from '../openai/openai.module';
 import { InterviewController } from './interview.controller';
 import { InterviewService } from './interview.service';
-import { openAiClientProvider } from './openai-client.provider';
 
 @Module({
+  imports: [OpenAiModule],
   controllers: [InterviewController],
-  providers: [InterviewService, openAiClientProvider],
+  providers: [InterviewService],
 })
 export class InterviewModule {}

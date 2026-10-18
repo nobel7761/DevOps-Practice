@@ -17,6 +17,7 @@
         "note": "শুরুটা চেনা — একজন user, একটা group, তারপর বাঁধা।"
       },
       "prompt": "testuser নামে একটা user বানাও — home directory-সহ।",
+      "answer": "useradd -m testuser",
       "check": {
         "require": ["useradd", "-m"],
         "usersState": [
@@ -31,6 +32,7 @@
       "id": "t02",
       "points": 4,
       "prompt": "testgroup নামে একটা group বানাও।",
+      "answer": "groupadd testgroup",
       "check": {
         "require": ["groupadd"],
         "groupsExist": ["testgroup"]
@@ -40,6 +42,7 @@
       "id": "t03",
       "points": 5,
       "prompt": "testuser-কে testgroup-এ যোগ করো — supplementary হিসেবে (আগের primary অক্ষত রেখে)।",
+      "answer": "usermod -a -G testgroup testuser",
       "check": {
         "require": ["usermod", "-a", "-G"],
         "usersState": [
@@ -59,6 +62,7 @@
         "note": "একজনের shell, নাম, ঘর, UID — সব বদলানো যায়, কিন্তু আলাদা আলাদা flag দিয়ে।"
       },
       "prompt": "testuser-এর shell বদলে /bin/bash করো।",
+      "answer": "usermod -s /bin/bash testuser",
       "check": {
         "require": ["usermod", "-s"],
         "usersState": [
@@ -73,6 +77,7 @@
       "id": "t05",
       "points": 5,
       "prompt": "testuser-এর username বদলে newuser করো।",
+      "answer": "usermod -l newuser testuser",
       "check": {
         "require": ["usermod", "-l"],
         "usersState": [
@@ -91,6 +96,7 @@
       "id": "t06",
       "points": 5,
       "prompt": "newuser-এর home directory পাল্টে /home/newuser করো — পুরনো ঘরের ফাইলগুলোও সরিয়ে নিয়ে।",
+      "answer": "usermod -d /home/newuser -m newuser",
       "check": {
         "require": ["usermod", "-d", "-m"],
         "usersState": [
@@ -109,6 +115,7 @@
       "id": "t07",
       "points": 4,
       "prompt": "newuser-এর জন্য একটা password সেট করো।",
+      "answer": "passwd newuser",
       "check": {
         "require": ["passwd"],
         "forbid": ["-S"],
@@ -119,6 +126,7 @@
       "id": "t08",
       "points": 4,
       "prompt": "newuser-এর account 2025-12-31 তারিখে expire হওয়ার ব্যবস্থা করো।",
+      "answer": "usermod -e 2025-12-31 newuser",
       "check": {
         "require": ["usermod", "-e"],
         "usersState": [
@@ -133,6 +141,7 @@
       "id": "t09",
       "points": 4,
       "prompt": "newuser-এর UID বদলে 1100 করো।",
+      "answer": "usermod -u 1100 newuser",
       "check": {
         "require": ["usermod", "-u"],
         "usersState": [
@@ -151,6 +160,7 @@
         "note": "আগের লেসনের lock (-L/-U) আজ ফিরে এলো, সাথে নতুন অতিথি chage — password-এর বয়স।"
       },
       "prompt": "newuser-এর account লক করো।",
+      "answer": "usermod -L newuser",
       "check": {
         "require": ["usermod", "-L"],
         "usersState": [
@@ -165,6 +175,7 @@
       "id": "t11",
       "points": 4,
       "prompt": "newuser সত্যিই লক আছে কিনা — status-টা দেখাও (passwd-এর একটা flag আছে)।",
+      "answer": "passwd -S newuser",
       "check": {
         "require": ["passwd", "-S"],
         "ref": "passwd -S newuser"
@@ -175,6 +186,7 @@
       "id": "t12",
       "points": 4,
       "prompt": "newuser-এর তালা খুলে দাও।",
+      "answer": "usermod -U newuser",
       "check": {
         "require": ["usermod", "-U"],
         "usersState": [
@@ -189,6 +201,7 @@
       "id": "t13",
       "points": 4,
       "prompt": "আবার status দেখাও — এবার unlocked দেখানোর কথা।",
+      "answer": "passwd -S newuser",
       "check": {
         "require": ["passwd", "-S"],
         "ref": "passwd -S newuser"
@@ -198,6 +211,7 @@
       "id": "t14",
       "points": 5,
       "prompt": "newuser-কে পরের বার login করার সময়ই password বদলাতে বাধ্য করো।",
+      "answer": "chage -d 0 newuser",
       "check": {
         "require": ["chage", "-d"],
         "ref": "chage -d 0 newuser"
@@ -208,6 +222,7 @@
       "id": "t15",
       "points": 5,
       "prompt": "newuser-এর password-এর সর্বোচ্চ বয়স (max days) 90 দিন বেঁধে দাও।",
+      "answer": "chage -M 90 newuser",
       "check": {
         "require": ["chage", "-M"],
         "usersState": [
@@ -222,6 +237,7 @@
       "id": "t16",
       "points": 4,
       "prompt": "newuser-এর পুরো password-aging তথ্য (list) দেখাও।",
+      "answer": "chage -l newuser",
       "check": {
         "require": ["chage", "-l"],
         "ref": "chage -l newuser"
@@ -231,6 +247,7 @@
       "id": "t17",
       "points": 5,
       "prompt": "newuser-এর comment/GECOS ফিল্ডে লেখো: Test User Account",
+      "answer": "usermod -c \"Test User Account\" newuser",
       "check": {
         "require": ["usermod", "-c"],
         "usersState": [
@@ -249,6 +266,7 @@
         "note": "আজকের গল্পের newuser আর testgroup — দুজনেরই বিদায়ের পালা।"
       },
       "prompt": "newuser-কে home directory-সহ মুছে ফেলো।",
+      "answer": "userdel -r newuser",
       "check": {
         "require": ["userdel", "-r"],
         "usersState": [
@@ -263,6 +281,7 @@
       "id": "t19",
       "points": 4,
       "prompt": "testgroup-টাও মুছে ফেলো।",
+      "answer": "groupdel testgroup",
       "check": {
         "require": ["groupdel"],
         "groupsNotExist": ["testgroup"]
@@ -277,6 +296,7 @@
         "note": "এতক্ষণ ধাপে ধাপে যা শিখলে, সবকিছু একসাথে এক কমান্ডে করাও সম্ভব।"
       },
       "prompt": "customuser নামে একজনকে বানাও — এক কমান্ডে: home-সহ, shell /bin/bash, primary group users, supplementary sudo, comment \"Custom User\", আর expire 2025-12-31।",
+      "answer": "useradd -m -d /home/customuser -s /bin/bash -g users -G sudo -c \"Custom User\" -e 2025-12-31 customuser",
       "check": {
         "require": ["useradd", "-m", "-d", "-s", "-g", "-G", "-c", "-e"],
         "usersState": [
@@ -300,6 +320,7 @@
       "id": "t21",
       "points": 5,
       "prompt": "customuser-এর পুরো পরিচয় (UID, primary, সব group) দেখাও।",
+      "answer": "id customuser",
       "check": {
         "require": ["id"],
         "ref": "id customuser"
@@ -309,6 +330,7 @@
       "id": "t22",
       "points": 5,
       "prompt": "customuser-এর password-aging তথ্যও যাচাই করো (list)।",
+      "answer": "chage -l customuser",
       "check": {
         "require": ["chage", "-l"],
         "ref": "chage -l customuser"

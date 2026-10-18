@@ -6,16 +6,24 @@ import { Badge, Progress } from "@/components/shared/shadcn";
 import {
   createShell,
   currentUser,
+  discardEditorAndExit,
   displayCwd,
   evaluateCheck,
   execute,
   isAwaitingInput,
+  isInEditor,
   nodeMode,
   resolvePath,
+  saveEditorAndExit,
   submitInput,
+  updateEditorDraft,
   HOME,
   type ShellState,
 } from "@/lib/lab-exam/engine";
+import {
+  continueTaskRetryState,
+  shouldRevealAnswer,
+} from "@/lib/lab-exam/attempt-policy";
 import type { LabExamSpec, LabExamTarget } from "@/lib/lab-exam/types";
 
 /* ── Target-tree visualization ─────────────────────────────────────────── */
@@ -339,9 +347,20 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
     prevState: ShellState;
     transcript: string[];
   } | null>(null);
+  // Set while a `vim`/`vi`/`nano`/`visudo` session is open — same idea as
+  // `pendingContext`, but for an editor session instead of a text prompt.
+  const [pendingEditorContext, setPendingEditorContext] = useState<{
+    prompt: string;
+    command: string;
+    prevState: ShellState;
+  } | null>(null);
+  const [editorCmdInput, setEditorCmdInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorCmdRef = useRef<HTMLInputElement>(null);
   const termRef = useRef<HTMLDivElement>(null);
   const awaitingInput = isAwaitingInput(shell);
+  const inEditor = isInEditor(shell);
 
   const tree = useMemo(() => buildTree(spec.targets), [spec.targets]);
   const totalPoints = spec.tasks.reduce((a, t) => a + t.points, 0);
@@ -407,6 +426,31 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
     }, 0);
   };
 
+  // `:wq`/`:x` saves, `:q`/`:q!` discards — anything else is an unrecognized
+  // editor command and just stays in the editor (like real vim would).
+  const handleEditorCommand = (raw: string) => {
+    if (!pendingEditorContext) return;
+    const normalized = raw.trim().replace(/^:/, "");
+    const isSave = normalized === "wq" || normalized === "x";
+    const isDiscard = normalized === "q" || normalized === "q!";
+    if (!isSave && !isDiscard) return;
+
+    const result = isSave
+      ? saveEditorAndExit(shell)
+      : discardEditorAndExit(shell);
+    const output = isSave ? `"${pendingEditorContext.command}" saved` : "";
+    finishAttempt(
+      pendingEditorContext.prompt,
+      pendingEditorContext.command,
+      output,
+      result,
+      pendingEditorContext,
+    );
+    setPendingEditorContext(null);
+    setEditorCmdInput("");
+    focusAfterRender();
+  };
+
   const submit = () => {
     if (finished || !input.trim()) return;
 
@@ -437,6 +481,17 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
     const prompt = shellPrompt(shell);
     const prevState = shell;
     const result = execute(shell, input);
+
+    // `vim`/`vi`/`nano`/`visudo` hands control to the editor view — not
+    // graded until the learner saves or discards.
+    if (isInEditor(result.state)) {
+      setShell(result.state);
+      setPendingEditorContext({ prompt, command: input, prevState });
+      setHistIdx(null);
+      setInput("");
+      setTimeout(() => editorRef.current?.focus(), 0);
+      return;
+    }
 
     // A command that opens a multi-step prompt (e.g. `passwd joker`) isn't
     // graded yet — just remember it and wait for the next typed line.
@@ -471,6 +526,22 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
     setHistIdx(null);
     setInput("");
     setPendingContext(null);
+    setPendingEditorContext(null);
+    setEditorCmdInput("");
+  };
+
+  // After the 10-attempt answer reveal: keep practicing the same task
+  // without wiping earlier progress (unlike `reset`, which restarts the
+  // whole exam).
+  const continueTask = () => {
+    const next = continueTaskRetryState({
+      attempts,
+      revealedHints,
+      taskIdx,
+      results,
+    });
+    setAttempts(next.attempts);
+    setRevealedHints(next.revealedHints);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -572,6 +643,26 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
                   )}
                 </div>
               )}
+              {shouldRevealAnswer(attempts) && (
+                <div className="mt-3 rounded-lg border-2 border-rose-300 bg-rose-50 p-3 dark:border-rose-500/40 dark:bg-rose-500/10">
+                  <p className="text-xs font-bold text-rose-700 dark:text-rose-300">
+                    ১০ বার চেষ্টা হয়ে গেছে — এই প্রশ্নের সঠিক উত্তর:
+                  </p>
+                  <code className="mt-2 block rounded bg-slate-900 px-3 py-2 font-mono text-xs text-emerald-300">
+                    {task.answer ?? "(এই task-এর জন্য answer এখনো নেই)"}
+                  </code>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Command-টা ভালো করে বুঝে নাও — তারপর এই প্রশ্নটা আবার চেষ্টা
+                    করো, আগের progress ঠিক থাকবে।
+                  </p>
+                  <button
+                    onClick={continueTask}
+                    className="mt-2 rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-rose-700"
+                  >
+                    ➡️ এখান থেকেই Continue করো
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div
@@ -615,72 +706,123 @@ export default function LabExam({ spec }: { spec: LabExamSpec }) {
               ref={termRef}
               className="max-h-72 min-h-40 overflow-y-auto p-3 font-mono text-xs leading-relaxed"
             >
-              {history.map((h, i) => (
-                <div key={i} className="mb-1.5">
-                  <div>
-                    <span className="text-emerald-400">{h.prompt}</span>{" "}
-                    <span className="text-slate-100">{h.cmd}</span>{" "}
-                    {h.verdict === "pass" ? (
-                      <span className="font-bold text-emerald-400">✓</span>
-                    ) : (
-                      <span className="font-bold text-rose-400">✗</span>
-                    )}
-                  </div>
-                  {h.output && (
-                    <pre
-                      className={`whitespace-pre-wrap ${h.error ? "text-rose-300" : "text-slate-300"}`}
-                    >
-                      {h.output}
-                    </pre>
-                  )}
-                  {h.verdict === "fail" && h.reason && !h.error && (
-                    <div className="mt-0.5 inline-block rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-300">
-                      → {h.reason}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {awaitingInput && pendingContext && (
-                <div className="mb-1.5">
-                  <div>
-                    <span className="text-emerald-400">
-                      {pendingContext.prompt}
-                    </span>{" "}
-                    <span className="text-slate-100">
-                      {pendingContext.command}
+              {pendingEditorContext && shell.pendingEditor ? (
+                // A real modal vim clone is out of scope — this simplified
+                // editor covers what actually matters for these labs: open,
+                // edit, and save/discard with the real :wq/:x/:q!/:q muscle
+                // memory.
+                <div className="flex h-64 flex-col overflow-hidden rounded-lg border border-slate-800">
+                  <div className="flex items-center justify-between bg-slate-900 px-2 py-1 text-[10px] text-slate-400">
+                    <span className="font-mono">
+                      &quot;{shell.pendingEditor.path}&quot;
                     </span>
+                    <span>Esc তারপর :wq (save) / :q! (discard)</span>
                   </div>
-                  {pendingContext.transcript.length > 1 && (
-                    <pre className="whitespace-pre-wrap text-slate-300">
-                      {pendingContext.transcript.slice(0, -1).join("\n")}
-                    </pre>
-                  )}
-                </div>
-              )}
-              {!finished && (
-                <div className="flex items-center">
-                  <span className="shrink-0 text-emerald-400">
-                    {awaitingInput && pendingContext
-                      ? pendingContext.transcript[
-                          pendingContext.transcript.length - 1
-                        ]
-                      : shellPrompt(shell)}
-                  </span>
-                  <input
-                    ref={inputRef}
-                    type={awaitingInput ? "password" : "text"}
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      setHistIdx(null);
+                  <textarea
+                    ref={editorRef}
+                    value={shell.pendingEditor.content}
+                    onChange={(e) =>
+                      setShell(updateEditorDraft(shell, e.target.value))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        editorCmdRef.current?.focus();
+                      }
                     }}
-                    onKeyDown={onKeyDown}
-                    className="ml-2 w-full bg-transparent font-mono text-xs text-slate-100 outline-none placeholder:text-slate-600"
-                    placeholder={awaitingInput ? "" : "কমান্ড লিখে Enter…"}
+                    className="flex-1 resize-none bg-slate-950 p-2 font-mono text-xs text-slate-100 outline-none"
                     spellCheck={false}
                     autoComplete="off"
                   />
+                  <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 font-mono text-xs">
+                    <span className="text-amber-300">:</span>
+                    <input
+                      ref={editorCmdRef}
+                      value={editorCmdInput}
+                      onChange={(e) => setEditorCmdInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleEditorCommand(editorCmdInput);
+                        }
+                      }}
+                      placeholder="wq"
+                      className="flex-1 bg-transparent text-amber-300 outline-none placeholder:text-slate-600"
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {history.map((h, i) => (
+                    <div key={i} className="mb-1.5">
+                      <div>
+                        <span className="text-emerald-400">{h.prompt}</span>{" "}
+                        <span className="text-slate-100">{h.cmd}</span>{" "}
+                        {h.verdict === "pass" ? (
+                          <span className="font-bold text-emerald-400">✓</span>
+                        ) : (
+                          <span className="font-bold text-rose-400">✗</span>
+                        )}
+                      </div>
+                      {h.output && (
+                        <pre
+                          className={`whitespace-pre-wrap ${h.error ? "text-rose-300" : "text-slate-300"}`}
+                        >
+                          {h.output}
+                        </pre>
+                      )}
+                      {h.verdict === "fail" && h.reason && !h.error && (
+                        <div className="mt-0.5 inline-block rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-300">
+                          → {h.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {awaitingInput && pendingContext && (
+                    <div className="mb-1.5">
+                      <div>
+                        <span className="text-emerald-400">
+                          {pendingContext.prompt}
+                        </span>{" "}
+                        <span className="text-slate-100">
+                          {pendingContext.command}
+                        </span>
+                      </div>
+                      {pendingContext.transcript.length > 1 && (
+                        <pre className="whitespace-pre-wrap text-slate-300">
+                          {pendingContext.transcript.slice(0, -1).join("\n")}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                  {!finished && (
+                    <div className="flex items-center">
+                      <span className="shrink-0 text-emerald-400">
+                        {awaitingInput && pendingContext
+                          ? pendingContext.transcript[
+                              pendingContext.transcript.length - 1
+                            ]
+                          : shellPrompt(shell)}
+                      </span>
+                      <input
+                        ref={inputRef}
+                        type={awaitingInput ? "password" : "text"}
+                        value={input}
+                        onChange={(e) => {
+                          setInput(e.target.value);
+                          setHistIdx(null);
+                        }}
+                        onKeyDown={onKeyDown}
+                        className="ml-2 w-full bg-transparent font-mono text-xs text-slate-100 outline-none placeholder:text-slate-600"
+                        placeholder={awaitingInput ? "" : "কমান্ড লিখে Enter…"}
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

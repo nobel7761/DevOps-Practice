@@ -159,6 +159,12 @@ export interface PendingInput {
   firstValue?: string;
 }
 
+/** An open `vim`/`vi`/`nano`/`visudo` session — a simplified stand-in for a real modal editor. */
+export interface PendingEditor {
+  path: string;
+  content: string;
+}
+
 /** Resolves a user's home directory, honoring a custom `-d` path. */
 function userHome(name: string, user: UserRec): string {
   return user.home ?? (name === "root" ? "/root" : `/home/${name}`);
@@ -186,6 +192,8 @@ export interface ShellState {
   services: Record<string, { running: boolean; pid: number }>;
   /** set while a multi-step prompt (e.g. `passwd`) is waiting on the next typed line */
   pendingInput?: PendingInput;
+  /** set while a `vim`/`vi`/`nano`/`visudo` session is open */
+  pendingEditor?: PendingEditor;
   /** which stress-ng scenario is "active" — drives canned perf-tool output */
   perfLoad: "idle" | "cpu" | "mem" | "mem-critical" | "disk" | "net";
   /** journal entries appended via `logger`, newest last */
@@ -1050,6 +1058,51 @@ export function submitInput(prev: ShellState, value: string): ExecResult {
 
   state.pendingInput = undefined;
   return { state, output: "", error: true };
+}
+
+/** True while a `vim`/`vi`/`nano`/`visudo` session is open. */
+export function isInEditor(state: ShellState): boolean {
+  return !!state.pendingEditor;
+}
+
+/** Updates the in-progress editor draft — does not touch the filesystem yet. */
+export function updateEditorDraft(
+  prev: ShellState,
+  content: string,
+): ShellState {
+  if (!prev.pendingEditor) return prev;
+  return { ...prev, pendingEditor: { ...prev.pendingEditor, content } };
+}
+
+/** Saves the editor draft to the filesystem and closes the editor (`:wq`/`:x`). */
+export function saveEditorAndExit(prev: ShellState): ExecResult {
+  const pending = prev.pendingEditor;
+  if (!pending) return { state: prev, output: "", error: true };
+
+  const state: ShellState = JSON.parse(JSON.stringify(prev));
+  const existing = state.fs[pending.path];
+  if (existing) {
+    state.fs[pending.path] = { ...existing, content: pending.content };
+  } else {
+    const owner = currentUser(state);
+    const rec = state.users[owner];
+    state.fs[pending.path] = {
+      type: "file",
+      content: pending.content,
+      mode: applyUmask(state, 6),
+      owner,
+      group: rec?.primary ?? owner,
+    };
+  }
+  state.pendingEditor = undefined;
+  return { state, output: "", error: false };
+}
+
+/** Discards the editor draft and closes the editor without writing anything (`:q!`). */
+export function discardEditorAndExit(prev: ShellState): ExecResult {
+  const state: ShellState = JSON.parse(JSON.stringify(prev));
+  state.pendingEditor = undefined;
+  return { state, output: "", error: false };
 }
 
 /**
@@ -2453,6 +2506,47 @@ function executeOne(
       return ok(out.join("\n"));
     }
 
+    // A real modal editor is out of scope here — opening one hands control
+    // to the UI (a simple editable draft + :wq/:x/:q!), matching the one
+    // thing learners actually need to practice: making an edit and saving it.
+    case "vim":
+    case "vi":
+    case "nano": {
+      const args = rest.filter((t) => t.quoted || !t.text.startsWith("-"));
+      const raw = args[0]?.text;
+      if (!raw) return fail(`${cmd}: missing file operand`);
+      const abs = resolvePath(state.cwd, raw);
+      const existing = state.fs[abs];
+      if (existing && existing.type === "dir")
+        return fail(`${cmd}: ${raw}: Is a directory`);
+      if (existing) {
+        if (
+          !effectiveRoot &&
+          (!canTraverseTo(state, abs, permUser) ||
+            !hasPerm(state, existing, permUser, "w"))
+        )
+          return fail(`${cmd}: ${raw}: Permission denied`);
+      } else {
+        const parent = state.fs[parentOf(abs)];
+        if (!parent || parent.type !== "dir")
+          return fail(`${cmd}: ${raw}: No such file or directory`);
+        if (!effectiveRoot && !hasPerm(state, parent, permUser, "w"))
+          return fail(`${cmd}: ${raw}: Permission denied`);
+      }
+      state.pendingEditor = { path: abs, content: existing?.content ?? "" };
+      return ok();
+    }
+
+    case "visudo": {
+      if (!effectiveRoot) return fail("visudo: you must be root to run visudo");
+      const abs = "/etc/sudoers";
+      state.pendingEditor = {
+        path: abs,
+        content: state.fs[abs]?.content ?? "",
+      };
+      return ok();
+    }
+
     case "ls": {
       const flags = rest
         .filter((t) => !t.quoted && t.text.startsWith("-"))
@@ -2469,7 +2563,9 @@ function executeOne(
       if (!node)
         return fail(`ls: cannot access '${raw}': No such file or directory`);
       if (node.type === "file") return ok(long ? lsMetaLine(raw, node) : raw);
-      const names = childrenOf(state.fs, abs).map(baseName);
+      const allNames = childrenOf(state.fs, abs).map(baseName);
+      // Real `ls` hides dotfiles unless `-a` is given.
+      const names = all ? allNames : allNames.filter((n) => !n.startsWith("."));
       const entries = all ? [".", "..", ...names] : names;
       if (!long) return ok(entries.join("  "));
       const lines = [`total ${entries.length * 4}`];

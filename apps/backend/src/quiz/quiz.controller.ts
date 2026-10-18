@@ -11,6 +11,11 @@ export class QuizController {
     return this.quizService.getQuizForLab(labId);
   }
 
+  @Get(':labId/attempts/latest')
+  getLatestAttempt(@Param('labId') labId: string) {
+    return this.quizService.getLatestAttempt(labId);
+  }
+
   @Post(':labId/submit')
   submitQuiz(@Param('labId') labId: string, @Body() dto: SubmitQuizDto) {
     return this.quizService.submitQuiz(labId, dto);

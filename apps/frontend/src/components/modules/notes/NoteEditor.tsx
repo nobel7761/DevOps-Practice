@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import CustomButton from "@/components/shared/CustomButton";
 import { Textarea } from "@/components/shared/shadcn";
 import useAPI from "@/hooks/api/useAPI";
@@ -10,7 +11,13 @@ interface NoteDto {
   content: string;
 }
 
-export default function NoteEditor({ contentId }: { contentId: string }) {
+export default function NoteEditor({
+  contentId,
+  onSaved,
+}: {
+  contentId: string;
+  onSaved?: (hasContent: boolean) => void;
+}) {
   const [draft, setDraft] = useState("");
 
   const {
@@ -21,10 +28,11 @@ export default function NoteEditor({ contentId }: { contentId: string }) {
     url: `/notes/${contentId}`,
     lazy: true,
   });
-  const { callApi: saveNote, loading: saving } = useAPI<
-    NoteDto,
-    { content: string }
-  >({
+  const {
+    data: saved,
+    callApi: saveNote,
+    loading: saving,
+  } = useAPI<NoteDto, { content: string }>({
     url: `/notes/${contentId}`,
     method: "PUT",
     lazy: true,
@@ -38,6 +46,15 @@ export default function NoteEditor({ contentId }: { contentId: string }) {
   useEffect(() => {
     if (data) setDraft(data.content);
   }, [data]);
+
+  useEffect(() => {
+    if (!saved) return;
+    toast.success("Note saved", {
+      description: "আপনার নোট সফলভাবে save হয়েছে।",
+    });
+    onSaved?.(saved.content.trim().length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved]);
 
   return (
     <div className="mt-2 flex flex-col gap-2 rounded-md border border-border bg-background/50 p-3">

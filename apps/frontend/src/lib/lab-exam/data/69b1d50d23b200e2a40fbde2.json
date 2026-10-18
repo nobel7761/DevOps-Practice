@@ -18,6 +18,7 @@
         "note": "প্রথমে classification (group), তারপর সেই দলকে sudoers-এ ক্ষমতা দেওয়া — এই ক্রমটাই শেখা।"
       },
       "prompt": "superadmin নামে একটা group বানাও।",
+      "answer": "groupadd superadmin",
       "check": {
         "require": ["groupadd"],
         "groupsExist": ["superadmin"]
@@ -27,6 +28,7 @@
       "id": "t02",
       "points": 5,
       "prompt": "serviceop নামে একজনকে বানাও — home-সহ।",
+      "answer": "useradd -m serviceop",
       "check": {
         "require": ["useradd", "-m"],
         "usersState": [
@@ -41,6 +43,7 @@
       "id": "t03",
       "points": 6,
       "prompt": "rootuser নামে একজনকে বানাও — home-সহ, আর জন্মের সময়ই superadmin group-এর সদস্য করে দাও।",
+      "answer": "useradd -G superadmin -m rootuser",
       "check": {
         "require": ["useradd", "-G", "-m"],
         "usersState": [
@@ -59,6 +62,7 @@
       "id": "t04",
       "points": 4,
       "prompt": "serviceop-এর জন্য একটা password সেট করো।",
+      "answer": "passwd serviceop",
       "check": {
         "require": ["passwd"],
         "forbid": ["-S", "-l", "-u"],
@@ -69,6 +73,7 @@
       "id": "t05",
       "points": 4,
       "prompt": "rootuser-এর জন্যও একটা password সেট করো।",
+      "answer": "passwd rootuser",
       "check": {
         "require": ["passwd"],
         "forbid": ["-S", "-l", "-u"],
@@ -79,8 +84,8 @@
       "id": "t06",
       "points": 10,
       "prompt": "/etc/sudoers-এর শেষে যোগ করো (মুছে না): %superadmin ALL=(ALL) ALL — বাস্তবে visudo দিয়ে করতে, এখানে সেই একই ফলাফলের কমান্ড দিয়ে।",
+      "answer": "echo \"%superadmin ALL=(ALL) ALL\" | sudo tee -a /etc/sudoers",
       "check": {
-        "require": ["echo", "|", "tee", "-a"],
         "paths": [
           {
             "path": "/etc/sudoers",
@@ -97,6 +102,7 @@
       "id": "t07",
       "points": 4,
       "prompt": "/etc/sudoers-এর পুরো কন্টেন্ট দেখাও — নতুন লাইনটা যোগ হয়েছে তো?",
+      "answer": "cat /etc/sudoers",
       "check": {
         "require": ["cat"],
         "ref": "cat /etc/sudoers"
@@ -110,6 +116,7 @@
         "note": "নিজেই rootuser হয়ে দেখো — root-only ফাইলও পড়া যাচ্ছে কিনা।"
       },
       "prompt": "rootuser identity-তে সুইচ করো।",
+      "answer": "su - rootuser",
       "check": {
         "require": ["su", "-"],
         "ref": "su - rootuser"
@@ -119,6 +126,7 @@
       "id": "t09",
       "points": 6,
       "prompt": "প্রমাণ করো rootuser-এর সত্যিই পূর্ণ sudo ক্ষমতা আছে — root-only পাসওয়ার্ড-খাতাটা খুলে দেখাও।",
+      "answer": "sudo cat /etc/shadow",
       "check": {
         "require": ["sudo", "cat"],
         "ref": "sudo cat /etc/shadow"
@@ -128,6 +136,7 @@
       "id": "t10",
       "points": 3,
       "prompt": "root-এ ফিরে এসো।",
+      "answer": "exit",
       "check": {
         "require": ["exit"]
       }
@@ -140,9 +149,8 @@
         "note": "এবার আলাদা ফাইলে (sudoers.d), সংকীর্ণ একটা নিয়ম — Principle of Least Privilege-এর হাতে-কলমে রূপ।"
       },
       "prompt": "/etc/sudoers.d/serviceop ফাইলে লেখো: serviceop ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart sshd, /usr/bin/systemctl status sshd",
+      "answer": "echo \"serviceop ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart sshd, /usr/bin/systemctl status sshd\" | sudo tee /etc/sudoers.d/serviceop",
       "check": {
-        "require": ["echo", "|", "tee"],
-        "forbid": ["-a"],
         "paths": [
           {
             "path": "/etc/sudoers.d/serviceop",
@@ -159,6 +167,7 @@
       "id": "t12",
       "points": 4,
       "prompt": "নতুন ফাইলটার কন্টেন্ট দেখে যাচাই করো।",
+      "answer": "cat /etc/sudoers.d/serviceop",
       "check": {
         "require": ["cat"],
         "ref": "cat /etc/sudoers.d/serviceop"
@@ -168,6 +177,7 @@
       "id": "t13",
       "points": 5,
       "prompt": "serviceop identity-তে সুইচ করো।",
+      "answer": "su - serviceop",
       "check": {
         "require": ["su", "-"],
         "ref": "su - serviceop"
@@ -177,6 +187,7 @@
       "id": "t14",
       "points": 5,
       "prompt": "sshd সার্ভিসের বর্তমান অবস্থা দেখাও (sudo-সহ, যেহেতু এটাও privileged)।",
+      "answer": "sudo systemctl status sshd",
       "check": {
         "require": ["sudo", "systemctl", "status"],
         "ref": "sudo systemctl status sshd"
@@ -186,6 +197,7 @@
       "id": "t15",
       "points": 4,
       "prompt": "sshd-এর এই মুহূর্তের PID দেখাও (sudo লাগবে না, এটা privileged না)।",
+      "answer": "pidof sshd",
       "check": {
         "require": ["pidof"],
         "ref": "pidof sshd"
@@ -195,6 +207,7 @@
       "id": "t16",
       "points": 6,
       "prompt": "sshd সার্ভিসটা restart করো (sudo-সহ) — দেখো তোমার narrow অনুমতিতেই এটা কাজ করে কিনা।",
+      "answer": "sudo systemctl restart sshd",
       "check": {
         "require": ["sudo", "systemctl", "restart"]
       }
@@ -203,6 +216,7 @@
       "id": "t17",
       "points": 4,
       "prompt": "আবার PID দেখাও — restart-এর পর বদলেছে কিনা প্রমাণ করো।",
+      "answer": "pidof sshd",
       "check": {
         "require": ["pidof"],
         "ref": "pidof sshd"
@@ -212,6 +226,7 @@
       "id": "t18",
       "points": 6,
       "prompt": "পুরো process তালিকা থেকে sshd-র লাইনটা বের করে দেখাও (pipe দিয়ে)।",
+      "answer": "ps -eo pid,etime,cmd | grep sshd",
       "check": {
         "require": ["ps", "|", "grep"],
         "ref": "ps -eo pid,etime,cmd | grep sshd"
@@ -221,6 +236,7 @@
       "id": "t19",
       "points": 4,
       "prompt": "root-এ ফিরে এসো।",
+      "answer": "exit",
       "check": {
         "require": ["exit"]
       }

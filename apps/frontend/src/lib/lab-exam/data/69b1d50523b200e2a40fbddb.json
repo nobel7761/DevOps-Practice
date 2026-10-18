@@ -33,6 +33,7 @@
         "note": "প্রথমে খাতায় নাম — home ছাড়া। তারপর একজনকে ঘরসহ বানিয়ে দুটোর তফাত চোখে দেখো।"
       },
       "prompt": "joker নামে একটা user বানাও — এখনো home ছাড়া।",
+      "answer": "useradd joker",
       "check": {
         "require": ["useradd"],
         "forbid": ["-m"],
@@ -48,6 +49,7 @@
       "id": "t02",
       "points": 3,
       "prompt": "যাচাই করো — joker সত্যিই খাতায় (/etc/passwd) উঠেছে কিনা, শুধু তার লাইনটা টেনে বের করো।",
+      "answer": "grep -w 'joker' /etc/passwd",
       "check": {
         "require": ["grep"],
         "ref": "grep -w 'joker' /etc/passwd"
@@ -57,6 +59,7 @@
       "id": "t03",
       "points": 4,
       "prompt": "bob নামে আরেকজনকে বানাও — এবার home directory-সহ।",
+      "answer": "useradd -m bob",
       "check": {
         "require": ["useradd", "-m"],
         "usersState": [
@@ -71,6 +74,7 @@
       "id": "t04",
       "points": 3,
       "prompt": "bob-এর home directory সত্যিই তৈরি হয়েছে কিনা দেখাও (directory-র বিস্তারিত তথ্যসহ)।",
+      "answer": "ls -ld /home/bob",
       "check": {
         "require": ["ls"],
         "ref": "ls -ld /home/bob"
@@ -84,6 +88,7 @@
         "note": "একজন user-এর password, home, shell — তিনটাই আলাদা আলাদা কমান্ডে বদলায়।"
       },
       "prompt": "joker-এর জন্য একটা password সেট করো।",
+      "answer": "passwd joker",
       "check": {
         "require": ["passwd"],
         "forbid": ["-l", "-u", "-S"],
@@ -94,6 +99,7 @@
       "id": "t06",
       "points": 4,
       "prompt": "joker-এর home directory বদলে /home/shiyanlou করো।",
+      "answer": "usermod -d /home/shiyanlou joker",
       "check": {
         "require": ["usermod", "-d"],
         "usersState": [
@@ -108,6 +114,7 @@
       "id": "t07",
       "points": 3,
       "prompt": "আবার joker-এর লাইনটা দেখাও — home সত্যিই বদলেছে তো?",
+      "answer": "grep -w 'joker' /etc/passwd",
       "check": {
         "require": ["grep"],
         "ref": "grep -w 'joker' /etc/passwd"
@@ -117,6 +124,7 @@
       "id": "t08",
       "points": 4,
       "prompt": "joker-এর shell বদলে /bin/bash করো (এখন পর্যন্ত ডিফল্ট /bin/sh)।",
+      "answer": "usermod -s /bin/bash joker",
       "check": {
         "require": ["usermod", "-s"],
         "usersState": [
@@ -135,6 +143,7 @@
         "note": "sudo group-এ ঢোকা মানে কার্যত root-এর ক্ষমতা ধার করা।"
       },
       "prompt": "joker-কে sudo group-এ যোগ করো — supplementary হিসেবে।",
+      "answer": "usermod -a -G sudo joker",
       "check": {
         "require": ["usermod", "-a", "-G"],
         "usersState": [
@@ -149,6 +158,7 @@
       "id": "t10",
       "points": 3,
       "prompt": "joker কোন কোন group-এ আছে দেখাও — sudo এসেছে তো?",
+      "answer": "groups joker",
       "check": {
         "require": ["groups"],
         "ref": "groups joker"
@@ -162,6 +172,7 @@
         "note": "এখনই সমস্যা ধরা পড়বে — /home/shiyanlou এখনো তৈরিই হয়নি!"
       },
       "prompt": "joker identity-তে সুইচ করো (login shell হিসেবে — শর্টকাট চিহ্নটা দিয়ে)।",
+      "answer": "su - joker",
       "check": {
         "require": ["su", "-"],
         "ref": "su - joker"
@@ -172,6 +183,7 @@
       "id": "t12",
       "points": 2,
       "prompt": "এবার root-এ ফিরে এসো।",
+      "answer": "exit",
       "check": {
         "require": ["exit"]
       }
@@ -180,6 +192,7 @@
       "id": "t13",
       "points": 3,
       "prompt": "/home/shiyanlou directory-টা বানিয়ে ফেলো (এখনো নেই বলেই su-তে warning এসেছিল)।",
+      "answer": "mkdir /home/shiyanlou",
       "check": {
         "require": ["mkdir"],
         "paths": [
@@ -194,6 +207,7 @@
       "id": "t14",
       "points": 3,
       "prompt": "/home/shiyanlou-র মালিকানা joker:joker করে দাও।",
+      "answer": "chown joker:joker /home/shiyanlou",
       "check": {
         "require": ["chown"],
         "pathModes": [
@@ -209,6 +223,7 @@
       "id": "t15",
       "points": 3,
       "prompt": "/home/shiyanlou-র permission 700 করো — শুধু মালিকই ঢুকতে পারবে।",
+      "answer": "chmod 700 /home/shiyanlou",
       "check": {
         "require": ["chmod"],
         "pathModes": [
@@ -223,6 +238,7 @@
       "id": "t16",
       "points": 3,
       "prompt": "এর ভেতরে .ssh নামে আরেকটা directory বানাও (SSH agent-এর জন্য দরকার)।",
+      "answer": "mkdir /home/shiyanlou/.ssh",
       "check": {
         "require": ["mkdir"],
         "paths": [
@@ -237,6 +253,7 @@
       "id": "t17",
       "points": 3,
       "prompt": ".ssh-র মালিকানাও joker:joker করো।",
+      "answer": "chown joker:joker /home/shiyanlou/.ssh",
       "check": {
         "require": ["chown"],
         "pathModes": [
@@ -252,6 +269,7 @@
       "id": "t18",
       "points": 3,
       "prompt": ".ssh-র permission-ও 700 করো।",
+      "answer": "chmod 700 /home/shiyanlou/.ssh",
       "check": {
         "require": ["chmod"],
         "pathModes": [
@@ -266,6 +284,7 @@
       "id": "t19",
       "points": 4,
       "prompt": "এবার আবার joker হয়ে দেখো — এবার warning ছাড়াই হওয়ার কথা।",
+      "answer": "su - joker",
       "check": {
         "require": ["su", "-"],
         "ref": "su - joker"
@@ -275,6 +294,7 @@
       "id": "t20",
       "points": 6,
       "prompt": "joker হিসেবেই প্রমাণ করো sudo সত্যিই কাজ করে — root-only ফাইলটা (পাসওয়ার্ডের গোপন খাতা) খুলে দেখাও।",
+      "answer": "sudo cat /etc/shadow",
       "check": {
         "require": ["sudo", "cat"],
         "ref": "sudo cat /etc/shadow"
@@ -287,6 +307,7 @@
       "id": "t21",
       "points": 2,
       "prompt": "আবার root-এ ফিরে এসো।",
+      "answer": "exit",
       "check": {
         "require": ["exit"]
       }
@@ -299,6 +320,7 @@
         "note": "account সাময়িকভাবে বন্ধ রাখার আরেকটা রাস্তা — passwd-এর নিজস্ব flag।"
       },
       "prompt": "joker-এর account লক করো (passwd-এর নিজের flag দিয়ে, usermod না)।",
+      "answer": "passwd -l joker",
       "check": {
         "require": ["passwd", "-l"],
         "forbid": ["usermod"],
@@ -314,6 +336,7 @@
       "id": "t23",
       "points": 6,
       "prompt": "এখন joker হিসেবে login করার চেষ্টা করো — locked অবস্থায় কী হয় দেখো।",
+      "answer": "login joker",
       "check": {
         "require": ["login"],
         "ref": "login joker"
@@ -326,6 +349,7 @@
       "id": "t24",
       "points": 4,
       "prompt": "joker-এর তালা খুলে দাও (passwd-এর flag দিয়ে)।",
+      "answer": "passwd -u joker",
       "check": {
         "require": ["passwd", "-u"],
         "usersState": [
@@ -340,6 +364,7 @@
       "id": "t25",
       "points": 5,
       "prompt": "আবার login করো joker হিসেবে — এবার সফল হওয়ার কথা।",
+      "answer": "login joker",
       "check": {
         "require": ["login"],
         "ref": "login joker"
@@ -349,6 +374,7 @@
       "id": "t26",
       "points": 2,
       "prompt": "শেষবারের মতো root-এ ফিরে এসো।",
+      "answer": "exit",
       "check": {
         "require": ["exit"]
       }
@@ -361,6 +387,7 @@
         "note": "bob-কে আর দরকার নেই — home-সহ পুরোপুরি বিদায়।"
       },
       "prompt": "bob-কে home directory-সহ মুছে ফেলো।",
+      "answer": "userdel -r bob",
       "check": {
         "require": ["userdel", "-r"],
         "usersState": [
@@ -375,6 +402,7 @@
       "id": "t28",
       "points": 3,
       "prompt": "/home ফোল্ডারের ভেতরটা দেখাও — bob সত্যিই আর নেই তো?",
+      "answer": "ls /home",
       "check": {
         "require": ["ls"],
         "ref": "ls /home"

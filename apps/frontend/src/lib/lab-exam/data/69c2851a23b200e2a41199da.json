@@ -1,0 +1,523 @@
+{
+  "labId": "69c2851a23b200e2a41199da",
+  "title": "Log Analysis with awk and grep",
+  "passPercent": 95,
+  "intro": "Poridhi-র পুরো log analysis ল্যাবটা — Setup থেকে Closing Challenge পর্যন্ত, প্রতিটা grep/awk কমান্ড তোমার নিজের হাতে। প্রথম চেষ্টায় সঠিক হলেই পুরো নম্বর। ৯৫% = PASSED।",
+  "targets": [
+    {
+      "path": "~/loglab",
+      "type": "dir"
+    },
+    {
+      "path": "~/loglab/app.log",
+      "type": "file",
+      "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve\n09:27:33 INFO Cache cleared successfully\n09:28:10 WARN CPU usage above threshold\n09:29:21 ERROR Disk write failure on data logs\n09:30:00 INFO Server health check passed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 2,
+      "section": {
+        "title": "🏗️ Lab Setup",
+        "note": "Log analysis practice করার জন্য একটা directory আর ১৮ লাইনের sample server log ফাইল বানাবে — লাইন ধরে ধরে। প্রতিটা log লাইনের format: TIME LEVEL MESSAGE... — মানে awk-এ $1 = timestamp, $2 = severity level (INFO/WARN/ERROR), $3 থেকে বাকিটা message। ডানের গাছটাই টার্গেট।"
+      },
+      "prompt": "Log analysis-এর জন্য ওয়ার্কিং directory বানাও: loglab",
+      "answer": "mkdir -p loglab",
+      "check": {
+        "require": ["mkdir"],
+        "paths": [{ "path": "~/loglab", "type": "dir" }]
+      },
+      "hints": [
+        "মাঝের parent directory না থাকলেও একসাথে বানানোর flag আছে mkdir-এ…"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 1,
+      "prompt": "loglab-এর ভেতরে app.log ফাইল বানাও, প্রথম লাইন: 09:15:02 INFO Server started successfully — এক কমান্ডে, editor ছাড়া।",
+      "answer": "echo \"09:15:02 INFO Server started successfully\" > loglab/app.log",
+      "check": {
+        "require": ["echo", ">"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully"
+          }
+        ]
+      },
+      "hints": ["echo-র output স্ক্রিনে না পাঠিয়ে ফাইলে ঘুরিয়ে দাও…"]
+    },
+    {
+      "id": "t03",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:15:05 INFO Listening on port 8080",
+      "answer": "echo \"09:15:05 INFO Listening on port 8080\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080"
+          }
+        ]
+      },
+      "hints": [
+        "overwrite না করে শেষে যোগ করার জন্য > এর বদলে অন্য একটা operator আছে…"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:16:10 INFO User alice logged in",
+      "answer": "echo \"09:16:10 INFO User alice logged in\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:17:23 WARN High memory usage detected",
+      "answer": "echo \"09:17:23 WARN High memory usage detected\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:18:40 INFO User bob logged in",
+      "answer": "echo \"09:18:40 INFO User bob logged in\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:19:12 ERROR Database connection failed",
+      "answer": "echo \"09:19:12 ERROR Database connection failed\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:19:45 ERROR Database connection failed again",
+      "answer": "echo \"09:19:45 ERROR Database connection failed again\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:20:01 WARN Disk space low on volume data",
+      "answer": "echo \"09:20:01 WARN Disk space low on volume data\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:21:15 INFO User carol logged in",
+      "answer": "echo \"09:21:15 INFO User carol logged in\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:22:30 ERROR Payment gateway timeout",
+      "answer": "echo \"09:22:30 ERROR Payment gateway timeout\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:23:05 INFO Request processed in 120ms",
+      "answer": "echo \"09:23:05 INFO Request processed in 120ms\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:24:18 WARN Slow query detected on orders table",
+      "answer": "echo \"09:24:18 WARN Slow query detected on orders table\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:25:42 INFO User dave logged in",
+      "answer": "echo \"09:25:42 INFO User dave logged in\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:26:59 ERROR Authentication Failed for user eve",
+      "answer": "echo \"09:26:59 ERROR Authentication Failed for user eve\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve"
+          }
+        ]
+      },
+      "hints": [
+        "লক্ষ্য করো — এই লাইনে 'Failed' বড় হাতের F দিয়ে লেখা, বাকিগুলোয় ছোট হাতের।"
+      ]
+    },
+    {
+      "id": "t16",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:27:33 INFO Cache cleared successfully",
+      "answer": "echo \"09:27:33 INFO Cache cleared successfully\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve\n09:27:33 INFO Cache cleared successfully"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:28:10 WARN CPU usage above threshold",
+      "answer": "echo \"09:28:10 WARN CPU usage above threshold\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve\n09:27:33 INFO Cache cleared successfully\n09:28:10 WARN CPU usage above threshold"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 1,
+      "prompt": "পরের লাইন append করো: 09:29:21 ERROR Disk write failure on data logs",
+      "answer": "echo \"09:29:21 ERROR Disk write failure on data logs\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve\n09:27:33 INFO Cache cleared successfully\n09:28:10 WARN CPU usage above threshold\n09:29:21 ERROR Disk write failure on data logs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "points": 1,
+      "prompt": "শেষ লাইন append করো: 09:30:00 INFO Server health check passed — setup শেষ! গাছটা পুরো সবুজ হওয়ার কথা।",
+      "answer": "echo \"09:30:00 INFO Server health check passed\" >> loglab/app.log",
+      "check": {
+        "require": ["echo", ">>"],
+        "paths": [
+          {
+            "path": "~/loglab/app.log",
+            "type": "file",
+            "content": "09:15:02 INFO Server started successfully\n09:15:05 INFO Listening on port 8080\n09:16:10 INFO User alice logged in\n09:17:23 WARN High memory usage detected\n09:18:40 INFO User bob logged in\n09:19:12 ERROR Database connection failed\n09:19:45 ERROR Database connection failed again\n09:20:01 WARN Disk space low on volume data\n09:21:15 INFO User carol logged in\n09:22:30 ERROR Payment gateway timeout\n09:23:05 INFO Request processed in 120ms\n09:24:18 WARN Slow query detected on orders table\n09:25:42 INFO User dave logged in\n09:26:59 ERROR Authentication Failed for user eve\n09:27:33 INFO Cache cleared successfully\n09:28:10 WARN CPU usage above threshold\n09:29:21 ERROR Disk write failure on data logs\n09:30:00 INFO Server health check passed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t20",
+      "points": 5,
+      "section": {
+        "title": "🔎 Exercise 1: grep দিয়ে Severity Level ও Keyword খোঁজা",
+        "note": "grep (Global Regular Expression Print) টেক্সটের মধ্যে pattern খোঁজে। severity level ($2 ফিল্ড) সবসময় স্পেস দিয়ে ঘেরা থাকে, তাই pattern-এ স্পেস যোগ করলে false match (যেমন message-এর মধ্যে কোথাও শব্দটা চলে আসা) এড়ানো যায়।"
+      },
+      "prompt": "Server-এ কোন কোন লাইনে ERROR severity এসেছে — পুরো লাইনগুলো বের করো (false match এড়িয়ে)।",
+      "answer": "grep \" ERROR \" loglab/app.log",
+      "check": {
+        "require": ["grep"],
+        "forbid": ["awk"],
+        "ref": "grep \" ERROR \" loglab/app.log"
+      },
+      "hints": [
+        "timestamp আর message-এর মাঝখানে severity level স্পেস দিয়ে ঘেরা — সেই স্পেসগুলোই pattern-এ রাখো।"
+      ]
+    },
+    {
+      "id": "t21",
+      "points": 5,
+      "prompt": "একইভাবে, সব WARN severity-র লাইন বের করো।",
+      "answer": "grep \" WARN \" loglab/app.log",
+      "check": {
+        "require": ["grep"],
+        "forbid": ["awk"],
+        "ref": "grep \" WARN \" loglab/app.log"
+      }
+    },
+    {
+      "id": "t22",
+      "points": 6,
+      "prompt": "এবার পুরো লাইন না দেখিয়ে, মোট কতগুলো ERROR event হয়েছে শুধু সংখ্যাটা বের করো।",
+      "answer": "grep -c \" ERROR \" loglab/app.log",
+      "check": {
+        "require": ["grep", "-c"],
+        "forbid": ["awk"],
+        "ref": "grep -c \" ERROR \" loglab/app.log"
+      },
+      "hints": [
+        "grep-এর এমন একটা flag আছে যেটা ম্যাচিং লাইন না দেখিয়ে শুধু সংখ্যাটা দেখায়।"
+      ]
+    },
+    {
+      "id": "t23",
+      "points": 6,
+      "prompt": "Normal (INFO) না এমন সব log লাইন বের করো — মানে INFO বাদে বাকি সবকিছু (WARN + ERROR)।",
+      "answer": "grep -v \" INFO \" loglab/app.log",
+      "check": {
+        "require": ["grep", "-v"],
+        "forbid": ["awk"],
+        "ref": "grep -v \" INFO \" loglab/app.log"
+      },
+      "hints": [
+        "match ইনভার্ট করার একটা flag আছে grep-এ — যেটা না-মেলা লাইনগুলো দেখায়।"
+      ]
+    },
+    {
+      "id": "t24",
+      "points": 6,
+      "prompt": "কোন কোন event-এ failure হয়েছে — ছোট হাতের/বড় হাতের অক্ষর যাই হোক না কেন, 'failed' শব্দযুক্ত সব লাইন বের করো।",
+      "answer": "grep -i \"failed\" loglab/app.log",
+      "check": {
+        "require": ["grep", "-i"],
+        "forbid": ["awk"],
+        "ref": "grep -i \"failed\" loglab/app.log"
+      },
+      "hints": [
+        "case ignore করে search করার জন্য grep-এর একটা flag আছে — না হলে বড় হাতের 'Failed'-ওয়ালা লাইনটা miss হয়ে যাবে।"
+      ]
+    },
+    {
+      "id": "t25",
+      "points": 6,
+      "section": {
+        "title": "🧮 Exercise 2: awk দিয়ে Field Extraction ও Pattern Matching",
+        "note": "প্রতিটা log লাইনের format: TIME LEVEL MESSAGE... — awk-এ $1 = timestamp, $2 = severity level, $3 থেকে বাকিটা message। awk দিয়ে নির্দিষ্ট field আলাদা করে বের করা যায় ($N), আর pattern দিয়ে ফিল্টারও করা যায় (/regex/ অথবা $N==\"value\")।"
+      },
+      "prompt": "প্রতিটা log লাইন থেকে শুধু severity level ($2) ফিল্ডটা আলাদা করে বের করো, পুরো লাইন না দেখিয়ে।",
+      "answer": "awk '{print $2}' loglab/app.log",
+      "check": {
+        "require": ["awk"],
+        "forbid": ["grep"],
+        "ref": "awk '{print $2}' loglab/app.log"
+      },
+      "hints": [
+        "awk-এ নির্দিষ্ট field access করতে $ চিহ্ন আর field number ব্যবহার হয়।"
+      ]
+    },
+    {
+      "id": "t26",
+      "points": 6,
+      "prompt": "কোন কোন user login করেছে — message-এ 'logged in' আছে এমন লাইনগুলো awk দিয়ে pattern match করে বের করো।",
+      "answer": "awk '/logged in/{print}' loglab/app.log",
+      "check": {
+        "require": ["awk"],
+        "forbid": ["grep"],
+        "ref": "awk '/logged in/{print}' loglab/app.log"
+      },
+      "hints": [
+        "awk-এ /pattern/{action} লিখলে pattern-টা পুরো লাইনের ($0) বিপরীতে ম্যাচ হয়।"
+      ]
+    },
+    {
+      "id": "t27",
+      "points": 8,
+      "prompt": "awk দিয়ে — grep না — severity level field-টা exactly \"ERROR\" এমন লাইনগুলো ফিল্টার করো, field comparison ব্যবহার করে।",
+      "answer": "awk '$2==\"ERROR\"{print}' loglab/app.log",
+      "check": {
+        "require": ["awk"],
+        "forbid": ["grep"],
+        "ref": "awk '$2==\"ERROR\"{print}' loglab/app.log"
+      },
+      "hints": [
+        "== দিয়ে নির্দিষ্ট field-এর exact value comparison করা যায় — pattern হিসেবে ব্যবহার করলে শুধু ম্যাচিং লাইনেই action চলে।"
+      ]
+    },
+    {
+      "id": "t28",
+      "points": 8,
+      "prompt": "WARN severity-র প্রতিটা লাইনের message-এর প্রথম শব্দটা ($3) বের করো — field comparison আর field extraction একসাথে ব্যবহার করে।",
+      "answer": "awk '$2==\"WARN\"{print $3}' loglab/app.log",
+      "check": {
+        "require": ["awk"],
+        "forbid": ["grep"],
+        "ref": "awk '$2==\"WARN\"{print $3}' loglab/app.log"
+      }
+    },
+    {
+      "id": "t29",
+      "points": 10,
+      "section": {
+        "title": "📊 Exercise 3: Associative Array দিয়ে Counting",
+        "note": "awk-এর associative array দিয়ে প্রতিটা distinct field value কতবার এসেছে তা count করা যায় — প্রতি লাইনে arr[$N]++ দিয়ে counter বাড়িয়ে, শেষে END ব্লকে for (k in arr) দিয়ে লুপ করে প্রিন্ট করা হয়।"
+      },
+      "prompt": "প্রতিটা severity level (INFO/WARN/ERROR) কতবার করে এসেছে — level আর তার count একসাথে বের করো, associative array ব্যবহার করে।",
+      "answer": "awk '{count[$2]++} END {for (k in count) print k, count[k]}' loglab/app.log",
+      "check": {
+        "require": ["awk", "END"],
+        "forbid": ["grep"],
+        "ref": "awk '{count[$2]++} END {for (k in count) print k, count[k]}' loglab/app.log"
+      },
+      "hints": [
+        "count[$2]++ দিয়ে প্রতি লাইনে field value-ভিত্তিক একটা counter বাড়াও।",
+        "END ব্লকে for (k in count) দিয়ে লুপ করে print k, count[k] লেখো।"
+      ]
+    },
+    {
+      "id": "t30",
+      "points": 6,
+      "section": {
+        "title": "⚔️ Closing Analysis Challenge",
+        "note": "ল্যাবের ফাইনাল challenge — grep আর awk একসাথে pipe দিয়ে, আর multi-clause awk দিয়ে, বাস্তব log analysis প্রশ্নের উত্তর বের করা।"
+      },
+      "prompt": "Challenge 1: ERROR severity-র লাইনগুলোর মধ্যে যেগুলোর message-এ 'Database' শব্দ আছে, শুধু সেগুলোর timestamp ($1) বের করো — grep আর awk একসাথে, pipe দিয়ে।",
+      "answer": "grep \" ERROR \" loglab/app.log | awk '/Database/{print $1}'",
+      "check": {
+        "require": ["grep", "awk", "|"],
+        "ref": "grep \" ERROR \" loglab/app.log | awk '/Database/{print $1}'"
+      },
+      "hints": [
+        "প্রথমে grep দিয়ে ERROR লাইনগুলো আলাদা করো, তারপর সেই output-টা awk-এ pipe করে আরও ফিল্টার আর extract করো।"
+      ]
+    },
+    {
+      "id": "t31",
+      "points": 5,
+      "prompt": "Challenge 2: INFO বাদে বাকি সব event (WARN + ERROR) মিলিয়ে মোট কতগুলো ঘটেছে — শুধু সংখ্যাটা বের করো, awk দিয়ে field comparison আর একটা সাধারণ counter variable ব্যবহার করে (array ছাড়াই)।",
+      "answer": "awk '$2!=\"INFO\"{c++} END{print c}' loglab/app.log",
+      "check": {
+        "require": ["awk", "END"],
+        "forbid": ["grep"],
+        "ref": "awk '$2!=\"INFO\"{c++} END{print c}' loglab/app.log"
+      },
+      "hints": [
+        "!= দিয়ে 'না-সমান' condition লেখা যায়; আলাদা array না বানিয়ে শুধু একটা variable++ দিয়েও গোনা যায়।"
+      ]
+    },
+    {
+      "id": "t32",
+      "points": 5,
+      "prompt": "Challenge 3 (শেষ!): একটা formatted রিপোর্ট বানাও — প্রতিটা severity level আর তার count 'LEVEL: count' ফরম্যাটে, printf ব্যবহার করে।",
+      "answer": "awk '{count[$2]++} END {for (k in count) printf \"%s: %d\", k, count[k]}' loglab/app.log",
+      "check": {
+        "require": ["awk", "printf"],
+        "forbid": ["grep"],
+        "ref": "awk '{count[$2]++} END {for (k in count) printf \"%s: %d\", k, count[k]}' loglab/app.log"
+      },
+      "hints": [
+        "printf-এ %s স্ট্রিং আর %d সংখ্যার জন্য placeholder — for loop-এর প্রতিটা iteration এমনিতেই নতুন লাইনে প্রিন্ট হবে, আলাদা করে লাইন-ব্রেক লেখার দরকার নেই।"
+      ]
+    }
+  ]
+}

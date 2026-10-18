@@ -3,7 +3,7 @@
 import React from "react";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "icon";
-type IconColor = "slate" | "blue" | "red";
+type IconColor = "slate" | "blue" | "red" | "green";
 
 interface CustomButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -26,6 +26,7 @@ const ICON_COLOR_CLASSES: Record<IconColor, string> = {
   slate: "text-slate-600 hover:bg-slate-100",
   blue: "text-blue-600 hover:bg-blue-50",
   red: "text-red-600 hover:bg-red-50",
+  green: "text-green-600 hover:bg-green-50",
 };
 
 export default function CustomButton({

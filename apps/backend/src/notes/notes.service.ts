@@ -29,4 +29,14 @@ export class NotesService {
       .exec();
     return { contentId: doc!.contentId, content: doc!.content };
   }
+
+  /** Of the given content ids, which ones have a saved note with real (non-whitespace) content. */
+  async getContentIdsWithNotes(contentIds: string[]): Promise<string[]> {
+    const docs = await this.noteModel
+      .find({ contentId: { $in: contentIds } }, 'contentId content')
+      .exec();
+    return docs
+      .filter((doc) => doc.content.trim().length > 0)
+      .map((doc) => doc.contentId);
+  }
 }

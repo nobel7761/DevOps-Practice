@@ -12,6 +12,7 @@
         "note": "চাপ তৈরি করার আগে জানতে হবে 'স্বাভাবিক' অবস্থাটা কেমন দেখতে — নাহলে তুলনা করবে কীসের সাথে?"
       },
       "prompt": "এই মুহূর্তের load average দেখাও।",
+      "answer": "uptime",
       "check": {
         "require": ["uptime"],
         "ref": "uptime"
@@ -21,6 +22,7 @@
       "id": "t02",
       "points": 5,
       "prompt": "RAM-এর এই মুহূর্তের ব্যবহার (megabyte-এ) দেখাও।",
+      "answer": "free -m",
       "check": {
         "require": ["free", "-m"],
         "ref": "free -m"
@@ -30,6 +32,7 @@
       "id": "t03",
       "points": 4,
       "prompt": "প্রতিটা CPU core আলাদা করে কতটা ব্যস্ত দেখাও।",
+      "answer": "mpstat -P ALL 1",
       "check": {
         "require": ["mpstat"],
         "ref": "mpstat -P ALL 1"
@@ -39,6 +42,7 @@
       "id": "t04",
       "points": 4,
       "prompt": "ডিস্ক I/O-র বর্তমান অবস্থা দেখাও।",
+      "answer": "iostat -xz 1",
       "check": {
         "require": ["iostat"],
         "ref": "iostat -xz 1"
@@ -48,6 +52,7 @@
       "id": "t05",
       "points": 4,
       "prompt": "এই সার্ভারে মোট কতটা CPU core আছে দেখাও।",
+      "answer": "nproc",
       "check": {
         "require": ["nproc"],
         "ref": "nproc"
@@ -61,6 +66,7 @@
         "note": "সবগুলো core-কে ব্যস্ত রাখার চেষ্টা করো।"
       },
       "prompt": "সব ক-টা CPU core-এ (nproc-এ যা পেয়েছ) ৩০০ সেকেন্ডের জন্য stress তৈরি করো।",
+      "answer": "stress-ng --cpu 4 --timeout 300s --metrics-brief",
       "check": {
         "require": ["stress-ng", "--cpu"]
       },
@@ -70,6 +76,7 @@
       "id": "t07",
       "points": 5,
       "prompt": "আবার load average দেখাও — বেসলাইনের সাথে তুলনা করো।",
+      "answer": "uptime",
       "check": {
         "require": ["uptime"],
         "ref": "uptime"
@@ -79,6 +86,7 @@
       "id": "t08",
       "points": 6,
       "prompt": "আবার প্রতি core-এর ব্যস্ততা দেখাও — %usr কতটা বেড়েছে?",
+      "answer": "mpstat -P ALL 1",
       "check": {
         "require": ["mpstat"],
         "ref": "mpstat -P ALL 1"
@@ -92,6 +100,7 @@
         "note": "এবার ইচ্ছাকৃতভাবে এতটাই চাপ দেবে যে kernel নিজেই একটা process মেরে ফেলতে বাধ্য হবে।"
       },
       "prompt": "মেমোরির ৯৫% পর্যন্ত ভরে ফেলার চেষ্টা করো (২টা worker দিয়ে, ১২০ সেকেন্ডের জন্য)।",
+      "answer": "stress-ng --vm 2 --vm-bytes 95% --timeout 120s",
       "check": {
         "require": ["stress-ng", "--vm"]
       },
@@ -101,6 +110,7 @@
       "id": "t10",
       "points": 6,
       "prompt": "RAM-এর অবস্থা আবার দেখাও — কতটা critical হয়ে গেছে?",
+      "answer": "free -m",
       "check": {
         "require": ["free", "-m"],
         "ref": "free -m"
@@ -110,6 +120,7 @@
       "id": "t11",
       "points": 9,
       "prompt": "kernel-এর নিজের log-এ (শেষের কিছু লাইন) দেখো কী ঘটেছে — কোনো process কি জোর করে বন্ধ করা হয়েছে?",
+      "answer": "dmesg | tail",
       "check": {
         "require": ["dmesg"],
         "ref": "dmesg | tail"
@@ -124,6 +135,7 @@
         "note": "এবার read/write দিয়ে ডিস্ককে ব্যস্ত রাখার চেষ্টা।"
       },
       "prompt": "৪টা worker দিয়ে ৩০০ সেকেন্ড ডিস্ক I/O-তে চাপ দাও।",
+      "answer": "stress-ng --io 4 --timeout 300s --metrics-brief",
       "check": {
         "require": ["stress-ng", "--io"]
       },
@@ -133,6 +145,7 @@
       "id": "t13",
       "points": 6,
       "prompt": "ডিস্কের %util আবার দেখাও — বেসলাইনের তুলনায় কতটা বেড়েছে?",
+      "answer": "iostat -xz 1",
       "check": {
         "require": ["iostat"],
         "ref": "iostat -xz 1"
@@ -146,6 +159,7 @@
         "note": "একটা client টুল দিয়ে (localhost-এর সাথেই) ব্যান্ডউইথ পরীক্ষা।"
       },
       "prompt": "localhost-এর 5001 পোর্টে ৪টা সমান্তরাল স্ট্রিম দিয়ে ৩০০ সেকেন্ডের bandwidth test চালাও (client হিসেবে)।",
+      "answer": "iperf3 -c localhost -p 5001 -t 300 -P 4",
       "check": {
         "require": ["iperf3", "-c"]
       },
@@ -155,6 +169,7 @@
       "id": "t15",
       "points": 6,
       "prompt": "নেটওয়ার্ক ইন্টারফেসের ট্রাফিক দেখাও — spike হয়েছে কিনা।",
+      "answer": "sar -n DEV 1",
       "check": {
         "require": ["sar", "-n", "DEV"],
         "ref": "sar -n DEV 1"
@@ -168,6 +183,7 @@
         "note": "আগের লেসনের টুলগুলো — sshd এখনো ঠিকঠাক চলছে কিনা, সব চাপের মধ্যেও।"
       },
       "prompt": "sshd-র PID দেখাও।",
+      "answer": "pidof sshd",
       "check": {
         "require": ["pidof"],
         "ref": "pidof sshd"
@@ -177,6 +193,7 @@
       "id": "t17",
       "points": 6,
       "prompt": "প্রসেস তালিকা থেকে sshd-র লাইনটা বের করে দেখাও (pipe দিয়ে)।",
+      "answer": "ps -eo pid,etime,cmd | grep sshd",
       "check": {
         "require": ["ps", "|", "grep"],
         "ref": "ps -eo pid,etime,cmd | grep sshd"
