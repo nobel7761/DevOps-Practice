@@ -1,21 +1,29 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
-export type UserDocument = User & Document;
+export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ required: true })
-  name: string;
+  @Prop({ required: true, trim: true })
+  firstName: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, trim: true })
+  lastName: string;
+
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;
 
-  @Prop()
-  phone?: string;
+  /** bcrypt hash — never selected unless a query asks for it explicitly. */
+  @Prop({ required: true, select: false })
+  passwordHash: string;
 
-  @Prop()
-  address?: string;
+  /** SHA-256 of the emailed reset token; the raw token only ever lives in the email link. */
+  @Prop({ select: false })
+  resetPasswordTokenHash?: string;
+
+  @Prop({ select: false })
+  resetPasswordExpires?: Date;
 
   @Prop({ default: true })
   isActive: boolean;

@@ -1,5 +1,11 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, ExternalLink, GraduationCap } from "lucide-react";
+import {
+  ArrowRight,
+  ExternalLink,
+  GraduationCap,
+  Settings2,
+} from "lucide-react";
 import StatTile from "@/components/modules/StatTile";
 
 export default function CourseHero({
@@ -10,6 +16,9 @@ export default function CourseHero({
   totalCount,
   continueHref,
   externalUrl,
+  contentDetailsHref,
+  notEnrolled,
+  aside,
 }: {
   courseTitle: string;
   milestoneCount: number;
@@ -18,20 +27,40 @@ export default function CourseHero({
   totalCount: number;
   continueHref: string | null;
   externalUrl?: string;
+  contentDetailsHref?: string;
+  notEnrolled?: boolean;
+  /** Shown on the right instead of the stat tiles. */
+  aside?: ReactNode;
 }) {
   const overallPercent = totalCount
     ? Math.round((completedCount / totalCount) * 100)
     : 0;
 
   return (
-    <section className="relative mb-8 overflow-hidden rounded-3xl border border-border bg-linear-to-br from-primary/20 via-primary/5 to-transparent p-8 sm:p-12">
+    <section className="relative overflow-hidden rounded-3xl border border-border bg-linear-to-br from-primary/20 via-primary/5 to-transparent p-8 sm:p-12">
       <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-primary/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-12 size-64 rounded-full bg-primary/10 blur-3xl" />
 
+      {contentDetailsHref && (
+        <Link
+          href={contentDetailsHref}
+          className="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/40 hover:bg-accent"
+        >
+          <Settings2 className="size-3.5" /> Content Details
+        </Link>
+      )}
+
       <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-xl">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
-            <GraduationCap className="size-3.5" /> Career Track
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
+              <GraduationCap className="size-3.5" /> Career Track
+            </div>
+            {notEnrolled && (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400">
+                Not enrolled — outline only
+              </div>
+            )}
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {courseTitle}
@@ -61,11 +90,13 @@ export default function CourseHero({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          <StatTile value={`${overallPercent}%`} label="Overall" ring />
-          <StatTile value={String(moduleCount)} label="Modules" />
-          <StatTile value={String(completedCount)} label="Completed" />
-        </div>
+        {aside ?? (
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <StatTile value={`${overallPercent}%`} label="Overall" ring />
+            <StatTile value={String(moduleCount)} label="Modules" />
+            <StatTile value={String(completedCount)} label="Completed" />
+          </div>
+        )}
       </div>
     </section>
   );

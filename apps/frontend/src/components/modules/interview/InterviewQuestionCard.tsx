@@ -12,7 +12,7 @@ export default function InterviewQuestionCard({
   question,
   index,
   total,
-  command,
+  answer,
   result,
   submitting,
   onSubmit,
@@ -20,12 +20,12 @@ export default function InterviewQuestionCard({
   question: InterviewQuestion;
   index: number;
   total: number;
-  command: string;
+  answer: string;
   result: GradeResult | null;
   submitting: boolean;
-  onSubmit: (command: string) => void;
+  onSubmit: (answer: string) => void;
 }) {
-  const [draft, setDraft] = useState(command);
+  const [draft, setDraft] = useState(answer);
 
   return (
     <div className="flex flex-col gap-4">
@@ -40,16 +40,13 @@ export default function InterviewQuestionCard({
       </div>
 
       <div className="rounded-lg border border-border bg-card p-3">
-        <div className="flex items-center gap-2 font-mono text-sm">
-          <span className="text-muted-foreground">$</span>
-          <Textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Type the complete command with all required flags and parameters"
-            disabled={Boolean(result)}
-            className="min-h-16 resize-none border-none bg-transparent p-0 font-mono shadow-none focus-visible:ring-0"
-          />
-        </div>
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Write your answer — a command, config, or a written design/reasoning explanation, whichever fits the scenario"
+          disabled={Boolean(result)}
+          className="min-h-24 resize-none border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+        />
       </div>
 
       {!result && (

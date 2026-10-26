@@ -13,7 +13,7 @@
       "question": "CIDR notation-এ \"/24\" মানে কী?",
       "options": [
         "subnet mask-এর প্রথম ২৪ বিট network অংশ নির্দেশ করে (255.255.255.0)",
-        "ঠিক ২৪টা host থাকবে",
+        "ঠিক ২৪টা usable host address থাকবে এই নেটওয়ার্কে, কারণ subnet mask-এর সংখ্যা সরাসরি host count নির্দেশ করে, network prefix bit-এর সাথে এর কোনো সম্পর্ক নেই",
         "২৪ নম্বর port ব্যবহার হবে",
         "সেই IP শুধু ২৪ ঘণ্টা valid থাকবে"
       ],
@@ -26,7 +26,7 @@
       "question": "\"192.168.1.0/24\" আর \"192.168.0.0/24\" — এই দুইটা কী নির্দেশ করে?",
       "options": [
         "দুইটা আলাদা, পৃথক subnet/network",
-        "একই subnet-এর দুইটা নাম",
+        "আসলে একই subnet-এরই দুইটা ভিন্ন নাম/alias, কারণ /24 mask-এ শুধু শেষ অক্টেট গুরুত্বপূর্ণ ধরা হয়, তৃতীয় অক্টেটের পার্থক্য subnet identity-তে কোনো প্রভাব ফেলে না",
         "দুইটা আলাদা MAC address",
         "দুইটা আলাদা port"
       ],
@@ -40,7 +40,7 @@
       "options": [
         "কাস্টম network topology সংজ্ঞায়িত (define) করতে",
         "শুধু IP address বরাদ্দ করতে",
-        "file system তৈরি করতে",
+        "Mininet-এর জন্য একটা আলাদা, ভার্চুয়াল file system তৈরি করতে, যেখানে প্রতিটা host তার নিজস্ব ফাইল স্টোরেজ পায় এবং টপোলজির সাথে এর সরাসরি কোনো সম্পর্ক নেই",
         "password সেট করতে"
       ],
       "answerIndex": 0,
@@ -52,7 +52,7 @@
       "question": "\"self.addSwitch(...)\" method দিয়ে কী করা হয়?",
       "options": [
         "topology-তে একটা নতুন switch যোগ করা",
-        "নতুন host যোগ করা",
+        "topology-তে একটা নতুন host যোগ করা, যা পরবর্তীতে addLink দিয়ে অন্য node-এর সাথে সংযুক্ত করা যায় এবং সাধারণত একটা IP address-ও সরাসরি অ্যাসাইন করা যায় এই method দিয়েই",
         "নতুন link যোগ করা",
         "IP address assign করা"
       ],
@@ -65,7 +65,7 @@
       "question": "\"self.addHost(...)\" method দিয়ে কী করা হয়?",
       "options": [
         "topology-তে একটা নতুন host যোগ করা",
-        "switch যোগ করা",
+        "topology-তে একটা নতুন switch যোগ করা, যা পরে অন্যান্য host বা switch-এর সাথে addLink দিয়ে সংযুক্ত করা যায়, এবং এই method দিয়েই switch-এর ক্লাস (যেমন OVSKernelSwitch) নির্ধারণ করা হয়",
         "নতুন controller যোগ করা",
         "কোনো port বন্ধ করা"
       ],
@@ -78,7 +78,7 @@
       "question": "\"self.addLink(...)\" method দিয়ে কী করা হয়?",
       "options": [
         "দুইটা node (host/switch)-এর মধ্যে ভার্চুয়াল সংযোগ (link) তৈরি করা",
-        "নতুন IP তৈরি করা",
+        "একটা সম্পূর্ণ নতুন IP address range তৈরি করে সেটা স্বয়ংক্রিয়ভাবে নেটওয়ার্কের সব host-এ বরাদ্দ করে দেওয়া, topology-র physical link বা cabling-এর সাথে এর কোনো সম্পর্ক নেই",
         "password পরিবর্তন করা",
         "নতুন controller বানানো"
       ],
@@ -93,7 +93,7 @@
         "Open vSwitch-এর kernel-space implementation, Mininet-এ switch হিসেবে ব্যবহৃত হয়",
         "একটা host-এর নাম",
         "একটা IP address",
-        "শুধু file পড়ার জন্য একটা python library"
+        "শুধুমাত্র text file পড়া ও লেখার জন্য ব্যবহৃত একটা সাধারণ python library, যার সাথে switch বা networking-এর কোনো প্রত্যক্ষ সম্পর্ক নেই, এটা মূলত I/O operation-এর জন্য ব্যবহৃত হয়"
       ],
       "answerIndex": 0,
       "explanation": "OVSKernelSwitch হলো Open vSwitch-এর kernel-space সংস্করণ, যা এই ল্যাবে br0 switch তৈরির জন্য ব্যবহার করা হয়েছে।"
@@ -105,7 +105,7 @@
       "options": [
         "কোনো external SDN controller ছাড়াই normal L2 switch-এর মতো নিজে থেকে কাজ করে",
         "সবসময় সব প্যাকেট ড্রপ করে",
-        "controller ছাড়া একদম বন্ধ থাকে",
+        "controller ছাড়া switch সম্পূর্ণ নিষ্ক্রিয়, বন্ধ অবস্থায় থেকে যায় এবং কোনো প্যাকেটই প্রসেস করে না, যতক্ষণ না একটা external controller সংযুক্ত হয়ে স্পষ্টভাবে rule পাঠায়",
         "শুধু ARP হ্যান্ডেল করে"
       ],
       "answerIndex": 0,
@@ -119,7 +119,7 @@
         "আগে define করা topology-র সব host/switch/link আসলেই চালু হয়",
         "শুধু script বন্ধ হয়ে যায়",
         "নতুন IP generate হয়",
-        "topology মুছে যায়"
+        "আগে define করা পুরো topology মুছে ফেলে একটা সম্পূর্ণ খালি, নতুন network অবস্থায় ফিরে যায়, যাতে পরবর্তী কল-এ সম্পূর্ণ নতুন করে টপোলজি define করতে হয়"
       ],
       "answerIndex": 0,
       "explanation": "net.start() ব্লুপ্রিন্ট হিসেবে define করা topology-কে আসলে বুট/চালু করে, সব virtual node সক্রিয় করে।"
@@ -130,7 +130,7 @@
       "question": "\"CLI(net)\" কল করলে কী হয়?",
       "options": [
         "Mininet-এর interactive command-line চালু হয়, যেখানে ping/ifconfig ইত্যাদি command চালানো যায়",
-        "network বন্ধ হয়ে যায়",
+        "চলমান network সম্পূর্ণভাবে বন্ধ হয়ে যায় এবং সব virtual host/switch/link একসাথে cleanup হয়ে যায়, এটা মূলত net.stop()-এর একটা shortcut/alias হিসেবে কাজ করে",
         "নতুন host তৈরি হয়",
         "IP address বদলে যায়"
       ],
@@ -143,7 +143,7 @@
       "question": "\"net.stop()\" কল করলে কী হয়?",
       "options": [
         "চালু থাকা সব virtual host/switch/link বন্ধ ও পরিষ্কার হয়ে যায়",
-        "network নতুন করে শুরু হয়",
+        "network সম্পূর্ণভাবে বন্ধ না হয়ে বরং নতুন করে restart হয়ে যায়, সব host/switch/link আগের অবস্থা থেকে fresh একটা নতুন configuration নিয়ে আবার চালু হয়ে যায় স্বয়ংক্রিয়ভাবে",
         "শুধু controller বন্ধ হয়",
         "IP address মুছে যায়"
       ],
@@ -156,7 +156,7 @@
       "question": "Mininet CLI-তে \"pingall\" command কী করে?",
       "options": [
         "network-এর প্রতিটা host-pair-এর মধ্যে ping চালিয়ে সামগ্রিক connectivity দেখায়",
-        "শুধু একটা host ping করে",
+        "শুধুমাত্র একটা নির্দিষ্ট, randomly বেছে নেওয়া host-কে ping করে এবং তার ফলাফল দেখায়, বাকি host-গুলো সম্পর্কে কোনো তথ্য দেয় না — এককভাবে single-target connectivity test করার একটা শর্টকাট",
         "নতুন host তৈরি করে",
         "IP address পরিবর্তন করে"
       ],
@@ -169,7 +169,7 @@
       "question": "Mininet CLI-তে \"net\" command কী দেখায়?",
       "options": [
         "কোন node কোন node-এর সাথে (কোন interface দিয়ে) কানেক্টেড তার link summary",
-        "শুধু CPU usage",
+        "প্রতিটা host আর switch-এর বর্তমান CPU আর memory usage statistics দেখায় রিয়েল-টাইমে, যা দিয়ে resource bottleneck চিহ্নিত করা যায়, এটা topology বা link সম্পর্কে কোনো তথ্য দেয় না",
         "শুধু error log",
         "শুধু file list"
       ],
@@ -184,7 +184,7 @@
         "একটা host-এর network interface, IP address, MAC address ইত্যাদি তথ্য",
         "শুধু file list",
         "শুধু user list",
-        "শুধু CPU তথ্য"
+        "শুধুমাত্র host-এর CPU core সংখ্যা, clock speed এবং বর্তমান temperature-এর মতো hardware-level তথ্য দেখায়, network interface বা IP address সম্পর্কে এটা কোনো তথ্য প্রদান করে না"
       ],
       "answerIndex": 0,
       "explanation": "ifconfig চালিয়ে host-এর নিজস্ব network interface-গুলোর configuration (IP, MAC ইত্যাদি) দেখা যায়।"
@@ -195,7 +195,7 @@
       "question": "\"ping -c 3\" — এখানে \"-c 3\" মানে কী?",
       "options": [
         "ঠিক ৩টা ping packet পাঠিয়ে থেমে যাবে",
-        "৩ সেকেন্ড অপেক্ষা করবে",
+        "ping command শুরুর আগে ৩ সেকেন্ড অপেক্ষা করবে, তারপর ডিফল্ট আচরণ অনুযায়ী অনির্দিষ্টকাল ধরে প্যাকেট পাঠাতে থাকবে যতক্ষণ না manually থামানো হয়",
         "৩টা host-এ পাঠাবে",
         "৩ নম্বর port ব্যবহার করবে"
       ],
@@ -214,7 +214,12 @@
       "id": "69e0e99023b200e2a4159f19-17",
       "difficulty": "easy",
       "question": "এই ল্যাবে মোট কয়টা switch ব্যবহার করা হয়েছে?",
-      "options": ["১টা (br0)", "২টা", "০টা", "৪টা"],
+      "options": [
+        "১টা (br0)",
+        "২টা — একটা প্রতিটা subnet-এর জন্য আলাদাভাবে ব্যবহার করা হয়েছে, যাতে প্রতিটা subnet তার নিজস্ব, ভিন্ন broadcast domain-এ নিরাপদে isolated থাকে কোনো overlap ছাড়াই",
+        "০টা",
+        "৪টা"
+      ],
       "answerIndex": 0,
       "explanation": "পুরো টপোলজিতে একটামাত্র কেন্দ্রীয় switch br0 ব্যবহার হয়েছে, যার সাথে সব host কানেক্টেড।"
     },
@@ -224,7 +229,7 @@
       "question": "একই subnet-এর দুই host (যেমন h20 আর h21)-এর মধ্যে ping করলে সাধারণত কী হওয়া উচিত?",
       "options": [
         "সফলভাবে connect/reply হওয়া উচিত",
-        "ব্যর্থ হওয়া উচিত",
+        "ব্যর্থ হওয়া উচিত, কারণ একই subnet-এর দুই host-এর IP address কাছাকাছি হওয়ায় switch তাদের মধ্যে একটা address conflict ধরে নিয়ে নিরাপত্তার কারণে স্বয়ংক্রিয়ভাবে সেই ট্রাফিক ব্লক করে দেয়",
         "দুই host merge হয়ে যাওয়া উচিত",
         "সব প্যাকেট ড্রপ হওয়া উচিত"
       ],
@@ -237,7 +242,7 @@
       "question": "ভিন্ন subnet-এর দুই host (যেমন h20 আর h10)-এর মধ্যে ping করলে এই ল্যাবের সেটআপে সাধারণত কী হয়?",
       "options": [
         "রাউটিং না থাকায় ব্যর্থ হয়",
-        "সবসময় সফল হয়",
+        "সবসময় সফল হয়, কারণ একই physical switch-এ সরাসরি কানেক্টেড থাকায় switch নিজে থেকেই প্রয়োজনে ভিন্ন subnet-এর মধ্যে ট্রাফিক route করে দেয়, যদিও কোনো explicit router configure করা নেই",
         "দুই host-ই বন্ধ হয়ে যায়",
         "IP address বদলে যায়"
       ],
@@ -263,7 +268,7 @@
       "question": "\"h20 = self.addHost('h20', ip='192.168.1.20/24')\" — এখানে IP কখন অ্যাসাইন করা হচ্ছে?",
       "options": [
         "host তৈরির সময়েই, topology define করার মধ্যে",
-        "পরে manually ifconfig দিয়ে",
+        "host তৈরির সময় কোনো IP দেওয়া হয় না — পরে প্রতিটা host-এ manually ifconfig command চালিয়ে আলাদাভাবে IP address বসাতে হয়, addHost call-এর ip প্যারামিটার আসলে শুধু একটা placeholder মাত্র, বাস্তবে apply হয় না",
         "Mininet শুরু হওয়ার পরে CLI থেকে",
         "কখনোই না, এটা শুধু একটা নাম"
       ],
@@ -276,7 +281,7 @@
       "question": "এই ল্যাবে switch \"br0\"-এর কোনো IP address নেই কেন সমস্যা হয় না?",
       "options": [
         "Layer 2 switch হিসেবে এটা MAC address-ভিত্তিক ফরওয়ার্ডিং করে, তাই নিজের IP দরকার হয় না",
-        "আসলে br0-এর একটা IP আছে কিন্তু দেখানো হয়নি",
+        "আসলে br0-এর একটা IP address অবশ্যই আছে, এটা Mininet স্বয়ংক্রিয়ভাবে প্রতিটা switch-কে একটা internal management IP বরাদ্দ করে, শুধু সেটা ডিফল্ট ifconfig output-এ হাইড করে রাখা হয় display সরলীকরণের জন্য",
         "এটা একটা bug",
         "br0 আসলে host, switch না"
       ],
@@ -289,7 +294,7 @@
       "question": "চারটা host-ই একই switch br0-এর সাথে সরাসরি কানেক্টেড হলেও, একই subnet-এর host-দের মধ্যে ping কাজ করে কীভাবে (কোনো routing ছাড়াই)?",
       "options": [
         "Layer 2 ফরওয়ার্ডিং-এই এটা সম্ভব, কারণ তারা একই broadcast domain-এ আছে, routing লাগে না",
-        "এটা আসলে secretly routing ব্যবহার করে",
+        "এটা আসলে secretly একটা হালকা, implicit routing মেকানিজম ব্যবহার করে — Mininet-এর br0 switch internally প্রতিটা প্যাকেটের IP subnet চেক করে, মিললে route করে দেয়, যদিও এটা ব্যবহারকারীর কাছে দৃশ্যমান না",
         "switch নিজে থেকে routing করে",
         "এটা কাজ করা উচিতই না"
       ],
@@ -302,7 +307,7 @@
       "question": "\"net = Mininet(topo=topo, switch=OVSKernelSwitch)\" — এখানে \"topo=topo\" প্যারামিটারটা কী বোঝায়?",
       "options": [
         "আগে define করা TwoSubnetTopo থেকে বানানো object pass করা হচ্ছে, যা দিয়ে Mininet জানবে কী বানাতে হবে",
-        "topo মানে একটা IP address",
+        "topo প্যারামিটারটা আসলে Mininet network-এর একটা centralized management IP address নির্ধারণ করে, যেটা দিয়ে পরবর্তীতে বাহির থেকে remote-এ network access করা যায়, টপোলজি সংজ্ঞায়নের সাথে এর সরাসরি সম্পর্ক নেই",
         "topo মানে একটা port নম্বর",
         "এটা কোনো কাজই করে না"
       ],
@@ -315,7 +320,7 @@
       "question": "দুই আলাদা subnet-এর host-রা একই br0-এর সাথে physically কানেক্টেড থাকা সত্ত্বেও কেন ping fail করে?",
       "options": [
         "switch শুধু L2 ফরওয়ার্ডিং করে; host-দের IP stack ভিন্ন subnet-এর destination-এর জন্য কোনো route/gateway জানে না, এবং সেই ট্রাফিক route করার মতো কোনো L3 ডিভাইস (router) নেই",
-        "br0 ভিন্ন subnet-এর host-দের জন্য আলাদা, বন্ধ port ব্যবহার করে",
+        "br0 switch প্রতিটা ভিন্ন subnet-এর host-এর জন্য internally আলাদা, pre-configured বন্ধ (disabled) port ব্যবহার করে রাখে, যাতে cross-subnet প্যাকেট hardware-level-এই filter হয়ে যায়, এটা একটা built-in switch-level security feature হিসেবে কাজ করে",
         "IP address ভুলভাবে অ্যাসাইন হয়েছে",
         "এটা একটা Mininet bug"
       ],
@@ -328,7 +333,7 @@
       "question": "এই ল্যাবের conclusion অনুযায়ী, cross-subnet connectivity পেতে হলে ভবিষ্যতে কী যোগ করা দরকার হবে?",
       "options": [
         "একটা router বা Layer 3 routing configuration (বা SDN controller-ভিত্তিক routing)",
-        "আরেকটা switch",
+        "আরেকটা switch যোগ করা, কারণ দুইটা আলাদা switch ব্যবহার করলে স্বয়ংক্রিয়ভাবে subnet-এর মধ্যে ট্রাফিক route হওয়া শুরু হয়ে যায়, কোনো router বা L3 configuration ছাড়াই শুধু switch সংখ্যা বাড়ানোই যথেষ্ট",
         "আরও বেশি host",
         "শুধু IP address পরিবর্তন"
       ],
@@ -341,7 +346,7 @@
       "question": "\"pingall\" command চালালে এই ল্যাবের সেটআপে কেমন ফলাফল আশা করা যায়?",
       "options": [
         "একই subnet-এর জোড়াগুলো সফল হবে, ভিন্ন subnet-এর জোড়াগুলো ব্যর্থ হবে — একটা মিশ্র (partial) ফলাফল",
-        "সবগুলো জোড়া সফল হবে",
+        "সবগুলো জোড়াই সফল হবে, কারণ সব host একই physical switch br0-এর সাথে সরাসরি কানেক্টেড থাকায় IP subnet ভিন্ন হলেও Layer 2 connectivity-ই যথেষ্ট সফল communication-এর জন্য, routing-এর প্রয়োজন পড়ে না",
         "সবগুলো জোড়া ব্যর্থ হবে",
         "pingall এই সেটআপে চলবেই না"
       ],
@@ -354,7 +359,7 @@
       "question": "Topo ক্লাসের \"build()\" method-টা কখন call হয়?",
       "options": [
         "Mininet instance তৈরির সময়, topology object বানানোর অংশ হিসেবে",
-        "শুধু CLI থেকে manually call করলে",
+        "শুধুমাত্র ব্যবহারকারী manually CLI থেকে একটা নির্দিষ্ট কমান্ড (যেমন \"build\") টাইপ করলে তবেই call হয়, Topo instantiate করা মাত্রই এটা স্বয়ংক্রিয়ভাবে চলে না, আলাদা করে ট্রিগার করতে হয়",
         "net.stop() করার সময়",
         "কখনোই call হয় না"
       ],
@@ -367,7 +372,7 @@
       "question": "\"h20 ifconfig\" আর \"h10 ifconfig\" output compare করলে মূলত কোন পার্থক্য স্পষ্ট হবে?",
       "options": [
         "দুই host-এর IP address ভিন্ন subnet রেঞ্জে (192.168.1.x বনাম 192.168.0.x)",
-        "MAC address একদম একই হবে",
+        "দুই host-এর MAC address হুবহু একই দেখাবে, কারণ একই switch br0-এর সাথে কানেক্টেড হওয়ায় Mininet তাদের একই hardware address assign করে, শুধু IP address-টাই আলাদা থাকে",
         "দুই host একই IP পাবে",
         "কোনো পার্থক্যই থাকবে না"
       ],
@@ -380,7 +385,7 @@
       "question": "\"self.addLink(h20, br0)\" — এই লাইনটা মূলত কী বোঝায় নেটওয়ার্কিং-এর ভাষায়?",
       "options": [
         "h20 host আর br0 switch-এর মধ্যে একটা virtual ethernet cable/interface pair তৈরি হচ্ছে",
-        "h20 আর br0 merge হয়ে যাচ্ছে",
+        "h20 host আর br0 switch দুটো node একীভূত (merge) হয়ে একটামাত্র নতুন, সম্মিলিত node-এ পরিণত হচ্ছে, যার ফলে তারা আলাদা আলাদা namespace বা IP আর বজায় রাখে না",
         "h20-এর IP পরিবর্তন হচ্ছে",
         "br0 মুছে যাচ্ছে"
       ],
@@ -393,7 +398,7 @@
       "question": "এই ল্যাবে subnet mask /24 না দিয়ে যদি /16 দেওয়া হতো (যেমন 192.168.0.0/16), তাহলে কী পরিবর্তন হতো conceptually?",
       "options": [
         "একই subnet-এর পরিধি (range) আরও বড় হয়ে যেত, সম্ভবত 192.168.0.x আর 192.168.1.x একই subnet-এ পড়ে যেত",
-        "কোনো পরিবর্তনই হতো না",
+        "কোনো পরিবর্তনই হতো না, কারণ Mininet-এ subnet mask শুধু একটা কসমেটিক লেবেল, আসলে প্রতিটা host-এর reachability নির্ধারিত হয় শুধুমাত্র physical addLink সংযোগের উপর ভিত্তি করে, IP mask-এর কোনো কার্যকর প্রভাব নেই",
         "host-এর সংখ্যা কমে যেত",
         "switch-এর সংখ্যা বেড়ে যেত"
       ],
@@ -406,7 +411,7 @@
       "question": "\"switch=OVSKernelSwitch\" প্যারামিটার Mininet() constructor-এ আলাদা করে দেওয়ার কারণ কী, যেখানে Topo-তেও cls=OVSKernelSwitch দেওয়া আছে?",
       "options": [
         "এটা Mininet network object-কে ডিফল্ট switch ক্লাস বলে দেয়, যা consistency বজায় রাখতে সাহায্য করে",
-        "এটা একটা ভুল, দুইবার দেওয়ার কখনোই দরকার নেই",
+        "এটা আসলে একটা ভুল/redundant লাইন — Topo-তে cls=OVSKernelSwitch দেওয়ার পর Mininet() constructor-এ switch প্যারামিটার দেওয়ার কখনোই কোনো দরকার নেই, দুইবার দিলে প্রোগ্রাম error দিয়ে বন্ধ হয়ে যাওয়ার কথা",
         "এটা শুধু IP address নির্ধারণ করে",
         "এটা শুধু host সংখ্যা নির্ধারণ করে"
       ],
@@ -419,7 +424,7 @@
       "question": "\"setLogLevel('info')\" লাইনটার উদ্দেশ্য কী?",
       "options": [
         "Mininet চলাকালীন কী ঘটছে তার informational log/message দেখানো",
-        "network security বাড়ানো",
+        "network-এর নিরাপত্তা (security) স্তর বাড়ানো — info level সেট করলে switch স্বয়ংক্রিয়ভাবে অননুমোদিত ট্রাফিক ফিল্টার করা শুরু করে এবং অতিরিক্ত encryption layer যোগ করে, এটা মূলত একটা security hardening সেটিং",
         "host-এর সংখ্যা বাড়ানো",
         "IP address সেট করা"
       ],
@@ -432,7 +437,7 @@
       "question": "h10 আর h11 একই subnet-এ থাকায় তাদের মধ্যে ping কাজ করে, কিন্তু h10 আর h20-এর মধ্যে করে না — এটা থেকে কী সিদ্ধান্তে আসা যায়?",
       "options": [
         "একই physical switch-এ থাকলেও, IP subnet ভিন্ন হলে এবং routing না থাকলে communication সম্ভব হয় না",
-        "physical connection-ই আসল ফ্যাক্টর, subnet কোনো ব্যাপার না",
+        "physical connection-ই এখানে একমাত্র নির্ধারক ফ্যাক্টর — IP subnet আসলে কোনো বাস্তব ভূমিকাই রাখে না, যেহেতু সব host একই switch-এ কানেক্টেড, তাদের মধ্যে ping সবসময় physical topology দিয়েই নির্ধারিত হওয়া উচিত ছিল, subnet পার্থক্য উপেক্ষা করা যায়",
         "IP address আসলে কোনো ভূমিকা রাখে না",
         "দুটোই আসলে একই subnet"
       ],
@@ -445,7 +450,7 @@
       "question": "যদি এই টপোলজিতে পঞ্চম একটা host \"h22\" যোগ করা হয় IP 192.168.1.22/24 দিয়ে, এটা কোন বিদ্যমান host-দের সাথে সরাসরি ping করতে পারবে বলে আশা করা যায়?",
       "options": [
         "h20 আর h21-এর সাথে (একই subnet 192.168.1.0/24)",
-        "h10 আর h11-এর সাথে",
+        "h10 আর h11-এর সাথে সরাসরি ping করতে পারবে, কারণ h22-এর IP ঠিকানার শেষ অংশ (.22) h10/h11-এর (.10, .11) কাছাকাছি সংখ্যায় থাকায় Mininet তাদের একই logical group হিসেবে বিবেচনা করে, subnet prefix-এর চেয়ে এই numeric closeness-কেই বেশি গুরুত্ব দেয়",
         "কারো সাথেই না",
         "সব host-এর সাথে"
       ],
@@ -458,7 +463,7 @@
       "question": "\"mininet.node\" থেকে import করা \"OVSKernelSwitch\" ক্লাস ছাড়া যদি ডিফল্ট Mininet switch ব্যবহার করা হতো, তাহলে কোড-এ কী কমন পরিবর্তন লাগত?",
       "options": [
         "cls=OVSKernelSwitch আর switch=OVSKernelSwitch প্যারামিটার বাদ দিয়ে ডিফল্ট switch ক্লাসে চলে যাওয়া যেত",
-        "IP address বদলাতে হতো",
+        "প্রতিটা host-এর IP address নতুন করে বদলাতে হতো, কারণ ডিফল্ট switch ক্লাস ব্যবহার করলে Mininet স্বয়ংক্রিয়ভাবে একটা ভিন্ন IP addressing scheme প্রয়োগ করে, যা আগের থেকে ভিন্ন subnet range তৈরি করে দেয়",
         "host সংখ্যা বদলাতে হতো",
         "পুরো script-ই অচল হয়ে যেত"
       ],
@@ -471,7 +476,7 @@
       "question": "\"info('*** Network is ready\\n')\" লাইনটার কাজ কী?",
       "options": [
         "স্ক্রিনে একটা informational বার্তা প্রিন্ট করা যে নেটওয়ার্ক তৈরি শেষ",
-        "network restart করা",
+        "চলমান network-টাকে সম্পূর্ণভাবে বন্ধ করে আবার নতুন করে restart করে দেওয়া, যাতে আগের সব configuration মুছে fresh অবস্থা থেকে network আবার চালু হয়, এই লাইনের মূল উদ্দেশ্য আসলে একটা restart trigger হিসেবে কাজ করা",
         "নতুন host তৈরি করা",
         "error log করা"
       ],
@@ -484,7 +489,7 @@
       "question": "দুটো ভিন্ন subnet (192.168.0.0/24 আর 192.168.1.0/24) ব্যবহার করার একটা সাধারণ বাস্তব কারণ কী হতে পারে?",
       "options": [
         "ভিন্ন ভিন্ন department/team বা security zone-এর জন্য network traffic আলাদাভাবে segment/isolate করা",
-        "নেটওয়ার্ককে ধীর করা",
+        "নেটওয়ার্কের সামগ্রিক গতি ইচ্ছাকৃতভাবে কমিয়ে দেওয়া, কারণ একাধিক subnet ব্যবহার করলে প্রতিটা প্যাকেটকে অতিরিক্ত subnet-boundary চেকিং-এর মধ্য দিয়ে যেতে হয়, যা latency উল্লেখযোগ্যভাবে বাড়িয়ে দেয় — এটাই subnet বিভাজনের মূল বাস্তব কারণ",
         "IP address বাঁচানো অসম্ভব করা",
         "কোনো সুনির্দিষ্ট কারণ নেই, এলোমেলোভাবে বেছে নেওয়া হয়"
       ],
@@ -497,7 +502,7 @@
       "question": "\"h20 ping h10\" command-এ \"-c\" flag দেওয়া হয়নি — এর ফলাফল কী হবে?",
       "options": [
         "কোনো reply না পাওয়া পর্যন্ত (বা manually থামানো পর্যন্ত) ক্রমাগত ping পাঠাতেই থাকবে",
-        "শুধু ১টা ping পাঠিয়ে থেমে যাবে",
+        "শুধুমাত্র ১টা ping packet পাঠিয়েই স্বয়ংক্রিয়ভাবে থেমে যাবে, কারণ -c flag না দিলে ping-এর ডিফল্ট আচরণ ধরা হয় একটামাত্র reply নিশ্চিত করেই command শেষ করা, এটাই POSIX ping utility-র standard behavior বলে ধরে নেওয়া হয়",
         "command-টাই চলবে না",
         "স্বয়ংক্রিয়ভাবে ৩টা ping পাঠাবে"
       ],
@@ -510,7 +515,7 @@
       "question": "যদি br0-এর বদলে দুইটা আলাদা switch ব্যবহার করা হতো (একটা প্রতি subnet-এর জন্য) কিন্তু তাদের মধ্যে কোনো link না থাকত, cross-subnet connectivity-র ফলাফলে কি কোনো পার্থক্য হতো?",
       "options": [
         "না, তখনও cross-subnet ping ব্যর্থ হতো, কারণ কোনো routing/connection নেই এই দুই আলাদা switch-group-এর মধ্যে",
-        "হ্যাঁ, তখন এটা সফল হতো",
+        "হ্যাঁ, তখন এটা সফল হতো, কারণ দুইটা আলাদা switch ব্যবহার করলে Mininet স্বয়ংক্রিয়ভাবে তাদের মধ্যে একটা virtual backbone link তৈরি করে দেয় routing সক্ষম করার জন্য, এমনকি explicit addLink call ছাড়াই",
         "সব host বন্ধ হয়ে যেত",
         "IP address স্বয়ংক্রিয়ভাবে মিলে যেত"
       ],
@@ -523,7 +528,7 @@
       "question": "এই ল্যাবের \"Network Isolation by Design\" ধারণাটা মূলত কী বোঝায়?",
       "options": [
         "ভিন্ন subnet স্বভাবতই একে অপরের থেকে আলাদা/বিচ্ছিন্ন থাকে, যতক্ষণ না স্পষ্টভাবে router বা routing rule দিয়ে তাদের যুক্ত করা হয়",
-        "subnet-গুলো সবসময় স্বয়ংক্রিয়ভাবে যুক্ত থাকে",
+        "ভিন্ন subnet-গুলো ডিফল্টভাবে সবসময় স্বয়ংক্রিয়ভাবে একে অপরের সাথে যুক্ত/সংযুক্ত থেকে যায়, router বা routing rule ছাড়াই, কারণ IP স্ট্যাক নিজে থেকেই সব সম্ভাব্য subnet-এর জন্য path খুঁজে বের করার চেষ্টা করে এবং সাধারণত সফল হয়",
         "isolation মানে host বন্ধ করে দেওয়া",
         "এটা শুধু firewall-এর একটা feature, subnet-এর সাথে সম্পর্কহীন"
       ],
@@ -536,7 +541,7 @@
       "question": "\"self.addHost('h11', ip='192.168.0.11/24')\" — যদি ভুলবশত ip='192.168.0.11/16' লেখা হতো, মূল conceptual প্রভাব কী হতো?",
       "options": [
         "h11-এর effective subnet range বদলে যেত (অনেক বড় হয়ে যেত), যা হয়তো h10/h20/h21-এর সাথে subnet membership-এর হিসেব পাল্টে দিতে পারত",
-        "কোনো প্রভাবই পড়ত না",
+        "কোনো প্রভাবই পড়ত না, কারণ Mininet-এ subnet mask শুধু একটা প্রদর্শনী (cosmetic) মান হিসেবে সংরক্ষিত হয়, প্রকৃত packet forwarding/reachability সবসময় শুধুমাত্র physical addLink টপোলজির উপর নির্ভর করে, mask-এর মান কার্যকরভাবে ব্যবহৃত হয় না",
         "h11 নামই বদলে যেত",
         "switch নষ্ট হয়ে যেত"
       ],
@@ -549,7 +554,7 @@
       "question": "Python-এ Mininet-এর \"Topo\" ক্লাস subclass করে নিজের \"TwoSubnetTopo\" ক্লাস বানানোর সুবিধা কী?",
       "options": [
         "custom, পুনঃব্যবহারযোগ্য (reusable) topology definition বানানো যায়, যা দরকার অনুযায়ী বারবার instantiate করা যায়",
-        "এটা না করলে Mininet একদমই চলবে না কোনো অবস্থাতেই",
+        "এটা না করলে Mininet একদমই চলবে না কোনো অবস্থাতেই — Topo subclass করা Mininet ব্যবহারের একমাত্র, বাধ্যতামূলক পদ্ধতি, built-in টপোলজি টেমপ্লেট (যেমন single,3) ব্যবহার করার আদৌ কোনো উপায় নেই এটা ছাড়া",
         "এটা শুধু code সুন্দর দেখানোর জন্য, কোনো কার্যকারিতা নেই",
         "এটা host-এর সংখ্যা স্বয়ংক্রিয়ভাবে বাড়িয়ে দেয়"
       ],
@@ -570,7 +575,7 @@
       "question": "দুই subnet যদি ভবিষ্যতে একটা router দিয়ে যুক্ত করা হয়, তখন \"Layer 2 switching\" আর \"Layer 3 routing\"-এর ভূমিকা কীভাবে ভাগ হবে?",
       "options": [
         "br0 একই subnet-এর ভেতরের ট্রাফিক switch করতে থাকবে (L2), আর router দুই subnet-এর মধ্যকার ট্রাফিক route করবে (L3)",
-        "router পুরো কাজটাই করে ফেলবে, switch-এর আর দরকার থাকবে না",
+        "router যোগ হওয়ার পর সেটাই পুরো নেটওয়ার্কের সব কাজ (উভয় subnet-এর ভেতরের আর মধ্যকার ট্রাফিক) একাই সামলে নেবে, br0 switch তখন কার্যত অপ্রয়োজনীয় হয়ে পড়বে এবং টপোলজি থেকে বাদ দেওয়া যেতে পারে",
         "switch-ই routing শিখে ফেলবে নিজে থেকে",
         "দুটোর কোনো আলাদা ভূমিকা থাকবে না"
       ],
@@ -583,7 +588,7 @@
       "question": "যদি একটা VLAN tag ব্যবহার করে দুই subnet-কে logically আলাদা করা হতো (physical switch একই রেখে), এটা বর্তমান সেটআপ (শুধু ভিন্ন IP subnet, একই L2 domain) থেকে মৌলিকভাবে কীভাবে আলাদা হতো?",
       "options": [
         "VLAN সত্যিকারের আলাদা broadcast domain তৈরি করে (L2 স্তরেই আলাদা), যেখানে এই ল্যাবের বর্তমান সেটআপে সব host আসলে একই broadcast domain-এ আছে, শুধু ভিন্ন IP range ব্যবহার করছে",
-        "দুটো আসলে হুবহু একই জিনিস, কোনো পার্থক্য নেই",
+        "দুটো আসলে হুবহু একই জিনিস, কোনো প্রকৃত পার্থক্য নেই — VLAN আর IP subnet উভয়ই একই অন্তর্নিহিত broadcast domain concept বর্ণনা করার দুইটা ভিন্ন নাম মাত্র, একটা আরেকটার ঠিক সমতুল্য বাস্তবায়ন, শুধু টার্মিনোলজির পার্থক্য",
         "VLAN আসলে IP subnet-এর সমার্থক শব্দ",
         "VLAN ব্যবহার করলে routing আর দরকারই হয় না"
       ],
@@ -596,7 +601,7 @@
       "question": "h20 (192.168.1.20) থেকে h10 (192.168.0.10)-তে ping করলে ঠিক কোন স্তরে ব্যর্থতা ঘটে — h20-এর নিজের IP স্ট্যাক সিদ্ধান্ত নেয়, নাকি switch ট্রাফিক ড্রপ করে?",
       "options": [
         "সাধারণত h20-এর নিজের IP স্ট্যাকই প্রথমে বুঝে ফেলে যে destination IP তার নিজের subnet-এর বাইরে, এবং কোনো default gateway কনফিগার করা না থাকায় প্যাকেটটা সফলভাবে পাঠানোরই উপায় থাকে না",
-        "switch প্যাকেটটা MAC layer-এ bytewise analyze করে subnet বুঝে ফেলে ড্রপ করে",
+        "switch প্রতিটা প্যাকেটের payload-এর ভেতরের IP header byte-by-byte বিশ্লেষণ করে সেখান থেকে subnet ঠিকানা বের করে, এবং নিজের ভেতরের একটা অন্তর্নির্মিত subnet-তুলনা লজিক দিয়ে ক্রস-subnet প্যাকেট শনাক্ত করে সরাসরি drop করে দেয়, যা একটা built-in L2 security ফিচার হিসেবে কাজ করে",
         "দুটোই সমান সম্ভাবনায় ঘটে, নির্ভর করে randomly",
         "এটা কখনো host-level-এ decide হয় না, সবসময় switch-level-এ হয়"
       ],
@@ -609,7 +614,7 @@
       "question": "topology script-এ যদি \"net.stop()\"-এর আগে CLI(net) সম্পূর্ণ শেষ না হয়ে script ক্র্যাশ করে, বাস্তবে কী সমস্যা হতে পারে?",
       "options": [
         "virtual interface/namespace ঠিকমতো পরিষ্কার (cleanup) না হয়ে থেকে যেতে পারে, যার ফলে পরের বার চালানোর আগে manually cleanup করার দরকার হতে পারে",
-        "কোনো সমস্যাই হয় না, সব স্বয়ংক্রিয়ভাবে পরিষ্কার হয়",
+        "কোনো সমস্যাই হয় না — অপারেটিং সিস্টেম স্বয়ংক্রিয়ভাবে Mininet প্রসেস ক্র্যাশ করলেই সব virtual interface এবং namespace নিখুঁতভাবে detect করে সাথে সাথে পরিষ্কার করে দেয়, কোনো manual cleanup কখনো প্রয়োজন হয় না",
         "host-এর IP address স্থায়ীভাবে নষ্ট হয়ে যায়",
         "কম্পিউটার রিস্টার্ট করা ছাড়া উপায় থাকে না"
       ],
@@ -623,7 +628,7 @@
       "options": [
         "switch শুধু frame forward করে পোর্ট/MAC ভিত্তিতে — IP subnet membership বোঝা বা subnet-এর মধ্যে route করা সুইচের (L2 device) কাজ না, সেটা L3 (router)-এর দায়িত্ব",
         "switch আসলে এই কাজ করতেই পারে না বলে এটা ভুল প্রশ্ন",
-        "দুটো subnet আসলে স্বয়ংক্রিয়ভাবে communicate করতে পারে সবসময়",
+        "দুটো subnet আসলে স্বয়ংক্রিয়ভাবেই একে অপরের সাথে communicate করতে পারে সবসময়, কারণ একই switch physically তাদের ধারণ করলে সেই switch স্বয়ংক্রিয়ভাবে একটা implicit routing table তৈরি করে ফেলে এবং subnet-এর মধ্যে প্যাকেট route করতে শুরু করে, কোনো router আলাদাভাবে দরকার হয় না",
         "IP subnet-এর কোনো প্রভাবই নেই L2 device-এ"
       ],
       "answerIndex": 0,
@@ -636,7 +641,7 @@
       "options": [
         "Routing (router/L3 gateway কনফিগার করা)",
         "শুধু Firewall rule যোগ করা",
-        "শুধু হোস্টের hostname পরিবর্তন করা",
+        "শুধুমাত্র প্রতিটা host-এর hostname নেটওয়ার্ক-সামঞ্জস্যপূর্ণ একটা নতুন নামে পরিবর্তন করা, কারণ hostname resolution-ই মূলত cross-subnet communication নিয়ন্ত্রণ করে, IP routing-এর সাথে এর সরাসরি সম্পর্ক সীমিত",
         "শুধু subnet mask ছোট করা"
       ],
       "answerIndex": 0,
@@ -648,7 +653,7 @@
       "question": "যদি কেউ ভুল করে h20 আর h10-কে একই subnet (ধরি উভয়কেই 192.168.1.0/24-এর IP দেয়) assign করে, কিন্তু physical topology (addLink calls) অপরিবর্তিত রাখে, তাহলে ping কাজ করবে কি?",
       "options": [
         "হ্যাঁ, কারণ এখন তারা logically একই subnet-এ, আর তারা আগে থেকেই একই physical switch-এর সাথে কানেক্টেড, তাই L2 reachability + matching subnet মিলে communication সম্ভব হবে",
-        "না, কারণ physical topology পরিবর্তন করতে হবে",
+        "না, কাজ করবে না — physical topology (addLink calls) অবশ্যই নতুন করে পরিবর্তন করতে হবে, কারণ একবার কোনো host একটা নির্দিষ্ট subnet-এ তৈরি হয়ে গেলে শুধু IP পরিবর্তন করে তার physical connectivity বা reachability কখনো বদলানো যায় না, পুরো টপোলজি স্ক্রিপ্ট আবার নতুন করে লিখতে হয়",
         "না, কারণ দুটো host-এর নাম আলাদা তাই কখনো communicate করতে পারবে না",
         "হ্যাঁ কিন্তু শুধু router যোগ করলে"
       ],
@@ -661,7 +666,7 @@
       "question": "এই ল্যাবে subnet-ভিত্তিক isolation তৈরি হয়েছে শুধুমাত্র IP addressing দিয়ে, কোনো ACL/firewall rule ছাড়াই। সিকিউরিটির দৃষ্টিকোণ থেকে এই ধরনের isolation-এর একটা দুর্বলতা (limitation) কী হতে পারে?",
       "options": [
         "কেউ যদি manually কোনো host-এর IP পরিবর্তন করে অন্য subnet-এর রেঞ্জে নিয়ে আসে (বা static route/gateway যোগ করে), তাহলে isolation সহজেই ভেঙে যেতে পারে, কারণ এটা প্রকৃত security enforcement না, শুধু addressing-based বিভাজন",
-        "IP-ভিত্তিক isolation কখনো ভাঙা সম্ভবই না",
+        "IP-ভিত্তিক isolation আসলে কখনোই ভাঙা সম্ভব না — এটা একটা cryptographically enforced বিভাজন, যেখানে subnet boundary নেটওয়ার্ক hardware-এর নিজস্ব firmware-এ হার্ড-কোডেড থাকে, তাই কোনো software-level পরিবর্তন দিয়ে এই isolation ভাঙা কখনোই সম্ভব না, এটা একটা fundamental hardware guarantee",
         "এটা hardware-level lock, তাই একদম অপরিবর্তনীয়",
         "এই পদ্ধতিতে কোনো দুর্বলতাই নেই"
       ],
@@ -674,7 +679,7 @@
       "question": "\"OVSKernelSwitch\" (kernel-space)-এর পরিবর্তে user-space OVS switch ব্যবহার করলে, এই ল্যাবের মূল conceptual ফলাফল (subnet isolation, L2 vs L3) কি পাল্টে যাবে?",
       "options": [
         "না, পাল্টাবে না — এটা শুধু switch implementation-এর পারফরম্যান্স/architecture-এর পার্থক্য, subnet/routing সংক্রান্ত মৌলিক নেটওয়ার্কিং আচরণ একই থাকবে",
-        "হ্যাঁ, user-space switch ব্যবহার করলে routing এমনিতেই চালু হয়ে যাবে",
+        "হ্যাঁ, user-space OVS switch ব্যবহার করলে Layer 3 routing ক্ষমতা স্বয়ংক্রিয়ভাবে সক্রিয় হয়ে যায়, কারণ user-space implementation-এ kernel-space-এর তুলনায় অতিরিক্ত networking feature বিল্ট-ইন থাকে, যা দিয়ে কোনো explicit router কনফিগারেশন ছাড়াই cross-subnet ট্রাফিক route হওয়া শুরু করে দেয়",
         "হ্যাঁ, তখন সব subnet মিশে একটাই হয়ে যাবে",
         "switch টাইপ বদলালে host-দের IP স্বয়ংক্রিয়ভাবে বদলে যায়"
       ],
@@ -687,7 +692,7 @@
       "question": "br0-এ \"failMode='standalone'\"-এর বদলে \"failMode='secure'\" ব্যবহার করা হলে (এবং কোনো controller সংযুক্ত না থাকলে), সম্ভাব্য প্রভাব কী হতো?",
       "options": [
         "secure mode-এ, controller না থাকলে switch flow rule ছাড়া ট্রাফিক forward করবে না (default fail-secure আচরণ), ফলে standalone mode-এর মতো স্বয়ংক্রিয় normal L2 forwarding নাও হতে পারে — Lab 1-এর controller=none + manual ovs-ofctl rule-এর মতো পরিস্থিতির কাছাকাছি হয়ে যেত",
-        "কোনো পার্থক্যই হতো না",
+        "কোনো পার্থক্যই হতো না — failMode সেটিং আসলে শুধু একটা নামমাত্র লেবেল, OVS switch-এর প্রকৃত forwarding আচরণ সবসময় controller-এর উপস্থিতি নির্বিশেষে ঠিক একইভাবে কাজ করে, standalone আর secure mode-এর মধ্যে বাস্তবে কোনো কার্যকরী পার্থক্য প্রয়োগ করা হয় না, দুটোই একই ডিফল্ট normal forwarding আচরণ বজায় রাখে চিরকাল",
         "সব subnet তখন automatically একসাথে যুক্ত হয়ে যেত",
         "host-রা IP হারিয়ে ফেলত"
       ],
@@ -701,7 +706,7 @@
       "options": [
         "template method pattern-এর মতো — base ক্লাস একটা কাঠামো দেয়, subclass সেই কাঠামোর নির্দিষ্ট অংশ (এখানে build()) নিজের মতো করে পূরণ করে",
         "এটা কোনো পরিচিত প্যাটার্নের সাথেই সম্পর্কিত না",
-        "এটা database normalization-এর একটা রূপ",
+        "এটা মূলত database normalization-এর একটা প্রোগ্রামিং রূপ, যেখানে ডেটা redundancy কমানোর জন্য বিভিন্ন টেবিলে তথ্য ভাগ করে রাখা হয় — build() method-টা মূলত একটা normalized ডেটা স্কিমা define করার জায়গা হিসেবে কাজ করে, টপোলজির সাথে সরাসরি সম্পর্ক কম",
         "এটা শুধু একটা coincidence, কোনো design principle নেই"
       ],
       "answerIndex": 0,
@@ -713,7 +718,7 @@
       "question": "এই ল্যাবের দুই subnet যদি ভবিষ্যতে একটা host-কে \"router\" হিসেবে ব্যবহার করে যুক্ত করা হয় (dual-homed host, দুই subnet-এই একটা করে interface সহ, আর IP forwarding চালু করে), এটা করলে প্রচলিত dedicated \"router\" ডিভাইসের বদলে কী trade-off থাকতে পারে?",
       "options": [
         "এটা functionally কাজ করতে পারে, কিন্তু dedicated router hardware/software-এর তুলনায় সাধারণত performance, redundancy, বা dedicated routing feature (যেমন ACL, QoS)-এর দিক থেকে সীমাবদ্ধ হতে পারে",
-        "কোনো trade-off নেই, এটা হুবহু dedicated router-এর সমান সবসময়",
+        "কোনো trade-off নেই — একটা সাধারণ dual-homed host-এ IP forwarding চালু করলে সেটা performance, redundancy এবং advanced feature (ACL, QoS)-সহ সবদিক থেকে একটা dedicated, বাণিজ্যিক router hardware-এর সাথে হুবহু সমতুল্য হয়ে যায়, কোনো practical পার্থক্যই থাকে না দুটোর মধ্যে",
         "এটা আসলে কখনো কাজই করবে না",
         "এটা শুধুমাত্র wireless network-এ সম্ভব"
       ],
@@ -726,7 +731,7 @@
       "question": "\"pingall\" output-এ যদি দেখা যায় ৪টা host-এর মধ্যে ৮টা সম্ভাব্য directed pair-এর মধ্যে ৪টা সফল আর ৪টা ব্যর্থ, এটা কি প্রত্যাশিত ফলাফলের সাথে সামঞ্জস্যপূর্ণ?",
       "options": [
         "হ্যাঁ — একই subnet-এর জোড়া (h20↔h21 এবং h10↔h11, প্রতিটা ২ দিক = ৪টা) সফল হবে, আর ভিন্ন subnet-এর বাকি ৪টা দিক ব্যর্থ হবে, যা মোট প্যাটার্নের সাথে মেলে",
-        "না, সবগুলোরই সফল হওয়া উচিত ছিল",
+        "না, এটা প্রত্যাশিত ফলাফলের সাথে সামঞ্জস্যপূর্ণ না — যেহেতু সবগুলো host একই physical switch br0-এর সাথে কানেক্টেড, সঠিকভাবে কনফিগার করা থাকলে সবগুলো ৮টা directed pair-ই সফল হওয়া উচিত ছিল, subnet পার্থক্য এখানে কোনো বাধাই হওয়ার কথা না",
         "না, সবগুলোরই ব্যর্থ হওয়া উচিত ছিল",
         "এই সংখ্যার কোনো অর্থ নেই"
       ],
@@ -739,7 +744,7 @@
       "question": "কেউ h20-তে manually একটা static route যোগ করে একটা gateway IP-র দিকে নির্দেশ করে, কিন্তু আসলে কোনো router/gateway সেই IP-তে না থাকে এবং IP forwarding কোথাও enable করা না থাকে। cross-subnet ping কি কাজ করবে?",
       "options": [
         "না, শুধু route যোগ করলেই যথেষ্ট না — gateway হিসেবে কাজ করা ডিভাইসে actual IP forwarding logic enable থাকতে হবে এবং সেটা দুই subnet-এর সাথেই সংযুক্ত থাকতে হবে",
-        "হ্যাঁ, route যোগ করলেই সবসময় যথেষ্ট",
+        "হ্যাঁ, route যোগ করলেই সবসময় যথেষ্ট — host-এর routing table-এ একটা entry যোগ করা মাত্রই, সেই entry নিজে থেকে প্যাকেট গন্তব্যে পৌঁছে দেওয়ার দায়িত্ব নিয়ে নেয়, এর জন্য gateway device-এ আলাদা কোনো IP forwarding configuration সক্রিয় থাকা প্রয়োজন হয় না",
         "হ্যাঁ, কারণ route যোগ করা মাত্রই switch নিজে routing শুরু করে দেয়",
         "এটা নির্ভর করে শুধু subnet mask-এর উপর, গেটওয়ের উপর না"
       ],
@@ -752,7 +757,7 @@
       "question": "দুই subnet-কে এক switch-এ রেখে ভবিষ্যতে \"inter-VLAN routing\"-এর মতো সমাধান বাস্তবায়ন করতে চাইলে, এই ল্যাবের বর্তমান single-switch, single-broadcast-domain ডিজাইন থেকে সবচেয়ে বড় কোন স্থাপত্যগত (architectural) পরিবর্তন লাগবে?",
       "options": [
         "আলাদা broadcast domain (যেমন VLAN) তৈরি করে প্রতিটা subnet-কে সত্যিকারের L2-level isolation দেওয়া, তারপর একটা L3 ডিভাইস (router/L3 switch) দিয়ে সেগুলোর মধ্যে নির্বাচিতভাবে route করা",
-        "কোনো পরিবর্তনই লাগবে না, এটা এমনিতেই কাজ করবে",
+        "কোনো আর্কিটেকচারাল পরিবর্তনই লাগবে না — বর্তমান single-switch, single-broadcast-domain ডিজাইন ইতিমধ্যেই inter-VLAN routing-এর সব প্রয়োজনীয় উপাদান ধারণ করে, শুধু pingall বারবার চালালেই switch ধীরে ধীরে নিজে থেকে প্রয়োজনীয় routing table তৈরি করে নেবে স্বয়ংক্রিয়ভাবে",
         "শুধু আরও বেশি host যোগ করলেই যথেষ্ট",
         "IP address মুছে ফেললেই যথেষ্ট"
       ],
@@ -765,7 +770,7 @@
       "question": "এই পুরো ল্যাবের মূল শিক্ষণীয় বিষয় (takeaway) সবচেয়ে ভালোভাবে কোনটা বর্ণনা করে?",
       "options": [
         "একটামাত্র Layer 2 switch দিয়ে একাধিক IP subnet-এর host-দের ফিজিক্যালি একসাথে রাখা গেলেও, routing (Layer 3) ছাড়া তাদের মধ্যে প্রকৃত communication সম্ভব না — switching আর routing দুটো ভিন্ন স্তরের, ভিন্ন দায়িত্বের কাজ",
-        "একাধিক subnet থাকলে switch নিজে থেকেই routing শিখে ফেলে",
+        "একাধিক IP subnet একই switch-এ থাকলে, পর্যাপ্ত ট্রাফিক আদান-প্রদানের পর switch ধীরে ধীরে নিজে থেকেই একটা adaptive learning প্রক্রিয়ার মাধ্যমে routing ক্ষমতা অর্জন করে ফেলে, এবং কোনো explicit router বা L3 configuration ছাড়াই ধীরে ধীরে cross-subnet communication স্বয়ংক্রিয়ভাবে কাজ করা শুরু করে দেয়",
         "সব IP address আসলে একই জিনিস, subnet বলে কিছু নেই বাস্তবে",
         "Mininet-এ কখনো একাধিক subnet ব্যবহার করা সম্ভবই না"
       ],

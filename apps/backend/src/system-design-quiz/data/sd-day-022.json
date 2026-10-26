@@ -1,0 +1,1080 @@
+{
+  "topicId": "sd-day-022",
+  "questions": [
+    {
+      "id": "sd-day-022-q01",
+      "difficulty": "easy",
+      "question": "users table-এ ১০ লাখ row, email column-এ কোনো index নেই। WHERE email = 'rahim@x.com' চালালে database সাধারণত কী করে?",
+      "options": [
+        "Primary key-র index দিয়ে email খুঁজে নেয়, কারণ PK index-এ সব column থাকে",
+        "Table-এর প্রতিটা row পড়ে email মিলিয়ে দেখে, অর্থাৎ full table scan করে",
+        "প্রথম যে row-এ email মেলে সেখানেই থামে, তাই গড়ে অর্ধেক table পড়ে",
+        "Email text column, তাই database সেটা আগে থেকেই বর্ণানুক্রমে সাজিয়ে রাখে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Index না থাকলে database-এর কাছে জানার কোনো উপায় নেই কোন row-এ ওই email আছে। তাই প্রতিটা row পড়ে শর্ত মেলায় (PostgreSQL-এ Seq Scan)। কাজ row-সংখ্যার সমানুপাতিক, O(n)।",
+      "whyWrong": {
+        "0": "PK index শুধু PK column দিয়ে sorted, email দিয়ে খোঁজায় সেটা কাজে আসে না।",
+        "2": "Column unique ঘোষণা না থাকলে আরও মিল থাকতে পারে, তাই database শেষ পর্যন্ত পড়ে।",
+        "3": "Table-এর row কোনো column-এর ক্রমে সাজানো থাকে না; sorted গঠন রাখাই index-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-022-q02",
+      "difficulty": "easy",
+      "question": "একটা সাধারণ B-tree index-এর leaf entry-তে মূলত কী থাকে?",
+      "options": [
+        "Indexed column-এর মান, আর সেই row কোথায় আছে তার ঠিকানা",
+        "পুরো row-এর একটা compressed copy, যাতে table-এ যেতেই না হয়",
+        "শুধু row নম্বর, column-এর মান রাখা হয় না জায়গা বাঁচাতে",
+        "Column-এর প্রতিটা আলাদা মান কতবার এসেছে তার একটা হিসাব"
+      ],
+      "correctIndex": 0,
+      "explanation": "Index হলো key → row pointer-এর একটা sorted তালিকা (B+tree-র leaf-এ)। PostgreSQL-এ pointer হলো TID (page, slot), InnoDB-র secondary index-এ primary key-র মান।",
+      "whyWrong": {
+        "1": "সাধারণ secondary index-এ পুরো row থাকে না; শুধু key আর ঠিকানা (InnoDB-র clustered index আলাদা ব্যাপার)।",
+        "2": "মান না থাকলে sorted ক্রমে খোঁজাই সম্ভব হতো না; key-ই index-এর মূল অংশ।",
+        "3": "এটা statistics-এর কাজ (optimizer ব্যবহার করে), index entry না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q03",
+      "difficulty": "easy",
+      "question": "Index-এর entry-গুলো sorted রাখার সবচেয়ে বড় লাভ কী?",
+      "options": [
+        "প্রতি ধাপে বড় অংশ বাদ দিয়ে O(log n)-এ খোঁজা যায়, range-ও পড়া যায়",
+        "Sorted data compress করা সহজ, তাই index table-এর চেয়ে সবসময় ছোট হয়",
+        "নতুন row সবসময় শেষে বসে, তাই sorted থাকলে insert দ্রুত হয়",
+        "Sorted থাকলে duplicate মান আপনা আপনি বাদ পড়ে, তাই data পরিষ্কার থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Sorted হওয়ায় binary search-এর মতো খোঁজা যায়: ২০ লাখ entry-তে ~২১ তুলনা। আর range (BETWEEN, >) বা ORDER BY-এর জন্য মিলগুলো পাশাপাশি থাকে।",
+      "whyWrong": {
+        "1": "Index ছোট হওয়া জরুরি না, অনেক সময় সব index মিলিয়ে table-এর চেয়েও বড় হয়।",
+        "2": "Sorted রাখতে নতুন key ঠিক জায়গায় বসাতে হয়, তাই insert বরং একটু ধীর হয়।",
+        "3": "Duplicate আটকায় UNIQUE constraint; সাধারণ index-এ একই মান অনেকবার থাকতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q04",
+      "difficulty": "easy",
+      "question": "একটা table-এ নতুন index যোগ করলে কোনটা সাধারণত বাড়ে?",
+      "options": [
+        "SELECT query-র network-এ পাঠানো data-র পরিমাণ",
+        "Table-এ রাখা row-এর সংখ্যা, কারণ index নতুন row যোগ করে",
+        "Application-এর connection pool-এ দরকারি মোট connection-এর সংখ্যা",
+        "INSERT, UPDATE আর DELETE-এর খরচ, আর disk ও memory-তে জায়গা"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা write-এ table-এর সাথে প্রতিটা index-ও update করতে হয় (কখনো page split), তাই write ধীর হয়। আর index আলাদা জায়গা নেয়, cache-এও জায়গা চায়।",
+      "whyWrong": {
+        "0": "Index কোন row ফেরত যাবে তা বদলায় না, শুধু খুঁজে পাওয়ার পথ বদলায়।",
+        "1": "Index আলাদা structure; table-এ কোনো row যোগ করে না।",
+        "2": "Connection সংখ্যার সাথে index-এর সরাসরি সম্পর্ক নেই; বরং দ্রুত query-তে connection কম আটকে থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q05",
+      "difficulty": "easy",
+      "question": "নিচের কোন query-তে name column-এর সাধারণ B-tree index সবচেয়ে কম কাজে আসে?",
+      "options": [
+        "WHERE name = 'Karim Rahman'",
+        "WHERE name LIKE 'Kar%' (C collation-এ)",
+        "ORDER BY name LIMIT 10",
+        "WHERE name LIKE '%rahman'"
+      ],
+      "correctIndex": 3,
+      "explanation": "শুরুতে % মানে মানটা কী দিয়ে শুরু হবে জানা নেই, তাই sorted ক্রম কোনো কাজে আসে না; পুরো table বা পুরো index পড়তে হয়। মাঝখানের লেখা খুঁজতে trigram বা full-text index লাগে।",
+      "whyWrong": {
+        "0": "সমান (=) খোঁজা B-tree-র সবচেয়ে সহজ কাজ।",
+        "1": "Prefix LIKE আসলে একটা range, sorted index-এ সেটা পাওয়া যায়।",
+        "2": "Index আগে থেকেই name-এ sorted, তাই প্রথম ১০টা সরাসরি পড়া যায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q06",
+      "difficulty": "easy",
+      "question": "B+tree-তে leaf node-গুলো একে অপরের সাথে link দিয়ে জোড়া থাকে। এর মূল সুবিধা কী?",
+      "options": [
+        "Leaf linked থাকায় tree-র height কখনো ৩-এর বেশি হয় না",
+        "Range query-তে root-এ না ফিরে পাশের leaf-এ চলে যাওয়া যায়",
+        "Link থাকায় নতুন key ঢোকালে আর কখনো page split হয় না",
+        "Crash হলে leaf-এর link ধরে পুরো table আবার নতুন করে বানানো যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "BETWEEN 42 AND 71 হলে একবার 42 পর্যন্ত নামতে হয়, তারপর leaf link ধরে ডানে হাঁটলেই range শেষ। এজন্যই B+tree range আর ORDER BY-তে এত ভালো।",
+      "whyWrong": {
+        "0": "Height নির্ভর করে fan-out আর row সংখ্যার উপর, leaf link-এর উপর না।",
+        "2": "Leaf ভর্তি হলে split হবেই; link শুধু পাশের page চেনায়।",
+        "3": "Crash recovery হয় WAL/redo log দিয়ে, leaf link-এর কাজ পড়ার পথ দেখানো।"
+      }
+    },
+    {
+      "id": "sd-day-022-q07",
+      "difficulty": "easy",
+      "question": "PostgreSQL-এ নিচের কোন ক্ষেত্রে database নিজে থেকে index বানায় না?",
+      "options": [
+        "Table-এ PRIMARY KEY ঘোষণা করলে",
+        "একটা column-এ UNIQUE constraint দিলে",
+        "দুই column মিলিয়ে একটা UNIQUE (a, b) constraint ঘোষণা করলে",
+        "FOREIGN KEY-র referencing column-এ (orders.user_id)"
+      ],
+      "correctIndex": 3,
+      "explanation": "PK আর UNIQUE-এ index লাগে duplicate ধরতে, তাই PostgreSQL নিজে বানায়। কিন্তু foreign key-র referencing column-এ বানায় না; join আর parent delete দ্রুত করতে নিজেকে দিতে হয়। (MySQL InnoDB এখানে নিজে বানায়।)",
+      "whyWrong": {
+        "0": "PRIMARY KEY দিলে PostgreSQL নিজেই একটা unique B-tree index বানায়।",
+        "1": "Uniqueness যাচাই করতে UNIQUE constraint-এর জন্য index নিজে থেকেই তৈরি হয়।",
+        "2": "Multi-column UNIQUE-এর জন্যও PostgreSQL একটা composite unique index বানায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q08",
+      "difficulty": "easy",
+      "question": "Hash index-এর প্রধান সীমাবদ্ধতা কোনটা?",
+      "options": [
+        "শুধু integer column-এর উপর বানানো যায়, text বা UUID column-এ না",
+        "একটা table-এ বড়জোর একটা hash index রাখা যায়",
+        "সমান খোঁজাতেও B-tree-র চেয়ে সবসময় অনেক ধীর",
+        "শুধু সমান (=) তুলনা পারে; range, sort বা prefix খোঁজা পারে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Hash function কাছাকাছি মানকে কাছাকাছি রাখে না, তাই > বা ORDER BY-এর জন্য কোনো ক্রম পাওয়া যায় না। এজন্য বেশিরভাগ ক্ষেত্রে B-tree-ই বেশি কাজের।",
+      "whyWrong": {
+        "0": "Hash যেকোনো hash করা যায় এমন মানে কাজ করে, text-এও।",
+        "1": "এমন কোনো সীমা নেই; একাধিক hash index রাখা যায়।",
+        "2": "Equality-তে hash ভালোই কাজ করে; সমস্যা হলো সে শুধু এটুকুই পারে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q09",
+      "difficulty": "easy",
+      "question": "EXPLAIN আর EXPLAIN ANALYZE-এর মূল পার্থক্য কী?",
+      "options": [
+        "EXPLAIN ANALYZE আগে table-এর statistics নতুন করে সংগ্রহ করে, তারপর plan দেখায়",
+        "EXPLAIN শুধু SELECT-এ চলে, EXPLAIN ANALYZE সব ধরনের query-তে",
+        "EXPLAIN ANALYZE plan দেখার পাশাপাশি কোন index বানানো উচিত তাও বলে দেয়",
+        "EXPLAIN ANALYZE query আসলে চালিয়ে অনুমানের পাশে আসল সময় আর row সংখ্যা দেখায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "EXPLAIN শুধু optimizer-এর পরিকল্পনা আর অনুমান দেখায়। EXPLAIN ANALYZE সত্যিই চালায়, তাই actual time আর actual rows পাওয়া যায়; UPDATE/DELETE-এ এটা data বদলে দেয়, তাই transaction-এ চালিয়ে ROLLBACK করা ভালো।",
+      "whyWrong": {
+        "0": "Statistics নতুন করে নেয় আলাদা ANALYZE command; EXPLAIN ANALYZE-এর ANALYZE মানে query চালানো।",
+        "1": "দুটোই SELECT, UPDATE ইত্যাদিতে চলে; পার্থক্য চালানো আর না চালানোয়।",
+        "2": "PostgreSQL নিজে index suggest করে না; plan পড়ে সিদ্ধান্ত আমাদের।"
+      }
+    },
+    {
+      "id": "sd-day-022-q10",
+      "difficulty": "easy",
+      "question": "PostgreSQL-এর plan-এ \"Seq Scan on users\" দেখলে তার মানে কী?",
+      "options": [
+        "users table-এর সব row শুরু থেকে শেষ পর্যন্ত পড়া হচ্ছে",
+        "users-এর serial id column দিয়ে index-এ ক্রমানুসারে খোঁজা হচ্ছে",
+        "Index-এর leaf page-গুলো বাম থেকে ডানে ক্রমানুসারে পড়া হচ্ছে",
+        "শুধু প্রথম কয়েকটা row পড়া হচ্ছে, তারপর query থেমে যাচ্ছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Seq Scan মানে sequential scan: table-এর page-গুলো ক্রমানুসারে পড়ে প্রতিটা row-এ Filter মেলানো। Index না থাকলে, ছোট table-এ, বা অনেক row মিললে এটা দেখা যায়।",
+      "whyWrong": {
+        "1": "Seq মানে sequential, sequence/serial না; এখানে কোনো index ব্যবহার হচ্ছে না।",
+        "2": "Index পড়লে plan-এ Index Scan বা Index Only Scan লেখা থাকত।",
+        "3": "Seq Scan নিজে পুরো table পড়ে; আগে থামে শুধু উপরে LIMIT থাকলে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q11",
+      "difficulty": "easy",
+      "question": "একটা column-এর cardinality বলতে কী বোঝায়?",
+      "options": [
+        "Table-এ মোট কতগুলো row আছে",
+        "একটা index-এ কতগুলো column রাখা হয়েছে",
+        "একটা query কতগুলো row ফেরত দিচ্ছে",
+        "ওই column-এ কতগুলো আলাদা আলাদা মান আছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "email-এর cardinality প্রায় row-সংখ্যার সমান (প্রায় সব আলাদা), is_active-এর মাত্র ২। Cardinality কম হলে একটা মানে অনেক row মেলে, তাই index-এর লাভ কমে।",
+      "whyWrong": {
+        "0": "মোট row সংখ্যা table-এর আকার; cardinality হলো আলাদা মানের সংখ্যা।",
+        "1": "এটা index-এর column সংখ্যা, cardinality না।",
+        "2": "এটা result-এর আকার; selectivity-র সাথে সম্পর্কিত, কিন্তু cardinality না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q12",
+      "difficulty": "easy",
+      "question": "১০ লাখ user-এর table-এ কোন column-এ একটা সাধারণ single-column index সবচেয়ে কম লাভ দেবে?",
+      "options": [
+        "email, যেখানে প্রায় প্রতিটা মান আলাদা",
+        "phone, যেটা দিয়ে login হয়",
+        "national_id, যেটা দিয়ে KYC যাচাই হয়",
+        "is_active, যেখানে ৯০% user-এর মান true"
+      ],
+      "correctIndex": 3,
+      "explanation": "is_active = true-তে ৯ লাখ row মেলে। Index দিয়ে ৯ লাখবার table-এর এলোমেলো page-এ লাফানোর চেয়ে পুরো table একটানা পড়া সস্তা, তাই optimizer index-টা ব্যবহারই করে না।",
+      "whyWrong": {
+        "0": "প্রায় unique column-এ index খুব selective, তাই সবচেয়ে বেশি লাভ।",
+        "1": "Phone প্রায় unique আর বারবার খোঁজা হয়, তাই index খুব কাজের।",
+        "2": "এটাও প্রায় unique, এক মানে এক row, index আদর্শ।"
+      }
+    },
+    {
+      "id": "sd-day-022-q13",
+      "difficulty": "easy",
+      "question": "users-এ composite index (city, age) আছে। কোন query এই index-এর leftmost prefix ব্যবহার করে?",
+      "options": [
+        "WHERE city = 'Dhaka'",
+        "WHERE age = 30",
+        "WHERE age BETWEEN 20 AND 30",
+        "WHERE age = 30 OR age = 40"
+      ],
+      "correctIndex": 0,
+      "explanation": "Composite index আগে city দিয়ে sorted, তারপর একই city-র ভেতরে age দিয়ে। তাই city দিয়ে শুরু করা query একটা একটানা block পায়।",
+      "whyWrong": {
+        "1": "age দ্বিতীয় column; প্রথম column বাদ দিলে মিলগুলো পুরো index-জুড়ে ছড়ানো থাকে।",
+        "2": "এখানেও প্রথম column city বাদ, তাই leftmost prefix মানা হয়নি।",
+        "3": "দুটো শর্তই দ্বিতীয় column-এ; city ছাড়া index-এর ক্রম কাজে আসে না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q14",
+      "difficulty": "easy",
+      "question": "Covering index বলতে কী বোঝায়?",
+      "options": [
+        "Table-এর প্রতিটা column মিলিয়ে বানানো একটা বিশাল index",
+        "Query-র দরকারি সব column index-এই আছে, তাই table-এ যেতে হয় না",
+        "এমন index, যেটা table-এর সব query-কে দ্রুত করে দেয়",
+        "এমন index, যেটা primary key-র জায়গা নিয়ে তাকে পুরোপুরি ঢেকে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "SELECT city, age ... WHERE city = ? AND age = ? query-তে (city, age) index নিজেই সব উত্তর রাখে। PostgreSQL তখন Index Only Scan করে; INCLUDE দিয়ে বাড়তি column যোগ করেও covering বানানো যায়।",
+      "whyWrong": {
+        "0": "সব column লাগে না; শুধু ওই query-র দরকারি column থাকলেই চলে।",
+        "2": "কোনো index সব query-র জন্য কাজ করে না; covering একটা নির্দিষ্ট query-র সাপেক্ষে।",
+        "3": "Covering index PK-কে বদলায় না; এটা শুধু table-এ যাওয়া এড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q15",
+      "difficulty": "easy",
+      "question": "MySQL InnoDB-তে \"clustered index\" কোনটা?",
+      "options": [
+        "যে secondary index সবচেয়ে বেশি query-তে ব্যবহার হয়, সেটাই",
+        "Primary key দিয়ে সাজানো B+tree, যার leaf-এ পুরো row থাকে",
+        "Table-এ প্রথম যে index বানানো হয়েছিল, সেটাই",
+        "একটা table-এর সব index মিলিয়ে রাখা একটা যৌথ গঠন"
+      ],
+      "correctIndex": 1,
+      "explanation": "InnoDB-তে table নিজেই primary key-র B+tree। তাই PK দিয়ে খুঁজলে এক tree-তেই পুরো row মেলে, আর একটা table-এ clustered index একটাই থাকতে পারে।",
+      "whyWrong": {
+        "0": "ব্যবহারের পরিমাণে clustered index ঠিক হয় না; এটা primary key-র উপর।",
+        "2": "বানানোর ক্রম না; InnoDB primary key (না থাকলে প্রথম UNIQUE NOT NULL) দিয়ে cluster করে।",
+        "3": "প্রতিটা index আলাদা B+tree; clustered মানে data নিজেই একটা index-এর ক্রমে রাখা।"
+      }
+    },
+    {
+      "id": "sd-day-022-q16",
+      "difficulty": "easy",
+      "question": "B+tree index-এ page split কখন হয়?",
+      "options": [
+        "একটা page-এর অর্ধেকের বেশি entry মুছে ফেললে",
+        "একই page বারবার SELECT-এ পড়া হলে, load দুই page-এ ভাগ করে দিতে",
+        "নতুন key যে leaf-এ বসার কথা, সেই page আগে থেকেই ভর্তি থাকলে",
+        "প্রতি নির্দিষ্ট সংখ্যক insert-এর পরে নিয়ম করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Leaf ভর্তি হলে সেটা দুই ভাগ হয়, অর্ধেক entry নতুন page-এ যায় আর parent-এ নতুন separator key ওঠে। Root ভাগ হলে tree-র height এক বাড়ে, তাই tree সবসময় balanced থাকে।",
+      "whyWrong": {
+        "0": "Delete-এ page খালি হয়; split হয় জায়গা না থাকলে, খালি হলে না।",
+        "1": "পড়ার পরিমাণে page ভাগ হয় না; split শুধু insert-এ জায়গার অভাবে।",
+        "3": "Split নিয়ম করে হয় না, শুধু যখন নির্দিষ্ট page-এ জায়গা ফুরায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q17",
+      "difficulty": "easy",
+      "question": "B+tree-র ক্ষেত্রে fan-out মানে কী?",
+      "options": [
+        "Tree-তে মোট কয়টা level আছে",
+        "একটা query একসাথে কয়টা index ব্যবহার করতে পারে",
+        "একটা node থেকে কতগুলো child node-এ যাওয়ার pointer থাকে",
+        "একটা leaf page-এর ভেতরে কয়টা row-এর পুরো copy রাখা থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একটা page-এ কয়েকশো key আর pointer ধরে, তাই fan-out কয়েকশো। Fan-out বড় বলেই কোটি row-এও tree মাত্র ৩-৪ level গভীর।",
+      "whyWrong": {
+        "0": "Level সংখ্যা হলো height; fan-out বেশি হলে height কমে।",
+        "1": "এটা query plan-এর বিষয়, B+tree-র fan-out না।",
+        "3": "Leaf-এ সাধারণত key আর pointer থাকে, পুরো row-এর copy না (InnoDB clustered বাদে)।"
+      }
+    },
+    {
+      "id": "sd-day-022-q18",
+      "difficulty": "easy",
+      "question": "PostgreSQL-এ partial index কী?",
+      "options": [
+        "Column-এর মানের শুধু প্রথম কয়েকটা character নিয়ে বানানো, জায়গা বাঁচানো index",
+        "যে index-এর শুধু অর্ধেক অংশ memory-তে রাখা হয়",
+        "মাঝপথে fail করে অসম্পূর্ণ রয়ে যাওয়া index",
+        "শুধু একটা শর্ত মেলা row-গুলোর index, যেমন WHERE status = 'pending'"
+      ],
+      "correctIndex": 3,
+      "explanation": "Partial index-এ শুধু শর্ত মেলা row থাকে, তাই ছোট, দ্রুত, আর বাকি row-এর write-এ খরচ নেই। বিরল কিন্তু বারবার খোঁজা মানের (pending order) জন্য আদর্শ।",
+      "whyWrong": {
+        "0": "এটা prefix index-এর ধারণা (MySQL-এ আছে); partial index row বাছাই করে, character না।",
+        "1": "কতটা memory-তে থাকবে তা buffer cache ঠিক করে; partial index-এর সংজ্ঞা এটা না।",
+        "2": "সেটা INVALID index (CONCURRENTLY fail করলে); partial index ইচ্ছাকৃত।"
+      }
+    },
+    {
+      "id": "sd-day-022-q19",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা expression index-এর উদাহরণ?",
+      "options": [
+        "CREATE INDEX ON users (email) WHERE is_active;",
+        "CREATE INDEX ON users (city, age);",
+        "CREATE INDEX ON users (LOWER(email));",
+        "CREATE UNIQUE INDEX ON users (email);"
+      ],
+      "correctIndex": 2,
+      "explanation": "Expression index column-এর মানের বদলে একটা হিসাবের ফলের উপর বানানো হয়। তখন WHERE LOWER(email) = ? query সরাসরি index ব্যবহার করতে পারে।",
+      "whyWrong": {
+        "0": "এটা partial index: row বাছাই করছে, কোনো expression-এর উপর না।",
+        "1": "এটা composite index: দুটো column, কোনো function নেই।",
+        "3": "এটা unique index: email-এর আসল মানের উপর, expression না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q20",
+      "difficulty": "easy",
+      "question": "২০০ row-এর একটা ছোট table-এ index থাকা সত্ত্বেও optimizer Seq Scan বেছে নিল। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "২০০ row-এর কম হলে database index বানায় না, তাই index আসলে খালি",
+        "ছোট table-এর জন্য optimizer কোনো statistics রাখে না, তাই index-টা চিনতেই পারে না",
+        "Index ছোট table-এ corrupt হয়ে যায়, তাই optimizer এড়িয়ে চলে",
+        "পুরো table কয়েকটা page-এই ধরে, তাই সরাসরি পড়াই index-এর চেয়ে সস্তা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Index দিয়ে গেলে index page আর table page দুটোই পড়তে হয়। কয়েক page-এর table পুরো পড়াই তার চেয়ে সস্তা। তাই test-এর ছোট data দেখে index নিয়ে সিদ্ধান্ত নেওয়া ঠিক না।",
+      "whyWrong": {
+        "0": "Index যেকোনো আকারের table-এ বানানো হয় আর সব row ধরে।",
+        "1": "ছোট table-এরও statistics থাকে; এখানে হিসাব করেই seq scan সস্তা।",
+        "2": "এটা corruption-এর লক্ষণ না; cost হিসাবে seq scan জিতেছে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q21",
+      "difficulty": "medium",
+      "question": "Result portal-এর results table-এ ২০ লাখ row। Result-এর দিন WHERE roll = ? query-তে database CPU ১০০%, অথচ প্রতি query-র উত্তর একটাই row। প্রথম কোন পদক্ষেপ সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "দ্বিগুণ CPU-র বড় database server নেওয়া, যাতে প্রতিটা scan দ্রুত শেষ হয়",
+        "৫টা read replica যোগ করে query ভাগ করে দেওয়া",
+        "EXPLAIN ANALYZE দিয়ে Seq Scan নিশ্চিত হয়ে roll column-এ index দেওয়া",
+        "Application-এ connection pool-এর আকার দ্বিগুণ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "সমস্যাটা algorithm-এর: একটা row খুঁজতে ২০ লাখ row পড়া। roll-এ B-tree index দিলে প্রতি query কয়েকটা page পড়ে। Hardware বা replica বাড়ানো পরে ভাবা যায়, আগে O(n)-কে O(log n) বানানো।",
+      "whyWrong": {
+        "0": "O(n) কাজ বড় server-এ শুধু একটু দ্রুত হয়; row বা traffic বাড়লে সমস্যা ফিরে আসে।",
+        "1": "প্রতিটা replica-তেও প্রতিটা query পুরো table scan করবে; খরচ ৫ গুণ, মূল সমস্যা থেকে যায়।",
+        "3": "বেশি connection মানে একসাথে আরও বেশি scan, CPU-র উপর চাপ আরও বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q22",
+      "difficulty": "medium",
+      "question": "Order history page-এর query: WHERE user_id = ? ORDER BY created_at DESC LIMIT 20। কোন index সবচেয়ে ভালো?",
+      "options": [
+        "(created_at, user_id)",
+        "(user_id, created_at)",
+        "user_id আর created_at-এ আলাদা আলাদা দুটো index",
+        "শুধু (created_at)"
+      ],
+      "correctIndex": 1,
+      "explanation": "Equality column (user_id) আগে, sort column (created_at) পরে। তাহলে database user-এর block-এ গিয়ে আগে থেকেই sorted ক্রমে শেষ ২০টা পড়ে থামে, কোনো sort লাগে না।",
+      "whyWrong": {
+        "0": "প্রথম column created_at হওয়ায় একজন user-এর order-গুলো পুরো index-জুড়ে ছড়ানো থাকে।",
+        "2": "একটা index দিয়ে filter, আরেকটা দিয়ে sort একসাথে সাধারণত হয় না; user-এর সব order এনে sort করতে হয়।",
+        "3": "এতে user_id-এর filter index দিয়ে হয় না; নতুন order থেকে হাঁটতে হাঁটতে অনেক row বাদ দিতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q23",
+      "difficulty": "medium",
+      "question": "Table-এ index (a, b, c) আছে। নিচের কোন query এই index থেকে সবচেয়ে কম সুবিধা পাবে?",
+      "options": [
+        "WHERE a = 1",
+        "WHERE b = 1 AND c = 2",
+        "WHERE a = 1 AND b = 2",
+        "WHERE a = 1 AND b = 2 AND c > 5"
+      ],
+      "correctIndex": 1,
+      "explanation": "Composite index আগে a দিয়ে sorted। a বাদ দিলে b আর c-এর মিলগুলো a-এর প্রতিটা মানের ভেতরে ছড়ানো, তাই সাধারণত index দিয়ে সরাসরি পৌঁছানো যায় না।",
+      "whyWrong": {
+        "0": "প্রথম column, তাই leftmost prefix পুরোপুরি মানা হয়েছে।",
+        "2": "প্রথম দুটো column টানা ব্যবহার হয়েছে, index ভালো কাজ করবে।",
+        "3": "তিনটা column-ই ক্রমে আছে, শেষেরটা range, যেটা ঠিক জায়গায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q24",
+      "difficulty": "medium",
+      "question": "একটা B+tree-র fan-out ১০০। ৩ level-এর tree-তে সর্বোচ্চ কতগুলো leaf entry ধরতে পারে?",
+      "options": [
+        "প্রায় ৩০০ (১০০ × ৩)",
+        "প্রায় ১০,০০০ (১০০²)",
+        "প্রায় ১০ লাখ (১০০³)",
+        "প্রায় ১০ কোটি (১০০⁴)"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা level-এ শাখা fan-out গুণ বাড়ে: ১০০ → ১০,০০০ → ১০,০০,০০০। তাই ১০ লাখ row-এর lookup মাত্র ৩টা page পড়ে।",
+      "whyWrong": {
+        "0": "Level-গুলো যোগ হয় না, গুণ হয়; প্রতিটা level-এ শাখা ১০০ গুণ বাড়ে।",
+        "1": "এটা ২ level-এর হিসাব; ৩ level-এ আরেকবার ১০০ গুণ।",
+        "3": "এটা ৪ level-এর হিসাব; ৩ level-এ এক ধাপ কম।"
+      }
+    },
+    {
+      "id": "sd-day-022-q25",
+      "difficulty": "medium",
+      "question": "Login query WHERE LOWER(email) = ? খুব ধীর, অথচ email column-এ index আছে। কোন সমাধান সবচেয়ে সরাসরি কাজ করবে?",
+      "options": [
+        "email-এর index REINDEX করে নতুন করে বানানো",
+        "LOWER(email)-এর উপর একটা expression index বানানো",
+        "email column-এ hash index যোগ করা",
+        "Query-র আগে statistics নিতে ANALYZE users চালানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "Index-এ sorted আছে email, তাই LOWER(email)-এর মান জানতে প্রতিটা row-এ function চালাতে হয়। CREATE INDEX ON users (LOWER(email)) দিলে ঠিক ওই expression sorted থাকে।",
+      "whyWrong": {
+        "0": "নতুন করে বানালেও index email-এর আসল মানে sorted থাকবে, LOWER(email)-এ না।",
+        "2": "Hash index-ও email-এর আসল মানে, LOWER() দিয়ে মোড়া শর্তে সেটাও কাজে আসে না।",
+        "3": "Statistics ঠিক থাকলেও email-এর index দিয়ে LOWER(email) মেলানো সম্ভব না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q26",
+      "difficulty": "medium",
+      "question": "created_at column-এ index আছে, কিন্তু WHERE DATE(created_at) = '2026-10-01' query Seq Scan করছে। Query-টা কিভাবে লিখলে index কাজে লাগবে?",
+      "options": [
+        "WHERE created_at = '2026-10-01'",
+        "WHERE created_at >= '2026-10-01' AND created_at < '2026-10-02'",
+        "WHERE CAST(created_at AS TEXT) LIKE '2026-10-01%' AND created_at IS NOT NULL",
+        "WHERE DATE(created_at) IN ('2026-10-01')"
+      ],
+      "correctIndex": 1,
+      "explanation": "Function column-এ না রেখে শর্তটাকে column-এর উপর range হিসেবে লিখলে sorted index সরাসরি ওই দিনের শুরু থেকে শেষ পর্যন্ত পড়তে পারে। এভাবে আলাদা expression index-ও লাগে না।",
+      "whyWrong": {
+        "0": "এটা শুধু ঠিক মাঝরাতের (00:00:00) row মেলাবে, পুরো দিনের না।",
+        "2": "এখানেও column-এর উপর function (cast), তাই index আবার বাদ পড়ে।",
+        "3": "IN দিলেও column DATE()-এ মোড়া থাকে, তাই সমস্যা একই।"
+      }
+    },
+    {
+      "id": "sd-day-022-q27",
+      "difficulty": "medium",
+      "question": "বড় একটা data import-এর পরে EXPLAIN ANALYZE-এ দেখা গেল একটা node-এ estimated rows=10 কিন্তু actual rows=500000, আর plan খারাপ। প্রথমে কী করবেন?",
+      "options": [
+        "ANALYZE চালিয়ে table-এর statistics হালনাগাদ করা",
+        "REINDEX করে সব index নতুন করে বানানো",
+        "ভুল plan-এ ব্যবহৃত index-টা DROP করে দেওয়া",
+        "VACUUM FULL চালিয়ে পুরো table আর index নতুন করে লেখা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Optimizer row-সংখ্যার অনুমান করে statistics থেকে। Bulk load-এর পরে statistics পুরনো থাকলে অনুমান আর আসলের মধ্যে বিশাল ফারাক হয়। ANALYZE নতুন statistics নেয়, তারপর plan সাধারণত ঠিক হয়ে যায়।",
+      "whyWrong": {
+        "1": "Index ঠিকই আছে; ভুলটা optimizer-এর অনুমানে, যেটা আসে statistics থেকে।",
+        "2": "Index সমস্যা না; পুরনো statistics-এর কারণে optimizer ভুল হিসাব করছে।",
+        "3": "এটা table lock করে আর জায়গা ফেরত দেয়, কিন্তু অনুমানের ভুল ঠিক করার সরাসরি উপায় ANALYZE।"
+      }
+    },
+    {
+      "id": "sd-day-022-q28",
+      "difficulty": "medium",
+      "question": "orders table-এর ৯৯% row-এর status = 'delivered'। Background worker প্রতি সেকেন্ডে খোঁজে WHERE status = 'pending' ORDER BY created_at। কোন index সবচেয়ে উপযুক্ত?",
+      "options": [
+        "(created_at)-এর উপর partial index, WHERE status = 'pending'",
+        "পুরো status column-এর উপর একটা সাধারণ B-tree index",
+        "status column-এ একটা hash index",
+        "সব row-এর জন্য (created_at, status) composite index, ক্রম ঠিক রাখতে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Partial index-এ শুধু pending row থাকে, তাই index ছোট, created_at-এ sorted, আর delivered order-এর insert/update-এ এর কোনো খরচ নেই। Query-র WHERE status = 'pending' index-এর শর্তের সাথে মেলে বলে optimizer এটা ব্যবহার করতে পারে।",
+      "whyWrong": {
+        "1": "কাজ করবে, কিন্তু ৯৯% delivered row-ও index-এ থাকবে, আর প্রতিটা write-এ খরচ দেবে।",
+        "2": "Equality পারবে, কিন্তু ORDER BY created_at পারে না, আর সব row-ই index-এ থাকে।",
+        "3": "প্রথম column created_at হওয়ায় pending-গুলো ছড়ানো থাকে, আর index-ও বিশাল।"
+      }
+    },
+    {
+      "id": "sd-day-022-q29",
+      "difficulty": "medium",
+      "question": "PostgreSQL-এ একটা user DELETE করতে ৮ সেকেন্ড লাগছে। orders.user_id হলো users.id-এর foreign key, আর orders-এ ২ কোটি row। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Foreign key থাকলে delete-এর সময় পুরো database lock হয়ে যায়",
+        "users-এর primary key index নষ্ট হয়ে গেছে, তাই user খুঁজতেই দেরি হচ্ছে",
+        "orders.user_id-এ index নেই, তাই প্রতি delete-এ পুরো orders scan হয়",
+        "PostgreSQL delete-এর সময় পুরো users table নতুন করে লেখে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Parent row মোছার আগে database-কে দেখতে হয় কোনো order সেই user-কে refer করছে কিনা। PostgreSQL FK column-এ নিজে index বানায় না, তাই ২ কোটি row scan। orders(user_id)-এ index দিলেই সমাধান।",
+      "whyWrong": {
+        "0": "FK যাচাই পুরো database lock করে না; ধীর হচ্ছে referencing row খোঁজায়।",
+        "1": "PK দিয়ে একটা user খোঁজা দ্রুত; ৮ সেকেন্ড যায় orders-এ reference খুঁজতে।",
+        "3": "Delete শুধু row-কে মৃত চিহ্নিত করে; পুরো table নতুন করে লেখা হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q30",
+      "difficulty": "medium",
+      "question": "একটা table-এ সেকেন্ডে ৩,০০০ insert হয়, আর table-এর সাথে ৪টা secondary index আছে। প্রতি সেকেন্ডে মোট কয়টা structure-এ insert হচ্ছে?",
+      "options": [
+        "১২,০০০ (৩,০০০ × ৪)",
+        "৩,০০০ (শুধু table-এ)",
+        "৭,০০০ (৩,০০০ + ৪,০০০)",
+        "১৫,০০০ (৩,০০০ × ৫)"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা insert মানে table-এ ১টা লেখা আর ৪টা index-এ ৪টা, মোট ৫টা। ৩,০০০ × ৫ = ১৫,০০০, তার উপর WAL। এটাই write amplification।",
+      "whyWrong": {
+        "0": "শুধু index গোনা হয়েছে; table নিজেও (heap বা clustered index) একটা structure।",
+        "1": "প্রতিটা insert-এ প্রতিটা index-এও entry বসাতে হয়।",
+        "2": "Index-এর লেখা প্রতিটা insert-এর সাথে গুণ হয়, যোগ না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q31",
+      "difficulty": "medium",
+      "question": "users-এ index (city, age) আছে আর VACUUM সম্প্রতি চলেছে। SELECT city, age FROM users WHERE city = 'Sylhet' AND age = 30 query-র plan কী আসার সম্ভাবনা বেশি?",
+      "options": [
+        "Seq Scan, কারণ SELECT-এ দুটো column চাওয়া হয়েছে",
+        "Index Scan, তারপর প্রতিটা row-এর জন্য table থেকে পুরো row আনা",
+        "Hash Join, কারণ দুটো শর্ত দুটো column-এ",
+        "Index Only Scan, কারণ দরকারি সব column index-এই আছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Query শুধু city আর age চায়, দুটোই index-এ আছে। VACUUM-এর পরে visibility map হালনাগাদ থাকায় PostgreSQL heap-এ না গিয়ে Index Only Scan করে, Heap Fetches: 0।",
+      "whyWrong": {
+        "0": "কয়টা column চাওয়া হলো তাতে seq scan লাগে না; সব column index-এই আছে।",
+        "1": "দরকারি সব column index-এ থাকায় table-এ যাওয়ার দরকার নেই।",
+        "2": "এখানে কোনো join নেই; একটা table, একটা index।"
+      }
+    },
+    {
+      "id": "sd-day-022-q32",
+      "difficulty": "medium",
+      "question": "একটা MySQL InnoDB table-এর primary key ৩৬-character-এর UUID string, আর ৬টা secondary index। কোন সমস্যা দেখা দেওয়ার সম্ভাবনা সবচেয়ে বেশি?",
+      "options": [
+        "সব secondary index-এ PK-র copy থাকে বলে index মোটা হয়, আর random insert-এ split বাড়ে",
+        "InnoDB string primary key সমর্থন করে না, তাই hidden row id ব্যবহার হয়",
+        "UUID primary key দিয়ে খুঁজলে lookup O(n) হয়ে যায়",
+        "Secondary index-এ পুরো row থাকে, তাই PK-র আকার index-এর আকারে তেমন কোনো প্রভাবই ফেলতে পারে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "InnoDB secondary index-এর প্রতিটা entry-তে PK-র মান রাখে, তাই ৩৬ byte-এর PK ৬টা index-এর প্রতি row-এ যোগ হয়। তার উপর random UUID table আর index-এর যেকোনো জায়গায় ঢোকে, ফলে page split আর অর্ধেক-খালি page।",
+      "whyWrong": {
+        "1": "InnoDB string PK সমর্থন করে; সমস্যা তার আকার আর এলোমেলো ক্রম।",
+        "2": "UUID দিয়েও B+tree lookup O(log n); খুঁজতে না, লিখতে আর জায়গায় খরচ।",
+        "3": "উল্টো: secondary index-এ থাকে PK-র মান, তাই PK যত বড়, প্রতিটা index তত বড়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q33",
+      "difficulty": "medium",
+      "question": "PostgreSQL production-এর ৫০ কোটি row-এর orders table-এ user_id-এর index লাগবে, কিন্তু checkout-এর write বন্ধ করা যাবে না। কোন পথ ঠিক?",
+      "options": [
+        "BEGIN; CREATE INDEX CONCURRENTLY idx_orders_user ON orders (user_id); COMMIT;",
+        "CREATE INDEX CONCURRENTLY idx_orders_user ON orders (user_id);",
+        "সাধারণ CREATE INDEX চালানো, কারণ এটা শুধু read আটকায়, write না",
+        "LOCK TABLE orders দিয়ে তাড়াতাড়ি সাধারণ CREATE INDEX শেষ করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "CONCURRENTLY write না আটকিয়ে index বানায়, বিনিময়ে বেশি সময় নেয় আর table দুবার scan করে। এটা transaction block-এর বাইরে চালাতে হয়, আর শেষে index VALID কিনা যাচাই করা উচিত।",
+      "whyWrong": {
+        "0": "CONCURRENTLY transaction block-এর ভেতরে চালানো যায় না, PostgreSQL error দেয়।",
+        "2": "উল্টো: সাধারণ CREATE INDEX read চলতে দেয় কিন্তু পুরো সময় write আটকায়।",
+        "3": "Table lock করলে পুরো সময় checkout বন্ধ থাকবে, যেটা এড়ানোই লক্ষ্য।"
+      }
+    },
+    {
+      "id": "sd-day-022-q34",
+      "difficulty": "medium",
+      "question": "CREATE INDEX CONCURRENTLY মাঝপথে একটা duplicate key error-এ fail করল। এখন অবস্থা কী?",
+      "options": [
+        "সব নিজে থেকে rollback হয়েছে, কোনো চিহ্ন রয়ে যায়নি",
+        "অর্ধেক বানানো index-টা যতটুকু তৈরি হয়েছে, ততটুকু row-এর জন্য query-তে ব্যবহার হবে",
+        "Table-টা lock হয়ে আছে, হাতে unlock না করা পর্যন্ত write চলবে না",
+        "একটা INVALID index রয়ে গেছে, query-তে কাজে আসে না কিন্তু write-এ খরচ নেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "PostgreSQL fail করা concurrent build-এর index INVALID চিহ্নিত রেখে দেয়। সেটা query-তে কাজে আসে না কিন্তু update-এর খরচ নিতে পারে। DROP INDEX CONCURRENTLY করে কারণ ঠিক করে আবার বানাতে হয়।",
+      "whyWrong": {
+        "0": "CONCURRENTLY fail করলে index-টা মুছে যায় না, INVALID অবস্থায় থেকে যায়।",
+        "1": "INVALID index optimizer একেবারেই ব্যবহার করে না।",
+        "2": "Fail করলে lock ছেড়ে দেয়; সমস্যা হলো পড়ে থাকা INVALID index।"
+      }
+    },
+    {
+      "id": "sd-day-022-q35",
+      "difficulty": "medium",
+      "question": "users-এর ৯০% row-এ is_active = true। is_active-এ index থাকা সত্ত্বেও WHERE is_active = true query-তে plan দেখাচ্ছে Seq Scan। এর সঠিক ব্যাখ্যা কী?",
+      "options": [
+        "Index corrupt হয়ে গেছে, তাই REINDEX করতে হবে",
+        "Optimizer-কে hint বা setting দিয়ে index ব্যবহারে বাধ্য করা উচিত, তাহলে query দ্রুত হবে",
+        "৯০% row মেলে, তাই পুরো table একটানা পড়াই সস্তা; optimizer ঠিক করছে",
+        "Boolean column-এ B-tree বানানো যায় না, hash index লাগবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Index দিয়ে গেলে প্রতিটা মিলের জন্য table-এর এলোমেলো page-এ লাফাতে হয়। বেশিরভাগ row মিললে একটানা পুরো table পড়া সস্তা। is_active = false (১০%)-এ কিন্তু index ব্যবহার হয়, Lab-এ দেখেছি।",
+      "whyWrong": {
+        "0": "Corruption-এর কোনো লক্ষণ নেই; কম selectivity-তে seq scan স্বাভাবিক।",
+        "1": "৯ লাখ row-এর জন্য index দিয়ে এলোমেলো লাফানো সাধারণত seq scan-এর চেয়ে ধীর।",
+        "3": "Boolean-এ B-tree বানানো যায় (Lab-এ বানিয়েছি); hash দিলেও ৯০% মিল একই সমস্যা।"
+      }
+    },
+    {
+      "id": "sd-day-022-q36",
+      "difficulty": "medium",
+      "question": "Product search box-এ query WHERE name LIKE '%karim%' ১ কোটি row-এ ধীর। কোন পথে যাওয়া উচিত?",
+      "options": [
+        "name column-এ একটা সাধারণ B-tree index দেওয়া",
+        "pg_trgm-এর trigram GIN index বা full-text search",
+        "name-এ text_pattern_ops দিয়ে B-tree index দেওয়া",
+        "(name, id) composite index দেওয়া, যাতে covering হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "'%karim%' মানে শুরু জানা নেই, তাই কোনো sorted index দিয়ে range পাওয়া যায় না। Trigram GIN index লেখাকে ছোট টুকরোয় ভেঙে খোঁজে; বড় পরিসরে full-text বা search engine (Day 34)।",
+      "whyWrong": {
+        "0": "শুরুতে % থাকায় sorted ক্রম কাজে আসে না, B-tree বেকার।",
+        "2": "text_pattern_ops শুধু prefix LIKE ('karim%')-এ সাহায্য করে, মাঝের খোঁজায় না।",
+        "3": "Covering হলেও শুরুতে % থাকায় পুরো index পড়তে হবে; খোঁজার সমস্যা থেকে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q37",
+      "difficulty": "medium",
+      "question": "Docker-এর postgres:16-এ (collation en_US.utf8) email-এ সাধারণ B-tree index আছে, তবু WHERE email LIKE 'User5000%' Seq Scan করছে। কী করবেন?",
+      "options": [
+        "email-এর উপর text_pattern_ops দিয়ে একটা index বানানো",
+        "email-এ একটা hash index যোগ করা",
+        "LOWER(email)-এর উপর expression index বানানো",
+        "SET enable_seqscan = off দিয়ে production-এ seq scan বন্ধ রাখা"
+      ],
+      "correctIndex": 0,
+      "explanation": "C ছাড়া অন্য collation-এ সাধারণ B-tree-র ক্রম LIKE-এর character-ভিত্তিক তুলনার সাথে মেলে না, তাই PostgreSQL prefix LIKE-এ সেটা ব্যবহার করে না। text_pattern_ops index-এ prefix LIKE একটা range (~>=~ ... ~<~) হয়ে যায়।",
+      "whyWrong": {
+        "1": "Hash index LIKE বা কোনো range-ই পারে না।",
+        "2": "Query-তে LOWER() নেই; আর সমস্যাটা collation-এর, case-এর না।",
+        "3": "এটা debug-এর জন্য; production-এ চালু রাখলে অন্য query-র plan নষ্ট হয়, আর মূল কারণ থেকে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q38",
+      "difficulty": "medium",
+      "question": "orders table-এ (user_id) আর (user_id, created_at) দুটো index আছে। Write কমাতে কোনটা সাধারণত সরানো যায়?",
+      "options": [
+        "(user_id, created_at), কারণ দুই column-এর index বেশি জায়গা নেয়",
+        "দুটোই রাখা, কারণ প্রতিটা query-র জন্য আলাদা index থাকাই নিয়ম",
+        "Primary key index সরিয়ে দেওয়া, কারণ সেটা সবচেয়ে বড়",
+        "(user_id), কারণ (user_id, created_at)-ই user_id-এর query সামলায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Leftmost-prefix অনুযায়ী (user_id, created_at) index শুধু user_id-এর শর্তেও কাজ করে। তাই আলাদা (user_id) index সাধারণত redundant; সরালে write আর storage বাঁচে।",
+      "whyWrong": {
+        "0": "এটা সরালে user_id দিয়ে filter আর created_at দিয়ে sort একসাথে index থেকে আর হবে না।",
+        "1": "অপ্রয়োজনীয় index প্রতিটা write-এ খরচ বাড়ায়; overlap থাকলে একটাই যথেষ্ট।",
+        "2": "PK index uniqueness রক্ষা করে আর অন্য table refer করে; সরানো যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q39",
+      "difficulty": "medium",
+      "question": "B+tree index-এ WHERE id BETWEEN 1000 AND 1100 query কিভাবে চলে?",
+      "options": [
+        "১০১টা মানের প্রতিটার জন্য আলাদা করে root থেকে leaf পর্যন্ত নেমে আলাদাভাবে খোঁজে",
+        "একবার 1000-এর leaf পর্যন্ত নেমে, তারপর leaf link ধরে 1100 পর্যন্ত হাঁটে",
+        "সবচেয়ে বামের leaf থেকে শুরু করে 1100 পর্যন্ত সব leaf পড়ে",
+        "প্রতিটা মান hash করে আলাদা bucket থেকে row আনে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Range-এর শুরু খুঁজতে একবার O(log n), তারপর leaf-গুলো পাশাপাশি linked থাকায় একটানা পড়া। তাই range scan-এর খরচ ≈ tree-র height + মিলে যাওয়া entry-র সংখ্যা।",
+      "whyWrong": {
+        "0": "Leaf-গুলো linked আর sorted, তাই বারবার root-এ ফেরার দরকার নেই।",
+        "2": "শুরুর জায়গা tree বেয়ে সরাসরি পাওয়া যায়; বাম থেকে হাঁটা অপ্রয়োজনীয়।",
+        "3": "এটা hash index-এর ধারণা, যেটা range পারেই না; B+tree sorted ক্রম ব্যবহার করে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q40",
+      "difficulty": "medium",
+      "question": "PostgreSQL plan-এ Bitmap Index Scan আর তার উপরে Bitmap Heap Scan দেখা গেল। এর মানে কী?",
+      "options": [
+        "Index-টা bitmap আকারে disk-এ রাখা, তাই এটা আলাদা ধরনের index",
+        "পুরো table শুরু থেকে পড়ে একটা bitmap filter দিয়ে অমিল row বাদ দেওয়া হচ্ছে",
+        "Table-এ না গিয়ে শুধু index থেকেই উত্তর দেওয়া হচ্ছে",
+        "Index থেকে মিল থাকা page-এর তালিকা বানিয়ে, page-গুলো physical ক্রমে পড়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "মাঝারি সংখ্যক row মিললে PostgreSQL আগে index থেকে কোন page-এ মিল আছে তার bitmap বানায়, তারপর page-গুলো ক্রমে একবার করে পড়ে। এলোমেলো লাফ কমে; Recheck Cond দেখে মিল আবার যাচাই করে।",
+      "whyWrong": {
+        "0": "Bitmap এখানে query চলার সময় memory-তে বানানো তালিকা; index নিজে সাধারণ B-tree।",
+        "1": "পুরো table পড়া হলে সেটা Seq Scan; bitmap scan শুধু মিল থাকা page পড়ে।",
+        "2": "সেটা Index Only Scan; Bitmap Heap Scan heap page পড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q41",
+      "difficulty": "hard",
+      "question": "একটা B+tree-র গড় fan-out ৫০০। ৪ level-এর tree-তে মোটামুটি কতগুলো entry ধরতে পারে?",
+      "options": [
+        "প্রায় ১২.৫ কোটি (৫০০³)",
+        "প্রায় ২,০০০ (৫০০ × ৪)",
+        "প্রায় ৬,২৫০ কোটি (৫০০⁴)",
+        "প্রায় ৬২.৫ লাখ (৫০০⁴ ÷ ১০,০০০)"
+      ],
+      "correctIndex": 2,
+      "explanation": "৫০০² = ২.৫ লাখ, ৫০০³ = ১২.৫ কোটি, ৫০০⁴ = ৬,২৫০ কোটি। এজন্যই বাস্তবের প্রায় সব table-এ B+tree ৩-৪ level-এর বেশি গভীর হয় না।",
+      "whyWrong": {
+        "0": "এটা ৩ level-এর হিসাব; ৪ level-এ আরও ৫০০ গুণ।",
+        "1": "Level-গুলো গুণ হয়, যোগ বা সরল গুণ না।",
+        "3": "হিসাবে ভুল ভাগ; ৫০০⁴ = ৬.২৫ × ১০¹⁰, অর্থাৎ ৬,২৫০ কোটি।"
+      }
+    },
+    {
+      "id": "sd-day-022-q42",
+      "difficulty": "hard",
+      "question": "১০০ কোটি key। একটা balanced binary search tree আর fan-out ১,০০০-এর একটা B+tree-তে একটা lookup-এ মোটামুটি কয়টা node পড়তে হবে?",
+      "options": [
+        "Binary tree-তে ~৩০, B+tree-তে ~৩",
+        "Binary tree-তে ~৯, B+tree-তে ~৩",
+        "দুটোতেই ~৩০, কারণ দুটোই O(log n)",
+        "Binary tree-তে ~১০০ কোটি, B+tree-তে ~৩"
+      ],
+      "correctIndex": 0,
+      "explanation": "log₂(10⁹) ≈ ৩০, log₁₀₀₀(10⁹) = ৩। Disk-এ প্রতিটা node পড়া মানে একটা page read, তাই চওড়া, বেঁটে B+tree disk-ভিত্তিক database-এ জেতে।",
+      "whyWrong": {
+        "1": "log₂(১০০ কোটি) ≈ ৩০, ৯ না; ৯ হলো log₁₀।",
+        "2": "দুটোই O(log n), কিন্তু log-এর ভিত্তি আলাদা; ভিত্তি ১,০০০ হলে height অনেক কম।",
+        "3": "Balanced binary tree-তেও lookup O(log n), O(n) না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q43",
+      "difficulty": "hard",
+      "question": "একটা table-এ ৫০ লাখ row, প্রতি ৮KB page-এ গড়ে ১০০টা row। Seq Scan আর B-tree-র একটা point lookup (৩ level index + table) মোটামুটি কয়টা page পড়ে?",
+      "options": [
+        "Seq Scan ~৫০ লাখ page, index lookup ~৪ page",
+        "Seq Scan ~৫০,০০০ page, index lookup ~২৩ page",
+        "Seq Scan ~৫০,০০০ page, index lookup ~৪ page",
+        "Seq Scan ~৫০০ page, index lookup ~৪ page"
+      ],
+      "correctIndex": 2,
+      "explanation": "৫০ লাখ ÷ ১০০ = ৫০,০০০ page পুরোটা পড়তে হয়। Index-এ root → internal → leaf (৩ page) আর তারপর ১টা table page। প্রায় ১২,৫০০ গুণ কম page।",
+      "whyWrong": {
+        "0": "Page-এ ১০০ row করে থাকায় page সংখ্যা row-এর ১০০ ভাগের এক ভাগ।",
+        "1": "২৩ হলো binary search-এর ধাপ; B+tree-তে ৩টা index page আর ১টা table page।",
+        "3": "৫০ লাখ ÷ ১০০ = ৫০,০০০, ৫০০ না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q44",
+      "difficulty": "hard",
+      "question": "Index (country, city, created_at) আছে। Query: WHERE country = 'BD' AND created_at > now() - interval '1 day' ORDER BY created_at। কী ঘটবে, আর ভালো index কী?",
+      "options": [
+        "তিনটা column-ই পুরোপুরি ব্যবহার হবে, কারণ country প্রথম column",
+        "Index একেবারেই ব্যবহার হবে না, কারণ city শর্তে নেই",
+        "Optimizer সবসময় skip scan দিয়ে city-র প্রতিটা মানে আলাদা করে লাফাবে, তাই query ভালোই চলবে",
+        "country দিয়ে block মেলে, কিন্তু city বাদ বলে created_at ছড়ানো; (country, created_at) দিন"
+      ],
+      "correctIndex": 3,
+      "explanation": "country = 'BD'-এর ভেতরে entry আগে city দিয়ে sorted, তাই গত দিনের row প্রতিটা city-র ভেতরে ছড়ানো; filter আর sort দুটোই লাগে। (country, created_at) হলে BD-এর block-এর ভেতরে created_at sorted, range আর ORDER BY দুটোই index থেকে।",
+      "whyWrong": {
+        "0": "Leftmost prefix শুধু টানা column-এ খাটে; city বাদ পড়ায় created_at দিয়ে সীমা ছোট হয় না।",
+        "1": "প্রথম column country শর্তে আছে, তাই অন্তত সেই block পর্যন্ত index কাজে লাগে।",
+        "2": "Skip scan সব version-এ নেই, আর city-র মান অনেক হলে কাজে আসে না; এর উপর design করা ঝুঁকি।"
+      }
+    },
+    {
+      "id": "sd-day-022-q45",
+      "difficulty": "hard",
+      "question": "Index (a, b, c), query: WHERE a = 1 AND b > 10 AND c = 5। Index-এ খোঁজার পরিধি (seek range) কোন শর্তগুলো দিয়ে ছোট হয়?",
+      "options": [
+        "a = 1 আর b > 10; c = 5 শুধু পরে filter হিসেবে",
+        "a, b, c তিনটাই, কারণ তিনটাই index-এ আছে",
+        "শুধু a = 1; b আর c দুটোই পরে filter হয়",
+        "আগে c = 5, তারপর a আর b, কারণ c-তে equality শর্ত আছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "a = 1-এর ভেতরে entry b দিয়ে sorted, তাই b > 10-এর অংশটা একটানা। কিন্তু সেই অংশে c-এর মান b-এর প্রতিটা মানের ভেতরে আলাদা করে sorted, একটানা না; তাই c শুধু filter। এজন্যই ESR নিয়মে range column শেষে রাখা হয়।",
+      "whyWrong": {
+        "1": "b-তে range শর্তের পরে c-এর মান আর একটানা থাকে না, তাই c পরিধি ছোট করে না।",
+        "2": "a-এর পরে b index-এর পরের column, তাই b-এর range-ও পরিধি ছোট করে।",
+        "3": "Index-এর ক্রম a → b → c; query-তে শর্তের ধরন দেখে ক্রম বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q46",
+      "difficulty": "hard",
+      "question": "Multi-tenant SaaS-এর query: WHERE tenant_id = ? AND status = ? AND created_at BETWEEN ? AND ? ORDER BY created_at। কোন composite index ESR নিয়ম মেনে সবচেয়ে ভালো?",
+      "options": [
+        "(created_at, tenant_id, status)",
+        "(tenant_id, created_at, status)",
+        "(tenant_id, status, created_at)",
+        "tenant_id, status, created_at-এ তিনটা আলাদা single-column index"
+      ],
+      "correctIndex": 2,
+      "explanation": "দুটো equality column (tenant_id, status) আগে, তারপর created_at, যেটা range আর sort দুটোই। তাহলে index-এর একটা একটানা অংশ সরাসরি sorted ক্রমে পড়া যায়, কোনো আলাদা sort ছাড়া।",
+      "whyWrong": {
+        "0": "Range column প্রথমে থাকলে tenant আর status-এর মিলগুলো পুরো সময়-পরিসরে ছড়ানো থাকে।",
+        "1": "created_at-এর range-এর পরে status আর পরিধি ছোট করতে পারে না, শুধু filter হয়।",
+        "3": "আলাদা index একসাথে filter আর sort সামলাতে পারে না; bitmap মেলালেও sort লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q47",
+      "difficulty": "hard",
+      "question": "PostgreSQL-এ users table-এ last_login_at column প্রতিটা login-এ update হয়, আর কেউ সেটায় index দিয়েছে। Table-এ আরও ৪টা index। এর একটা লুকানো খরচ কী?",
+      "options": [
+        "কোনো খরচ নেই, কারণ PostgreSQL update-এ row-কে জায়গায় বসেই বদলায়",
+        "শুধু last_login_at-এর index-টা update হয়, বাকি ৪টা অপরিবর্তিত থাকে",
+        "Indexed column বদলায় বলে HOT update হয় না, তাই প্রতি login-এ সব index-এ লেখা",
+        "HOT শুধু DELETE-এর ক্ষেত্রে প্রযোজ্য একটা optimization, তাই এখানে কোনো প্রভাব নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "কোনো indexed column না বদলালে আর একই page-এ জায়গা থাকলে PostgreSQL HOT update করে, index ছোঁয় না। last_login_at-এ index থাকায় সেই সুযোগ শেষ: প্রতিটা login-এ ৫টা index-এই লেখা।",
+      "whyWrong": {
+        "0": "PostgreSQL MVCC-তে update নতুন row version লেখে, জায়গায় বদলায় না।",
+        "1": "HOT না হলে নতুন version-এর নতুন TID-এর জন্য সব index-এ entry লাগে।",
+        "3": "HOT (Heap-Only Tuple) update-এর optimization; delete-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-022-q48",
+      "difficulty": "hard",
+      "question": "MySQL InnoDB-তে email-এ secondary index আছে। SELECT * FROM users WHERE email = ? কিভাবে চলে?",
+      "options": [
+        "Secondary index-এর leaf-এ row-এর physical ঠিকানা (page, slot) থাকে, সেখান থেকে সরাসরি row",
+        "Secondary index-এর leaf-এই পুরো row থাকে, তাই এক ধাপেই শেষ",
+        "Secondary index-এ email খুঁজে PK পায়, তারপর PK দিয়ে clustered index থেকে row আনে",
+        "Email দিয়ে clustered index-টা শুরু থেকে শেষ পর্যন্ত scan করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "InnoDB secondary index entry = (email, PK)। তাই প্রথমে secondary B+tree, তারপর PK দিয়ে clustered B+tree, দুটো tree traversal। এজন্যই InnoDB-তে ছোট PK আর covering index গুরুত্বপূর্ণ।",
+      "whyWrong": {
+        "0": "এটা PostgreSQL-এর TID পদ্ধতি; InnoDB secondary index-এ রাখে PK-র মান।",
+        "1": "পুরো row থাকে শুধু clustered (PK) index-এর leaf-এ।",
+        "3": "Clustered index PK দিয়ে sorted; email-এর index থাকায় পুরো scan লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q49",
+      "difficulty": "hard",
+      "question": "MySQL InnoDB-তে email-এ secondary index আছে, আর id হলো primary key। SELECT id FROM users WHERE email = ? query কি index থেকেই উত্তর পেতে পারে?",
+      "options": [
+        "হ্যাঁ, InnoDB-র secondary index entry-তে PK (id) থাকেই",
+        "না, id পেতে সবসময় clustered index-এ যেতেই হয়",
+        "শুধু তখনই, যদি index-টা INCLUDE (id) দিয়ে আলাদা করে বানানো হয়",
+        "শুধু তখনই, যদি email column UNIQUE হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "InnoDB প্রতিটা secondary index-এ PK column রাখে, তাই email আর id দুটোই index-এ আছে। Query তখন covering হয়, clustered index-এ দ্বিতীয় lookup লাগে না (EXPLAIN-এ 'Using index')।",
+      "whyWrong": {
+        "1": "Secondary index-এর entry-তে PK-র মান থাকে, তাই id সেখান থেকেই পাওয়া যায়।",
+        "2": "InnoDB-তে INCLUDE clause নেই, আর PK এমনিতেই secondary index-এ থাকে।",
+        "3": "Uniqueness-এর সাথে covering-এর সম্পর্ক নেই; দরকারি column index-এ আছে কিনা সেটাই প্রশ্ন।"
+      }
+    },
+    {
+      "id": "sd-day-022-q50",
+      "difficulty": "hard",
+      "question": "PostgreSQL plan-এ Index Only Scan দেখাচ্ছে, কিন্তু Heap Fetches: 400000। কেন, আর কী করবেন?",
+      "options": [
+        "Index-এ দরকারি column নেই, তাই প্রতিটা row table থেকে আনতে হচ্ছে",
+        "Index corrupt হয়েছে, তাই PostgreSQL heap থেকে মিলিয়ে নিচ্ছে; REINDEX লাগবে",
+        "Visibility map হালনাগাদ নেই (সম্প্রতি বদলানো page); VACUUM চালাতে হবে",
+        "work_mem কম, তাই index-এর data heap-এ সরিয়ে রাখা হয়েছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "PostgreSQL index-এ row-এর দৃশ্যমানতার তথ্য রাখে না। যে page-এর সব row সবার কাছে দৃশ্যমান বলে visibility map-এ চিহ্নিত, শুধু সেগুলোয় heap এড়ানো যায়। VACUUM সেই map হালনাগাদ করে।",
+      "whyWrong": {
+        "0": "Column না থাকলে plan Index Only Scan-ই হতো না; সমস্যা দৃশ্যমানতা যাচাইয়ে।",
+        "1": "Corruption না; MVCC-তে row দৃশ্যমান কিনা জানতে visibility map না থাকলে heap দেখতে হয়।",
+        "3": "work_mem sort/hash-এর memory; Index Only Scan-এর heap fetch-এর কারণ না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q51",
+      "difficulty": "hard",
+      "question": "একটা event log table-এ সেকেন্ডে ৫,০০০ insert, ৮টা index। শুধু রাতে একবার analytics batch পড়ে। Insert latency বাড়ছে। সবচেয়ে যুক্তিসঙ্গত পদক্ষেপ কী?",
+      "options": [
+        "Batch query দ্রুত করতে আরও কয়েকটা covering index যোগ করা",
+        "বেশিরভাগ index সরিয়ে দেওয়া, দরকারে created_at-এ ছোট একটা BRIN রাখা",
+        "সব B-tree index-কে hash index-এ বদলে দেওয়া",
+        "প্রতি রাতে CREATE INDEX CONCURRENTLY দিয়ে ৮টা index নতুন করে বানানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "Write-heavy, কম পড়া table-এ ৮টা index মানে প্রতিটা insert-এ ৯টা structure-এ লেখা। দিনে একবারের batch কয়েক মিনিট নিলেও ক্ষতি নেই। Log সময়ের ক্রমে আসে, তাই created_at-এ BRIN খুব ছোট আর সস্তায় সময়-পরিসর বাদ দিতে পারে।",
+      "whyWrong": {
+        "0": "Index বাড়ালে প্রতিটা insert-এর খরচ আরও বাড়ে, অথচ পড়া হয় দিনে একবার।",
+        "2": "Hash-এও প্রতিটা insert-এ প্রতিটা index update লাগে; write খরচ মূলত একই।",
+        "3": "Index থাকলে সারাদিন write-এর খরচ থাকেই; রোজ নতুন বানানো খরচ আরও বাড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q52",
+      "difficulty": "hard",
+      "question": "২০০ কোটি row-এর একটা IoT reading table, row আসে সময়ের ক্রমে, আর query প্রায় সবসময় সময়-পরিসর দিয়ে। Disk খরচ সবচেয়ে কম রেখে কোন index উপযুক্ত?",
+      "options": [
+        "created_at-এর উপর GIN index",
+        "created_at-এর উপর hash index",
+        "created_at-এর উপর BRIN index",
+        "(device_id, created_at)-এর উপর একটা B-tree, সব row-এর entry সহ"
+      ],
+      "correctIndex": 2,
+      "explanation": "BRIN প্রতিটা block-range-এর শুধু min/max রাখে। Data সময়ের ক্রমে থাকায় range-গুলো পরিষ্কারভাবে আলাদা, তাই সামান্য জায়গায় বেশিরভাগ block বাদ দেওয়া যায়। Data এলোমেলো হলে BRIN কাজে আসত না।",
+      "whyWrong": {
+        "0": "GIN একাধিক মান-ওয়ালা data (array, JSONB, text)-এর জন্য, সাধারণ সময়-পরিসরের জন্য না।",
+        "1": "Hash range পারে না, অথচ query সময়-পরিসর দিয়ে।",
+        "3": "কাজ করবে, কিন্তু ২০০ কোটি entry-র B-tree বিশাল; প্রশ্নটা ছিল সবচেয়ে কম disk খরচ।"
+      }
+    },
+    {
+      "id": "sd-day-022-q53",
+      "difficulty": "hard",
+      "question": "MySQL InnoDB table-এ random UUID v4 primary key। Table যত বড় হচ্ছে, insert তত ধীর হচ্ছে, অথচ query একই। মূল কারণ কী?",
+      "options": [
+        "UUID তুলনা করতে প্রতিবার পুরো tree scan লাগে, তাই insert O(n)",
+        "Random key যেকোনো leaf-এ ঢোকে: page split, অর্ধেক-খালি page, আর cache-এ না থাকা page পড়া",
+        "InnoDB প্রতিটা insert-এর পরে পুরো clustered index নতুন করে বানায়",
+        "UUID দিয়ে cluster করা যায় না, তাই InnoDB পেছনে একটা লুকানো row id দিয়ে পুরো table সাজায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ক্রমবর্ধমান key সবসময় ডানের leaf-এ বসে, সেই page memory-তে গরম থাকে। Random key-তে প্রতিটা insert আলাদা page চায়; table বড় হলে সেগুলো memory-তে আঁটে না, disk read আর split বাড়ে। Time-ordered ID (Day 32) এটা কমায়।",
+      "whyWrong": {
+        "0": "UUID-ও sorted B+tree-তে O(log n)-এ জায়গা পায়; সমস্যা জায়গাটা এলোমেলো হওয়ায়।",
+        "2": "InnoDB শুধু দরকারি page বদলায়, পুরো index নতুন করে বানায় না।",
+        "3": "UUID primary key হলে InnoDB সেটা দিয়েই cluster করে; লুকানো id আসে PK না থাকলে।"
+      }
+    },
+    {
+      "id": "sd-day-022-q54",
+      "difficulty": "hard",
+      "question": "১ কোটি row-এর একটা table-এ একটা index, প্রতিটা entry গড়ে ৪০ byte, আর page গড়ে ৭০% ভর্তি। Index-এর আকার মোটামুটি কত?",
+      "options": ["প্রায় ৫৭০MB", "প্রায় ৪০MB", "প্রায় ৪GB", "প্রায় ২৮০MB"],
+      "correctIndex": 0,
+      "explanation": "Data: ১০⁷ × ৪০ = ৪০০MB। Page ৭০% ভর্তি হলে মোট জায়গা = ৪০০ ÷ ০.৭ ≈ ৫৭০MB (internal page সামান্য যোগ হয়)। এই হিসাব দিয়েই বোঝা যায় index memory-তে আঁটবে কিনা।",
+      "whyWrong": {
+        "1": "১ কোটি × ৪০ byte = ৪০০MB; ৪০MB দশ গুণ কম।",
+        "2": "৪০০MB-কে ০.৭ দিয়ে ভাগ করলে ~৫৭০MB, ৪GB না।",
+        "3": "৭০% ভর্তি মানে বেশি page লাগে; ৪০০MB × ০.৭ না, ৪০০MB ÷ ০.৭।"
+      }
+    },
+    {
+      "id": "sd-day-022-q55",
+      "difficulty": "hard",
+      "question": "PostgreSQL-এ email আর phone-এ আলাদা দুটো single-column index আছে। WHERE email = ? OR phone = ? query-র জন্য optimizer সাধারণত কী করতে পারে?",
+      "options": [
+        "OR থাকলে কোনো index চলে না, তাই সবসময় Seq Scan",
+        "শুধু প্রথম শর্তের (email) index ব্যবহার করে, phone-এর শর্ত পরে filter হয়",
+        "দুটো Bitmap Index Scan চালিয়ে BitmapOr দিয়ে মিলিয়ে তারপর heap পড়া",
+        "(email, phone) composite index না থাকলে query error দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "OR-এর প্রতিটা অংশ আলাদা index-এ খুঁজে page-এর bitmap বানানো যায়, তারপর দুটো bitmap OR করে মিল থাকা page একবার করে পড়া। (email, phone) composite index এখানে কাজে আসত না, কারণ phone একা দ্বিতীয় column।",
+      "whyWrong": {
+        "0": "PostgreSQL দুটো index-এর bitmap OR করে মেলাতে পারে।",
+        "1": "তাহলে phone-এ মেলা কিন্তু email-এ না মেলা row বাদ পড়ত; OR-এ দুই দিকই খুঁজতে হয়।",
+        "3": "Index না থাকলেও query চলে; শুধু plan বদলায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q56",
+      "difficulty": "hard",
+      "question": "MySQL-এ phone column VARCHAR আর indexed। WHERE phone = 1712345678 (quote ছাড়া) query ধীর, EXPLAIN-এ type: ALL। কারণ কী?",
+      "options": [
+        "সংখ্যার সাথে তুলনায় প্রতিটা row-এ type রূপান্তর লাগে, তাই index বাদ পড়ে",
+        "VARCHAR column-এ B-tree index বানানো যায় না",
+        "Phone নম্বর খুব লম্বা, তাই index-এ ধরে না",
+        "EXPLAIN-এর type: ALL মানে সব index একসাথে ব্যবহার হচ্ছে, তাই query এত ধীর"
+      ],
+      "correctIndex": 0,
+      "explanation": "MySQL string column-কে সংখ্যার সাথে তুলনা করলে অনেক রকম string (যেমন '01712345678', ' 1712345678') একই সংখ্যা হতে পারে, তাই index দিয়ে খোঁজা যায় না। মানটা quote দিয়ে string হিসেবে দিলেই index কাজ করে।",
+      "whyWrong": {
+        "1": "VARCHAR-এ index খুব সাধারণ; সমস্যা তুলনার type-এ।",
+        "2": "১০-১১ character সহজেই index-এ ধরে।",
+        "3": "MySQL EXPLAIN-এ type: ALL মানে full table scan।"
+      }
+    },
+    {
+      "id": "sd-day-022-q57",
+      "difficulty": "hard",
+      "question": "Bulk import-এ গত এক দিনের লাখো নতুন row ঢুকল। এখন WHERE created_at > now() - interval '1 hour' (আসলে ০.১% row) Seq Scan করছে, আর plan-এ estimated rows বিশাল। সম্ভাব্য কারণ কী?",
+      "options": [
+        "Statistics পুরনো, optimizer নতুন মানের বণ্টন জানে না; ANALYZE লাগবে",
+        "now() একটা function, আর function থাকলে created_at-এর index বাদ পড়ে যায়",
+        "B-tree index > ধরনের range শর্ত সমর্থন করে না",
+        "সময়ের column-এ শুধু BRIN কাজ করে, B-tree না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Optimizer histogram দিয়ে অনুমান করে কত row মিলবে। Bulk load-এর পরে নতুন সময়ের মান statistics-এ না থাকলে অনুমান ভুল হয়ে বেশি row ধরে, তাই seq scan বেছে নেয়। ANALYZE-এর পরে estimated আর actual কাছাকাছি আসে।",
+      "whyWrong": {
+        "1": "Function এখানে column-এ না, তুলনার মানের দিকে; created_at নিজে মোড়া নেই, index ব্যবহারযোগ্য।",
+        "2": "Range B-tree-র স্বাভাবিক কাজ।",
+        "3": "B-tree সময়ের column-এ ভালোভাবেই কাজ করে; BRIN একটা বিকল্প, বাধ্যবাধকতা না।"
+      }
+    },
+    {
+      "id": "sd-day-022-q58",
+      "difficulty": "hard",
+      "question": "Deployment-এর migration peak time-এ ৩০ কোটি row-এর orders table-এ সাধারণ CREATE INDEX চালাল, আর ২০ মিনিট checkout আটকে থাকল (PostgreSQL)। মূল কারণ আর ঠিক প্রতিকার কী?",
+      "options": [
+        "সাধারণ CREATE INDEX পুরো সময় write আটকায়; CONCURRENTLY দিয়ে, কম traffic-এ",
+        "CREATE INDEX read আর write দুটোই আটকায়; read replica-তে index বানিয়ে নেওয়া",
+        "Disk ধীর ছিল; দ্রুত SSD-তে migration চালালেই সমস্যা মিটবে",
+        "B-tree-র বদলে hash index দিলে build সাথে সাথে শেষ হতো"
+      ],
+      "correctIndex": 0,
+      "explanation": "PostgreSQL-এর সাধারণ CREATE INDEX table-এ এমন lock নেয় যেটা read চলতে দেয় কিন্তু INSERT/UPDATE/DELETE আটকায়। বড় table-এ CREATE INDEX CONCURRENTLY ব্যবহার করুন, শেষে index VALID কিনা দেখুন।",
+      "whyWrong": {
+        "1": "সাধারণ CREATE INDEX read আটকায় না; আর physical replica-তে আলাদা করে index বানানো যায় না।",
+        "2": "দ্রুত disk সময় কমাতে পারে, কিন্তু build চলাকালীন write আটকানো থেকেই যাবে।",
+        "3": "Hash index-ও সব row পড়ে বানাতে হয়, আর সাধারণ build-এ write আটকায়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q59",
+      "difficulty": "hard",
+      "question": "orders-এ তিনটা query: Q1 WHERE user_id = ? (খুব বেশি), Q2 WHERE user_id = ? AND status = ? ORDER BY created_at (খুব বেশি), Q3 WHERE status = ? (রাতে একবার)। Write-heavy table-এ কোন index set সবচেয়ে ভারসাম্যপূর্ণ?",
+      "options": [
+        "user_id, status আর created_at-এ তিনটা আলাদা single-column index",
+        "শুধু (user_id, status, created_at); Q3 রাতে seq scan করলেও চলে",
+        "(status, user_id, created_at), যাতে Q3-ও index পায়",
+        "(user_id), (status) আর (user_id, status, created_at) তিনটাই"
+      ],
+      "correctIndex": 1,
+      "explanation": "(user_id, status, created_at) leftmost-prefix-এ Q1 সামলায়, আর Q2-এর equality + sort পুরোপুরি index থেকে হয়। দিনে একবারের Q3-এর জন্য সারাদিন write খরচ দেওয়া লাভজনক না।",
+      "whyWrong": {
+        "0": "আলাদা index Q2-এর filter আর sort একসাথে সামলায় না, আর তিনটাই write খরচ বাড়ায়।",
+        "2": "Q1-এ শুধু user_id, যেটা এখানে দ্বিতীয় column; সবচেয়ে ঘন ঘন query-টাই ভোগে।",
+        "3": "(user_id) redundant, আর রাতে একবারের Q3-এর জন্য (status) প্রতিটা write-এ খরচ নেয়।"
+      }
+    },
+    {
+      "id": "sd-day-022-q60",
+      "difficulty": "hard",
+      "question": "Nested loop join-এ ১০০ জন user-এর order আনা হচ্ছে। orders-এ ১ কোটি row, orders.user_id-এ index নেই, আর plan প্রতিটা user-এর জন্য orders পুরো পড়ছে। মোটামুটি কত row পড়া হবে?",
+      "options": [
+        "প্রায় ১ কোটি (orders একবার পড়া)",
+        "প্রায় ১০০ কোটি (১০০ × ১ কোটি)",
+        "প্রায় ১০০ (প্রতি user-এর একটা order)",
+        "প্রায় ১০ লাখ (১ কোটির ১০%)"
+      ],
+      "correctIndex": 1,
+      "explanation": "Inner side-এ index না থাকলে প্রতিটা outer row-এর জন্য ১ কোটি row পড়া: ১০০ × ১০⁷ = ১০⁹। Optimizer সাধারণত hash join বেছে এটা এড়ায় (তবুও ১ কোটি row)। orders(user_id)-এ index থাকলে প্রতি user কয়েকটা page, মোট কয়েক হাজার।",
+      "whyWrong": {
+        "0": "সেটা hash join হলে হতো; এখানে plan প্রতিটা user-এর জন্য আলাদা করে পুরো table পড়ছে।",
+        "2": "Index না থাকায় প্রতিটা user-এর জন্য সব row মেলাতে হয়, শুধু মিলগুলো না।",
+        "3": "Filter-এর আগে সব row পড়তে হয়; ১০% কোনো হিসাব থেকে আসে না।"
+      }
+    }
+  ]
+}

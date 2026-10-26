@@ -1,0 +1,1050 @@
+{
+  "topicId": "sd-day-004",
+  "questions": [
+    {
+      "id": "sd-day-004-q01",
+      "difficulty": "easy",
+      "question": "API (Application Programming Interface) বলতে মূলত কী বোঝায়?",
+      "options": [
+        "Server-এর database-এর আরেক নাম, যেখানে app-এর সব data জমা থাকে",
+        "দুটো program-এর মধ্যে চুক্তি: কী চাওয়া যায়, কিভাবে চাইতে হয়, আর কী উত্তর আসবে",
+        "Website-এর screen আর button সাজানোর জন্য একটা UI framework",
+        "শুধু mobile app আর server-এর মধ্যে ব্যবহৃত একটা আলাদা network protocol, যেটা HTTP-র বদলে চলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "API হলো একটা program আরেকটার সাথে কিভাবে কথা বলবে তার চুক্তি। এটা ঠিক করে কোন request পাঠানো যায় আর কেমন উত্তর আসবে, ভেতরের code আর database লুকিয়ে রেখে।",
+      "whyWrong": {
+        "0": "Database data রাখে; API হলো সেই data-র কাছে পৌঁছানোর নিয়ন্ত্রিত দরজা, database নিজে না।",
+        "2": "UI framework screen বানায়; API program-দের মধ্যে কথা বলার চুক্তি, এর কোনো চেহারা নেই।",
+        "3": "API যেকোনো দুটো program-এর মধ্যে হতে পারে, দুটো server-এর মধ্যেও; আর এটা নিজে নতুন network protocol না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q02",
+      "difficulty": "easy",
+      "question": "দেশিহাট courier partner-কে database-এর read password না দিয়ে একটা API দিল। এর সবচেয়ে বড় লাভ কোনটা?",
+      "options": [
+        "API দিলে courier-এর প্রতিটা request সরাসরি database query করার চেয়ে সবসময় কয়েক গুণ দ্রুত হয়ে যায়",
+        "API থাকলে database-এ আর কোনো backup বা password-এর দরকার পড়ে না",
+        "ভেতরের table বা column বদলালেও courier-এর code ভাঙে না, আর কে কী দেখবে তা নিয়ন্ত্রণ করা যায়",
+        "API দিলে courier নিজেই নতুন column যোগ করে নিজের মতো data রাখতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "API ভেতরের গঠন লুকিয়ে একটা স্থির চুক্তি দেয়। Column-এর নাম বদলালেও API-র JSON একই থাকে, আর courier শুধু নিজের order-এর দরকারি field দেখে।",
+      "whyWrong": {
+        "0": "API মাঝে একটা ধাপ যোগ করে, তাই গতি সবসময় বাড়ে না; লাভটা স্থিরতা আর নিয়ন্ত্রণে।",
+        "1": "API database-এর নিরাপত্তা বা backup-এর বিকল্প না, এগুলো আগের মতোই লাগে।",
+        "3": "উল্টো: API-র উদ্দেশ্যই হলো বাইরের কেউ যেন ভেতরের গঠন বদলাতে না পারে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q03",
+      "difficulty": "easy",
+      "question": "নিচের কোন request REST-এর নিয়ম (URL-এ resource, কাজ বলবে method) সবচেয়ে ভালোভাবে মানে?",
+      "options": [
+        "GET /products/7",
+        "GET /getProduct?id=7",
+        "POST /api  {\"action\": \"getProduct\", \"id\": 7}",
+        "POST /products/7/fetchDetails"
+      ],
+      "correctIndex": 0,
+      "explanation": "REST-এ URL হলো resource-এর নাম (/products/7), আর 'পড়া' কাজটা বলে GET method। নামের ভেতরে ক্রিয়া লাগে না।",
+      "whyWrong": {
+        "1": "URL-এ ক্রিয়া (getProduct) ঢুকে গেছে; কাজ বলার দায়িত্ব method-এর।",
+        "2": "এক URL-এ সব কাজ body দিয়ে বলা হলো Richardson Level 0, HTTP শুধু বাহন।",
+        "3": "পড়ার কাজে POST ব্যবহার হয়েছে, আর URL-এ আবার ক্রিয়া; GET-এর safe অর্থটা হারায়।"
+      }
+    },
+    {
+      "id": "sd-day-004-q04",
+      "difficulty": "easy",
+      "question": "দেশিহাটের app-এ customer নতুন order দিচ্ছে। REST-এ সবচেয়ে উপযুক্ত request কোনটা?",
+      "options": [
+        "GET /orders/new?product=7&qty=1",
+        "PUT /orders",
+        "POST /orders",
+        "PATCH /orders"
+      ],
+      "correctIndex": 2,
+      "explanation": "নতুন resource collection-এ তৈরি করার জন্য POST। Server নতুন order-এর id ঠিক করে আর 201 Created দিয়ে Location-এ ঠিকানা জানায়।",
+      "whyWrong": {
+        "0": "GET কিছু বদলাবে না, এই নিয়ম ভাঙলে crawler বা prefetch নিজে থেকে order বানিয়ে ফেলতে পারে।",
+        "1": "PUT /orders মানে পুরো orders collection এই body দিয়ে বদলে দেওয়া, একটা নতুন order যোগ করা না।",
+        "3": "PATCH মানে আগে থেকে থাকা resource-এর আংশিক পরিবর্তন; নতুন order তৈরি এর কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q05",
+      "difficulty": "easy",
+      "question": "POST /orders সফলভাবে নতুন order তৈরি করল। সবচেয়ে সঠিক status code কোনটা?",
+      "options": [
+        "200 OK, কারণ request সফল হয়েছে",
+        "201 Created, সাথে Location header-এ নতুন order-এর ঠিকানা",
+        "204 No Content, কারণ order তৈরিতে client-কে কিছু ফেরত দেওয়ার নেই",
+        "202 Accepted, কারণ order database-এ জমা হয়ে গেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "201 Created স্পষ্ট বলে নতুন resource তৈরি হয়েছে, আর Location header বলে সেটা কোথায় পাওয়া যাবে। Client তখন GET দিয়ে সেখানে order-এর অবস্থা দেখতে পারে।",
+      "whyWrong": {
+        "0": "200 চলে, কিন্তু 'নতুন কিছু তৈরি হলো' এই তথ্যটা হারায়; 201 বেশি নির্দিষ্ট।",
+        "2": "204 মানে body নেই; নতুন order-এর id আর ঠিকানা client-এর জানা দরকার।",
+        "3": "202 মানে 'নিয়েছি, কাজ পরে শেষ হবে'; এখানে order এখনই তৈরি হয়ে গেছে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q06",
+      "difficulty": "easy",
+      "question": "App একটা request পাঠাল কিন্তু Authorization header-এ কোনো token নেই। Server কী দেবে?",
+      "options": [
+        "403 Forbidden",
+        "400 Bad Request",
+        "401 Unauthorized",
+        "422 Unprocessable Content"
+      ],
+      "correctIndex": 2,
+      "explanation": "401 মানে server জানে না আপনি কে: token নেই, ভুল বা মেয়াদোত্তীর্ণ। Client-এর কাজ হলো login করে নতুন token নিয়ে আবার চেষ্টা করা।",
+      "whyWrong": {
+        "0": "403 তখন, যখন server আপনাকে চেনে কিন্তু এই কাজের অনুমতি নেই।",
+        "1": "400 request-এর গঠন ভুল হলে (যেমন ভাঙা JSON); পরিচয় না থাকা আলাদা সমস্যা।",
+        "3": "422 body-র মান অর্থহীন হলে দেওয়া হয়; এখানে সমস্যা পরিচয়ে, body-তে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q07",
+      "difficulty": "easy",
+      "question": "একজন সাধারণ customer, ঠিকঠাক login করা, DELETE /products/7 পাঠাল। শুধু admin product মুছতে পারে। সঠিক উত্তর কোনটা?",
+      "options": [
+        "401 Unauthorized, কারণ সে admin না",
+        "403 Forbidden, কারণ server তাকে চেনে কিন্তু অনুমতি নেই",
+        "405 Method Not Allowed, কারণ customer-দের DELETE ব্যবহার নিষেধ",
+        "409 Conflict, কারণ customer আর admin-এর মধ্যে সংঘাত"
+      ],
+      "correctIndex": 1,
+      "explanation": "Customer-এর token ঠিক আছে, তাই পরিচয় জানা। কিন্তু product মোছার অধিকার নেই, এটাই 403-এর অর্থ।",
+      "whyWrong": {
+        "0": "401 পরিচয় না জানলে; এখানে পরিচয় জানা, সমস্যা অনুমতিতে।",
+        "2": "405 মানে এই resource-এ DELETE method-ই নেই, কে ডাকছে তার উপর নির্ভর করে না।",
+        "3": "409 resource-এর বর্তমান অবস্থার সাথে সংঘাত (যেমন stock শেষ), অনুমতির সমস্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q08",
+      "difficulty": "easy",
+      "question": "REST API 'stateless' হওয়ার মানে কী?",
+      "options": [
+        "Server-এ কোনো database থাকে না, সব data client রাখে",
+        "API-র response কখনো cache করা যায় না",
+        "প্রতিটা request-এ token সহ সব দরকারি তথ্য আসে; server আগের request মনে রেখে পরেরটা বোঝে না",
+        "Client আর server-কে সবসময় একই machine-এ, অথবা অন্তত একই data center-এর একই local network-এ চলতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Stateless মানে request-গুলোর মাঝে client-এর session অবস্থা server-এর memory-তে আটকে থাকে না। তাই যেকোনো server যেকোনো request সামলাতে পারে।",
+      "whyWrong": {
+        "0": "Stateless মানে database নেই না; order, product সবই database-এ থাকে।",
+        "1": "উল্টো: stateless হওয়ায় GET response cache করা বরং সহজ।",
+        "3": "Stateless-এর সাথে machine-এর অবস্থানের কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-004-q09",
+      "difficulty": "easy",
+      "question": "নিচের কোন HTTP method 'safe', মানে server-এর কিছু বদলানোর কথা না?",
+      "options": ["DELETE", "PUT", "POST", "GET"],
+      "correctIndex": 3,
+      "explanation": "GET শুধু পড়ে, তাই safe। Browser, crawler, cache সবাই ধরে নেয় GET পাঠালে কিছু বদলাবে না।",
+      "whyWrong": {
+        "0": "DELETE resource মুছে দেয়, তাই অবস্থা বদলায়; এটা idempotent, কিন্তু safe না।",
+        "1": "PUT resource বসায় বা বদলায়; idempotent, কিন্তু safe না।",
+        "2": "POST নতুন কিছু তৈরি করে, অবস্থা বদলায়।"
+      }
+    },
+    {
+      "id": "sd-day-004-q10",
+      "difficulty": "easy",
+      "question": "Admin page-এ 'মুছুন' link ছিল GET /deleteProductNow?id=7। একটা browser extension link-গুলো আগেভাগে খুলে রাখত, আর product উধাও হলো। মূল ভুল কোনটা?",
+      "options": [
+        "Extension-টা ক্ষতিকর ছিল, নিয়মমতো চলা কোনো browser software কখনো নিজে থেকে link খোলে না",
+        "অবস্থা বদলানো কাজ GET দিয়ে করা হয়েছিল, অথচ GET-কে সবাই safe ধরে নেয়",
+        "Product-এর id URL-এ থাকায় যে কেউ সেটা দেখে ফেলেছিল",
+        "Server-এ HTTPS ছিল না, তাই extension request বদলে দিয়েছিল"
+      ],
+      "correctIndex": 1,
+      "explanation": "HTTP-র নিয়মে GET safe, তাই prefetch, crawler আর cache নির্ভয়ে GET link খোলে। মোছার কাজ DELETE (বা POST) দিয়ে করলে এমন হতো না।",
+      "whyWrong": {
+        "0": "Prefetch বা crawler GET খোলাকে নিরাপদ ধরে, নিয়ম মেনেই; ভুলটা API-র।",
+        "2": "Id URL-এ থাকা REST-এ স্বাভাবিক; সমস্যা হলো কোন method দিয়ে কাজটা হচ্ছে।",
+        "3": "HTTPS থাকলেও extension একই link খুলত; সমস্যাটা encryption-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q11",
+      "difficulty": "easy",
+      "question": "REST API-তে client JSON হিসেবে যা পায়, সেটাকে 'representation' বলা হয় কেন?",
+      "options": [
+        "কারণ এটা resource-এর একটা বর্ণনা; ভেতরে data কিভাবে রাখা আছে তা থেকে আলাদা হতে পারে",
+        "কারণ এটা database-এর row হুবহু, কোনো পরিবর্তন ছাড়া",
+        "কারণ REST-এ JSON বাধ্যতামূলক, XML বা অন্য format চলে না",
+        "কারণ representation শুধু client-এর পাঠানো request-এ থাকে, server-এর response-এ কখনো থাকে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Client resource নিজে পায় না, পায় তার একটা রূপ বা বর্ণনা। Database-এ product হয়তো তিনটা table-এ ছড়ানো; client একটা পরিষ্কার JSON দেখে।",
+      "whyWrong": {
+        "1": "Database-এর row হুবহু বের করে দেওয়াই একটা সাধারণ ভুল, এতে ভেতরের গঠন বাইরে ফাঁস হয়।",
+        "2": "JSON সবচেয়ে প্রচলিত, কিন্তু REST format বাধ্য করে না।",
+        "3": "Representation দুই দিকেই যায়: POST-এর body-তেও, response-এও।"
+      }
+    },
+    {
+      "id": "sd-day-004-q12",
+      "difficulty": "easy",
+      "question": "Product 7-এর শুধু দাম ৪৫০০ থেকে ৪২০০ করতে চান, বাকি সব যেমন আছে থাকুক। কোন method সবচেয়ে উপযুক্ত?",
+      "options": [
+        "PUT /products/7 body-তে শুধু {\"price\": 4200}",
+        "POST /products body-তে {\"id\": 7, \"price\": 4200}",
+        "PATCH /products/7 body-তে {\"price\": 4200}",
+        "GET /products/7?price=4200"
+      ],
+      "correctIndex": 2,
+      "explanation": "PATCH মানে আংশিক পরিবর্তন: শুধু পাঠানো field বদলায়। দাম বদলাবে, name আর stock যেমন ছিল থাকবে।",
+      "whyWrong": {
+        "0": "PUT পুরো resource বসায়, তাই শুধু price পাঠালে নিয়ম মেনে চলা server name আর stock মুছে দেবে।",
+        "1": "POST /products নতুন product তৈরির জন্য, আগেরটা বদলানোর জন্য না।",
+        "3": "GET কিছু বদলানোর জন্য না; query দিয়ে দাম বদলানো GET-এর safe নিয়ম ভাঙে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q13",
+      "difficulty": "easy",
+      "question": "GET /products/99 পাঠালেন, কিন্তু ৯৯ নম্বর product নেই। সঠিক উত্তর কোনটা?",
+      "options": [
+        "200 OK আর খালি body {}",
+        "404 Not Found",
+        "500 Internal Server Error",
+        "400 Bad Request"
+      ],
+      "correctIndex": 1,
+      "explanation": "Resource-টা নেই, এটাই 404-এর অর্থ। Client এটা দেখে বুঝতে পারে 'নেই' দেখাতে হবে, retry করার কিছু নেই।",
+      "whyWrong": {
+        "0": "200 মানে সফল আর data আছে; খালি body দিলে client ভাবতে পারে product আছে কিন্তু তথ্য নেই।",
+        "2": "500 server-এর ভেতরের ভুল; resource না থাকা server-এর ভুল না।",
+        "3": "Request-এর গঠন ঠিক ছিল; সমস্যা হলো ওই id-র কিছু নেই।"
+      }
+    },
+    {
+      "id": "sd-day-004-q14",
+      "difficulty": "easy",
+      "question": "তিন ধরনের API-র মধ্যে কোনটা একবার ছাড়ার পর বদলানো সাধারণত সবচেয়ে কঠিন?",
+      "options": [
+        "Internal API, কারণ নিজেদের team-এর মধ্যে সমন্বয় সবচেয়ে কঠিন",
+        "Partner API, কারণ চুক্তির কাগজ আইনজীবী ছাড়া বদলানো যায় না",
+        "সবগুলো সমান কঠিন, কারণ HTTP একই",
+        "Public API, কারণ কারা কিভাবে ব্যবহার করছে আপনি জানেনই না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Public API যে কেউ ব্যবহার করতে পারে, তাই কোনো পরিবর্তনে কার code ভাঙবে আপনি জানেন না, জানানোরও উপায় সীমিত। Internal আর partner API-র ব্যবহারকারী চেনা।",
+      "whyWrong": {
+        "0": "Internal API বদলানো তুলনামূলক সহজ, কারণ সব client নিজেদের; তবে পুরনো app version-এর কথা ভাবতে হয়।",
+        "1": "Partner চেনা, তাই কথা বলে পরিবর্তন সমন্বয় করা যায়; public-এর মতো অজানা না।",
+        "2": "Protocol একই হলেও কে ব্যবহার করছে সেটা জানা-না-জানাই পার্থক্য গড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q15",
+      "difficulty": "easy",
+      "question": "REST আসলে কী?",
+      "options": [
+        "HTTP-র একটা নতুন version, যেটা HTTP/2-এর পরে এসে API-র জন্য বিশেষভাবে বানানো",
+        "একটা architectural style, মানে API সাজানোর কিছু নিয়মের সমষ্টি",
+        "JSON পাঠানোর জন্য একটা JavaScript library",
+        "Database-এর সাথে কথা বলার একটা query language"
+      ],
+      "correctIndex": 1,
+      "explanation": "REST (Representational State Transfer) Roy Fielding ২০০০ সালে বর্ণনা করেন। এটা কোনো library বা protocol না, বরং resource, uniform interface, statelessness-এর মতো কিছু নিয়ম।",
+      "whyWrong": {
+        "0": "HTTP version (1.1, 2, 3) আলাদা জিনিস; REST HTTP-র উপর ব্যবহার হয়, কিন্তু নিজে HTTP-র version না।",
+        "2": "REST যেকোনো language-এ বানানো যায়, এটা কোনো library না।",
+        "3": "Database query language (যেমন SQL) আলাদা; REST client আর server-এর কথা বলার style।"
+      }
+    },
+    {
+      "id": "sd-day-004-q16",
+      "difficulty": "easy",
+      "question": "/products আর /products/7-এর মধ্যে পার্থক্য কী?",
+      "options": [
+        "/products একটা collection (সব product), /products/7 একটা নির্দিষ্ট product",
+        "/products শুধু admin-এর জন্য, /products/7 সাধারণ customer-এর জন্য",
+        "দুটো একই, শুধু দ্বিতীয়টায় page নম্বর 7",
+        "/products-এ শুধু POST চলে আর /products/7-এ শুধু GET চলে, অন্য কোনো method চলে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "REST-এ collection আর তার ভেতরের একটা resource-এর আলাদা ঠিকানা। GET /products তালিকা দেয়, GET /products/7 একটা product।",
+      "whyWrong": {
+        "1": "URL কে ব্যবহার করবে তা ঠিক করে না; অনুমতি আসে authorization থেকে।",
+        "2": "Page নম্বর সাধারণত query-তে যায় (?page=7), path-এর /7 সাধারণত resource-এর id।",
+        "3": "Collection-এ GET (তালিকা) আর POST (নতুন) দুটোই চলে; resource-এ GET, PUT, PATCH, DELETE।"
+      }
+    },
+    {
+      "id": "sd-day-004-q17",
+      "difficulty": "easy",
+      "question": "পুরো API-জুড়ে error response-এর JSON format একই রাখার মূল লাভ কী?",
+      "options": [
+        "Error response ছোট আর একই রকম হয়, তাই network খরচ আর server-এর CPU দুটোই কমে",
+        "Server-এ আর log রাখার দরকার পড়ে না",
+        "Error এলে status code দেওয়ার আর প্রয়োজন হয় না",
+        "Client একবার error সামলানোর code লিখলেই সব endpoint-এ কাজ করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "সব endpoint একই গঠনে (code, message, details) error দিলে client-এর একটাই handler লাগে। Endpoint-ভেদে আলাদা গঠন হলে প্রতিটার জন্য আলাদা code।",
+      "whyWrong": {
+        "0": "Format একই রাখা আকার কমানোর জন্য না; লাভটা আন্দাজযোগ্যতায়।",
+        "1": "Log আগের মতোই লাগে; requestId দিয়ে log খোঁজাই সহজ হয়।",
+        "2": "Status code থাকবেই; body-র format তার সাথে বাড়তি বিস্তারিত দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-004-q18",
+      "difficulty": "easy",
+      "question": "API-তে user-এর token পাঠানোর সবচেয়ে প্রচলিত আর নিরাপদ জায়গা কোনটা?",
+      "options": [
+        "URL-এর query-তে: /orders?token=abc123, যাতে প্রতিটা link-এ token নিজে থেকেই সাথে থাকে",
+        "Authorization header-এ: Authorization: Bearer abc123, HTTPS-এর উপর",
+        "URL-এর path-এ: /abc123/orders",
+        "GET request-এর body-তে JSON হিসেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Authorization header token পাঠানোর standard জায়গা। URL-এ রাখলে সেটা server log, proxy log আর browser history-তে থেকে যায়।",
+      "whyWrong": {
+        "0": "Query-র token log আর history-তে জমা থাকে, ফাঁস হওয়ার ঝুঁকি বেশি।",
+        "2": "Path-এ token রাখলে query-র মতোই log-এ যায়, আর URL resource-এর ঠিকানার অর্থ হারায়।",
+        "3": "GET-এর body অনেক server ও proxy উপেক্ষা করে; token header-এ দেওয়াই নিয়ম।"
+      }
+    },
+    {
+      "id": "sd-day-004-q19",
+      "difficulty": "easy",
+      "question": "API থেকে 429 Too Many Requests এলো। এর অর্থ কী?",
+      "options": [
+        "Server crash করেছে বা overload হয়ে গেছে, সব client-এর জন্য; কিছুক্ষণ পরে নিজে থেকেই আবার ঠিক হয়ে যাবে",
+        "Request-এর JSON-এ অনেক বেশি field ছিল",
+        "Client সীমার বেশি request পাঠিয়েছে; Retry-After দেখে অপেক্ষা করে আবার চেষ্টা করা উচিত",
+        "Token-এর মেয়াদ শেষ, আবার login করতে হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "429 মানে rate limit পার হয়েছে। Server সাধারণত Retry-After header-এ বলে দেয় কতক্ষণ পরে আবার চেষ্টা করা যাবে।",
+      "whyWrong": {
+        "0": "Server-এর সমস্যা 5xx দিয়ে বোঝায়; 429 client-এর অতিরিক্ত request-এর কারণে।",
+        "1": "Field বেশি হওয়া validation-এর বিষয় (400/422), request সংখ্যার না।",
+        "3": "Token-এর সমস্যা 401; 429 শুধু request-এর হার নিয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q20",
+      "difficulty": "easy",
+      "question": "GET /products endpoint-এ pagination (যেমন ?page=2&limit=20) রাখা হয় কেন?",
+      "options": [
+        "যাতে search engine page-গুলো আলাদা করে খুঁজে পায়",
+        "যাতে হাজার হাজার product একসাথে পাঠিয়ে response, database আর phone-এর memory-র উপর চাপ না পড়ে",
+        "যাতে প্রতিটা page-এর জন্য আলাদা token লাগে আর নিরাপত্তা বাড়ে",
+        "কারণ HTTP protocol নিজেই একটা response-এ ২০টার বেশি item পাঠাতে দেয় না, বেশি হলে বাকিটা কেটে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Collection বড় হতে থাকে। সব একসাথে পাঠালে response কয়েক MB, database-এর query ভারী, আর client-এর memory শেষ। টুকরো করে দিলে সবকিছু ছোট আর দ্রুত থাকে।",
+      "whyWrong": {
+        "0": "Pagination-এর উদ্দেশ্য API-র load আর response আকার; search engine-এর সাথে সম্পর্ক নেই।",
+        "2": "Page প্রতি আলাদা token লাগে না; একই Authorization header-ই চলে।",
+        "3": "HTTP response-এর item সংখ্যার এমন কোনো সীমা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-004-q21",
+      "difficulty": "medium",
+      "question": "Timeout-এর পরে নিচের কোন request কোনো বাড়তি ব্যবস্থা (যেমন idempotency key) ছাড়াই অন্ধভাবে retry করা নিরাপদ?",
+      "options": [
+        "POST /orders body-তে {\"productId\": 7, \"qty\": 1}",
+        "PUT /users/42/address body-তে পুরো নতুন ঠিকানা",
+        "POST /payments body-তে {\"amount\": 4500}",
+        "PATCH /products/7 body-তে \"stock ১ বাড়াও\" নির্দেশ"
+      ],
+      "correctIndex": 1,
+      "explanation": "PUT পুরো অবস্থা বসিয়ে দেয়, তাই একই ঠিকানা দশবার বসালেও শেষে একটাই ঠিকানা। এটা idempotent, তাই আবার পাঠানো নিরাপদ।",
+      "whyWrong": {
+        "0": "POST প্রতিবার নতুন order বানায়; প্রথমটা পৌঁছে থাকলে retry মানে duplicate।",
+        "2": "একই সমস্যা, এবার দুবার টাকা কাটা; এজন্যই payment API idempotency key নেয়।",
+        "3": "এই patch মান বসায় না, বাড়ায়; দুবার পৌঁছালে stock দুই বাড়বে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q22",
+      "difficulty": "medium",
+      "question": "DELETE /orders/7 প্রথমবার 204 দিল, timeout ভেবে client আবার পাঠাল, এবার 404। DELETE কি তবুও idempotent?",
+      "options": [
+        "না, কারণ দুবার আলাদা status code এসেছে",
+        "হ্যাঁ, কারণ idempotency মাপা হয় server-এর শেষ অবস্থা দিয়ে, আর দুবার পরেও order 7 নেই",
+        "না, কারণ দ্বিতীয় request-এ server একটা error দিয়েছে",
+        "হ্যাঁ, কিন্তু শুধু তখনই যদি দুবারই একই 204 status আসে; দ্বিতীয়বার 404 এলে আর idempotent থাকে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Idempotent মানে একবার আর বহুবার পাঠানোর শেষে server-এর অবস্থা একই। Order 7 প্রথমবারেই মুছেছে; পরের request কোনো বাড়তি পরিবর্তন করেনি, শুধু উত্তরটা আলাদা।",
+      "whyWrong": {
+        "0": "Response code আলাদা হতেই পারে; idempotency অবস্থার কথা বলে, উত্তরের না।",
+        "2": "404 এখানে 'আগেই মোছা হয়েছে' বোঝায়, এতে অবস্থার কোনো বাড়তি পরিবর্তন নেই।",
+        "3": "দুবার 204 আসা জরুরি না; শেষ অবস্থা একই থাকাই শর্ত।"
+      }
+    },
+    {
+      "id": "sd-day-004-q23",
+      "difficulty": "medium",
+      "question": "Product 2 এখন {id: 2, name: \"Nakshi Kantha\", price: 2200, stock: 10}। নিয়ম মেনে চলা একটা API-তে PUT /products/2 body {\"price\": 2000} পাঠালে কী হবে?",
+      "options": [
+        "শুধু price 2000 হবে, name আর stock আগের মতো থাকবে",
+        "Server 404 দেবে, কারণ PUT শুধু একদম নতুন resource তৈরির জন্য ব্যবহার হয়",
+        "Resource হবে {id: 2, price: 2000}; name আর stock আর থাকবে না",
+        "Server আরেকটা নতুন product তৈরি করবে, id হবে 3"
+      ],
+      "correctIndex": 2,
+      "explanation": "PUT মানে পাঠানো representation-ই পুরো নতুন অবস্থা। যে field পাঠাননি সেগুলো আর থাকে না। আংশিক বদলের জন্য PATCH।",
+      "whyWrong": {
+        "0": "এটা PATCH-এর আচরণ; PUT পুরো resource বদলে দেয়।",
+        "1": "PUT আগে থেকে থাকা resource বদলাতেও পারে, তৈরিও করতে পারে; 404 এখানে প্রযোজ্য না।",
+        "3": "PUT নির্দিষ্ট ঠিকানায় কাজ করে (/products/2); নতুন id-তে product বানায় POST।"
+      }
+    },
+    {
+      "id": "sd-day-004-q24",
+      "difficulty": "medium",
+      "question": "আপনার teammate-এর API সব ক্ষেত্রে 200 দেয়, ভুল হলে body-তে {\"success\": false}। Dashboard বলছে error rate 0%, অথচ user-রা অভিযোগ করছে। মূল সমস্যা কী?",
+      "options": [
+        "Dashboard-এর software-এ bug, তাই সংখ্যা ভুল দেখাচ্ছে",
+        "Monitoring, client library আর retry logic status code দেখে; সব 200 হওয়ায় কেউ error চিনতে পারছে না",
+        "User-রা ভুল app version ব্যবহার করছে, API-র সমস্যা নেই",
+        "Body-তে success: false থাকায় response আকারে বড় হয়ে যাচ্ছে, আর সেই কারণেই মাঝে মাঝে request timeout হচ্ছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "HTTP-র চারপাশের সব tool status code দিয়ে সাফল্য-ব্যর্থতা বোঝে। Error-কে 200 দিয়ে মুড়ে দিলে monitoring অন্ধ হয়, আর client কোনটা retry করবে বুঝতে পারে না।",
+      "whyWrong": {
+        "0": "Dashboard ঠিকই গুনছে: সব response 200, তাই সে error দেখতে পাচ্ছে না।",
+        "2": "সমস্যা API-র নকশায়; যেকোনো version-ই একই 200 পাচ্ছে।",
+        "3": "একটা ছোট field response-কে উল্লেখযোগ্যভাবে বড় করে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q25",
+      "difficulty": "medium",
+      "question": "Customer POST /orders পাঠাল, কিন্তু জামদানি শাড়ির stock শেষ। JSON-এর গঠন ঠিক ছিল। সবচেয়ে উপযুক্ত status কোনটা?",
+      "options": [
+        "409 Conflict, body-তে code: OUT_OF_STOCK",
+        "500 Internal Server Error, কারণ order তৈরি হয়নি",
+        "404 Not Found, কারণ product-টা এখন পাওয়া যাচ্ছে না",
+        "200 OK, body-তে message: \"stock শেষ\""
+      ],
+      "correctIndex": 0,
+      "explanation": "Request ঠিক, কিন্তু resource-এর বর্তমান অবস্থার (stock 0) সাথে সংঘাত, তাই 409। Body-তে স্থির error code দিলে app সঠিক বার্তা দেখাতে পারে।",
+      "whyWrong": {
+        "1": "Server ঠিকঠাক কাজ করেছে, ভুল কিছু হয়নি; 5xx দিলে monitoring ভুল alert দেবে আর client retry করবে।",
+        "2": "Product আছে, শুধু stock নেই; 404 দিলে client ভাববে product-ই মুছে গেছে।",
+        "3": "200 মানে সফল; order হয়নি, তাই client ভুল বুঝবে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q26",
+      "difficulty": "medium",
+      "question": "POST /orders body {\"productId\": 7, \"qty\": -5}। JSON পড়া যাচ্ছে, কিন্তু qty ঋণাত্মক। ভালো API কী দেবে?",
+      "options": [
+        "201 Created, কারণ JSON ঠিক আছে",
+        "500 Internal Server Error, কারণ server order তৈরি করতে পারেনি",
+        "405 Method Not Allowed",
+        "422 Unprocessable Content (অনেক API এখানে 400 দেয়)"
+      ],
+      "correctIndex": 3,
+      "explanation": "গঠন ঠিক কিন্তু মান অর্থহীন, এটা client-এর ভুল, তাই 4xx। 422 নির্দিষ্টভাবে এটা বোঝায়, অনেকে 400 ব্যবহার করে; পুরো API-তে একটা নিয়ম রাখাই আসল।",
+      "whyWrong": {
+        "0": "Validation না থাকলে এমন হয় (lab-এর json-server-এ দেখেছেন); আসল API-তে এটা bug।",
+        "1": "Server-এর কিছু ভাঙেনি; ভুলটা client-এর পাঠানো data-তে।",
+        "2": "405 মানে এই path-এ POST method-ই সমর্থিত না, এখানে তা সত্য না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q27",
+      "difficulty": "medium",
+      "question": "দেশিহাটের API-তে GET /orders আর POST /orders আছে, কিন্তু কেউ DELETE /orders (পুরো collection) পাঠাল। সঠিক উত্তর কোনটা?",
+      "options": [
+        "404 Not Found, কারণ /orders নামে কিছু নেই",
+        "405 Method Not Allowed, কারণ path আছে কিন্তু এই method সমর্থিত না",
+        "403 Forbidden, কারণ শুধু admin-রাই একসাথে সব order মুছে ফেলতে পারে",
+        "204 No Content, কারণ কোনো order মোছার মতো ছিল না"
+      ],
+      "correctIndex": 1,
+      "explanation": "/orders resource আছে, কিন্তু এর উপর DELETE operation নেই, এটাই 405-এর অর্থ। Response-এ Allow header দিয়ে কোন method চলে তা জানানো যায়।",
+      "whyWrong": {
+        "0": "Path আছে, GET আর POST চলে; তাই 'নেই' বলা ভুল তথ্য।",
+        "2": "403 অনুমতির প্রশ্ন; এখানে কারও জন্যই এই operation নেই।",
+        "3": "204 মানে সফল হয়েছে, অথচ কিছুই করা হয়নি আর এই কাজ সমর্থিতও না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q28",
+      "difficulty": "medium",
+      "question": "GET /products?page=7&limit=50 (page 1 থেকে শুরু)। Offset pagination-এ database কতটা row বাদ দিয়ে পড়া শুরু করবে?",
+      "options": ["350", "300", "57", "250"],
+      "correctIndex": 1,
+      "explanation": "Offset = (page − 1) × limit = 6 × 50 = 300। প্রথম ৬টা page-এর ৩০০টা row বাদ দিয়ে পরের ৫০টা ফেরত আসে।",
+      "whyWrong": {
+        "0": "7 × 50 = 350 নিলে page 7-এর বদলে page 8-এর শুরু পাওয়া যায়।",
+        "2": "Page আর limit যোগ করা অর্থহীন; offset গুণফল দিয়ে হয়।",
+        "3": "250 হলো page 6-এর offset, এক page পিছিয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q29",
+      "difficulty": "medium",
+      "question": "দেশিহাটে ১,২৬০টা product, API প্রতি page-এ ৫০টা দেয়। সব product আনতে client-কে কতগুলো request পাঠাতে হবে?",
+      "options": ["25", "63", "26", "50"],
+      "correctIndex": 2,
+      "explanation": "1260 ÷ 50 = 25.2, অর্থাৎ ২৫টা ভরা page আর শেষে ১০টার একটা page। মোট ২৬টা request (উপরের দিকে round)।",
+      "whyWrong": {
+        "0": "25টা page-এ ১,২৫০টা আসে, শেষের ১০টা বাদ পড়ে।",
+        "1": "63 আসে 20 দিয়ে ভাগ করলে; এখানে limit 50।",
+        "3": "50 হলো প্রতি page-এর item সংখ্যা, page সংখ্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q30",
+      "difficulty": "medium",
+      "question": "একটা public API-র rate limit ঘণ্টায় ৫,০০০ request। আপনার app-এর প্রতিটা page খুলতে ৪টা API call লাগে। এক ঘণ্টায় সর্বোচ্চ কতবার page খোলা যাবে?",
+      "options": ["5,000", "20,000", "1,200", "1,250"],
+      "correctIndex": 3,
+      "explanation": "প্রতিবার page খোলায় ৪টা request খরচ হয়। 5000 ÷ 4 = 1,250 বার। Call সংখ্যা কমালে (যেমন একটা endpoint-এ দরকারি সব data) এই সংখ্যা বাড়ে।",
+      "whyWrong": {
+        "0": "5,000 request-এর সীমা, page view-এর না; প্রতি view-এ ৪টা খরচ হয়।",
+        "1": "গুণ করা হয়েছে, অথচ ভাগ করতে হবে।",
+        "2": "1,200 ভুল হিসাব; 5000 ÷ 4 ঠিক 1,250।"
+      }
+    },
+    {
+      "id": "sd-day-004-q31",
+      "difficulty": "medium",
+      "question": "App-এর product list screen আগে GET /products থেকে ২০টা id পায়, তারপর প্রতিটা product-এর জন্য আলাদা GET /products/{id}, একটার পর একটা। প্রতি round trip ৮০ms হলে screen-এর data আসতে কত সময়?",
+      "options": [
+        "প্রায় 1,680ms",
+        "প্রায় 1,600ms",
+        "প্রায় 160ms",
+        "প্রায় 80ms"
+      ],
+      "correctIndex": 0,
+      "explanation": "মোট request = 1 (তালিকা) + 20 (প্রতিটা product) = 21। একটার পর একটা হলে 21 × 80 = 1,680ms। তালিকার response-এই দরকারি field দিলে একটা round trip-এ কাজ হয়ে যেত।",
+      "whyWrong": {
+        "1": "শুধু ২০টা detail call গোনা হয়েছে, প্রথম তালিকার call বাদ।",
+        "2": "দুটো round trip ধরা হয়েছে; আসলে ২১টা, একটার পর একটা।",
+        "3": "একটা round trip-এ সব আসলে এমন হতো, কিন্তু এই design-এ ২১টা লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q32",
+      "difficulty": "medium",
+      "question": "v1 API-তে order-এর JSON-এ \"price\" field আছে। Team সেটার নাম বদলে \"amount\" করতে চায়। কোন উপায় পুরনো client না ভেঙে সবচেয়ে নিরাপদ?",
+      "options": [
+        "আজ রাতেই নাম বদলে দেওয়া, কারণ field-এর নাম ছোট একটা পরিবর্তন",
+        "কিছুদিন দুটো field-ই পাঠানো, price-কে deprecated ঘোষণা করা, অথবা নতুন version (v2)-এ বদলানো",
+        "পুরনো client-দের email করে বলা app update করতে, তারপর এক সপ্তাহ অপেক্ষা করে নাম বদলে দেওয়া, কারণ ততদিনে সবাই জেনে যাবে",
+        "price field-টা খালি (null) পাঠানো শুরু করা, যাতে client নিজেই বুঝে নেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Field-এর নাম বদলানো breaking change: পুরনো client price খুঁজবে আর পাবে না। নতুন field যোগ করে কিছুদিন পুরনোটাও রাখা, বা নতুন version, পুরনো client-কে সময় দেয়।",
+      "whyWrong": {
+        "0": "পুরনো client-এর code price-এর উপর নির্ভর করে, নাম বদলালেই ভাঙবে।",
+        "2": "সবাই email পড়ে না, আর পুরনো mobile app মাসের পর মাস phone-এ থেকে যায়।",
+        "3": "null পাঠানোও breaking change; client-এর হিসাব ভুল হবে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q33",
+      "difficulty": "medium",
+      "question": "Order JSON-এ নতুন একটা ঐচ্ছিক field \"giftWrap\" যোগ করা হলো। সাধারণত এর জন্য নতুন API version লাগে কি?",
+      "options": [
+        "হ্যাঁ, JSON-এর যেকোনো পরিবর্তনেই নতুন version লাগে",
+        "হ্যাঁ, কারণ পুরনো client অচেনা কোনো field দেখলেই JSON parse করতে না পেরে সাথে সাথে crash করবে",
+        "না, নতুন ঐচ্ছিক field যোগ সাধারণত non-breaking; পুরনো client সেটা উপেক্ষা করে",
+        "না, কারণ REST API-তে কখনো version লাগে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "যোগ করা সাধারণত নিরাপদ, কারণ পুরনো client নিজের চেনা field-গুলোই পড়ে। মোছা, নাম বদলানো বা type বদলানো breaking। তবে client-কেও অচেনা field উপেক্ষা করতে লিখতে হয়।",
+      "whyWrong": {
+        "0": "সব পরিবর্তনে version বদলালে version-এর পাহাড় জমে; শুধু breaking change-এ লাগে।",
+        "1": "ঠিকভাবে লেখা client অচেনা field উপেক্ষা করে; সেভাবে লেখাই নিয়ম।",
+        "3": "Breaking change এলে REST API-তেও version লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q34",
+      "difficulty": "medium",
+      "question": "Customer order cancel করতে চায়। নিচের কোনটা REST-এর সাথে সবচেয়ে ভালো মেলে?",
+      "options": [
+        "GET /orders/42/cancel",
+        "POST /cancelOrder?id=42",
+        "DELETE /orders/42, order-এর record database থেকে একেবারে মুছে দিয়ে",
+        "POST /orders/42/cancellation (cancellation-কে resource ধরে)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cancel একটা action, যেটা CRUD-এ ঠিক বসে না। তাই action-কে একটা resource হিসেবে তৈরি করা হয় (cancellation), অথবা PATCH দিয়ে status বদলানো হয়।",
+      "whyWrong": {
+        "0": "GET দিয়ে অবস্থা বদলানো safe নিয়ম ভাঙে; prefetch বা crawler order cancel করে দিতে পারে।",
+        "1": "URL-এ ক্রিয়া, আর resource-এর ঠিকানা query-তে; REST-এর resource ধারণা হারায়।",
+        "2": "Cancel মানে order-এর ইতিহাস মুছে ফেলা না; refund, হিসাব আর support-এর জন্য record দরকার।"
+      }
+    },
+    {
+      "id": "sd-day-004-q35",
+      "difficulty": "medium",
+      "question": "৩টা API server load balancer-এর পেছনে। একটা server user-এর 'cart' নিজের memory-তে রাখে। User মাঝে মাঝে অভিযোগ করে cart খালি হয়ে যায়। কারণ কী?",
+      "options": [
+        "অন্য server-এ request গেলে সে cart জানে না; state server-এর memory-তে না রেখে token বা shared store-এ রাখতে হবে",
+        "Browser cart-এর cookie মুছে ফেলছে, server-এর কোনো দোষ নেই",
+        "Database-এ cart রাখলে আরও দ্রুত খালি হয়, তাই memory-ই ঠিক জায়গা",
+        "তিনটা server থাকায় network বেশি ধীর হয়ে যায়, তাই cart-এর session timeout হয়ে কিছুক্ষণ পরপর নিজে থেকেই মুছে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Server-এর memory-তে client-এর state রাখলে পরের request অন্য server-এ গেলে সেটা পাওয়া যায় না। Stateless নকশায় state থাকে token-এ বা সবার জন্য shared database/cache-এ।",
+      "whyWrong": {
+        "1": "Cookie ঠিক থাকলেও cart যে server-এর memory-তে, request সেখানে না গেলে cart দেখা যায় না।",
+        "2": "Database বা shared store-এ রাখলেই সব server একই cart দেখে, খালি হয় না।",
+        "3": "সমস্যা গতির না, কোন server request পাচ্ছে তার; memory-র state অন্য server জানে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q36",
+      "difficulty": "medium",
+      "question": "Mobile app error message-এর লেখা মিলিয়ে কাজ করত: if (message === \"Out of stock\")। পরে API message বাংলায় বদলাল, app ভেঙে গেল। কী থাকলে এটা হতো না?",
+      "options": [
+        "Message সবসময় English রাখার একটা কড়া নিয়ম, যাতে API team-এর কেউ কখনো error-এর লেখাটা বদলাতে না পারে",
+        "Error-এ আলাদা একটা স্থির machine-readable code (যেমন OUT_OF_STOCK), যেটা message বদলালেও বদলায় না",
+        "Error-এর জন্য 200 status, যাতে app সবসময় body পড়ে",
+        "Message-এর বদলে stack trace পাঠানো, যাতে app নিজেই কারণ বোঝে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Message মানুষের জন্য, সেটা বদলাতেই পারে (ভাষা, বানান)। Client-এর logic-এর জন্য স্থির code field দিলে message যেমন খুশি বদলানো যায়।",
+      "whyWrong": {
+        "0": "এতে সমস্যা লুকায়, যায় না; বানান বা লেখার ধরন বদলালেও app আবার ভাঙবে।",
+        "2": "200 দিলে monitoring আর retry logic অন্ধ হয়, মূল সমস্যারও সমাধান হয় না।",
+        "3": "Stack trace ভেতরের তথ্য ফাঁস করে, আর client-এর জন্য নির্ভরযোগ্য সংকেতও না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q37",
+      "difficulty": "medium",
+      "question": "User page 1 (offset 0, limit 20) দেখছিল। এর মধ্যে তালিকার শুরুতে একটা নতুন product যোগ হলো। এবার page 2 (offset 20) চাইলে কী হতে পারে?",
+      "options": [
+        "Page 2 খালি আসবে, কারণ তালিকা বদলেছে",
+        "Server 409 Conflict দেবে",
+        "Page 1-এর শেষ product-টা page 2-তে আবার দেখা যাবে, কারণ সব item এক ঘর পিছিয়ে গেছে",
+        "নতুন product-টা page 2-এর শেষে চলে আসবে, কারণ নতুন item সবসময় পরের page-এ গিয়ে যোগ হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Offset গোনে অবস্থান দিয়ে। শুরুতে একটা item ঢুকলে সব এক ঘর সরে যায়, তাই আগের ২০ নম্বর item এখন ২১ নম্বরে, page 2-তে আবার আসে। Cursor pagination ('এই item-এর পর থেকে') এই সমস্যা এড়ায়।",
+      "whyWrong": {
+        "0": "তালিকায় item আছে; offset 20-এর পরের item-গুলো ঠিকই আসবে।",
+        "1": "Offset pagination তালিকা বদলানো ধরতে পারে না, কোনো conflict-ও জানায় না।",
+        "3": "নতুন item শুরুতে ঢুকেছে, তাই সেটা page 1-এর অংশ; user সেটা page 2-তে পাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q38",
+      "difficulty": "medium",
+      "question": "User-এর token-এর মেয়াদ গতকাল শেষ হয়েছে, সে GET /orders পাঠাল। কোন উত্তর সবচেয়ে সঠিক?",
+      "options": [
+        "401 Unauthorized, যাতে app নতুন করে login বা token refresh করে",
+        "403 Forbidden, কারণ token-এর মেয়াদ শেষ হওয়ায় তার আর অনুমতি নেই",
+        "404 Not Found, কারণ তার order খুঁজে পাওয়া যায়নি",
+        "500 Internal Server Error, কারণ token যাচাই ব্যর্থ"
+      ],
+      "correctIndex": 0,
+      "explanation": "মেয়াদোত্তীর্ণ token মানে server এখন নিশ্চিত না আপনি কে, তাই 401। App 401 দেখে refresh token দিয়ে নতুন token নেয় বা login screen দেখায়।",
+      "whyWrong": {
+        "1": "403 পরিচয় নিশ্চিত হওয়ার পরে অনুমতি না থাকলে; এখানে পরিচয়ই প্রমাণিত না।",
+        "2": "Order আছে কিনা সেই প্রশ্নে পৌঁছানোর আগেই পরিচয় যাচাই ব্যর্থ।",
+        "3": "Token যাচাই ঠিকঠাক কাজ করেছে, ফল 'মেয়াদ শেষ'; এটা server-এর ভুল না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q39",
+      "difficulty": "medium",
+      "question": "Customer A login করে GET /orders/99 চাইল, কিন্তু order 99 customer B-এর। কোন উত্তর ভালো?",
+      "options": [
+        "200 OK আর order-এর পুরো data, কারণ A তো ঠিকঠাক login করা আছে",
+        "500 Internal Server Error",
+        "401 Unauthorized, যাতে A আবার login করে",
+        "403 Forbidden, বা order-এর অস্তিত্বই লুকাতে চাইলে 404"
+      ],
+      "correctIndex": 3,
+      "explanation": "A-র পরিচয় জানা, কিন্তু অন্যের order দেখার অধিকার নেই, তাই 403। অনেক API 404 দেয়, যাতে বাইরের কেউ id বদলে বদলে কোন order আছে তা জানতে না পারে।",
+      "whyWrong": {
+        "0": "Login থাকা মানেই সব order দেখার অধিকার না; এটা একটা পরিচিত নিরাপত্তা bug।",
+        "1": "Server ঠিকঠাক অনুমতি যাচাই করেছে; এটা server-এর ভুল না।",
+        "2": "আবার login করলেও A, B-এর order দেখার অধিকার পাবে না; সমস্যা পরিচয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q40",
+      "difficulty": "medium",
+      "question": "POST /orders-এর উত্তরে 201 Created এলো। Client নতুন order-এর ঠিকানা কোথা থেকে জানবে?",
+      "options": [
+        "Location header থেকে, যেমন Location: /orders/42",
+        "Client নিজে শেষ order-এর id-তে ১ যোগ করে আন্দাজ করবে",
+        "Retry-After header থেকে",
+        "আবার POST /orders পাঠিয়ে"
+      ],
+      "correctIndex": 0,
+      "explanation": "201-এর সাথে Location header নতুন resource-এর ঠিকানা দেয়। Client সেখানে GET পাঠিয়ে order-এর অবস্থা দেখতে পারে।",
+      "whyWrong": {
+        "1": "একসাথে অনেকে order দিলে id আন্দাজ ভুল হবে, আর অন্যের order-এ গিয়ে পড়তে পারে।",
+        "2": "Retry-After কতক্ষণ পরে আবার চেষ্টা করতে হবে তা বলে (যেমন 429-এ), ঠিকানা না।",
+        "3": "আবার POST মানে আরেকটা order তৈরি, ঠিকানা জানা না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q41",
+      "difficulty": "hard",
+      "question": "PATCH /carts/5 body: [{\"op\": \"add\", \"path\": \"/items/-\", \"value\": {\"productId\": 7}}] (list-এর শেষে item যোগ)। Timeout-এর পরে client একই request আবার পাঠাল, দুটোই server-এ পৌঁছেছে। কী হবে?",
+      "options": [
+        "কিছুই বদলাবে না, কারণ PATCH সবসময় idempotent",
+        "Server দ্বিতীয়টা 409 দিয়ে আটকে দেবে, কারণ একই body দুবার এসেছে",
+        "Cart-এ product 7 দুবার যোগ হবে, কারণ এই patch মান বসায় না, যোগ করে",
+        "Cart পুরোটা মুছে শুধু product 7 থাকবে, কারণ এখানে PATCH আসলে PUT-এর মতো কাজ করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "'List-এ যোগ করো' ধরনের patch প্রতিবার অবস্থা বদলায়, তাই idempotent না। এজন্যই HTTP spec PATCH-কে idempotent ধরে না; retry নিরাপদ করতে idempotency key বা 'মান বসানো' ধরনের patch লাগে।",
+      "whyWrong": {
+        "0": "PATCH নিজে থেকে idempotent না; শুধু 'মান বসানো' patch তেমন হয়।",
+        "1": "Server নিজে থেকে duplicate চেনে না, যদি না idempotency key-র মতো কিছু থাকে।",
+        "3": "PATCH আংশিক পরিবর্তন; পুরো resource বদলানো PUT-এর আচরণ।"
+      }
+    },
+    {
+      "id": "sd-day-004-q42",
+      "difficulty": "hard",
+      "question": "Payment API idempotency key নেয়। Client key \"k-81\" দিয়ে 4500 টাকার payment পাঠাল, তারপর একই key দিয়ে 5000 টাকার request পাঠাল। ভালো server কী করবে?",
+      "options": [
+        "দ্বিতীয়টাকে একদম নতুন payment ধরে 5000 টাকা কাটবে, কারণ body তো আলাদা",
+        "প্রথম payment-এর amount চুপচাপ 5000-এ বদলে দেবে",
+        "একই key-তে আলাদা body এসেছে বলে error দেবে, কোনো নতুন charge করবে না",
+        "Key উপেক্ষা করে দুটোই process করবে, কারণ key শুধু তথ্যের জন্য"
+      ],
+      "correctIndex": 2,
+      "explanation": "Idempotency key-র অর্থ 'এটা একই কাজের পুনরাবৃত্তি'। একই key-তে আলাদা body মানে client-এর bug, তাই নিরাপদ পথ হলো error দেওয়া। আগের ফলাফল বদলানো বা নতুন charge দুটোই বিপজ্জনক।",
+      "whyWrong": {
+        "0": "তাহলে key-র কোনো অর্থ থাকে না; client-এর bug-এ টাকা দুবার কাটবে।",
+        "1": "হয়ে যাওয়া payment চুপচাপ বদলানো হিসাব আর বিশ্বাস দুটোই নষ্ট করে।",
+        "3": "Key উপেক্ষা করলে duplicate payment ঠেকানোর পুরো উদ্দেশ্যই বৃথা।"
+      }
+    },
+    {
+      "id": "sd-day-004-q43",
+      "difficulty": "hard",
+      "question": "একজন developer প্রতিবার retry-র সময় নতুন UUID দিয়ে Idempotency-Key header বানায়। এতে কী হবে?",
+      "options": [
+        "কোনো সমস্যা নেই, key থাকলেই server duplicate ধরে",
+        "এতে নিরাপত্তা বাড়ে, কারণ একই key দুবার পাঠালে মাঝপথে কেউ সেটা চুরি করে আরেকটা payment-এ ব্যবহার করতে পারত",
+        "Server সব request reject করবে, কারণ UUID idempotency key হিসেবে চলে না",
+        "Server প্রতিটা retry-কে নতুন কাজ ভাববে, duplicate আটকাবে না; key হবে প্রতিটা আসল কাজে একটা, retry-তে একই"
+      ],
+      "correctIndex": 3,
+      "explanation": "Server একই key দেখেই বোঝে 'এটা আগের কাজের retry'। প্রতি retry-তে নতুন key মানে server-এর কাছে প্রতিটা আলাদা কাজ, ফলে duplicate তৈরি হয়।",
+      "whyWrong": {
+        "0": "Key থাকা না, key একই থাকাটাই duplicate ধরার শর্ত।",
+        "1": "Retry-তে একই key পাঠানোই নকশার উদ্দেশ্য; নিরাপত্তা আসে auth আর HTTPS থেকে।",
+        "2": "UUID খুব প্রচলিত idempotency key; সমস্যা হলো প্রতিবার নতুন বানানো।"
+      }
+    },
+    {
+      "id": "sd-day-004-q44",
+      "difficulty": "hard",
+      "question": "App POST /orders পাঠায়, ৫ সেকেন্ডে উত্তর না এলে আবার পাঠায়, সর্বোচ্চ ৩ বার retry। কোনো idempotency key নেই, আর server ধীর কিন্তু প্রতিটা request-ই শেষ পর্যন্ত process করে। সবচেয়ে খারাপ ক্ষেত্রে কয়টা order তৈরি হতে পারে?",
+      "options": ["1", "3", "4", "2"],
+      "correctIndex": 2,
+      "explanation": "প্রথম request আর ৩টা retry মিলে মোট ৪টা request server-এ যায়। POST idempotent না, তাই প্রতিটা আলাদা order বানাতে পারে: সবচেয়ে খারাপ ক্ষেত্রে ৪টা।",
+      "whyWrong": {
+        "0": "এক order হতো যদি idempotency key থাকত বা retry না হতো।",
+        "1": "৩ হলো শুধু retry-র সংখ্যা; প্রথম মূল request-টা বাদ পড়েছে।",
+        "3": "দুটো ধরা মানে শুধু এক retry; এখানে সর্বোচ্চ ৩টা retry।"
+      }
+    },
+    {
+      "id": "sd-day-004-q45",
+      "difficulty": "hard",
+      "question": "একটা API-তে প্রতিটা resource-এর আলাদা URL আছে (/orders/42, /products/7), কিন্তু সব request POST, আর সব response 200, error body-তে। Richardson Maturity Model-এ এটা কোন level?",
+      "options": ["Level 0", "Level 2", "Level 3", "Level 1"],
+      "correctIndex": 3,
+      "explanation": "আলাদা resource URL থাকায় Level 0 পেরিয়েছে, কিন্তু HTTP method আর status code-এর অর্থ ব্যবহার হচ্ছে না, তাই Level 2-তে পৌঁছায়নি। এটা Level 1।",
+      "whyWrong": {
+        "0": "Level 0-তে একটাই URL থাকে; এখানে resource-ভিত্তিক URL আছে।",
+        "1": "Level 2-তে সঠিক method (GET, POST, DELETE…) আর status code লাগে, এখানে নেই।",
+        "2": "Level 3 মানে Level 2 + HATEOAS link; এখানে Level 2-ই নেই।"
+      }
+    },
+    {
+      "id": "sd-day-004-q46",
+      "difficulty": "hard",
+      "question": "Order-এর response-এ links.cancel থাকে শুধু যতক্ষণ order cancel করা যায়; ship হলে link আর আসে না। এই HATEOAS নকশার মূল লাভ কী?",
+      "options": [
+        "Client-কে 'কখন cancel করা যায়' নিয়ম নিজে জানতে বা hardcode করতে হয় না; server-এর নিয়ম বদলালেও client ঠিক থাকে",
+        "Response ছোট হয়, তাই network খরচ উল্লেখযোগ্যভাবে কমে",
+        "Link থাকলে authentication-এর আর দরকার পড়ে না",
+        "HATEOAS থাকলে API-কে আর কখনো version করতে হয় না, কারণ client সব URL link থেকেই পায়, নিজে কোনো নিয়ম বা ঠিকানা জানে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Server response-এ বলে দেয় এখন কী কী করা যায়। নিয়ম (যেমন 'ship হলে cancel না') server-এ থাকে, client শুধু link আছে কিনা দেখে।",
+      "whyWrong": {
+        "1": "Link যোগ করলে response বরং একটু বড় হয়; লাভটা নিয়ম আলাদা রাখায়।",
+        "2": "Link দেখলেও request-এ পরিচয় আর অনুমতি যাচাই লাগবেই।",
+        "3": "HATEOAS কিছু পরিবর্তন সহজ করে, কিন্তু breaking change-এ version-এর প্রয়োজন পুরোপুরি দূর করে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q47",
+      "difficulty": "hard",
+      "question": "বেশিরভাগ বাস্তব 'REST API' Richardson Level 2-তে থামে, Level 3 (HATEOAS)-এ যায় না। এর সবচেয়ে যুক্তিসঙ্গত কারণ কোনটা?",
+      "options": [
+        "HTTP-তে response-এর ভেতরে link পাঠানো প্রযুক্তিগতভাবে সম্ভব না",
+        "Level 3 API সবসময় Level 2-এর চেয়ে ধীর চলে, কারণ প্রতিটা response-এ link বানাতে database-এ বাড়তি query লাগে",
+        "Client সাধারণত documentation (যেমন OpenAPI) দেখে আগেই জানে কোন URL ডাকবে; link ধরে চলা client খুব কম লেখা হয়",
+        "Roy Fielding নিজেই Level 3-কে ঐচ্ছিক বলেছিলেন, তাই বাস্তবে কোনো team এটাকে খুব একটা গুরুত্ব দেয় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "HATEOAS-এর লাভ পেতে client-কে link পড়ে চলার মতো করে লিখতে হয়। বাস্তবে app-এর screen আর flow আগেই ঠিক থাকে আর spec দিয়ে চুক্তি লেখা হয়, তাই বেশিরভাগ team Level 2-কেই যথেষ্ট মনে করে।",
+      "whyWrong": {
+        "0": "JSON-এ link রাখা খুবই সম্ভব, GitHub-এর মতো API কিছু link দেয়ও।",
+        "1": "Link যোগ করলে গতির উল্লেখযোগ্য পার্থক্য হয় না; কারণটা ব্যবহারিক লাভের।",
+        "3": "Fielding উল্টো বলেছেন: hypermedia ছাড়া API তাঁর সংজ্ঞায় REST-ই না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q48",
+      "difficulty": "hard",
+      "question": "PUT /carts/abc123 (client নিজে id বানিয়েছে) প্রথমবার পাঠালে cart তৈরি হলো, timeout ভেবে client আবার একই body পাঠাল। কোন status ক্রম সবচেয়ে যুক্তিসঙ্গত, আর server-এ কয়টা cart?",
+      "options": [
+        "প্রথমে 201 Created, পরে 200 OK বা 204; cart একটাই",
+        "দুবারই 201 Created; cart দুটো",
+        "প্রথমে 201, পরে 409 Conflict কারণ ঠিকানাটা আগেই নেওয়া; cart দুটো",
+        "প্রথমে 200, পরে 404; cart একটাও না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Client ঠিকানা জানলে PUT দিয়ে তৈরি করা যায়: নতুন হলে 201, আগে থাকলে বদলানো (200/204)। একই ঠিকানায় একই body, তাই cart একটাই; PUT idempotent।",
+      "whyWrong": {
+        "1": "একই URL-এ PUT একটাই resource বোঝায়, দুটো cart হওয়া সম্ভব না।",
+        "2": "PUT আগে থাকা resource বদলাতে পারে, conflict না; আর cart দুটো হয় না।",
+        "3": "PUT-এর পরে resource থাকে, মুছে যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q49",
+      "difficulty": "hard",
+      "question": "একটা CDN আপনার API-র সামনে। কেন CDN নিরাপদে GET /products-এর response cache করতে পারে, কিন্তু POST /orders-এর না?",
+      "options": [
+        "কারণ GET response সবসময় POST-এর চেয়ে ছোট হয়",
+        "কারণ POST request HTTPS ছাড়া পাঠানো যায় না, তাই মাঝের CDN সেটার ভেতরের body বা উত্তর কোনোটাই পড়তে পারে না",
+        "কারণ CDN শুধু ছবি cache করে, JSON করে না",
+        "কারণ GET safe: আবার পাঠালে কিছু বদলায় না, তাই আগের উত্তর দেওয়া চলে; POST-কে প্রতিবার server-এ যেতে হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Uniform interface-এর কারণে মাঝের অংশও জানে GET-এর অর্থ। Safe request-এর উত্তর (Cache-Control অনুযায়ী) আবার দেওয়া যায়; POST-এর উত্তর cache করলে order আসলে তৈরিই হতো না।",
+      "whyWrong": {
+        "0": "আকার এখানে বিবেচ্য না; বড় GET response-ও cache হয়।",
+        "1": "GET আর POST দুটোই HTTPS-এ যায়; CDN TLS শেষ করে দুটোই দেখতে পারে।",
+        "2": "CDN JSON সহ যেকোনো cacheable response রাখতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q50",
+      "difficulty": "hard",
+      "question": "API 429 দিল, সাথে Retry-After: 30। আপনার client library সাথে সাথে loop-এ আরও ৩বার retry করে। কোন আচরণ ঠিক?",
+      "options": [
+        "অন্তত ৩০ সেকেন্ড অপেক্ষা করে আবার চেষ্টা, আর দরকার হলে ক্রমশ বেশি অপেক্ষা (backoff)",
+        "আরও দ্রুত retry করা, যাতে সীমা খোলার ঠিক মুহূর্তেই request-টা অন্য সবার আগে ঢুকে যায়",
+        "429-কে স্থায়ী error ধরে user-কে বলা 'service বন্ধ'",
+        "আরেকটা API key দিয়ে একই request পাঠিয়ে সীমা এড়ানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "429 সাময়িক: server বলছে কখন আবার আসতে হবে। সাথে সাথে retry সীমা আরও খরচ করে আর চাপ বাড়ায়; Retry-After মেনে অপেক্ষা করাই নিয়ম।",
+      "whyWrong": {
+        "1": "দ্রুত retry-তে প্রতিটাই আবার 429 পাবে, আর server-এর উপর চাপ বাড়বে।",
+        "2": "429 স্থায়ী না; অপেক্ষা করলেই আবার কাজ করবে।",
+        "3": "Key বদলে সীমা এড়ানো সাধারণত শর্তভঙ্গ, আর provider এটা ধরে ফেলে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q51",
+      "difficulty": "hard",
+      "question": "একটা partner API-র সীমা প্রতি key-তে মিনিটে ১০০ request। আপনার রাতের batch job-কে ৪,৫০০টা call করতে হবে। সীমা না ভেঙে সবচেয়ে কম কত সময় লাগবে?",
+      "options": ["৪৫ মিনিট", "৪.৫ মিনিট", "৪৫০ মিনিট", "৭৫ মিনিট"],
+      "correctIndex": 0,
+      "explanation": "মিনিটে সর্বোচ্চ ১০০টা, তাই 4500 ÷ 100 = 45 মিনিট। Job-এর পরিকল্পনা এই হিসাব দিয়েই করতে হয়, নাহলে মাঝপথে 429 আসবে।",
+      "whyWrong": {
+        "1": "১০০০/মিনিট ধরে হিসাব করলে এটা আসে; সীমা ১০০।",
+        "2": "১০/মিনিট ধরে হিসাব করলে এটা আসে, দশ গুণ বেশি।",
+        "3": "৬০ দিয়ে ভাগ করে ঘণ্টা-মিনিট গুলিয়ে ফেললে এমন ভুল সংখ্যা আসে; সঠিক 4500 ÷ 100।"
+      }
+    },
+    {
+      "id": "sd-day-004-q52",
+      "difficulty": "hard",
+      "question": "নিচের কোন পরিবর্তন পুরনো client-এর জন্য breaking change, অর্থাৎ নতুন version বা সতর্ক migration লাগবে?",
+      "options": [
+        "Response-এ নতুন ঐচ্ছিক field \"discount\" যোগ করা",
+        "নতুন একটা endpoint GET /products/{id}/reviews যোগ করা",
+        "\"price\": 4500 (সংখ্যা) বদলে \"price\": \"৳4,500\" (string) করা",
+        "Request-এ নতুন একটা ঐচ্ছিক query parameter ?sort=price যোগ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Field-এর type বদলালে পুরনো client-এর হিসাব (যোগ, তুলনা) ভাঙে, যদিও নাম একই। যোগ করা জিনিস (field, endpoint, ঐচ্ছিক parameter) সাধারণত পুরনো client-কে প্রভাবিত করে না।",
+      "whyWrong": {
+        "0": "নতুন ঐচ্ছিক field পুরনো client উপেক্ষা করে।",
+        "1": "নতুন endpoint পুরনো কোনো endpoint-এর আচরণ বদলায় না।",
+        "3": "ঐচ্ছিক parameter না পাঠালে আগের আচরণই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-004-q53",
+      "difficulty": "hard",
+      "question": "GET /products?page=10000&limit=20 offset pagination-এ খুব ধীর, কিন্তু প্রথম page দ্রুত। মূল কারণ আর ভালো বিকল্প কোনটা?",
+      "options": [
+        "Page নম্বর বড় হলে network-এ response ধীরে আসে, কারণ server-কে বেশি দূর থেকে data আনতে হয়; সমাধান limit বাড়ানো",
+        "Server-এর cache ভর্তি; সমাধান হলো cache মুছে দেওয়া",
+        "Page নম্বর বেশি হলে JSON parse ধীর হয়ে যায়, কারণ বড় সংখ্যা পড়তে সময় লাগে; সমাধান হলো JSON-এর বদলে XML",
+        "Database-কে আগের প্রায় ২ লাখ row গুনে বাদ দিতে হয়; cursor (\"এই id-এর পর থেকে ২০টা\") index দিয়ে এটা এড়ায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "OFFSET 199980 মানে database ওই সংখ্যক row পড়ে ফেলে দেয়, তারপর ২০টা দেয়। Cursor-এ শেষ দেখা id মনে রেখে WHERE id > last দিয়ে index থেকে সরাসরি পরের ২০টা আনা যায়।",
+      "whyWrong": {
+        "0": "Response-এ এখনো মাত্র ২০টা item; ধীর হচ্ছে database-এর বাদ দেওয়ার কাজে।",
+        "1": "Cache মুছলে সাধারণত আরও ধীর হয়; মূল খরচ offset-এ।",
+        "2": "Parse-এর সময় page নম্বরের উপর নির্ভর করে না, item সংখ্যার উপর।"
+      }
+    },
+    {
+      "id": "sd-day-004-q54",
+      "difficulty": "hard",
+      "question": "Production-এ একটা bug-এ API error response-এ পুরো SQL error ফেরত দিচ্ছে: table-এর নাম, column আর query। সবচেয়ে বড় সমস্যা কোনটা?",
+      "options": [
+        "Response বড় হয়ে যাচ্ছে, তাই bandwidth খরচ বাড়ছে",
+        "Status code ভুল আসবে, কারণ নিয়ম অনুযায়ী SQL error থাকলে HTTP 200 দিয়ে body-তে error পাঠাতে হয়, তাই client বিভ্রান্ত হবে",
+        "Client developer-রা বিভ্রান্ত হবে, কারণ সবাই SQL বোঝে না আর error-এর আসল অর্থ ধরতে পারবে না",
+        "আক্রমণকারী ভেতরের database-এর গঠন জেনে যায়, injection-এর মতো আক্রমণ সহজ হয়; বিস্তারিত log-এ রাখুন"
+      ],
+      "correctIndex": 3,
+      "explanation": "Error-এ ভেতরের তথ্য ফাঁস হওয়া নিরাপত্তা সমস্যা: আক্রমণকারী জানে কোন table, কোন column, কোন query। বিস্তারিত server log-এ থাকবে, requestId দিয়ে খোঁজা যাবে।",
+      "whyWrong": {
+        "0": "আকার ছোট সমস্যা; আসল বিপদ তথ্য ফাঁস।",
+        "1": "Server-এর ভুলে 5xx-ই ঠিক; SQL error-এর সাথে 200-এর কোনো সম্পর্ক নেই।",
+        "2": "বিভ্রান্তি গৌণ; এমনকি সবাই SQL বুঝলেও এটা পাঠানো বিপজ্জনক।"
+      }
+    },
+    {
+      "id": "sd-day-004-q55",
+      "difficulty": "hard",
+      "question": "একটা request-এ token-ও নেই, আবার body-র JSON-ও অসম্পূর্ণ। ভালো API কোনটা আগে যাচাই করে কী দেবে, আর কেন?",
+      "options": [
+        "আগে body যাচাই করে 400 দেওয়া, কারণ body-ই যদি ভুল হয় তাহলে token দেখার বা পরিচয় যাচাইয়ের কোনো মানে নেই",
+        "দুটোই একসাথে, 207-এর মতো একটা status দিয়ে",
+        "আগে database-এ order লিখে দেখা, তারপর যাচাই",
+        "আগে authentication, 401; অচেনা caller-কে validation-এর বিস্তারিত দেখানো উচিত না, আর সস্তা যাচাই আগে"
+      ],
+      "correctIndex": 3,
+      "explanation": "স্বাভাবিক ক্রম: routing → authentication → authorization → validation → business logic। পরিচয় না জেনে validation-এর বিস্তারিত দিলে অচেনা কেউ API-র গঠন জেনে যায়, আর server বৃথা কাজ করে।",
+      "whyWrong": {
+        "0": "Auth-এর আগে body-র বিস্তারিত error দেওয়া অচেনা caller-কে তথ্য দেয়।",
+        "1": "207 Multi-Status এই কাজের জন্য না; একটা স্পষ্ট প্রথম কারণ ফেরত দেওয়াই নিয়ম।",
+        "2": "যাচাইয়ের আগে database-এ লেখা মানে ভুল বা অননুমোদিত data জমা হওয়া।"
+      }
+    },
+    {
+      "id": "sd-day-004-q56",
+      "difficulty": "hard",
+      "question": "POST /reports বিশাল একটা sales export বানায়, যেটা ৩ মিনিট লাগে। HTTP request ৩ মিনিট খোলা রাখা ভালো না। কোন নকশা ভালো?",
+      "options": [
+        "সাথে সাথে 202 Accepted আর একটা status resource-এর ঠিকানা (যেমন /reports/91); client সেখানে GET করে দেখে",
+        "Request ৩ মিনিট খোলা রেখে শেষে 200 দেওয়া, আর client, proxy ও load balancer সবার timeout বাড়িয়ে দেওয়া",
+        "সাথে সাথে 201 Created দেওয়া, যদিও report এখনো তৈরি হয়নি",
+        "Client-কে বলা ৩ মিনিট পরে আবার POST /reports পাঠাতে"
+      ],
+      "correctIndex": 0,
+      "explanation": "202 মানে 'নিয়েছি, কাজ পরে শেষ হবে'। Status resource দিয়ে client অগ্রগতি দেখে, শেষ হলে download link পায়; request ঝুলে থাকে না।",
+      "whyWrong": {
+        "1": "দীর্ঘ খোলা connection proxy বা load balancer-এ timeout হতে পারে, আর client জানে না কাজ চলছে কিনা।",
+        "2": "201 বলে resource তৈরি হয়ে গেছে; এখনো হয়নি, তাই ভুল তথ্য।",
+        "3": "আবার POST মানে আরেকটা নতুন report-এর কাজ শুরু, আগেরটার ফল না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q57",
+      "difficulty": "hard",
+      "question": "দুজন admin একসাথে product 2 খুললেন (GET)। একজন দাম বদলে পুরো object PUT করলেন, কয়েক সেকেন্ড পরে আরেকজন stock বদলে পুরো object PUT করলেন। কী হবে, আর কী দিয়ে ঠেকানো যায়?",
+      "options": [
+        "দ্বিতীয় PUT-এ পুরনো দাম ছিল, তাই প্রথমজনের বদল মুছে যাবে; ETag আর If-Match দিলে server 412 দিয়ে আটকায়",
+        "দুটো পরিবর্তনই থাকবে, কারণ PUT idempotent",
+        "Server দ্বিতীয় PUT-কে নিজে থেকেই 409 Conflict দিয়ে আটকাবে, কোনো header বা বাড়তি ব্যবস্থা ছাড়াই, কারণ সে বোঝে data পুরনো",
+        "দুটো আলাদা product তৈরি হবে, কারণ দুটো PUT এসেছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "PUT পুরো object বসায়, তাই দ্বিতীয়জন তার হাতে থাকা পুরনো দামটাও বসিয়ে দেয়: lost update। GET-এর ETag রেখে If-Match দিয়ে PUT করলে, এর মধ্যে বদলে থাকলে server 412 Precondition Failed দেয়।",
+      "whyWrong": {
+        "1": "Idempotent মানে একই request বারবার একই ফল; দুটো আলাদা request-এর পরিবর্তন মেলানো না।",
+        "2": "Server নিজে থেকে জানে না দ্বিতীয়জন পুরনো data দেখে লিখছে; conditional request ছাড়া এটা ধরা পড়ে না।",
+        "3": "একই ঠিকানায় PUT একই resource বদলায়, নতুন তৈরি করে না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q58",
+      "difficulty": "hard",
+      "question": "এক developer চায় GET /products/next endpoint: server প্রতিটা client-এর 'শেষ কোন page দেখেছে' নিজের memory-তে মনে রাখবে আর পরের page দেবে। এই নকশার মূল সমস্যা কী?",
+      "options": [
+        "URL-এ 'next' শব্দটা একটা ক্রিয়া, তাই এটা শুধু নামকরণের সমস্যা; নাম বদলে দিলেই পুরো নকশাটা একদম ঠিক হয়ে যাবে",
+        "Memory-তে রাখলে response সবসময় database থেকে পড়ার চেয়ে ধীর হয়, তাই সব client-এর জন্য দেরি বাড়ে",
+        "GET request-এ page নম্বর পাঠানো যায় না, তাই এটাই একমাত্র উপায়",
+        "এটা statelessness ভাঙে: অন্য server-এ গেলে বা restart হলে অবস্থান হারায়; cursor request-এর সাথেই পাঠানো উচিত"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stateless API-তে প্রতিটা request নিজের মধ্যে সম্পূর্ণ। 'কোথায় ছিলাম' তথ্য server-এর memory-তে থাকলে load balancer অন্য server-এ পাঠালে বা restart হলে সব গুলিয়ে যায়। ?after=<cursor> দিলে যেকোনো server উত্তর দিতে পারে।",
+      "whyWrong": {
+        "0": "নাম ছোট সমস্যা; আসল সমস্যা server-এ client-এর অবস্থা রাখা।",
+        "1": "Memory সাধারণত দ্রুতই; সমস্যা গতির না, নির্ভরযোগ্যতা আর scaling-এর।",
+        "2": "Query parameter দিয়ে page বা cursor পাঠানো খুবই সাধারণ।"
+      }
+    },
+    {
+      "id": "sd-day-004-q59",
+      "difficulty": "hard",
+      "question": "Client DELETE /cart/items/3 পাঠাল, timeout হলো, আবার পাঠাল, এবার 404। App user-কে \"মুছতে ব্যর্থ\" দেখাচ্ছে। ভালো client কী করত?",
+      "options": [
+        "Retry-এর পরের 404-কে 'আগেই মুছে গেছে' ধরে সফল দেখাত, কারণ লক্ষ্য অবস্থা (item নেই) পূরণ হয়েছে",
+        "404 পেলে আরও কয়েকবার DELETE পাঠাত, যতক্ষণ না server থেকে আবার একটা 204 No Content ফিরে আসে",
+        "404 পেলে item-টা আবার POST করে তৈরি করত, তারপর মুছত",
+        "DELETE-এর বদলে সবসময় PATCH ব্যবহার করত, কারণ PATCH কখনো 404 দেয় না আর তাই কোনো error-ও দেখায় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "DELETE idempotent: প্রথম request সম্ভবত মুছেই দিয়েছিল, শুধু উত্তর হারিয়েছে। Retry-তে 404 মানে লক্ষ্য অবস্থা আগে থেকেই পূরণ, user-কে সফল দেখানোই ঠিক।",
+      "whyWrong": {
+        "1": "Item আর নেই, তাই যতবারই পাঠান 404-ই আসবে।",
+        "2": "আবার তৈরি করে মোছা অর্থহীন, আর মাঝের সময়ে ভুল অবস্থা তৈরি করে।",
+        "3": "না থাকা resource-এ PATCH-ও 404 দেবে; আর মোছার কাজে PATCH ঠিক method না।"
+      }
+    },
+    {
+      "id": "sd-day-004-q60",
+      "difficulty": "hard",
+      "question": "Pagination ছাড়া GET /products ৫০,০০০টা product ফেরত দেয়, প্রতিটা JSON-এ গড়ে ৪০০ byte। Response প্রায় কত বড়, আর limit=50 দিলে এক page কত?",
+      "options": [
+        "প্রায় ২০০ MB; এক page প্রায় ২০০ KB",
+        "প্রায় ২ MB; এক page প্রায় ২ KB",
+        "প্রায় ২০০ KB; এক page প্রায় ২০০ byte",
+        "প্রায় ২০ MB; এক page প্রায় ২০ KB"
+      ],
+      "correctIndex": 3,
+      "explanation": "50,000 × 400 = 20,000,000 byte ≈ ২০ MB, mobile network-এ খুবই ভারী। 50 × 400 = 20,000 byte ≈ ২০ KB, যেটা দ্রুত আসে আর memory-তেও চাপ দেয় না।",
+      "whyWrong": {
+        "0": "দশ গুণ বেশি ধরা হয়েছে।",
+        "1": "দশ গুণ কম ধরা হয়েছে; 50,000 × 400 হলো ২ কোটি byte।",
+        "2": "একশো গুণ কম; গুণফলের শূন্য হারিয়েছে।"
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import ModulePageShell from "@/components/modules/course-shell/ModulePageShell";
 import { notFound } from "next/navigation";
 import VideoDetailScreen from "@/components/modules/video/VideoDetailScreen";
 import { findContentLocation } from "@/lib/data/course-modules";
@@ -15,12 +16,15 @@ export default async function VideoPage({
   }
 
   return (
-    <VideoDetailScreen
-      milestone={location.milestone}
-      module={location.module}
-      contentId={contentId}
-      title={location.content.title ?? "Video"}
-      videoUrl={location.content.videoUrl}
-    />
+    <ModulePageShell courseId={location.courseId} moduleId={location.module.id}>
+      <VideoDetailScreen
+        courseId={location.courseId}
+        milestone={location.milestone}
+        module={location.module}
+        contentId={contentId}
+        title={location.content.title ?? "Video"}
+        videoUrl={location.content.videoUrl}
+      />
+    </ModulePageShell>
   );
 }

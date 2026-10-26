@@ -54,7 +54,7 @@ describe('InterviewService', () => {
 
       const result = await service.gradeAnswer(MODULE_ID, {
         questionId: 'q1',
-        command:
+        answer:
           'chgrp -R developers /var/www/app && chmod -R 2775 /var/www/app',
       });
 
@@ -78,7 +78,7 @@ describe('InterviewService', () => {
       const service = new InterviewService(mockOpenAiReturning({}) as any);
 
       await expect(
-        service.gradeAnswer(MODULE_ID, { questionId: 'nope', command: 'ls' }),
+        service.gradeAnswer(MODULE_ID, { questionId: 'nope', answer: 'ls' }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -95,7 +95,7 @@ describe('InterviewService', () => {
       const service = new InterviewService(openai as any);
 
       await expect(
-        service.gradeAnswer(MODULE_ID, { questionId: 'q1', command: 'ls' }),
+        service.gradeAnswer(MODULE_ID, { questionId: 'q1', answer: 'ls' }),
       ).rejects.toThrow();
     });
   });

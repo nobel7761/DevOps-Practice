@@ -27,7 +27,7 @@ export function FormField({
     <div className={cn("space-y-2", className)}>
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-medium tracking-wide text-slate-700"
+        className="block text-sm font-medium tracking-wide text-slate-700 dark:text-slate-300"
       >
         {label}
         {required ? (
@@ -54,7 +54,7 @@ export function FormField({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
-            className="text-sm text-slate-500"
+            className="text-sm text-slate-500 dark:text-slate-400"
           >
             {hint}
           </motion.p>

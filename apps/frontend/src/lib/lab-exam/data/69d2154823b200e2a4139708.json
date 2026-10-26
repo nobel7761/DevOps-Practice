@@ -1,0 +1,370 @@
+{
+  "labId": "69d2154823b200e2a4139708",
+  "title": "LAB: Network Interface & Routing Configuration",
+  "passPercent": 95,
+  "intro": "নতুন VM app-01-এ শুধু loopback আছে। database subnet-এর (10.20.0.0/24) সাথে কথা বলার আগে interface up করতে হবে, একটা secondary IP বসাতে হবে, আর সঠিক gateway দিয়ে static route বসাতে হবে। নিজের আসল eth0/SSH session-এ হাত না দিয়ে, একটা network namespace-এর ভেতরে এই পুরো প্র্যাকটিসটা করবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🔍 পর্ব ১: বর্তমান network দেখা",
+        "note": "শুধু observation — eth0 স্পর্শ করবে না, ওটাই তোমার SSH session বহন করছে।"
+      },
+      "prompt": "সব network interface আর তাদের অবস্থা দেখো।",
+      "answer": "ip link show",
+      "check": {
+        "require": ["ip", "link", "show"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 4,
+      "prompt": "সব interface-এর IP address দেখো।",
+      "answer": "ip addr show",
+      "check": {
+        "require": ["ip", "addr", "show"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 4,
+      "prompt": "বর্তমান routing table দেখো।",
+      "answer": "ip route show",
+      "check": {
+        "require": ["ip", "route", "show"]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "section": {
+        "title": "🏗️ পর্ব ২: নিরাপদ sandbox বানানো",
+        "note": "একটা আলাদা namespace, যেখানে ভুল করলেও SSH session নিরাপদ থাকবে।"
+      },
+      "prompt": "lab-net নামে একটা নতুন network namespace বানাও।",
+      "answer": "ip netns add lab-net",
+      "check": {
+        "require": ["ip", "netns", "add", "lab-net"],
+        "netnsExists": ["lab-net"]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 6,
+      "prompt": "veth-host আর veth-ns নামে একজোড়া virtual ethernet (veth pair) বানাও।",
+      "answer": "ip link add veth-host type veth peer name veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-host"
+          },
+          {
+            "name": "veth-ns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "veth-ns প্রান্তটা lab-net namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns netns lab-net",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns", "netns", "lab-net"],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "lab-net"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 5,
+      "section": {
+        "title": "⬆️ পর্ব ৩: Interface চালু করা",
+        "note": "veth pair-এর দুই প্রান্তই up করতে হবে, তবেই traffic যাবে।"
+      },
+      "prompt": "host-এর পাশে veth-host চালু করো।",
+      "answer": "ip link set veth-host up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host", "up"],
+        "netIfaceState": [
+          {
+            "name": "veth-host",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 5,
+      "prompt": "namespace-এর ভেতরে lo interface-টাও চালু করো।",
+      "answer": "ip netns exec lab-net ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "lo",
+            "context": "lab-net",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 6,
+      "prompt": "namespace-এর ভেতরে veth-ns চালু করো।",
+      "answer": "ip netns exec lab-net ip link set veth-ns up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "link",
+          "set",
+          "veth-ns",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "lab-net",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 7,
+      "section": {
+        "title": "📫 পর্ব ৪: IP address বসানো",
+        "note": "veth-host হবে app-01-এর gateway, veth-ns হবে app-01-এর নিজের ঠিকানা।"
+      },
+      "prompt": "veth-host-কে 10.10.0.1/24 ঠিকানা দাও (namespace-এর জন্য এটাই হবে gateway)।",
+      "answer": "ip addr add 10.10.0.1/24 dev veth-host",
+      "check": {
+        "require": ["ip", "addr", "add", "10.10.0.1/24", "dev", "veth-host"],
+        "netIfaceState": [
+          {
+            "name": "veth-host",
+            "hasAddress": "10.10.0.1/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 7,
+      "prompt": "namespace-এর ভেতরে veth-ns-কে 10.10.0.100/24 (app-01-এর প্রধান ঠিকানা) দাও।",
+      "answer": "ip netns exec lab-net ip addr add 10.10.0.100/24 dev veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "addr",
+          "add",
+          "10.10.0.100/24",
+          "dev",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "lab-net",
+            "hasAddress": "10.10.0.100/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 6,
+      "prompt": "namespace-এর ভেতরে veth-ns-এ 10.10.0.200/24 নামে একটা secondary (staging) ঠিকানাও যোগ করো।",
+      "answer": "ip netns exec lab-net ip addr add 10.10.0.200/24 dev veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "addr",
+          "add",
+          "10.10.0.200/24",
+          "dev",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "lab-net",
+            "hasAddress": "10.10.0.200/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 6,
+      "prompt": "host থেকে namespace-এর primary address 10.10.0.100-এ ping করে connectivity যাচাই করো।",
+      "answer": "ping -c 3 10.10.0.100",
+      "check": {
+        "require": ["ping", "10.10.0.100"]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 8,
+      "section": {
+        "title": "🗺️ পর্ব ৫: Routing",
+        "note": "database subnet সরাসরি connected না, তাই static route লাগবে।"
+      },
+      "prompt": "namespace-এর ভেতর থেকে 10.20.0.0/24 (database subnet)-এর জন্য 10.10.0.1 (veth-host) হয়ে একটা static route যোগ করো।",
+      "answer": "ip netns exec lab-net ip route add 10.20.0.0/24 via 10.10.0.1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "route",
+          "add",
+          "10.20.0.0/24",
+          "via",
+          "10.10.0.1"
+        ],
+        "routeExists": [
+          {
+            "dest": "10.20.0.0/24",
+            "via": "10.10.0.1",
+            "context": "lab-net"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 7,
+      "prompt": "namespace-এর জন্য একটা default gateway সেট করো, যাতে বাকি সব ট্রাফিকের জন্য একটা পথ থাকে।",
+      "answer": "ip netns exec lab-net ip route add default via 10.10.0.1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "route",
+          "add",
+          "default",
+          "via",
+          "10.10.0.1"
+        ],
+        "routeExists": [
+          {
+            "dest": "default",
+            "via": "10.10.0.1",
+            "context": "lab-net"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 6,
+      "prompt": "namespace-এর ভেতর থেকে 10.20.0.5 (database subnet-এর একটা hypothetical হোস্ট)-এর জন্য কোন route ব্যবহার হবে তা দেখো — কোনো প্যাকেট না পাঠিয়েই।",
+      "answer": "ip netns exec lab-net ip route get 10.20.0.5",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "route",
+          "get",
+          "10.20.0.5"
+        ]
+      },
+      "hints": [
+        "ip route get শুধু lookup করে, কোনো প্যাকেট পাঠায় না — destination সত্যিই reachable হওয়ার দরকার নেই"
+      ]
+    },
+    {
+      "id": "t17",
+      "points": 6,
+      "section": {
+        "title": "🧹 পর্ব ৬: পরিষ্কার করা",
+        "note": "অস্থায়ী route সরিয়ে শুধু default route দিয়েই test করা যায় কিনা দেখা।"
+      },
+      "prompt": "namespace থেকে 10.20.0.0/24-এর static route-টা মুছে ফেলো।",
+      "answer": "ip netns exec lab-net ip route del 10.20.0.0/24",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "lab-net",
+          "ip",
+          "route",
+          "del",
+          "10.20.0.0/24"
+        ],
+        "routeExists": [
+          {
+            "dest": "10.20.0.0/24",
+            "context": "lab-net",
+            "exists": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 5,
+      "section": {
+        "title": "🧭 পর্ব ৭: ARP / Neighbour cache",
+        "note": "ping করার পর কার্নেল MAC address মনে রাখে।"
+      },
+      "prompt": "host-এর ARP/neighbour cache দেখো (আগের ping-এর পর এন্ট্রি থাকার কথা)।",
+      "answer": "ip neigh show",
+      "check": {
+        "require": ["ip", "neigh", "show"]
+      }
+    }
+  ]
+}

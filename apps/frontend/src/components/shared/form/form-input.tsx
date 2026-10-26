@@ -50,11 +50,11 @@ export function FormInput({
       : type;
 
   const inputCls = cn(
-    "w-full rounded-xl border bg-white/80 px-4 py-3 text-sm text-slate-900 shadow-xs outline-hidden transition-colors duration-150",
+    "w-full rounded-xl border bg-white/80 px-4 py-3 text-sm text-slate-900 shadow-xs outline-hidden transition-colors duration-150 dark:bg-slate-900/60 dark:text-slate-100",
     "focus:border-slate-400",
     fieldState.error
       ? "border-(--form-error-main) focus:border-(--form-error-main)"
-      : "border-slate-200 hover:border-slate-300",
+      : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600",
     disabled && "cursor-not-allowed bg-slate-50 text-slate-500",
     type === "password" && showPasswordToggle && "pr-11",
   );

@@ -6,6 +6,9 @@ export type QuizAttemptDocument = QuizAttempt & Document;
 @Schema({ timestamps: true, collection: 'quiz_attempts' })
 export class QuizAttempt {
   @Prop({ required: true, index: true })
+  userId: string;
+
+  @Prop({ required: true, index: true })
   labId: string;
 
   @Prop({ required: true })

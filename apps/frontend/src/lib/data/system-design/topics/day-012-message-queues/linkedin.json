@@ -1,0 +1,13 @@
+{
+  "type": "story",
+  "text": "কুরিয়ার অফিসে parcel দিলে কেউ কি delivery পর্যন্ত counter-এ দাঁড়িয়ে থাকে?\nDay 12/100 · Message Queues\n\nধরুন একটা কুরিয়ার অফিসে নিয়ম, যে parcel দেবে সে delivery-ম্যানের সাথে ঢাকা থেকে চট্টগ্রাম যাবে, পৌঁছানো দেখে তারপর বাড়ি ফিরবে।\n\nএকজনের জন্য পুরো লাইন সারাদিন আটকে থাকবে। আর রাস্তায় ট্রাক নষ্ট হলে? Parcel-ই জমা হবে না।\n\nবাস্তবে counter parcel নিয়ে একটা receipt দেয়, আপনি চলে যান। Parcel গুদামে জমা থাকে, delivery-ম্যানরা নিজেদের সময়মতো তুলে নিয়ে যায়।\n\nআজ **Message Queue** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nOnline shop-এ order হলে অনেক সময় একই request-এর ভেতরে:\n- confirmation email\n- invoice PDF\n- SMS\nসব পাঠানো হয়, user তিন সেকেন্ড বসে থাকে। আর SMS service down থাকলে পুরো order fail।\n\nএখানেই আসে Message Queue। Order service শুধু কাজটা queue-তে রেখে user-কে সাথে সাথে উত্তর দেয়, বাকিটা worker-রা পরে করে।\n\n৩টা মূল ধারণা:\n1. **Producer**: যে কাজটা queue-তে রাখে, নিজে করে না\n2. **Consumer**: যে queue থেকে তুলে আসল কাজটা করে\n3. **Acknowledgement**: কাজ শেষে \"শেষ\" জানানো; না জানালে message আবার আসে\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ কোন কাজ synchronous ছিল, আর সেটা কী সমস্যা তৈরি করেছিল?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম। একই message কি দুবার আসতে পারে? হ্যাঁ। Worker email পাঠিয়ে \"শেষ\" বলার আগেই crash করলে message আবার আসে, email দুবার যায়। তাই worker-কে আগে দেখে নিতে হয় কাজটা আগেই হয়েছে কিনা (**Idempotency**)।\n\nMessage Queue = কাজটা এখনই না করে, নিরাপদে লাইনে রেখে দেওয়ার জায়গা।\n\nআপনার project-এ কোন কাজটা আপনি queue-তে পাঠান? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ কোন কাজ synchronous ছিল, আর সেটা কী সমস্যা তৈরি করেছিল?",
+  "firstComment": "পুরো lesson, diagram আর নিজে চালিয়ে দেখার Message Queue Lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#MessageQueue",
+    "#BackendEngineering"
+  ],
+  "visual": "day-012-main"
+}

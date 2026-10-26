@@ -1,0 +1,1085 @@
+{
+  "topicId": "sd-day-001",
+  "questions": [
+    {
+      "id": "sd-day-001-q01",
+      "difficulty": "easy",
+      "question": "System design-এর মূল কাজ কোনটা?",
+      "options": [
+        "কোন component লাগবে, সেগুলো কিভাবে যুক্ত থাকবে আর data কোন পথে যাবে, তা ঠিক করা",
+        "শুধু code ঠিকভাবে লেখা, যাতে প্রতিটা feature কাজ করে; ভিড় বা failure পরে দেখা যাবে",
+        "সবচেয়ে জনপ্রিয় tool (Kafka, Redis, Kubernetes) বেছে নিয়ে সেগুলো দিয়ে system সাজানো",
+        "Code-এর প্রতিটা function-এর জন্য unit test লিখে নিশ্চিত করা যে production-এ কোনো bug থাকবে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "System design বড় ছবিটা ঠিক করে: কোন অংশ লাগবে, তারা কিভাবে কথা বলবে, data কোথায় থাকবে। লক্ষ্য হলো requirement পূরণ করা, প্রত্যাশিত user সংখ্যা আর বাজেটের ভেতরে। Screen design, language বাছাই বা unit test আলাদা কাজ।",
+      "whyWrong": {
+        "1": "Feature ঠিক থাকা functional দিক; ভিড় আর failure-এর পরিকল্পনাই design-এর মূল কাজ।",
+        "2": "Tool বাছাই requirement-এর পরের ধাপ; requirement ছাড়া tool দিয়ে শুরু করা design না।",
+        "3": "Bug-মুক্ত code থাকলেও ভিড়ে system ভেঙে পড়তে পারে; testing design-এর বিকল্প না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q02",
+      "difficulty": "easy",
+      "question": "একটা e-commerce app-এর জন্য নিচের কোনটা functional requirement?",
+      "options": [
+        "৯৫% page ৩০০ms-এর মধ্যে খুলতে হবে",
+        "বছরে মোট ৯ ঘণ্টার বেশি বন্ধ থাকা যাবে না",
+        "User একটা product cart-এ যোগ করতে পারবে",
+        "একসাথে ১ লাখ user সামলাতে পারতে হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Functional requirement বলে system কী করবে, অর্থাৎ feature। 'Cart-এ যোগ করা' একটা কাজ যেটা user করতে পারে। বাকিগুলো বলে কতটা দ্রুত, কতক্ষণ চালু বা কত user, যেগুলো non-functional।",
+      "whyWrong": {
+        "0": "এটা latency-র লক্ষ্য, অর্থাৎ কতটা ভালোভাবে কাজ হবে: non-functional।",
+        "1": "এটা availability-র লক্ষ্য: non-functional।",
+        "3": "এটা scalability-র লক্ষ্য: non-functional।"
+      }
+    },
+    {
+      "id": "sd-day-001-q03",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা non-functional requirement?",
+      "options": [
+        "User নিজের আগের সব order-এর তালিকা এক page-এ দেখতে পারবে",
+        "একবার confirm হওয়া কোনো order কখনো হারাবে না",
+        "Admin নতুন product-এর ছবি upload করতে পারবে",
+        "User bKash দিয়ে order-এর টাকা দিতে পারবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "'কখনো হারাবে না' কোনো feature না, এটা system-এর একটা গুণ (durability/reliability)। Non-functional requirement এরকমই: কাজটা কতটা ভালোভাবে, কতটা নিশ্চিতভাবে হবে। বাকি তিনটা user বা admin-এর করা কাজ, তাই functional।",
+      "whyWrong": {
+        "0": "পুরনো order দেখা একটা feature, তাই functional।",
+        "2": "ছবি upload করা একটা কাজ, তাই functional।",
+        "3": "Payment দেওয়া একটা feature, তাই functional।"
+      }
+    },
+    {
+      "id": "sd-day-001-q04",
+      "difficulty": "easy",
+      "question": "Scalability বলতে কী বোঝায়?",
+      "options": [
+        "System কখনো কোনো অবস্থাতেই বন্ধ হবে না, এই নিশ্চয়তা",
+        "একজন user-এর জন্য প্রতিটা request আগের চেয়ে দ্রুত হওয়া",
+        "অনেক user-কে একসাথে, কোনো ভুল ছাড়া, সবাইকে একই data দেখানো",
+        "Load বাড়লে resource যোগ করে system-কে বাড়াতে পারা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Scalability মানে বাড়তি load সামলাতে পারা, আরও resource (বড় machine বা আরও machine) যোগ করে। এটা গতি বা uptime-এর সমার্থক না। একটা system একজনের জন্য ধীর হয়েও scalable হতে পারে।",
+      "whyWrong": {
+        "0": "কখনো বন্ধ না হওয়া availability-র বিষয়, আর বাস্তবে ১০০% নিশ্চয়তা কেউ দিতে পারে না।",
+        "1": "একজনের request দ্রুত হওয়া latency কমানো, scalability না।",
+        "2": "সবাইকে একই data দেখানো consistency-র বিষয়, scalability না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q05",
+      "difficulty": "easy",
+      "question": "\"আমাদের system-এর availability 99.9%\" কথাটার মানে কী?",
+      "options": [
+        "৯৯.৯% request-এর উত্তর সঠিক, বাকিগুলো ভুল data দেয়",
+        "System ৯৯.৯% user-কে সামলাতে পারে, বাকি ০.১% user-কে ঢুকতে দেয় না",
+        "মোট সময়ের ৯৯.৯% সময় system user-এর request-এ সাড়া দেয়",
+        "৯৯.৯% request ১ সেকেন্ডের মধ্যে উত্তর পায়, বাকিগুলো ধীর"
+      ],
+      "correctIndex": 2,
+      "explanation": "Availability মাপা হয় সময়ের অংশ দিয়ে: user চাইলে system কতটা সময় সাড়া দেয়। 99.9% মানে বছরে মোটামুটি ৮.৮ ঘণ্টা বন্ধ থাকা যায়। সঠিকতা বা CPU ব্যবহার আলাদা মাপ।",
+      "whyWrong": {
+        "0": "উত্তর সঠিক কিনা সেটা reliability/correctness-এর প্রশ্ন, availability-র না।",
+        "1": "কত user সামলায় সেটা capacity বা scalability-র বিষয়।",
+        "3": "এটা latency-র লক্ষ্য; availability মাপে system কতটা সময় সাড়া দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q06",
+      "difficulty": "easy",
+      "question": "Latency আর throughput-এর পার্থক্য কোনটা ঠিকভাবে বলে?",
+      "options": [
+        "Latency একটা request শেষ হওয়ার সময়; throughput প্রতি সেকেন্ডে কতগুলো request শেষ হয়",
+        "Latency হলো প্রতি সেকেন্ডে কতগুলো request শেষ হয়; throughput হলো একটা request-এর মোট সময়",
+        "দুটো একই জিনিসের দুই নাম: একটা request কত দ্রুত শেষ হয়",
+        "Latency কমালে throughput সবসময় সমান হারে বাড়ে, তাই একটা মাপলেই অন্যটা জানা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Latency হলো একটা request-এর শুরু থেকে শেষ পর্যন্ত সময় (যেমন ১২০ms)। Throughput হলো একক সময়ে কতগুলো কাজ শেষ হয় (যেমন ৫০০ request/সেকেন্ড)। একটা বাড়লে অন্যটা স্বয়ংক্রিয়ভাবে বাড়ে না।",
+      "whyWrong": {
+        "1": "সংজ্ঞা দুটো উল্টে বলা হয়েছে।",
+        "2": "এরা আলাদা মাপ; একটা ঠিক রেখে অন্যটা বদলাতে পারে।",
+        "3": "দুটো আলাদা; lab-এ throughput একই থেকে latency ২০ গুণ বেড়েছিল।"
+      }
+    },
+    {
+      "id": "sd-day-001-q07",
+      "difficulty": "easy",
+      "question": "Load Balancer-এর প্রধান কাজ কী?",
+      "options": [
+        "Database-এর data অনেকগুলো disk আর machine-এ সমানভাবে ভাগ করে রাখা, যাতে কোনোটা ভরে না যায়",
+        "User-এর ছবি আর video পৃথিবীর নানা শহরে কপি করে রাখা",
+        "ধীর কাজগুলো লাইনে রেখে পরে worker-কে দিয়ে করানো",
+        "অনেক server-এর সামনে বসে request ভাগ করা, আর মরা server-কে বাদ দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Load balancer আসা request-গুলো কয়েকটা server-এর মধ্যে ভাগ করে দেয়, যাতে কেউ একা চাপে না পড়ে। কোনো server সাড়া না দিলে তাকে বাদ দিয়ে বাকিদের পাঠায়। তাই এটা scalability আর availability দুটোতেই সাহায্য করে।",
+      "whyWrong": {
+        "0": "Data disk-এ ভাগ করা storage বা sharding-এর কাজ।",
+        "1": "এটা CDN-এর কাজ।",
+        "2": "এটা queue আর worker-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-001-q08",
+      "difficulty": "easy",
+      "question": "System-এ cache রাখার মূল কারণ কী?",
+      "options": [
+        "সব data স্থায়ীভাবে রাখা, যাতে database আর লাগে না",
+        "বারবার পড়া data দ্রুত memory-তে রাখা, যাতে প্রতিবার database-এ যেতে না হয়",
+        "Database মরে গেলে data হারানো ঠেকাতে তার একটা backup কপি রাখা",
+        "Database-এ লেখা (write) দ্রুত করা, যাতে প্রতিটা order database-এ save হতে কম সময় লাগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Cache (যেমন Redis) বারবার লাগে এমন data দ্রুত memory-তে রাখে। এতে response দ্রুত হয় আর database-এর চাপ কমে। কিন্তু cache সাধারণত স্থায়ী data-র মূল উৎস না, database-ই থাকে 'আসল হিসাব'।",
+      "whyWrong": {
+        "0": "Cache-এর data মুছে যেতে বা পুরনো হতে পারে, তাই এটা database-এর বিকল্প না।",
+        "2": "Backup স্থায়ী কপি; cache-এর data যেকোনো সময় মুছে যেতে পারে, তাই এটা backup না।",
+        "3": "Cache মূলত বারবার পড়া (read) দ্রুত করে; write-এর আসল ঠিকানা এখনো database।"
+      }
+    },
+    {
+      "id": "sd-day-001-q09",
+      "difficulty": "easy",
+      "question": "CDN কোন সমস্যার সমাধান করে?",
+      "options": [
+        "ছবি, video, CSS-এর মতো file user-এর কাছাকাছি server থেকে দিয়ে দূরত্বের দেরি কমায়",
+        "Server-এর ভেতরের code দ্রুত চালায়, তাই API-র প্রতিটা জটিল হিসাব অনেক কম সময়ে শেষ হয়",
+        "Database-এর পুরো কপি প্রতিটা শহরে রাখে, যাতে সব query কাছ থেকে হয়",
+        "সব request কয়েকটা app server-এর মধ্যে সমানভাবে ভাগ করে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "CDN (Content Delivery Network) পৃথিবীর নানা জায়গায় server রাখে, আর static file user-এর কাছের server থেকে দেয়। ঢাকার user-কে আমেরিকা থেকে ছবি দিলে প্রতিটা যাওয়া-আসায় অনেক সময় লাগে; কাছের server থেকে দিলে সেটা কমে। মূল server-এর bandwidth-এর চাপও কমে।",
+      "whyWrong": {
+        "1": "CDN মূলত static file কাছ থেকে দেয়; app-এর হিসাব এখনো মূল server-এ চলে।",
+        "2": "সেটা database replication-এর দিক; CDN সাধারণত static content cache করে, database না।",
+        "3": "এটা load balancer-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-001-q10",
+      "difficulty": "easy",
+      "question": "Order-এর পর confirmation email পাঠানোর কাজটা queue-তে দেওয়া হয় কেন?",
+      "options": [
+        "কারণ queue-তে দিলে email নিজে থেকেই দ্রুত পৌঁছে যায়, network-এর দেরিও কমে যায়",
+        "কারণ queue থাকলে email কখনো ব্যর্থ হয় না, প্রথম চেষ্টাতেই পৌঁছায়",
+        "কারণ কাজটা এখনই না হলেও চলে, তাই user-কে অপেক্ষা না করিয়ে পরে করা যায়",
+        "কারণ এতে email server-এর load কমে যায়, মোট কম email পাঠাতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "User-এর তখনই জানা দরকার order হয়েছে কিনা, email কয়েক সেকেন্ড পরে গেলেও চলে। Queue-তে রাখলে user দ্রুত উত্তর পায়, আর worker পরে email পাঠায়। Email server কিছুক্ষণ down থাকলেও order fail করে না।",
+      "whyWrong": {
+        "0": "Queue কাজটাকে পরে করায়, email নিজে দ্রুত হয় না।",
+        "1": "Queue retry সহজ করে, কিন্তু email পাঠানো তবুও fail করতে পারে।",
+        "3": "Email-এর সংখ্যা একই থাকে; queue শুধু কাজটা পরে আর নিজের গতিতে করায়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q11",
+      "difficulty": "easy",
+      "question": "একটা system-এ database-এর ভূমিকা কোনটা?",
+      "options": [
+        "Data স্থায়ীভাবে রাখা, যেটা system-এর \"আসল হিসাব\"",
+        "বারবার লাগে এমন data দ্রুত memory-তে রাখা, যাতে সব read দ্রুত হয়",
+        "আসা request-গুলো কয়েকটা server-এর মধ্যে সমানভাবে ভাগ করে দেওয়া",
+        "ছবিগুলো user-এর কাছের শহর থেকে পাঠানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "Database data স্থায়ীভাবে রাখে, server restart হলেও হারায় না। Order, user, balance, সব এখানেই থাকে, আর cache বা অন্য কপিগুলো এখান থেকেই আসে। তাই database হারানো সবচেয়ে বড় বিপদগুলোর একটা।",
+      "whyWrong": {
+        "1": "এটা cache-এর কাজ; database হলো স্থায়ী মূল উৎস।",
+        "2": "এটা load balancer-এর কাজ।",
+        "3": "এটা CDN-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-001-q12",
+      "difficulty": "easy",
+      "question": "কেন বলা হয় trade-off হলো system design-এর প্রাণ?",
+      "options": [
+        "কারণ ভালো design-এ কোনো দুর্বলতা থাকে না, শুধু খুঁজে বের করতে হয়",
+        "কারণ design-এর সময় দুই team আলোচনা করে মাঝামাঝি একটা সিদ্ধান্তে আসে",
+        "কারণ বড় company যা ব্যবহার করে সেটাই সবসময় ঠিক উত্তর",
+        "কারণ প্রায় প্রতিটা সিদ্ধান্ত কিছু দেয় আর কিছু নেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cache দিলে দ্রুততা আসে কিন্তু data পুরনো হতে পারে; বেশি server-এ availability বাড়ে কিন্তু খরচও বাড়ে। কোনো design সব দিকে সেরা হয় না। তাই কাজটা হলো requirement অনুযায়ী ঠিক balance বাছা আর সেটা পরিষ্কার করে বলা।",
+      "whyWrong": {
+        "0": "প্রতিটা design-এরই কিছু দুর্বলতা থাকে; নিখুঁত design বলে কিছু নেই।",
+        "1": "Trade-off মানে মানুষের আপস না, technical গুণগুলোর (দ্রুততা, consistency, খরচ) মধ্যে বিনিময়।",
+        "2": "বড় company-র design তাদের requirement-এর ফল, আপনার জন্য ভুল হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q13",
+      "difficulty": "easy",
+      "question": "High-Level Design (HLD) আর Low-Level Design (LLD)-এর পার্থক্য কোনটা?",
+      "options": [
+        "HLD হলো ছোট app-এর design, আর LLD হলো বড় distributed system-এর design",
+        "HLD-তে component আর সংযোগ; LLD-তে একটা component-এর ভেতরের class ও schema",
+        "HLD হলো frontend-এর design, LLD হলো backend-এর design",
+        "HLD-তে business requirement লেখা হয়, আর LLD-তে সেগুলোর জন্য server আর database বাছাই হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "HLD বড় ছবি দেখায়: কোন কোন box, কে কার সাথে কথা বলে, data কোথায়। LLD একটা box-এর ভেতরে ঢোকে: class কিভাবে ভাগ হবে, table-এর column, state কিভাবে বদলায়। দুটো আলাদা স্তর, একে অপরের পরিপূরক।",
+      "whyWrong": {
+        "0": "দুই স্তর scale দিয়ে আলাদা না, খুঁটিনাটির গভীরতা দিয়ে আলাদা।",
+        "2": "Frontend আর backend দুটোরই HLD আর LLD হতে পারে।",
+        "3": "Server আর database বাছাই HLD-র কাজ; LLD একটা component-এর ভেতরের class ও schema।"
+      }
+    },
+    {
+      "id": "sd-day-001-q14",
+      "difficulty": "easy",
+      "question": "একটা নতুন app, দুজন developer, প্রথম মাসে ১০০ জনের মতো user। শুরুর design কোনটা সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "একটা server আর একটা database, backup সহ, যত দ্রুত সম্ভব feature বানানো",
+        "প্রথম দিন থেকেই ১০টা microservice আর Kafka দিয়ে শুরু, যাতে পরে কোনো কিছু বদলাতে না হয়",
+        "তিনটা আলাদা region-এ পুরো system-এর কপি, যাতে কখনো বন্ধ না হয়",
+        "প্রতিটা feature-এর জন্য আলাদা database, যাতে data কখনো মিশে না যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "এই অবস্থায় সবচেয়ে বড় ঝুঁকি হলো product কেউ ব্যবহার না করা, ভিড় না। সরল design সস্তা, দ্রুত বানানো যায়, আর debug সহজ। Backup রাখা জরুরি, কারণ data হারানো ছোট app-এও বিপদ।",
+      "whyWrong": {
+        "1": "১০০ user-এর জন্য এটা over-engineering; দুজনের team-এর গতি অনেক কমিয়ে দেবে।",
+        "2": "এর খরচ আর জটিলতা এই পর্যায়ে লাভের চেয়ে অনেক বেশি।",
+        "3": "আলাদা database মানে বেশি জটিলতা, অথচ কোনো সমস্যার সমাধান হচ্ছে না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q15",
+      "difficulty": "easy",
+      "question": "একটা bank app সবসময় খোলে, কিন্তু মাঝে মাঝে ভুল balance দেখায়। এই system-এর কোন quality-তে সমস্যা?",
+      "options": [
+        "Availability, কারণ app মাঝে মাঝে বন্ধ থাকছে বা খুলছে না",
+        "Scalability, কারণ বেশি user আসতে পারছে না",
+        "Latency, কারণ balance দেখাতে অনেক সময় লাগছে",
+        "Reliability, কারণ চালু থাকলেও সঠিক কাজ করছে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "App সবসময় খোলে, তাই availability ঠিক আছে। কিন্তু ভুল balance দেখানো মানে system ঠিকভাবে কাজ করছে না। Reliability মানে চালু থেকে সঠিক কাজ করা, data না হারিয়ে।",
+      "whyWrong": {
+        "0": "প্রশ্নেই বলা আছে app সবসময় খোলে, তাই availability-র সমস্যা না।",
+        "1": "User আসতে না পারার কোনো কথা নেই।",
+        "2": "সমস্যা দেরি না, ভুল উত্তর।"
+      }
+    },
+    {
+      "id": "sd-day-001-q16",
+      "difficulty": "easy",
+      "question": "Maintainability বলতে কী বোঝায়?",
+      "options": [
+        "System কত বেশি user একসাথে কোনো সমস্যা ছাড়াই সামলাতে পারে, তার মাপ",
+        "অন্য engineer সহজে system বুঝতে, বদলাতে আর চালাতে পারে কিনা",
+        "System কত বেশি সময় কোনো বিরতি ছাড়া চালু থাকতে পারে",
+        "Code কত দ্রুত চলে আর কত কম memory নেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Maintainability মানে system-কে বছরের পর বছর বুঝে, বদলে আর চালিয়ে নেওয়া কতটা সহজ। এমন design যেটা শুধু একজনই বোঝে, বা যেটা ছুঁতে সবাই ভয় পায়, সেটা maintainable না। অনেক system-এর মোট খরচের বড় অংশ যায় বানানোর পরের এই কাজে।",
+      "whyWrong": {
+        "0": "এটা scalability বা capacity।",
+        "2": "এটা availability।",
+        "3": "এটা performance; maintainability মানে মানুষের পক্ষে বোঝা আর বদলানো।"
+      }
+    },
+    {
+      "id": "sd-day-001-q17",
+      "difficulty": "easy",
+      "question": "Single Point of Failure (SPOF) কী?",
+      "options": [
+        "System-এর সবচেয়ে ধীর অংশ, যেটা পুরো request-কে ধীর করে",
+        "যে component-এ সবচেয়ে বেশি bug ধরা পড়ে, তাই যেটা সবচেয়ে বেশি fail করে",
+        "যে অংশ একা নষ্ট হলে পুরো system বন্ধ হয়ে যায়",
+        "যে server সবচেয়ে বেশি request পায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "SPOF হলো এমন একটা অংশ যার কোনো বিকল্প নেই, তাই সেটা মরলে সব মরে। একটাই server, একটাই database, একটাই load balancer, সবই SPOF হতে পারে। সমাধান হলো redundancy: বিকল্প কপি রাখা।",
+      "whyWrong": {
+        "0": "সবচেয়ে ধীর অংশকে bottleneck বলে, SPOF না।",
+        "1": "কতবার fail করে তা না, বিকল্প না থাকাই কোনো অংশকে SPOF বানায়।",
+        "3": "বেশি request পাওয়া মানে hot spot, সেটা নিজে SPOF না-ও হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q18",
+      "difficulty": "easy",
+      "question": "একটা system design শুরু করার সময় প্রথম কাজ কোনটা হওয়া উচিত?",
+      "options": [
+        "Requirement পরিষ্কার করা: কোন feature জরুরি, কত user, কতটা দ্রুত",
+        "সবার আগে কোন database ব্যবহার হবে সেটা বেছে নেওয়া, কারণ বাকি সব তার উপর নির্ভর করে",
+        "কতগুলো server লাগবে সেটা হিসাব করা",
+        "পুরো system-এর একটা সম্পূর্ণ diagram এঁকে team-কে দেখানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "কী বানাচ্ছেন আর কতটা ভালোভাবে, সেটা না জেনে কোনো component বাছাই অর্থহীন। Requirement থেকেই আসে কত server, কোন database, cache লাগবে কিনা। তাই design শুরু হয় প্রশ্ন দিয়ে, tool দিয়ে না।",
+      "whyWrong": {
+        "1": "Read বেশি না write, কত data, কতটা consistency লাগবে না জেনে database বাছা আন্দাজ।",
+        "2": "Estimation দরকারি, কিন্তু কত user আর কী feature না জেনে হিসাবই করা যায় না।",
+        "3": "Requirement না জেনে আঁকা diagram আন্দাজ মাত্র; আগে প্রশ্ন।"
+      }
+    },
+    {
+      "id": "sd-day-001-q19",
+      "difficulty": "easy",
+      "question": "Horizontal scaling বলতে কোনটা বোঝায়?",
+      "options": [
+        "একটা server-এ আরও RAM আর CPU যোগ করা",
+        "একই server-এ app-এর আরও কয়েকটা copy (process) চালানো",
+        "Load কম রাখতে কিছু user-কে সাময়িকভাবে ঢুকতে না দেওয়া",
+        "আরও server যোগ করে load তাদের মধ্যে ভাগ করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Horizontal scaling মানে আরও machine যোগ করা, আর load balancer দিয়ে কাজ ভাগ করা। একটা machine-কেই বড় করাকে বলে vertical scaling। Horizontal-এ প্রায় সীমাহীন বাড়ানো যায়, কিন্তু server-দের stateless হতে হয়।",
+      "whyWrong": {
+        "0": "এটা vertical scaling।",
+        "1": "সব একই machine-এ থাকায় সেই machine-এর সীমা আর SPOF থেকেই যায়; horizontal মানে আরও machine।",
+        "2": "এটা load কমানো (rate limiting), system বাড়ানো না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q20",
+      "difficulty": "easy",
+      "question": "Consistency বলতে এখানে কী বোঝানো হয়েছে?",
+      "options": [
+        "Server মরলেও data কখনো হারায় না (durability)",
+        "সবাই একই আর সর্বশেষ data দেখছে কিনা",
+        "User যখনই চায়, system সবসময় চালু থাকে (availability)",
+        "সব request-এর latency ঠিক একই রকম হওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "Consistency মানে data বদলালে সবাই সেই নতুন data দেখবে কিনা, আর কত দ্রুত। আপনি profile ছবি বদলালেন, বন্ধু কি সাথে সাথে নতুনটা দেখবে? Cache আর replica এই প্রশ্নকে কঠিন করে, তাই এটা একটা বড় trade-off।",
+      "whyWrong": {
+        "0": "এটা durability/reliability; consistency বলে সবাই একই সর্বশেষ data দেখে কিনা।",
+        "2": "এটা availability-র সংজ্ঞা।",
+        "3": "Latency সমান হওয়া আলাদা বিষয়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q21",
+      "difficulty": "medium",
+      "question": "একটা app-এর প্রতিদিন ১০ লাখ active user, প্রত্যেকে দিনে গড়ে ১০টা request পাঠায়। গড়ে প্রতি সেকেন্ডে মোটামুটি কত request আসে?",
+      "options": [
+        "প্রায় ১২টা",
+        "প্রায় ১১৫টা",
+        "প্রায় ১,১৫০টা",
+        "প্রায় ১০,০০০টা"
+      ],
+      "correctIndex": 1,
+      "explanation": "দিনে মোট ১০ লাখ × ১০ = ১ কোটি request। একদিনে ৮৬,৪০০ সেকেন্ড, তাই ১,০০,০০,০০০ ÷ ৮৬,৪০০ ≈ ১১৬। মনে রাখবেন এটা গড়; peak-এ কয়েক গুণ বেশি হতে পারে।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম; সম্ভবত ১০ লাখকে ১ লাখ ধরে হিসাব হয়েছে।",
+        "2": "এটা দশ গুণ বেশি; সেকেন্ডের সংখ্যা ৮,৬৪০ ধরলে এমন হয়।",
+        "3": "এটা ঘণ্টা বা দিনের হিসাব গুলিয়ে ফেলার ফল, সেকেন্ডে ভাগ করা হয়নি।"
+      }
+    },
+    {
+      "id": "sd-day-001-q22",
+      "difficulty": "medium",
+      "question": "আপনার app-এ গড়ে ২০০ request/সেকেন্ড আসে, আর সন্ধ্যার peak গড়ের প্রায় ৩ গুণ। একটা server আপনার latency লক্ষ্য রেখে ২০০ request/সেকেন্ড সামলায়। কমপক্ষে কয়টা server রাখা যুক্তিসঙ্গত, যাতে peak-এ একটা server মরলেও চলে?",
+      "options": [
+        "১টা, কারণ গড় load একটা server-এর ক্ষমতার সমান",
+        "২টা, একটা দিয়ে কাজ চলবে আর আরেকটা শুধু backup হিসেবে বসে থাকবে",
+        "৩টা, কারণ peak গড়ের ৩ গুণ",
+        "৪টা: peak-এর জন্য ৩টা, আর একটা মরলে তার জায়গায় একটা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Peak = ২০০ × ৩ = ৬০০ request/সেকেন্ড, যা সামলাতে ৬০০ ÷ ২০০ = ৩টা server লাগে। Peak-এর মধ্যে একটা server মরলেও চালাতে হলে আরেকটা বাড়তি লাগবে, মোট ৪টা। Design সবসময় peak আর failure দুটো ধরে করতে হয়, গড় ধরে না।",
+      "whyWrong": {
+        "0": "গড় ধরে design করলে প্রতিদিন সন্ধ্যায় system চাপে ভেঙে পড়বে।",
+        "1": "দুটো server peak-এর ৬০০ request/সেকেন্ডের জন্যই যথেষ্ট না।",
+        "2": "৩টা peak সামলায়, কিন্তু একটা মরলেই বাকি দুটো চাপে পড়বে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q23",
+      "difficulty": "medium",
+      "question": "আপনার SLA বলছে availability 99.9%। বছরে মোটামুটি কতক্ষণ system বন্ধ থাকতে পারে?",
+      "options": [
+        "প্রায় ৫ মিনিট",
+        "প্রায় ৫২.৬ মিনিট",
+        "প্রায় ৮.৮ ঘণ্টা",
+        "প্রায় ৩.৬৫ দিন"
+      ],
+      "correctIndex": 2,
+      "explanation": "বছরে ৩৬৫ × ২৪ = ৮,৭৬০ ঘণ্টা। 0.1% downtime মানে ৮,৭৬০ × 0.001 ≈ ৮.৮ ঘণ্টা। প্রতিটা বাড়তি '9' এই সময়কে দশ ভাগের এক ভাগে নামায়।",
+      "whyWrong": {
+        "0": "~৫ মিনিট হলো 99.999%-এর হিসাব।",
+        "1": "~৫২ মিনিট হলো 99.99%-এর হিসাব।",
+        "3": "~৩.৬৫ দিন হলো 99%-এর হিসাব।"
+      }
+    },
+    {
+      "id": "sd-day-001-q24",
+      "difficulty": "medium",
+      "question": "একটা server-এ app আর database দুটোই চলছে। User বেড়েছে, আর ভারী database query চললে app-এর response-ও ধীর হয়ে যাচ্ছে। প্রথম যুক্তিসঙ্গত পদক্ষেপ কোনটা?",
+      "options": [
+        "Database-কে আলাদা machine-এ সরানো, যাতে দুটো একে অপরের CPU-RAM নিয়ে টানাটানি না করে",
+        "সাথে সাথে database-কে ১০টা shard-এ ভাগ করা, যাতে প্রতিটায় কম data থাকে",
+        "App-কে microservice-এ ভাগ করে ফেলা, যাতে প্রতিটা আলাদা team চালায়",
+        "App server-এর thread সংখ্যা অনেক বাড়িয়ে দেওয়া, যাতে একসাথে আরও বেশি request নিতে পারে"
+      ],
+      "correctIndex": 0,
+      "explanation": "সমস্যা হলো দুটো ভারী কাজ একই machine-এর resource ভাগ করছে। Database আলাদা machine-এ নিলে দুটো স্বাধীনভাবে চলে, আর প্রতিটাকে আলাদাভাবে বড় করা যায়। এটা ছোট, সহজ ধাপ যেটা সরাসরি এই bottleneck-এর উত্তর।",
+      "whyWrong": {
+        "1": "Sharding অনেক জটিল, আর এখানে সমস্যা data-র আকার না, resource-এর ভাগাভাগি।",
+        "2": "Microservice এই resource-এর টানাটানির সমাধান করে না, উল্টো জটিলতা বাড়ায়।",
+        "3": "এতে একই machine-এ আরও চাপ পড়ে, CPU-RAM-এর টানাটানি আরও বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q25",
+      "difficulty": "medium",
+      "question": "Product page-এর data দিনে একবার বদলায়, কিন্তু প্রতি সেকেন্ডে হাজার বার পড়া হয়। Database-এর CPU প্রায় ৯০%। কোনটা সবচেয়ে কার্যকর?",
+      "options": [
+        "Database-এর জন্য আরও শক্তিশালী machine কেনা",
+        "Product data cache-এ রাখা, যাতে বেশিরভাগ read database-এ না যায়",
+        "আরও কয়েকটা app server যোগ করা, যাতে প্রতিটা server-এর load ভাগ হয়ে যায়",
+        "User-দের প্রতি মিনিটে একবারের বেশি page খুলতে না দেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "Read অনেক বেশি আর data কম বদলায়, এটা cache-এর আদর্শ পরিস্থিতি। Cache থেকে বেশিরভাগ read মিটে গেলে database-এর চাপ অনেক কমে, আর page-ও দ্রুত হয়। Trade-off হলো data বদলানোর পর কিছুক্ষণ পুরনো data দেখা যেতে পারে, যেটা এখানে সহনীয়।",
+      "whyWrong": {
+        "0": "কাজ করতে পারে, কিন্তু একই data বারবার পড়ার মূল সমস্যা থেকে যায় আর খরচ বেশি; cache সস্তা ও বেশি কার্যকর।",
+        "2": "Bottleneck database-এ; app server বাড়ালে database-এ query কমে না।",
+        "3": "User-কে আটকানো ব্যবসার ক্ষতি; সমস্যাটা design দিয়ে সমাধান করা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q26",
+      "difficulty": "medium",
+      "question": "আপনার সব user বাংলাদেশে, কিন্তু server আমেরিকায়। Page-এর HTML দ্রুত আসে, কিন্তু প্রতিটা page-এর ১০টা বড় ছবি লোড হতে অনেক সময় নেয়। কী করবেন?",
+      "options": [
+        "App server-এর CPU আর RAM দ্বিগুণ করা, যাতে server ছবিগুলো দ্রুত পাঠাতে পারে",
+        "Database-এ index যোগ করা, যাতে ছবির query দ্রুত হয়",
+        "ছবিগুলো CDN দিয়ে দেওয়া, যাতে user-এর কাছের server থেকে আসে",
+        "আমেরিকার server-এর সামনে load balancer আর আরেকটা server যোগ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "এখানে দেরি আসছে দূরত্ব থেকে: প্রতিটা ছবির জন্য মহাদেশ পেরিয়ে যাওয়া-আসা। CPU বাড়ালে আলোর গতি বাড়ে না। CDN ছবিগুলো কাছের server-এ রাখে, তাই দূরত্ব আর মূল server-এর bandwidth দুটোই কমে।",
+      "whyWrong": {
+        "0": "সমস্যা দূরত্বের, CPU-র না; server যত দ্রুতই হোক network-এর দেরি থাকবে।",
+        "1": "ছবি সাধারণত database থেকে আসে না, আর সমস্যা query-তে না।",
+        "3": "Server বাড়ালেও দূরত্ব একই থাকে, প্রতিটা ছবি মহাদেশ পেরিয়েই আসে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q27",
+      "difficulty": "medium",
+      "question": "Checkout-এর সময় server payment নিশ্চিত করে, তারপর invoice PDF বানায় আর email পাঠায়। User প্রায় ৩ সেকেন্ড অপেক্ষা করে। কোন পরিবর্তনটা সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "Payment-কেও queue-তে দেওয়া, যাতে user শুধু \"অপেক্ষা করুন\" দেখে",
+        "Server-এর timeout বাড়িয়ে ৩০ সেকেন্ড করা, যাতে কোনো কাজ মাঝপথে বন্ধ না হয়ে যায়",
+        "PDF, email আর payment একসাথে parallel thread-এ চালানো, যাতে মোট সময় কমে",
+        "Payment synchronous রেখে PDF আর email queue-তে দিয়ে worker দিয়ে পরে করানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "User-এর এখনই জানা দরকার payment হয়েছে কিনা, তাই সেটা synchronous। PDF আর email কয়েক সেকেন্ড পরে হলেও চলে, তাই queue-তে দিলে response দ্রুত হয়। কোনটা এখনই লাগবে আর কোনটা পরে হলেও চলে, এই ভাগটাই মূল design সিদ্ধান্ত।",
+      "whyWrong": {
+        "0": "Payment-এর ফলাফল user-এর তখনই দরকার; queue-তে দিলে order-এর অবস্থা অনিশ্চিত থাকে।",
+        "1": "Timeout বাড়ালে অপেক্ষা কমে না, উল্টো খারাপ অবস্থায় আরও বাড়ে।",
+        "2": "সময় কিছুটা কমে, কিন্তু user এখনো সবচেয়ে ধীর কাজের অপেক্ষায় থাকে, আর email service fail করলে checkout-ও fail।"
+      }
+    },
+    {
+      "id": "sd-day-001-q28",
+      "difficulty": "medium",
+      "question": "দুটো app server load balancer-এর পেছনে। User-রা অভিযোগ করছে, মাঝে মাঝে হঠাৎ logout হয়ে যাচ্ছে। Login session প্রতিটা server-এর নিজের memory-তে রাখা হয়। মূল সমস্যা কী?",
+      "options": [
+        "Server stateful: পরের request অন্য server-এ গেলে সে session চেনে না",
+        "Session-এর মেয়াদ খুব কম রাখা হয়েছে, তাই কিছুক্ষণ পরপর নিজে থেকে শেষ হয়ে যাচ্ছে",
+        "User-দের browser cookie রাখতে পারছে না",
+        "দুটো server-এর ঘড়ির সময় মেলে না, তাই login-এর হিসাব ভুল হচ্ছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Session server-এর নিজের memory-তে থাকলে শুধু সেই server user-কে চেনে। Load balancer পরের request অন্য server-এ পাঠালে সেখানে session নেই, তাই user logout দেখে। সমাধান হলো server-কে stateless করা, session কোনো shared store-এ (যেমন Redis বা database) রাখা।",
+      "whyWrong": {
+        "1": "মেয়াদের সমস্যা হলে নির্দিষ্ট সময় পরপর হতো; এখানে হচ্ছে অন্য server-এ গেলে, কারণ session একেক server-এর memory-তে।",
+        "2": "Cookie ঠিকই আছে, কিন্তু অন্য server-এর কাছে সেই session-এর data নেই।",
+        "3": "ঘড়ির পার্থক্য কিছু token-এর সমস্যা করতে পারে, কিন্তু এখানে session-টাই অন্য server-এ নেই।"
+      }
+    },
+    {
+      "id": "sd-day-001-q29",
+      "difficulty": "medium",
+      "question": "দুজন developer-এর একটা startup, ২০০ user। একজন প্রস্তাব দিল microservices, Kafka আর Kubernetes দিয়ে শুরু করতে। সবচেয়ে ভালো জবাব কোনটা?",
+      "options": [
+        "রাজি হওয়া, কারণ বড় company-গুলো এভাবেই করে, তাই শুরু থেকেই এটাই সবচেয়ে সঠিক পথ",
+        "রাজি হওয়া, তবে শুধু Kafka বাদ দিয়ে, কারণ queue সবসময় অপ্রয়োজনীয়",
+        "Microservices না, কিন্তু শুরু থেকেই তিনটা region-এ app চালানো, যাতে কখনো বন্ধ না হয়",
+        "আপাতত সরল একটা app আর database, কারণ বাকিগুলোর জটিলতা এখনকার লাভের চেয়ে বেশি"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা component চালানো, monitor করা আর শেখার খরচ আছে, যা দুজনের team-এর feature বানানোর গতি কমিয়ে দেয়। ২০০ user-এর জন্য এই scale-এর সমস্যা এখনো নেই। মেপে দেখে যেখানে আটকাবে সেখানে পরে component যোগ করা যায়।",
+      "whyWrong": {
+        "0": "বড় company-র design তাদের scale আর team-এর জন্য; এখানে সেটা over-engineering।",
+        "1": "Queue সবসময় অপ্রয়োজনীয় না; প্রশ্নটা এখনকার requirement-এর।",
+        "2": "এটাও over-engineering; ২০০ user-এর জন্য multi-region-এর খরচ আর জটিলতা অনেক বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-001-q30",
+      "difficulty": "medium",
+      "question": "একটা app-এ দুটো feature: wallet balance আর post-এর like count। Consistency নিয়ে কোন সিদ্ধান্ত সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "Balance-এ strong consistency, like count কয়েক সেকেন্ড পুরনো হলেও চলবে",
+        "দুটোতেই কয়েক সেকেন্ড পুরনো data চলবে, কারণ দুটোই শেষ পর্যন্ত শুধু একটা সংখ্যা",
+        "Like count-এ strong consistency, balance পুরনো হলেও চলবে",
+        "দুটোতেই সবসময় strong consistency, খরচ বা দেরি যতই হোক"
+      ],
+      "correctIndex": 0,
+      "explanation": "Balance ভুল বা পুরনো দেখালে টাকার ক্ষতি আর আস্থা হারানো, তাই একটু ধীর হলেও সঠিক হওয়া জরুরি। Like count কয়েক সেকেন্ড পুরনো হলে কারো ক্ষতি নেই, তাই দ্রুততা আর availability বেছে নেওয়া যায়। একই system-এর ভেতরেও feature অনুযায়ী আলাদা সিদ্ধান্ত হয়।",
+      "whyWrong": {
+        "1": "Balance পুরনো দেখালে double spend-এর মতো গুরুতর ভুল হতে পারে।",
+        "2": "এটা উল্টো: যেখানে ভুল চলে না সেখানে ঢিলেঢালা, আর যেখানে চলে সেখানে কড়া।",
+        "3": "Like count-এ কড়া consistency দিলে বাড়তি দেরি আর খরচ, কিন্তু কোনো লাভ নেই।"
+      }
+    },
+    {
+      "id": "sd-day-001-q31",
+      "difficulty": "medium",
+      "question": "আপনার team একটা নতুন feature-এর requirement লিখছে: \"৯৯% search ২০০ms-এর মধ্যে ফলাফল দেবে।\" এটা কোন ধরনের requirement, আর design-এ কী প্রভাব ফেলে?",
+      "options": [
+        "Functional; এটা বলে search feature-টা থাকবে কিনা",
+        "Non-functional; এটা ঠিক করে দেয় search-এর জন্য index বা cache-এর মতো কৌশল লাগবে কিনা",
+        "Functional; কারণ এটা search feature-এর সাথে জড়িত, তাই feature-এরই অংশ",
+        "Non-functional; কিন্তু এটা design-এ কোনো প্রভাব ফেলে না, শুধু release-এর আগে testing-এ লাগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা search কতটা দ্রুত হবে তা বলে, তাই non-functional (latency)। এরকম লক্ষ্যই design বদলায়: ২০০ms-এ পৌঁছাতে হয়তো index, cache বা আলাদা search engine লাগবে। লক্ষ্য না লিখলে কেউ জানে না কতটা ভালো যথেষ্ট।",
+      "whyWrong": {
+        "0": "Feature থাকবে কিনা সেটা আলাদা functional requirement; এখানে গতির কথা বলা হচ্ছে।",
+        "2": "Feature-এর সাথে জড়িত হলেও এটা গতির কথা বলে, কাজের না; তাই non-functional।",
+        "3": "Latency লক্ষ্যই অনেক design সিদ্ধান্ত চালায়, শুধু testing-এ সীমাবদ্ধ না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q32",
+      "difficulty": "medium",
+      "question": "একটা server-এ প্রতিটা request ৫০ms-এ শেষ হয়, কিন্তু server সর্বোচ্চ ১০০ request/সেকেন্ড সামলাতে পারে। হঠাৎ ৫০০ request/সেকেন্ড আসছে। কী ঘটবে?",
+      "options": [
+        "প্রতিটা request এখনো ৫০ms-এ শেষ হবে, কারণ latency server-এর গুণ",
+        "প্রথম ১০০টা স্বাভাবিক চলবে, আর বাকি ৪০০টা সাথে সাথে error পেয়ে ফিরে যাবে",
+        "অতিরিক্ত request লাইনে জমবে, ফলে অপেক্ষাসহ latency বাড়তে থাকবে বা request fail করবে",
+        "শুধু প্রথম ১০০টা request server-এ পৌঁছাবে, বাকিগুলো network থেকে নিজে থেকেই হারিয়ে যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "এখানে সীমা throughput-এ: সেকেন্ডে ১০০টার বেশি শেষ হয় না। বাকি ৪০০টা লাইনে দাঁড়ায়, তাই user-এর দেখা latency (অপেক্ষাসহ) বাড়তে থাকে, আর লাইন ভরে গেলে request fail করে। একটা request কত দ্রুত আর server কতগুলো সামলায়, দুটো আলাদা প্রশ্ন।",
+      "whyWrong": {
+        "0": "কাজের সময় ৫০ms থাকলেও লাইনে অপেক্ষার সময় যোগ হয়, তাই user অনেক বেশি সময় দেখে।",
+        "1": "সাধারণ server আগে অতিরিক্ত request লাইনে জমায়, তাই সবার latency বাড়ে; আলাদা করে load shedding না বানালে এমন পরিষ্কার ভাগ হয় না।",
+        "3": "Request নিজে থেকে হারায় না; জমে থাকে, timeout হয় বা server ফিরিয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q33",
+      "difficulty": "medium",
+      "question": "একটা server একবারে একটাই request সামলায়, প্রতিটায় ১০০ms লাগে। একসাথে ২০ জন user request পাঠালে গড়ে প্রত্যেক user মোটামুটি কতক্ষণ অপেক্ষা করবে (lab-এর মতো, লাইনে দাঁড়ানোসহ)?",
+      "options": [
+        "প্রায় ১০০ms, কারণ প্রতিটা request ঠিক ১০০ms নেয়, user যতজনই হোক",
+        "প্রায় ৫ms, কারণ ২০ জনে ভাগ হয়ে যায়",
+        "প্রায় ২০ সেকেন্ড, কারণ ২০ জন user-এর প্রত্যেকের জন্য ১ সেকেন্ড করে অপেক্ষা যোগ হয়",
+        "প্রায় ২ সেকেন্ড, কারণ প্রত্যেককে লাইনে বাকিদের শেষ হওয়ার অপেক্ষা করতে হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Server সেকেন্ডে ১০টা request শেষ করে (১০০ms করে)। ২০ জন যখন বারবার লাইনে থাকে, প্রত্যেকের request-কে বাকিদেরগুলো শেষ হওয়ার অপেক্ষা করতে হয়, তাই গড়ে ~২০ × ১০০ms = ~২ সেকেন্ড। Lab-এ ab ঠিক এটাই দেখায়: throughput একই, latency ২০ গুণ।",
+      "whyWrong": {
+        "0": "১০০ms শুধু কাজের সময়; লাইনে অপেক্ষার সময় বাদ পড়েছে।",
+        "1": "একবারে একটাই request চলে, তাই কাজ ভাগ হয়ে দ্রুত হয় না।",
+        "2": "প্রতিটা request ১০০ms নেয়, ১ সেকেন্ড না; হিসাব দশ গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-001-q34",
+      "difficulty": "medium",
+      "question": "Profile page-এ cache যোগ করার পর একজন user বলছে, নাম বদলানোর পরও কিছুক্ষণ পুরনো নাম দেখাচ্ছে। এটা কিসের ফল?",
+      "options": [
+        "Cache-এর স্বাভাবিক trade-off: দ্রুততার বিনিময়ে data কিছুক্ষণ পুরনো থাকতে পারে",
+        "Database-এ নতুন নাম ঠিকমতো save না হওয়ার একটা bug, যেটা শুধু মাঝে মাঝে দেখা দেয়",
+        "Browser পুরনো page নিজের কাছে রেখে দিয়েছে, তাই শুধু এই user-এর সমস্যা",
+        "Database-এর read replica পিছিয়ে আছে, তাই replica থেকে পুরনো নাম আসছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Cache-এ data-র একটা কপি থাকে; মূল data বদলালে কপিটা কিছুক্ষণ পুরনো থাকতে পারে যতক্ষণ না মেয়াদ শেষ হয় বা মুছে দেওয়া হয়। এটাই cache-এর মূল trade-off। সমাধান হলো লেখার সময় cache মুছে দেওয়া, বা মেয়াদ (TTL) কম রাখা।",
+      "whyWrong": {
+        "1": "Database-এ ঠিকই save হয়েছে; পুরনো data আসছে cache-এর কপি থেকে।",
+        "2": "হতে পারে, কিন্তু সদ্য cache যোগ করার পরেই শুরু হওয়া আর কিছুক্ষণ পরে নিজে ঠিক হওয়া server-এর cache-এর লক্ষণ।",
+        "3": "এখানে কোনো replica যোগ হয়নি; নতুন যোগ হওয়া পরিবর্তন হলো cache।"
+      }
+    },
+    {
+      "id": "sd-day-001-q35",
+      "difficulty": "medium",
+      "question": "Read-এর চাপ কমাতে database-এর একটা read replica যোগ করা হলো। User order দেওয়ার সাথে সাথে \"My Orders\" page খুলে নতুন order দেখতে পাচ্ছে না, কয়েক সেকেন্ড পরে পাচ্ছে। কেন?",
+      "options": [
+        "Order আসলে save হয়নি, user-কে ভুল confirmation দেওয়া হয়েছে",
+        "Replica-তে নতুন data পৌঁছাতে একটু দেরি হয় (replication lag), আর page replica থেকে পড়ছে",
+        "Read replica শুধু পুরনো data রাখার জন্যই বানানো, তাই সেখানে নতুন কোনো data কখনো পৌঁছায় না",
+        "Browser page-টা cache করে রেখেছে, server-এর কোনো ভূমিকা নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "Write যায় primary database-এ, তারপর replica-তে কপি হয়, যেটায় কিছুটা সময় লাগে। সেই ফাঁকে replica থেকে পড়লে নতুন order দেখা যায় না। এটা replica-র consistency trade-off; সমাধান হতে পারে নিজের সদ্য লেখা data primary থেকে পড়া (Day 28-এ বিস্তারিত)।",
+      "whyWrong": {
+        "0": "কয়েক সেকেন্ড পরে order দেখা যাচ্ছে, তাই save ঠিকই হয়েছে।",
+        "2": "Replica নিয়মিত নতুন data পায়, শুধু একটু দেরিতে।",
+        "3": "কয়েক সেকেন্ডে নিজে থেকে ঠিক হয়ে যাওয়া replication lag-এর লক্ষণ, browser cache-এর একমাত্র ব্যাখ্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q36",
+      "difficulty": "medium",
+      "question": "Interview-তে বলা হলো \"একটা URL shortener design করুন।\" প্রথম কয়েক মিনিটে কী করা সবচেয়ে ভালো?",
+      "options": [
+        "সাথে সাথে Cassandra, Kafka আর Redis দিয়ে একটা বড় diagram আঁকা শুরু করা, যাতে interviewer বোঝে আমি এগুলো জানি",
+        "URL-কে ছোট করার hash function-এর code লেখা শুরু করা",
+        "প্রশ্ন করে requirement পরিষ্কার করা: দিনে কতগুলো URL, read আর write-এর অনুপাত, link কতদিন থাকবে",
+        "বলা যে এর কোনো সঠিক উত্তর নেই, তাই যেকোনো design চলবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Interviewer দেখতে চান আপনি আন্দাজে না, requirement বুঝে design করেন। Scale, read/write অনুপাত আর ধরে রাখার সময় জানলে পরের সব সিদ্ধান্ত (storage, cache, ID তৈরি) যুক্তিসঙ্গত হয়। শুরুতেই tool-এর নাম বলা একটা পরিচিত red flag।",
+      "whyWrong": {
+        "0": "Requirement না জেনে tool বাছা interviewer-এর কাছে বড় red flag।",
+        "1": "Code LLD-র অংশ; আগে HLD আর requirement।",
+        "3": "এক উত্তর না থাকলেও যুক্তি দিয়ে বাছা design লাগে; যেকোনো design চলে না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q37",
+      "difficulty": "medium",
+      "question": "দিনে ১ লাখ order আসে, প্রতিটা order database-এ মোটামুটি ২KB জায়গা নেয়। এক বছরে order-এর data মোটামুটি কত হবে?",
+      "options": [
+        "প্রায় ৭.৩GB",
+        "প্রায় ৭৩০GB",
+        "প্রায় ৭.৩TB",
+        "প্রায় ৭৩GB"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিদিন ১,০০,০০০ × ২KB = ২,০০,০০০KB ≈ ২০০MB। বছরে ২০০MB × ৩৬৫ ≈ ৭৩,০০০MB ≈ ৭৩GB। এই আকার একটা database-এ সহজেই ধরে, তাই এই মুহূর্তে sharding-এর দরকার নেই।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম; সম্ভবত দিনে ২০MB ধরা হয়েছে।",
+        "1": "এটা দশ গুণ বেশি; দিনে ২GB ধরলে এমন হয়।",
+        "2": "এটা একশো গুণ বেশি; KB আর MB গুলিয়ে ফেলার ফল।"
+      }
+    },
+    {
+      "id": "sd-day-001-q38",
+      "difficulty": "medium",
+      "question": "নিচের কোন প্রশ্নটা Low-Level Design (LLD)-এর, High-Level Design-এর না?",
+      "options": [
+        "Parking lot system-এ Vehicle, Slot আর Ticket class কিভাবে ভাগ হবে, আর ticket-এর state কিভাবে বদলাবে",
+        "User-দের request কোন region-এর data center-এ যাবে, আর region-গুলোর মধ্যে data কিভাবে আর কত দ্রুত sync হবে",
+        "App server-দের সামনে load balancer লাগবে কিনা, আর কয়টা server রাখা হবে",
+        "ছবিগুলো CDN দিয়ে দেওয়া হবে নাকি সরাসরি app server থেকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Class-এর ভাগ আর একটা object-এর state কিভাবে বদলায়, এগুলো একটা component-এর ভেতরের খুঁটিনাটি, তাই LLD। বাকি তিনটা প্রশ্ন বড় ছবির: কোন component, কোথায়, কিভাবে যুক্ত। LLD নিয়ে Day 115-এ বিস্তারিত হবে।",
+      "whyWrong": {
+        "1": "Region আর data sync পুরো system-এর গঠনের সিদ্ধান্ত, তাই HLD।",
+        "2": "Load balancer আর server সংখ্যা component-স্তরের সিদ্ধান্ত, HLD।",
+        "3": "CDN ব্যবহার হবে কিনা component বাছাই, HLD।"
+      }
+    },
+    {
+      "id": "sd-day-001-q39",
+      "difficulty": "medium",
+      "question": "আপনার ঈদ-কেনাকাটার site-এ বছরের বেশিরভাগ সময় traffic কম, কিন্তু ঈদের আগের এক সপ্তাহে ১০ গুণ। Cost-এর দিক থেকে কোন design সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "সারা বছর ঈদের peak-এর সমান সংখ্যক server চালিয়ে রাখা, যাতে কোনো সময়েই কোনো রকম ঝুঁকি না থাকে",
+        "সারা বছর কম server রাখা, ঈদে site ধীর হলে সেটা মেনে নেওয়া",
+        "এমন setup যেখানে চাহিদা বাড়লে server যোগ হয় আর কমলে সরে যায়, যেমন cloud-এর autoscaling",
+        "ঈদের আগে একটা অনেক বড় server কিনে রাখা, ঈদের পরেও সেটাই চালু রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "সারা বছর peak-এর জন্য machine চালানো মানে ৫১ সপ্তাহ বেশিরভাগ resource অলস। চাহিদা অনুযায়ী resource বাড়ানো-কমানো (autoscaling) peak সামলায় আর বাকি সময় খরচ কমায়। তবে এর জন্য server-দের stateless হতে হয়, আর আগে থেকে load test করে নিতে হয় (Day 87)।",
+      "whyWrong": {
+        "0": "এতে বছরের বেশিরভাগ সময় অপ্রয়োজনীয় খরচ।",
+        "1": "সবচেয়ে বেশি বিক্রির সময়েই site ধীর হলে সবচেয়ে বড় ক্ষতি।",
+        "3": "বড় machine সারা বছর প্রায় অলস বসে থাকবে, আর একটা machine মানে SPOF; চাহিদা অনুযায়ী বাড়ানো-কমানো সস্তা।"
+      }
+    },
+    {
+      "id": "sd-day-001-q40",
+      "difficulty": "medium",
+      "question": "একটা পুরনো system-এর পুরো logic ৫০ হাজার লাইনের একটা file-এ, কোনো test নেই, আর শুধু একজন engineer বোঝেন। তিনি ছুটিতে গেলে কেউ bug ঠিক করতে পারে না। কোন quality-তে সবচেয়ে বড় দুর্বলতা?",
+      "options": [
+        "Scalability, কারণ একটা বড় file-এর code বেশি user একসাথে সামলাতে পারে না",
+        "Maintainability, কারণ system বুঝে, বদলে আর চালিয়ে নেওয়া কঠিন",
+        "Availability, কারণ ওই engineer না থাকলে system বন্ধ হয়ে যায়",
+        "Reliability, কারণ test না থাকায় system ভুল উত্তর দিচ্ছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এখানে সমস্যা system-এর কাজ বা গতি না, মানুষের পক্ষে এটা বোঝা আর বদলানো। একজনের উপর নির্ভরতাও এক রকম 'single point of failure', তবে মানুষের। Modular গঠন, test আর documentation দিয়ে maintainability বাড়ানো যায়।",
+      "whyWrong": {
+        "0": "File-এর আকার নিজে user সংখ্যার সীমা ঠিক করে না।",
+        "2": "System চালু আছে; শুধু bug ঠিক করা যাচ্ছে না, তাই এটা maintainability-র সমস্যা।",
+        "3": "প্রশ্নে ভুল উত্তরের কথা নেই; সমস্যা হলো বোঝা আর বদলানো।"
+      }
+    },
+    {
+      "id": "sd-day-001-q41",
+      "difficulty": "hard",
+      "question": "একটা request load balancer → app server → database, এই তিনটা ধাপ পেরিয়ে যায়। প্রতিটা আলাদাভাবে 99.9% available, আর এদের কোনো কপি নেই। পুরো পথের availability মোটামুটি কত?",
+      "options": [
+        "99.9%, কারণ সবগুলোর availability একই",
+        "99.99%, কারণ তিনটা মিলে আরও নির্ভরযোগ্য",
+        "প্রায় 99.7%, কারণ তিনটাকেই একসাথে চালু থাকতে হয়",
+        "প্রায় 97%, কারণ তিনটা ধাপের প্রতিটায় ১% করে availability হারায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Request সফল হতে তিনটাকেই একসাথে চালু থাকতে হবে, তাই availability গুণ হয়: 0.999 × 0.999 × 0.999 ≈ 0.997। একের পর এক যত অংশ, মোট availability তত কমে। তাই প্রতিটা স্তরে redundancy দরকার হয়।",
+      "whyWrong": {
+        "0": "তিনটার যেকোনো একটা বন্ধ হলেই request fail, তাই মোট availability একটার চেয়ে কম।",
+        "1": "কপি ছাড়া একের পর এক অংশ যোগ করলে availability বাড়ে না, কমে।",
+        "3": "প্রতিটায় ০.১% (১% না) হারায়, তাই ফল প্রায় 99.7%।"
+      }
+    },
+    {
+      "id": "sd-day-001-q42",
+      "difficulty": "hard",
+      "question": "দুটো app server, প্রতিটা 99% available, আর তারা একে অপরের থেকে স্বাধীনভাবে fail করে। Load balancer যেকোনো চালু server-এ পাঠাতে পারে। অন্তত একটা server চালু থাকার সম্ভাবনা কত (load balancer বাদ দিয়ে)?",
+      "options": [
+        "99.99%, কারণ দুটো একসাথে বন্ধ থাকার সম্ভাবনা ০.০১ × ০.০১",
+        "98%, কারণ দুটো server-এর downtime একসাথে যোগ হয়ে দ্বিগুণ হয়",
+        "99%, কারণ দুটোর availability একই",
+        "99.5%, কারণ দুটোর গড় নিতে হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "System বন্ধ হবে শুধু যদি দুটোই একসাথে বন্ধ থাকে। স্বাধীন হলে সেই সম্ভাবনা ০.০১ × ০.০১ = ০.০০০১, তাই availability ১ − ০.০০০১ = 99.99%। পাশাপাশি কপি রাখা (redundancy) এভাবেই availability অনেক বাড়ায়, তবে শুধু যদি failure সত্যিই স্বাধীন হয়।",
+      "whyWrong": {
+        "1": "Downtime যোগ হয় একের পর এক থাকা অংশে; পাশাপাশি কপিতে দুটোকেই একসাথে বন্ধ হতে হয়।",
+        "2": "এতে দ্বিতীয় server-এর লাভ হিসাবে আসেনি।",
+        "3": "Availability-র গড় নেওয়ার কোনো ভিত্তি নেই।"
+      }
+    },
+    {
+      "id": "sd-day-001-q43",
+      "difficulty": "hard",
+      "question": "আগের হিসাবে দুটো server মিলে 99.99% availability পাওয়ার কথা। কিন্তু দুটো server একই rack-এ, একই power supply-তে, আর একসাথে একই code deploy হয়। বাস্তবে কী হবে?",
+      "options": [
+        "হিসাব ঠিকই থাকবে, কারণ server দুটো আলাদা machine",
+        "দুটো একসাথে fail করার সম্ভাবনা অনেক বেশি, কারণ failure আর স্বাধীন না",
+        "Availability আরও বাড়বে, কারণ একই জায়গায় থাকলে network দ্রুত",
+        "শুধু hardware failure হিসাবে আসে, তাই একসাথে একই code deploy করার কোনো প্রভাব নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "গুণের হিসাব ধরে নেয় failure স্বাধীন। একই power supply গেলে বা একই ভুল code deploy হলে দুটো একসাথে মরে (correlated failure)। তাই বাস্তবে কপি রাখা হয় আলাদা rack, zone বা region-এ, আর deploy করা হয় ধাপে ধাপে।",
+      "whyWrong": {
+        "0": "আলাদা machine হলেও একই কারণে একসাথে fail করতে পারে, তাই হিসাব খাটে না।",
+        "2": "কাছাকাছি থাকলে latency কমতে পারে, কিন্তু একসাথে মরার ঝুঁকি বাড়ে।",
+        "3": "খারাপ deploy outage-এর একটা প্রধান কারণ, আর এটা দুটো server-কে একসাথে ফেলে দিতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q44",
+      "difficulty": "hard",
+      "question": "আপনার fleet-এ ১,০০০টা server, প্রতিটা গড়ে ১,০০০ দিনে একবার নষ্ট হয়। এর থেকে design-এর জন্য সবচেয়ে গুরুত্বপূর্ণ শিক্ষা কোনটা?",
+      "options": [
+        "Server খুব কমই নষ্ট হয়, তাই এই scale-এ failure নিয়ে আলাদা করে চিন্তার দরকার নেই",
+        "আরও দামী server কিনলে failure পুরো বন্ধ হয়ে যাবে",
+        "ভালো monitoring দিয়ে আগে থেকে জেনে প্রতিটা failure ঠেকানো যায়, তাই recovery লাগবে না",
+        "গড়ে প্রায় প্রতিদিন একটা server নষ্ট হবে, তাই recovery স্বয়ংক্রিয় হতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা server-এর জন্য প্রতিদিন নষ্ট হওয়ার সম্ভাবনা ১/১,০০০; ১,০০০টা মিলে গড়ে দিনে একটা। এই scale-এ failure প্রতিদিনের ঘটনা, তাই মানুষের হাতে ঠিক করার অপেক্ষা করা চলে না। Health check, automatic failover আর redundancy design-এর অংশ হতে হয়।",
+      "whyWrong": {
+        "0": "একটা server-এর জন্য বিরল, কিন্তু হাজারটা মিলে প্রায় প্রতিদিন।",
+        "1": "দামী hardware-ও নষ্ট হয়; failure কমে, বন্ধ হয় না।",
+        "2": "Monitoring অনেক সমস্যা আগে দেখায়, কিন্তু সব failure ঠেকাতে পারে না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q45",
+      "difficulty": "hard",
+      "question": "একটা shopping app-এর home page-এ \"আপনার জন্য\" recommendation আসে আলাদা একটা service থেকে। সেই service down হলে কোন আচরণ সবচেয়ে ভালো design?",
+      "options": [
+        "পুরো home page-এ error দেখানো, যাতে user বুঝতে পারে কিছু ভুল হয়েছে",
+        "Recommendation service ফিরে না আসা পর্যন্ত page load আটকে রাখা",
+        "অল্প timeout-এর পর recommendation-এর জায়গায় জনপ্রিয় product দেখিয়ে বাকি page স্বাভাবিক রাখা",
+        "Recommendation service-কে প্রতি millisecond-এ retry করা, যতক্ষণ না সেটা ফিরে এসে উত্তর দেয়, যাতে ঠিক data দেখানো যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটাকে বলে graceful degradation: একটা কম জরুরি অংশ ভাঙলে পুরো page না ভেঙে একটা সহজ বিকল্প দেখানো। Timeout না থাকলে ধীর service পুরো page আটকে দিত। User কেনাকাটা চালিয়ে যেতে পারে, যেটাই আসল লক্ষ্য।",
+      "whyWrong": {
+        "0": "একটা ঐচ্ছিক অংশের জন্য পুরো page ভাঙা অপ্রয়োজনীয় ক্ষতি।",
+        "1": "অপেক্ষায় পুরো page আটকে যায়, user চলে যায়।",
+        "3": "এত ঘন retry ভাঙা service-এর উপর চাপ আরও বাড়ায়, আর ফেরা আরও কঠিন করে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q46",
+      "difficulty": "hard",
+      "question": "Peak-এ ৩,০০০ request/সেকেন্ড আসবে বলে হিসাব। Load test-এ দেখা গেছে একটা server latency লক্ষ্য রেখে ৪০০ request/সেকেন্ড সামলায়। একটা server মরলেও peak সামলাতে হলে কমপক্ষে কয়টা server লাগবে?",
+      "options": [
+        "৮টা, কারণ ৩,০০০ ÷ ৪০০ = ৭.৫, উপরের দিকে গোল করে",
+        "৯টা: peak-এর জন্য ৮টা, আর একটা মরলে তার বদলি",
+        "৭টা, কারণ ৭.৫ নিচের দিকে গোল করলে ৭",
+        "৩০টা, কারণ প্রতি ১০০ request-এ একটা server"
+      ],
+      "correctIndex": 1,
+      "explanation": "৩,০০০ ÷ ৪০০ = ৭.৫, তাই peak-এর জন্য অন্তত ৮টা (অর্ধেক server হয় না)। একটা মরলেও ৮টা চালু রাখতে আরেকটা লাগবে, মোট ৯টা (N+1)। বাস্তবে আরও কিছু বাড়তি রাখা হয়, কারণ হিসাব আর load test দুটোই আনুমানিক।",
+      "whyWrong": {
+        "0": "৮টা peak সামলায়, কিন্তু একটা মরলেই ৭টা ৩,০০০ সামলাতে পারবে না।",
+        "2": "নিচে গোল করলে peak-এই ক্ষমতার ঘাটতি।",
+        "3": "প্রতি server ৪০০ request সামলায়, ১০০ না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q47",
+      "difficulty": "hard",
+      "question": "Database কিছুক্ষণ ধীর হতেই হাজার হাজার client সাথে সাথে retry শুরু করল, আর database ফিরে আসার পরও load-এর চাপে আবার পড়ে গেল। কোন design সবচেয়ে ভালো এই সমস্যা কমায়?",
+      "options": [
+        "Retry সংখ্যা বাড়িয়ে দেওয়া, যাতে শেষ পর্যন্ত সবার request সফল হয়",
+        "Client-এর timeout অসীম করা, যাতে কেউ retry-ই না করে",
+        "ধীর হলেই database restart করে দেওয়া, যাতে সব পুরনো connection একবারে কেটে গিয়ে চাপ নেমে যায়",
+        "Retry-এর মাঝে ক্রমশ বাড়তে থাকা অপেক্ষা (backoff) আর এলোমেলো jitter, সাথে retry-এর সীমা"
+      ],
+      "correctIndex": 3,
+      "explanation": "সবাই একসাথে সাথে সাথে retry করলে বিপদের সময়ই load কয়েক গুণ বাড়ে (retry storm)। Backoff প্রতিবার অপেক্ষা বাড়ায়, আর jitter সবার retry-কে সময়ে ছড়িয়ে দেয়, ফলে database সামলে ওঠার সুযোগ পায়। এ নিয়ে Day 57-এ গভীরে যাব।",
+      "whyWrong": {
+        "0": "বেশি retry মানে বিপদের সময় আরও বেশি load।",
+        "1": "অসীম timeout-এ client আর server-এর resource চিরকাল আটকে থাকে।",
+        "2": "Restart-এর পর সবাই আবার একসাথে ঝাঁপিয়ে পড়বে, সমস্যার মূল কারণ থেকেই যায়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q48",
+      "difficulty": "hard",
+      "question": "একজন engineer user-এর wallet balance ১০ মিনিটের মেয়াদে cache-এ রাখলেন, যাতে balance page দ্রুত খোলে। এই সিদ্ধান্তের সবচেয়ে বড় ঝুঁকি কোনটা?",
+      "options": [
+        "Cache memory ব্যবহার করে বলে server-এর মাসিক খরচ সামান্য বাড়বে, আর আরেকটা component চালাতে হবে",
+        "একসাথে অনেকে page খুললে cache নিজেই ধীর হয়ে যাবে",
+        "টাকা পাঠানোর পরও user ১০ মিনিট পর্যন্ত পুরনো, ভুল balance দেখতে পারে",
+        "Cache-এর data মুছে গেলে user-এর টাকা চিরতরে হারিয়ে যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Balance এমন data যেখানে পুরনো সংখ্যা দেখানো টাকার ভুল সিদ্ধান্ত আর আস্থা হারানোর কারণ হতে পারে। দ্রুততার বিনিময়ে এখানে consistency ছেড়ে দেওয়া খারাপ trade-off। Cache রাখলেও লেখার সাথে সাথে মুছে দেওয়া, অথবা balance সবসময় মূল উৎস থেকে পড়া নিরাপদ।",
+      "whyWrong": {
+        "0": "খরচ সামান্য; আসল ঝুঁকি ভুল টাকার হিসাব দেখানো।",
+        "1": "Cache memory-ভিত্তিক আর অনেক read সামলায়; আসল ঝুঁকি পুরনো balance।",
+        "3": "Cache শুধু একটা কপি; মুছলে আবার database থেকে আসে, টাকা হারায় না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q49",
+      "difficulty": "hard",
+      "question": "আপনার database-এ মোট ৫GB data, আর সব query দ্রুত চলছে। Team চাইছে এখনই database-কে ৮টা shard-এ ভাগ করতে, \"ভবিষ্যতের জন্য\"। সবচেয়ে ভালো যুক্তি কোনটা?",
+      "options": [
+        "এখন sharding না করা: data ছোট, আর sharding cross-shard query আর চালানোর জটিলতা আনে",
+        "এখনই sharding করে ফেলা, কারণ data বড় হওয়ার পরে sharding করা সবসময় অসম্ভব হয়ে যায়",
+        "Sharding-এর বদলে সব data cache-এ রেখে database বাদ দেওয়া",
+        "৮টার বদলে ৮০টা shard করা, যাতে আর কখনো বদলাতে না হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "৫GB একটা সাধারণ database server-এ সহজেই ধরে, আর এখন কোনো bottleneck নেই। Sharding-এর দাম বড়: একাধিক shard-জুড়ে query আর transaction কঠিন, চালানো আর debug করা কঠিন। হিসাব করে দেখুন কবে সীমায় পৌঁছাবেন, আর তার আগে index বা বড় machine-এর মতো সহজ পথ আছে কিনা।",
+      "whyWrong": {
+        "1": "পরে করা কঠিন হতে পারে, অসম্ভব না; আর আগাম জটিলতার খরচ প্রতিদিন দিতে হয়।",
+        "2": "Cache স্থায়ী data-র নির্ভরযোগ্য মূল উৎস না।",
+        "3": "আরও বেশি shard মানে আরও বেশি জটিলতা, কোনো বর্তমান সমস্যার সমাধান ছাড়াই।"
+      }
+    },
+    {
+      "id": "sd-day-001-q50",
+      "difficulty": "hard",
+      "question": "একটা page বানাতে server ৫টা আলাদা service-কে একটার পর একটা call করে, প্রতিটা গড়ে ৮০ms নেয়, আর call-গুলো একে অপরের ফলের উপর নির্ভর করে না। Latency কমাতে কোনটা সবচেয়ে কার্যকর?",
+      "options": [
+        "প্রতিটা call-এর timeout ৮০ms থেকে বাড়িয়ে ৫০০ms করা",
+        "Call-গুলো parallel-এ করা, তাতে মোট সময় প্রায় সবচেয়ে ধীর call-টার সমান হবে",
+        "পাঁচটা service-কে মিশিয়ে একটা বড় service বানানো, যাতে network call-ই আর না লাগে",
+        "আরও ৫টা app server যোগ করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "একটার পর একটা call-এ সময় যোগ হয়: ৫ × ৮০ = ~৪০০ms। একে অপরের উপর নির্ভরশীল না হলে একসাথে পাঠালে মোট সময় প্রায় সবচেয়ে ধীর call-টার সমান, ~৮০ms আর সামান্য overhead। তবে খেয়াল রাখতে হবে, তখন সবচেয়ে ধীর call-টাই পুরো page-এর গতি ঠিক করে।",
+      "whyWrong": {
+        "0": "Timeout বাড়ালে কাজ দ্রুত হয় না, শুধু খারাপ অবস্থায় বেশি অপেক্ষা হয়।",
+        "2": "মিশিয়ে ফেললেও কাজগুলো একের পর এক চললে সময় একই থাকবে, আর জটিলতা নতুন রূপে আসে।",
+        "3": "আরও server throughput বাড়ায়, একটা request-এর latency না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q51",
+      "difficulty": "hard",
+      "question": "একটা search request একসাথে ১০০টা server-এ যায়, আর সবার উত্তর এলে তবেই user ফলাফল পায়। প্রতিটা server আলাদাভাবে ১% request-এ ধীর হয়। একটা user request ধীর হওয়ার সম্ভাবনা মোটামুটি কত?",
+      "options": [
+        "১%, কারণ প্রতিটা server ১% সময় ধীর",
+        "প্রায় ১০%, কারণ ১০০টার বর্গমূল ১০",
+        "১০০%, কারণ ১০০ × ১% = ১০০%",
+        "প্রায় ৬৩%, কারণ ১ − ০.৯৯¹⁰⁰ ≈ ০.৬৩"
+      ],
+      "correctIndex": 3,
+      "explanation": "User request দ্রুত হয় শুধু যদি ১০০টার সবাই দ্রুত হয়, যার সম্ভাবনা ০.৯৯¹⁰⁰ ≈ ০.৩৭। তাই অন্তত একটা ধীর হওয়ার সম্ভাবনা ≈ ৬৩%। বড় scale-এ বিরল ধীরগতিও সাধারণ ঘটনা হয়ে যায়, এজন্য tail latency নিয়ে আলাদা করে ভাবতে হয় (Day 95)।",
+      "whyWrong": {
+        "0": "এক server-এর জন্য ১%, কিন্তু ১০০টার যেকোনো একটা ধীর হলেই পুরো request ধীর।",
+        "1": "বর্গমূলের সাথে এই সম্ভাবনার কোনো সম্পর্ক নেই।",
+        "2": "সম্ভাবনা এভাবে সরাসরি যোগ করা যায় না; ফল কখনো ১০০% হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q52",
+      "difficulty": "hard",
+      "question": "System design interview-তে একজন candidate কোনো প্রশ্ন না করেই Kafka, Cassandra আর Kubernetes দিয়ে বিশাল diagram আঁকলেন। Interviewer সবচেয়ে সম্ভবত কী লক্ষ্য করবেন?",
+      "options": [
+        "Candidate অনেক আধুনিক tool জানেন, তাই design নিশ্চয়ই ভালো",
+        "Diagram বড় আর বিস্তারিত হওয়ায় candidate নিশ্চয়ই সব ধরনের scale আগে থেকে ভেবে রেখেছেন",
+        "Requirement আর scale না জেনে tool বাছা হয়েছে, আর কোনো trade-off-এর যুক্তি নেই",
+        "Candidate সময় বাঁচিয়েছেন, তাই এটা সবচেয়ে কার্যকর পদ্ধতি"
+      ],
+      "correctIndex": 2,
+      "explanation": "Interviewer দেখতে চান আপনি কেন কোনো component বাছলেন, আর এর বদলে কী ছেড়ে দিলেন। Requirement না জেনে tool বাছা দেখায় design মুখস্থ, বোঝা না। ছোট একটা সহজ design দিয়ে শুরু করে প্রয়োজন অনুযায়ী বাড়ানো অনেক শক্তিশালী উত্তর।",
+      "whyWrong": {
+        "0": "Tool-এর নাম জানা আর design করতে পারা আলাদা দক্ষতা।",
+        "1": "Diagram-এর আকার যুক্তির প্রমাণ না; প্রশ্ন ছাড়া scale বোঝা সম্ভব না।",
+        "3": "Requirement বোঝার কয়েক মিনিট পরের সব সিদ্ধান্তকে সঠিক করে, সময় নষ্ট করে না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q53",
+      "difficulty": "hard",
+      "question": "দুটো সিদ্ধান্ত নিতে হবে: (ক) cache-এর মেয়াদ ৫ মিনিট নাকি ১০ মিনিট, (খ) মূল data কোন database-এ আর কোন data model-এ থাকবে। কোনটায় বেশি সময় দেওয়া উচিত, আর কেন?",
+      "options": [
+        "(ক), কারণ cache প্রতিটা request-কে প্রভাবিত করে, আর ভুল মেয়াদ দিলে সব user পুরনো data দেখবে",
+        "দুটোতেই সমান সময়, কারণ সব সিদ্ধান্ত সমান গুরুত্বপূর্ণ",
+        "কোনোটাতেই বেশি সময় না দিয়ে দ্রুত বেছে নেওয়া, পরে দেখা যাবে",
+        "(খ), কারণ database আর data model পরে বদলানো খুব কঠিন, আর cache-এর মেয়াদ সহজেই বদলানো যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "কিছু সিদ্ধান্ত সহজে ফেরানো যায় (একটা config বদল), কিছু ফেরাতে মাসের পর মাস data migration লাগে। ফেরানো কঠিন সিদ্ধান্তে বেশি ভাবনা আর হিসাব দিন; সহজগুলোতে দ্রুত এগিয়ে মেপে ঠিক করুন। এতে গতি আর নিরাপত্তা দুটোই থাকে।",
+      "whyWrong": {
+        "0": "Cache-এর মেয়াদ গুরুত্বপূর্ণ হলেও এক লাইনের config বদলে ঠিক করা যায়।",
+        "1": "সব সিদ্ধান্তে সমান সময় দিলে সহজগুলোতে সময় নষ্ট, কঠিনগুলোতে ঘাটতি।",
+        "2": "Database-এর ভুল সিদ্ধান্ত পরে ঠিক করতে অনেক বেশি খরচ পড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q54",
+      "difficulty": "hard",
+      "question": "একটা বাসের seat booking system দুটো data center-এ চলে। হঠাৎ দুই data center-এর মধ্যে যোগাযোগ বন্ধ হয়ে গেল। দুই জায়গাতেই কেউ একই seat book করতে চাইছে। কোন আচরণ সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "দুই জায়গাতেই booking নেওয়া, আর পরে যোগাযোগ ফিরলে দুজনের একজনের booking বাতিল করে টাকা ফেরত দেওয়া",
+        "যতক্ষণ নিশ্চিত হওয়া না যায়, booking সাময়িকভাবে বন্ধ রাখা বা পরে চেষ্টা করতে বলা",
+        "যে data center-এর server বেশি দ্রুত, তার booking-ই সবসময় ঠিক ধরা",
+        "দুই জায়গার ঘড়ির সময় দেখে যে আগে button চেপেছে, তার booking-ই ঠিক ধরা"
+      ],
+      "correctIndex": 1,
+      "explanation": "একই seat দুজনকে বিক্রি করা গুরুতর ক্ষতি আর আস্থার সংকট, তাই এখানে consistency বেশি জরুরি। যোগাযোগ বন্ধ থাকলে নিশ্চিত না হয়ে booking নেওয়া মানে double booking-এর ঝুঁকি। এর বদলে কিছুক্ষণ availability ছাড়া হয়; এটাই CAP-এর মূল প্রশ্ন (Day 8)।",
+      "whyWrong": {
+        "0": "পরে বাতিল করলে confirm পাওয়া একজন যাত্রী আসনহীন হবে, যেটা এই domain-এ গ্রহণযোগ্য না।",
+        "2": "Server-এর গতির সাথে কে আগে book করেছে তার কোনো সম্পর্ক নেই।",
+        "3": "যোগাযোগ বন্ধ থাকায় কেউ কারো booking জানে না, আর দুই ঘড়ি পুরোপুরি মেলে না; তাই এখনই নিশ্চিত হওয়া যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q55",
+      "difficulty": "hard",
+      "question": "Traffic বাড়ায় app server ২টা থেকে ১০টা করা হলো, কিন্তু throughput প্রায় একই রইল। Monitoring-এ দেখা যাচ্ছে database-এর CPU ১০০%, app server-রা বেশিরভাগ সময় database-এর উত্তরের অপেক্ষায়। সঠিক বিশ্লেষণ কোনটা?",
+      "options": [
+        "Bottleneck database-এ, তাই app server বাড়িয়ে লাভ নেই; database-এর চাপ কমাতে হবে",
+        "App server আরও কম, তাই ২০টা করলে সমস্যা মিটবে",
+        "Load balancer ঠিকমতো কাজ করছে না, তাই নতুন ৮টা server আসলে কোনো request-ই পাচ্ছে না",
+        "Network ধীর, তাই সব server-কে একই machine-এ নিয়ে আসা উচিত"
+      ],
+      "correctIndex": 0,
+      "explanation": "System-এর গতি ঠিক করে সবচেয়ে সরু জায়গা (bottleneck)। App server বাড়ালে database-এ আরও query যায়, কিন্তু database আগেই পূর্ণ ক্ষমতায়। সমাধান হতে পারে cache, read replica, index বা ধীর query ঠিক করা, তারপর দরকার হলে বড় database machine।",
+      "whyWrong": {
+        "1": "Database পূর্ণ থাকলে আরও app server শুধু আরও অপেক্ষমাণ query যোগ করবে।",
+        "2": "App server-রা request পাচ্ছে, তারা database-এর অপেক্ষায় বসে আছে।",
+        "3": "Monitoring-এ network না, database CPU পূর্ণ দেখাচ্ছে; সব এক machine-এ আনলে আবার SPOF।"
+      }
+    },
+    {
+      "id": "sd-day-001-q56",
+      "difficulty": "hard",
+      "question": "Queue যোগ করার পর checkout দ্রুত হয়েছে আর কোনো error নেই। কিন্তু customer-রা অভিযোগ করছে, invoice email আসছে দুই ঘণ্টা দেরিতে। Design-এর কোন দিকটা উপেক্ষা করা হয়েছিল?",
+      "options": [
+        "Queue যোগ করাই ভুল ছিল, তাই আবার সব কাজ synchronous-এ ফিরিয়ে নেওয়া উচিত, যাতে email সাথে সাথে যায়",
+        "বাইরের email provider ধীর, তাই provider বদলালেই সমস্যা মিটবে",
+        "Queue-তে কত কাজ জমেছে আর সবচেয়ে পুরনোটা কত পুরনো, সেটা monitor করা আর worker বাড়ানো",
+        "Queue-এর message হারিয়ে যাচ্ছে, তাই বারবার retry হয়ে দেরিতে আসছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Queue user-এর latency কমায়, কিন্তু worker কম থাকলে পেছনে কাজ জমে যায়, আর সেটা বাইরে থেকে দেখা যায় না। Queue depth আর সবচেয়ে পুরনো message-এর বয়সে alert থাকলে এটা আগেই ধরা পড়ত। প্রতিটা component-এর সাথে তার নিজের monitoring-ও design-এর অংশ।",
+      "whyWrong": {
+        "0": "Queue ঠিক সিদ্ধান্ত ছিল; সমস্যা হলো backlog-এর দিকে নজর না রাখা।",
+        "1": "Queue depth না দেখে এটা বলা যায় না; error নেই অথচ সব email দেরিতে, এটা backlog-এর লক্ষণ।",
+        "3": "হারালে email আসতই না; দেরিতে আসা মানে কাজ জমে আছে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q57",
+      "difficulty": "hard",
+      "question": "একটা internal HR tool অফিস সময়ে ২০০ জন ব্যবহার করে। কেউ প্রস্তাব দিল availability 99.9% থেকে 99.99%-এ নিতে দ্বিতীয় region-এ পুরো কপি চালাতে, যাতে খরচ প্রায় দ্বিগুণ। সবচেয়ে ভালো মূল্যায়ন কোনটা?",
+      "options": [
+        "অবশ্যই করা উচিত, কারণ বেশি availability সবসময় ভালো",
+        "Region না বাড়িয়ে server-গুলো আরও দামী hardware-এ নেওয়া, তাতেই 99.99% নিশ্চিত হবে",
+        "দ্বিতীয় region-এর বদলে একই server-এ দ্বিতীয় একটা process চালানো, তাতে কম খরচে একই ফল পাওয়া যাবে",
+        "সম্ভবত না: বাড়তি ৮ ঘণ্টার মতো downtime কমাতে দ্বিগুণ খরচ এই tool-এর ক্ষতির তুলনায় বেশি"
+      ],
+      "correctIndex": 3,
+      "explanation": "99.9% থেকে 99.99% মানে বছরে ~৮.৮ ঘণ্টা থেকে ~৫২ মিনিট downtime। একটা internal tool কয়েক ঘণ্টা বন্ধ থাকলে ক্ষতি সামান্য, অথচ খরচ দ্বিগুণ। Availability-র লক্ষ্য ঠিক হয় ব্যবসার ক্ষতি আর খরচ তুলনা করে, 'যত বেশি তত ভালো' ধরে না।",
+      "whyWrong": {
+        "0": "প্রতিটা বাড়তি '9'-এর খরচ আছে; লাভ সেই খরচের চেয়ে কম হলে সেটা খারাপ সিদ্ধান্ত।",
+        "1": "দামী hardware-ও fail করে, আর region-স্তরের outage থেকে বাঁচায় না; আসল প্রশ্ন লাভ আর খরচের।",
+        "2": "একই server-এর দুই process একসাথে মরে, তাই region-স্তরের redundancy দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-001-q58",
+      "difficulty": "hard",
+      "question": "Horizontal scaling-এর জন্য app server-দের stateless হওয়া কেন এত গুরুত্বপূর্ণ?",
+      "options": [
+        "যাতে যেকোনো request যেকোনো server সামলাতে পারে, আর server যোগ বা সরালে user-এর data না হারায়",
+        "কারণ stateless server-এ database একেবারেই লাগে না",
+        "কারণ stateless server প্রতিটা request আগের চেয়ে দ্রুত শেষ করে",
+        "কারণ stateless হলে load balancer ছাড়াই server-রা নিজেরা নিজেদের মধ্যে কাজ ভাগ করে নিতে পারে, আলাদা কিছু লাগে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Server-এর নিজের memory-তে user-এর state থাকলে পরের request সেই server-এই যেতে হয়, আর সেটা মরলে state হারায়। State বাইরে (database, cache) রাখলে সব server একই রকম, তাই load balancer যেকোনোটায় পাঠাতে পারে, আর server বাড়ানো-কমানো নিরাপদ। এ নিয়ে Day 14-এ বিস্তারিত।",
+      "whyWrong": {
+        "1": "State সরে যায় database বা cache-এ, database বাদ যায় না।",
+        "2": "Stateless হওয়া একটা request-এর গতি বাড়ানোর জন্য না।",
+        "3": "Stateless server-এর সামনেও load balancer লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-001-q59",
+      "difficulty": "hard",
+      "question": "একটা app-এ দিনে ১০ লাখ বার ছবি দেখা হয়, প্রতিটা ছবি গড়ে ৫০০KB। গড়ে মোটামুটি কত bandwidth লাগবে?",
+      "options": [
+        "প্রায় ৪.৬ Mbps",
+        "প্রায় ৪৬০ Mbps",
+        "প্রায় ৪৬ Mbps",
+        "প্রায় ৪.৬ Gbps"
+      ],
+      "correctIndex": 2,
+      "explanation": "দিনে ১০ লাখ × ৫০০KB = ৫০০GB। ৫০০GB ÷ ৮৬,৪০০ সেকেন্ড ≈ ৫.৮MB/সেকেন্ড, আর bit-এ ×৮ ≈ ৪৬ Mbps। এটা গড়; peak-এ কয়েক গুণ, তাই এমন হিসাব দেখায় কেন ছবি CDN-এ সরানো লাভজনক।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম; byte থেকে bit-এ রূপান্তরের ×৮ বাদ পড়লে কাছাকাছি এমন আসে।",
+        "1": "এটা দশ গুণ বেশি; দিনের সেকেন্ড ৮,৬৪০ ধরলে এমন হয়।",
+        "3": "এটা একশো গুণ বেশি; KB আর MB গুলিয়ে ফেললে এমন হয়।"
+      }
+    },
+    {
+      "id": "sd-day-001-q60",
+      "difficulty": "hard",
+      "question": "একটা বাড়ন্ত app ধীর হয়ে যাচ্ছে। Team-এর তিনজন তিনটা আলাদা সমাধান চাইছে: cache, CDN আর database sharding। কোন পদ্ধতিটা সবচেয়ে ভালো?",
+      "options": [
+        "তিনটাই একসাথে যোগ করা, যাতে কোনো সমস্যা বাকি না থাকে",
+        "আগে মেপে দেখা ঠিক কোথায় সময় যাচ্ছে, তারপর শুধু সেই bottleneck-এর সমাধান যোগ করা",
+        "সবচেয়ে জনপ্রিয় tool-টা বেছে নেওয়া, কারণ বেশি মানুষ যেটা ব্যবহার করে সেটাই ভালো",
+        "যিনি সবচেয়ে senior, তার প্রস্তাব নেওয়া, কারণ অভিজ্ঞতাই যথেষ্ট প্রমাণ"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা component একটা নির্দিষ্ট সমস্যার সমাধান করে, আর নিজের জটিলতা আনে। ধীরগতি ছবি থেকে হলে CDN, বারবার পড়া query থেকে হলে cache, data-র আকার থেকে হলে sharding; না মেপে জানা যায় না কোনটা। মাপা, bottleneck খোঁজা, তারপর সবচেয়ে সরল সমাধান, এটাই system design-এর মূল অভ্যাস।",
+      "whyWrong": {
+        "0": "অপ্রয়োজনীয় component খরচ আর ভাঙার জায়গা বাড়ায়, অথচ আসল সমস্যা হয়তো অন্য কোথাও।",
+        "2": "জনপ্রিয়তা আপনার bottleneck-এর প্রমাণ না।",
+        "3": "অভিজ্ঞতা কাজে লাগে, কিন্তু সিদ্ধান্ত হওয়া উচিত মাপা data দেখে।"
+      }
+    }
+  ]
+}

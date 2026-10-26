@@ -6,6 +6,7 @@ import { StickyNote } from "lucide-react";
 import { Badge } from "@/components/shared/shadcn";
 import CustomButton from "@/components/shared/CustomButton";
 import NoteEditor from "@/components/modules/notes/NoteEditor";
+import { resolveContentHref } from "@/lib/data/content-href";
 import type {
   CourseContentItem,
   CourseContentType,
@@ -20,6 +21,7 @@ const TYPE_LABELS: Record<CourseContentType, string> = {
   ai_exam: "AI exam",
   project_submission: "Project",
   udemy_lecture: "Lecture",
+  sd_lesson: "Lesson",
 };
 
 export default function ModuleContentItemRow({
@@ -45,9 +47,6 @@ export default function ModuleContentItemRow({
   );
 
   const isUnprovisionedLab = item.type === "lab" && !item.labId;
-  const isVideo =
-    (item.type === "live_class" || item.type === "pre_class") &&
-    Boolean(item.videoUrl && item.contentId);
   const isExternal = item.type === "udemy_lecture" && Boolean(item.externalUrl);
   const status = isUnprovisionedLab ? (
     <span className="shrink-0 text-xs italic text-muted-foreground">
@@ -61,14 +60,7 @@ export default function ModuleContentItemRow({
     <span className="shrink-0 text-xs text-muted-foreground">Done</span>
   ) : null;
 
-  const href =
-    item.type === "lab" && item.labId
-      ? `/module/lab/${item.labId}`
-      : isVideo
-        ? `/module/video/${item.contentId}`
-        : item.type === "ai_interview" && hasInterview(moduleId)
-          ? `/module/interview/${moduleId}`
-          : null;
+  const href = resolveContentHref(item, moduleId, hasInterview);
 
   const canHaveNotes = Boolean(item.contentId);
 

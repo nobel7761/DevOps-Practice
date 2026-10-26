@@ -48,12 +48,12 @@ describe('QuizService completion tracking', () => {
       contentProgressModel as any,
     );
 
-    await service.submitQuiz('lab-1', {
+    await service.submitQuiz('u1', 'lab-1', {
       answers: [{ questionId: 'q1', answerIndex: 0 }], // correct -> 100%
     });
 
     expect(contentProgressModel.findOneAndUpdate).toHaveBeenCalledWith(
-      { key: 'lab-1', type: 'quiz' },
+      { userId: 'u1', key: 'lab-1', type: 'quiz' },
       expect.objectContaining({ completed: true }),
       expect.objectContaining({ upsert: true }),
     );
@@ -67,7 +67,7 @@ describe('QuizService completion tracking', () => {
       contentProgressModel as any,
     );
 
-    await service.submitQuiz('lab-1', {
+    await service.submitQuiz('u1', 'lab-1', {
       answers: [{ questionId: 'q1', answerIndex: 1 }], // wrong -> 0%
     });
 

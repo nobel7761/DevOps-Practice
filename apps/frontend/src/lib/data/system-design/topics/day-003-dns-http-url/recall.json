@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-003",
+  "points": [
+    {
+      "term": "URL Anatomy",
+      "prompt": "একটা URL-এর ছয়টা অংশ কী কী, আর কোন অংশটা server পর্যন্ত যায় না?",
+      "answer": "Scheme (protocol), host (কোন machine, DNS দিয়ে IP হয়), port (না দিলে http-এ 80, https-এ 443), path (কোন resource), query (key=value শর্ত) আর fragment (page-এর কোন অংশ)। Fragment (#...) browser নিজের কাছে রাখে, server-এ পাঠায় না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "DNS Resolver",
+      "prompt": "Recursive resolver কী করে, আর root, TLD ও authoritative server-এর ভূমিকা কী?",
+      "answer": "Resolver (ISP-র বা 1.1.1.1/8.8.8.8-এর মতো public) আপনার হয়ে পুরো খোঁজটা করে আর উত্তর cache করে। Root বলে TLD-এর server কারা, TLD বলে domain-এর name server কে, আর authoritative server আসল record দিয়ে চূড়ান্ত উত্তর দেয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "A / AAAA / CNAME",
+      "prompt": "A, AAAA আর CNAME record-এর পার্থক্য কী? Zone-এর apex-এ কেন CNAME দেওয়া যায় না?",
+      "answer": "A record নামকে IPv4-এ, AAAA নামকে IPv6-এ, আর CNAME নামকে আরেকটা নামে (alias) নিয়ে যায়, যেটা resolver আবার খোঁজে। Apex-এ NS আর SOA record থাকতেই হয়, আর CNAME অন্য record-এর পাশে থাকতে পারে না; তাই provider-রা alias বা CNAME flattening দেয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "TTL ও DNS Caching",
+      "prompt": "TTL কী, আর DNS উত্তর কোন কোন জায়গায় cache হয়? ছোট আর বড় TTL-এর trade-off কী?",
+      "answer": "TTL হলো সেকেন্ডে বলা সময়, যতক্ষণ একটা উত্তর cache-এ রাখা যায়; উত্তর browser, OS আর resolver-এ জমা থাকে। ছোট TTL-এ বদল আর failover দ্রুত হয় কিন্তু lookup আর authoritative-এর চাপ বাড়ে; বড় TTL দ্রুত কিন্তু ভুল বা বদল ঠিক হতে অনেক সময় নেয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Recursive vs Iterative",
+      "prompt": "Recursive আর iterative query-র পার্থক্য কী, আর কাজটা এভাবে ভাগ করা কেন?",
+      "answer": "Stub resolver resolver-কে recursive query করে, মানে 'পুরো উত্তর দাও'; resolver root, TLD আর authoritative-কে iterative query করে, যেখানে প্রত্যেকে শুধু referral দেয়। এতে root আর TLD-এর উপর কাজ কম থাকে, ভারী কাজ আর cache resolver-এ হয়, যেটা লাখো user-এর মধ্যে ভাগ হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "DNS Propagation",
+      "prompt": "\"DNS propagation\" আসলে কী? Server migration-এর আগে কী করবেন?",
+      "answer": "কিছুই ছড়ায় না: authoritative-এ record সাথে সাথে বদলায়, কিন্তু বাকি cache-গুলো পুরনো উত্তরের TTL শেষ হলে তবেই নতুন করে জিজ্ঞেস করে, তাই সবচেয়ে খারাপ অপেক্ষা = পুরনো TTL। তাই migration-এর অন্তত পুরনো TTL-এর সমান সময় আগে TTL কমান (যেমন ৬০s), তারপর IP বদলান আর পুরনো server কিছুক্ষণ চালু রাখুন।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "HTTP Request ও Response",
+      "prompt": "একটা HTTP request আর response-এ কী কী থাকে? Host header কেন দরকার?",
+      "answer": "Request-এ method (GET, POST...), path আর version, তারপর header, খালি লাইন আর ঐচ্ছিক body; response-এ version, status code, header আর body। একটা IP-তে অনেক site থাকতে পারে, তাই Host header বলে দেয় কোন site চাওয়া হচ্ছে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Status Codes",
+      "prompt": "2xx, 3xx, 4xx আর 5xx কী বোঝায়? 401 আর 403, বা 502 আর 504-এর পার্থক্য কী?",
+      "answer": "2xx সফল, 3xx অন্য জায়গায় দেখো (redirect বা 304), 4xx client-এর ভুল, 5xx server-এর ভুল। 401 মানে পরিচয় দেননি (login লাগবে), 403 মানে চিনি কিন্তু অনুমতি নেই; 502 মানে মাঝের proxy পেছনের server থেকে খারাপ উত্তর পেয়েছে, 504 মানে সময়মতো উত্তরই পায়নি।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Stateless HTTP ও Cookie",
+      "prompt": "HTTP কেন stateless, আর তাহলে login কিভাবে মনে থাকে?",
+      "answer": "প্রতিটা request নিজের মধ্যে সম্পূর্ণ, তাই যেকোনো server যেকোনো request নিতে পারে, scale আর failure সামলানো সহজ। State আসে request-এর সাথে: server Set-Cookie দিয়ে session id বা token দেয়, browser প্রতিটা request-এ Cookie header-এ সেটা পাঠায়; HttpOnly, Secure আর SameSite দিয়ে সেটাকে সুরক্ষিত রাখা হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Keep-alive, Redirect ও HSTS",
+      "prompt": "Keep-alive কেন latency কমায়? HTTP → HTTPS redirect থাকলেও HSTS কেন লাগে?",
+      "answer": "নতুন HTTPS connection-এ TCP আর TLS মিলে প্রায় ২ RTT যায়; keep-alive একই connection বারবার ব্যবহার করে সেই handshake বাঁচায়। Redirect-এর আগের প্রথম HTTP request encrypt হয় না, তাই মাঝের কেউ সেটা আটকে দিতে পারে (SSL stripping); HSTS browser-কে বলে সবসময় নিজেই HTTPS ব্যবহার করতে, আর preload list প্রথম visit-এর ফাঁকটাও বন্ধ করে।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

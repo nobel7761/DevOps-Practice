@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { CurrentUserId } from '../auth/auth.decorators';
 import { AskService } from './ask.service';
 import { AskQuestionDto } from './dto/ask-question.dto';
 
@@ -7,12 +8,19 @@ export class AskController {
   constructor(private readonly askService: AskService) {}
 
   @Get(':contentId/history')
-  getHistory(@Param('contentId') contentId: string) {
-    return this.askService.getHistory(contentId);
+  getHistory(
+    @CurrentUserId() userId: string,
+    @Param('contentId') contentId: string,
+  ) {
+    return this.askService.getHistory(userId, contentId);
   }
 
   @Post(':contentId')
-  ask(@Param('contentId') contentId: string, @Body() dto: AskQuestionDto) {
-    return this.askService.ask(contentId, dto);
+  ask(
+    @CurrentUserId() userId: string,
+    @Param('contentId') contentId: string,
+    @Body() dto: AskQuestionDto,
+  ) {
+    return this.askService.ask(userId, contentId, dto);
   }
 }

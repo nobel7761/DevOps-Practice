@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-012",
+  "points": [
+    {
+      "term": "Producer",
+      "prompt": "Producer কী করে, আর কোন কাজটা সে নিজে করে না?",
+      "answer": "Producer হলো যে service message তৈরি করে queue-তে পাঠায়, যেমন Order Service বলে 'order #42-এর email পাঠাও'। আসল কাজটা (email পাঠানো) সে নিজে করে না, তাই user-কে দ্রুত উত্তর দিতে পারে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Broker",
+      "prompt": "Broker কী, আর producer ও consumer-এর মাঝে কেন একজন মধ্যস্থতাকারী দরকার?",
+      "answer": "Broker (যেমন RabbitMQ, SQS, Kafka) message জমা রাখে যতক্ষণ না কেউ process করে, আর ভালো broker message disk-এ রাখে যাতে restart-এও না হারায়। মাঝে broker থাকায় producer আর consumer-কে একই সময়ে চালু থাকতে হয় না, একে অপরকে চিনতেও হয় না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Consumer",
+      "prompt": "Consumer কী করে, আর একাধিক consumer রাখলে কী লাভ হয়?",
+      "answer": "Consumer (worker) queue থেকে message তুলে আসল কাজটা করে আর শেষে ack দেয়। একাধিক consumer (competing consumers) রাখলে কাজ নিজে থেকেই ভাগ হয়ে যায়, ফলে worker বাড়িয়ে throughput বাড়ানো যায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Asynchronous Processing",
+      "prompt": "Asynchronous processing user-এর জন্য কী বদলায়? এটা কি কাজটাকে দ্রুত করে?",
+      "answer": "User আর ধীর কাজ (email, PDF) শেষ হওয়ার জন্য অপেক্ষা করে না, তাই তার দেখা latency কমে যায়। কিন্তু কাজটা নিজে দ্রুত হয় না, শুধু 'এখন'-এর বদলে 'পরে' হয়; মোট throughput বাড়ে consumer বাড়ালে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Decoupling",
+      "prompt": "Decoupling মানে কী, আর SMS Gateway down হলে queue থাকা-না-থাকায় কী পার্থক্য হয়?",
+      "answer": "Decoupling মানে producer আর consumer একে অপরের অবস্থার উপর নির্ভর করে না। Queue না থাকলে SMS Gateway down মানে পুরো order request fail; queue থাকলে message অপেক্ষা করে আর Gateway ফিরলে চলে যায়, order ঠিকই সফল হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Traffic Buffering",
+      "prompt": "হঠাৎ traffic spike এলে queue কিভাবে সাহায্য করে, আর এর বিপদ কী?",
+      "answer": "Spike-এর অতিরিক্ত message queue-তে জমে থাকে, worker-রা নিজের গতিতে শেষ করে, তাই system ভেঙে পড়ে না (load levelling)। বিপদ হলো backlog লুকিয়ে থাকে, তাই queue depth আর সবচেয়ে পুরনো message-এর বয়স monitor করতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Acknowledgement",
+      "prompt": "Ack কখন দিতে হয়, আর auto-ack কেন বিপজ্জনক?",
+      "answer": "Ack দিতে হয় কাজ পুরোপুরি শেষ হওয়ার পরে; তখনই broker message মুছে দেয়। Auto-ack-এ message হাতে পাওয়ামাত্র মুছে যায়, তাই কাজের মাঝে crash করলে message চিরতরে হারায়। ack না এলে visibility timeout-এর পরে message আবার দৃশ্যমান হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Retry",
+      "prompt": "কোন fail-এ retry কাজ করে, কোনটায় করে না? Retry-তে backoff কেন?",
+      "answer": "সাময়িক fail-এ (service কিছুক্ষণ down) একটু পরে retry করলে কাজ হয়; কিন্তু data-ই ভুল হলে (poison message) হাজারবার retry করলেও fail করবে। Exponential backoff (১s, ২s, ৪s...) দিলে ভাঙা service-এর উপর চাপ বাড়ে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Dead Letter Queue (DLQ)",
+      "prompt": "DLQ কী, আর কোন message সেখানে যায়? না থাকলে কী সমস্যা হতো?",
+      "answer": "DLQ একটা আলাদা queue, যেখানে max retries-এর পরেও fail করা message সরিয়ে রাখা হয়। মুছে ফেলা হয় না, পরে দেখে ঠিক করে আবার পাঠানো যায়। না থাকলে poison message সীমাহীন retry হয়ে worker আটকে রাখত, অথবা নিঃশব্দে হারিয়ে যেত।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Idempotency",
+      "prompt": "At-least-once delivery-তে কেন idempotency লাগে, আর কিভাবে বানাবেন?",
+      "answer": "At-least-once-এ একই message একাধিকবার আসতে পারে (যেমন ack-এর আগে crash), তখন email দুবার যায়। Idempotent consumer আগে order id বা message id দিয়ে দেখে কাজটা আগেই হয়েছে কিনা, হলে শুধু ack দেয়। এভাবেই বাস্তবে 'effectively-once' পাওয়া যায়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

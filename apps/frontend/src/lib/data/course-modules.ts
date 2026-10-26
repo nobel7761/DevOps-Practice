@@ -1,6 +1,8 @@
 // Snapshot of "MASTERING AWS & DEVOPS SEASON 4" course modules, pulled from
 // poridhi.io's course roadmap API for the logged-in user's enrolled course.
 
+import { forwardDeployedEngineeringCourse } from "./courses/forward-deployed-engineering";
+
 export type CourseContentType =
   | "lab"
   | "pre_class"
@@ -8,7 +10,8 @@ export type CourseContentType =
   | "ai_interview"
   | "ai_exam"
   | "project_submission"
-  | "udemy_lecture";
+  | "udemy_lecture"
+  | "sd_lesson";
 
 export interface CourseContentItem {
   type: CourseContentType;
@@ -28,9 +31,13 @@ export interface CourseContentItem {
   hasNote?: boolean;
 }
 
+/** Topic badges for the System Design A-Z course: "new" = 🆕 added topic, "published" = 🔒 already on LinkedIn, "optional" = ঐচ্ছিক. */
+export type CourseModuleTag = "new" | "published" | "optional";
+
 export interface CourseModule {
   id: string;
   title: string;
+  tags?: CourseModuleTag[];
   contentCounts: Partial<Record<CourseContentType, number>>;
   progress: {
     completed: number;
@@ -48,33 +55,62 @@ export interface CourseMilestone {
 
 export interface CourseSummary {
   courseTitle: string;
+  /** This course's id in the course registry (lib/data/courses/registry.ts) — used to link back into its own `/course/[courseId]` page, e.g. from lab/video/interview breadcrumbs. */
+  courseId?: string;
+  /** True when this is an outline-only snapshot fetched for an account not enrolled in the course — lab ids, video urls, and durations are all gated by poridhi.io and left unset. Surfaced as a "Not enrolled" badge in the UI. */
+  notEnrolled?: boolean;
   milestones: CourseMilestone[];
 }
 
 export interface CourseLocation {
+  /** The registry id of the course this location was found in — see `CourseSummary.courseId`. */
+  courseId: string;
   milestone: CourseMilestone;
   module: CourseModule;
 }
 
+// findModuleLocation/findLabLocation/findContentLocation search every course
+// listed here (labs/videos/interviews aren't wired up for the Udemy courses
+// yet, so only the poridhi-backed courses with authored content are listed).
+const DEVOPS_SEASON_4_COURSE_ID = "devops-season-4";
+const FORWARD_DEPLOYED_ENGINEERING_COURSE_ID = "forward-deployed-engineering";
+
+// A function rather than a top-level const: `masteringAwsDevopsSeason4` is
+// declared further down in this same module, so referencing it eagerly here
+// would hit the temporal dead zone at module-load time.
+function getSearchableCourses(): { courseId: string; course: CourseSummary }[] {
+  return [
+    { courseId: DEVOPS_SEASON_4_COURSE_ID, course: masteringAwsDevopsSeason4 },
+    {
+      courseId: FORWARD_DEPLOYED_ENGINEERING_COURSE_ID,
+      course: forwardDeployedEngineeringCourse,
+    },
+  ];
+}
+
 export function findModuleLocation(moduleId: string): CourseLocation | null {
-  for (const milestone of masteringAwsDevopsSeason4.milestones) {
-    const courseModule = milestone.modules.find(
-      (candidate) => candidate.id === moduleId,
-    );
-    if (courseModule) return { milestone, module: courseModule };
+  for (const { courseId, course } of getSearchableCourses()) {
+    for (const milestone of course.milestones) {
+      const courseModule = milestone.modules.find(
+        (candidate) => candidate.id === moduleId,
+      );
+      if (courseModule) return { courseId, milestone, module: courseModule };
+    }
   }
   return null;
 }
 
 export function findLabLocation(labId: string): CourseLocation | null {
-  for (const milestone of masteringAwsDevopsSeason4.milestones) {
-    for (const courseModule of milestone.modules) {
-      if (
-        courseModule.contents.some(
-          (content) => content.type === "lab" && content.labId === labId,
-        )
-      ) {
-        return { milestone, module: courseModule };
+  for (const { courseId, course } of getSearchableCourses()) {
+    for (const milestone of course.milestones) {
+      for (const courseModule of milestone.modules) {
+        if (
+          courseModule.contents.some(
+            (content) => content.type === "lab" && content.labId === labId,
+          )
+        ) {
+          return { courseId, milestone, module: courseModule };
+        }
       }
     }
   }
@@ -88,12 +124,15 @@ export interface CourseContentLocation extends CourseLocation {
 export function findContentLocation(
   contentId: string,
 ): CourseContentLocation | null {
-  for (const milestone of masteringAwsDevopsSeason4.milestones) {
-    for (const courseModule of milestone.modules) {
-      const content = courseModule.contents.find(
-        (candidate) => candidate.contentId === contentId,
-      );
-      if (content) return { milestone, module: courseModule, content };
+  for (const { courseId, course } of getSearchableCourses()) {
+    for (const milestone of course.milestones) {
+      for (const courseModule of milestone.modules) {
+        const content = courseModule.contents.find(
+          (candidate) => candidate.contentId === contentId,
+        );
+        if (content)
+          return { courseId, milestone, module: courseModule, content };
+      }
     }
   }
   return null;
@@ -101,6 +140,7 @@ export function findContentLocation(
 
 export const masteringAwsDevopsSeason4: CourseSummary = {
   courseTitle: "MASTERING AWS & DEVOPS SEASON 4",
+  courseId: DEVOPS_SEASON_4_COURSE_ID,
   milestones: [
     {
       id: "cae9ca27-b531-4e46-a1d4-1a9c1b1bd3ed",
@@ -317,6 +357,14 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
             },
             {
               type: "pre_class",
+              title: "ARP Fundamentals and Advanced Topologies with Mininet",
+              completed: false,
+              contentId: "4ff39b16-374d-4877-9fd0-f57d7b928e11",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/da272300-bd2d-4bde-aa79-bb3b93e25126/playlist.m3u8",
+            },
+            {
+              type: "pre_class",
               title:
                 "Layer 2 Traffic Forwarding Setup in Mininet with OpenFlow",
               completed: false,
@@ -353,14 +401,6 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
             },
             {
               type: "pre_class",
-              title: "ARP Fundamentals and Advanced Topologies with Mininet",
-              completed: false,
-              contentId: "4ff39b16-374d-4877-9fd0-f57d7b928e11",
-              videoUrl:
-                "https://81q1cu9eke.tenbytecdn.com/da272300-bd2d-4bde-aa79-bb3b93e25126/playlist.m3u8",
-            },
-            {
-              type: "pre_class",
               title: "Simulating VLAN Networks with Mininet",
               completed: false,
               contentId: "1f5af84e-c49b-4bed-9f2e-1cf46840389e",
@@ -378,6 +418,12 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
               title: "Configure and manage network flows at different layers",
               completed: false,
               labId: "69e0e99023b200e2a4159f11",
+            },
+            {
+              type: "lab",
+              title: "ARP Fundamentals and Advanced Topologies with Mininet",
+              completed: false,
+              labId: "69e0e99023b200e2a4159f1b",
             },
             {
               type: "lab",
@@ -409,12 +455,6 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
             },
             {
               type: "lab",
-              title: "ARP Fundamentals and Advanced Topologies with Mininet",
-              completed: false,
-              labId: "69e0e99023b200e2a4159f1b",
-            },
-            {
-              type: "lab",
               title: "Simulating VLAN Networks with Mininet",
               completed: false,
               labId: "69e0e99023b200e2a4159f1d",
@@ -438,28 +478,34 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
               type: "live_class",
               title: "Introduction To Linux Networking",
               completed: false,
+              contentId: "7badccc9-4c94-489b-9456-7fff6ebe8d61",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/d961858b-03d6-4a12-bb00-4f7b81b49163/playlist.m3u8",
+              durationLabel: "01:24:50",
             },
             {
               type: "live_class",
               title: "Linux Networking Basic Part 1",
               completed: false,
+              contentId: "78793420-df5b-4f99-b996-27d7fc8a3b83",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/365b5410-040e-42f5-9a04-96ce53ed730e/playlist.m3u8",
+              durationLabel: "01:12:38",
             },
             {
               type: "live_class",
               title: "Linux Networking Basic Part 2",
               completed: false,
+              contentId: "e1760306-1632-403c-97b3-e0d20f41afe1",
+              videoUrl:
+                "https://81q1cu9eke.tenbytecdn.com/195d0546-4262-43a4-8e40-46347837fc2e/playlist.m3u8",
+              durationLabel: "01:40:54",
             },
             {
               type: "lab",
-              title: "Firewall Management with ufw",
+              title: "Network Interface & Routing Configuration",
               completed: false,
-              labId: "69d2157cbfa7b7946e1a97e0",
-            },
-            {
-              type: "lab",
-              title: "Packet Capture and Traffic Analysis with tcpdump",
-              completed: false,
-              labId: "69d21575bfa7b7946e1a97d9",
+              labId: "69d2154823b200e2a4139708",
             },
             {
               type: "lab",
@@ -469,9 +515,15 @@ export const masteringAwsDevopsSeason4: CourseSummary = {
             },
             {
               type: "lab",
-              title: "Network Interface & Routing Configuration",
+              title: "Packet Capture and Traffic Analysis with tcpdump",
               completed: false,
-              labId: "69d2154823b200e2a4139708",
+              labId: "69d21575bfa7b7946e1a97d9",
+            },
+            {
+              type: "lab",
+              title: "Firewall Management with ufw",
+              completed: false,
+              labId: "69d2157cbfa7b7946e1a97e0",
             },
             {
               type: "lab",

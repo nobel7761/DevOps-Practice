@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import LanguageToggle from "@/components/shared/LanguageToggle";
+import UserMenu from "@/components/auth/UserMenu";
 import { Toaster } from "@/components/shared/shadcn";
 import { ReactNode } from "react";
 
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
           {children}
           <ThemeToggle />
           <LanguageToggle />
+          <UserMenu />
           <Toaster />
         </LanguageProvider>
       </AuthProvider>

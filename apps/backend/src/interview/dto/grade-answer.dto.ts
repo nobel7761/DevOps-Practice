@@ -7,5 +7,5 @@ export class GradeAnswerDto {
 
   @IsString()
   @IsNotEmpty()
-  command: string;
+  answer: string;
 }

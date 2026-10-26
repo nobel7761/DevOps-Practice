@@ -2,45 +2,60 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
+  useState,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
+import { authApi, type AuthUser } from "@/lib/api/auth";
+import { isAuthPath } from "@/lib/auth/auth-paths";
 
 interface AuthContextType {
-  token: string | null;
-  setToken: (token: string | null) => void;
+  user: AuthUser | null;
+  loading: boolean;
+  /** Store the user returned by login/register/reset (the cookie is already set by the backend). */
+  setUser: (user: AuthUser | null) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setTokenState] = useState<string | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const onAuthPage = isAuthPath(pathname);
 
   useEffect(() => {
-    // Load token from localStorage on mount
-    if (typeof window !== "undefined") {
-      const storedToken =
-        localStorage.getItem("accessToken") || localStorage.getItem("token");
-      setTokenState(storedToken);
+    // Auth pages don't need the session (and a 401 there must not redirect).
+    if (onAuthPage || user) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    authApi
+      .me()
+      .then((me) => !cancelled && setUser(me))
+      .catch(() => !cancelled && setUser(null))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [onAuthPage, user]);
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      window.location.href = "/login";
     }
   }, []);
 
-  const setToken = (newToken: string | null) => {
-    setTokenState(newToken);
-    if (typeof window !== "undefined") {
-      if (newToken) {
-        localStorage.setItem("accessToken", newToken);
-      } else {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("token");
-      }
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ token, setToken }}>
+    <AuthContext.Provider value={{ user, loading, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

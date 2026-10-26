@@ -24,8 +24,15 @@ import {
   generativeAgenticAiProductionCourse,
   courseUrl as generativeAgenticAiProductionUrl,
 } from "./generative-agentic-ai-production";
+import { forwardDeployedEngineeringCourse } from "./forward-deployed-engineering";
+import { systemDesignSeason3Course } from "./system-design-season-3";
+import {
+  SYSTEM_DESIGN_A_Z_COURSE_ID,
+  systemDesignAToZCourse,
+} from "./system-design-a-z";
+import { backendPythonAwsSeason2Course } from "./backend-python-aws-season-2";
 
-export type CoursePlatform = "poridhi" | "udemy";
+export type CoursePlatform = "poridhi" | "udemy" | "own";
 
 export interface CourseRegistryEntry {
   id: string;
@@ -39,6 +46,26 @@ export const courseRegistry: CourseRegistryEntry[] = [
     id: "devops-season-4",
     platform: "poridhi",
     course: masteringAwsDevopsSeason4,
+  },
+  {
+    id: SYSTEM_DESIGN_A_Z_COURSE_ID,
+    platform: "own",
+    course: systemDesignAToZCourse,
+  },
+  {
+    id: "forward-deployed-engineering",
+    platform: "poridhi",
+    course: forwardDeployedEngineeringCourse,
+  },
+  {
+    id: "system-design-season-3",
+    platform: "poridhi",
+    course: systemDesignSeason3Course,
+  },
+  {
+    id: "backend-python-aws-season-2",
+    platform: "poridhi",
+    course: backendPythonAwsSeason2Course,
   },
   {
     id: "ai-builder-n8n",

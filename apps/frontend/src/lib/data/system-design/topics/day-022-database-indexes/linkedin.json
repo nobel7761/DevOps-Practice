@@ -1,0 +1,14 @@
+{
+  "type": "mistakes",
+  "text": "Database index ব্যবহারে নতুনরা যে ৩টা ভুল করে (আমিও করেছি)\nDay 22/100 · Database Indexes\n\nফোনের contact list নাম অনুযায়ী sorted বলেই ২০০০ নামের মধ্যে একজনকে এক সেকেন্ডে পাই। **Index** ঠিক এটাই করে: table-এর পাশে একটা আলাদা sorted structure (সাধারণত **B+tree**), যেটা পুরো table না পড়ে সরাসরি row-এর ঠিকানা দেয়।\n\nকিন্তু index দিলেই query দ্রুত হয় না। আজ শিখতে গিয়ে নিজের তিনটা ভুল ধরলাম:\n\n❌ ভুল ১: সব column-এ একটা করে index দেওয়া, \"যত বেশি তত দ্রুত\" ভেবে।\n✅ ঠিক উপায়: প্রতিটা index প্রতিটা INSERT/UPDATE/DELETE-এ বাড়তি লেখা আর storage খরচ আনে। ৫টা index মানে একটা insert-এ ৬টা structure-এ লেখা। Column দেখে না, query দেখে index দিন, আর অব্যবহৃত index সরিয়ে ফেলুন।\n\n❌ ভুল ২: Index আছে email-এ, অথচ query লিখেছি WHERE LOWER(email) = ?\n✅ ঠিক উপায়: Index-এ sorted আছে email, LOWER(email) না। তাই index চুপচাপ বাদ পড়ে, পুরো table scan হয়। ঠিক সেই expression-এ index দিন: CREATE INDEX ON users (LOWER(email))।\n\n❌ ভুল ৩: Composite index-এ column-এর ক্রম যেমন-তেমন দেওয়া।\n✅ ঠিক উপায়: (city, age) index আগে city দিয়ে sorted, তাই শুধু age দিয়ে খুঁজলে প্রায় কাজে আসে না (**Leftmost-prefix rule**)। ক্রম: equality column আগে, তারপর ORDER BY-এর column, শেষে range।\n\nবোনাস শিক্ষা: Index বানিয়ে ভরসা না করে **EXPLAIN ANALYZE** দিয়ে দেখুন, plan-এ Seq Scan না Index Scan।\n\n[✍️ আপনার অভিজ্ঞতা: এর মধ্যে কোন ভুলটা আপনি বাস্তবে দেখেছেন, আর সেটা কিভাবে ধরা পড়েছিল?]\n\nআর কোন index-এর ভুল এই list-এ থাকা উচিত? Comment-এ লিখুন 👇",
+  "personalPrompt": "এর মধ্যে কোন ভুলটা আপনি বাস্তবে দেখেছেন, আর সেটা কিভাবে ধরা পড়েছিল?",
+  "firstComment": "পুরো lesson, B+tree ধাপে ধাপে diagram আর ১০ লাখ row-এ নিজে EXPLAIN ANALYZE চালানোর Lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Database",
+    "#PostgreSQL",
+    "#BackendEngineering"
+  ],
+  "visual": "day-022-main"
+}

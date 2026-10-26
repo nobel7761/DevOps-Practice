@@ -41,9 +41,9 @@ export class QuizService {
   ) {}
 
   /** Most recent saved attempt for this lab, so the frontend can show "you already took this" instead of a blank quiz. */
-  async getLatestAttempt(labId: string) {
+  async getLatestAttempt(userId: string, labId: string) {
     return this.quizAttemptModel
-      .findOne({ labId })
+      .findOne({ userId, labId })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -104,7 +104,7 @@ export class QuizService {
     };
   }
 
-  async submitQuiz(labId: string, dto: SubmitQuizDto) {
+  async submitQuiz(userId: string, labId: string, dto: SubmitQuizDto) {
     const bank = this.loadBank(labId);
     const questionById = new Map(bank.questions.map((q) => [q.id, q]));
 
@@ -140,8 +140,10 @@ export class QuizService {
     const passed = score >= bank.passPercent;
 
     const attemptNo =
-      (await this.quizAttemptModel.countDocuments({ labId }).exec()) + 1;
+      (await this.quizAttemptModel.countDocuments({ userId, labId }).exec()) +
+      1;
     await this.quizAttemptModel.create({
+      userId,
       labId,
       attemptNo,
       score,
@@ -156,8 +158,8 @@ export class QuizService {
     if (passed) {
       await this.contentProgressModel
         .findOneAndUpdate(
-          { key: labId, type: 'quiz' },
-          { key: labId, type: 'quiz', completed: true, score },
+          { userId, key: labId, type: 'quiz' },
+          { userId, key: labId, type: 'quiz', completed: true, score },
           { upsert: true },
         )
         .exec();

@@ -1,3 +1,4 @@
+import ModulePageShell from "@/components/modules/course-shell/ModulePageShell";
 import { notFound } from "next/navigation";
 import InterviewScreen from "@/components/modules/interview/InterviewScreen";
 import { findModuleLocation } from "@/lib/data/course-modules";
@@ -16,10 +17,13 @@ export default async function ModuleInterviewPage({
   }
 
   return (
-    <InterviewScreen
-      moduleId={moduleId}
-      milestone={location.milestone}
-      module={location.module}
-    />
+    <ModulePageShell courseId={location.courseId} moduleId={location.module.id}>
+      <InterviewScreen
+        moduleId={moduleId}
+        courseId={location.courseId}
+        milestone={location.milestone}
+        module={location.module}
+      />
+    </ModulePageShell>
   );
 }

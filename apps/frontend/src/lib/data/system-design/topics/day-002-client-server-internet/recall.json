@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-002",
+  "points": [
+    {
+      "term": "Client ও Server (Role)",
+      "prompt": "Client আর server কি নির্দিষ্ট ধরনের machine? আপনার backend কখন client হয়?",
+      "answer": "না, এগুলো ভূমিকা: যে কথা শুরু করে আর কিছু চায় সে client, যে অপেক্ষা করে, শোনে আর উত্তর দেয় সে server। আপনার backend user-দের কাছে server, কিন্তু যখন সে payment gateway-এর API call করে তখন সে নিজেই client।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Request/Response",
+      "prompt": "Request/response মডেলে কে কথা শুরু করে, আর protocol-এর ভূমিকা কী?",
+      "answer": "Client request পাঠায়, server process করে response ফেরত দেয়, আর client সাধারণত response-এর অপেক্ষা করে। দুই পক্ষ একই নিয়মে কথা বলে বলেই একে অপরকে বোঝে; এই নিয়মের নাম protocol, যেমন HTTP।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Internet = Network-এর Network",
+      "prompt": "Internet কি একটা বিশাল computer? ISP আর BGP এখানে কী করে?",
+      "answer": "না, Internet হলো বাসার network, ISP, দেশের আর বিদেশের network, data center সবাই মিলে যুক্ত অসংখ্য network। প্রতিটা বড় network একটা Autonomous System, আর তারা BGP দিয়ে একে অপরকে জানায় কোন IP তাদের মাধ্যমে পাওয়া যায়; কোনো কেন্দ্রীয় নিয়ন্ত্রক নেই।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Packet ও Router",
+      "prompt": "Data কেন packet-এ ভাগ হয়ে যায়, আর router পুরো পথ জানে কি?",
+      "answer": "বড় data ছোট packet-এ (সাধারণত ~১৫০০ byte পর্যন্ত) ভাগ হয়ে যায়, প্রতিটায় source আর destination IP থাকে, অন্য প্রান্তে আবার জোড়া লাগে। কোনো router পুরো পথ জানে না, শুধু routing table দেখে পরের hop ঠিক করে; TTL নিশ্চিত করে packet চিরকাল ঘুরবে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "IP Address ও Port",
+      "prompt": "IP address আর port-এর পার্থক্য কী? একই server-এ দশটা tab-এর connection আলাদা থাকে কিভাবে?",
+      "answer": "IP address বলে কোন machine, port (0-65535) বলে সেই machine-এর কোন program, যেমন HTTPS 443। Client-এর OS প্রতিটা connection-এ আলাদা ephemeral port দেয়, তাই protocol, client IP, client port, server IP, server port মিলিয়ে (5-tuple) প্রতিটা connection আলাদা চেনা যায়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Server Client-কে বিশ্বাস করে না",
+      "prompt": "Frontend-এ validation থাকলে server-এ আবার যাচাই কেন লাগে?",
+      "answer": "Client-এর code user-এর হাতে, যে কেউ devtools বা curl দিয়ে নিজের মতো request বানিয়ে পাঠাতে পারে। তাই client-এর validation শুধু user-এর সুবিধার জন্য; দাম, অনুমতি, stock সবসময় server নিজের database থেকে হিসাব ও যাচাই করে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Stateless Request",
+      "prompt": "Stateless request মানে কী, আর এতে server বাড়ানো সহজ হয় কেন?",
+      "answer": "প্রতিটা request নিজের মধ্যেই সম্পূর্ণ, server আগের request মনে রাখতে বাধ্য না, তাই client প্রতিবার token বা cookie-র মতো পরিচয় পাঠায়। যেহেতু কোনো server-এর কাছে কারও আলাদা স্মৃতি নেই, যেকোনো server যেকোনো request সামলাতে পারে, ফলে server যোগ করা সহজ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Thin vs Thick Client",
+      "prompt": "Thin আর thick client-এর trade-off কী? Thick client-এও আসল যাচাই কোথায় থাকে?",
+      "answer": "Thin client-এ প্রায় সব কাজ server-এ, তাই update সহজ আর দুর্বল device-এও চলে, কিন্তু network ছাড়া অচল আর প্রতিটা click-এ round trip। Thick client অনেক কাজ local-এ করে, দ্রুত আর offline-এও চলে, কিন্তু update ছড়াতে দেরি হয়; দুই ক্ষেত্রেই সত্য data আর আসল যাচাই server-এ থাকে।",
+      "lessonLink": "#trade-offs"
+    },
+    {
+      "term": "NAT ও Private IP",
+      "prompt": "NAT কী করে, আর এর ফলে বাইরের server কেন সরাসরি আপনার phone-এ connection খুলতে পারে না?",
+      "answer": "বাসার device-দের private IP (যেমন 192.168.x.x) থাকে, router বাইরে যাওয়ার সময় সেটা বদলে নিজের একটা public IP:port বসায় আর translation table-এ মনে রাখে। Table-এ entry তৈরি হয় শুধু ভেতর থেকে connection শুরু হলে, তাই বাইরের অচেনা connection router কাকে দেবে জানে না; এজন্য chat app আগে নিজে connection খুলে রাখে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Latency-র চার উৎস",
+      "prompt": "Latency-র চারটা উৎস কী, আর কোনটা bandwidth বাড়িয়েও কমে না?",
+      "answer": "Propagation (তার দিয়ে সংকেত যেতে সময়), transmission (bit লাইনে তুলতে সময়), queuing (ভিড়ে অপেক্ষা) আর processing (router/server-এর কাজ)। Propagation শুধু দূরত্বের উপর নির্ভর করে, fiber-এ প্রতি ১,০০০ km-এ প্রায় ৫ms; bandwidth বাড়ালে কমে না, কমে শুধু server বা content কাছে আনলে।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

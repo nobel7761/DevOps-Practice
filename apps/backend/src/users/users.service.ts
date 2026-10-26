@@ -1,45 +1,77 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+
+export interface PublicUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const createdUser = new this.userModel(createUserDto);
-    return createdUser.save();
+  static toPublic(user: UserDocument): PublicUser {
+    return {
+      id: String(user._id),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    };
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  findById(id: string) {
+    return this.userModel.findById(id).exec();
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.userModel.findById(id).exec();
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+  findByEmail(email: string) {
+    return this.userModel.findOne({ email: email.toLowerCase().trim() }).exec();
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, updateUserDto, { new: true })
+  findByEmailWithPassword(email: string) {
+    return this.userModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .select('+passwordHash')
       .exec();
-    if (!updatedUser) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return updatedUser;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.userModel.findByIdAndDelete(id).exec();
-    if (!result) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+  create(
+    data: Pick<User, 'firstName' | 'lastName' | 'email' | 'passwordHash'>,
+  ) {
+    return this.userModel.create(data);
+  }
+
+  async setResetToken(userId: string, tokenHash: string, expires: Date) {
+    await this.userModel
+      .updateOne(
+        { _id: userId },
+        { resetPasswordTokenHash: tokenHash, resetPasswordExpires: expires },
+      )
+      .exec();
+  }
+
+  findByValidResetToken(tokenHash: string) {
+    return this.userModel
+      .findOne({
+        resetPasswordTokenHash: tokenHash,
+        resetPasswordExpires: { $gt: new Date() },
+      })
+      .exec();
+  }
+
+  /** Sets the new password and burns the reset token so the link can't be reused. */
+  async updatePassword(userId: string, passwordHash: string) {
+    await this.userModel
+      .updateOne(
+        { _id: userId },
+        {
+          passwordHash,
+          $unset: { resetPasswordTokenHash: 1, resetPasswordExpires: 1 },
+        },
+      )
+      .exec();
   }
 }

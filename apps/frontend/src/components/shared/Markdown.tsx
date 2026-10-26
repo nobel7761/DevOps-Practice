@@ -30,12 +30,20 @@ export default function Markdown({ children }: { children: string }) {
         h3: ({ ...props }) => (
           <h3 className="mt-5 mb-2 text-lg font-semibold" {...props} />
         ),
-        p: ({ ...props }) => <p className="mb-3 leading-relaxed" {...props} />,
+        p: ({ ...props }) => (
+          <p className="mb-3 leading-relaxed text-foreground/85" {...props} />
+        ),
         ul: ({ ...props }) => (
-          <ul className="mb-3 list-disc space-y-1 pl-6" {...props} />
+          <ul
+            className="mb-3 list-disc space-y-1 pl-6 text-foreground/85"
+            {...props}
+          />
         ),
         ol: ({ ...props }) => (
-          <ol className="mb-3 list-decimal space-y-1 pl-6" {...props} />
+          <ol
+            className="mb-3 list-decimal space-y-1 pl-6 text-foreground/85"
+            {...props}
+          />
         ),
         a: ({ ...props }) => (
           <a

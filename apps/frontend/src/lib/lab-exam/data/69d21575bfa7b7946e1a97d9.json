@@ -1,0 +1,100 @@
+{
+  "labId": "69d21575bfa7b7946e1a97d9",
+  "title": "LAB: Packet Capture and Traffic Analysis with tcpdump",
+  "passPercent": 95,
+  "intro": "একটা নতুন internal service deploy হয়েছে — এটা আসলেই সঠিক port-এ connection receive করছে কিনা, আর traffic-টা আসলে কেমন দেখতে, সেটা tcpdump দিয়ে সরাসরি packet capture করে যাচাই করবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 5,
+      "section": {
+        "title": "🛠️ পর্ব ১: টেস্ট ট্রাফিক বানানো",
+        "note": "capture করার মতো কিছু না থাকলে tcpdump-এ কিছুই দেখা যাবে না।"
+      },
+      "prompt": "port 9090-এ একটা netcat listener চালু করো, background-এ।",
+      "answer": "nc -lk 9090 &",
+      "check": {
+        "require": ["nc", "-lk", "9090"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "section": {
+        "title": "📡 পর্ব ২: Baseline capture",
+        "note": "এখনো কোনো connection হয়নি, তাই capture খালি থাকার কথা।"
+      },
+      "prompt": "loopback interface-এ capture শুরু করো, numeric আউটপুটসহ।",
+      "answer": "tcpdump -i lo -n",
+      "check": {
+        "require": ["tcpdump", "-i", "lo", "-n"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 7,
+      "prompt": "netcat listener-এর সাথে একটা connection বানাও, যাতে capture করার মতো প্যাকেট তৈরি হয়।",
+      "answer": "nc localhost 9090 &",
+      "check": {
+        "require": ["nc", "localhost", "9090"]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 8,
+      "section": {
+        "title": "🔎 পর্ব ৩: Filtered capture",
+        "note": "BPF filter দিয়ে শুধু প্রাসঙ্গিক ট্রাফিক বেছে নেওয়া যায়।"
+      },
+      "prompt": "শুধু port 9090-এর ট্রাফিক capture করো, lo interface-এ।",
+      "answer": "tcpdump -i lo -n port 9090",
+      "check": {
+        "require": ["tcpdump", "-i", "lo", "-n", "port", "9090"]
+      },
+      "hints": [
+        "tcpdump-এর filter হিসেবে সরাসরি \"port <number>\" লেখা যায়, কোনো quote দরকার নেই"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 8,
+      "prompt": "একই capture, কিন্তু প্রোটোকলও স্পষ্টভাবে বলো — শুধু TCP, port 9090।",
+      "answer": "tcpdump -i lo -n tcp and port 9090",
+      "check": {
+        "require": ["tcpdump", "tcp", "and", "port", "9090"]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "port 22 (SSH) বাদ দিয়ে lo-এর সব ট্রাফিক capture করো।",
+      "answer": "tcpdump -i lo -n not port 22",
+      "check": {
+        "require": ["tcpdump", "not", "port", "22"]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 8,
+      "section": {
+        "title": "💾 পর্ব ৪: ফাইলে সংরক্ষণ",
+        "note": "পরে offline analysis-এর জন্য, বা Wireshark-এ খোলার জন্য capture সেভ করা যায়।"
+      },
+      "prompt": "port 9090-এর capture একটা .pcap ফাইলে সংরক্ষণ করো।",
+      "answer": "tcpdump -i lo -n port 9090 -w capture.pcap",
+      "check": {
+        "require": ["tcpdump", "port", "9090", "-w", "capture.pcap"]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "prompt": "সংরক্ষিত capture ফাইলটা পড়ে আবার দেখো।",
+      "answer": "tcpdump -r capture.pcap",
+      "check": {
+        "require": ["tcpdump", "-r", "capture.pcap"]
+      }
+    }
+  ]
+}

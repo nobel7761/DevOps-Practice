@@ -49,7 +49,7 @@
       "difficulty": "easy",
       "question": "OpenFlow match field \"tp_dst\" কী match করে?",
       "options": [
-        "destination MAC address",
+        "destination MAC address — তবে বাস্তবে এই field switch-এর MAC address learning table-এ lookup করতে ব্যবহৃত হয়, এবং এটা OpenFlow-এ সবচেয়ে বেশি ব্যবহৃত Layer 2 match field হিসেবে পরিচিত",
         "destination transport-layer port",
         "destination IP address",
         "destination VLAN"
@@ -65,7 +65,7 @@
         "source transport-layer port",
         "source MAC address",
         "source IP address",
-        "switch port number"
+        "switch port number — physical port-এর সংখ্যা নির্দেশ করে, যা দিয়ে switch বুঝে নেয় প্যাকেটটা কোন physical interface দিয়ে ভবিষ্যতে ফরওয়ার্ড করা হবে; port number আর TCP/UDP header-এর কোনো সম্পর্ক নেই এখানে"
       ],
       "answerIndex": 0,
       "explanation": "tp_src হলো transport port source — প্যাকেট কোন source port থেকে এসেছে তা match করে।"
@@ -76,7 +76,7 @@
       "question": "OpenFlow match field \"nw_proto\" কী বোঝায়?",
       "options": [
         "network layer-এর protocol number (TCP/UDP ইত্যাদি)",
-        "switch-এর port নম্বর",
+        "switch-এর ভৌত port নম্বর নির্দেশ করে, যেটা দিয়ে বোঝা যায় প্যাকেট কোন ইন্টারফেস দিয়ে switch-এ প্রবেশ করেছে — এটা protocol না, হার্ডওয়্যার port-এর তথ্য দেয়",
         "rule-এর priority",
         "VLAN id"
       ],
@@ -97,7 +97,7 @@
       "question": "ovs-ofctl টুল-টা মূলত কী কাজ করে?",
       "options": [
         "Open vSwitch-এর OpenFlow flow table manage করা",
-        "নতুন host বানানো",
+        "নতুন host বানানো — এটা মূলত Mininet-এর টপোলজি স্ক্রিপ্টের একটা অংশ, যা দিয়ে নতুন virtual host namespace তৈরি করে সেটাকে switch-এর সাথে সংযুক্ত করা হয়",
         "IP address assign করা",
         "file transfer করা"
       ],
@@ -111,7 +111,7 @@
       "options": [
         "নতুন একটা OpenFlow rule যোগ করে",
         "একটা flow মুছে দেয়",
-        "switch রিস্টার্ট করে",
+        "switch রিস্টার্ট করে দেয় — অর্থাৎ flow table-এর সব আগের rule মুছে ফেলে একদম নতুন, খালি অবস্থা থেকে শুরু করে; এটা মূলত একটা reset/reboot command, নতুন rule যোগ করার কমান্ড না",
         "নতুন host যোগ করে"
       ],
       "answerIndex": 0,
@@ -124,7 +124,7 @@
       "options": [
         "বর্তমানে ইনস্টল করা সব flow rule, packet count ও byte count",
         "শুধু switch-এর নাম",
-        "host-এর তালিকা",
+        "host-এর তালিকা — নেটওয়ার্কে বর্তমানে সংযুক্ত সব host-এর নাম, IP আর MAC address একসাথে দেখায়; flow rule বা packet counter সম্পর্কে কোনো তথ্য দেয় না এটা",
         "IP address"
       ],
       "answerIndex": 0,
@@ -136,7 +136,7 @@
       "question": "Mininet-এ \"mn --topo=single,3\" দিয়ে কী তৈরি হয়?",
       "options": [
         "১টা switch ও ৩টা host, সরাসরি কানেক্টেড",
-        "৩টা switch ও ১টা host",
+        "৩টা switch ও ১টা host তৈরি করে, যেখানে switch-গুলো একটা chain আকারে একে অপরের সাথে সংযুক্ত থাকে এবং একমাত্র host-টা প্রথম switch-এর সাথে যুক্ত থাকে",
         "৩টা controller",
         "শুধু single host, কোনো switch ছাড়া"
       ],
@@ -149,7 +149,7 @@
       "question": "\"--controller=none\" দিলে কী হয়?",
       "options": [
         "কোনো external SDN controller ছাড়াই switch চলে",
-        "স্বয়ংক্রিয়ভাবে নতুন controller ইনস্টল হয়",
+        "স্বয়ংক্রিয়ভাবে একটা built-in, lightweight default controller ইনস্টল ও চালু হয়ে যায় ব্যাকগ্রাউন্ডে, যা basic L2 learning switch আচরণ প্রদান করে কোনো manual rule ছাড়াই",
         "পুরো network বন্ধ হয়ে যায়",
         "শুধু ARP কাজ করতে থাকে এমনিতেই"
       ],
@@ -163,7 +163,7 @@
       "options": [
         "h1 host থেকে h3-কে HTTP request পাঠানো",
         "h3 host delete করা",
-        "দুইটা host merge করা",
+        "দুইটা host (h1 ও h3)-কে নেটওয়ার্ক টপোলজিতে একসাথে merge করে একটামাত্র নতুন namespace বানিয়ে দেয়, যার ফলে তাদের আলাদা IP address আর বজায় থাকে না",
         "h1-এর IP address বদলানো"
       ],
       "answerIndex": 0,
@@ -176,7 +176,7 @@
       "options": [
         "switch-এর স্বাভাবিক L2/L3 forwarding logic দিয়ে প্যাকেট হ্যান্ডেল করা",
         "প্যাকেট ড্রপ করে দেওয়া",
-        "প্যাকেট duplicate করে পাঠানো",
+        "প্যাকেটটাকে duplicate করে switch-এর সবগুলো সংযুক্ত port-এ একসাথে পাঠিয়ে দেওয়া, যাতে প্রতিটা host একই প্যাকেটের একটা করে কপি একসাথে পায় — normal action-এর এটাই মূল কাজ ধরা হয়",
         "প্যাকেট encrypt করা"
       ],
       "answerIndex": 0,
@@ -189,7 +189,7 @@
       "options": [
         "প্যাকেট switch-এর 3 নম্বর পোর্ট দিয়ে পাঠানো",
         "৩ সেকেন্ড delay দেওয়া",
-        "প্যাকেট ৩ বার পাঠানো",
+        "প্যাকেটটা পরপর ৩ বার, প্রতিবার সামান্য বিরতি দিয়ে একই গন্তব্যে পুনরায় পাঠানো, যা মূলত packet loss কমানোর একটা redundancy কৌশল হিসেবে ব্যবহৃত হয় OpenFlow-তে",
         "প্যাকেট ড্রপ করে দেওয়া"
       ],
       "answerIndex": 0,
@@ -202,7 +202,7 @@
       "options": [
         "IP address থেকে MAC address বের করা",
         "file transfer করা",
-        "পাসওয়ার্ড যাচাই করা",
+        "নেটওয়ার্কের একটা নির্দিষ্ট হোস্টের লগইন পাসওয়ার্ড remote-এ পাঠিয়ে authentication server-এর কাছে যাচাই করিয়ে নেওয়া, যা মূলত একটা security-লেয়ার প্রোটোকল হিসেবে ব্যবহৃত হয়",
         "port scan করা"
       ],
       "answerIndex": 0,
@@ -214,7 +214,7 @@
       "question": "Python-এর \"SimpleHTTPServer\" মডিউল দিয়ে কী করা যায়?",
       "options": [
         "একটা সাধারণ HTTP server চালানো",
-        "একটা database তৈরি করা",
+        "একটা পূর্ণাঙ্গ relational database তৈরি ও পরিচালনা করা, যেখানে টেবিল, কুয়েরি এবং ইনডেক্স তৈরি করে ডেটা সংরক্ষণ ও সার্চ করা যায়, HTTP-এর সাথে এর সরাসরি কোনো সম্পর্ক নেই",
         "নতুন host তৈরি করা",
         "packet capture করা"
       ],
@@ -227,7 +227,7 @@
       "question": "একই OpenFlow rule-এ একাধিক match field (যেমন dl_type, nw_proto, tp_dst) কমা দিয়ে একসাথে লিখলে এর মানে কী?",
       "options": [
         "সবগুলো শর্তই একসাথে (AND) মিলতে হবে",
-        "যেকোনো একটা মিললেই হবে (OR)",
+        "যেকোনো একটা শর্ত মিললেই rule match করে ধরা হবে (OR-ভিত্তিক), অর্থাৎ প্যাকেটটা তালিকার যেকোনো একটা field-এর সাথে মিললেই rule প্রযোজ্য হয়ে যাবে, বাকি field-গুলো optional হিসেবে গণ্য হয়",
         "শুধু শেষেরটাই কার্যকর হবে",
         "এটা একটা syntax error"
       ],
@@ -240,7 +240,7 @@
       "question": "Layer 4 forwarding বলতে মূলত কী বোঝায়?",
       "options": [
         "TCP/UDP port-এর মতো transport-layer তথ্যের ভিত্তিতে ট্রাফিক forward করার সিদ্ধান্ত নেওয়া",
-        "শুধু MAC address দেখে forward করা",
+        "শুধুমাত্র MAC address টেবিল দেখে, কোনো IP বা port তথ্য ছাড়াই, সুইচ হার্ডওয়্যার লেভেলে সরাসরি ফ্রেম ফরওয়ার্ড করার প্রক্রিয়া, যা মূলত একটা pure Layer 2 আচরণ",
         "শুধু physical cable দেখে forward করা",
         "শুধু IP TTL দেখে forward করা"
       ],
@@ -253,7 +253,7 @@
       "question": "\"priority=500,dl_type=0x800,nw_proto=6,tp_dst=80,actions=output:3\" rule কোন ট্রাফিক match করবে?",
       "options": [
         "শুধু port 80-এ যাওয়া TCP (IPv4) ট্রাফিক",
-        "সব ধরনের ট্রাফিক",
+        "সব ধরনের ট্রাফিক — IPv4, IPv6, ARP, TCP, UDP নির্বিশেষে নেটওয়ার্কের প্রতিটা প্যাকেট, কারণ priority=500 একটা উচ্চ মান হওয়ায় এটা match field-গুলোকে override করে সার্বজনীনভাবে সব ট্রাফিক ধরে নেয়",
         "শুধু UDP ট্রাফিক",
         "শুধু ARP ট্রাফিক"
       ],
@@ -267,7 +267,7 @@
       "options": [
         "switch-এর default rule-এর চেয়ে বেশি priority দিয়ে এই নির্দিষ্ট rule আগে match হওয়া নিশ্চিত করতে",
         "এটা না দিলে rule-ই syntax অনুযায়ী কাজ করত না",
-        "৫০০ মিলিসেকেন্ড delay যোগ করতে",
+        "৫০০ মিলিসেকেন্ড একটা নির্দিষ্ট delay/বিলম্ব যোগ করতে, যাতে প্যাকেটটা অবিলম্বে ফরওয়ার্ড না হয়ে কিছুটা সময় switch buffer-এ অপেক্ষা করে — এটা মূলত একটা rate-limiting/throttling মেকানিজম",
         "port নম্বর নির্দেশ করতে"
       ],
       "answerIndex": 0,
@@ -279,7 +279,7 @@
       "question": "\"priority=800,ip,nw_src=10.0.0.3,actions=normal\" rule-টা কার জন্য লেখা হয়েছে?",
       "options": [
         "h3 থেকে বের হওয়া (outgoing) ট্রাফিকের জন্য",
-        "h3-তে আসা ট্রাফিকের জন্য",
+        "h3-তে আসা (incoming) সব ট্রাফিকের জন্য, কারণ nw_src আসলে destination-ভিত্তিক match করে এবং এখানে h3-কে গন্তব্য হিসেবেই match field-এ উল্লেখ করা আছে বলে ধরে নেওয়া হয়",
         "শুধু ARP ট্রাফিকের জন্য",
         "h1-এর জন্য"
       ],
@@ -293,7 +293,7 @@
       "options": [
         "হোস্টরা একে অপরের MAC address resolve করতে পারত না, ফলে IP communication-ই শুরু হতো না",
         "HTTP server চলত না",
-        "IP address পরিবর্তন হয়ে যেত",
+        "switch নিজে থেকে ক্র্যাশ করে পুরো physical হার্ডওয়্যার রিবুট হয়ে যেত, কারণ ARP rule না থাকলে switch-এর ফ্লো টেবিল একটা অসামঞ্জস্যপূর্ণ (inconsistent) অবস্থায় চলে যায় বলে ধরা হয়",
         "switch ক্র্যাশ করত"
       ],
       "answerIndex": 0,
@@ -306,7 +306,7 @@
       "options": [
         "ARP (MAC address resolve করতে)",
         "সরাসরি TCP SYN",
-        "DNS lookup",
+        "প্রথমে একটা সম্পূর্ণ HTTPS handshake (TLS negotiation, সার্টিফিকেট যাচাই-সহ) সম্পন্ন হয়, কারণ Mininet-এর সব HTTP ট্রাফিক ডিফল্টভাবে TLS encryption দিয়ে শুরু হয় বলে ধরে নেওয়া হয়",
         "HTTPS handshake"
       ],
       "answerIndex": 0,
@@ -318,7 +318,7 @@
       "question": "h3 থেকে h1-এর কাছে HTTP response ফিরে আসার সময় কোন rule match করবে?",
       "options": [
         "nw_src=10.0.0.3 ওয়ালা priority=800 rule",
-        "tp_dst=80 ওয়ালা rule",
+        "tp_dst=80 ওয়ালা rule, কারণ response প্যাকেটেও TCP header-এ port 80-এর উল্লেখ থাকে (source port হিসেবে), আর tp_dst field উভয় দিকের port-কেই match করে বলে ধরে নেওয়া হয়",
         "শুধু arp rule",
         "কোনো rule-ই না, default drop হবে"
       ],
@@ -331,7 +331,7 @@
       "question": "tp_dst=80 rule-এ যদি nw_proto=6 না থেকে শুধু tp_dst=80 থাকত, তাহলে সমস্যা কী হতে পারত?",
       "options": [
         "UDP পোর্ট 80 ট্রাফিকও ভুলভাবে match করতে পারত, কারণ port নম্বর TCP ও UDP দুই হেডারেই থাকে",
-        "কোনো সমস্যাই হতো না",
+        "কোনো সমস্যাই হতো না, কারণ tp_dst field স্বয়ংক্রিয়ভাবে শুধুমাত্র TCP header-এর সাথেই যুক্ত থাকে, UDP header-এ আদৌ কোনো port field থাকে না বলে ধরে নেওয়া হয়",
         "rule-ই কাজ করত না",
         "IP address match হতো না"
       ],
@@ -346,7 +346,7 @@
         "সেই command h3 নামের host-এর নিজস্ব network namespace-এর ভেতরে চালানো হচ্ছে",
         "h3 নামের একটা নতুন file তৈরি হচ্ছে",
         "h3 host delete হয়ে যাচ্ছে",
-        "সব host-এ একসাথে command চলছে"
+        "সব host-এ command-টা একসাথে, সমান্তরালভাবে execute হয়ে যাচ্ছে, কারণ Mininet CLI-তে hostname prefix আসলে শুধু কোন output কোন host থেকে এসেছে তা লেবেল করার জন্য ব্যবহৃত হয়, scope সীমাবদ্ধ করে না"
       ],
       "answerIndex": 0,
       "explanation": "Mininet CLI-তে hostname prefix দিলে সেই command শুধু সেই নির্দিষ্ট host-এর namespace-এ চলে, অন্য host-গুলোতে না।"
@@ -357,7 +357,7 @@
       "question": "যদি শুধু priority=500-এর tp_dst=80 rule থাকত, priority=800-এর normal rule না থাকত, curl request-এর response-এর কী হতো?",
       "options": [
         "h3-এর response ফিরে যাওয়ার জন্য কোনো matching rule না পেয়ে সম্ভবত ড্রপ হয়ে যেত",
-        "সবকিছু স্বাভাবিকভাবেই কাজ করত",
+        "সবকিছু স্বাভাবিকভাবেই কাজ করত, কারণ OpenFlow switch স্বয়ংক্রিয়ভাবে প্রতিটা TCP connection-এর reverse path মনে রাখে এবং আলাদা rule ছাড়াই response ট্রাফিক একই পথে ফেরত পাঠিয়ে দেয়",
         "request-ই পাঠানো যেত না",
         "ARP কাজ করা বন্ধ হয়ে যেত"
       ],
@@ -370,7 +370,7 @@
       "question": "\"dl_type=0x800\" আর \"nw_proto=6\" — এই দুইটা field আসলে কোন দুই layer-এর তথ্য match করছে?",
       "options": [
         "dl_type হলো Layer 3 (network) প্যাকেট টাইপ নির্দেশক, nw_proto হলো Layer 4 (transport) প্রোটোকল নির্দেশক",
-        "দুটোই একই layer-এর তথ্য",
+        "দুটোই আসলে একই layer (Layer 3)-এর তথ্য প্রকাশ করে — dl_type আর nw_proto দুটোই মূলত IP header-এর ভেতরের ভিন্ন ভিন্ন অংশ বর্ণনা করে, একটা অন্যটার বিকল্প নোটেশন মাত্র, কোনো প্রকৃত layer পার্থক্য নেই",
         "dl_type Layer 4, nw_proto Layer 3",
         "দুটোই Layer 2-এর তথ্য"
       ],
@@ -384,7 +384,7 @@
       "options": [
         "h2-এর জন্য আলাদা flow rule দরকার হয়নি, কারণ ল্যাবটা শুধু h3-কে target করে forwarding দেখাচ্ছে",
         "h2 আসলে network-এই নেই",
-        "h2-এর জন্য নিষিদ্ধ rule আছে",
+        "h2-এর জন্য একটা explicit নিষিদ্ধ (deny/block) rule flow table-এ আগে থেকেই বসানো আছে, যা h2-এর সব ধরনের non-ARP ট্রাফিক স্বয়ংক্রিয়ভাবে drop করে দেয়, তাই আলাদা কোনো allow rule-এর দরকার পড়েনি",
         "h2 শুধু ARP করতে পারে"
       ],
       "answerIndex": 0,
@@ -396,7 +396,7 @@
       "question": "\"actions=normal\" ব্যবহার করলে switch ঠিক কীভাবে decision নেয়?",
       "options": [
         "traditional L2 learning switch-এর মতো MAC address table দেখে ফরওয়ার্ড বা ফ্লাড করে",
-        "এলোমেলোভাবে একটা port বেছে নেয়",
+        "সম্পূর্ণ এলোমেলোভাবে (random) যেকোনো একটা সংযুক্ত port বেছে নেয় প্রতিটা প্যাকেটের জন্য, কোনো MAC table বা learning মেকানিজম ছাড়াই, যা প্রতিবার আলাদা ফলাফল দিতে পারে",
         "সবসময় শুধু broadcast করে",
         "প্যাকেট ড্রপ করে দেয়"
       ],
@@ -409,7 +409,7 @@
       "question": "এই ল্যাবের মূল use-case (\"HTTP ট্রাফিক একটা নির্দিষ্ট host-এ forward করা\") বাস্তব জগতে কীসের সাথে তুলনীয়?",
       "options": [
         "load balancer বা নির্দিষ্ট backend server-এ ট্রাফিক route করার মতো সাধারণ নেটওয়ার্কিং কৌশল",
-        "শুধু ফাইল সিস্টেম backup",
+        "distributed database-এর মধ্যে replication প্রক্রিয়া, যেখানে একই ডেটা একাধিক সার্ভারে সিঙ্ক্রোনাইজড রাখা হয় consistency বজায় রাখতে — এটা মূলত storage-layer-এর কৌশল, নেটওয়ার্ক রাউটিং-এর সাথে সরাসরি সম্পর্কহীন",
         "database replication",
         "password encryption"
       ],
@@ -430,7 +430,7 @@
       "question": "OpenFlow match \"ip\" (কোনো nw_proto specify না করে) কী বোঝায়?",
       "options": [
         "যেকোনো IPv4 প্যাকেট match করবে, প্রোটোকল যাই হোক (TCP/UDP/ICMP)",
-        "শুধু ARP match করবে",
+        "শুধুমাত্র ARP প্যাকেট match করবে, কারণ \"ip\" keyword আসলে address resolution-সংক্রান্ত সব প্রোটোকলের একটা সাধারণ shorthand হিসেবে ব্যবহৃত হয়, IPv4 ডেটা ট্রাফিকের সাথে এর কোনো সম্পর্ক নেই",
         "শুধু port 80 match করবে",
         "কিছুই match করবে না"
       ],
@@ -443,7 +443,7 @@
       "question": "দুটো পৃথক rule (tp_dst=80 আর nw_src=10.0.0.3)-এ আলাদা priority দেওয়া কেন গুরুত্বপূর্ণ হতে পারে, যদি কোনো প্যাকেট দুটো শর্তই satisfy করতে পারত?",
       "options": [
         "কোনো প্যাকেট একাধিক rule-এর শর্ত মিললে switch সবচেয়ে বেশি priority-র rule অনুযায়ী কাজ করে, তাই conflict এড়াতে priority গুরুত্বপূর্ণ",
-        "priority আসলে কোনো কাজেই লাগে না",
+        "priority আসলে কোনো কাজেই লাগে না — OpenFlow switch match হওয়া সব rule-এর actions একসাথে, ক্রমানুসারে প্রয়োগ করে দেয়, তাই একাধিক rule মিললেও কোনো conflict বা override-এর প্রশ্নই আসে না",
         "priority শুধু display order ঠিক করে",
         "priority সবসময় auto assign হয়"
       ],
@@ -456,7 +456,7 @@
       "question": "\"sh\" prefix দিয়ে Mininet CLI থেকে command চালানোর মানে কী (যেমন \"sh ovs-ofctl ...\")?",
       "options": [
         "command-টা কোনো নির্দিষ্ট virtual host-এর namespace-এ না গিয়ে, সরাসরি underlying host OS-এর shell-এ চালানো হচ্ছে",
-        "এটা h দিয়ে শুরু হওয়া একটা host-এর নাম",
+        "এটা আসলে \"h\" দিয়ে শুরু হওয়া নতুন একটা host তৈরি করে এবং সেই host-এর namespace-এ পরবর্তী command চালানোর জন্য প্রস্তুত করে রাখে, ঠিক h1, h2, h3-এর মতোই একটা নতুন virtual host সংজ্ঞায়িত হয়",
         "এটা একটা নতুন host তৈরি করে",
         "এটা শুধু switch-এর জন্য reserved keyword"
       ],
@@ -469,7 +469,7 @@
       "question": "\"--mac\" flag দিলে সুবিধা কী?",
       "options": [
         "হোস্টদের MAC address predictable/sequential হয়, যা debugging-এ সুবিধাজনক",
-        "প্যাকেট encrypt হয়ে যায়",
+        "প্রতিবার Mininet চালু করার সময় সম্পূর্ণ random, অপ্রত্যাশিত MAC address assign হয়, যা debugging-কে আরও কঠিন করে তোলে কারণ প্রতিটা রানে আলাদা address মেলাতে হয়",
         "প্রতিবার নতুন MAC address random হয়",
         "এটা কোনো প্রভাব ফেলে না"
       ],
@@ -482,7 +482,7 @@
       "question": "এই ল্যাবের rule-গুলো পরে মুছে দেওয়া হলে (del-flows), ARP ছাড়া বাকি সব ট্রাফিকের ফলাফল কী হতে পারে?",
       "options": [
         "কোনো matching rule না থাকায় সেই ট্রাফিক সম্ভবত ড্রপ হবে (controller=none অবস্থায়)",
-        "সব ট্রাফিক স্বয়ংক্রিয়ভাবে forward হবে",
+        "সব ট্রাফিক স্বয়ংক্রিয়ভাবে forward হবে, কারণ flow rule মুছে ফেললে switch একটা fallback হিসেবে normal L2 learning switch আচরণে ফিরে যায় এবং কোনো rule ছাড়াই সব প্যাকেট ঠিকমতো ফরওয়ার্ড করতে থাকে",
         "নতুন controller চালু হবে",
         "শুধু HTTP ট্রাফিক কাজ করবে, বাকি সব বন্ধ"
       ],
@@ -495,7 +495,7 @@
       "question": "tp_dst=80 rule-এ \"80\" সংখ্যাটা ঠিক কোন স্তরের (layer) তথ্য?",
       "options": [
         "Layer 4 (Transport layer) port number",
-        "Layer 2 MAC address-এর অংশ",
+        "Layer 2 MAC address-এরই একটা উপ-অংশ (sub-field) — আসলে port number MAC address-এর শেষ দুই byte থেকেই নেওয়া হয়, এটা transport layer-এর সাথে প্রত্যক্ষভাবে সম্পর্কিত না",
         "Layer 3 IP address-এর অংশ",
         "Layer 1 physical signal"
       ],
@@ -508,7 +508,7 @@
       "question": "এই সেটআপে h2 থেকে h3-এ port 80-এ ট্রাফিক পাঠানো হলে কোন rule match করবে?",
       "options": [
         "একই tp_dst=80 rule, কারণ এটা source host নির্বিশেষে (nw_src উল্লেখ নেই) সব TCP:80 ট্রাফিক match করে",
-        "কোনো rule-ই match করবে না",
+        "শুধুমাত্র h1-এর জন্যই rule কাজ করে, কারণ এই ল্যাবের সব rule আসলে নির্দিষ্টভাবে h1-এর IP address hardcode করা আছে বলে ধরে নেওয়া হয়, অন্য কোনো host-এর ট্রাফিক কখনো এই rule-এ match করে না",
         "শুধু h1-এর জন্য rule কাজ করে",
         "nw_src=10.0.0.3 rule match করবে"
       ],
@@ -521,7 +521,7 @@
       "question": "Layer 4 forwarding, Layer 2 (MAC-based) forwarding থেকে মূলত কীভাবে আলাদা?",
       "options": [
         "Layer 4 decision transport-layer তথ্য (port, protocol) ব্যবহার করে, Layer 2 শুধু MAC address ব্যবহার করে",
-        "দুটো আসলে একই জিনিস",
+        "দুটো আসলে একই জিনিস — Layer 2 আর Layer 4 forwarding উভয়ই শেষ পর্যন্ত একই MAC address টেবিল লুকআপের উপর নির্ভর করে, পোর্ট/প্রোটোকল তথ্য শুধু একটা অতিরিক্ত, কার্যত অপ্রয়োজনীয় লেবেল হিসেবে যোগ হয়",
         "Layer 4-এ কোনো addressing লাগে না",
         "Layer 2 শুধু IP address ব্যবহার করে"
       ],
@@ -535,7 +535,7 @@
       "options": [
         "tp_dst field আসলে TCP/UDP হেডারের অংশ, তাই nw_proto দিয়ে প্রোটোকল নির্দিষ্ট না করলে match ambiguous/ভুল হতে পারে",
         "nw_proto একদমই অপ্রয়োজনীয়, বাদ দিলেও কোনো পার্থক্য হতো না",
-        "nw_proto আসলে priority নির্ধারণ করে",
+        "এটা শুধুই syntax-এর সৌন্দর্য আর readability-এর জন্য লেখা হয় — ovs-ofctl কখনোই আসলে nw_proto field-এর মান পরীক্ষা করে না, এটা একটা পুরোপুরি ঐচ্ছিক, decorative field যা rule-এর কার্যকারিতায় কোনো প্রভাব ফেলে না",
         "এটা শুধু syntax সৌন্দর্যের জন্য"
       ],
       "answerIndex": 0,
@@ -547,7 +547,7 @@
       "question": "controller=none থাকা সত্ত্বেও এই ল্যাবের network কাজ করছে কীভাবে?",
       "options": [
         "আমরা নিজেরাই ovs-ofctl দিয়ে manually flow rule বসিয়ে দিচ্ছি, তাই switch-এর external controller দরকার হচ্ছে না",
-        "আসলে একটা হিডেন controller চলছে ব্যাকগ্রাউন্ডে",
+        "আসলে controller=none বললেও ব্যাকগ্রাউন্ডে একটা হিডেন, ডিফল্ট controller স্বয়ংক্রিয়ভাবে চালু হয়ে যায়, যা ব্যবহারকারীর কাছে অদৃশ্য থেকে সব forwarding decision নিয়ে নেয়, এই ফ্ল্যাগটা শুধু output থেকে controller-এর নাম লুকিয়ে রাখে",
         "controller=none মানে rule-ই দরকার নেই",
         "Mininet নিজে থেকে controller বানিয়ে দেয়"
       ],
@@ -560,7 +560,7 @@
       "question": "\"output:3\" action-এ \"3\" সংখ্যাটা কী নির্দেশ করে?",
       "options": [
         "switch-এর 3 নম্বর port (যেখানে h3 কানেক্টেড)",
-        "৩ সেকেন্ড টাইমআউট",
+        "flow rule-এর নিজস্ব priority level ৩ নির্দেশ করে, অর্থাৎ এই rule-টা অন্য rule-গুলোর তুলনায় তৃতীয় সর্বোচ্চ priority-তে বিবেচিত হবে, output action-এর সাথে physical port-এর কোনো সম্পর্ক নেই এখানে",
         "৩ নম্বর priority level",
         "TCP প্রোটোকল নম্বর"
       ],
@@ -573,7 +573,7 @@
       "question": "ধরা যাক একটা নতুন rule যোগ করা হলো: priority=900,ip,nw_dst=10.0.0.1,actions=output:1। এটা h3→h1 রিটার্ন ট্রাফিকের ক্ষেত্রে priority=800-এর nw_src=10.0.0.3 rule-এর সাথে conflict করলে কোনটা জিতবে?",
       "options": [
         "priority=900-ওয়ালা rule, কারণ বেশি priority-র rule সবসময় আগে বিবেচিত হয়",
-        "priority=800-ওয়ালা rule, কারণ এটা আগে যোগ হয়েছিল",
+        "priority=800-ওয়ালা rule, কারণ OpenFlow flow table-এ rule-গুলো insertion order অনুযায়ী মূল্যায়িত হয় এবং যেটা আগে যোগ হয়েছে সেটাই সবসময় পরবর্তীতে যোগ হওয়া rule-এর চেয়ে প্রাধান্য পায়, priority সংখ্যা এখানে শুধু একটা লেবেল মাত্র",
         "দুটোই একসাথে apply হবে",
         "কোনোটাই apply হবে না, conflict error দেবে"
       ],
@@ -586,7 +586,7 @@
       "question": "tp_dst=80 rule-এর priority কমিয়ে 100 করা হলো, আর nw_src=10.0.0.3 rule-এর priority=800-ই থাকলো। এতে h1→h3 (port 80) ট্রাফিকে কোনো প্রভাব পড়বে কি?",
       "options": [
         "না, কারণ nw_src=10.0.0.3 rule শুধু h3 থেকে বের হওয়া ট্রাফিক (source IP h3) match করে, h1→h3 দিকের ট্রাফিকে এটা apply হয় না",
-        "হ্যাঁ, এখন priority=800 rule-ই জিতে যাবে এই ট্রাফিকের জন্যও",
+        "হ্যাঁ, priority=800 rule-টা এখন এই h1→h3 দিকের ট্রাফিকের জন্যও জিতে যাবে, কারণ nw_src field আসলে উভয় দিকের (source ও destination) IP-কেই একসাথে match করে বলে ধরে নেওয়া হয়, ফলে দিক নির্বিশেষে বেশি priority-র rule-ই সবসময় প্রযোজ্য হয়",
         "দুটো rule একসাথে কাজ করা বন্ধ করে দেবে",
         "HTTP সম্পূর্ণ বন্ধ হয়ে যাবে"
       ],
@@ -600,7 +600,7 @@
       "options": [
         "একটামাত্র match (tp_dst=80) একইসাথে দুইটা আলাদা output-এ load বণ্টন করতে পারে না — এর জন্য group table বা hashing-based selection-এর মতো আলাদা মেকানিজম দরকার",
         "এটা আসলে কোনো সমস্যাই না, সরাসরি output:2,3 লিখলেই হয়ে যায়",
-        "OpenFlow কখনো একাধিক host সাপোর্ট করে না",
+        "শুধু priority বাড়িয়ে দিলেই সমাধান হয়ে যায় — priority যত বেশি হবে, switch তত বেশি সংখ্যক output port-এ প্যাকেটের কপি স্বয়ংক্রিয়ভাবে পাঠিয়ে দেবে, এটাই OpenFlow-তে load balancing বাস্তবায়নের standard পদ্ধতি",
         "priority বাড়ালেই সমাধান হয়ে যায়"
       ],
       "answerIndex": 0,
@@ -612,7 +612,7 @@
       "question": "\"dl_type=0x800,nw_proto=6,tp_dst=80\" rule HTTP ট্রাফিক match করলেও, HTTPS (port 443) ট্রাফিকের কী হবে এই rule-সেটে?",
       "options": [
         "HTTPS ট্রাফিক এই নির্দিষ্ট rule match করবে না (tp_dst=80 না, 443), তাই default behavior (সম্ভবত drop, controller=none অবস্থায়) প্রযোজ্য হবে",
-        "HTTPS-ও একই rule-এ match করবে কারণ দুটোই TCP",
+        "HTTPS ট্রাফিক একটা implicit, স্বয়ংক্রিয়ভাবে তৈরি হওয়া security rule দিয়ে ব্লক হয়ে যাবে, কারণ OpenFlow ডিফল্টভাবে এনক্রিপ্টেড (port 443) ট্রাফিককে সন্দেহজনক ধরে নিয়ে প্রত্যাখ্যান করার ব্যবস্থা রাখে",
         "HTTPS স্বয়ংক্রিয়ভাবে ব্লক হয়ে যাবে একটা বিশেষ rule দিয়ে",
         "কিছুই হবে না, যেহেতু এখানে rule-ই কোনো প্রভাব ফেলে না"
       ],
@@ -625,7 +625,7 @@
       "question": "বর্তমান rule, h1 ও h2 উভয়ের থেকে আসা port 80 ট্রাফিককে h3-এ পাঠায় কারণ source IP/port উল্লেখ নেই। শুধু h1-কে অনুমতি দিতে চাইলে কোন field যোগ করা উচিত?",
       "options": [
         "nw_src=10.0.0.1 (h1-এর IP) যোগ করে rule-টাকে আরও নির্দিষ্ট করা",
-        "priority আরও কমানো",
+        "rule-এর priority মান আরও কমিয়ে দেওয়া, কারণ কম priority-র rule আরও বেশি selective/নির্দিষ্ট হয়ে যায় এবং স্বয়ংক্রিয়ভাবে শুধু h1-এর ট্রাফিকই match করতে শুরু করে, এটাই OpenFlow-এ source-ভিত্তিক filtering করার প্রচলিত কৌশল",
         "dl_type বাদ দেওয়া",
         "শুধু arp rule বাড়ানো"
       ],
@@ -638,7 +638,7 @@
       "question": "\"nw_proto\" field সংখ্যাসূচক (numeric) কেন, \"tcp\"/\"udp\" শব্দ কেন ব্যবহার হয় না এভাবে?",
       "options": [
         "এটা আসলে IP হেডারের Protocol ফিল্ডের raw numeric value, যা IANA-নির্ধারিত প্রোটোকল নম্বর অনুসরণ করে (TCP=6, UDP=17)",
-        "এটা শুধু ovs-ofctl-এর একটা bug",
+        "সংখ্যা ব্যবহার করলে switch hardware-এ প্যাকেট প্রসেসিং-এর গতি উল্লেখযোগ্যভাবে বেড়ে যায় বলে ধরা হয়, আর এটাই একমাত্র কারণ কেন ovs-ofctl কখনো \"tcp\"/\"udp\"-এর মতো readable শব্দ সমর্থন করে না, সম্পূর্ণ performance optimization-এর বিষয়",
         "সংখ্যা ব্যবহার করলে গতি বাড়ে, এটাই একমাত্র কারণ",
         "এটা priority-র সাথে সম্পর্কিত"
       ],
@@ -652,7 +652,7 @@
       "options": [
         "priority=500,dl_type=0x800,nw_proto=17,tp_dst=8080,actions=output:2",
         "priority=500,dl_type=0x800,nw_proto=6,tp_dst=8080,actions=output:2",
-        "priority=500,arp,tp_dst=8080,actions=output:2",
+        "priority=500,dl_type=0x806,arp,nw_proto=17,tp_dst=8080,actions=output:2,output:3",
         "priority=500,ip,tp_src=8080,actions=output:3"
       ],
       "answerIndex": 0,
@@ -664,7 +664,7 @@
       "question": "ARP rule-টা যদি priority উল্লেখ না করে (default priority) থাকে, আর tp_dst=80 rule যদি অনেক বেশি priority-তে থাকে, তাহলে কি ARP resolve করা ব্যাহত হবে?",
       "options": [
         "না, কারণ tp_dst=80 rule শুধু TCP+IPv4+port80 ট্রাফিক match করে, ARP প্যাকেট (ভিন্ন EtherType 0x0806) সেই rule-এ কখনো match করবে না, তাই arp rule-ই সেগুলো হ্যান্ডেল করবে",
-        "হ্যাঁ, priority বেশি হওয়ায় ARP ব্লক হয়ে যাবে",
+        "হ্যাঁ, priority বেশি হওয়ায় ARP প্যাকেটও ভুলবশত tp_dst=80 rule-এর সাথে মিলে যাবে এবং সেই rule অনুযায়ী প্রসেস হয়ে ARP resolve হওয়া সম্পূর্ণ বন্ধ হয়ে যাবে, কারণ OpenFlow dl_type-এর ভিন্নতা উপেক্ষা করে শুধু priority-কেই চূড়ান্ত বিচারক ধরে নেয় বলে এখানে ধরা হয়েছে",
         "দুটো rule একে অপরকে ওভাররাইট করে ফেলবে",
         "ARP প্যাকেট কোনো rule ছাড়াই সবসময় চলে যায়"
       ],
@@ -678,7 +678,7 @@
       "options": [
         "network topology/condition পরিবর্তন হলে rule নিজে থেকে আপডেট হয় না, প্রতিটা পরিবর্তনে manual rule maintain করতে হয় — তাই বড় dynamic network-এ এর বদলে একটা central SDN controller ব্যবহার করা হয়",
         "কোনো সীমাবদ্ধতা নেই, এটাই সবসময় সবচেয়ে ভালো পদ্ধতি",
-        "static rule সবসময় controller-এর চেয়ে দ্রুত কাজ করে তাই production-এও এটাই ব্যবহার করা উচিত",
+        "static rule automatically scale করে — network-এর আকার যতই বড় হোক না কেন, বা নতুন যতগুলো host/সার্ভিস যুক্ত হোক না কেন, আগে থেকে লেখা rule-গুলো নিজে থেকেই নতুন topology বুঝে rule generate করে আপডেট হয়ে যায়, কোনো manual হস্তক্ষেপ ছাড়াই",
         "static rule automatically scale করে"
       ],
       "answerIndex": 0,
@@ -690,7 +690,7 @@
       "question": "priority=500 আর priority=800 rule দুইটা ছাড়া, শুধু arp rule থাকলে h1 থেকে h3-এ curl করলে কী হতো?",
       "options": [
         "ARP resolve হতো, কিন্তু HTTP (TCP port 80) ট্রাফিকের জন্য কোনো matching rule না থাকায় সেটা সম্ভবত ড্রপ হতো",
-        "সবকিছু স্বাভাবিকভাবে কাজ করত",
+        "সবকিছু স্বাভাবিকভাবেই কাজ করত, কারণ একবার ARP resolve হয়ে গেলে switch স্বয়ংক্রিয়ভাবে সেই দুই host-এর মধ্যে ভবিষ্যতের সব ধরনের ট্রাফিক (TCP, UDP নির্বিশেষে) ফরওয়ার্ড করার অনুমতি দিয়ে দেয়, আলাদা কোনো rule আর প্রয়োজন হয় না",
         "ARP-ই কাজ করত না",
         "h3 স্বয়ংক্রিয়ভাবে নতুন rule তৈরি করে দিত"
       ],
@@ -705,7 +705,7 @@
         "ডিফল্ট priority (সাধারণত OVS-এ একটা মাঝারি-উচ্চ মান, যেমন 32768) প্রায়ই কম priority দেওয়া rule-এর চেয়ে বেশি হতে পারে, তাই priority সবসময় বুঝে সেট করা জরুরি",
         "priority না দিলে এটা সবসময় সর্বনিম্ন হয়ে যায়",
         "priority না দিলে rule-টাই কাজ করে না",
-        "priority ডিফল্টে সবসময় সর্বোচ্চ"
+        "priority না দিলে সেটা ডিফল্টে সবসময় সর্বোচ্চ সম্ভাব্য মান (65535) ধরে নেওয়া হয়, যার ফলে priority উল্লেখ না করা rule-গুলো আর কখনোই কোনো explicit-priority rule দ্বারা override হতে পারে না, এটা একটা hard-coded সর্বোচ্চ সীমা"
       ],
       "answerIndex": 0,
       "explanation": "OVS-এ priority না দিলে একটা default value (সাধারণত 32768) ব্যবহার হয়, যা কম explicit priority-র rule-এর চেয়ে বেশি হতে পারে — তাই এই ল্যাবের arp rule (default priority) আসলে 500/800-এর চেয়েও বেশি priority-তে থাকে।"
@@ -717,7 +717,7 @@
       "options": [
         "ARP আর TCP SYN ট্রাফিক h3 পর্যন্ত ঠিকমতো পৌঁছাবে (switch rule তো ঠিক আছে), কিন্তু h3-তে port 80-এ কোনো server শুনছে না বলে connection refused জাতীয় error আসবে",
         "সম্পূর্ণ network বন্ধ হয়ে যাবে",
-        "curl নিজেই চলবে না",
+        "switch-এর সব flow rule-ই তৎক্ষণাৎ কাজ করা বন্ধ করে দেবে, কারণ OpenFlow switch প্রতিটা rule-এর destination-এ কোনো application শুনছে কিনা তা আগে থেকেই যাচাই করে নেয় এবং সার্ভার বন্ধ থাকলে পুরো ফরওয়ার্ডিং পাইপলাইনটাই স্থগিত করে দেয়",
         "switch rule-ই কাজ করা বন্ধ করে দেবে"
       ],
       "answerIndex": 0,
@@ -730,7 +730,7 @@
       "options": [
         "এক ধরনের asymmetric/directional traffic steering — শুধু request-দিকের ট্রাফিক L4 বিচার করে h3-এ পাঠানো, আর response-দিকের ট্রাফিক স্বাভাবিক forwarding দিয়ে ফেরত পাঠানো",
         "দুটো rule আসলে একই কাজ করছে, redundant",
-        "পুরো network-কে encrypt করছে",
+        "পুরো network-এর সব ট্রাফিক একটা centralized encryption gateway দিয়ে পাস করিয়ে end-to-end encrypt করছে, যাতে h1 আর h3-এর মধ্যকার সব data নিরাপদে, unauthorized পড়া থেকে সুরক্ষিত থেকে আদান-প্রদান হয়",
         "দুটো host-কে merge করছে"
       ],
       "answerIndex": 0,
@@ -742,7 +742,7 @@
       "question": "h2 থেকেও port 80-এ h3-কে target করে একাধিক দ্রুত request পাঠালে, h3 কীভাবে বুঝবে কোন response কার (h1 নাকি h2)-কে পাঠাতে হবে, যেহেতু OpenFlow rule-গুলো শুধু IP/port-ভিত্তিক ও destination-based?",
       "options": [
         "এটা OpenFlow rule-এর দায়িত্ব না — TCP/IP স্তরেই h3-এর OS প্রতিটা connection-কে তার source IP+port দিয়ে আলাদা track করে সঠিক response পাঠায়; switch শুধু প্যাকেট ফরওয়ার্ড করে, connection track করে না",
-        "OpenFlow rule নিজেই প্রতিটা connection আলাদা track করে",
+        "OpenFlow rule নিজেই প্রতিটা TCP connection-কে আলাদা করে ট্র্যাক করে রাখে একটা internal connection table-এ, এবং প্রতিটা response প্যাকেটের জন্য সঠিক source host নির্ধারণ করে দেয় — switch-level-এই পুরো stateful connection management সম্পন্ন হয়, h3-এর OS-এর আলাদা কিছু করার প্রয়োজন পড়ে না",
         "এটা সম্ভবই না, একসাথে দুই host serve করা যায় না",
         "rule-গুলো randomly একটা request বেছে নেয়"
       ],
@@ -755,7 +755,7 @@
       "question": "এই পুরো ল্যাবের মূল শিক্ষণীয় বিষয় (takeaway) সবচেয়ে ভালোভাবে কোনটা বর্ণনা করে?",
       "options": [
         "OpenFlow দিয়ে শুধু MAC/IP না, transport-layer (port/protocol) তথ্য ব্যবহার করেও সূক্ষ্ম traffic forwarding policy বাস্তবায়ন করা যায়, যেমন নির্দিষ্ট service-ভিত্তিক ট্রাফিককে নির্দিষ্ট destination-এ পাঠানো",
-        "OpenFlow শুধু ARP হ্যান্ডেল করতে পারে",
+        "OpenFlow আসলে শুধুমাত্র ARP-এর মতো address-resolution প্রোটোকল হ্যান্ডেল করার জন্যই ডিজাইন করা হয়েছে, IP বা transport-layer-ভিত্তিক ফরওয়ার্ডিং সিদ্ধান্ত নেওয়ার সক্ষমতা এর নেই, তাই বাস্তব production নেটওয়ার্কে এটা শুধুমাত্র address resolution-এর জন্যই সীমাবদ্ধ থাকে",
         "Mininet শুধু ছোট network-এ কাজ করে",
         "HTTP server ছাড়া কোনো rule কাজ করে না"
       ],

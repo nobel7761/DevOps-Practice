@@ -1,0 +1,143 @@
+{
+  "labId": "69d2156dbfa7b7946e1a97d2",
+  "title": "LAB: Connection Monitoring with netstat and ss",
+  "passPercent": 95,
+  "intro": "api-server-01-এ port 9090-এ কিছু একটা শুনছে, কানেকশন সংখ্যা বাড়ছে, কেউ নতুন কিছু deploy করেনি। কে শুনছে, কতগুলো connection established, কোথাও আটকে আছে কিনা — ss আর netstat দিয়ে বের করো।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🔍 পর্ব ১: বেসলাইন দেখা",
+        "note": "নতুন কিছু চালু করার আগে, এখন কী চলছে দেখে নাও।"
+      },
+      "prompt": "এই মুহূর্তে কোন কোন port listen করছে, process-সহ দেখো।",
+      "answer": "ss -tlnp",
+      "check": {
+        "require": ["ss", "-tlnp"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 5,
+      "section": {
+        "title": "🛠️ পর্ব ২: পরীক্ষার পরিবেশ বানানো",
+        "note": "\"mystery service\" (9090) আর একটা HTTP server (8080) চালু করবে।"
+      },
+      "prompt": "port 9090-এ একটা netcat listener চালু করো, background-এ।",
+      "answer": "nc -lk 9090 &",
+      "check": {
+        "require": ["nc", "-lk", "9090"],
+        "socketExists": [
+          {
+            "localPort": 9090,
+            "state": "LISTEN"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 5,
+      "prompt": "port 8080-এ Python-এর built-in HTTP server চালু করো, background-এ।",
+      "answer": "python3 -m http.server 8080 &",
+      "check": {
+        "require": ["python3", "-m", "http.server", "8080"],
+        "socketExists": [
+          {
+            "localPort": 8080,
+            "state": "LISTEN"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "prompt": "port 9090-এর netcat listener-এর সাথে একটা connection বানাও (background-এ)।",
+      "answer": "nc localhost 9090 &",
+      "check": {
+        "require": ["nc", "localhost", "9090"]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 6,
+      "section": {
+        "title": "📊 পর্ব ৩: ss দিয়ে investigation",
+        "note": "ss হলো আধুনিক, দ্রুত টুল — netlink দিয়ে সরাসরি kernel-কে জিজ্ঞেস করে।"
+      },
+      "prompt": "এখন কোন কোন port listen করছে, process-সহ আরেকবার দেখো — 9090 আর 8080 দুটোই এখন থাকার কথা।",
+      "answer": "ss -tlnp",
+      "check": {
+        "require": ["ss", "-tlnp"]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "শুধু established connection-গুলো দেখো।",
+      "answer": "ss -tnp state established",
+      "check": {
+        "require": ["ss", "state", "established"]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 7,
+      "prompt": "port 9090-এর সাথে সম্পর্কিত সব socket (যেকোনো দিক থেকে) ফিল্টার করে দেখো।",
+      "answer": "ss -tnp '( dport = :9090 or sport = :9090 )'",
+      "check": {
+        "require": ["ss", "9090"]
+      },
+      "hints": [
+        "ss-এর নিজস্ব filter expression: dport/sport আর or দিয়ে দুই দিকই কভার করা যায়"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "section": {
+        "title": "📟 পর্ব ৪: ক্লাসিক netstat",
+        "note": "আধুনিক না হলেও, প্রায় সব সিস্টেমেই এটা আগে থেকেই আছে।"
+      },
+      "prompt": "netstat দিয়ে সব state-এর (listen + established সব) connection একসাথে দেখো।",
+      "answer": "netstat -tanp",
+      "check": {
+        "require": ["netstat", "-tanp"]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 6,
+      "prompt": "netstat-এর আউটপুট থেকে grep দিয়ে শুধু port 9090-সংক্রান্ত লাইনগুলো বের করো।",
+      "answer": "netstat -tanp | grep :9090",
+      "check": {
+        "require": ["netstat", "grep", "9090"]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 5,
+      "section": {
+        "title": "🖧 পর্ব ৫: Interface আর routing",
+        "note": "netstat কিছু view দেয় যা ss দেয় না।"
+      },
+      "prompt": "প্রতিটা network interface-এর packet-level counter দেখো।",
+      "answer": "netstat -i",
+      "check": {
+        "require": ["netstat", "-i"]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 4,
+      "prompt": "routing table দেখো netstat দিয়ে, numeric ঠিকানাসহ।",
+      "answer": "netstat -rn",
+      "check": {
+        "require": ["netstat", "-rn"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-004",
+  "points": [
+    {
+      "term": "API (Contract)",
+      "prompt": "API আসলে কী, আর partner-কে সরাসরি database access না দিয়ে API দেওয়ার লাভ কী?",
+      "answer": "API হলো দুটো program-এর মধ্যে চুক্তি: কী চাওয়া যায়, কিভাবে চাইতে হয়, আর কী উত্তর আসবে। এটা ভেতরের code আর database লুকিয়ে রাখে, তাই ভেতরের table বা column বদলালেও বাইরের client ভাঙে না, আর কে কী দেখবে, কতবার ডাকবে, সেই নিয়মও বসানো যায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Public / Partner / Internal API",
+      "prompt": "তিন ধরনের API কী কী, আর কোনটা বদলানো সবচেয়ে কঠিন, কেন?",
+      "answer": "Public API যে কেউ key নিয়ে ব্যবহার করতে পারে, partner API নির্দিষ্ট business-এর জন্য চুক্তি করে, আর internal API নিজেদের app ও service-এর মধ্যে। Public API বদলানো সবচেয়ে কঠিন, কারণ কারা কিভাবে ব্যবহার করছে আপনি জানেন না; internal-ও পুরোপুরি স্বাধীন না, কারণ পুরনো mobile app মানুষের phone-এ থেকে যায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Resource ও URL (noun)",
+      "prompt": "REST-এ URL-এ কী থাকে, আর /getAllProducts কেন ভালো নাম না?",
+      "answer": "REST-এ URL হলো resource-এর নাম, বিশেষ্য: /products একটা collection, /products/7 একটা নির্দিষ্ট product। /getAllProducts-এ কাজটা নামের ভেতরে ঢুকে গেছে; REST-এ কাজ বলে HTTP method (GET /products), ফলে নিয়ম সবার জন্য একই আর আন্দাজযোগ্য থাকে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "HTTP Method (verb)",
+      "prompt": "GET, POST, PUT, PATCH, DELETE প্রত্যেকটা REST-এ কী অর্থ বহন করে?",
+      "answer": "GET পড়ে, কিছু বদলায় না; POST collection-এ নতুন কিছু তৈরি করে (POST /orders); PUT একটা ঠিকানার resource পুরোটা বসিয়ে দেয়; PATCH শুধু কিছু অংশ বদলায়; DELETE মুছে দেয়। একই method সব resource-এ একই অর্থ রাখে, এটাই uniform interface।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Status Code",
+      "prompt": "API-তে সব response 200 দিয়ে body-তে error লেখা কেন খারাপ? 201, 401, 403, 409 কখন?",
+      "answer": "Client-এর code, monitoring আর retry logic status code দেখে সিদ্ধান্ত নেয়, তাই সব 200 হলে সবাই ভুল বোঝে আর error rate শূন্য দেখায়। নতুন resource তৈরি হলে 201 (সাথে Location), কে আপনি জানা না গেলে 401, চিনি কিন্তু অনুমতি নেই 403, আর বর্তমান অবস্থার সাথে সংঘাত (যেমন stock শেষ) হলে 409।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Statelessness",
+      "prompt": "Stateless API মানে কী, আর এতে scaling-এ কী সুবিধা?",
+      "answer": "প্রতিটা request নিজের মধ্যে সম্পূর্ণ: token, method, URL, body সব সাথে আসে, server আগের request মনে রেখে পরেরটা বোঝে না। তাই যেকোনো server যেকোনো request সামলাতে পারে, server বাড়ানো বা একটা পড়ে গেলে অন্যটায় পাঠানো সহজ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Safe vs Idempotent",
+      "prompt": "Safe আর idempotent method-এর পার্থক্য কী, আর timeout-এর পরে retry-তে এটা কেন জরুরি?",
+      "answer": "Safe মানে server-এর কিছু বদলায় না (GET); idempotent মানে একবার বা দশবার পাঠালে server-এর শেষ অবস্থা একই (GET, PUT, DELETE)। Timeout-এ client জানে না request পৌঁছেছিল কিনা, তাই idempotent request নিরাপদে আবার পাঠানো যায়, কিন্তু POST আবার পাঠালে duplicate হতে পারে, তখন idempotency key লাগে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "PUT vs PATCH",
+      "prompt": "একই body {\"price\": 2000} দিয়ে PUT আর PATCH করলে resource-এর কী হয়? কোনটা idempotent?",
+      "answer": "PUT পুরো representation বসায়, তাই নিয়ম মেনে চলা server-এ name আর stock মুছে শুধু price থাকে; PATCH শুধু price বদলায়, বাকি যেমন ছিল। PUT সবসময় idempotent; PATCH spec অনুযায়ী নিশ্চিত না, কারণ 'বাড়াও' বা 'যোগ করো' ধরনের patch প্রতিবার ফল বদলায়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Consistent Error Format",
+      "prompt": "একটা ভালো error response-এ কী কী থাকে, আর কী কখনো থাকা উচিত না?",
+      "answer": "সঠিক status code-এর সাথে পুরো API-জুড়ে একই JSON গঠন: machine-এর জন্য স্থির code (OUT_OF_STOCK), মানুষের জন্য message, কোন field-এ সমস্যা তার details, আর খোঁজার জন্য requestId; RFC 9457 problem+json একটা standard রূপ। Stack trace, SQL বা ভেতরের path কখনো client-কে পাঠাবেন না, ওগুলো log-এ যাবে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Richardson Maturity Model",
+      "prompt": "Richardson Maturity Model-এর চারটা level কী, আর বেশিরভাগ API কোথায় থামে, কেন?",
+      "answer": "Level 0-তে এক URL আর সব POST, Level 1-এ আলাদা resource URL, Level 2-তে সঠিক HTTP method আর status code, Level 3-এ HATEOAS, মানে response-এ পরের কাজের link। বেশিরভাগ API Level 2-তে থামে, কারণ client আগে থেকেই documentation (যেমন OpenAPI) দেখে জানে কোন URL ডাকবে, link ধরে চলা generic client খুব কম লেখা হয়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

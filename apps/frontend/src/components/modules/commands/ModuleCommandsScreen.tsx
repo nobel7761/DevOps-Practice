@@ -8,10 +8,12 @@ import type { CommandEntry } from "@/lib/data/commands";
 import type { CourseMilestone, CourseModule } from "@/lib/data/course-modules";
 
 export default function ModuleCommandsScreen({
+  courseId,
   milestone,
   module,
   commands,
 }: {
+  courseId: string;
   milestone: CourseMilestone;
   module: CourseModule;
   commands: CommandEntry[];
@@ -40,15 +42,18 @@ export default function ModuleCommandsScreen({
   }, [filtered]);
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 print:py-0">
+    <div className="container mx-auto max-w-3xl px-4 py-10 print:py-0">
       <div className="print:hidden">
         <ModuleBreadcrumb
           items={[
             { label: "Home", href: "/" },
-            { label: milestone.title, href: `/?milestone=${milestone.id}` },
+            {
+              label: milestone.title,
+              href: `/course/${courseId}?milestone=${milestone.id}`,
+            },
             {
               label: module.title,
-              href: `/?milestone=${milestone.id}&module=${module.id}`,
+              href: `/course/${courseId}?milestone=${milestone.id}&module=${module.id}`,
             },
             { label: "সব Commands" },
           ]}
@@ -80,6 +85,6 @@ export default function ModuleCommandsScreen({
           কোনো command পাওয়া যায়নি।
         </p>
       )}
-    </main>
+    </div>
   );
 }

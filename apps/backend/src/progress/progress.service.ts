@@ -15,18 +15,41 @@ export class ProgressService {
   ) {}
 
   /** Every key (labId or video contentId) with at least one completed record, for the homepage overlay. */
-  async getCompletedKeys(): Promise<string[]> {
+  async getCompletedKeys(userId: string): Promise<string[]> {
     const keys = await this.contentProgressModel
-      .distinct('key', { completed: true })
+      .distinct('key', { userId, completed: true })
       .exec();
     return keys;
   }
 
-  async markComplete(key: string, type: ContentProgressType): Promise<void> {
+  async getCompletedKeysOfType(
+    userId: string,
+    type: ContentProgressType,
+  ): Promise<string[]> {
+    return this.contentProgressModel
+      .distinct('key', { userId, completed: true, type })
+      .exec();
+  }
+
+  async markComplete(
+    userId: string,
+    key: string,
+    type: ContentProgressType,
+  ): Promise<void> {
+    await this.setCompleted(userId, key, type, true);
+  }
+
+  /** Like markComplete, but can also un-mark (e.g. unticking "Post করেছি"). */
+  async setCompleted(
+    userId: string,
+    key: string,
+    type: ContentProgressType,
+    completed: boolean,
+  ): Promise<void> {
     await this.contentProgressModel
       .findOneAndUpdate(
-        { key, type },
-        { key, type, completed: true },
+        { userId, key, type },
+        { userId, key, type, completed },
         { upsert: true },
       )
       .exec();

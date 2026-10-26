@@ -198,6 +198,179 @@ export interface ShellState {
   perfLoad: "idle" | "cpu" | "mem" | "mem-critical" | "disk" | "net";
   /** journal entries appended via `logger`, newest last */
   journal: { tag: string; priority: string; message: string }[];
+  /** simulated git repo rooted wherever `git init` was run (null = no repo yet) */
+  git: GitRepoState;
+  /** simulated docker daemon state */
+  docker: DockerState;
+  /** simulated kubernetes cluster state */
+  k8s: K8sState;
+  /** the "host" network stack (interfaces/routes/neighbors) */
+  network: NetworkStack;
+  /** `ip netns add <name>` -> an isolated network stack */
+  netns: Record<string, NetworkStack>;
+  /** ss/netstat socket table */
+  sockets: SocketEntry[];
+  /** fixed, pre-seeded packets tcpdump filters from — not genuinely generated traffic */
+  trafficLog: PacketRecord[];
+  firewall: { ufw: UfwState; iptables: IptablesState };
+}
+
+export interface NetIface {
+  name: string;
+  state: "up" | "down";
+  addresses: { cidr: string }[];
+  mac?: string;
+  /** veth partner interface name, if this is one end of a veth pair */
+  peer?: string;
+}
+
+export interface NetRoute {
+  /** "default" or a destination CIDR */
+  dest: string;
+  via?: string;
+  dev: string;
+}
+
+export interface NetworkStack {
+  interfaces: Record<string, NetIface>;
+  routes: NetRoute[];
+  /** ip address -> ARP entry */
+  neighbors: Record<string, { mac: string; state: string; dev: string }>;
+}
+
+export interface SocketEntry {
+  proto: "tcp" | "udp";
+  localAddr: string;
+  localPort: number;
+  remoteAddr?: string;
+  remotePort?: number;
+  state: string;
+  pid?: number;
+  program?: string;
+}
+
+export interface PacketRecord {
+  iface: string;
+  timestamp: string;
+  srcIp: string;
+  srcPort: number;
+  dstIp: string;
+  dstPort: number;
+  proto: "tcp" | "udp";
+  flags?: string;
+  seq?: number;
+  length: number;
+}
+
+export interface UfwRule {
+  action: "allow" | "deny" | "reject";
+  port?: string;
+  proto?: "tcp" | "udp";
+  from?: string;
+  appProfile?: string;
+  seq: number;
+}
+
+export interface UfwState {
+  enabled: boolean;
+  defaultIncoming: "allow" | "deny";
+  defaultOutgoing: "allow" | "deny";
+  rules: UfwRule[];
+  nextSeq: number;
+}
+
+export interface IptablesRule {
+  target: "ACCEPT" | "DROP" | "REJECT" | "LOG";
+  proto?: "tcp" | "udp";
+  dport?: string;
+  sport?: string;
+  source?: string;
+  extra?: string[];
+}
+
+export interface IptablesChain {
+  policy: "ACCEPT" | "DROP";
+  rules: IptablesRule[];
+}
+
+export interface IptablesState {
+  chains: Record<string, IptablesChain>;
+}
+
+export interface GitCommitRec {
+  /** deterministic fake short hash, derived from `seq` */
+  id: string;
+  message: string;
+  /** absolute paths included in this commit (the staged set at commit time) */
+  files: string[];
+  seq: number;
+}
+
+export interface GitRepoState {
+  /** absolute path `git init` was run in; null = no repo yet */
+  root: string | null;
+  /** branch name -> ordered commit id list, oldest first */
+  branches: Record<string, string[]>;
+  currentBranch: string;
+  /** flat commit store, keyed by id (no merge support, so no DAG needed) */
+  commits: Record<string, GitCommitRec>;
+  /** absolute paths staged for the next commit */
+  staged: string[];
+  /**
+   * absolute path -> content as of the last commit, drives "modified"
+   * detection in `git status`. Deliberately branch-agnostic — `checkout`
+   * only flips `currentBranch` and never rewrites `fs` to a per-branch
+   * snapshot (that would need full per-commit filesystem snapshots, out of
+   * scope for this simulator).
+   */
+  tracked: Record<string, string>;
+  nextSeq: number;
+}
+
+export interface DockerImage {
+  tag: string;
+  id: string;
+  sourcePath: string;
+  dockerfileContent: string;
+  seq: number;
+}
+
+export interface DockerContainer {
+  name: string;
+  id: string;
+  image: string;
+  /**
+   * Every `docker run` (detached or not) lands as "running" immediately —
+   * there's no real process/exit-code model in this simulator.
+   */
+  status: "running" | "exited";
+  ports: { host: number; container: number }[];
+  /** set by `docker compose up`, read by `docker compose down` */
+  composeProject?: string;
+  seq: number;
+}
+
+export interface DockerState {
+  images: Record<string, DockerImage>;
+  containers: Record<string, DockerContainer>;
+  nextSeq: number;
+}
+
+export interface K8sResource {
+  kind: string;
+  name: string;
+  namespace: string;
+  /** Deployment only */
+  replicas?: number;
+  /** mirrors replicas instantly — no rollout simulation */
+  readyReplicas?: number;
+  sourceFile?: string;
+  raw: Record<string, string>;
+}
+
+export interface K8sState {
+  /** keyed by `${namespace}/${kind}/${name}` */
+  resources: Record<string, K8sResource>;
 }
 
 /** Applies the current umask to a base mode (666 for files, 777 for dirs). */
@@ -344,6 +517,99 @@ export function createShell(): ShellState {
     services: { sshd: { running: true, pid: 742 } },
     perfLoad: "idle",
     journal: [],
+    git: {
+      root: null,
+      branches: {},
+      currentBranch: "main",
+      commits: {},
+      staged: [],
+      tracked: {},
+      nextSeq: 1,
+    },
+    docker: { images: {}, containers: {}, nextSeq: 1 },
+    k8s: { resources: {} },
+    network: {
+      interfaces: {
+        lo: { name: "lo", state: "up", addresses: [{ cidr: "127.0.0.1/8" }] },
+        eth0: {
+          name: "eth0",
+          state: "up",
+          addresses: [{ cidr: "10.0.1.15/24" }],
+          mac: "02:42:0a:00:01:0f",
+        },
+      },
+      routes: [
+        { dest: "10.0.1.0/24", dev: "eth0" },
+        { dest: "default", via: "10.0.1.1", dev: "eth0" },
+      ],
+      neighbors: {},
+    },
+    netns: {},
+    sockets: [
+      {
+        proto: "tcp",
+        localAddr: "127.0.0.53",
+        localPort: 53,
+        state: "LISTEN",
+        program: "systemd-resolve",
+        pid: 520,
+      },
+      {
+        proto: "tcp",
+        localAddr: "127.0.0.54",
+        localPort: 53,
+        state: "LISTEN",
+        program: "systemd-resolve",
+        pid: 520,
+      },
+      {
+        proto: "tcp",
+        localAddr: "0.0.0.0",
+        localPort: 22,
+        state: "LISTEN",
+        program: "sshd",
+        pid: 742,
+      },
+      {
+        proto: "tcp",
+        localAddr: "0.0.0.0",
+        localPort: 3000,
+        state: "LISTEN",
+        program: "node",
+        pid: 1001,
+      },
+      {
+        proto: "tcp",
+        localAddr: "0.0.0.0",
+        localPort: 7070,
+        state: "LISTEN",
+        program: "node",
+        pid: 1002,
+      },
+    ],
+    trafficLog: [],
+    firewall: {
+      ufw: {
+        enabled: false,
+        defaultIncoming: "allow",
+        defaultOutgoing: "allow",
+        rules: [],
+        nextSeq: 1,
+      },
+      iptables: {
+        chains: {
+          INPUT: {
+            policy: "ACCEPT",
+            rules: [{ target: "ACCEPT", extra: ["NETBIRD-ACL-INPUT"] }],
+          },
+          OUTPUT: { policy: "ACCEPT", rules: [] },
+          FORWARD: {
+            policy: "ACCEPT",
+            rules: [{ target: "ACCEPT", extra: ["DOCKER-FORWARD"] }],
+          },
+        },
+      },
+    },
   };
   syncEtcFiles(state);
   return state;
@@ -355,6 +621,352 @@ function nextUid(state: ShellState): number {
 
 function nextGid(state: ShellState): number {
   return Math.max(1000, ...Object.values(state.groups)) + 1;
+}
+
+/**
+ * Deterministic fake hex id (git commit hashes, docker image/container ids):
+ * derived purely from a monotonic `seq` counter already persisted on state,
+ * so re-running the same command from the same starting state (the learner's
+ * attempt vs. a `ref` check's reference run) always produces the same id.
+ */
+function fakeHex(seq: number, len: number): string {
+  return seq.toString(16).padStart(len, "0").slice(0, len);
+}
+
+/** Parses "a.b.c.d" into a 32-bit integer, or null if malformed. */
+function ipToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const v = Number(p);
+    if (!Number.isInteger(v) || v < 0 || v > 255) return null;
+    n = n * 256 + v;
+  }
+  return n >>> 0;
+}
+
+/** True if `ip` falls within `cidr` ("a.b.c.d/prefix"). */
+function cidrContains(cidr: string, ip: string): boolean {
+  const [base, prefixRaw] = cidr.split("/");
+  const prefix = Number(prefixRaw);
+  const baseInt = ipToInt(base);
+  const ipInt = ipToInt(ip);
+  if (baseInt === null || ipInt === null || !Number.isInteger(prefix))
+    return false;
+  if (prefix === 0) return true;
+  const mask = prefix >= 32 ? 0xffffffff : (0xffffffff << (32 - prefix)) >>> 0;
+  return (baseInt & mask) === (ipInt & mask);
+}
+
+/** Strips the host bits off a CIDR's address, e.g. "10.0.1.15/24" -> "10.0.1.0/24". */
+function cidrNetwork(cidr: string): string {
+  const [base, prefixRaw] = cidr.split("/");
+  const prefix = Number(prefixRaw);
+  const baseInt = ipToInt(base);
+  if (baseInt === null || !Number.isInteger(prefix)) return cidr;
+  const mask = prefix >= 32 ? 0xffffffff : (0xffffffff << (32 - prefix)) >>> 0;
+  const net = (baseInt & mask) >>> 0;
+  return `${(net >>> 24) & 255}.${(net >>> 16) & 255}.${(net >>> 8) & 255}.${net & 255}/${prefix}`;
+}
+
+/** Longest-prefix-match lookup against a stack's routing table, falling back to default. */
+function findRoute(stack: NetworkStack, destIp: string): NetRoute | null {
+  let best: NetRoute | null = null;
+  let bestPrefix = -1;
+  for (const r of stack.routes) {
+    if (r.dest === "default") continue;
+    const prefix = Number(r.dest.split("/")[1] ?? 0);
+    if (cidrContains(r.dest, destIp) && prefix > bestPrefix) {
+      best = r;
+      bestPrefix = prefix;
+    }
+  }
+  if (best) return best;
+  return stack.routes.find((r) => r.dest === "default") ?? null;
+}
+
+function formatRoute(r: NetRoute): string {
+  if (r.dest === "default") return `default via ${r.via} dev ${r.dev}`;
+  if (r.via) return `${r.dest} via ${r.via} dev ${r.dev}`;
+  return `${r.dest} dev ${r.dev} scope link`;
+}
+
+/** Finds which interface on a stack has an address in the same subnet as `ip`. */
+function findDeviceForGateway(
+  stack: NetworkStack,
+  viaIp: string,
+): string | undefined {
+  return Object.entries(stack.interfaces).find(([, iface]) =>
+    iface.addresses.some((a) => cidrContains(a.cidr, viaIp)),
+  )?.[0];
+}
+
+/** Value of a `--flag value` or `-f value` style option among unquoted tokens. */
+function flagValue(tokens: Token[], name: string): string | undefined {
+  const idx = tokens.findIndex((t) => !t.quoted && t.text === name);
+  return idx >= 0 ? tokens[idx + 1]?.text : undefined;
+}
+
+/** `/etc/services`-style name -> "port/proto", for `ufw allow ssh` etc. */
+const UFW_SERVICE_PORTS: Record<string, string> = {
+  ssh: "22/tcp",
+  telnet: "23/tcp",
+  http: "80/tcp",
+  https: "443/tcp",
+};
+
+/** Known `ufw` application profiles (normally under /etc/ufw/applications.d/). */
+const UFW_APP_PROFILES: Record<
+  string,
+  { ports: string; proto?: "tcp" | "udp" }
+> = {
+  OpenSSH: { ports: "22", proto: "tcp" },
+  Nginx: { ports: "80,443", proto: "tcp" },
+  "Nginx Full": { ports: "80,443", proto: "tcp" },
+  "Nginx HTTP": { ports: "80", proto: "tcp" },
+};
+
+/**
+ * Parses the match/target flags of an `iptables -I/-A/-D ...` invocation
+ * (everything after the chain name and optional position number) into a
+ * rule object. Returns null when no `-j`/`--jump` target was given — every
+ * real iptables rule needs one.
+ */
+function parseIptablesRule(tokens: Token[]): IptablesRule | null {
+  let proto: "tcp" | "udp" | undefined;
+  let dport: string | undefined;
+  let sport: string | undefined;
+  let source: string | undefined;
+  let target: IptablesRule["target"] | undefined;
+  const extra: string[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.quoted) continue;
+    if (t.text === "-p" || t.text === "--protocol") {
+      proto = tokens[++i]?.text === "udp" ? "udp" : "tcp";
+      continue;
+    }
+    if (t.text === "--dport") {
+      dport = tokens[++i]?.text;
+      continue;
+    }
+    if (t.text === "--sport") {
+      sport = tokens[++i]?.text;
+      continue;
+    }
+    if (t.text === "-s" || t.text === "--source") {
+      source = tokens[++i]?.text;
+      continue;
+    }
+    if (t.text === "-j" || t.text === "--jump") {
+      const j = tokens[++i]?.text;
+      if (j === "ACCEPT" || j === "DROP" || j === "REJECT" || j === "LOG")
+        target = j;
+      continue;
+    }
+    if (t.text === "-m") {
+      const mod = tokens[++i]?.text;
+      if (mod) extra.push(`-m ${mod}`);
+      continue;
+    }
+    if (t.text === "--limit") {
+      const v = tokens[++i]?.text;
+      if (v) extra.push(`limit: ${v}`);
+      continue;
+    }
+    if (t.text === "--ctstate") {
+      const v = tokens[++i]?.text;
+      if (v) extra.push(`ctstate: ${v}`);
+      continue;
+    }
+  }
+  if (!target) return null;
+  return {
+    target,
+    proto,
+    dport,
+    sport,
+    source,
+    extra: extra.length ? extra : undefined,
+  };
+}
+
+/** Pulls every ":<port>" reference out of an `ss` bracket filter expression. */
+function parseSsPortFilter(expr: string): number[] {
+  return [...expr.matchAll(/:(\d+)/g)].map((m) => Number(m[1]));
+}
+
+/**
+ * Appends a plausible SYN/SYN-ACK/ACK/data TCP handshake to `trafficLog` for
+ * a new connection — this is the only source of `trafficLog` entries
+ * (tcpdump has nothing to filter until a connection like this actually
+ * happens), not genuinely generated traffic.
+ */
+function appendHandshakePackets(
+  state: ShellState,
+  iface: string,
+  clientPort: number,
+  serverPort: number,
+): void {
+  const ip = "127.0.0.1";
+  const baseSeq = 1000000 + state.trafficLog.length * 37;
+  const n = state.trafficLog.length;
+  const mkTime = (offset: number) => {
+    const sec = 56 + Math.floor((n + offset) / 10);
+    const micro = ((n + offset) % 10) * 100000;
+    return `12:34:${String(sec).padStart(2, "0")}.${String(micro).padStart(6, "0")}`;
+  };
+  state.trafficLog.push(
+    {
+      iface,
+      timestamp: mkTime(0),
+      srcIp: ip,
+      srcPort: clientPort,
+      dstIp: ip,
+      dstPort: serverPort,
+      proto: "tcp",
+      flags: "S",
+      seq: baseSeq,
+      length: 0,
+    },
+    {
+      iface,
+      timestamp: mkTime(1),
+      srcIp: ip,
+      srcPort: serverPort,
+      dstIp: ip,
+      dstPort: clientPort,
+      proto: "tcp",
+      flags: "S.",
+      seq: baseSeq + 5000,
+      length: 0,
+    },
+    {
+      iface,
+      timestamp: mkTime(2),
+      srcIp: ip,
+      srcPort: clientPort,
+      dstIp: ip,
+      dstPort: serverPort,
+      proto: "tcp",
+      flags: ".",
+      seq: baseSeq + 1,
+      length: 0,
+    },
+    {
+      iface,
+      timestamp: mkTime(3),
+      srcIp: ip,
+      srcPort: clientPort,
+      dstIp: ip,
+      dstPort: serverPort,
+      proto: "tcp",
+      flags: "P.",
+      seq: baseSeq + 1,
+      length: 24,
+    },
+  );
+}
+
+/** BPF-ish filter match: supports `port N`, `host IP`, `tcp`, `udp`, `not`, implicit/explicit `and`. */
+function matchesBpf(pkt: PacketRecord, tokens: string[]): boolean {
+  if (!tokens.length) return true;
+  let result = true;
+  let negate = false;
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (tok === "and") continue;
+    if (tok === "not") {
+      negate = true;
+      continue;
+    }
+    let term: boolean;
+    if (tok === "port") {
+      const port = Number(tokens[++i]);
+      term = pkt.srcPort === port || pkt.dstPort === port;
+    } else if (tok === "host") {
+      const host = tokens[++i];
+      term = pkt.srcIp === host || pkt.dstIp === host;
+    } else if (tok === "tcp") {
+      term = pkt.proto === "tcp";
+    } else if (tok === "udp") {
+      term = pkt.proto === "udp";
+    } else {
+      term = true;
+    }
+    if (negate) {
+      term = !term;
+      negate = false;
+    }
+    result = result && term;
+  }
+  return result;
+}
+
+function formatPacketLine(p: PacketRecord): string {
+  const flagStr = p.flags ? ` Flags [${p.flags}],` : "";
+  return `${p.timestamp} IP ${p.srcIp}.${p.srcPort} > ${p.dstIp}.${p.dstPort}:${flagStr} seq ${p.seq ?? 0}, length ${p.length}`;
+}
+
+/** Shared `ss`/`netstat` socket-table renderer — same source data, different column styles. */
+function formatSockets(
+  sockets: SocketEntry[],
+  opts: {
+    listenOnly?: boolean;
+    stateFilter?: string;
+    portFilter?: number[];
+    showProcess: boolean;
+    style: "ss" | "netstat";
+  },
+): string {
+  let filtered = sockets;
+  if (opts.listenOnly) filtered = filtered.filter((s) => s.state === "LISTEN");
+  if (opts.stateFilter)
+    filtered = filtered.filter(
+      (s) => s.state.toLowerCase() === opts.stateFilter!.toLowerCase(),
+    );
+  if (opts.portFilter?.length)
+    filtered = filtered.filter(
+      (s) =>
+        opts.portFilter!.includes(s.localPort) ||
+        (s.remotePort !== undefined && opts.portFilter!.includes(s.remotePort)),
+    );
+
+  if (opts.style === "ss") {
+    const lines = [
+      "State      Recv-Q Send-Q   Local Address:Port    Peer Address:Port   Process",
+    ];
+    for (const s of filtered) {
+      const local = `${s.localAddr}:${s.localPort}`;
+      const peer = s.remoteAddr
+        ? `${s.remoteAddr}:${s.remotePort}`
+        : "0.0.0.0:*";
+      const proc =
+        opts.showProcess && s.program
+          ? `users:(("${s.program}",pid=${s.pid ?? 0},fd=3))`
+          : "";
+      lines.push(
+        `${s.state.padEnd(11)}0      0        ${local.padEnd(22)}${peer.padEnd(21)}${proc}`,
+      );
+    }
+    return lines.join("\n");
+  }
+
+  const lines = [
+    "Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name",
+  ];
+  for (const s of filtered) {
+    const local = `${s.localAddr}:${s.localPort}`;
+    const foreign = s.remoteAddr
+      ? `${s.remoteAddr}:${s.remotePort}`
+      : "0.0.0.0:*";
+    const proc = opts.showProcess && s.program ? `${s.pid}/${s.program}` : "-";
+    lines.push(
+      `${s.proto.padEnd(5)}0      0 ${local.padEnd(23)} ${foreign.padEnd(23)} ${s.state.padEnd(11)} ${proc}`,
+    );
+  }
+  return lines.join("\n");
 }
 
 export function displayCwd(cwd: string): string {
@@ -384,6 +996,115 @@ function parentOf(path: string): string {
 
 function baseName(path: string): string {
   return path === "/" ? "/" : path.slice(path.lastIndexOf("/") + 1);
+}
+
+/** One YAML "document" (k8s manifests may have several, split on `---`). */
+interface YamlDoc {
+  /** dotted-path -> scalar value, e.g. "metadata.name" -> "myapp" */
+  flat: Record<string, string>;
+}
+
+/**
+ * Minimal indentation-based scanner for the YAML subset docker-compose files
+ * and k8s manifests need in these labs: top-level scalars, one level of
+ * mapping nesting ("key:" then indented "child: value" lines), and
+ * multi-document files split on a line that is exactly "---". Blank lines,
+ * "#" comments, and "-"-prefixed list items are skipped entirely — list
+ * values (e.g. compose's "ports:" lists) are intentionally unsupported.
+ * This is NOT a general YAML parser.
+ */
+function scanYamlish(content: string): YamlDoc[] {
+  const docs: YamlDoc[] = [];
+  let flat: Record<string, string> = {};
+  let stack: { indent: number; path: string }[] = [];
+
+  const startDoc = () => {
+    flat = {};
+    stack = [];
+    docs.push({ flat });
+  };
+  startDoc();
+
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.replace(/\r$/, "");
+    if (/^---\s*$/.test(line)) {
+      startDoc();
+      continue;
+    }
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("-"))
+      continue;
+
+    const match = /^(\s*)([\w.-]+):\s*(.*)$/.exec(line);
+    if (!match) continue;
+    const indent = match[1].length;
+    const key = match[2];
+    let value = match[3].trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    while (stack.length && stack[stack.length - 1].indent >= indent)
+      stack.pop();
+    const parentPath = stack.length ? stack[stack.length - 1].path : null;
+    const path = parentPath ? `${parentPath}.${key}` : key;
+
+    if (value === "") {
+      stack.push({ indent, path });
+    } else {
+      flat[path] = value;
+    }
+  }
+
+  return docs;
+}
+
+/** Direct child service names under "services:" in a docker-compose file. */
+export function composeServiceNames(content: string): string[] {
+  const [doc] = scanYamlish(content);
+  const prefix = "services.";
+  const names = new Set<string>();
+  for (const path of Object.keys(doc?.flat ?? {})) {
+    if (!path.startsWith(prefix)) continue;
+    names.add(path.slice(prefix.length).split(".")[0]);
+  }
+  return [...names];
+}
+
+/** A service's `image:` value from a docker-compose file, if set. */
+export function composeServiceImage(
+  content: string,
+  service: string,
+): string | undefined {
+  const [doc] = scanYamlish(content);
+  return doc?.flat[`services.${service}.image`];
+}
+
+export interface ParsedK8sDoc {
+  kind: string;
+  name: string;
+  namespace: string;
+  replicas?: number;
+  raw: Record<string, string>;
+}
+
+/** One entry per `---`-separated doc that has both kind: and metadata.name:. */
+export function parseK8sManifest(content: string): ParsedK8sDoc[] {
+  return scanYamlish(content)
+    .map((doc) => ({
+      kind: doc.flat["kind"] ?? "",
+      name: doc.flat["metadata.name"] ?? "",
+      namespace: doc.flat["metadata.namespace"] ?? "default",
+      replicas:
+        doc.flat["spec.replicas"] !== undefined
+          ? Number(doc.flat["spec.replicas"])
+          : undefined,
+      raw: doc.flat,
+    }))
+    .filter((d) => d.kind && d.name);
 }
 
 function childrenOf(fs: Record<string, FsNode>, dir: string): string[] {
@@ -1183,6 +1904,17 @@ function executeOne(
   let rawToks = tokenize(input.trim());
   if (!rawToks) return fail("bash: syntax error: unclosed quote");
   if (!rawToks.length) return ok();
+  // No real job control is simulated — a trailing `&` (background the
+  // command) is simply stripped and the command runs synchronously, which is
+  // sufficient for labs that only care about the resulting state (a socket
+  // now listening, a service now running), not actual process backgrounding.
+  if (
+    !rawToks[rawToks.length - 1].quoted &&
+    rawToks[rawToks.length - 1].text === "&"
+  ) {
+    rawToks = rawToks.slice(0, -1);
+    if (!rawToks.length) return ok();
+  }
   const actingUser = currentUser(state);
   // A leading `sudo` elevates for this one command — allowed unconditionally
   // for root, and for anyone else only if they're in the sudo group.
@@ -1391,6 +2123,1515 @@ function executeOne(
       }
       syncEtcFiles(state);
       return ok();
+    }
+
+    case "git": {
+      const g = state.git;
+      const action = rest[0]?.text;
+      const NOT_A_REPO =
+        "fatal: not a git repository (or any of the parent directories): .git";
+      const inRepo = () => g.root !== null && g.root === state.cwd;
+      const relTo = (abs: string) => abs.slice((g.root ?? "").length + 1);
+
+      if (action === "init") {
+        if (g.root === state.cwd) {
+          return ok(
+            `Reinitialized existing Git repository in ${state.cwd}/.git/`,
+          );
+        }
+        g.root = state.cwd;
+        g.branches = { main: [] };
+        g.currentBranch = "main";
+        g.commits = {};
+        g.staged = [];
+        g.tracked = {};
+        g.nextSeq = 1;
+        const gitDir = state.cwd === "/" ? "/.git" : state.cwd + "/.git";
+        state.fs[gitDir] = {
+          type: "dir",
+          mode: "755",
+          ...creatorOwnerGroup(state, permUser, effectiveRoot),
+        };
+        return ok(`Initialized empty Git repository in ${state.cwd}/.git/`);
+      }
+
+      if (!inRepo()) return fail(NOT_A_REPO);
+
+      if (action === "add") {
+        const args = rest
+          .slice(1)
+          .filter((t) => t.quoted || !t.text.startsWith("-"));
+        if (!args.length) return fail("Nothing specified, nothing added.");
+        for (const a of args) {
+          if (!a.quoted && a.text === ".") {
+            for (const p of Object.keys(state.fs)) {
+              if (
+                p !== g.root &&
+                p.startsWith(g.root + "/") &&
+                state.fs[p].type === "file" &&
+                !g.staged.includes(p)
+              ) {
+                g.staged.push(p);
+              }
+            }
+            continue;
+          }
+          const abs = resolvePath(state.cwd, a.text);
+          if (!state.fs[abs])
+            return fail(`fatal: pathspec '${a.text}' did not match any files`);
+          if (state.fs[abs].type === "file" && !g.staged.includes(abs))
+            g.staged.push(abs);
+        }
+        return ok();
+      }
+
+      if (action === "commit") {
+        const mIdx = rest.findIndex((t) => !t.quoted && t.text === "-m");
+        if (mIdx === -1) return fail("usage: git commit -m <message>");
+        const message = rest[mIdx + 1]?.text;
+        if (!message) return fail("error: switch `m' requires a value");
+        if (!g.staged.length)
+          return fail(
+            `On branch ${g.currentBranch}\nnothing to commit, working tree clean`,
+          );
+        const seq = g.nextSeq++;
+        const id = fakeHex(seq, 7);
+        const files = [...g.staged];
+        g.commits[id] = { id, message, files, seq };
+        (g.branches[g.currentBranch] ??= []).push(id);
+        for (const f of files) g.tracked[f] = state.fs[f]?.content ?? "";
+        g.staged = [];
+        return ok(
+          `[${g.currentBranch} ${id}] ${message}\n ${files.length} file(s) changed`,
+        );
+      }
+
+      if (action === "status") {
+        const stagedSet = new Set(g.staged);
+        const allFiles = Object.keys(state.fs).filter(
+          (p) =>
+            p !== g.root &&
+            p.startsWith(g.root + "/") &&
+            state.fs[p].type === "file",
+        );
+        const untracked = allFiles.filter(
+          (p) => !(p in g.tracked) && !stagedSet.has(p),
+        );
+        const modified = allFiles.filter(
+          (p) =>
+            p in g.tracked &&
+            g.tracked[p] !== (state.fs[p].content ?? "") &&
+            !stagedSet.has(p),
+        );
+        const staged = [...stagedSet];
+        const lines: string[] = [`On branch ${g.currentBranch}`];
+        if (!staged.length && !modified.length && !untracked.length) {
+          lines.push("nothing to commit, working tree clean");
+        } else {
+          if (staged.length) {
+            lines.push("Changes to be committed:");
+            for (const p of staged) lines.push(`\tnew file:   ${relTo(p)}`);
+          }
+          if (modified.length) {
+            lines.push("Changes not staged for commit:");
+            for (const p of modified) lines.push(`\tmodified:   ${relTo(p)}`);
+          }
+          if (untracked.length) {
+            lines.push("Untracked files:");
+            for (const p of untracked) lines.push(`\t${relTo(p)}`);
+          }
+        }
+        return ok(lines.join("\n"));
+      }
+
+      if (action === "log") {
+        const ids = g.branches[g.currentBranch] ?? [];
+        if (!ids.length)
+          return fail(
+            `fatal: your current branch '${g.currentBranch}' does not have any commits yet`,
+          );
+        const oneline = rest.some((t) => !t.quoted && t.text === "--oneline");
+        const ordered = [...ids].reverse();
+        const lines = ordered.map((id) => {
+          const c = g.commits[id];
+          return oneline
+            ? `${c.id} ${c.message}`
+            : `commit ${c.id}\n\n    ${c.message}`;
+        });
+        return ok(lines.join("\n"));
+      }
+
+      if (action === "branch") {
+        const args = rest
+          .slice(1)
+          .filter((t) => t.quoted || !t.text.startsWith("-"));
+        const name = args[0]?.text;
+        if (!name) {
+          const names = Object.keys(g.branches);
+          return ok(
+            names
+              .map((n) => (n === g.currentBranch ? `* ${n}` : `  ${n}`))
+              .join("\n"),
+          );
+        }
+        if (g.branches[name])
+          return fail(`fatal: a branch named '${name}' already exists`);
+        g.branches[name] = [...(g.branches[g.currentBranch] ?? [])];
+        return ok();
+      }
+
+      if (action === "checkout") {
+        const args = rest.slice(1);
+        const hasB = args.some((t) => !t.quoted && t.text === "-b");
+        const name = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!name) return fail("usage: git checkout [-b] <branch>");
+        if (hasB) {
+          if (g.branches[name])
+            return fail(`fatal: a branch named '${name}' already exists`);
+          g.branches[name] = [...(g.branches[g.currentBranch] ?? [])];
+          g.currentBranch = name;
+          return ok(`Switched to a new branch '${name}'`);
+        }
+        if (!g.branches[name])
+          return fail(
+            `error: pathspec '${name}' did not match any file(s) known to git`,
+          );
+        g.currentBranch = name;
+        return ok(`Switched to branch '${name}'`);
+      }
+
+      return fail(`git: '${action}' is not a git command. See 'git --help'.`);
+    }
+
+    case "docker":
+    case "docker-compose": {
+      const composeAlias = cmd === "docker-compose";
+      const action = composeAlias ? "compose" : rest[0]?.text;
+      const args = composeAlias ? rest : rest.slice(1);
+
+      if (action === "build") {
+        const tagIdx = args.findIndex((t) => !t.quoted && t.text === "-t");
+        const rawTag = tagIdx >= 0 ? args[tagIdx + 1]?.text : undefined;
+        if (!rawTag) return fail("docker build: missing required flag -t");
+        const tag = rawTag.includes(":") ? rawTag : `${rawTag}:latest`;
+        const positional = args.filter(
+          (t, i) =>
+            i !== tagIdx &&
+            i !== tagIdx + 1 &&
+            (t.quoted || !t.text.startsWith("-")),
+        );
+        const contextArg = positional[0]?.text ?? ".";
+        const context = resolvePath(state.cwd, contextArg);
+        const ctxNode = state.fs[context];
+        if (!ctxNode || ctxNode.type !== "dir")
+          return fail(
+            `unable to prepare context: path "${contextArg}" not found`,
+          );
+        const dfPath =
+          context === "/" ? "/Dockerfile" : context + "/Dockerfile";
+        const df = state.fs[dfPath];
+        if (!df)
+          return fail(
+            `unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat ${dfPath}: no such file or directory`,
+          );
+        const seq = state.docker.nextSeq++;
+        state.docker.images[tag] = {
+          tag,
+          id: fakeHex(seq, 12),
+          sourcePath: context,
+          dockerfileContent: df.content ?? "",
+          seq,
+        };
+        return ok(
+          `[+] Building 1.0s (5/5) FINISHED\n => naming to docker.io/library/${tag}`,
+        );
+      }
+
+      if (action === "images") {
+        const imgs = Object.values(state.docker.images);
+        const header = "REPOSITORY   TAG      IMAGE ID";
+        if (!imgs.length) return ok(header);
+        const lines = imgs.map((img) => {
+          const [repo, t] = img.tag.split(":");
+          return `${repo}   ${t}   ${img.id}`;
+        });
+        return ok([header, ...lines].join("\n"));
+      }
+
+      if (action === "run") {
+        let detached = false;
+        let name: string | undefined;
+        const ports: { host: number; container: number }[] = [];
+        let image: string | undefined;
+        for (let i = 0; i < args.length; i++) {
+          const t = args[i];
+          if (t.quoted) {
+            if (!image) image = t.text;
+            continue;
+          }
+          if (t.text === "-d") {
+            detached = true;
+            continue;
+          }
+          if (t.text === "--name") {
+            name = args[++i]?.text;
+            continue;
+          }
+          if (t.text === "-p") {
+            const raw = args[++i]?.text ?? "";
+            const [h, c] = raw.split(":").map(Number);
+            if (!Number.isNaN(h) && !Number.isNaN(c))
+              ports.push({ host: h, container: c });
+            continue;
+          }
+          if (t.text.startsWith("-")) continue;
+          if (!image) {
+            image = t.text;
+            continue;
+          }
+        }
+        if (!image)
+          return fail('docker: "docker run" requires at least 1 argument.');
+        const tag = image.includes(":") ? image : `${image}:latest`;
+        if (!state.docker.images[tag])
+          return fail(
+            `Unable to find image '${image}' locally\ndocker: Error response from daemon: pull access denied for ${image}, repository does not exist or may require 'docker login'`,
+          );
+        const containerName = name ?? `container_${state.docker.nextSeq}`;
+        if (state.docker.containers[containerName])
+          return fail(
+            `docker: Error response from daemon: Conflict. The container name "/${containerName}" is already in use by container. You have to remove (or rename) that container to reuse that name.`,
+          );
+        const seq = state.docker.nextSeq++;
+        state.docker.containers[containerName] = {
+          name: containerName,
+          id: fakeHex(seq, 12),
+          image: tag,
+          status: "running",
+          ports,
+          seq,
+        };
+        return ok(detached ? fakeHex(seq, 64) : "");
+      }
+
+      if (action === "ps") {
+        const all = args.some((t) => !t.quoted && t.text === "-a");
+        const containers = Object.values(state.docker.containers).filter(
+          (c) => all || c.status === "running",
+        );
+        const header = "CONTAINER ID   IMAGE     STATUS    NAMES";
+        if (!containers.length) return ok(header);
+        const lines = containers.map(
+          (c) => `${c.id.slice(0, 12)}   ${c.image}   ${c.status}   ${c.name}`,
+        );
+        return ok([header, ...lines].join("\n"));
+      }
+
+      if (action === "stop" || action === "start") {
+        const name = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!name)
+          return fail(`docker ${action}: requires at least 1 argument`);
+        const c = state.docker.containers[name];
+        if (!c) return fail(`Error: No such container: ${name}`);
+        c.status = action === "stop" ? "exited" : "running";
+        return ok(name);
+      }
+
+      if (action === "rm") {
+        const force = args.some((t) => !t.quoted && t.text === "-f");
+        const name = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!name) return fail("docker rm: requires at least 1 argument");
+        const c = state.docker.containers[name];
+        if (!c) return fail(`Error: No such container: ${name}`);
+        if (c.status === "running" && !force)
+          return fail(
+            `Error response from daemon: You cannot remove a running container ${c.id}. Stop the container before attempting removal or force remove`,
+          );
+        delete state.docker.containers[name];
+        return ok(name);
+      }
+
+      if (action === "logs") {
+        const name = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!name) return fail("docker logs: requires at least 1 argument");
+        const c = state.docker.containers[name];
+        if (!c) return fail(`Error: No such container: ${name}`);
+        return ok(`[app] Starting ${c.image}...\n[app] Listening for requests`);
+      }
+
+      if (action === "compose") {
+        const sub = args[0]?.text;
+        const project = baseName(state.cwd).toLowerCase() || "root";
+        if (sub === "up") {
+          const abs = resolvePath(state.cwd, "docker-compose.yml");
+          const file = state.fs[abs];
+          if (!file) return fail("no configuration file provided: not found");
+          const names = composeServiceNames(file.content ?? "");
+          if (!names.length)
+            return fail("no services defined in docker-compose.yml");
+          const lines: string[] = [];
+          for (const svc of names) {
+            const image =
+              composeServiceImage(file.content ?? "", svc) ?? `${svc}:latest`;
+            const containerName = `${project}_${svc}_1`;
+            const seq = state.docker.nextSeq++;
+            state.docker.containers[containerName] = {
+              name: containerName,
+              id: fakeHex(seq, 12),
+              image,
+              status: "running",
+              ports: [],
+              composeProject: project,
+              seq,
+            };
+            lines.push(` Container ${containerName}  Started`);
+          }
+          return ok(lines.join("\n"));
+        }
+        if (sub === "down") {
+          for (const [name, c] of Object.entries(state.docker.containers)) {
+            if (c.composeProject === project)
+              delete state.docker.containers[name];
+          }
+          return ok(`Removing containers for project "${project}"`);
+        }
+        return fail(`docker: 'compose ${sub}' is not a docker command.`);
+      }
+
+      return fail(
+        `docker: '${action}' is not a docker command.\nSee 'docker --help'`,
+      );
+    }
+
+    case "kubectl": {
+      const action = rest[0]?.text;
+      const args = rest.slice(1);
+      const SUPPORTED_KINDS = new Set([
+        "deployment",
+        "deploy",
+        "pod",
+        "service",
+        "svc",
+        "configmap",
+        "namespace",
+      ]);
+      const canonicalKind = (raw: string): string => {
+        const lower = raw.toLowerCase();
+        if (lower === "deploy") return "Deployment";
+        if (lower === "svc") return "Service";
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      };
+      const flagValue = (
+        tokens: Token[],
+        short?: string,
+        long?: string,
+      ): string | undefined => {
+        for (let i = 0; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t.quoted) continue;
+          if (short && t.text === short) return tokens[i + 1]?.text;
+          if (long) {
+            if (t.text === long) return tokens[i + 1]?.text;
+            if (t.text.startsWith(long + "="))
+              return t.text.slice(long.length + 1);
+          }
+        }
+        return undefined;
+      };
+
+      if (action === "apply") {
+        const fileArg = flagValue(args, "-f");
+        if (!fileArg) return fail("error: must specify -f");
+        const abs = resolvePath(state.cwd, fileArg);
+        const node = state.fs[abs];
+        if (!node) return fail(`error: the path "${fileArg}" does not exist`);
+        const docs = parseK8sManifest(node.content ?? "");
+        if (!docs.length)
+          return fail(
+            `error: unable to decode "${fileArg}": no kind/metadata.name found`,
+          );
+        const lines: string[] = [];
+        for (const d of docs) {
+          const key = `${d.namespace}/${d.kind}/${d.name}`;
+          const existed = key in state.k8s.resources;
+          const replicas =
+            d.kind === "Deployment" ? (d.replicas ?? 1) : undefined;
+          state.k8s.resources[key] = {
+            kind: d.kind,
+            name: d.name,
+            namespace: d.namespace,
+            replicas,
+            readyReplicas: replicas,
+            sourceFile: abs,
+            raw: d.raw,
+          };
+          lines.push(
+            `${d.kind.toLowerCase()}.apps/${d.name} ${existed ? "configured" : "created"}`,
+          );
+        }
+        return ok(lines.join("\n"));
+      }
+
+      if (action === "get") {
+        const kindArg = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!kindArg)
+          return fail("error: you must specify the type of resource to get");
+        if (!SUPPORTED_KINDS.has(kindArg.toLowerCase()))
+          return fail(
+            `error: the server doesn't have a resource type "${kindArg}"`,
+          );
+        const kind = canonicalKind(kindArg);
+        const ns = flagValue(args, "-n", "--namespace") ?? "default";
+        const matches = Object.values(state.k8s.resources).filter(
+          (r) => r.kind === kind && r.namespace === ns,
+        );
+        if (!matches.length)
+          return ok(`No resources found in ${ns} namespace.`);
+        const header = "NAME   READY   STATUS";
+        const lines = matches.map(
+          (r) =>
+            `${r.name}   ${r.replicas !== undefined ? `${r.readyReplicas}/${r.replicas}` : "1/1"}   Running`,
+        );
+        return ok([header, ...lines].join("\n"));
+      }
+
+      if (action === "describe") {
+        const positional = args.filter(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        );
+        const kindArg = positional[0]?.text;
+        const name = positional[1]?.text;
+        if (!kindArg || !name)
+          return fail(
+            "error: You must specify the type and name of the resource",
+          );
+        const kind = canonicalKind(kindArg);
+        const ns = flagValue(args, "-n", "--namespace") ?? "default";
+        const res = state.k8s.resources[`${ns}/${kind}/${name}`];
+        if (!res)
+          return fail(
+            `Error from server (NotFound): ${kind.toLowerCase()}s.apps "${name}" not found`,
+          );
+        const lines = [
+          `Name:         ${res.name}`,
+          `Namespace:    ${res.namespace}`,
+          `Kind:         ${res.kind}`,
+        ];
+        if (res.replicas !== undefined)
+          lines.push(`Replicas:     ${res.replicas}`);
+        return ok(lines.join("\n"));
+      }
+
+      if (action === "delete") {
+        const fileArg = flagValue(args, "-f");
+        if (fileArg) {
+          const abs = resolvePath(state.cwd, fileArg);
+          const node = state.fs[abs];
+          if (!node) return fail(`error: the path "${fileArg}" does not exist`);
+          const docs = parseK8sManifest(node.content ?? "");
+          for (const d of docs) {
+            const key = `${d.namespace}/${d.kind}/${d.name}`;
+            if (!(key in state.k8s.resources))
+              return fail(
+                `Error from server (NotFound): ${d.kind.toLowerCase()}s.apps "${d.name}" not found`,
+              );
+          }
+          for (const d of docs) {
+            delete state.k8s.resources[`${d.namespace}/${d.kind}/${d.name}`];
+          }
+          return ok(
+            docs
+              .map((d) => `${d.kind.toLowerCase()}.apps "${d.name}" deleted`)
+              .join("\n"),
+          );
+        }
+        const positional = args.filter(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        );
+        const kindArg = positional[0]?.text;
+        const name = positional[1]?.text;
+        if (!kindArg || !name)
+          return fail("error: must specify a resource type and name, or -f");
+        const kind = canonicalKind(kindArg);
+        const ns = flagValue(args, "-n", "--namespace") ?? "default";
+        const key = `${ns}/${kind}/${name}`;
+        if (!(key in state.k8s.resources))
+          return fail(
+            `Error from server (NotFound): ${kind.toLowerCase()}s.apps "${name}" not found`,
+          );
+        delete state.k8s.resources[key];
+        return ok(`${kind.toLowerCase()}.apps "${name}" deleted`);
+      }
+
+      if (action === "scale") {
+        const positional = args.filter(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        );
+        const kindArg = positional[0]?.text;
+        if (
+          !kindArg ||
+          !["deployment", "deploy"].includes(kindArg.toLowerCase())
+        )
+          return fail(
+            `error: the server doesn't have a resource type "${kindArg}"`,
+          );
+        const name = positional[1]?.text;
+        const ns = flagValue(args, "-n", "--namespace") ?? "default";
+        const replicasRaw = flagValue(args, undefined, "--replicas");
+        if (
+          !name ||
+          replicasRaw === undefined ||
+          Number.isNaN(Number(replicasRaw))
+        )
+          return fail('error: required flag(s) "replicas" not set');
+        const key = `${ns}/Deployment/${name}`;
+        const res = state.k8s.resources[key];
+        if (!res)
+          return fail(
+            `Error from server (NotFound): deployments.apps "${name}" not found`,
+          );
+        res.replicas = Number(replicasRaw);
+        res.readyReplicas = res.replicas;
+        return ok(`deployment.apps/${name} scaled`);
+      }
+
+      if (action === "logs") {
+        const name = args.find(
+          (t) => t.quoted || !t.text.startsWith("-"),
+        )?.text;
+        if (!name) return fail("error: requires at least 1 argument");
+        return ok(`[app] Starting...\n[app] Listening for requests`);
+      }
+
+      return fail(`error: unknown command "${action}" for "kubectl"`);
+    }
+
+    case "nc": {
+      const flagsRaw = rest
+        .filter((t) => !t.quoted && t.text.startsWith("-"))
+        .map((t) => t.text)
+        .join("");
+      const positional = rest
+        .filter((t) => t.quoted || !t.text.startsWith("-"))
+        .map((t) => t.text);
+
+      if (flagsRaw.includes("l")) {
+        const port = Number(positional[0]);
+        if (!positional[0] || !Number.isInteger(port))
+          return fail("nc: usage: nc -l [-k] port");
+        const seq = state.sockets.length + 1;
+        state.sockets.push({
+          proto: "tcp",
+          localAddr: "0.0.0.0",
+          localPort: port,
+          state: "LISTEN",
+          program: "nc",
+          pid: 2000 + seq,
+        });
+        return ok();
+      }
+
+      const host = positional[0];
+      const port = Number(positional[1]);
+      if (!host || !positional[1] || !Number.isInteger(port))
+        return fail("nc: usage: nc <host> <port>");
+      const listener = state.sockets.find(
+        (s) =>
+          s.proto === "tcp" && s.state === "LISTEN" && s.localPort === port,
+      );
+      if (!listener)
+        return fail(
+          `nc: connect to ${host} port ${port} (tcp) failed: Connection refused`,
+        );
+      const ephemeral = 40000 + state.sockets.length;
+      state.sockets.push({
+        proto: "tcp",
+        localAddr: "127.0.0.1",
+        localPort: ephemeral,
+        remoteAddr: "127.0.0.1",
+        remotePort: port,
+        state: "ESTABLISHED",
+        program: "nc",
+        pid: 2000 + state.sockets.length + 1,
+      });
+      state.sockets.push({
+        proto: "tcp",
+        localAddr: "127.0.0.1",
+        localPort: port,
+        remoteAddr: "127.0.0.1",
+        remotePort: ephemeral,
+        state: "ESTABLISHED",
+        program: listener.program,
+        pid: listener.pid,
+      });
+      appendHandshakePackets(state, "lo", ephemeral, port);
+      return ok();
+    }
+
+    case "python3": {
+      const mIdx = rest.findIndex((t) => !t.quoted && t.text === "-m");
+      const mod = mIdx >= 0 ? rest[mIdx + 1]?.text : undefined;
+      if (mod === "http.server") {
+        const portTok = rest[mIdx + 2];
+        const port =
+          portTok && !portTok.quoted && !portTok.text.startsWith("-")
+            ? Number(portTok.text)
+            : 8000;
+        const seq = state.sockets.length + 1;
+        state.sockets.push({
+          proto: "tcp",
+          localAddr: "0.0.0.0",
+          localPort: port,
+          state: "LISTEN",
+          program: "python3",
+          pid: 3000 + seq,
+        });
+        return ok(
+          `Serving HTTP on 0.0.0.0 port ${port} (http://0.0.0.0:${port}/) ...`,
+        );
+      }
+      return fail(`python3: unsupported invocation`);
+    }
+
+    case "ss": {
+      const flagsRaw = rest
+        .filter((t) => !t.quoted && t.text.startsWith("-"))
+        .map((t) => t.text)
+        .join("");
+      const listenOnly = flagsRaw.includes("l");
+      const showProcess = flagsRaw.includes("p");
+      const stateIdx = rest.findIndex((t) => !t.quoted && t.text === "state");
+      const stateFilter = stateIdx >= 0 ? rest[stateIdx + 1]?.text : undefined;
+      const filterToken = rest.find(
+        (t) => t.quoted && /dport|sport/.test(t.text),
+      );
+      const portFilter = filterToken
+        ? parseSsPortFilter(filterToken.text)
+        : undefined;
+      return ok(
+        formatSockets(state.sockets, {
+          listenOnly,
+          stateFilter,
+          portFilter,
+          showProcess,
+          style: "ss",
+        }),
+      );
+    }
+
+    case "netstat": {
+      const flagsRaw = rest
+        .filter((t) => !t.quoted && t.text.startsWith("-"))
+        .map((t) => t.text)
+        .join("");
+      if (flagsRaw.includes("i")) {
+        const lines = [
+          "Kernel Interface table",
+          "Iface      MTU    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg",
+        ];
+        for (const [name, iface] of Object.entries(state.network.interfaces)) {
+          lines.push(
+            `${name.padEnd(10)} 1500        0      0      0      0        0      0      0      0 ${iface.state === "up" ? "BMRU" : ""}`,
+          );
+        }
+        return ok(lines.join("\n"));
+      }
+      if (flagsRaw.includes("r")) {
+        const lines = [
+          "Kernel IP routing table",
+          "Destination     Gateway         Genmask         Flags Iface",
+        ];
+        for (const r of state.network.routes) {
+          const dest = r.dest === "default" ? "0.0.0.0" : r.dest.split("/")[0];
+          const gw = r.via ?? "0.0.0.0";
+          lines.push(
+            `${dest.padEnd(16)}${gw.padEnd(16)}${"".padEnd(16)}${r.via ? "UG" : "U"}    ${r.dev}`,
+          );
+        }
+        return ok(lines.join("\n"));
+      }
+      const listenOnly = flagsRaw.includes("l") && !flagsRaw.includes("a");
+      const showProcess = flagsRaw.includes("p");
+      return ok(
+        formatSockets(state.sockets, {
+          listenOnly,
+          showProcess,
+          style: "netstat",
+        }),
+      );
+    }
+
+    case "tcpdump": {
+      const readFile = flagValue(rest, "-r");
+      if (readFile) {
+        const abs = resolvePath(state.cwd, readFile);
+        const node = state.fs[abs];
+        if (!node)
+          return fail(`tcpdump: ${readFile}: No such file or directory`);
+        return ok(node.content ?? "");
+      }
+
+      const iface = flagValue(rest, "-i");
+      const writeFile = flagValue(rest, "-w");
+      const bpfTokens: string[] = [];
+      for (let i = 0; i < rest.length; i++) {
+        const t = rest[i];
+        if (!t.quoted && (t.text === "-i" || t.text === "-w")) {
+          i++;
+          continue;
+        }
+        if (!t.quoted && t.text === "-n") continue;
+        bpfTokens.push(t.text);
+      }
+
+      const matches = state.trafficLog.filter(
+        (p) => (!iface || p.iface === iface) && matchesBpf(p, bpfTokens),
+      );
+      const output = matches.map(formatPacketLine).join("\n");
+
+      if (writeFile) {
+        const abs = resolvePath(state.cwd, writeFile);
+        state.fs[abs] = {
+          type: "file",
+          content: output,
+          mode: applyUmask(state, 6),
+          ...creatorOwnerGroup(state, permUser, effectiveRoot),
+        };
+        return ok(`${matches.length} packets captured`);
+      }
+
+      return ok(output);
+    }
+
+    case "netfilter-persistent": {
+      const sub = rest[0]?.text;
+      if (sub === "save")
+        return ok(
+          "run-parts: executing /usr/share/netfilter-persistent/plugins.d/15-ip4tables save",
+        );
+      if (sub === "reload" || sub === "flush") return ok();
+      return fail(`netfilter-persistent: unknown subcommand "${sub}"`);
+    }
+
+    case "iptables": {
+      const fw = state.firewall.iptables;
+      const hasFlag = (f: string) =>
+        rest.some((t) => !t.quoted && t.text === f);
+
+      if (hasFlag("-L")) {
+        const lIdx = rest.findIndex((t) => !t.quoted && t.text === "-L");
+        const next = rest[lIdx + 1];
+        const chainArg =
+          next && !next.quoted && !next.text.startsWith("-")
+            ? next.text
+            : undefined;
+        const verbose = hasFlag("-v");
+        const lineNumbers = hasFlag("--line-numbers");
+        if (chainArg && !fw.chains[chainArg])
+          return fail(`iptables: No chain/target/match by that name.`);
+        const chainsToShow = chainArg ? [chainArg] : Object.keys(fw.chains);
+        const lines: string[] = [];
+        for (const chainName of chainsToShow) {
+          const chain = fw.chains[chainName];
+          lines.push(`Chain ${chainName} (policy ${chain.policy})`);
+          lines.push(
+            verbose
+              ? "num   pkts bytes target     prot opt in     out     source               destination"
+              : "num   target     prot opt source               destination",
+          );
+          chain.rules.forEach((r, i) => {
+            const num = lineNumbers ? `${i + 1}    ` : "";
+            const parts = [
+              num,
+              r.target.padEnd(10),
+              (r.proto ?? "all").padEnd(5),
+              "--",
+              (r.source ?? "anywhere").padEnd(20),
+              "anywhere",
+            ];
+            if (r.extra?.length) parts.push(r.extra.join(" "));
+            lines.push(parts.join(" "));
+          });
+          lines.push("");
+        }
+        return ok(lines.join("\n").trimEnd());
+      }
+
+      if (hasFlag("-P")) {
+        const pIdx = rest.findIndex((t) => !t.quoted && t.text === "-P");
+        const chainName = rest[pIdx + 1]?.text;
+        const policy = rest[pIdx + 2]?.text;
+        if (!chainName || !fw.chains[chainName])
+          return fail(`iptables: No chain/target/match by that name.`);
+        if (policy !== "ACCEPT" && policy !== "DROP")
+          return fail(`iptables: Bad built-in chain name.`);
+        fw.chains[chainName].policy = policy;
+        return ok();
+      }
+
+      if (hasFlag("-I")) {
+        const iIdx = rest.findIndex((t) => !t.quoted && t.text === "-I");
+        const chainName = rest[iIdx + 1]?.text;
+        if (!chainName)
+          return fail("iptables: No chain/target/match by that name.");
+        if (!fw.chains[chainName])
+          fw.chains[chainName] = { policy: "ACCEPT", rules: [] };
+        const posTok = rest[iIdx + 2];
+        const posArg =
+          posTok && !posTok.quoted && /^\d+$/.test(posTok.text)
+            ? posTok.text
+            : undefined;
+        const rule = parseIptablesRule(rest.slice(iIdx + 2));
+        if (!rule)
+          return fail(
+            "iptables: Bad rule (does a matching rule exist in that chain?).",
+          );
+        const chainRules = fw.chains[chainName].rules;
+        const pos = posArg ? Number(posArg) - 1 : 0;
+        chainRules.splice(
+          Math.max(0, Math.min(pos, chainRules.length)),
+          0,
+          rule,
+        );
+        return ok();
+      }
+
+      if (hasFlag("-A")) {
+        const aIdx = rest.findIndex((t) => !t.quoted && t.text === "-A");
+        const chainName = rest[aIdx + 1]?.text;
+        if (!chainName)
+          return fail("iptables: No chain/target/match by that name.");
+        if (!fw.chains[chainName])
+          fw.chains[chainName] = { policy: "ACCEPT", rules: [] };
+        const rule = parseIptablesRule(rest.slice(aIdx + 2));
+        if (!rule)
+          return fail(
+            "iptables: Bad rule (does a matching rule exist in that chain?).",
+          );
+        fw.chains[chainName].rules.push(rule);
+        return ok();
+      }
+
+      if (hasFlag("-D")) {
+        const dIdx = rest.findIndex((t) => !t.quoted && t.text === "-D");
+        const chainName = rest[dIdx + 1]?.text;
+        if (!chainName || !fw.chains[chainName])
+          return fail("iptables: No chain/target/match by that name.");
+        const posTok = rest[dIdx + 2];
+        const posArg =
+          posTok && !posTok.quoted && /^\d+$/.test(posTok.text)
+            ? posTok.text
+            : undefined;
+        if (posArg) {
+          const idx = Number(posArg) - 1;
+          const chainRules = fw.chains[chainName].rules;
+          if (idx < 0 || idx >= chainRules.length)
+            return fail("iptables: Index of deletion too big.");
+          chainRules.splice(idx, 1);
+          return ok();
+        }
+        const rule = parseIptablesRule(rest.slice(dIdx + 2));
+        if (!rule)
+          return fail(
+            "iptables: Bad rule (does a matching rule exist in that chain?).",
+          );
+        const chainRules = fw.chains[chainName].rules;
+        const matchIdx = chainRules.findIndex(
+          (r) =>
+            r.target === rule.target &&
+            r.proto === rule.proto &&
+            r.dport === rule.dport &&
+            r.sport === rule.sport &&
+            r.source === rule.source,
+        );
+        if (matchIdx === -1)
+          return fail(
+            "iptables: Bad rule (does a matching rule exist in that chain?).",
+          );
+        chainRules.splice(matchIdx, 1);
+        return ok();
+      }
+
+      if (hasFlag("-N")) {
+        const nIdx = rest.findIndex((t) => !t.quoted && t.text === "-N");
+        const chainName = rest[nIdx + 1]?.text;
+        if (!chainName)
+          return fail("iptables: No chain/target/match by that name.");
+        if (fw.chains[chainName])
+          return fail(`iptables: Chain already exists.`);
+        fw.chains[chainName] = { policy: "ACCEPT", rules: [] };
+        return ok();
+      }
+
+      if (hasFlag("-F")) {
+        const fIdx = rest.findIndex((t) => !t.quoted && t.text === "-F");
+        const next = rest[fIdx + 1];
+        const chainName =
+          next && !next.quoted && !next.text.startsWith("-")
+            ? next.text
+            : undefined;
+        if (chainName) {
+          if (!fw.chains[chainName])
+            return fail("iptables: No chain/target/match by that name.");
+          fw.chains[chainName].rules = [];
+        } else {
+          for (const c of Object.values(fw.chains)) c.rules = [];
+        }
+        return ok();
+      }
+
+      return fail(`iptables: unknown invocation`);
+    }
+
+    case "ufw": {
+      const action = rest[0]?.text;
+      const args = rest.slice(1);
+      const ufw = state.firewall.ufw;
+
+      const formatRuleTarget = (r: UfwRule): string => {
+        if (r.appProfile) return r.appProfile;
+        if (r.port) return r.proto ? `${r.port}/${r.proto}` : r.port;
+        return "Anywhere";
+      };
+      const formatRuleFrom = (r: UfwRule): string => r.from ?? "Anywhere";
+
+      if (action === "status") {
+        if (!ufw.enabled) return ok("Status: inactive");
+        const verbose = args.some((t) => !t.quoted && t.text === "verbose");
+        const numbered = args.some((t) => !t.quoted && t.text === "numbered");
+        const lines: string[] = ["Status: active"];
+        if (verbose) {
+          lines.push("Logging: on (low)");
+          lines.push(
+            `Default: ${ufw.defaultIncoming} (incoming), ${ufw.defaultOutgoing} (outgoing)`,
+          );
+        }
+        lines.push("");
+        lines.push("To                         Action      From");
+        lines.push("--                         ------      ----");
+        ufw.rules.forEach((r, i) => {
+          const prefix = numbered ? `[${String(i + 1).padStart(2)}] ` : "";
+          lines.push(
+            `${prefix}${formatRuleTarget(r).padEnd(27)}${r.action.toUpperCase().padEnd(12)}${formatRuleFrom(r)}`,
+          );
+        });
+        return ok(lines.join("\n"));
+      }
+
+      if (action === "show") {
+        const sub = args[0]?.text;
+        if (sub === "added") {
+          if (!ufw.rules.length) return ok("");
+          const lines = [
+            "Added user rules (see 'ufw status' for running firewall):",
+            "",
+          ];
+          for (const r of ufw.rules)
+            lines.push(`ufw ${r.action} ${formatRuleTarget(r)}`);
+          return ok(lines.join("\n"));
+        }
+        return fail(`ufw: show: unknown subcommand "${sub}"`);
+      }
+
+      if (action === "default") {
+        const policy = args[0]?.text;
+        const direction = args[1]?.text;
+        if (policy !== "allow" && policy !== "deny")
+          return fail("ERROR: Must specify 'allow' or 'deny'");
+        if (direction === "incoming") ufw.defaultIncoming = policy;
+        else if (direction === "outgoing") ufw.defaultOutgoing = policy;
+        else return fail('ERROR: Need to specify "incoming" or "outgoing"');
+        return ok(`Default ${direction} policy changed to '${policy}'`);
+      }
+
+      if (action === "enable") {
+        ufw.enabled = true;
+        return ok("Firewall is active and enabled on system startup");
+      }
+      if (action === "disable") {
+        ufw.enabled = false;
+        return ok("Firewall stopped and disabled on system startup");
+      }
+      if (action === "reset") {
+        ufw.enabled = false;
+        ufw.rules = [];
+        ufw.defaultIncoming = "allow";
+        ufw.defaultOutgoing = "allow";
+        return ok("Resetting all rules to installed defaults.");
+      }
+
+      if (action === "allow" || action === "deny" || action === "reject") {
+        const fromIdx = args.findIndex((t) => !t.quoted && t.text === "from");
+        let from: string | undefined;
+        let port: string | undefined;
+        let proto: "tcp" | "udp" | undefined;
+        let appProfile: string | undefined;
+
+        if (fromIdx >= 0) {
+          from = args[fromIdx + 1]?.text;
+          if (!from) return fail("ERROR: Invalid syntax");
+          const toIdx = args.findIndex((t) => !t.quoted && t.text === "to");
+          if (toIdx >= 0) {
+            const portIdx = args.findIndex(
+              (t) => !t.quoted && t.text === "port",
+            );
+            port = portIdx >= 0 ? args[portIdx + 1]?.text : undefined;
+          }
+        } else {
+          const spec = args[0]?.text;
+          if (!spec) return fail("ERROR: Invalid syntax");
+          if (UFW_APP_PROFILES[spec]) {
+            appProfile = spec;
+          } else if (spec.includes("/")) {
+            const [p, pr] = spec.split("/");
+            port = p;
+            proto = pr === "udp" ? "udp" : "tcp";
+          } else if (UFW_SERVICE_PORTS[spec]) {
+            const [p, pr] = UFW_SERVICE_PORTS[spec].split("/");
+            port = p;
+            proto = pr as "tcp" | "udp";
+          } else {
+            port = spec;
+          }
+        }
+
+        const seq = ufw.nextSeq++;
+        ufw.rules.push({ action, port, proto, from, appProfile, seq });
+        return ok("Rule added");
+      }
+
+      if (action === "delete") {
+        const numArg = args[0]?.text;
+        const asNumber = Number(numArg);
+        if (
+          numArg &&
+          Number.isInteger(asNumber) &&
+          String(asNumber) === numArg
+        ) {
+          const idx = asNumber - 1;
+          if (idx < 0 || idx >= ufw.rules.length)
+            return fail(`ERROR: Could not delete non-existent rule`);
+          ufw.rules.splice(idx, 1);
+          return ok("Rule deleted");
+        }
+        const specAction = args[0]?.text;
+        const specArgs = args.slice(1);
+        const fromIdx = specArgs.findIndex(
+          (t) => !t.quoted && t.text === "from",
+        );
+        let from: string | undefined;
+        let port: string | undefined;
+        let proto: "tcp" | "udp" | undefined;
+        let appProfile: string | undefined;
+        if (fromIdx >= 0) {
+          from = specArgs[fromIdx + 1]?.text;
+          const toIdx = specArgs.findIndex((t) => !t.quoted && t.text === "to");
+          if (toIdx >= 0) {
+            const portIdx = specArgs.findIndex(
+              (t) => !t.quoted && t.text === "port",
+            );
+            port = portIdx >= 0 ? specArgs[portIdx + 1]?.text : undefined;
+          }
+        } else {
+          const spec = specArgs[0]?.text;
+          if (spec && UFW_APP_PROFILES[spec]) appProfile = spec;
+          else if (spec?.includes("/")) {
+            const [p, pr] = spec.split("/");
+            port = p;
+            proto = pr === "udp" ? "udp" : "tcp";
+          } else if (spec && UFW_SERVICE_PORTS[spec]) {
+            const [p, pr] = UFW_SERVICE_PORTS[spec].split("/");
+            port = p;
+            proto = pr as "tcp" | "udp";
+          } else {
+            port = spec;
+          }
+        }
+        const matchIdx = ufw.rules.findIndex(
+          (r) =>
+            r.action === specAction &&
+            r.port === port &&
+            r.proto === proto &&
+            r.from === from &&
+            r.appProfile === appProfile,
+        );
+        if (matchIdx === -1)
+          return fail(`ERROR: Could not delete non-existent rule`);
+        ufw.rules.splice(matchIdx, 1);
+        return ok("Rule deleted");
+      }
+
+      if (action === "app") {
+        const sub = args[0]?.text;
+        if (sub === "list") {
+          return ok(
+            [
+              "Available applications:",
+              ...Object.keys(UFW_APP_PROFILES).map((n) => `  ${n}`),
+            ].join("\n"),
+          );
+        }
+        if (sub === "info") {
+          const name = args[1]?.text;
+          const profile = name ? UFW_APP_PROFILES[name] : undefined;
+          if (!name || !profile)
+            return fail(`ERROR: Could not find a profile matching '${name}'`);
+          return ok(
+            `Profile: ${name}\nPorts: ${profile.ports}${profile.proto ? "/" + profile.proto : ""}`,
+          );
+        }
+        return fail(`ufw: app: unknown subcommand "${sub}"`);
+      }
+
+      return fail(`ERROR: unknown command "${action}"`);
+    }
+
+    case "ping": {
+      const countArg = flagValue(rest, "-c");
+      const count = countArg ? Number(countArg) : 4;
+      let dest: string | undefined;
+      for (let i = 0; i < rest.length; i++) {
+        const t = rest[i];
+        if (!t.quoted && (t.text === "-c" || t.text === "-w")) {
+          i++; // skip this flag's value too
+          continue;
+        }
+        if (!t.quoted && t.text.startsWith("-")) continue;
+        dest = t.text;
+        break;
+      }
+      if (!dest) return fail("usage: ping [-c count] <destination>");
+      const match = findRoute(state.network, dest);
+      if (!match) return fail(`ping: connect: Network is unreachable`);
+      if (!match.via) {
+        state.network.neighbors[dest] = {
+          mac: `02:00:00:00:${fakeHex(Object.keys(state.network.neighbors).length + 1, 2)}:00`,
+          state: "REACHABLE",
+          dev: match.dev,
+        };
+      }
+      const lines: string[] = [`PING ${dest} 56(84) bytes of data.`];
+      for (let i = 1; i <= count; i++) {
+        lines.push(
+          `64 bytes from ${dest}: icmp_seq=${i} ttl=64 time=0.0${i}0 ms`,
+        );
+      }
+      lines.push(`--- ${dest} ping statistics ---`);
+      lines.push(
+        `${count} packets transmitted, ${count} received, 0% packet loss, time ${count}ms`,
+      );
+      return ok(lines.join("\n"));
+    }
+
+    case "ip": {
+      const action = rest[0]?.text;
+      const args = rest.slice(1);
+
+      if (action === "link") {
+        const sub = args[0]?.text;
+        if (sub === "show" || sub === undefined) {
+          const typeFilter = flagValue(args, "type");
+          const filterName =
+            typeFilter === undefined
+              ? args.slice(1).find((t) => t.quoted || !t.text.startsWith("-"))
+                  ?.text
+              : undefined;
+          let allNames = Object.keys(state.network.interfaces);
+          if (typeFilter === "veth")
+            allNames = allNames.filter((n) => state.network.interfaces[n].peer);
+          const names = filterName
+            ? allNames.filter((n) => n === filterName)
+            : allNames;
+          if (filterName && !names.length)
+            return fail(`Device "${filterName}" does not exist.`);
+          const lines: string[] = [];
+          for (const name of names) {
+            const idx = allNames.indexOf(name) + 1;
+            const iface = state.network.interfaces[name];
+            const flags =
+              name === "lo"
+                ? iface.state === "up"
+                  ? "LOOPBACK,UP,LOWER_UP"
+                  : "LOOPBACK"
+                : iface.state === "up"
+                  ? "BROADCAST,MULTICAST,UP,LOWER_UP"
+                  : "BROADCAST,MULTICAST";
+            lines.push(`${idx}: ${name}: <${flags}> mtu 1500`);
+            if (iface.mac)
+              lines.push(`    link/ether ${iface.mac} brd ff:ff:ff:ff:ff:ff`);
+            else if (name === "lo")
+              lines.push(
+                `    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00`,
+              );
+          }
+          return ok(lines.join("\n"));
+        }
+        if (sub === "set") {
+          const name = args[1]?.text;
+          const verb = args[2]?.text;
+          const iface = name ? state.network.interfaces[name] : undefined;
+          if (!name || !iface) return fail(`Cannot find device "${name}"`);
+          if (verb === "up") {
+            iface.state = "up";
+            return ok();
+          }
+          if (verb === "down") {
+            iface.state = "down";
+            return ok();
+          }
+          if (verb === "netns") {
+            const nsName = args[3]?.text;
+            if (!nsName) return fail("usage: ip link set <iface> netns <name>");
+            const ns = state.netns[nsName];
+            if (!ns)
+              return fail(
+                `Cannot open network namespace "${nsName}": No such file or directory`,
+              );
+            delete state.network.interfaces[name];
+            ns.interfaces[name] = iface;
+            return ok();
+          }
+          return fail(`ip link set: unknown verb "${verb}"`);
+        }
+        if (sub === "add") {
+          const name = args[1]?.text;
+          const typeIdx = args.findIndex((t) => !t.quoted && t.text === "type");
+          const kind = typeIdx >= 0 ? args[typeIdx + 1]?.text : undefined;
+          if (kind === "veth") {
+            const peerIdx = args.findIndex(
+              (t) => !t.quoted && t.text === "name",
+            );
+            const peerName = peerIdx >= 0 ? args[peerIdx + 1]?.text : undefined;
+            if (!name || !peerName)
+              return fail("usage: ip link add <a> type veth peer name <b>");
+            if (
+              state.network.interfaces[name] ||
+              state.network.interfaces[peerName]
+            )
+              return fail(`RTNETLINK answers: File exists`);
+            state.network.interfaces[name] = {
+              name,
+              state: "down",
+              addresses: [],
+              peer: peerName,
+            };
+            state.network.interfaces[peerName] = {
+              name: peerName,
+              state: "down",
+              addresses: [],
+              peer: name,
+            };
+            return ok();
+          }
+          return fail(`ip link add: unsupported type "${kind}"`);
+        }
+        return fail(`Object "${sub}" is unknown, try "ip help".`);
+      }
+
+      if (action === "addr" || action === "a") {
+        const sub = args[0]?.text ?? "show";
+        if (sub === "show") {
+          const filterName = args
+            .slice(1)
+            .find((t) => t.quoted || !t.text.startsWith("-"))?.text;
+          const allNames = Object.keys(state.network.interfaces);
+          const names = filterName
+            ? allNames.filter((n) => n === filterName)
+            : allNames;
+          if (filterName && !names.length)
+            return fail(`Device "${filterName}" does not exist.`);
+          const lines: string[] = [];
+          for (const name of names) {
+            const idx = allNames.indexOf(name) + 1;
+            const iface = state.network.interfaces[name];
+            const flags = iface.state === "up" ? "UP,LOWER_UP" : "DOWN";
+            lines.push(`${idx}: ${name}: <${flags}> mtu 1500`);
+            for (const a of iface.addresses)
+              lines.push(`    inet ${a.cidr} scope global ${name}`);
+          }
+          return ok(lines.join("\n"));
+        }
+        if (sub === "add") {
+          const cidr = args[1]?.text;
+          const devName = flagValue(args, "dev");
+          if (!cidr || !devName)
+            return fail("usage: ip addr add <cidr> dev <iface>");
+          const iface = state.network.interfaces[devName];
+          if (!iface) return fail(`Cannot find device "${devName}"`);
+          iface.addresses.push({ cidr });
+          // Real Linux auto-creates a "scope link" route for the interface's
+          // subnet the moment an address is assigned — without this, nothing
+          // on that subnet would be reachable until a route was added by hand.
+          const network = cidrNetwork(cidr);
+          if (
+            !state.network.routes.some(
+              (r) => r.dest === network && r.dev === devName,
+            )
+          ) {
+            state.network.routes.push({ dest: network, dev: devName });
+          }
+          return ok();
+        }
+        if (sub === "del") {
+          const cidr = args[1]?.text;
+          const devName = flagValue(args, "dev");
+          if (!cidr || !devName)
+            return fail("usage: ip addr del <cidr> dev <iface>");
+          const iface = state.network.interfaces[devName];
+          if (!iface) return fail(`Cannot find device "${devName}"`);
+          const before = iface.addresses.length;
+          iface.addresses = iface.addresses.filter((a) => a.cidr !== cidr);
+          if (iface.addresses.length === before)
+            return fail(`Cannot assign requested address`);
+          return ok();
+        }
+        return fail(`Object "${sub}" is unknown, try "ip help".`);
+      }
+
+      if (action === "route" || action === "r") {
+        const sub = args[0]?.text ?? "show";
+        if (sub === "show") {
+          return ok(state.network.routes.map(formatRoute).join("\n"));
+        }
+        if (sub === "add") {
+          const destArg = args[1]?.text;
+          const via = flagValue(args, "via");
+          let dev = flagValue(args, "dev");
+          if (!destArg)
+            return fail('Error: an inet prefix is expected rather than "".');
+          if (!dev) {
+            if (!via)
+              return fail(
+                'Error: either "dev" is duplicate, or "via" is a garbage.',
+              );
+            dev = findDeviceForGateway(state.network, via);
+            if (!dev) return fail("Error: Nexthop has invalid gateway.");
+          }
+          if (!state.network.interfaces[dev])
+            return fail(`Cannot find device "${dev}"`);
+          state.network.routes.push({ dest: destArg, via, dev });
+          return ok();
+        }
+        if (sub === "del") {
+          const destArg = args[1]?.text;
+          if (!destArg)
+            return fail('Error: an inet prefix is expected rather than "".');
+          const before = state.network.routes.length;
+          state.network.routes = state.network.routes.filter(
+            (r) => r.dest !== destArg,
+          );
+          if (state.network.routes.length === before)
+            return fail(`RTNETLINK answers: No such process`);
+          return ok();
+        }
+        if (sub === "get") {
+          const dest = args[1]?.text;
+          if (!dest) return fail("usage: ip route get <address>");
+          const match = findRoute(state.network, dest);
+          if (!match) return fail(`RTNETLINK answers: Network is unreachable`);
+          const srcIface = state.network.interfaces[match.dev];
+          const src = srcIface?.addresses[0]?.cidr.split("/")[0];
+          if (match.via)
+            return ok(`${dest} via ${match.via} dev ${match.dev} src ${src}`);
+          return ok(`${dest} dev ${match.dev} src ${src}`);
+        }
+        return fail(`Object "${sub}" is unknown, try "ip help".`);
+      }
+
+      if (
+        action === "neigh" ||
+        action === "neighbor" ||
+        action === "neighbour"
+      ) {
+        const sub = args[0]?.text ?? "show";
+        if (sub === "show") {
+          const devFilter = flagValue(args, "dev");
+          const lines = Object.entries(state.network.neighbors)
+            .filter(([, n]) => !devFilter || n.dev === devFilter)
+            .map(([ip, n]) => `${ip} dev ${n.dev} lladdr ${n.mac} ${n.state}`);
+          return ok(lines.join("\n"));
+        }
+        if (sub === "flush") {
+          const devFilter = flagValue(args, "dev");
+          for (const ip of Object.keys(state.network.neighbors)) {
+            if (!devFilter || state.network.neighbors[ip].dev === devFilter)
+              delete state.network.neighbors[ip];
+          }
+          return ok();
+        }
+        return fail(`Object "${sub}" is unknown, try "ip help".`);
+      }
+
+      if (action === "netns") {
+        const sub = args[0]?.text;
+        if (sub === "add") {
+          const name = args[1]?.text;
+          if (!name) return fail("usage: ip netns add <name>");
+          if (state.netns[name])
+            return fail(
+              `Cannot create namespace file "/var/run/netns/${name}": File exists`,
+            );
+          state.netns[name] = {
+            interfaces: { lo: { name: "lo", state: "down", addresses: [] } },
+            routes: [],
+            neighbors: {},
+          };
+          return ok();
+        }
+        if (sub === "list" || sub === "show" || sub === undefined) {
+          return ok(Object.keys(state.netns).join("\n"));
+        }
+        if (sub === "exec") {
+          const nsName = args[1]?.text;
+          if (!nsName) return fail("usage: ip netns exec <name> <command>");
+          const ns = state.netns[nsName];
+          if (!ns)
+            return fail(
+              `Cannot open network namespace "${nsName}": No such file or directory`,
+            );
+          const innerTokens = args.slice(2);
+          if (!innerTokens.length)
+            return fail("ip netns exec: missing command");
+          const innerCmd = innerTokens
+            .map((t) => (t.quoted ? `"${t.text}"` : t.text))
+            .join(" ");
+          // Temporarily repoint the "current" network stack at the namespace's,
+          // run the inner command through the full dispatcher (so `ip`/`ping`
+          // inside it naturally operate on the namespace), then persist the
+          // namespace's resulting state back and restore the host's network.
+          const savedNetwork = state.network;
+          state.network = ns;
+          const innerResult = execute(state, innerCmd);
+          // innerResult.state is a fresh clone from the recursive execute()
+          // call, distinct from `state` — mutate (and return) that one, not
+          // `state`, or the namespace update would be silently discarded.
+          innerResult.state.netns[nsName] = innerResult.state.network;
+          innerResult.state.network = savedNetwork;
+          return innerResult;
+        }
+        if (sub === "delete" || sub === "del") {
+          const name = args[1]?.text;
+          if (!name || !state.netns[name])
+            return fail(
+              `Cannot remove namespace file "/var/run/netns/${name}": No such file or directory`,
+            );
+          delete state.netns[name];
+          return ok();
+        }
+        return fail(`Object "${sub}" is unknown, try "ip help".`);
+      }
+
+      return fail(`Object "${action}" is unknown, try "ip help".`);
     }
 
     case "usermod": {
@@ -3170,6 +5411,265 @@ export function evaluateCheck(
         return {
           pass: false,
           reason: `${expect.name}-এর password max age ${expect.maxDays} দিন হওয়ার কথা`,
+        };
+    }
+  }
+  if (check.gitState) {
+    const g = ctx.result.state.git;
+    const gs = check.gitState;
+    if (gs.initialized && g.root === null)
+      return { pass: false, reason: "এখনো git init করোনি" };
+    if (gs.currentBranch !== undefined && g.currentBranch !== gs.currentBranch)
+      return {
+        pass: false,
+        reason: `এখনো ${gs.currentBranch} branch-এ যাওনি`,
+      };
+    for (const b of gs.branchesExist ?? []) {
+      if (!g.branches[b])
+        return { pass: false, reason: `${b} branch-টা এখনো তৈরি হয়নি` };
+    }
+    const commitIds = g.branches[g.currentBranch] ?? [];
+    if (gs.minCommits !== undefined && commitIds.length < gs.minCommits)
+      return {
+        pass: false,
+        reason: `কমপক্ষে ${gs.minCommits}টা commit থাকার কথা`,
+      };
+    if (gs.lastCommitMessage !== undefined) {
+      const lastId = commitIds[commitIds.length - 1];
+      const last = lastId ? g.commits[lastId] : undefined;
+      if (!last || last.message !== gs.lastCommitMessage)
+        return {
+          pass: false,
+          reason: `শেষ commit message "${gs.lastCommitMessage}" হওয়ার কথা`,
+        };
+    }
+    if (gs.lastCommitIncludes) {
+      const lastId = commitIds[commitIds.length - 1];
+      const last = lastId ? g.commits[lastId] : undefined;
+      for (const p of gs.lastCommitIncludes) {
+        const abs = resolvePath(HOME, p);
+        if (!last || !last.files.includes(abs))
+          return {
+            pass: false,
+            reason: `শেষ commit-এ ${p} থাকার কথা`,
+          };
+      }
+    }
+    for (const p of gs.staged ?? []) {
+      const abs = resolvePath(HOME, p);
+      if (!g.staged.includes(abs))
+        return { pass: false, reason: `${p} এখনো stage করোনি` };
+    }
+    if (gs.clean && g.staged.length > 0)
+      return { pass: false, reason: "working tree clean থাকার কথা না" };
+  }
+  if (check.dockerImages) {
+    for (const want of check.dockerImages) {
+      const image = ctx.result.state.docker.images[want.tag];
+      if (want.exists === false) {
+        if (image)
+          return { pass: false, reason: `${want.tag} ইমেজটা এখনো আছে` };
+        continue;
+      }
+      if (!image)
+        return { pass: false, reason: `${want.tag} ইমেজ এখনো build হয়নি` };
+    }
+  }
+  if (check.dockerContainers) {
+    for (const want of check.dockerContainers) {
+      const c = ctx.result.state.docker.containers[want.name];
+      if (want.exists === false) {
+        if (c)
+          return { pass: false, reason: `${want.name} container-টা এখনো আছে` };
+        continue;
+      }
+      if (!c)
+        return {
+          pass: false,
+          reason: `${want.name} container-টা এখনো চালু হয়নি`,
+        };
+      if (want.status !== undefined && c.status !== want.status)
+        return {
+          pass: false,
+          reason: `${want.name}-এর status ${want.status} হওয়ার কথা (এখন ${c.status})`,
+        };
+      if (want.image !== undefined && c.image !== want.image)
+        return {
+          pass: false,
+          reason: `${want.name}-এর image ${want.image} হওয়ার কথা`,
+        };
+      if (want.ports !== undefined) {
+        for (const p of want.ports) {
+          const has = c.ports.some(
+            (cp) => cp.host === p.host && cp.container === p.container,
+          );
+          if (!has)
+            return {
+              pass: false,
+              reason: `${want.name}-এ ${p.host}:${p.container} port mapping নেই`,
+            };
+        }
+      }
+    }
+  }
+  if (check.k8sResources) {
+    for (const want of check.k8sResources) {
+      const ns = want.namespace ?? "default";
+      const res =
+        ctx.result.state.k8s.resources[`${ns}/${want.kind}/${want.name}`];
+      if (want.exists === false) {
+        if (res)
+          return { pass: false, reason: `${want.kind}/${want.name} এখনো আছে` };
+        continue;
+      }
+      if (!res)
+        return {
+          pass: false,
+          reason: `${want.kind}/${want.name} এখনো তৈরি হয়নি`,
+        };
+      if (want.replicas !== undefined && res.replicas !== want.replicas)
+        return {
+          pass: false,
+          reason: `${want.name}-এর replicas ${want.replicas} হওয়ার কথা (এখন ${res.replicas})`,
+        };
+    }
+  }
+  if (check.netIfaceState) {
+    for (const want of check.netIfaceState) {
+      const stack =
+        want.context && want.context !== "host"
+          ? ctx.result.state.netns[want.context]
+          : ctx.result.state.network;
+      const iface = stack?.interfaces[want.name];
+      if (!iface)
+        return { pass: false, reason: `${want.name} interface-টা এখনো নেই` };
+      if (want.state !== undefined && iface.state !== want.state)
+        return {
+          pass: false,
+          reason: `${want.name}-এর state ${want.state} হওয়ার কথা (এখন ${iface.state})`,
+        };
+      if (
+        want.hasAddress !== undefined &&
+        !iface.addresses.some((a) => a.cidr === want.hasAddress)
+      )
+        return {
+          pass: false,
+          reason: `${want.name}-এ ${want.hasAddress} address নেই`,
+        };
+    }
+  }
+  if (check.routeExists) {
+    for (const want of check.routeExists) {
+      const stack =
+        want.context && want.context !== "host"
+          ? ctx.result.state.netns[want.context]
+          : ctx.result.state.network;
+      const route = stack?.routes.find(
+        (r) =>
+          r.dest === want.dest &&
+          (want.via === undefined || r.via === want.via) &&
+          (want.dev === undefined || r.dev === want.dev),
+      );
+      if (want.exists === false) {
+        if (route)
+          return { pass: false, reason: `${want.dest}-এর route এখনো আছে` };
+        continue;
+      }
+      if (!route)
+        return { pass: false, reason: `${want.dest}-এর route এখনো তৈরি হয়নি` };
+    }
+  }
+  if (check.netnsExists) {
+    for (const name of check.netnsExists) {
+      if (!ctx.result.state.netns[name])
+        return {
+          pass: false,
+          reason: `${name} network namespace এখনো তৈরি হয়নি`,
+        };
+    }
+  }
+  if (check.ufwState) {
+    const ufw = ctx.result.state.firewall.ufw;
+    const want = check.ufwState;
+    if (want.enabled !== undefined && ufw.enabled !== want.enabled)
+      return {
+        pass: false,
+        reason: want.enabled
+          ? "ufw এখনো enable করোনি"
+          : "ufw এখনো disable করোনি",
+      };
+    if (
+      want.defaultIncoming !== undefined &&
+      ufw.defaultIncoming !== want.defaultIncoming
+    )
+      return {
+        pass: false,
+        reason: `default incoming policy ${want.defaultIncoming} হওয়ার কথা`,
+      };
+    if (
+      want.defaultOutgoing !== undefined &&
+      ufw.defaultOutgoing !== want.defaultOutgoing
+    )
+      return {
+        pass: false,
+        reason: `default outgoing policy ${want.defaultOutgoing} হওয়ার কথা`,
+      };
+    for (const r of want.ruleExists ?? []) {
+      const match = ufw.rules.some(
+        (rule) =>
+          rule.action === r.action &&
+          (r.port === undefined || rule.port === r.port) &&
+          (r.from === undefined || rule.from === r.from),
+      );
+      if (r.exists === false) {
+        if (match)
+          return { pass: false, reason: "এই rule-টা এখনো আছে, মুছতে হবে" };
+        continue;
+      }
+      if (!match)
+        return { pass: false, reason: "এই ufw rule-টা এখনো তৈরি হয়নি" };
+    }
+  }
+  if (check.iptablesRuleExists) {
+    for (const want of check.iptablesRuleExists) {
+      const chain = ctx.result.state.firewall.iptables.chains[want.chain];
+      const match = chain?.rules.some(
+        (r) =>
+          r.target === want.target &&
+          (want.dport === undefined || r.dport === want.dport),
+      );
+      if (want.exists === false) {
+        if (match)
+          return { pass: false, reason: `${want.chain}-এ এই rule-টা এখনো আছে` };
+        continue;
+      }
+      if (!match)
+        return {
+          pass: false,
+          reason: `${want.chain}-এ এই rule-টা এখনো তৈরি হয়নি`,
+        };
+    }
+  }
+  if (check.socketExists) {
+    for (const want of check.socketExists) {
+      const match = ctx.result.state.sockets.some(
+        (s) =>
+          s.localPort === want.localPort &&
+          (want.proto === undefined || s.proto === want.proto) &&
+          (want.state === undefined || s.state === want.state),
+      );
+      if (want.exists === false) {
+        if (match)
+          return {
+            pass: false,
+            reason: `পোর্ট ${want.localPort}-এ এখনো socket আছে`,
+          };
+        continue;
+      }
+      if (!match)
+        return {
+          pass: false,
+          reason: `পোর্ট ${want.localPort}-এ এখনো কোনো socket নেই`,
         };
     }
   }

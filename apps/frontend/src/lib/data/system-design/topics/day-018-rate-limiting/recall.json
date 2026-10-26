@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-018",
+  "points": [
+    {
+      "term": "কেন Rate Limiting",
+      "prompt": "Rate limiting কোন কোন সমস্যা ঠেকায়? আরও server যোগ করলেই কেন সমাধান হয় না?",
+      "answer": "এটা brute-force login, OTP/SMS abuse, scraping, noisy neighbour, প্রতিবার টাকা লাগা call-এর খরচ আর দুর্বল downstream-কে রক্ষা করে, যাতে কেউ একা shared resource খেয়ে ফেলতে না পারে। Server বাড়ালে বিল বাড়ে, কিন্তু abuser-ও গতি বাড়াতে পারে আর database সহজে বাড়ে না; আসল অভাব ছিল 'কে কতটা পাবে' তার নিয়ম।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Limit Key (IP / User / API key)",
+      "prompt": "কিসের ভিত্তিতে গুনবেন? শুধু IP ধরে কড়া limit দিলে কী সমস্যা?",
+      "answer": "Login-এর আগে IP ছাড়া উপায় নেই, পরে user ID বা API key সবচেয়ে ন্যায্য, আর endpoint অনুযায়ী আলাদা limit দিতে হয়। শুধু IP ধরলে একই NAT-এর পেছনের শত শত নির্দোষ user একসাথে আটকায়, আর attacker সহজে IP বদলায়; তাই প্রায়ই IP + username বা user + endpoint মিশিয়ে key বানানো হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Token Bucket",
+      "prompt": "Token bucket কিভাবে কাজ করে? Capacity 10, refill 2/s হলে সর্বোচ্চ burst আর 5 সেকেন্ডে সর্বোচ্চ কয়টা?",
+      "answer": "Token স্থির গতিতে (refill rate) জমে, capacity-র বেশি না; প্রতিটা request একটা token খরচ করে, token না থাকলে 429। সর্বোচ্চ burst = capacity = 10, আর যেকোনো T সেকেন্ডে সর্বোচ্চ b + r×T = 10 + 2×5 = 20টা। প্রতি key-তে শুধু tokens আর শেষ হিসাবের সময় রাখতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Leaky Bucket",
+      "prompt": "Leaky bucket token bucket থেকে কিভাবে আলাদা, আর কখন এটা বাছবেন?",
+      "answer": "Request একটা নির্দিষ্ট মাপের queue-তে ঢোকে আর স্থির গতিতে বের হয়, তাই downstream সবসময় মসৃণ গতি পায়; queue ভরা থাকলে নতুন request বাদ। দাম হলো burst-এর request queue-তে অপেক্ষা করে, latency বাড়ে। যখন পেছনের system (partner API, SMS gateway) একটুও বাড়তি চাপ নিতে পারে না, তখন এটা ভালো।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Fixed Window Edge Burst",
+      "prompt": "Fixed window counter-এ মিনিটে 100 limit থাকলে অল্প সময়ে কিভাবে 200টা পাস হয়?",
+      "answer": "প্রতিটা ঘড়ি-ধরা মিনিটের জন্য আলাদা counter থাকে, আর নতুন মিনিটে সেটা শূন্য থেকে শুরু হয়। কেউ 10:00:59-এ 100টা আর 10:01:00-এ 100টা পাঠালে দুটো window-ই নিয়ম মানে, অথচ দুই সেকেন্ডে 200টা, অর্থাৎ limit-এর 2 গুণ পাস হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Sliding Window Log vs Counter",
+      "prompt": "Sliding window log আর sliding window counter-এর মধ্যে নির্ভুলতা আর memory-র trade-off কী?",
+      "answer": "Log প্রতিটা request-এর timestamp রাখে, তাই যেকোনো window-এ নিখুঁত, কিন্তু প্রতি key-তে limit-সংখ্যক timestamp লাগে (বড় scale-এ GB-র হিসাব)। Counter শুধু আগের আর চলতি window-এর দুটো সংখ্যা রাখে আর আগেরটাকে ওজন দিয়ে আন্দাজ করে (যেমন 80 × 0.75 + 30 = 90), তাই কম memory-তে প্রায় নিখুঁত।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "429 + Retry-After",
+      "prompt": "Limit পেরোলে server কী উত্তর দেবে, আর 503-এর সাথে পার্থক্য কী?",
+      "answer": "429 Too Many Requests দেবে, সাথে Retry-After (কতক্ষণ পরে আবার চেষ্টা) আর সম্ভব হলে বাকি quota-র header (যেমন X-RateLimit-Remaining)। 429 মানে client বেশি পাঠাচ্ছে; 503 মানে server নিজেই চাপে বা অপ্রাপ্য, যেমন load shedding-এ। RateLimit header-এর IETF standard এখনো draft, তাই অনেক API নিজের X-RateLimit-* নাম ব্যবহার করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Exponential Backoff with Jitter",
+      "prompt": "429 পেয়ে client কিভাবে retry করবে? Jitter না দিলে কী হয়?",
+      "answer": "Retry-After থাকলে অন্তত ততক্ষণ, না থাকলে প্রতিবার অপেক্ষা দ্বিগুণ (1s, 2s, 4s...) করে, সর্বোচ্চ সীমা আর চেষ্টার সংখ্যা সহ। Jitter মানে অপেক্ষায় random অংশ মেশানো; না দিলে হাজারো client একই মুহূর্তে ফিরে এসে আবার ধাক্কা দেয় (thundering herd / retry storm)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Distributed Rate Limiting",
+      "prompt": "Load balancer-এর পেছনে ৩টা server নিজে নিজে গুনলে কী হয়? Redis দিয়ে কিভাবে ঠিক করবেন, আর কোন race-এ সাবধান?",
+      "answer": "প্রতিটা server আলাদা গুনলে 100-এর limit আসলে 300 হয়ে যায়। সব server একই Redis key-তে atomic INCR করে (প্রথমবার EXPIRE), বা পুরো token bucket logic একটা Lua script-এ চালায়। GET-তারপর-SET করলে দুই server একসাথে ছেড়ে দেয়, আর INCR ও EXPIRE-এর মাঝে crash হলে মেয়াদহীন key-তে user চিরকাল block থাকে; বিকল্প হিসেবে sticky routing বা local + global hybrid, সামান্য ভুল মেনে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Fail-open vs Fail-closed",
+      "prompt": "Rate limiter-এর Redis down হলে কী করবেন? Rate limiting আর load shedding-এর পার্থক্য কী?",
+      "answer": "Fail-open মানে request ছেড়ে দেওয়া (API চালু, সুরক্ষা নেই), fail-closed মানে আটকানো (সুরক্ষা আছে, কিন্তু পুরো API বন্ধ); সাধারণ endpoint-এ fail-open আর local fallback, login/OTP-তে fail-closed যুক্তিসঙ্গত। Rate limiting প্রতি client-এর গতি সীমিত করে (429), আর load shedding server-এর নিজের চাপ দেখে অগ্রাধিকার অনুযায়ী কম জরুরি traffic ফেলে দেয় (সাধারণত 503)।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

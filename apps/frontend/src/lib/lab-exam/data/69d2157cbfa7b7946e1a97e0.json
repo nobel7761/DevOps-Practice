@@ -1,0 +1,188 @@
+{
+  "labId": "69d2157cbfa7b7946e1a97e0",
+  "title": "LAB: Firewall Management with ufw",
+  "passPercent": 95,
+  "intro": "নতুন একটা application server-কে lock down করতে হবে — SSH সবার জন্য খোলা, web app (8080) সবার জন্য, monitoring (9090) শুধু internal network-এর জন্য, বাকি সব বন্ধ। SSH আগে allow করো, তারপর default deny — নইলে নিজেই লক-আউট হয়ে যাবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🔍 পর্ব ১: বর্তমান অবস্থা দেখা",
+        "note": "কিছু পরিবর্তনের আগে সবসময় আগে দেখে নাও — শুধু observation।"
+      },
+      "prompt": "ufw-এর বর্তমান অবস্থা বিস্তারিতভাবে দেখো।",
+      "answer": "ufw status verbose",
+      "check": {
+        "require": ["ufw", "status"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "section": {
+        "title": "🔑 পর্ব ২: সবার আগে SSH allow করো",
+        "note": "এটাই সবচেয়ে গুরুত্বপূর্ণ ধাপ — default deny সেট করার আগে SSH খোলা না থাকলে নিজের session-ই বন্ধ হয়ে যাবে।"
+      },
+      "prompt": "port 22-এ TCP traffic allow করো (SSH)।",
+      "answer": "ufw allow 22/tcp",
+      "check": {
+        "require": ["ufw", "allow", "22"],
+        "ufwState": {
+          "ruleExists": [
+            {
+              "action": "allow",
+              "port": "22"
+            }
+          ]
+        }
+      },
+      "hints": [
+        "ufw allow-এর সাথে port আর protocol একসাথে লেখা যায়, port/proto এই ফরম্যাটে"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 6,
+      "prompt": "incoming traffic-এর জন্য default policy deny করো।",
+      "answer": "ufw default deny incoming",
+      "check": {
+        "require": ["ufw", "default", "deny", "incoming"],
+        "ufwState": {
+          "defaultIncoming": "deny"
+        }
+      }
+    },
+    {
+      "id": "t04",
+      "points": 5,
+      "prompt": "outgoing traffic-এর জন্য default policy allow করো।",
+      "answer": "ufw default allow outgoing",
+      "check": {
+        "require": ["ufw", "default", "allow", "outgoing"],
+        "ufwState": {
+          "defaultOutgoing": "allow"
+        }
+      }
+    },
+    {
+      "id": "t05",
+      "points": 6,
+      "prompt": "ফায়ারওয়াল চালু করো।",
+      "answer": "ufw enable",
+      "check": {
+        "require": ["ufw", "enable"],
+        "ufwState": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "t06",
+      "points": 5,
+      "section": {
+        "title": "🌐 পর্ব ৩: নির্দিষ্ট পোর্ট খোলা",
+        "note": "এখন ফায়ারওয়াল সক্রিয় — শুধু যা দরকার তাই খুলবে।"
+      },
+      "prompt": "web application-এর জন্য port 8080/tcp সবার জন্য allow করো।",
+      "answer": "ufw allow 8080/tcp",
+      "check": {
+        "require": ["ufw", "allow", "8080"],
+        "ufwState": {
+          "ruleExists": [
+            {
+              "action": "allow",
+              "port": "8080"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "t07",
+      "points": 8,
+      "prompt": "monitoring endpoint (port 9090) শুধু internal network (100.84.0.0/16) থেকে allow করো।",
+      "answer": "ufw allow from 100.84.0.0/16 to any port 9090",
+      "check": {
+        "require": ["ufw", "allow", "from", "100.84.0.0/16", "port", "9090"],
+        "ufwState": {
+          "ruleExists": [
+            {
+              "action": "allow",
+              "port": "9090",
+              "from": "100.84.0.0/16"
+            }
+          ]
+        }
+      },
+      "hints": [
+        "ufw allow from <subnet> to any port <port> — দুটো শর্তই একসাথে লেখা হয়"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 5,
+      "prompt": "Telnet (port 23/tcp) স্পষ্টভাবে deny করো (যদিও default-এই বন্ধ, intent documented করার জন্য)।",
+      "answer": "ufw deny 23/tcp",
+      "check": {
+        "require": ["ufw", "deny", "23"],
+        "ufwState": {
+          "ruleExists": [
+            {
+              "action": "deny",
+              "port": "23"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "t09",
+      "points": 4,
+      "prompt": "নম্বরসহ পুরো ruleset দেখো, যাতে delete করার সময় নম্বর বসাতে পারো।",
+      "answer": "ufw status numbered",
+      "check": {
+        "require": ["ufw", "status", "numbered"]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "section": {
+        "title": "🧹 পর্ব ৪: পুরনো rule সরানো",
+        "note": "অপ্রয়োজনীয় rule একটা নিরাপত্তা ঝুঁকি।"
+      },
+      "prompt": "rule-এর বিবরণ লিখে deny 23/tcp rule-টা মুছে দাও।",
+      "answer": "ufw delete deny 23/tcp",
+      "check": {
+        "require": ["ufw", "delete", "deny", "23"],
+        "ufwState": {
+          "ruleExists": [
+            {
+              "action": "deny",
+              "port": "23",
+              "exists": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "delete করার সময় ঠিক যেভাবে rule-টা বানিয়েছিলে, সেভাবেই লিখে delete করা যায়"
+      ]
+    },
+    {
+      "id": "t11",
+      "points": 5,
+      "section": {
+        "title": "📋 পর্ব ৫: Application profile",
+        "note": "পোর্ট নাম্বার মুখস্থ না রেখে, পরিচিত নাম দিয়ে rule লেখা যায়।"
+      },
+      "prompt": "কী কী application profile আছে দেখো।",
+      "answer": "ufw app list",
+      "check": {
+        "require": ["ufw", "app", "list"]
+      }
+    }
+  ]
+}

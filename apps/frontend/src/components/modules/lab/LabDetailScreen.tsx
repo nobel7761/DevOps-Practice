@@ -17,10 +17,12 @@ import { getLabExamSpec } from "@/lib/lab-exam/loader";
 
 export default function LabDetailScreen({
   lab,
+  courseId,
   milestone,
   module,
 }: {
   lab: LabContent;
+  courseId: string;
   milestone: CourseMilestone;
   module: CourseModule;
 }) {
@@ -29,14 +31,17 @@ export default function LabDetailScreen({
   const topicEssay = getLabTopicEssay(lab.id);
 
   return (
-    <main className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
+    <div className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
       <ModuleBreadcrumb
         items={[
           { label: "Home", href: "/" },
-          { label: milestone.title, href: `/?milestone=${milestone.id}` },
+          {
+            label: milestone.title,
+            href: `/course/${courseId}?milestone=${milestone.id}`,
+          },
           {
             label: module.title,
-            href: `/?milestone=${milestone.id}&module=${module.id}`,
+            href: `/course/${courseId}?milestone=${milestone.id}&module=${module.id}`,
           },
           { label: lab.title ?? "Lab" },
         ]}
@@ -109,6 +114,6 @@ export default function LabDetailScreen({
           </div>
         }
       />
-    </main>
+    </div>
   );
 }

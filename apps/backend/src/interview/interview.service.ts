@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type OpenAI from 'openai';
 import { GradeAnswerDto } from './dto/grade-answer.dto';
+import { buildGradingMessages } from './grading-prompt';
 import { GradeResult, InterviewSpec } from './interview.types';
 import { OPENAI_CLIENT } from '../openai/openai-client.provider';
 
@@ -56,23 +57,7 @@ export class InterviewService {
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a strict but fair Linux/DevOps technical interviewer. ' +
-            "Grade the candidate's shell command against the given scenario. " +
-            'Respond with ONLY a JSON object with exactly these keys: ' +
-            'score (0-100 integer, overall), verdict (one short sentence), ' +
-            'strengths (array of short strings), improvements (array of short strings, ' +
-            'use ["None needed, the command is functionally correct"] if there are none), ' +
-            'technicalAccuracy (0-100 integer), completeness (0-100 integer).',
-        },
-        {
-          role: 'user',
-          content: `Scenario: ${question.scenario}\n\nCandidate's answer:\n${dto.command}`,
-        },
-      ],
+      messages: buildGradingMessages(question.scenario, dto.answer),
     });
 
     const raw = completion.choices[0]?.message?.content ?? '';

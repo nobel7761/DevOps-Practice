@@ -14,7 +14,7 @@
       "options": [
         "একটা fixed, হুবহু string খোঁজে",
         "text-এর একটা 'shape' বা pattern বর্ণনা করে, যার সাথে একাধিক ভিন্ন string মিলতে পারে",
-        "file-এর নাম পরিবর্তন করে",
+        "file-এর নাম পরিবর্তন করে, অর্থাৎ regex engine pattern ম্যাচ হওয়া সাথে সাথে disk-এ থাকা ফাইলের rename অপারেশন স্বয়ংক্রিয়ভাবে ট্রিগার করে, টেক্সট ম্যাচিং-এর বাইরে এটাই regex-এর মূল ব্যবহারিক কাজ",
         "শুধু সংখ্যা গোনে"
       ],
       "answerIndex": 1,
@@ -28,7 +28,7 @@
         "literal ডট (শুধু একটা '.' অক্ষর)",
         "'যেকোনো একটা character' (wildcard)",
         "এটা error দেবে",
-        "শূন্য বা তার বেশি অক্ষর"
+        "শূন্য বা তার বেশি অক্ষর, কারণ BRE mode-এ একটা একক ডট আসলে * quantifier-এর সংক্ষিপ্ত রূপ হিসেবে কাজ করে এবং তার আগের অবস্থানে শূন্য বা তার বেশি যেকোনো character অনুমতি দেয়"
       ],
       "answerIndex": 1,
       "explanation": "grep-এর default (basic regex) mode-এও ডট (.) 'যেকোনো একটা character' বোঝায় — এটা -E ছাড়াই কাজ করে, শুধু +, ?, {n}, |, () -এর মতো operator-গুলোর জন্য -E লাগে।"
@@ -40,7 +40,7 @@
       "options": [
         "case ignore করে",
         "+, ?, {n,m}, |, () — এই operator-গুলো backslash ছাড়াই ব্যবহার করা যায়",
-        "শুধু hidden file-এ খোঁজে",
+        "শুধু hidden file-এ খোঁজে, অর্থাৎ -E দিলে grep স্বয়ংক্রিয়ভাবে ডট (.) দিয়ে শুরু হওয়া hidden file-গুলোর ভেতরেই শুধু pattern অনুসন্ধান সীমাবদ্ধ রাখে, visible ফাইল বাদ দেয়",
         "ফলাফল উল্টো করে দেখায়"
       ],
       "answerIndex": 1,
@@ -54,7 +54,7 @@
         "ঠিক একবার",
         "আগের element শূন্যবার বা তার বেশিবার",
         "আগের element অন্তত একবার",
-        "আগের element সর্বোচ্চ একবার"
+        "আগের element সর্বোচ্চ একবার, কারণ * আসলে ? quantifier-এর সমতুল্য এবং এটা element-টাকে ঐচ্ছিক করে দেয় — থাকলে ঠিক একবার, নাহলে একেবারেই না, কিন্তু একাধিকবার কখনোই অনুমোদন করে না"
       ],
       "answerIndex": 1,
       "explanation": "* মানে ঠিক তার আগের element (character/group) শূন্যবার বা তার বেশিবার থাকতে পারে — অর্থাৎ নাও থাকতে পারে, আবার বহুবারও থাকতে পারে।"
@@ -88,7 +88,7 @@
         "হুবহু 'abc' string-টা",
         "a, b, অথবা c — এর মধ্যে যেকোনো একটামাত্র character",
         "a থেকে c পর্যন্ত সবকিছু বাদে",
-        "কমপক্ষে তিনটা character"
+        "কমপক্ষে তিনটা character — character class-এর ভেতরে যতগুলো character লেখা থাকে, সেই position থেকে ঠিক ততগুলো consecutive character একসাথে মিলতে হয়, অর্থাৎ [abc] মানে পরপর অন্তত তিনটা character থাকা আবশ্যক"
       ],
       "answerIndex": 1,
       "explanation": "[abc] একটা single position-এর জন্য একটা set define করে — সেই position-এ a, b, বা c — এই তিনটার যেকোনো একটা character থাকলেই মিলবে।"
@@ -101,7 +101,7 @@
         "শুধু সংখ্যা 0 আর 9",
         "0 থেকে 9 পর্যন্ত যেকোনো একটা digit",
         "0 থেকে 9 — পুরো range-টা একসাথে",
-        "কোনো digit নেই এমন position"
+        "কোনো digit নেই এমন position, কারণ হাইফেন (-) দিয়ে range লেখা character class-কে negate করে দেয় এবং [0-9] আসলে digit বাদে বাকি সব character-এর set বোঝায়, ঠিক [^0-9]-এর মতোই আচরণ করে"
       ],
       "answerIndex": 1,
       "explanation": "[0-9] একটা range define করে — 0 থেকে 9 পর্যন্ত যেকোনো একটা digit সেই position-এ থাকলেই মিলবে।"
@@ -113,7 +113,7 @@
       "options": [
         "a, b, c — এর যেকোনো একটা",
         "a, b, c বাদে যেকোনো একটা character",
-        "হুবহু '^abc' string",
+        "হুবহু '^abc' string — [^abc]-এর ভেতরের ^ এখানে negation না বরং একটা literal caret character হিসেবে ধরা হয়, তাই এই class আসলে শুধুমাত্র '^', 'a', 'b', অথবা 'c' এই চারটা literal character-এর যেকোনো একটার সাথে মেলে",
         "খালি string"
       ],
       "answerIndex": 1,
@@ -126,7 +126,7 @@
       "options": [
         "literal হাইফেন অক্ষর",
         "a আর z-এর মধ্যে একটা range",
-        "negation",
+        "negation — [a-z]-এর হাইফেন আসলে [^...]-এর মতোই কাজ করে এবং a আর z বাদে বাকি সব character-কে match করার জন্য class-টাকে উল্টে দেয়, এটা range তৈরি করে না",
         "দুইটা আলাদা group"
       ],
       "answerIndex": 1,
@@ -153,7 +153,7 @@
         "আগের element অন্তত একবার",
         "আগের element শূন্যবার বা একবার (ঐচ্ছিক)",
         "একটা literal প্রশ্নবোধক চিহ্ন",
-        "যেকোনো একটা character"
+        "যেকোনো একটা character — ? আসলে ডটের (.) মতোই একটা wildcard হিসেবে কাজ করে এবং তার অবস্থানে ঠিক একটা যেকোনো character থাকা আবশ্যক করে, repetition নিয়ন্ত্রণের সাথে এর সম্পর্ক নেই"
       ],
       "answerIndex": 1,
       "explanation": "? মানে ঠিক তার আগের element ঐচ্ছিক — শূন্যবার (নেই) অথবা ঠিক একবার থাকতে পারে।"
@@ -205,7 +205,7 @@
         "শুধু pattern-টা দেখতে সুন্দর করে",
         "একটা অংশকে একসাথে ধরে রাখে — quantifier/alternation-এর scope ঠিক করতে, আর পরে reuse (capture) করতে",
         "pattern-টা case-insensitive বানায়",
-        "লাইন delete করে"
+        "লাইন delete করে — () দিয়ে একটা অংশ group করার সাথে সাথে regex engine সেই group-এ ম্যাচ হওয়া লাইনটাকেই input stream থেকে সরিয়ে ফেলে, অনেকটা sed-এর d কমান্ডের মতোই একটা built-in deletion আচরণ ঘটায়"
       ],
       "answerIndex": 1,
       "explanation": "() দিয়ে একটা অংশকে একটা একক unit হিসেবে group করা যায় — quantifier/alternation কোন অংশে প্রযোজ্য সেটা স্পষ্ট করতে, এবং সেই অংশটা capture (পরে reuse) করতে।"
@@ -218,7 +218,7 @@
         "প্রথম লাইন",
         "pattern-এর প্রথম capture group-এ যা ধরা পড়েছে, সেটাই",
         "প্রথম file",
-        "একটা literal '\\1' text"
+        "একটা literal '\\1' text — replacement অংশে \\1 লিখলে sed সেটাকে হুবহু '\\1' এই দুইটা character হিসেবেই output-এ বসিয়ে দেয়, pattern-এর কোনো group-এর সাথে এর কোনো সংযোগ তৈরি হয় না"
       ],
       "answerIndex": 1,
       "explanation": "\\1 মানে pattern-এর প্রথম (...) group-এ যে text ধরা পড়েছে, সেটাই replacement-এ আবার বসিয়ে দেওয়া হয়।"
@@ -243,7 +243,7 @@
       "options": [
         "$2 field-টা pattern-এর সাথে মেলে কিনা test করে",
         "$2 field-টা মুছে দেয়",
-        "$2 আর pattern-কে যোগ করে",
+        "$2 আর pattern-কে যোগ করে, কারণ ~ অপারেটর আসলে string concatenation-এর একটা বিশেষ রূপ হিসেবে কাজ করে এবং $2-এর মান আর pattern-টাকে একটা নতুন combined string বানিয়ে পরবর্তী ব্যবহারের জন্য রেখে দেয়, কোনো boolean test করে না",
         "$2-কে sort করে"
       ],
       "answerIndex": 0,
@@ -256,7 +256,7 @@
       "options": [
         "কোনো সমস্যা নেই, ডট সবসময় literal-ই থাকে",
         "ডট 'যেকোনো একটা character' হিসেবে কাজ করবে, তাই 'poridhiXio'-এর মতো ভুল string-ও মিলে যেতে পারে",
-        "pattern-টা error দেবে",
+        "pattern-টা error দেবে, কারণ grep-এর parser email domain-এর মাঝে escape না করা ডট পেলে সেটাকে invalid syntax ধরে নিয়ে সরাসরি একটা 'unterminated pattern' error রিটার্ন করে এবং কোনো ফলাফল না দেখিয়ে কমান্ড ব্যর্থ হয়",
         "শুধু uppercase letter-এ কাজ করবে"
       ],
       "answerIndex": 1,
@@ -269,7 +269,7 @@
       "options": [
         "দুটোই match করবে",
         "শুধু 'ERROR: disk full' match করবে, 'System: ERROR occurred' করবে না",
-        "শুধু 'System: ERROR occurred' match করবে",
+        "শুধু 'System: ERROR occurred' match করবে, কারণ ^ anchor আসলে pattern-কে শব্দের মাঝামাঝি কোনো capital letter-এর অবস্থানের সাথে পিন করে, লাইনের একদম প্রথম position-এর সাথে নয় — তাই ERROR শব্দটা মাঝে থাকা লাইনই বরং অগ্রাধিকার পায়",
         "দুটোর কোনোটাই না"
       ],
       "answerIndex": 1,
@@ -283,7 +283,7 @@
         "হ্যাঁ, কারণ ? আগের character (u)-কে ঐচ্ছিক বানিয়ে দিয়েছে",
         "না, শুধু 'colour' match করবে",
         "না, শুধু 'color' match করবে",
-        "না, কোনোটাই না — pattern ভুল"
+        "না, কোনোটাই না — pattern ভুল, কারণ grep -E mode-এ ? quantifier শব্দের মাঝে বসানো অবৈধ এবং regex engine এটাকে malformed pattern হিসেবে ধরে নিয়ে 'invalid preceding regular expression' error দেয়, কোনো লাইনই ম্যাচ হয় না"
       ],
       "answerIndex": 0,
       "explanation": "colou?r-এ ? শুধু তার ঠিক আগের 'u' অক্ষরটাকে ঐচ্ছিক বানায় — তাই u থাকলে 'colour', না থাকলে 'color' — দুটোই মিলবে।"
@@ -294,7 +294,7 @@
       "question": "pattern [0-9]{3}-[0-9]{4} ঠিক কোন ধরনের string match করবে?",
       "options": [
         "৩টা digit, একটা হাইফেন, তারপর ৪টা digit — যেমন 123-4567",
-        "ঠিক ৩টা digit, তারপর ৪টা হাইফেন",
+        "ঠিক ৩টা digit, তারপর ৪টা হাইফেন — কারণ {3} আর {4} উভয়ই ঠিক তাদের ঠিক আগের element-কে repeat করে, এখানে প্রথম {3} তিনটা digit repeat করে আর দ্বিতীয় {4} মাঝের হাইফেনটাকেই চারবার repeat করে বোঝায়",
         "৩ থেকে ৪টা digit-এর যেকোনো সংখ্যা",
         "'3-4' এই literal string"
       ],
@@ -308,7 +308,7 @@
       "options": [
         "কোনো সমস্যা নেই, একই জিনিস",
         "| এর scope পুরো pattern জুড়ে প্রসারিত হয়ে যেত — 'cat' অথবা 'dogs' match করত, 'cats' অথবা 'dogs' না",
-        "pattern error দিত",
+        "pattern error দিত — group ছাড়া | অক্ষরটা regex engine-এর কাছে একটা অসম্পূর্ণ alternation হিসেবে গণ্য হয় এবং s suffix-টা কোন অংশের সাথে bind হবে তা নির্ধারণ করতে না পেরে parser সরাসরি একটা syntax error রিটার্ন করে",
         "শুধু 'dogs' match করত"
       ],
       "answerIndex": 1,
@@ -334,7 +334,7 @@
       "options": [
         "শুধু screen-এ preview দেখায়, ফাইল বদলায় না",
         "সরাসরি ফাইলের ভেতরের content স্থায়ীভাবে বদলে দেয় (in-place edit)",
-        "case ignore করে",
+        "case ignore করে, অর্থাৎ -i flag আসলে বড়-ছোট হাতের অক্ষরের পার্থক্য উপেক্ষা করে match খোঁজে, ঠিক i flag-এরই একটা বিকল্প রূপ — ফাইলে কোনো স্থায়ী পরিবর্তন এটা করে না",
         "শুধু প্রথম matching লাইনে কাজ করে"
       ],
       "answerIndex": 1,
@@ -348,7 +348,7 @@
         "শুধু ২য় লাইন প্রিন্ট হবে",
         "ফিল্ড (column) আলাদা করার জন্য delimiter হবে কমা (,)",
         "ফাইলের নাম",
-        "sort করার কলাম"
+        "sort করার কলাম — -F দিয়ে awk-কে বলে দেওয়া হয় কোন column-এর মান অনুযায়ী output আগে থেকেই sorted ক্রমে সাজিয়ে দেখাতে হবে, field আলাদা করার সাথে এর কোনো সম্পর্ক নেই"
       ],
       "answerIndex": 1,
       "explanation": "-F দিয়ে field separator ঠিক করা হয় — default-এ এটা whitespace, কিন্তু -F',' দিলে awk কমা (,) দিয়ে প্রতিটা লাইনকে field-এ ভাগ করবে, যা CSV-র জন্য দরকারি।"
@@ -358,7 +358,7 @@
       "difficulty": "medium",
       "question": "awk-এ NR ভ্যারিয়েবলটা কী বোঝায়?",
       "options": [
-        "বর্তমান লাইনের field সংখ্যা",
+        "বর্তমান লাইনের field সংখ্যা, অর্থাৎ NR আসলে NF-এরই সমার্থক একটা variable এবং প্রতিটা লাইনে সেই লাইনটা মোট কয়টা field-এ বিভক্ত হয়েছে তার সংখ্যা ধরে রাখে, লাইনের ক্রম নির্দেশ করে না",
         "বর্তমান লাইন নম্বর (record number)",
         "ফাইলের নাম",
         "শুধু error হলে ১ হয়"
@@ -399,7 +399,7 @@
       "options": [
         "শুধু 'aXb' (প্রথম b পর্যন্ত)",
         "পুরো 'aXbYb' (শেষ b পর্যন্ত যতদূর সম্ভব বিস্তৃত)",
-        "কিছুই ধরবে না",
+        "কিছুই ধরবে না, কারণ .* এর মাঝে দুইটা b থাকায় regex engine ambiguous match ধরে নিয়ে কোনো সিদ্ধান্তে পৌঁছাতে পারে না এবং pattern-টা সম্পূর্ণ ব্যর্থ (no match) হিসেবে ফিরে আসে",
         "শুধু 'a'"
       ],
       "answerIndex": 1,
@@ -412,7 +412,7 @@
       "options": [
         "প্রথমটা শুধু জোড় সংখ্যা ধরে",
         "কার্যত কোনো পার্থক্য নেই — দুটোই যেকোনো একটা digit match করে, শুধু লেখার ধরন ভিন্ন",
-        "দ্বিতীয়টা কাজ করবে না, error দেবে",
+        "দ্বিতীয়টা কাজ করবে না, error দেবে — কারণ character class-এর ভেতরে range (হাইফেন) ছাড়া এতগুলো আলাদা digit আলাদা করে লেখা regex engine-এর সর্বোচ্চ character limit অতিক্রম করে এবং parser একটা 'malformed character class' error রিটার্ন করে",
         "প্রথমটা case-sensitive, দ্বিতীয়টা না"
       ],
       "answerIndex": 1,
@@ -426,7 +426,7 @@
         "দুটো একই জিনিস",
         "প্রথমটা digit বাদে যেকোনো character ধরে, দ্বিতীয়টা শুধু digit ধরে — একে অপরের বিপরীত",
         "দুটোই শুধু digit ধরে",
-        "প্রথমটা digit ধরে, দ্বিতীয়টা digit বাদে সব ধরে"
+        "প্রথমটা digit ধরে, দ্বিতীয়টা digit বাদে সব ধরে — কারণ character class-এর শুরুর ^ আসলে সেই class-টাকে অতিরিক্তভাবে জোরদার (reinforce) করে, ফলে [^0-9] বরং শুধু digit-কেই আরও কঠোরভাবে match করে, আর সাধারণ [0-9] digit বাদে বাকি সব ধরে"
       ],
       "answerIndex": 1,
       "explanation": "[ ] এর ভেতরে শুরুতে ^ থাকলে set-টা negate হয়ে যায় — [0-9] মানে 'যেকোনো digit', আর [^0-9] মানে 'digit বাদে যেকোনো character'।"
@@ -439,7 +439,7 @@
         "হ্যাঁ, দুটোই 'শুরু' বোঝায়",
         "না — [ ] এর ভেতরে শুরুতে ^ মানে negation, কিন্তু [ ] এর বাইরে ^ মানে লাইনের শুরুর anchor",
         "না — [ ] এর ভেতরে ^ মানে anchor, বাইরে মানে negation",
-        "কোনোটাই ঠিক না, দুটোই error"
+        "কোনোটাই ঠিক না, দুটোই error — কারণ ^ চিহ্নটা grep-এর POSIX স্ট্যান্ডার্ডে শুধুমাত্র pattern-এর একদম শুরুতে একবারই বৈধ, character class-এর ভেতরে বা অন্য কোথাও ব্যবহার করলেই parser সবসময় একটা syntax error রিটার্ন করবে"
       ],
       "answerIndex": 1,
       "explanation": "context-ভেদে ^-এর অর্থ পাল্টে যায় — character class [ ] এর ভেতরে শুরুতে থাকলে এটা negation বোঝায়, কিন্তু সাধারণ pattern-এ এটা anchor (লাইনের শুরু) বোঝায়।"
@@ -451,7 +451,7 @@
       "options": [
         "পুরো 'ab' অংশের উপর",
         "শুধু তার ঠিক আগের একটা character 'b'-এর উপর",
-        "পুরো pattern 'abc'-এর উপর",
+        "পুরো pattern 'abc'-এর উপর — group ছাড়া quantifier-ও আসলে implicitly তার বাম পাশের সবকিছুকে ঘিরে ফেলে এবং পুরো 'ab' sequence-কে এক বা একাধিকবার repeat করার অনুমতি দেয়, তারপর 'c' সেই repeated অংশের সাথে যুক্ত হয়",
         "শুধু 'c'-এর উপর"
       ],
       "answerIndex": 1,
@@ -464,7 +464,7 @@
       "options": [
         "match করবে, কারণ লাইনে ERROR শব্দটা আছে",
         "match করবে না, কারণ পুরো লাইনটা শুধু 'ERROR' না — আগে-পরে আরও text আছে",
-        "error দেবে",
+        "error দেবে — কারণ একই pattern-এ ^ আর $ দুটো anchor একসাথে ব্যবহার করা regex engine-এর কাছে conflicting নির্দেশ হিসেবে গণ্য হয় (শুরু আর শেষ একই সাথে দাবি করা যায় না), তাই parser সরাসরি একটা syntax error রিটার্ন করে",
         "শুধু প্রথম ৫ অক্ষর মিলবে"
       ],
       "answerIndex": 1,
@@ -478,7 +478,7 @@
         "ভুলে বসানো, কোনো কাজ নেই",
         "ডটটা literal রাখার জন্য — escape না করলে এটা 'যেকোনো character' হয়ে যেত",
         "এটা একটা anchor",
-        "group বন্ধ করার জন্য"
+        "group বন্ধ করার জন্য — \\. এখানে আসলে একটা closing parenthesis-এর বিকল্প হিসেবে কাজ করে এবং @(gmail|yahoo) group-টাকে বন্ধ করে দেয়, literal ডট ম্যাচ করার সাথে এর কোনো সম্পর্ক নেই"
       ],
       "answerIndex": 1,
       "explanation": "-E mode-এও ডট (.) 'যেকোনো character' বোঝায় — ঠিক literal ডট (domain-এর আসল .) মেলাতে এটাকে \\. দিয়ে escape করতে হয়।"
@@ -490,7 +490,7 @@
       "options": [
         "এটা না থাকলে কমান্ড error দিত",
         "এটা নিশ্চিত করে IP-টা লাইনের একদম শেষে আছে — মাঝখানে কোথাও থাকলে সেটা বাদ পড়বে",
-        "এটা case ignore করে",
+        "এটা case ignore করে — $ চিহ্নটা grep-এ anchor হিসেবে না বরং একটা বিশেষ flag-char হিসেবে কাজ করে, pattern-এর শেষে বসালে পুরো ম্যাচিং প্রক্রিয়াটা case-insensitive করে দেয়, লাইনের অবস্থানের সাথে এর সম্পর্ক নেই",
         "এটা আসলে কোনো কাজ করে না"
       ],
       "answerIndex": 1,
@@ -503,7 +503,7 @@
       "options": [
         "কোনো পার্থক্য নেই",
         "প্রথমটা প্রতি লাইনে শুধু প্রথম মিল বদলায়, দ্বিতীয়টা (g = global) প্রতি লাইনের সবগুলো মিল বদলায়",
-        "প্রথমটা পুরো file বদলায়, দ্বিতীয়টা শুধু প্রথম লাইন",
+        "প্রথমটা পুরো file বদলায়, দ্বিতীয়টা শুধু প্রথম লাইন — কারণ g flag আসলে 'global' মানে পুরো ফাইল জুড়ে প্রভাব সীমিত করার flag, flag ছাড়া sed ডিফল্টভাবে পুরো ফাইলের সবগুলো লাইনে সবগুলো মিল বদলে দেয়, g দিলে শুধু প্রথম লাইনেই সীমাবদ্ধ থাকে",
         "দ্বিতীয়টা case-insensitive"
       ],
       "answerIndex": 1,
@@ -517,7 +517,7 @@
         "সব failed login, internal IP সহ",
         "যেসব failed login internal network (192.168.x বা 10.0.x) থেকে আসেনি — অর্থাৎ বহিরাগত IP থেকে",
         "শুধু successful login",
-        "শুধু internal IP থেকে আসা login"
+        "শুধু internal IP থেকে আসা login — কারণ দ্বিতীয় ধাপের grep -vE আসলে invert-match না বরং শুধুমাত্র pattern-এর সাথে মেলা লাইনগুলোকেই আবার পুনরায় নিশ্চিত (re-confirm) করে দেখায়, না-মেলা লাইনগুলো silently বাদ দিয়ে দেয়"
       ],
       "answerIndex": 1,
       "explanation": "প্রথম grep failed login-এর লাইন বাছাই করে, দ্বিতীয় grep -v (invert) দিয়ে তার ভেতর থেকে internal IP range-এর লাইনগুলো বাদ দেয় — বাকি থাকে শুধু বহিরাগত (external) IP থেকে আসা failed login।"
@@ -543,7 +543,7 @@
         "একটা বন্ধনী (ঠিক একবার) অবশ্যই থাকতে হবে",
         "একটা literal '(' অক্ষর ঐচ্ছিক — থাকতেও পারে, নাও থাকতে পারে",
         "একটা group শুরু হচ্ছে যেটা ? দিয়ে শেষ হবে",
-        "এটা একটা invalid pattern"
+        "এটা একটা invalid pattern — কারণ escape করা \\( আর তার পরের ? একসাথে ব্যবহার করলে regex engine এটাকে একটা অসম্পূর্ণ group-opening হিসেবে ধরে নেয় এবং matching শুরু হওয়ার আগেই একটা 'unbalanced parenthesis' error রিটার্ন করে"
       ],
       "answerIndex": 1,
       "explanation": "\\( দিয়ে একটা literal '(' অক্ষর বোঝানো হয়, আর তার পরের ? সেই literal '('-কে ঐচ্ছিক বানায় — তাই '555' আর '(555' দুটো ফরম্যাটই মিলবে।"
@@ -555,7 +555,7 @@
       "options": [
         "শুধু পুরো file-এর প্রথম লাইনে কাজ হবে",
         "শুধু যে লাইনগুলো এই regex pattern-এর সাথে মেলে, সেগুলোতেই কমান্ডটা প্রযোজ্য হবে",
-        "পুরো file-এ কমান্ড একবার চলবে, pattern উপেক্ষিত হবে",
+        "পুরো file-এ কমান্ড একবার চলবে, pattern উপেক্ষিত হবে — কারণ sed address হিসেবে regex দিলে সেটা আসলে শুধু একটা label বা annotation হিসেবে গণ্য হয় এবং প্রকৃত filtering-এর কোনো ভূমিকা রাখে না, কমান্ডটা ফাইলের প্রতিটা লাইনে সমানভাবে প্রয়োগ হয়",
         "এটা শুধু print করার জন্য ব্যবহার হয়, filter-এর জন্য না"
       ],
       "answerIndex": 1,
@@ -568,7 +568,7 @@
       "options": [
         "regex ছাড়া কোনো টুল দিয়েই এটা করা সম্ভব না",
         "regex দিয়ে একটামাত্র pattern-এ বিভিন্ন ফরম্যাটের 'shape' বর্ণনা করে সবগুলোকেই ধরা যায়, আলাদা আলাদা করে প্রতিটা ফরম্যাট হার্ডকোড না করেই",
-        "regex শুধু সবচেয়ে কমন ফরম্যাটটাই ধরতে পারে",
+        "regex শুধু সবচেয়ে কমন ফরম্যাটটাই ধরতে পারে — regex engine internally প্রতিটা আলাদা ফরম্যাটের জন্য আলাদা আলাদা পুরো pattern পুনরায় compile করে, তাই একাধিক ফরম্যাট একসাথে একটা single pattern-এ কভার করা বাস্তবে সম্ভব হয় না, শুধুমাত্র সবচেয়ে বেশি ব্যবহৃত একটা ফরম্যাট নির্বাচন করে সেটার জন্যই নির্ভরযোগ্যভাবে কাজ করে",
         "regex দিয়ে phone নম্বর কখনো normalize করা যায় না"
       ],
       "answerIndex": 1,
@@ -581,7 +581,7 @@
       "options": [
         "শুধু কমা অক্ষরটাই",
         "কমা বাদে যেকোনো সংখ্যক character — অর্থাৎ একটা CSV field-এর পুরো content",
-        "ঠিক একটা character, কমা না হলে",
+        "ঠিক একটা character, কমা না হলে — কারণ [^,] নিজেই একটা সম্পূর্ণ single-character match আর তার পরের * আসলে পুরো group-টাকে optional করে দেয় (শূন্য বা একবার), একাধিক consecutive character ধরার ক্ষমতা এর নেই",
         "এটা invalid, কাজ করবে না"
       ],
       "answerIndex": 1,
@@ -595,7 +595,7 @@
         "হ্যাঁ, কারণ এতে ঠিক ১০টা digit আছে",
         "না — কারণ pattern-এ দুইটা literal হাইফেনও আছে, যেটা এই string-এ নেই",
         "হ্যাঁ, কিন্তু শুধু -E ছাড়া চালালে",
-        "না, কারণ pattern-এ কোনো anchor নেই"
+        "না, কারণ pattern-এ কোনো anchor নেই — আসলে ^ আর $ উভয়ই এখানে উপস্থিত আছে, কিন্তু ভুল করে দাবি করা হচ্ছে এগুলো নেই; বাস্তবে anchor অনুপস্থিত থাকলে dash-বিহীন ১০-ডিজিট স্ট্রিং-এর মাঝের অংশও মিলে যেতে পারত, কারণ pattern তখন লাইনের যেকোনো জায়গায় মিলত"
       ],
       "answerIndex": 1,
       "explanation": "pattern-টা শুধু digit না, মাঝের হাইফেনগুলোও literal character হিসেবে বাধ্যতামূলক করে রেখেছে (^ আর $ দিয়ে পুরো লাইন আটকেও রাখা হয়েছে) — তাই dash-বিহীন plain digit string এটার সাথে মিলবে না।"
@@ -607,7 +607,7 @@
       "options": [
         "আগের মতোই শুধু WARN লাইন দেখাবে",
         "খালি alternative ('') সব লাইনের সাথেই মেলে, তাই file-এর প্রতিটা লাইনই match হিসেবে দেখাবে",
-        "pattern error দিয়ে কিছুই দেখাবে না",
+        "pattern error দিয়ে কিছুই দেখাবে না — grep-এর parser | এর ডান পাশে কোনো pattern না পেলে সেটাকে একটা অসম্পূর্ণ alternation হিসেবে ধরে নিয়ে একটা 'trailing backslash' বা 'unexpected end of pattern' টাইপ error রিটার্ন করে, কোনো লাইন matched হিসেবে দেখানো হয় না",
         "শুধু ERROR লাইন দেখাবে"
       ],
       "answerIndex": 1,
@@ -618,7 +618,7 @@
       "difficulty": "hard",
       "question": "sed -E 's/^([^,]*,[^,]*,[^,]*,)\\(?([0-9]{3})\\)?[ .-]?([0-9]{3})[ .-]?([0-9]{4})(,.*)$/\\1\\2\\3\\4\\5/' দিয়ে '(555) 234-5679' phone field-টা normalize করলে কী হবে?",
       "options": [
-        "(555)234-5679 (অপরিবর্তিত থাকে)",
+        "(555)234-5679 (অপরিবর্তিত থাকে) — কারণ ঐচ্ছিক \\(? আর \\)? group যেহেতু 'না থাকতেও পারে' এই condition পূরণ করতে ব্যর্থ হয় (এখানে বন্ধনী আসলে আছে), pattern-টা পুরোপুরি match না করেই আংশিকভাবে বন্ধ হয়ে যায় এবং sed মূল স্ট্রিং-টা অপরিবর্তিত রেখে দেয়, শুধু space-টুকু বাদ পড়ে",
         "5552345679 — শুধু ১০টা raw digit, সব formatting character বাদ",
         "555-234-5679",
         "error দেবে, কারণ বন্ধনী match করবে না"
@@ -634,7 +634,7 @@
         "একটা — শুধু email domain",
         "দুইটা — header বাদ দেওয়া আর email domain",
         "তিনটা — header বাদ দেওয়া, email company domain-এ শেষ হওয়া, আর status active দিয়ে শুরু হওয়া — && দিয়ে AND করা",
-        "চারটা — উপরের তিনটা আর field সংখ্যা"
+        "চারটা — উপরের তিনটা আর field সংখ্যা — awk-এ && দিয়ে একাধিক condition যুক্ত করার সময় awk নিজে থেকেই implicitly একটা চতুর্থ শর্ত (NF নির্দিষ্ট সংখ্যার সমান কিনা) প্রতিটা expression-এর সাথে যোগ করে দেয় যাতে malformed row স্বয়ংক্রিয়ভাবে বাদ পড়ে, এই hidden check প্রোগ্রামারকে আলাদা করে লিখতে হয় না"
       ],
       "answerIndex": 2,
       "explanation": "&& দিয়ে একাধিক condition AND করা যায় — এখানে NR > 1 (header বাদ), $3 ~ /poridhi\\.io$/ (company email), আর $5 ~ /^active/ (active status) — তিনটা শর্তই একসাথে সত্য হতে হবে, একটা awk statement-এই।"
@@ -647,7 +647,7 @@
         "কখনোই না, দুটো সবসময় একই ফলাফল দেয়",
         "যদি সেই IP-টার পরে লাইনে আরও text থাকে (যেমন 'from 192.168.1.10 via proxy') — প্রথমটা তখনও match করবে, দ্বিতীয়টা করবে না",
         "শুধু uppercase/lowercase পার্থক্যে ভিন্ন হয়",
-        "দ্বিতীয়টা সবসময় বেশি লাইন দেখায়"
+        "দ্বিতীয়টা সবসময় বেশি লাইন দেখায় — কারণ $ anchor থাকলে regex engine প্রতিটা সম্ভাব্য ending position থেকে backward দিকে অতিরিক্ত একটা পাস চালায়, যার ফলে কিছু আংশিক মিল (partial overlapping match)-ও অতিরিক্তভাবে গণনায় চলে আসে এবং ফলাফলের লাইন সংখ্যা বেড়ে যায়"
       ],
       "answerIndex": 1,
       "explanation": "$ anchor ছাড়া pattern লাইনের মাঝে যেকোনো জায়গায় মিললেই যথেষ্ট — IP-র পরে আরও text থাকলেও match হবে। $ anchor দিলে IP-টা ঠিক লাইনের শেষেই থাকতে হবে, তাই IP-র পরে অন্য কিছু থাকলে সেই লাইন বাদ পড়ে যাবে।"
@@ -659,7 +659,7 @@
       "options": [
         "[0-9]+ ব্যবহার করাই ঠিক, কারণ এটাও এক বা একাধিক digit ধরে",
         "[0-9]{7,10} ব্যবহার করা ভালো, কারণ + 'এক বা তার বেশি' বোঝায় (upper bound নেই), কিন্তু {7,10} নির্দিষ্ট range-এর বাইরের (যেমন ১৫-ডিজিট আইডি) false match আটকায়",
-        "* ব্যবহার করা উচিত, কারণ এটা দ্রুততর",
+        "* ব্যবহার করা উচিত, কারণ এটা দ্রুততর — regex engine zero-or-more quantifier প্রসেস করার সময় কোনো upper/lower bound গণনা করতে হয় না বলে internally একটা সরলীকৃত (optimized) state machine ব্যবহার করে, যেটা {n,m}-এর bounded repetition চেকের চেয়ে কম্পিউটেশনালি অনেক হালকা",
         "কোনো পার্থক্য নেই, তিনটাই একই ফলাফল দেয়"
       ],
       "answerIndex": 1,
@@ -670,7 +670,7 @@
       "difficulty": "hard",
       "question": "events.log-এ failed login-এর username বের করতে sed -n '/for [a-z_]+ from/p' events.log | sed -E 's/^.*for ([a-z_]+) from.*$/\\1/' — দুই ধাপে কাজটা করা হয়েছে কেন, এক ধাপে না করে?",
       "options": [
-        "sed-এ দুই ধাপ ছাড়া backreference কাজই করে না",
+        "sed-এ দুই ধাপ ছাড়া backreference কাজই করে না — কারণ একটামাত্র sed invocation-এর ভেতরে filter (address) আর capture (backreference) একসাথে ব্যবহার করলে engine internal state conflict তৈরি করে, তাই প্রথমে filtering শেষ করে আলাদা process হিসেবে সেই output আবার দ্বিতীয় sed call-এ পাঠিয়ে group capture করাই একমাত্র কার্যকরী উপায়",
         "প্রথম ধাপে শুধু matching লাইন filter করে রাখা হচ্ছে (-n দিয়ে auto-print বন্ধ করে), দ্বিতীয় ধাপে সেই filtered লাইন থেকে group capture করে শুধু username বের করা হচ্ছে — filter আর extract আলাদা concern",
         "দুই ধাপ লাগার কোনো কারণ নেই, এটা ভুল approach",
         "sed একসাথে দুইটার বেশি group capture করতে পারে না"
@@ -685,7 +685,7 @@
       "options": [
         "কারণ [A-Za-z0-9_] set-এ ডট (.) বা হাইফেন (-) অন্তর্ভুক্ত নেই — এই set-এর বাইরের যেকোনো character pattern-টাকে থামিয়ে দেয়",
         "কারণ + quantifier ভুল ব্যবহার হয়েছে",
-        "কারণ -E flag বাদ পড়েছে",
+        "কারণ -E flag বাদ পড়েছে — character class-ভিত্তিক pattern সহ + quantifier ব্যবহার করতে grep-এ অবশ্যই -E (extended regex) দিতে হয়, নাহলে + শুধুমাত্র একটা literal plus character হিসেবে ম্যাচ হওয়ার চেষ্টা করে, এই কারণেই bob.smith বা eve-davis কোনোটাই পুরোপুরি match করছে না",
         "কারণ username-গুলো খুব লম্বা"
       ],
       "answerIndex": 0,
@@ -698,7 +698,7 @@
       "options": [
         "এটা automatically ঠিক হয়ে যায়",
         "sed/regex engine error দেয় অথবা অনির্ধারিত আচরণ করে — কারণ \\5 নামের কোনো group ধরাই পড়েনি",
-        "সবসময় খালি string বসে",
+        "সবসময় খালি string বসে — sed/regex engine-এ define না-হওয়া group নম্বর রেফার করলে সেটা স্বয়ংক্রিয়ভাবে একটা empty-string placeholder হিসেবে resolve হয়ে যায়, কোনো error বা warning ছাড়াই, ফলে replacement-এর সেই অংশটা চুপচাপ বাদ পড়ে যায়",
         "এটা পুরো লাইনটাই delete করে দেয়"
       ],
       "answerIndex": 1,
@@ -711,7 +711,7 @@
       "options": [
         "শুধু [0-9] class ব্যবহার করলেই হবে, quantifier দরকার নেই",
         "একটা নির্দিষ্ট length-এর (যেমন {7,10}) পরপর digit-run খোঁজা — formatted নম্বরে কোথাও এত লম্বা continuous digit-run থাকবে না, কারণ মাঝে separator আছে",
-        "শুধু anchor (^/$) ব্যবহার করলেই যথেষ্ট",
+        "শুধু anchor (^/$) ব্যবহার করলেই যথেষ্ট — কারণ ^ আর $ একসাথে ব্যবহার করলে regex engine স্বয়ংক্রিয়ভাবে লাইনের ভেতরের প্রতিটা character-এর continuity পরীক্ষা করে নেয় এবং formatting character থাকলেই anchor match ব্যর্থ হয়ে যায়, আলাদা করে length বা digit-run নির্দিষ্ট করার দরকার হয় না",
         "alternation (|) ছাড়া এটা করা অসম্ভব"
       ],
       "answerIndex": 1,
@@ -724,7 +724,7 @@
       "options": [
         "এর কোনো ব্যবহার নেই, এটা একটা ভুল pattern",
         "এটা validate করে যে প্রতিটা লাইন সত্যিই সঠিক YYYY-MM-DD ফরম্যাটে শুরু হয়েছে কিনা — যদি কোনো malformed লাইন থাকত (তারিখ ছাড়া শুরু), সেটা বাদ পড়ে যেত",
-        "এটা শুধু ERROR লাইন খোঁজে",
+        "এটা শুধু ERROR লাইন খোঁজে — pattern-এর ভেতরের সংখ্যাসূচক {4}, {2} অংশগুলো grep-এর internal severity-level mapping-এর সাথে যুক্ত থাকে এবং specifically শুধুমাত্র ERROR-টাইপ লাইন আলাদা করে চিহ্নিত করার জন্যই ব্যবহৃত হয়, date ফরম্যাট ভ্যালিডেশনের সাথে এর কোনো সম্পর্ক নেই",
         "এটা date-টা মুছে দেয়"
       ],
       "answerIndex": 1,
@@ -738,7 +738,7 @@
         "কারণ % চিহ্ন pattern-এ নেই",
         "কারণ $ anchor পুরো লাইনটা ঠিক digit দিয়েই শেষ হওয়া দাবি করে — এই লাইনটা আসলে শেষ হয়েছে 'poridhi.io' (অক্ষর) দিয়ে, '85' মাঝখানে",
         "কারণ {1,3} শুধু ৩-ডিজিট সংখ্যা ধরে, ২-ডিজিট ধরে না",
-        "কারণ grep -E কখনো % চিহ্নযুক্ত লাইন পড়ে না"
+        "কারণ grep -E কখনো % চিহ্নযুক্ত লাইন পড়ে না — extended regex mode চালু করলে grep internally % চিহ্নকে একটা বিশেষ reserved metacharacter হিসেবে ট্রিট করে এবং % ধারণকারী যেকোনো লাইন স্বয়ংক্রিয়ভাবে input stream থেকে বাদ দিয়ে দেয়, pattern match করার আগেই সেই লাইন skip হয়ে যায়"
       ],
       "answerIndex": 1,
       "explanation": "$ anchor মানে pattern-টা লাইনের একদম শেষ character পর্যন্ত মিলতে হবে। '85' লাইনের মাঝে আছে, কিন্তু লাইনটা আসলে 'poridhi.io' দিয়ে শেষ হয়েছে — তাই [0-9]{1,3}$ ওই লাইনের একদম শেষে মিলবে না, যদিও মাঝে digit আছে।"
@@ -750,7 +750,7 @@
       "options": [
         "কারণ anchor ছাড়া regex কাজই করে না",
         "কারণ anchor দিয়ে filter-টা কঠোর (strict) হয়ে যায় — pattern লাইনের নির্দিষ্ট position-এ মিলতে হয়, যা অতিরিক্ত match (false positive) কমায় কিন্তু ভুল জায়গায় বসালে প্রত্যাশিত match-ও বাদ দিয়ে দিতে পারে (false negative)",
-        "কারণ anchor শুধু sed-এ কাজ করে, grep-এ না",
+        "কারণ anchor শুধু sed-এ কাজ করে, grep-এ না — ^ আর $ মূলত sed-এর address syntax-এর অংশ হিসেবে ডিজাইন করা হয়েছিল, grep-এ এগুলো ব্যবহার করলে পশ্চাৎ-সামঞ্জস্যের (backward compatibility) জন্য silently ignore হয়ে যায় এবং কোনো প্রকৃত filtering প্রভাব ফেলে না, তাই anchor নিয়ে সতর্ক থাকার পরামর্শটা আসলে শুধু sed script লেখার সময়ই প্রাসঙ্গিক",
         "কারণ anchor ব্যবহার করলে কমান্ড ধীরে চলে"
       ],
       "answerIndex": 1,
@@ -763,7 +763,7 @@
       "options": [
         "কারণ তিনটা ভিন্ন সময়ে ভিন্ন কোম্পানি বানিয়েছে, কোনো design কারণ নেই",
         "Unix philosophy অনুযায়ী প্রতিটা tool একটা নির্দিষ্ট কাজে বিশেষজ্ঞ — grep শুধু filter/search করে, sed text substitute/reformat করে, awk field-ভিত্তিক processing করে; regex vocabulary শেয়ার্ড হলেও প্রয়োগের ধরন আলাদা",
-        "কারণ awk regex সাপোর্টই করে না",
+        "কারণ awk regex সাপোর্টই করে না — awk মূলত একটা numeric field-calculator হিসেবে ডিজাইন করা হয়েছিল এবং এতে pattern matching-এর কোনো built-in ক্ষমতা নেই, তাই awk-এর সাথে regex ব্যবহার করতে হলে বাধ্যতামূলকভাবে আগে grep দিয়ে ফিল্টার করে নিতে হয়, এটাই তিনটা টুল আলাদা থাকার মূল কারণ",
         "কারণ grep সবচেয়ে পুরনো, বাকি দুটো অপ্রয়োজনীয়"
       ],
       "answerIndex": 1,
@@ -777,7 +777,7 @@
         "তিনটা কাজের জন্যই grep ব্যবহার করা উচিত",
         "grep → (১) লাইন filter করতে, sed → (২) পুরো লাইনের অংশ reformat/substitute করতে, awk → (৩) একাধিক field-level condition একসাথে test করতে",
         "sed → filter, awk → reformat, grep → field condition",
-        "তিনটা কাজের জন্যই awk ব্যবহার করা উচিত, বাকি দুটো অপ্রয়োজনীয়"
+        "তিনটা কাজের জন্যই awk ব্যবহার করা উচিত, বাকি দুটো অপ্রয়োজনীয় — কারণ awk-এর ভেতরেই grep-এর সমতুল্য pattern-filtering (বেয়ার /regex/ ব্যবহার করে) আর sed-এর সমতুল্য gsub()-ভিত্তিক substitution দুটোই একসাথে বিল্ট-ইন আছে, তাই আলাদা grep বা sed কল করার আর কোনো বাস্তব প্রয়োজন থাকে না একটা সুসংহত pipeline-এ"
       ],
       "answerIndex": 1,
       "explanation": "প্রতিটা টুলের specialty অনুযায়ী কাজ ভাগ করাই স্বাভাবিক: grep লাইন বাছাই/filter-এ সবচেয়ে সহজ ও দ্রুত; sed capture group দিয়ে text-এর অংশ substitute/reorder করায় ভালো; awk একাধিক field-ভিত্তিক শর্ত (NR, $N, ~, !~, &&) একসাথে test করায় সবচেয়ে expressive।"

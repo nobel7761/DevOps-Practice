@@ -17,10 +17,12 @@ import type { CourseMilestone, CourseModule } from "@/lib/data/course-modules";
 
 export default function InterviewScreen({
   moduleId,
+  courseId,
   milestone,
   module,
 }: {
   moduleId: string;
+  courseId: string;
   milestone: CourseMilestone;
   module: CourseModule;
 }) {
@@ -30,7 +32,7 @@ export default function InterviewScreen({
   const { language } = useLanguage();
 
   const [index, setIndex] = useState(0);
-  const [commands, setCommands] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, GradeResult>>({});
   const [finished, setFinished] = useState(false);
   const [grading, setGrading] = useState(false);
@@ -60,13 +62,13 @@ export default function InterviewScreen({
     };
   }, [language, spec, moduleId, translatedQuestions]);
 
-  const handleSubmit = async (questionId: string, command: string) => {
-    setCommands((prev) => ({ ...prev, [questionId]: command }));
+  const handleSubmit = async (questionId: string, answer: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
     setGrading(true);
     try {
       const res = await client.post<GradeResult>(
         `/interview/${moduleId}/grade`,
-        { questionId, command },
+        { questionId, answer },
       );
       setResults((prev) => ({ ...prev, [questionId]: res.data }));
     } finally {
@@ -76,9 +78,9 @@ export default function InterviewScreen({
 
   if (loading || !spec) {
     return (
-      <main className="mx-auto w-[95%] max-w-3xl py-8 sm:py-12">
+      <div className="mx-auto w-[95%] max-w-3xl py-8 sm:py-12">
         <p className="text-sm text-muted-foreground">Interview load হচ্ছে...</p>
-      </main>
+      </div>
     );
   }
 
@@ -90,14 +92,17 @@ export default function InterviewScreen({
   const answeredCount = Object.keys(results).length;
 
   return (
-    <main className="mx-auto w-[95%] max-w-3xl py-8 sm:py-12">
+    <div className="mx-auto w-[95%] max-w-3xl py-8 sm:py-12">
       <ModuleBreadcrumb
         items={[
           { label: "Home", href: "/" },
-          { label: milestone.title, href: `/?milestone=${milestone.id}` },
+          {
+            label: milestone.title,
+            href: `/course/${courseId}?milestone=${milestone.id}`,
+          },
           {
             label: module.title,
-            href: `/?milestone=${milestone.id}&module=${module.id}`,
+            href: `/course/${courseId}?milestone=${milestone.id}&module=${module.id}`,
           },
           { label: spec.title },
         ]}
@@ -106,9 +111,7 @@ export default function InterviewScreen({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold">{spec.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            DevOps Commands Interview
-          </p>
+          <p className="text-sm text-muted-foreground">AI Interview Practice</p>
         </div>
         {!finished && (
           <Button
@@ -134,7 +137,7 @@ export default function InterviewScreen({
           results={results}
           onRetake={() => {
             setIndex(0);
-            setCommands({});
+            setAnswers({});
             setResults({});
             setFinished(false);
           }}
@@ -147,10 +150,10 @@ export default function InterviewScreen({
               question={question}
               index={index}
               total={displayQuestions.length}
-              command={commands[question.id] ?? ""}
+              answer={answers[question.id] ?? ""}
               result={results[question.id] ?? null}
               submitting={grading}
-              onSubmit={(command) => handleSubmit(question.id, command)}
+              onSubmit={(answer) => handleSubmit(question.id, answer)}
             />
 
             <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
@@ -176,6 +179,6 @@ export default function InterviewScreen({
           </CardContent>
         </Card>
       )}
-    </main>
+    </div>
   );
 }

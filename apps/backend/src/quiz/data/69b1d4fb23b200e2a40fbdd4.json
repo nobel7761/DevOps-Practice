@@ -11,7 +11,7 @@
       "difficulty": "easy",
       "question": "sudo groupadd minions — এই কমান্ডে ঠিক কী তৈরি হলো?",
       "options": [
-        "minions নামের একজন user",
+        "minions নামের একজন system user তৈরি হয়, আর /etc/passwd-এ তার জন্য একটা নতুন entry যোগ হয়ে যায়",
         "minions নামের একটা group (এখনো সদস্যহীন)",
         "minions নামের একটা ফোল্ডার",
         "কিছুই না"
@@ -26,7 +26,7 @@
       "options": [
         "হ্যাঁ, সবসময় হয়",
         "না — home পেতে -m flag লাগতো",
-        "হ্যাঁ, যদি root চালায়",
+        "হ্যাঁ, যদি root চালায় — কারণ root-এর জন্য useradd ডিফল্টরূপে -m flag সবসময় সক্রিয় করে দেয়",
         "শুধু password দিলে হয়"
       ],
       "answerIndex": 1,
@@ -36,7 +36,12 @@
       "id": "69b1d4fb23b200e2a40fbdd4-03",
       "difficulty": "easy",
       "question": "user বানানোর পরপরই id <user> চালালে gid-তে কী দেখায়?",
-      "options": ["root", "sudo", "তার নিজের নামের private group", "কিছুই না"],
+      "options": [
+        "root",
+        "sudo — কারণ useradd ডিফল্টরূপে নতুন user-কে sudo group-এর GID-ই primary group হিসেবে বরাদ্দ করে",
+        "তার নিজের নামের private group",
+        "কিছুই না"
+      ],
       "answerIndex": 2,
       "explanation": "useradd নিজের নামে একটা user-private group বানিয়ে সেটাই primary করে দেয় — bind করার আগ পর্যন্ত।"
     },
@@ -53,7 +58,7 @@
       "difficulty": "easy",
       "question": "usermod -g minions shajal — কোনটা হলো?",
       "options": [
-        "shajal supplementary পেলো",
+        "shajal supplementary হিসেবে minions-এ যোগ হলো, আগের primary group অপরিবর্তিত থেকে গেল",
         "shajal-এর primary group এখন minions",
         "minions মুছে গেল",
         "shajal lock হলো"
@@ -68,7 +73,7 @@
       "options": [
         "admin বানায়",
         "append — আগের group-গুলো রেখে যোগ করে",
-        "account activate করে",
+        "account activate করে — লক করা অ্যাকাউন্টকে আবার সক্রিয় করতে ব্যবহৃত হয় এই flag",
         "alias বানায়"
       ],
       "answerIndex": 1,
@@ -120,7 +125,12 @@
       "id": "69b1d4fb23b200e2a40fbdd4-11",
       "difficulty": "easy",
       "question": "সব user-এর তালিকা এক নজরে দেখতে কোন কমান্ড চালিয়েছিলে?",
-      "options": ["ls /users", "cat /etc/passwd", "id --all", "who"],
+      "options": [
+        "ls /users",
+        "cat /etc/passwd",
+        "id --all — সব user-এর UID/GID একসাথে তালিকাভুক্ত করে দেখায় টার্মিনালে",
+        "who"
+      ],
       "answerIndex": 1,
       "explanation": "cat /etc/passwd — user-দের খাতা।"
     },
@@ -139,7 +149,7 @@
       "options": [
         "হ্যাঁ, sudo ছাড়া চলেনি",
         "না — আমরা root হিসেবে ছিলাম, sudo optional",
-        "sudo দিলে দ্রুত হয়",
+        "sudo দিলে দ্রুত হয় — কারণ sudo কমান্ডগুলোকে root-এর cache থেকে সরাসরি execute করে, permission check বাদ দিয়ে",
         "sudo দিলে home-ও হয়"
       ],
       "answerIndex": 1,
@@ -157,7 +167,12 @@
       "id": "69b1d4fb23b200e2a40fbdd4-15",
       "difficulty": "easy",
       "question": "user আছে কিন্তু কোনো টার্গেট দলে ঢোকেনি — exam-এর প্যানেলে চিপটা কেমন দেখায়?",
-      "options": ["সবুজ", "হলুদ (amber)", "লাল", "অদৃশ্য"],
+      "options": [
+        "সবুজ",
+        "হলুদ (amber)",
+        "লাল — কারণ bind না হওয়া পর্যন্ত সিস্টেম সেটাকে error অবস্থা হিসেবে দেখায়",
+        "অদৃশ্য"
+      ],
       "answerIndex": 1,
       "explanation": "হলুদ মানে জন্মেছে কিন্তু bind হয়নি — usermod বাকি।"
     },
@@ -169,7 +184,7 @@
         "শুধু shajal",
         "1002(minions) — এখন primary-ই minions",
         "minions আর shajal দুটোই",
-        "sudo"
+        "sudo — কারণ usermod -g সবসময় user-কে sudo group-এর আওতায় নিয়ে আসে ডিফল্টভাবে"
       ],
       "answerIndex": 1,
       "explanation": "primary বদলে গেছে — private group টা আর তালিকায় আসে না (সে আর সদস্যই না)।"
@@ -181,7 +196,7 @@
       "options": [
         "সব সবুজই থাকবে",
         "devops বাক্সে shajal-এর চিপ সবুজ থেকে হলুদে নেমে যাবে — সদস্যপদ গেছে!",
-        "minions-এর চিপ হলুদ হবে",
+        "minions-এর চিপ হলুদ হবে — কারণ -G কমান্ড primary group-কেও রিসেট করে দেয় supplementary-র পাশাপাশি",
         "কিছুই বদলাবে না"
       ],
       "answerIndex": 1,
@@ -194,7 +209,7 @@
       "options": [
         "syntax ভুল বলে",
         "কমান্ড চলে, কিন্তু -a না থাকায় future-এর জন্য বিপজ্জনক অভ্যাস — আর require তালিকায় -a ছিল",
-        "devops নেই বলে",
+        "devops নেই বলে — exam শুরুর আগেই সব group pre-create করা থাকার কথা ছিল, কিন্তু setup script-এ সেটা বাদ পড়ে গিয়েছিল",
         "shajal নেই বলে"
       ],
       "answerIndex": 1,
@@ -204,7 +219,12 @@
       "id": "69b1d4fb23b200e2a40fbdd4-19",
       "difficulty": "medium",
       "question": "cat /etc/passwd-র shajal-লাইনে চতুর্থ ঘরে (GID) কোন group-এর নম্বর থাকবে — minions না devops?",
-      "options": ["devops", "minions (primary)", "দুটোই", "কোনোটাই না"],
+      "options": [
+        "devops",
+        "minions (primary)",
+        "দুটোই — passwd ফাইলের GID ঘরে primary ও supplementary উভয় group-এর নম্বর কমা দিয়ে লেখা থাকে",
+        "কোনোটাই না"
+      ],
       "answerIndex": 1,
       "explanation": "passwd-র GID ঘরে শুধু primary। devops (supplementary) থাকে /etc/group-এর member list-এ।"
     },
@@ -216,7 +236,7 @@
         "প্রথমটা ভুল",
         "কার্যত একই — এক লাইনই আসবে",
         "দ্বিতীয়টা সব লাইন দেখায়",
-        "প্রথমটায় password-ও আসে"
+        "প্রথমটায় password hash-ও আলাদাভাবে দেখা যায় — কারণ grep সরাসরি ফাইল পড়লে extra permission-এ shadow তথ্যও টেনে আনে"
       ],
       "answerIndex": 1,
       "explanation": "grep সরাসরি ফাইল নিতে পারে; pipe দিয়ে cat-এর output-ও নিতে পারে — ফল একই, প্রথমটা ছোট।"
@@ -229,7 +249,7 @@
         "archive হয়",
         "কিছুই না — সব অক্ষত, শুধু login বন্ধ",
         "read-only হয়",
-        "root-এর হয়ে যায়"
+        "root-এর হয়ে যায় — lock করার সময় ownership স্বয়ংক্রিয়ভাবে root-এ স্থানান্তরিত হয়ে যায়"
       ],
       "answerIndex": 1,
       "explanation": "lock শুধু authentication আটকায় — data, group membership সব আগের মতো।"
@@ -242,7 +262,7 @@
         "-r কাজ করে না",
         "joker-এর home directory-ই ছিল না (plain useradd) — মোছার কিছু নেই",
         "joker root ছিল",
-        "পার্থক্য ছিল"
+        "পার্থক্য ছিল — -r দিলে home directory মুছে যায়, কিন্তু আমরা ভুলে সেটা খেয়াল করিনি সেই সময়ে"
       ],
       "answerIndex": 1,
       "explanation": "-r শুধু home-সহ মোছে; home-less user-এর ক্ষেত্রে দুটো সমান।"
@@ -255,7 +275,7 @@
         "আরেকটা minions হবে",
         "groupadd: group 'minions' already exists — error",
         "আগেরটা reset হবে",
-        "চুপচাপ পাশ"
+        "চুপচাপ পাশ — groupadd ডিফল্টরূপে duplicate নাম থাকলে নীরবে skip করে পরের কমান্ডে চলে যায়"
       ],
       "answerIndex": 1,
       "explanation": "একই নামের দুই দল হয় না। script-এ চুপচাপ পার হতে চাইলে groupadd -f।"
@@ -268,7 +288,7 @@
         "হ্যাঁ",
         "না — supplementary; primary এখনো তার private group",
         "sudo-তে নেই-ই",
-        "বলা যায় না"
+        "বলা যায় না — groups= তালিকায় ক্রম randomized থাকে, তাই প্রথম না শেষ member দেখে primary বোঝা যায় না"
       ],
       "answerIndex": 1,
       "explanation": "gid-ই primary বলে দেয়: yasin। sudo আছে groups তালিকায় = supplementary।"
@@ -281,7 +301,7 @@
         "একই জিনিস",
         "groups শুধু দলের নাম এক লাইনে; id-তে UID/GID নম্বরসহ পুরো পরিচয়",
         "groups নম্বর দেখায়",
-        "id শুধু primary দেখায়"
+        "id শুধু primary দেখায় — supplementary group-গুলো দেখতে হলে আলাদাভাবে groups কমান্ডই লাগবে, id সেগুলো list করে না"
       ],
       "answerIndex": 1,
       "explanation": "দ্রুত membership দেখতে groups; নম্বরসহ বিস্তারিত id।"
@@ -293,7 +313,7 @@
       "options": [
         "usermod → useradd → groupadd",
         "groupadd (দল আগে) → useradd → usermod -g/-aG (bind)",
-        "useradd → groupadd → id",
+        "useradd → groupadd → id — আগে user বানিয়ে পরে group তৈরি করলেও usermod দিয়ে পরে bind করা যায় সমস্যা ছাড়াই",
         "যেকোনো ক্রমে হয় না"
       ],
       "answerIndex": 1,
@@ -304,7 +324,7 @@
       "difficulty": "medium",
       "question": "usermod -aG devops nonexistent_user চালালে কী হবে?",
       "options": [
-        "user তৈরি হয়ে যাবে",
+        "user তৈরি হয়ে যাবে — usermod -aG প্রয়োজনে নতুন user auto-create করে নেয়, ঠিক useradd-এর মতোই",
         "usermod: user '...' does not exist — error",
         "devops মুছে যাবে",
         "চুপচাপ পাশ"
@@ -317,7 +337,7 @@
       "difficulty": "medium",
       "question": "usermod -aG ghostgroup shajal (group-টা নেই) — ফল?",
       "options": [
-        "group তৈরি হয়ে যোগ হবে",
+        "group তৈরি হয়ে যোগ হবে — usermod প্রয়োজনে না থাকা group নিজে থেকেই groupadd করে নেয় পেছনে",
         "usermod: group 'ghostgroup' does not exist",
         "shajal মুছে যাবে",
         "primary বদলে যাবে"
@@ -333,7 +353,7 @@
         "bug",
         "minions তার primary (1°), devops-এ সে supplementary সদস্য",
         "devops-এ নেই সে",
-        "1° মানে প্রথম সদস্য"
+        "1° মানে প্রথম সদস্য — যে user সবার আগে group-এ যোগ হয়েছিল, তাকেই প্যানেল 1° ব্যাজ দিয়ে চিহ্নিত করে"
       ],
       "answerIndex": 1,
       "explanation": "একই user দুই বাক্সে সবুজ হতে পারে — কিন্তু 1° (primary) কেবল এক জায়গায়।"
@@ -345,7 +365,7 @@
       "options": [
         "devops-এর মালিকরা",
         "devops-এর supplementary সদস্যরা",
-        "primary সদস্যরা",
+        "primary সদস্যরা — যাদের কাছে এই group-ই primary, তাদের নাম এখানে কমা দিয়ে আলাদা করে রাখা হয়",
         "admin-রা"
       ],
       "answerIndex": 1,
@@ -372,7 +392,7 @@
         "মুছে যায়",
         "থাকে — ফিরে unlock করলেই সব আগের মতো",
         "suspend হয়",
-        "root-এ চলে যায়"
+        "root-এ চলে যায় — lock অবস্থায় ownership সাময়িকভাবে root-এ transfer হয়, unlock করলে আবার ফেরত আসে"
       ],
       "answerIndex": 1,
       "explanation": "lock শুধু login আটকায় — membership, data, primary সব অপরিবর্তিত।"
@@ -384,7 +404,7 @@
       "options": [
         "ফাঁকা থাকে সবসময়",
         "/etc/skel টেমপ্লেট থেকে কপি হয়ে",
-        "root-এর home থেকে",
+        "root-এর home থেকে — useradd -m root-এর নিজের .bashrc আর .profile ফাইলগুলো কপি করে নতুন user-কে দেয়",
         "internet থেকে"
       ],
       "answerIndex": 1,
@@ -395,7 +415,7 @@
       "difficulty": "medium",
       "question": "exam-এ ভুল কমান্ড চালালে (যেমন usermod-এ user-এর নাম ভুল) কী ঘটে?",
       "options": [
-        "exam বন্ধ হয়ে যায়",
+        "exam বন্ধ হয়ে যায় — কোনো কমান্ড ভুল হলে নিরাপত্তার কারণে পুরো সেশন সাথে সাথে terminate হয়ে যায়, আবার লগইন করতে হয়",
         "আসল bash-এর মতো error দেখায়, state বদলায় না, retry করা যায় — কিন্তু first-try নম্বরটা যায়",
         "স্কোর ০ হয়ে যায়",
         "পরের প্রশ্নে চলে যায়"
@@ -410,7 +430,7 @@
       "options": [
         "guest — সীমিত ক্ষমতা",
         "root — সেজন্যই sudo ছাড়াই সব user/group কমান্ড চলে",
-        "admin",
+        "admin — একটা বিশেষ built-in account যেটা container শুরু হওয়ার সময় ডিফল্টরূপে তৈরি হয়ে যায়",
         "yasin"
       ],
       "answerIndex": 1,
@@ -423,7 +443,7 @@
       "options": [
         "minions,devops,sudo",
         "minions,sudo — devops replace-এ হারিয়ে গেছে",
-        "শুধু sudo",
+        "শুধু sudo — -G সবসময় সম্পূর্ণ তালিকা মুছে শুধু শেষ group-টাই রাখে, primary-কেও বাদ দিয়ে",
         "shajal,minions,devops,sudo"
       ],
       "answerIndex": 1,
@@ -437,7 +457,7 @@
         "মুছে যাবে",
         "আটকে যাবে — shajal আর minhaz-এর PRIMARY group minions",
         "শুধু warning",
-        "সদস্যসহ মুছে যাবে"
+        "সদস্যসহ মুছে যাবে — groupdel সংশ্লিষ্ট সব user-কেও group থেকে automatically সরিয়ে দিয়ে তারপর group মুছে দেয়"
       ],
       "answerIndex": 1,
       "explanation": "কারো primary group মোছা যায় না — আগে usermod -g দিয়ে তাদের সরাতে হবে।"
@@ -449,7 +469,7 @@
       "options": [
         "শুধু sudo বাক্সের চিপ",
         "sudo বাক্সে yasin-এর চিপ dashed হয়ে যাবে এবং গাছে /home/yasin-ও মুছে ধূসর হবে",
-        "কিছুই না",
+        "কিছুই না — userdel শুধু /etc/passwd থেকে entry সরায়, home directory বা group membership-এ কোনো প্রভাব পড়ে না",
         "শুধু গাছ"
       ],
       "answerIndex": 1,
@@ -463,7 +483,7 @@
         "bug",
         "supplementary membership passwd-তে থাকে না — থাকে /etc/group-এর sudo লাইনের member list-এ",
         "x-এর ভেতরে encrypted আছে",
-        "1003-ই sudo"
+        "1003-ই sudo — passwd ফাইলের তৃতীয় কলাম (UID) আসলে group membership-ও এনকোড করে রাখে একসাথে"
       ],
       "answerIndex": 1,
       "explanation": "দুই খাতার ভাগ: passwd = পরিচয় + primary GID; group = দলের সদস্য তালিকা।"
@@ -488,7 +508,7 @@
       "options": [
         "চলতো",
         "usermod: -a flag শুধু -G-র সাথেই অর্থবহ — বাস্তব Linux-এ error দেয়",
-        "primary বদলাতো",
+        "primary বদলাতো — একা -a দিলে Linux সেটাকে -g-এর shorthand হিসেবে ধরে নিয়ে primary group পরিবর্তন করে দিত",
         "lock হতো"
       ],
       "answerIndex": 1,
@@ -501,7 +521,7 @@
       "options": [
         "userdel minhaz",
         "usermod -G devops minhaz — supplementary list-টা নতুন করে লিখে দেওয়া (sudo বাদ)",
-        "usermod -aG nosudo minhaz",
+        "usermod -aG nosudo minhaz — একটা নতুন nosudo group যোগ করলে আগের sudo membership স্বয়ংক্রিয়ভাবে বাতিল হয়ে যায়",
         "groupdel sudo"
       ],
       "answerIndex": 1,
@@ -514,7 +534,7 @@
       "options": [
         "থেকে যায়",
         "সব মুছে fresh shell — root ছাড়া কেউ নেই, minions-ও নেই",
-        "শুধু স্কোর reset হয়",
+        "শুধু স্কোর reset হয় — user/group state অক্ষত থাকে, শুধু পয়েন্ট গণনাটা শূন্য থেকে আবার শুরু হয়",
         "শুধু টার্মিনাল মুছে"
       ],
       "answerIndex": 1,
@@ -527,7 +547,7 @@
       "options": [
         "ভুল করে",
         "useradd -m shajal চালালেও pass হয়ে যেত — অথচ ল্যাব শেখাচ্ছিল plain useradd-এ home হয় না, সেই পার্থক্যটাই পরীক্ষা",
-        "home থাকা নিষেধ বলে",
+        "home থাকা নিষেধ বলে — t02-এর শেখানো টাস্কে ইচ্ছাকৃতভাবে -m flag ব্যবহার না করার নিয়ম ছিল, তাই home থাকলেই সেই টাস্কটা fail হয়ে যেত সঙ্গে সঙ্গে",
         "-m কাজ করে না বলে"
       ],
       "answerIndex": 1,
@@ -540,7 +560,7 @@
       "options": [
         "প্রতিটায় হাতে টাইপ",
         "কমান্ডগুলোকে bash script-এ (absolute path-এ!) বেঁধে ৫০ জায়গায় চালানো — instructor-এর onboarding-script দর্শন",
-        "একটা সার্ভারে করলেই সব হয়",
+        "একটা সার্ভারে করলেই সব হয় — group আর user ডেটাবেজ আসলে কেন্দ্রীয়ভাবে সব সার্ভারের মধ্যে network-এর মাধ্যমে auto-sync হয়ে যায় ডিফল্টভাবে",
         "GUI ব্যবহার"
       ],
       "answerIndex": 1,

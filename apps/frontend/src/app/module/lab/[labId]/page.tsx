@@ -1,3 +1,4 @@
+import ModulePageShell from "@/components/modules/course-shell/ModulePageShell";
 import { notFound } from "next/navigation";
 import LabDetailScreen from "@/components/modules/lab/LabDetailScreen";
 import { getLabContent } from "@/lib/data/lab-content";
@@ -17,10 +18,13 @@ export default async function LabPage({
   }
 
   return (
-    <LabDetailScreen
-      lab={lab}
-      milestone={location.milestone}
-      module={location.module}
-    />
+    <ModulePageShell courseId={location.courseId} moduleId={location.module.id}>
+      <LabDetailScreen
+        lab={lab}
+        courseId={location.courseId}
+        milestone={location.milestone}
+        module={location.module}
+      />
+    </ModulePageShell>
   );
 }

@@ -1,0 +1,17 @@
+{
+  "type": "company",
+  "text": "Stripe-এর API-তে কেউ হঠাৎ request-এর বন্যা পাঠালে বাকিদের payment কিভাবে চলতে থাকে?\nDay 18/100 · Rate Limiting\n\nআজ পড়লাম Stripe-এর engineering blog \"Scaling your API with rate limiters\" (2017)।\n\nসমস্যা: API সবার ভাগের জিনিস। একজনের ভুল script বাকি সবার payment ধীর করে দিতে পারে।\n\nতারা চার স্তরের সুরক্ষা বানিয়েছে:\n1. **Request Rate Limiter**: প্রতি user প্রতি সেকেন্ডে কয়টা request পাঠাতে পারবে। Blog-এ এটাকেই সবচেয়ে গুরুত্বপূর্ণ বলা হয়েছে।\n2. **Concurrent Requests Limiter**: একসাথে কয়টা request চলমান থাকতে পারবে।\n3. **Fleet Usage Load Shedder**: পুরো infrastructure-এর একটা অংশ সবসময় critical request-এর জন্য রাখা।\n4. **Worker Utilization Load Shedder**: worker-রা চাপে পড়লে কম জরুরি traffic ধাপে ধাপে বাদ, critical সবার শেষে।\n\nভেতরে **Token Bucket** algorithm, আর হিসাব থাকে **Redis**-এ, যাতে সব server একই সংখ্যা দেখে।\n\nআরেকটা পরামর্শ মনে ধরেছে: নতুন limiter আগে শুধু চুপচাপ দেখুক কাদের আটকাত, তারপর সত্যি চালু হোক।\n\nআমার জন্য শিক্ষা: rate limiting একজনের বাড়াবাড়ি থামায়, load shedding সবাই মিলে বেশি হলে system বাঁচায়। হাসপাতালের জরুরি বিভাগের মতো: ভিড়ে সাধারণ সিরিয়াল পিছায়, emergency থামে না।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার কোনো API-তে কি কখনো একজন client বা bot বাকি সবাইকে ধীর করে দিয়েছিল? কিভাবে সামলেছিলেন?]\n\nআপনার system-এ সবার আগে কোন endpoint-এ rate limit বসাতেন, আর কেন? 👇",
+  "personalPrompt": "আপনার কোনো API-তে কি কখনো একজন client বা bot বাকি সবাইকে ধীর করে দিয়েছিল? কিভাবে সামলেছিলেন?",
+  "firstComment": "পুরো lesson, পাঁচটা algorithm-এর diagram আর নিজে চালিয়ে দেখার Rate Limiter simulator এখানে: {link}\n\nউৎস: Stripe Engineering Blog, \"Scaling your API with rate limiters\" (2017)",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#RateLimiting",
+    "#APIDesign",
+    "#BackendEngineering"
+  ],
+  "visual": "day-018-main",
+  "sources": [
+    "Stripe Engineering Blog — Paul Tarjan, \"Scaling your API with rate limiters\", March 2017 (stripe.com/blog/rate-limiters): চার ধরনের limiter (request rate limiter, concurrent requests limiter, fleet usage load shedder, worker utilization load shedder), token bucket, Redis, নতুন limiter আগে dark launch করার পরামর্শ।"
+  ]
+}

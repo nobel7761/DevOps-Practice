@@ -13,7 +13,7 @@
       "question": "`sudo mn --topo=single,3 --controller=none --mac` কমান্ডে `--topo=single,3` অংশটুকু কী তৈরি করে?",
       "options": [
         "একটা single switch-এর সাথে ৩টা host যুক্ত topology",
-        "৩টা আলাদা switch",
+        "৩টা আলাদা switch — প্রতিটা switch নিজের মতো independently চলবে এবং একে অপরের সাথে কোনো link ছাড়াই আলাদা আলাদা broadcast domain তৈরি করবে, কোনো host common switch-এ যুক্ত থাকবে না",
         "৩টা controller",
         "৩টা VLAN"
       ],
@@ -26,7 +26,7 @@
       "question": "`mn` কমান্ডে `--controller=none` flag দিলে কী হয়?",
       "options": [
         "কোনো SDN controller connect হয় না, flow rule manually দিতে হয়",
-        "একটা default controller auto-install হয়",
+        "একটা default controller auto-install হয় — Mininet নিজে থেকে একটা built-in lightweight reference controller চালু করে দেয়, যেটা L2 learning switch logic দিয়ে flow rule automatically পাঠাতে শুরু করে",
         "switch বন্ধ হয়ে যায়",
         "সব host disconnect হয়ে যায়"
       ],
@@ -39,7 +39,7 @@
       "question": "`mn` কমান্ডে `--mac` flag-এর কাজ কী?",
       "options": [
         "host গুলোকে সহজে চেনা যায় এমন simplified MAC address দেয়",
-        "MAC address encrypt করে",
+        "MAC address encrypt করে — প্রতিটা host-এর MAC address cryptographic hash দিয়ে secure করে রাখে, যাতে packet sniffing tool দিয়ে আসল hardware address দেখা না যায়",
         "MAC address মুছে ফেলে",
         "একটা নতুন MAC address generator চালু করে"
       ],
@@ -52,7 +52,7 @@
       "question": "Mininet CLI-তে `dump` কমান্ড কী দেখায়?",
       "options": [
         "সব node (host, switch)-এর বিস্তারিত অবস্থা (interface, IP, process id)",
-        "শুধু switch-এর flow table",
+        "শুধু switch-এর flow table — প্রতিটা installed match-action rule-এর priority, counter, এবং timeout value-সহ বিস্তারিত তালিকা, host বা process সম্পর্কে কোনো তথ্য দেখায় না",
         "শুধু host-দের ping result",
         "পুরো internet-এর topology"
       ],
@@ -66,7 +66,7 @@
       "options": [
         "node গুলোর মধ্যে connection/wiring mapping",
         "প্রতিটা flow rule-এর priority",
-        "internet speed",
+        "internet speed — প্রতিটা host থেকে একটা standard speed-test server-এ গিয়ে download/upload bandwidth measure করে real-time graph আকারে দেখায়",
         "host-দের password"
       ],
       "answerIndex": 0,
@@ -78,7 +78,7 @@
       "question": "Mininet CLI-র ভেতরে `sh` কমান্ডের কাজ কী?",
       "options": [
         "underlying Linux shell-এ একটা command চালানো",
-        "একটা নতুন host তৈরি করা",
+        "একটা নতুন host তৈরি করা — Mininet CLI-র ভেতরে থেকেই topology-তে dynamically আরেকটা virtual host যোগ করে তাকে স্বয়ংক্রিয়ভাবে switch-এর একটা নতুন port-এর সাথে সংযুক্ত করে দেয়",
         "controller restart করা",
         "flow table মুছে ফেলা"
       ],
@@ -93,7 +93,7 @@
         "Open vSwitch-এর OpenFlow switch control/management command-line tool",
         "একটা web browser",
         "একটা text editor",
-        "একটা package manager"
+        "একটা package manager — Linux system-এ software install, update এবং uninstall করার জন্য ব্যবহৃত command-line utility, যা dependency resolve করে repository থেকে package নামিয়ে আনে"
       ],
       "answerIndex": 0,
       "explanation": "`ovs-ofctl` হলো Open vSwitch-এর command-line utility, যা দিয়ে OpenFlow-compatible switch-এর flow table query এবং manage করা যায়।"
@@ -104,7 +104,7 @@
       "question": "`ovs-ofctl add-flow` কমান্ড মূলত কী করে?",
       "options": [
         "switch-এর flow table-এ নতুন একটা flow rule যোগ করে",
-        "একটা নতুন switch তৈরি করে",
+        "একটা নতুন switch তৈরি করে — পুরো topology-তে dynamically আরেকটা OVS switch instance স্পন করে এবং তাকে existing network-এর সাথে একটা নতুন trunk link দিয়ে যুক্ত করে দেয়",
         "controller install করে",
         "host delete করে"
       ],
@@ -118,7 +118,7 @@
       "options": [
         "switch s1-তে বর্তমানে ইনস্টল করা সব flow rule",
         "switch s1-এর CPU usage",
-        "host-দের তালিকা",
+        "host-দের তালিকা — switch s1-এর সাথে connected প্রতিটা host-এর নাম, IP address, এবং MAC address একটা সারণী আকারে প্রদর্শন করে, flow rule সম্পর্কিত কোনো তথ্য দেখায় না",
         "controller-এর IP address"
       ],
       "answerIndex": 0,
@@ -130,7 +130,7 @@
       "question": "`ovs-ofctl del-flows s1` কমান্ড চালালে কী হয়?",
       "options": [
         "switch s1-এর সব flow entry মুছে যায়",
-        "switch s1 বন্ধ হয়ে যায়",
+        "switch s1 বন্ধ হয়ে যায় — পুরো OVS switch process terminate হয়ে যায় এবং তার সাথে যুক্ত সব interface physically down হয়ে যায়, পুনরায় চালু করতে switch আবার তৈরি করতে হয়",
         "একটা নতুন flow entry যোগ হয়",
         "host গুলো restart হয়"
       ],
@@ -144,7 +144,7 @@
       "options": [
         "topology-র প্রতিটা host থেকে বাকি সব host-এ ping পাঠিয়ে connectivity test করা",
         "শুধু একটা নির্দিষ্ট host ping করা",
-        "controller-কে ping করা",
+        "controller-কে ping করা — SDN controller process-টা এখনো live আছে কিনা তা যাচাই করতে শুধুমাত্র controller-এর IP address-এ ICMP packet পাঠিয়ে response measure করে, host-দের মধ্যে connectivity-র সাথে এর সম্পর্ক নেই",
         "flow table reset করা"
       ],
       "answerIndex": 0,
@@ -158,7 +158,7 @@
         "switch traditional Layer 2 learning switch-এর মতো আচরণ করবে",
         "switch সব packet drop করবে",
         "switch শুধু broadcast করবে",
-        "switch controller-কে packet পাঠাবে"
+        "switch controller-কে packet পাঠাবে — প্রতিটা আসা packet নিজে কোনো decision না নিয়ে সরাসরি controller-এর কাছে packet-in message আকারে forward করে দেবে, যদিও এখানে কোনো controller connected নেই"
       ],
       "answerIndex": 0,
       "explanation": "`action=normal` দিলে switch built-in default switching logic ব্যবহার করে — অর্থাৎ MAC address শিখে (learn) সাধারণ Ethernet switch-এর মতো forward করে।"
@@ -169,7 +169,7 @@
       "question": "flow rule-এ `in_port=1` match field দিয়ে কী বোঝানো হয়?",
       "options": [
         "port 1 দিয়ে আসা packet-এর সাথে এই rule মিলবে",
-        "port 1-এ packet পাঠানো হবে",
+        "port 1-এ packet পাঠানো হবে — এটা একটা action field, যা বলে দেয় match হওয়া প্রতিটা packet সবসময় switch-এর port 1 দিয়ে output করে পাঠিয়ে দিতে হবে, input port-এর সাথে এর কোনো সম্পর্ক নেই",
         "port 1 বন্ধ করে দেওয়া হবে",
         "host 1 মুছে ফেলা হবে"
       ],
@@ -183,7 +183,7 @@
       "options": [
         "match হওয়া packet-টা port 2-তে পাঠিয়ে দিতে হবে",
         "port 2 বন্ধ করে দিতে হবে",
-        "packet-টা delete করতে হবে",
+        "packet-টা delete করতে হবে — output action মূলত OpenFlow-এ drop-এর একটা বিশেষ রূপ, যেখানে নির্দিষ্ট port number আসলে সেই packet-কে কোন reason code দিয়ে বাতিল করতে হবে তা নির্দেশ করে",
         "port 2-এর IP পরিবর্তন করতে হবে"
       ],
       "answerIndex": 0,
@@ -195,7 +195,7 @@
       "question": "flow rule-এ `priority` field মূলত কী নির্ধারণ করে?",
       "options": [
         "একাধিক rule match করলে কোনটা আগে প্রয়োগ হবে",
-        "flow rule কতক্ষণ valid থাকবে",
+        "flow rule কতক্ষণ valid থাকবে — প্রতিটা rule কত সেকেন্ড পর automatically expire হয়ে flow table থেকে মুছে যাবে তার timeout value নির্ধারণ করে, একাধিক rule match করলে কোনটা আগে প্রয়োগ হবে তার সাথে সম্পর্কহীন",
         "packet-এর গতি",
         "host-এর IP address"
       ],
@@ -221,7 +221,7 @@
       "question": "`ovs-ofctl show s1` আউটপুটে `dpid` কী বোঝায়?",
       "options": [
         "switch-এর unique identifier (datapath ID)",
-        "switch-এর IP address",
+        "switch-এর IP address — network layer-এ অন্য device-দের সাথে communicate করার জন্য switch-কে assign করা একটা dotted-decimal address, যা DHCP অথবা manual configuration দিয়ে সেট করা হয়",
         "host-এর সংখ্যা",
         "controller-এর নাম"
       ],
@@ -234,7 +234,7 @@
       "question": "`ovs-ofctl show s1` আউটপুটে `n_tables:254` কী বোঝায়?",
       "options": [
         "switch সর্বোচ্চ ২৫৪টা flow table সাপোর্ট করে",
-        "switch-এ ২৫৪টা host যুক্ত আছে",
+        "switch-এ ২৫৪টা host যুক্ত আছে — বর্তমানে এই switch-এর সাথে physically সংযুক্ত virtual host-এর সর্বমোট সংখ্যা, যাদের প্রতিটার নিজস্ব MAC address flow table-এ আলাদাভাবে register করা আছে",
         "switch-এর ২৫৪টা port আছে",
         "২৫৪টা controller connected আছে"
       ],
@@ -260,7 +260,7 @@
       "question": "`--controller=none` দিয়ে switch চালু করার ঠিক পরে, কোনো flow rule add করার আগে, switch-এর flow table-এ কী থাকে?",
       "options": [
         "কোনো flow rule থাকে না (খালি থাকে)",
-        "একটা default allow-all rule থাকে",
+        "একটা default allow-all rule থাকে — OVS প্রতিটা নতুন switch তৈরির সময় স্বয়ংক্রিয়ভাবে একটা wildcard priority=0 rule বসিয়ে দেয় যা সব incoming traffic কে স্বাভাবিক L2 learning switch-এর মতো forward করে দেয়",
         "আগের lab-এর সব rule থেকে যায়",
         "শুধু ARP rule থাকে"
       ],
@@ -287,7 +287,7 @@
       "options": [
         "port 1 দিয়ে আসা এবং port 2-তে যাওয়া traffic (এক-মুখী)",
         "port 2 দিয়ে আসা সব traffic",
-        "সব port-এর সব traffic",
+        "সব port-এর সব traffic — in_port field উল্লেখ থাকলেও OVS বাস্তবে সেটা ignore করে প্রতিটা connected port থেকে আসা প্রতিটা packet-ই port 2-তে forward করে দেয়, নির্দিষ্ট source port filter করে না",
         "শুধু broadcast traffic"
       ],
       "answerIndex": 0,
@@ -299,7 +299,7 @@
       "question": "lab-এ h1 ও h2-এর মধ্যে ping কাজ করলেও h3 থেকে h2-তে ping fail করে কেন?",
       "options": [
         "port 3 (h3) থেকে আসা packet-এর জন্য কোনো flow rule তখনো যোগ করা হয়নি",
-        "h3-এর IP address ভুল",
+        "h3-এর IP address ভুল — Mininet topology তৈরির সময় --mac flag দেওয়ার পরও h3-কে ভুলবশত h1 বা h2-এর সাথে duplicate IP address assign করা হয়েছে, যার ফলে IP conflict-এর কারণে ping fail করছে",
         "h3 physically disconnected",
         "h2 বন্ধ হয়ে গেছে"
       ],
@@ -313,7 +313,7 @@
       "options": [
         "port 3 দিয়ে আসা packet port 1 ও port 2 — দুই জায়গাতেই পাঠানো",
         "port 3 বন্ধ করে দেওয়া",
-        "port 1 আর port 2-কে merge করা",
+        "port 1 আর port 2-কে merge করা — এই দুইটা physical port-কে একটাই logical bonded interface বানিয়ে দেয়, যার ফলে উভয় port একসাথে একটা single higher-bandwidth link হিসেবে কাজ করতে শুরু করে",
         "port 3-এর traffic drop করা"
       ],
       "answerIndex": 0,
@@ -339,7 +339,7 @@
       "options": [
         "একই match field হলে আগের rule নতুনটা দিয়ে replace হয়",
         "দুইটা rule একসাথে thake, কোনোটাই বাদ যায় না",
-        "switch crash করে",
+        "switch crash করে — একই match criteria-র জন্য দ্বিতীয়বার flow rule যোগ করার চেষ্টা করলে OVS internal conflict detect করে পুরো switch process সম্পূর্ণভাবে বন্ধ হয়ে যায়, flow table পুরোপুরি corrupt হয়ে যায়",
         "দুইটা rule-ই delete হয়ে যায়"
       ],
       "answerIndex": 0,
@@ -352,7 +352,7 @@
       "options": [
         "switch কোন কোন ধরনের statistics/matching feature সাপোর্ট করে",
         "switch-এ কতগুলো host connected",
-        "switch-এর maximum bandwidth",
+        "switch-এর maximum bandwidth — পুরো switch যত Gbps traffic একসাথে handle করতে পারবে তার theoretical সর্বোচ্চ সীমা, যা hardware NIC-এর speed rating থেকে নির্ধারিত হয়",
         "controller-এর নাম"
       ],
       "answerIndex": 0,
@@ -364,7 +364,7 @@
       "question": "`mod_dl_src` / `mod_dl_dst` action দুটো কোন layer-এর সাথে সম্পর্কিত?",
       "options": [
         "Layer 2 — source/destination MAC address পরিবর্তন করে",
-        "Layer 3 — IP address পরিবর্তন করে",
+        "Layer 3 — packet-এর ভেতরের IP header-এ থাকা source/destination IP address পরিবর্তন করে, যা মূলত NAT বা routing-এর মতো কাজে ব্যবহৃত হয়, data link layer-এর সাথে এর সম্পর্ক নেই",
         "Layer 4 — port number পরিবর্তন করে",
         "Layer 1 — physical port পরিবর্তন করে"
       ],
@@ -378,7 +378,7 @@
       "options": [
         "Layer 3 — source/destination IP address পরিবর্তন করে",
         "Layer 2 — MAC address পরিবর্তন করে",
-        "Layer 4 — TCP port পরিবর্তন করে",
+        "Layer 4 — TCP/UDP segment header-এর ভেতরের source বা destination port number পরিবর্তন করে, যা port-based NAT বা load balancing-এর ক্ষেত্রে common ভাবে ব্যবহৃত হয়",
         "Layer 1 — physical cable পরিবর্তন করে"
       ],
       "answerIndex": 0,
@@ -392,7 +392,7 @@
         "Layer 4 — transport layer source/destination port পরিবর্তন করে",
         "Layer 2 — MAC address পরিবর্তন করে",
         "Layer 3 — IP address পরিবর্তন করে",
-        "Application layer — HTTP header পরিবর্তন করে"
+        "Application layer — HTTP request/response-এর ভেতরের header field, যেমন Host বা User-Agent, deep packet inspection করে modify করে, transport layer port-এর সাথে এর কোনো সম্পর্ক নেই"
       ],
       "answerIndex": 0,
       "explanation": "`mod_tp_src`/`mod_tp_dst` হলো transport layer (Layer 4) action — এগুলো packet-এর TCP/UDP source বা destination port number পরিবর্তন করে।"
@@ -403,7 +403,7 @@
       "question": "`set_vlan_vid` ও `set_vlan_pcp` action দুটো কী কাজ করে?",
       "options": [
         "packet-এ VLAN ID এবং VLAN priority সেট করে দেয়",
-        "packet থেকে VLAN tag সরিয়ে ফেলে",
+        "packet থেকে VLAN tag সরিয়ে ফেলে — ইতিমধ্যে থাকা 802.1Q header সম্পূর্ণভাবে মুছে দিয়ে packet-টাকে untagged অবস্থায় ফিরিয়ে আনে, নতুন কোনো VLAN ID বসায় না",
         "packet drop করে দেয়",
         "packet-কে encrypt করে"
       ],
@@ -429,7 +429,7 @@
       "question": "`enqueue` action সাধারণত কী উদ্দেশ্যে ব্যবহৃত হয়?",
       "options": [
         "packet-কে একটা নির্দিষ্ট QoS queue-তে পাঠানোর জন্য",
-        "packet delete করার জন্য",
+        "packet delete করার জন্য — নির্দিষ্ট QoS threshold অতিক্রম করা packet গুলোকে কোনো queue-তে না পাঠিয়ে সরাসরি drop করে ফেলার জন্য ব্যবহৃত হয়, bandwidth shaping-এর সাথে এর কোনো সম্পর্ক নেই",
         "নতুন host তৈরির জন্য",
         "controller restart করার জন্য"
       ],
@@ -444,7 +444,7 @@
         "switch নিজের জন্য ব্যবহৃত internal interface, যা switch থেকে/এ traffic-এর জন্য",
         "একটা extra physical host",
         "একটা backup controller",
-        "একটা VLAN tag"
+        "একটা VLAN tag — প্রতিটা packet-এ স্বয়ংক্রিয়ভাবে বসানো একটা default VLAN identifier, যা switch-এর traffic-কে অন্য switch-এর traffic থেকে আলাদা করতে ব্যবহৃত হয়, কোনো physical বা virtual interface নয়"
       ],
       "answerIndex": 0,
       "explanation": "`LOCAL` interface হলো একটা special port, যা switch নিজের (host OS-এর) জন্য traffic পাঠানো/গ্রহণ করতে ব্যবহার করে — এটা কোনো connected host নয়।"
@@ -455,7 +455,7 @@
       "question": "`ovs-ofctl show` আউটপুটে কোনো port-এ `config: PORT_DOWN` ও `state: LINK_DOWN` দেখলে এর অর্থ কী?",
       "options": [
         "port administratively বা physically disabled আছে",
-        "port সর্বোচ্চ speed-এ চলছে",
+        "port সর্বোচ্চ speed-এ চলছে — এই flag দুইটা আসলে নির্দেশ করে যে port তার maximum negotiated link speed (যেমন 1 Gbps full-duplex)-এ স্থিতিশীলভাবে data পাঠাচ্ছে, কোনো সমস্যা নেই",
         "port-এ বেশি traffic আসছে",
         "port-এ VLAN configured আছে"
       ],
@@ -468,7 +468,7 @@
       "question": "`OFPT_GET_CONFIG_REPLY` আউটপুটে `miss_send_len=0` থাকার সাধারণ অর্থ কী (controller-based মোডে)?",
       "options": [
         "flow miss হলে controller-কে পাঠানো packet data-র দৈর্ঘ্য 0, অর্থাৎ কোনো payload পাঠানো হয় না",
-        "switch-এর সব port বন্ধ",
+        "switch-এর সব port বন্ধ — প্রতিটা physical এবং virtual interface administratively shutdown অবস্থায় আছে, যার ফলে কোনো packet আসা-যাওয়া সম্পূর্ণভাবে বন্ধ হয়ে গেছে, এটা একটা global port-state flag",
         "কোনো flow rule নেই",
         "switch crash করেছে"
       ],
@@ -482,7 +482,7 @@
       "options": [
         "fragmented packet গুলো স্বাভাবিকভাবে (normal) handle করা হবে",
         "fragmented packet সব drop করা হবে",
-        "fragmentation সম্পূর্ণ বন্ধ করা হয়েছে",
+        "fragmentation সম্পূর্ণ বন্ধ করা হয়েছে — switch প্রতিটা বড় packet-কে reassemble করতে বাধ্য করে এবং কোনো fragmented IP packet network-এর ভেতর দিয়ে চলাচল করতে দেয় না, সব fragment সরাসরি drop হয়ে যায়",
         "শুধু TCP packet allow করা হবে"
       ],
       "answerIndex": 0,
@@ -495,7 +495,7 @@
       "options": [
         "switch-এর feature request-এর জবাবে পাঠানো response, যেখানে dpid, port তথ্য ইত্যাদি থাকে",
         "একটা error message",
-        "controller বন্ধ হওয়ার মেসেজ",
+        "controller বন্ধ হওয়ার মেসেজ — controller graceful shutdown হওয়ার আগে connected সব switch-কে একটা notification পাঠায় যাতে তারা নিজের flow table temporarily freeze করে রাখে",
         "একটা নতুন host তৈরির request"
       ],
       "answerIndex": 0,
@@ -507,7 +507,7 @@
       "question": "`action=normal` ব্যবহার করলে switch-টা কেমন আচরণ করে?",
       "options": [
         "traditional Ethernet switch-এর মতো MAC শিখে forward করে",
-        "সব packet drop করে দেয়",
+        "সব packet drop করে দেয় — এই mode-এ switch কোনো forwarding logic ব্যবহার না করে safety measure হিসেবে প্রতিটা আসা packet নিঃশব্দে বাতিল করে দেয়, যতক্ষণ না explicit flow rule যোগ করা হয়",
         "শুধু broadcast packet পাঠায়",
         "controller-এর কাছে প্রতিটা packet পাঠায়"
       ],
@@ -521,7 +521,7 @@
       "options": [
         "manual rule-এ precise match+action control পাওয়া যায়, normal-এ switch নিজে default logic দিয়ে decide করে",
         "দুটো আসলে একই জিনিস",
-        "manual rule শুধু IP-ভিত্তিক, normal শুধু MAC-ভিত্তিক",
+        "manual rule শুধু IP-ভিত্তিক, normal শুধু MAC-ভিত্তিক — ovs-ofctl দিয়ে বসানো প্রতিটা rule কেবল nw_src/nw_dst (IP) match করতে পারে, অন্যদিকে action=normal শুধুমাত্র dl_src/dl_dst (MAC) ভিত্তিতে forward করে, দুটো সম্পূর্ণ ভিন্ন matching scope-এ সীমাবদ্ধ",
         "normal action শুধু controller mode-এ কাজ করে"
       ],
       "answerIndex": 0,
@@ -533,7 +533,7 @@
       "question": "৩টা host-এর মধ্যে সম্পূর্ণ (full mesh) connectivity পেতে, এই lab-এর approach অনুযায়ী প্রতিটা port-এর জন্য কয়টা flow rule দরকার হয়েছিল?",
       "options": [
         "প্রতিটা port-এর জন্য একটা করে rule (মোট ৩টা), প্রতিটায় বাকি দুই port-এ output করা",
-        "একটাই rule সব port-এর জন্য",
+        "একটাই rule সব port-এর জন্য — wildcard in_port match ব্যবহার করে একটামাত্র priority=500 rule দিয়ে প্রতিটা port থেকে আসা packet স্বয়ংক্রিয়ভাবে বাকি সব port-এ flood করে দেওয়া যায়, আলাদা per-port rule লেখার প্রয়োজন হয় না",
         "প্রতিটা host pair-এর জন্য আলাদা rule (মোট ৬টা)",
         "কোনো rule-ই দরকার হয় না"
       ],
@@ -546,7 +546,7 @@
       "question": "`dump` কমান্ডের আউটপুটে switch-এর port যেমন `s1-eth1`-এর সামনে `None` দেখানোর অর্থ কী?",
       "options": [
         "সেই interface-এ তখনো কোনো IP address assign/configure করা হয়নি",
-        "port বন্ধ হয়ে গেছে",
+        "port বন্ধ হয়ে গেছে — সেই switch interface administratively down করে দেওয়া হয়েছে, এবং যতক্ষণ না আবার up করা হয়, কোনো packet সেই port দিয়ে আসা-যাওয়া করতে পারবে না",
         "port-এ error হয়েছে",
         "port অন্য switch-এর সাথে যুক্ত"
       ],
@@ -560,7 +560,7 @@
       "options": [
         "`net` connection mapping দেখায়, `dump` প্রতিটা node-এর বিস্তারিত status দেখায়",
         "দুটো একই আউটপুট দেয়",
-        "`net` শুধু controller-এর তথ্য দেখায়",
+        "net শুধু controller-এর তথ্য দেখায় — connected controller-এর IP address, port number, এবং connection status, topology-র বাকি host বা switch সম্পর্কে কোনো তথ্য net কমান্ড দেয় না",
         "`dump` শুধু flow table দেখায়"
       ],
       "answerIndex": 0,
@@ -573,7 +573,7 @@
       "options": [
         "কারণ আমরা Mininet CLI-র ভেতরে আছি, আর `ovs-ofctl` হলো host OS-এর shell-এর কমান্ড",
         "কারণ `sh` ছাড়া `ovs-ofctl` কাজ করে না কোনো অবস্থাতেই",
-        "কারণ `sh` switch restart করে",
+        "কারণ sh switch restart করে — প্রতিটা sh কমান্ড চালানোর সাথে সাথে Mininet নিজে থেকে target switch-এর OVS process পুনরায় চালু করে দেয়, যাতে পুরনো state মুছে fresh অবস্থায় কমান্ড চলে",
         "কারণ `sh` root privilege দেয়"
       ],
       "answerIndex": 0,
@@ -585,7 +585,7 @@
       "question": "flow table-এ যদি কোনো wildcarded (অর্থাৎ কম specific) rule আর একটা নির্দিষ্ট in_port match করা rule দুটোই একটা packet-এর সাথে মেলে, কোনটা প্রাধান্য পাবে?",
       "options": [
         "যেটার priority value বেশি সেটা, নাহলে বেশি specific match করা rule-টা",
-        "সবসময় সবচেয়ে পুরনো rule-টা",
+        "সবসময় সবচেয়ে পুরনো rule-টা — OpenFlow priority value উপেক্ষা করে প্রতিবার সবচেয়ে প্রথমে add করা rule-কেই match-এর ক্ষেত্রে প্রাধান্য দেয়, পরে যোগ করা rule গুলো শুধু backup হিসেবে থাকে",
         "সবসময় সবচেয়ে নতুন rule-টা",
         "দুটোই একসাথে প্রয়োগ হবে"
       ],
@@ -611,7 +611,7 @@
       "question": "lab-এ প্রথমে `priority=500,in_port=1,actions=output:2` দেওয়া হয়েছিল, পরে একই priority ও in_port-এ `actions=output:2,3` দেওয়া হলো। ফলাফল কী হবে?",
       "options": [
         "আগের rule replace হয়ে যাবে, in_port=1-এর packet এখন port 2 ও 3 — দুই জায়গাতেই যাবে",
-        "দুইটা rule আলাদাভাবে একসাথে active থাকবে, packet দুইবার পাঠানো হবে",
+        "দুইটা rule আলাদাভাবে একসাথে active থাকবে, packet দুইবার পাঠানো হবে — OVS একই match field-এর জন্য একাধিক rule জমা রাখে এবং match হলে প্রতিটা rule অনুযায়ী আলাদা আলাদা copy পাঠিয়ে দেয়, পুরনোটা কখনো replace হয় না",
         "switch error দেবে এবং কোনো rule-ই কাজ করবে না",
         "প্রথম rule-টাই থেকে যাবে, দ্বিতীয়টা ignore হবে"
       ],
@@ -625,7 +625,7 @@
       "options": [
         "প্রতিটা স্তর ভিন্ন header field (in_port, dl_src/dst, nw_src/dst, tp_src/dst) দিয়ে packet match করে",
         "সব স্তরে আসলে একই field match হয়, শুধু নাম আলাদা",
-        "শুধু L1 আর L4 real, L2-L3 শুধু তাত্ত্বিক",
+        "শুধু L1 আর L4 real, L2-L3 শুধু তাত্ত্বিক — বাস্তব OpenFlow implementation-এ MAC (L2) আর IP (L3) address ভিত্তিক matching কখনো support করা হয় না, শুধু physical port আর TCP/UDP port দিয়েই সব rule লেখা সম্ভব",
         "L1-L4 matching সবসময় একসাথে করতে হয়, আলাদা করা যায় না"
       ],
       "answerIndex": 0,
@@ -637,7 +637,7 @@
       "question": "`--controller=none` mode-এ, কোনো packet যদি flow table-এর কোনো rule-এর সাথে match না করে, তখন switch কী করবে (traditional controller-based SDN-এর তুলনায়)?",
       "options": [
         "packet drop করে দেবে, কারণ জিজ্ঞেস করার মতো কোনো controller নেই",
-        "controller-এর কাছে packet-in message পাঠাবে",
+        "controller-এর কাছে packet-in message পাঠাবে — যদিও কোনো controller connected নেই, তবুও switch default gateway-তে এই message পাঠানোর চেষ্টা করতে থাকবে যতক্ষণ না timeout হয়, এর ফলে packet সাময়িকভাবে buffer-এ জমা থাকবে",
         "automatically নতুন rule তৈরি করে নেবে",
         "packet-টা সব port-এ broadcast করে দেবে"
       ],
@@ -652,7 +652,7 @@
         "port/traffic-ভিত্তিক fine-grained control — কোন port-এর traffic কোথায় যাবে তা হুবহু নির্ধারণ করা যায় (যেমন h3-কে প্রথমে isolate রাখা)",
         "কোনো বাস্তব সুবিধা নেই, দুটোই একই আচরণ করে",
         "manual rule সবসময় দ্রুত কাজ করে, এটাই একমাত্র সুবিধা",
-        "manual rule ব্যবহারে controller আবশ্যক হয়ে যায়"
+        "manual rule ব্যবহারে controller আবশ্যক হয়ে যায় — ovs-ofctl দিয়ে কোনো rule বসাতে হলে প্রথমে একটা SDN controller connect করে তার মাধ্যমে authorization নিতে হয়, controller ছাড়া কোনো manual rule কার্যকরভাবে flow table-এ বসানো সম্ভব হয় না, যা lab-এর --controller=none approach-এর সম্পূর্ণ বিপরীত একটা ভুল ধারণা"
       ],
       "answerIndex": 0,
       "explanation": "lab-এ দেখানো হয়েছে manual rule দিয়ে প্রথমে শুধু port 1 ও 2-এর মধ্যে connectivity রাখা যায় (h3 intentionally isolated), যা `action=normal`-এর auto-learning behavior দিয়ে অর্জন করা যেত না — এটাই fine-grained control-এর উদাহরণ।"
@@ -664,7 +664,7 @@
       "options": [
         "packet-এর একাধিক copy তৈরি করে প্রতিটা উল্লেখিত port দিয়ে পাঠানো (multi-output), ঠিক broadcast নয় কারণ নির্দিষ্ট port-গুলোই বেছে নেওয়া হয়েছে",
         "শুধু প্রথম port-এ পাঠানো হয়, দ্বিতীয়টা ignore হয়",
-        "একসাথে দুইটা port merge করে একটা virtual port বানানো হয়",
+        "একসাথে দুইটা port merge করে একটা virtual port বানানো হয় — এই action কার্যকর হলে OVS স্থায়ীভাবে উল্লেখিত port গুলোকে একটা bonded/aggregated logical interface-এ রূপান্তরিত করে ফেলে, যা পরবর্তী সব traffic-এর জন্য একটাই single port হিসেবে কাজ করে, আলাদা আলাদা copy পাঠানো হয় না, যা selective multi-output forwarding থেকে সম্পূর্ণ ভিন্ন একটা behavior",
         "packet অর্ধেক একটায় আর অর্ধেক আরেকটায় পাঠানো হয়"
       ],
       "answerIndex": 0,
@@ -677,7 +677,7 @@
       "options": [
         "মূলত একটা (table 0), কারণ সব `add-flow` কমান্ডে explicit কোনো table number উল্লেখ করা হয়নি — OpenFlow default table 0 ব্যবহার করে",
         "২৫৪টাই একসাথে ব্যবহার করা হয়েছে",
-        "কোনো table ব্যবহারই হয়নি, সরাসরি port-এ rule বসানো হয়েছে",
+        "কোনো table ব্যবহারই হয়নি, সরাসরি port-এ rule বসানো হয়েছে — ovs-ofctl add-flow কমান্ড flow table bypass করে directly প্রতিটা physical port-এর hardware configuration register-এ rule লিখে দেয়, OpenFlow pipeline বা n_tables-এর কোনো সম্পর্ক এখানে নেই",
         "table সংখ্যা host সংখ্যার সমান, অর্থাৎ ৩টা"
       ],
       "answerIndex": 0,
@@ -689,7 +689,7 @@
       "question": "`ARP_MATCH_IP` capability-এর বাস্তব তাৎপর্য কী?",
       "options": [
         "switch ARP packet-এর ভেতরের IP address field-এর উপর ভিত্তি করেও flow match করতে পারে, শুধু MAC/Ethertype নয়",
-        "switch ARP packet সম্পূর্ণ block করে দেয়",
+        "switch ARP packet সম্পূর্ণ block করে দেয় — এই capability থাকা মানে switch সব ARP request এবং reply automatically drop করে দেয়, যাতে কোনো host একে অপরের MAC address কখনো resolve করতে না পারে, এটা একটা security hardening feature",
         "switch ARP spoofing আটকাতে পারে না",
         "এটা শুধু IPv6-এর জন্য প্রযোজ্য"
       ],
@@ -704,7 +704,7 @@
         "না, কারণ তারা কখনো একই packet-এর সাথে একসাথে match করবে না — আলাদা traffic handle করে",
         "হ্যাঁ, switch যেকোনো একটা random বেছে নেবে",
         "হ্যাঁ, দুটো rule-ই invalid হয়ে যাবে",
-        "হ্যাঁ, switch crash করবে"
+        "হ্যাঁ, switch crash করবে — OpenFlow specification অনুযায়ী একই priority value-র একাধিক rule flow table-এ থাকা একটা fatal configuration error হিসেবে গণ্য হয়, যা পুরো OVS process-কে বন্ধ করে দিতে পারে, match field ভিন্ন হলেও এই সমস্যা এড়ানো যায় না"
       ],
       "answerIndex": 0,
       "explanation": "যেহেতু match field ভিন্ন (in_port আলাদা), কোনো একটা packet কখনোই দুইটা rule-এর সাথে একসাথে মিলবে না — তাই priority সমান হলেও বাস্তবে কোনো conflict হয় না।"
@@ -716,7 +716,7 @@
       "options": [
         "data plane (physical forwarding path) আর control plane (flow rule/logic) আলাদা — physical connectivity থাকলেও rule না থাকলে traffic চলবে না",
         "physical cable-ই connectivity-র একমাত্র নির্ধারক",
-        "flow rule শুধু performance optimization-এর জন্য, connectivity-র জন্য জরুরি না",
+        "flow rule শুধু performance optimization-এর জন্য, connectivity-র জন্য জরুরি না — flow rule না থাকলেও switch built-in hardware fallback logic দিয়ে traffic ঠিকই forward করতে পারে, rule গুলো শুধু latency কমানোর একটা অতিরিক্ত layer মাত্র, মূল connectivity নিশ্চিত করায় কোনো ভূমিকা রাখে না",
         "pingall আসলে flow table-এর উপর নির্ভর করে না"
       ],
       "answerIndex": 0,
@@ -729,7 +729,7 @@
       "options": [
         "packet-এর IP header-এর ToS/DSCP field পরিবর্তন করে QoS marking/prioritization-এর জন্য",
         "packet-এর MAC address পরিবর্তনের জন্য",
-        "packet-এর payload encrypt করার জন্য",
+        "packet-এর payload encrypt করার জন্য — AES-এর মতো cryptographic algorithm ব্যবহার করে পুরো packet payload secure করে দেয়, যাতে মাঝপথে কেউ data intercept করলেও পড়তে না পারে, IP header বা QoS marking-এর সাথে এর সম্পর্ক নেই",
         "নতুন host তৈরির জন্য"
       ],
       "answerIndex": 0,
@@ -742,7 +742,7 @@
       "options": [
         "Mininet topology তৈরির সময় switch-host সংযোগের ক্রম অনুযায়ী OVS নিজে থেকে sequential port number assign করেছে",
         "ব্যবহারকারী manually প্রতিটা port number ঠিক করে দিয়েছে",
-        "এটা host-এর IP address থেকে derive করা হয়েছে",
+        "এটা host-এর IP address থেকে derive করা হয়েছে — প্রতিটা host-এর IP address-এর শেষ অংশ (যেমন 10.0.0.1-এর 1) সরাসরি switch port number হিসেবে hash করে assign করা হয়েছে, Mininet topology তৈরির ক্রমের সাথে এর কোনো সম্পর্ক নেই",
         "এটা MAC address-এর শেষ digit থেকে আসে"
       ],
       "answerIndex": 0,
@@ -754,7 +754,7 @@
       "question": "flow rule-এ match field হিসেবে শুধু `in_port` উল্লেখ করা হলে (MAC/IP/protocol কিছুই না দিয়ে), বাকি field গুলোর ব্যাপারে rule-টার আচরণ কেমন হয়?",
       "options": [
         "বাকি field গুলো wildcard (যেকোনো value match করবে) ধরা হয় — শুধু in_port মিললেই rule apply হয়",
-        "rule-টা invalid হয়ে যায়, কারণ সব field বাধ্যতামূলক",
+        "rule-টা invalid হয়ে যায়, কারণ সব field বাধ্যতামূলক — OpenFlow স্পেসিফিকেশন অনুযায়ী প্রতিটা match field (dl_src, dl_dst, nw_src, nw_dst, tp_src, tp_dst) explicitly উল্লেখ না করলে rule কে syntax error হিসেবে reject করে দেওয়া হয়, add-flow command fail করবে",
         "বাকি field গুলো automatically 0 ধরা হয়",
         "rule-টা শুধু ARP packet-এর জন্য প্রযোজ্য হয়"
       ],
@@ -767,7 +767,7 @@
       "question": "এই lab-এর manual `ovs-ofctl` approach-কে কেন pure/classic SDN controller-based architecture না বলে বরং \"manual OpenFlow configuration\" বলা ভালো?",
       "options": [
         "এখানে কোনো centralized controller নেই যে dynamically, programmatically rule push করছে — rule গুলো static ও মানুষ নিজে হাতে বসাচ্ছে",
-        "কারণ এখানে OpenFlow protocol ব্যবহারই হয়নি",
+        "কারণ এখানে OpenFlow protocol ব্যবহারই হয়নি — ovs-ofctl কমান্ডগুলো আসলে একটা proprietary Open vSwitch-only scripting interface ব্যবহার করে, যার সাথে OpenFlow standard protocol-এর কোনো সম্পর্ক নেই, তাই এটা controller-ভিত্তিক হোক বা না হোক, কখনোই real SDN হিসেবে গণ্য হয় না",
         "কারণ এটা Mininet-এ চলছে, তাই real SDN না",
         "কারণ এখানে কোনো flow table ব্যবহার হয়নি"
       ],
@@ -780,7 +780,7 @@
       "question": "যদি `in_port=1,actions=output:2` আর `in_port=2,actions=output:1` শুধু এই দুইটা rule থাকে (in_port=3-এর কোনো rule না থাকে), তাহলে h1↔h3 বা h2↔h3-এর মধ্যে ping-এর ফলাফল কী হবে, আর কেন?",
       "options": [
         "fail করবে, কারণ h3 (port 3)-এর ARP/ICMP packet-এর জন্য matching কোনো rule নেই, switch সেগুলো drop করবে",
-        "সফল হবে, কারণ action=normal default behavior আপনা থেকে কাজ করবে",
+        "সফল হবে, কারণ action=normal default behavior আপনা থেকে কাজ করবে — এই lab-এ ইতিমধ্যে action=normal সেট করা আছে বলে manual rule না থাকলেও switch নিজে থেকে traditional L2 learning switch logic দিয়ে h3-এর ট্র্যাফিক ঠিকভাবে forward করে দেবে, in_port-ভিত্তিক manual rule-এর কোনো প্রয়োজনই পড়ে না",
         "সফল হবে শুধু ping-এর ক্ষেত্রে, কিন্তু অন্য protocol-এ fail করবে",
         "আংশিক সফল হবে — request যাবে কিন্তু reply আসবে না"
       ],

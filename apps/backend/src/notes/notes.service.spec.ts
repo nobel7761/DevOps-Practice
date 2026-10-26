@@ -29,9 +29,12 @@ describe('NotesService', () => {
       const model = mockNoteModel({ findOneResult: null });
       const service = new NotesService(model as any);
 
-      const result = await service.getNote('lecture-1');
+      const result = await service.getNote('u1', 'lecture-1');
 
-      expect(model.findOne).toHaveBeenCalledWith({ contentId: 'lecture-1' });
+      expect(model.findOne).toHaveBeenCalledWith({
+        userId: 'u1',
+        contentId: 'lecture-1',
+      });
       expect(result).toBeNull();
     });
 
@@ -41,7 +44,7 @@ describe('NotesService', () => {
       });
       const service = new NotesService(model as any);
 
-      const result = await service.getNote('lecture-1');
+      const result = await service.getNote('u1', 'lecture-1');
 
       expect(result).toEqual({ contentId: 'lecture-1', content: 'আমার নোট' });
     });
@@ -54,11 +57,11 @@ describe('NotesService', () => {
       });
       const service = new NotesService(model as any);
 
-      await service.saveNote('lecture-1', 'নতুন নোট');
+      await service.saveNote('u1', 'lecture-1', 'নতুন নোট');
 
       expect(model.findOneAndUpdate).toHaveBeenCalledWith(
-        { contentId: 'lecture-1' },
-        { contentId: 'lecture-1', content: 'নতুন নোট' },
+        { userId: 'u1', contentId: 'lecture-1' },
+        { userId: 'u1', contentId: 'lecture-1', content: 'নতুন নোট' },
         { upsert: true, new: true },
       );
     });
@@ -69,7 +72,7 @@ describe('NotesService', () => {
       });
       const service = new NotesService(model as any);
 
-      const result = await service.saveNote('lecture-1', 'নতুন নোট');
+      const result = await service.saveNote('u1', 'lecture-1', 'নতুন নোট');
 
       expect(result).toEqual({ contentId: 'lecture-1', content: 'নতুন নোট' });
     });
@@ -85,14 +88,17 @@ describe('NotesService', () => {
       });
       const service = new NotesService(model as any);
 
-      const result = await service.getContentIdsWithNotes([
+      const result = await service.getContentIdsWithNotes('u1', [
         'lecture-1',
         'lecture-2',
         'lecture-3',
       ]);
 
       expect(model.find).toHaveBeenCalledWith(
-        { contentId: { $in: ['lecture-1', 'lecture-2', 'lecture-3'] } },
+        {
+          userId: 'u1',
+          contentId: { $in: ['lecture-1', 'lecture-2', 'lecture-3'] },
+        },
         'contentId content',
       );
       expect(result).toEqual(['lecture-1']);
@@ -102,7 +108,7 @@ describe('NotesService', () => {
       const model = mockNoteModel({ findResult: [] });
       const service = new NotesService(model as any);
 
-      const result = await service.getContentIdsWithNotes(['lecture-9']);
+      const result = await service.getContentIdsWithNotes('u1', ['lecture-9']);
 
       expect(result).toEqual([]);
     });

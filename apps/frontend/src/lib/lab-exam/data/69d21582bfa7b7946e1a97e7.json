@@ -1,0 +1,211 @@
+{
+  "labId": "69d21582bfa7b7946e1a97e7",
+  "title": "LAB: Advanced Firewall Rules with iptables",
+  "passPercent": 95,
+  "intro": "ufw-এর নিচে আসলে iptables-ই কাজ করে। এই lab-এ সরাসরি iptables দিয়ে rule লিখবে — stateful filtering, rate limiting, আর logging, যা ufw দিয়ে করা যায় না।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🔍 পর্ব ১: বর্তমান অবস্থা পড়া",
+        "note": "কখনো না দেখে firewall-এ হাত দিও না।"
+      },
+      "prompt": "verbose, numeric, আর line-number-সহ পুরো ruleset দেখো।",
+      "answer": "iptables -L -v -n --line-numbers",
+      "check": {
+        "require": ["iptables", "-L"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "section": {
+        "title": "🔑 পর্ব ২: SSH আগে সুরক্ষিত করো",
+        "note": "সবসময় সবার আগে — position 1-এ — SSH allow rule বসাও, বাকি সব rule-এর আগে চেক হবে।"
+      },
+      "prompt": "INPUT chain-এর 1 নম্বর পজিশনে port 22/tcp ACCEPT করার rule বসাও।",
+      "answer": "iptables -I INPUT 1 -p tcp --dport 22 -j ACCEPT",
+      "check": {
+        "require": [
+          "iptables",
+          "-I",
+          "INPUT",
+          "1",
+          "--dport",
+          "22",
+          "-j",
+          "ACCEPT"
+        ],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "ACCEPT",
+            "dport": "22"
+          }
+        ]
+      },
+      "hints": [
+        "-I <chain> <position> দিয়ে নির্দিষ্ট জায়গায় rule বসানো যায়, -A দিয়ে শুধু শেষে যোগ হয়"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 6,
+      "prompt": "INPUT chain-এর শেষে port 8080/tcp ACCEPT করার rule যোগ করো।",
+      "answer": "iptables -A INPUT -p tcp --dport 8080 -j ACCEPT",
+      "check": {
+        "require": [
+          "iptables",
+          "-A",
+          "INPUT",
+          "--dport",
+          "8080",
+          "-j",
+          "ACCEPT"
+        ],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "ACCEPT",
+            "dport": "8080"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "section": {
+        "title": "🚫 পর্ব ৩: DROP বনাম REJECT",
+        "note": "DROP নীরবে ফেলে দেয়, REJECT সাথে সাথে ICMP error পাঠায়।"
+      },
+      "prompt": "port 23/tcp-এর জন্য DROP rule যোগ করো।",
+      "answer": "iptables -A INPUT -p tcp --dport 23 -j DROP",
+      "check": {
+        "require": ["iptables", "-A", "INPUT", "--dport", "23", "-j", "DROP"],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "DROP",
+            "dport": "23"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 6,
+      "prompt": "DROP rule-টা সরিয়ে একই port 23/tcp-এর জন্য REJECT rule বসাও (প্রথমে DROP rule-টা মুছো)।",
+      "answer": "iptables -D INPUT -p tcp --dport 23 -j DROP",
+      "check": {
+        "require": ["iptables", "-D", "INPUT", "--dport", "23", "-j", "DROP"],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "DROP",
+            "dport": "23",
+            "exists": false
+          }
+        ]
+      },
+      "hints": [
+        "-D দিয়ে ঠিক যেভাবে rule বানিয়েছিলে, সেই একই match-spec লিখে delete করা যায়"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "এবার port 23/tcp-এর জন্য REJECT rule যোগ করো।",
+      "answer": "iptables -A INPUT -p tcp --dport 23 -j REJECT",
+      "check": {
+        "require": ["iptables", "-A", "INPUT", "--dport", "23", "-j", "REJECT"],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "REJECT",
+            "dport": "23"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 7,
+      "section": {
+        "title": "⏱️ পর্ব ৪: Rate limiting",
+        "note": "Brute-force আটকাতে নতুন SSH connection-এর হার সীমিত করা হয়।"
+      },
+      "prompt": "নতুন SSH connection attempt রেট-লিমিট করো — প্রতি মিনিটে 5টা, ACCEPT target দিয়ে।",
+      "answer": "iptables -A INPUT -p tcp --dport 22 -m limit --limit 5/min -j ACCEPT",
+      "check": {
+        "require": [
+          "iptables",
+          "-A",
+          "INPUT",
+          "--dport",
+          "22",
+          "-m",
+          "limit",
+          "--limit",
+          "5/min",
+          "-j",
+          "ACCEPT"
+        ]
+      },
+      "hints": ["-m limit --limit <rate> দিয়ে rate-limiting module চালু হয়"]
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "section": {
+        "title": "🔄 পর্ব ৫: Stateful filtering",
+        "note": "ফিরতি traffic-এর জন্য আলাদা port খোলার দরকার নেই।"
+      },
+      "prompt": "established বা related connection-এর ফিরতি traffic ACCEPT করার stateful rule যোগ করো।",
+      "answer": "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+      "check": {
+        "require": [
+          "iptables",
+          "-A",
+          "INPUT",
+          "-m",
+          "conntrack",
+          "--ctstate",
+          "ESTABLISHED,RELATED",
+          "-j",
+          "ACCEPT"
+        ],
+        "iptablesRuleExists": [
+          {
+            "chain": "INPUT",
+            "target": "ACCEPT"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 5,
+      "prompt": "INPUT chain-এর default policy DROP সেট করো (এতক্ষণে SSH, 8080 সব আগে থেকেই allow করা আছে)।",
+      "answer": "iptables -P INPUT DROP",
+      "check": {
+        "require": ["iptables", "-P", "INPUT", "DROP"]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 5,
+      "section": {
+        "title": "💾 পর্ব ৬: Persist করা",
+        "note": "নইলে reboot হলেই সব rule হারিয়ে যাবে।"
+      },
+      "prompt": "বর্তমান সব rule স্থায়ীভাবে সংরক্ষণ করো, যাতে reboot-এও টিকে থাকে।",
+      "answer": "netfilter-persistent save",
+      "check": {
+        "require": ["netfilter-persistent", "save"]
+      }
+    }
+  ]
+}

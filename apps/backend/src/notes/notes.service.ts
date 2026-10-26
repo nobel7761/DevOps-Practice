@@ -14,16 +14,20 @@ export class NotesService {
     @InjectModel(Note.name) private readonly noteModel: Model<NoteDocument>,
   ) {}
 
-  async getNote(contentId: string): Promise<NoteDto | null> {
-    const doc = await this.noteModel.findOne({ contentId }).exec();
+  async getNote(userId: string, contentId: string): Promise<NoteDto | null> {
+    const doc = await this.noteModel.findOne({ userId, contentId }).exec();
     return doc ? { contentId: doc.contentId, content: doc.content } : null;
   }
 
-  async saveNote(contentId: string, content: string): Promise<NoteDto> {
+  async saveNote(
+    userId: string,
+    contentId: string,
+    content: string,
+  ): Promise<NoteDto> {
     const doc = await this.noteModel
       .findOneAndUpdate(
-        { contentId },
-        { contentId, content },
+        { userId, contentId },
+        { userId, contentId, content },
         { upsert: true, new: true },
       )
       .exec();
@@ -31,9 +35,12 @@ export class NotesService {
   }
 
   /** Of the given content ids, which ones have a saved note with real (non-whitespace) content. */
-  async getContentIdsWithNotes(contentIds: string[]): Promise<string[]> {
+  async getContentIdsWithNotes(
+    userId: string,
+    contentIds: string[],
+  ): Promise<string[]> {
     const docs = await this.noteModel
-      .find({ contentId: { $in: contentIds } }, 'contentId content')
+      .find({ userId, contentId: { $in: contentIds } }, 'contentId content')
       .exec();
     return docs
       .filter((doc) => doc.content.trim().length > 0)

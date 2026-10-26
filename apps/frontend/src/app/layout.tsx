@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Turborepo Next Nest App",
-  description: "Monorepo with Next.js and NestJS",
+  title: "One Step Closer Learning Platform",
+  description: "Track your courses, labs and quizzes in one place.",
 };
 
 export default function RootLayout({

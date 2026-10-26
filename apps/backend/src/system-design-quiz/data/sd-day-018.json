@@ -1,0 +1,1075 @@
+{
+  "topicId": "sd-day-018",
+  "questions": [
+    {
+      "id": "sd-day-018-q01",
+      "difficulty": "easy",
+      "question": "Rate limiting-এর মূল কাজ কোনটা?",
+      "options": [
+        "নির্দিষ্ট সময়ে একজন client কয়টা request পাঠাতে পারবে তা সীমিত করা, বাড়তি request ফিরিয়ে দেওয়া",
+        "Request-গুলো একাধিক server-এর মধ্যে সমানভাবে ভাগ করে দেওয়া, যাতে কোনো একটা server অলস বসে না থাকে আর কোনোটা overloaded না হয়",
+        "বারবার চাওয়া response memory-তে রেখে দেওয়া, যাতে database-এ কম query যায়",
+        "ধীর কাজগুলো queue-তে রেখে পরে process করা, যাতে user সাথে সাথে উত্তর পায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Rate limiting প্রতি client (user, IP, API key) ধরে request গোনে, আর নির্দিষ্ট সময়ে সীমা পেরোলে বাড়তি request কাজ শুরুর আগেই ফিরিয়ে দেয়। উদ্দেশ্য হলো কেউ একা shared resource খেয়ে ফেলতে না পারে।",
+      "whyWrong": {
+        "1": "Request ভাগ করা load balancer-এর কাজ, সেখানে কাউকে থামানো হয় না।",
+        "2": "Response জমিয়ে রাখা caching, এটা কারও request সংখ্যা সীমিত করে না।",
+        "3": "কাজ পরে করার জন্য queue রাখা message queue-র কাজ, rate limiter বাড়তি request ফিরিয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q02",
+      "difficulty": "easy",
+      "question": "Login endpoint-এ কড়া rate limit দেওয়া কেন বিশেষভাবে জরুরি?",
+      "options": [
+        "Login response সাধারণত সবচেয়ে বড় হয়, তাই bandwidth বাঁচাতে login endpoint-এ সবচেয়ে কম request রাখতে হয়, অন্য endpoint-এ না",
+        "Rate limit থাকলে password hash করার আর দরকার পড়ে না, তাই server-এর CPU বেঁচে যায়",
+        "Attacker অনেক password একের পর এক চেষ্টা করে (brute-force), আর limit সেই চেষ্টার গতি আটকে দেয়",
+        "Login request সবসময় GET method-এ আসে, আর GET বারবার আসা ঠেকাতেই limit লাগে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Login-এ সবচেয়ে বড় ঝুঁকি brute-force আর credential stuffing: bot হাজারো password চেষ্টা করে। প্রতি account বা IP-তে অল্প কয়টা চেষ্টার limit দিলে এই আক্রমণ কার্যত অচল হয়, আর প্রতিটা চেষ্টায় password hash-এর CPU খরচও বাঁচে।",
+      "whyWrong": {
+        "0": "Login response সাধারণত ছোট; সমস্যা bandwidth না, বারবার password চেষ্টা।",
+        "1": "Rate limit থাকলেও password hash করতেই হবে; limit শুধু কতবার চেষ্টা করা যাবে তা ঠিক করে।",
+        "3": "Login সাধারণত POST দিয়ে হয়, আর limit-এর কারণ method না, abuse।"
+      }
+    },
+    {
+      "id": "sd-day-018-q03",
+      "difficulty": "easy",
+      "question": "Client নির্দিষ্ট সময়ে অনুমোদিত সংখ্যার বেশি request পাঠালে কোন HTTP status code ফেরত দেওয়া সবচেয়ে উপযুক্ত?",
+      "options": [
+        "403 Forbidden",
+        "429 Too Many Requests",
+        "503 Service Unavailable",
+        "401 Unauthorized"
+      ],
+      "correctIndex": 1,
+      "explanation": "429 Too Many Requests (RFC 6585) ঠিক এই কাজের জন্য: client নির্দিষ্ট সময়ে বেশি request পাঠিয়েছে। এর সাথে সাধারণত Retry-After header দেওয়া হয়, যাতে client জানে কখন আবার চেষ্টা করবে।",
+      "whyWrong": {
+        "0": "403 মানে অনুমতি নেই; কিছু API (যেমন GitHub) limit-এ 403-ও দেয়, কিন্তু অর্থের দিক থেকে 429-ই নির্দিষ্ট।",
+        "2": "503 বোঝায় server নিজেই অপ্রাপ্য বা চাপে, client বেশি পাঠাচ্ছে তা না।",
+        "3": "401 মানে authentication নেই বা ভুল, request-এর সংখ্যার সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-018-q04",
+      "difficulty": "easy",
+      "question": "429 response-এর সাথে আসা Retry-After header client-কে কী জানায়?",
+      "options": [
+        "Server request-টা process করতে কত সময় নিয়েছে",
+        "চলতি window-এ client-এর আর কয়টা request বাকি আছে",
+        "Client সর্বোচ্চ কতবার retry করতে পারবে",
+        "আবার চেষ্টা করার আগে কতক্ষণ অপেক্ষা করা উচিত"
+      ],
+      "correctIndex": 3,
+      "explanation": "Retry-After বলে দেয় কত সেকেন্ড পরে (বা কোন সময়ের পরে) আবার চেষ্টা করা যাবে। এটা থাকলে client আন্দাজে সাথে সাথে retry করে চাপ বাড়ায় না।",
+      "whyWrong": {
+        "0": "Processing time জানানো এর কাজ না।",
+        "1": "বাকি request-এর সংখ্যা জানায় X-RateLimit-Remaining ধরনের header।",
+        "2": "Retry-After কতবার না, কতক্ষণ পরে, সেটা বলে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q05",
+      "difficulty": "easy",
+      "question": "Token bucket algorithm-এ bucket-এর capacity কী ঠিক করে?",
+      "options": [
+        "একবারে সর্বোচ্চ কয়টা request একসাথে পাস হতে পারে (সর্বোচ্চ burst)",
+        "প্রতি সেকেন্ডে কয়টা নতুন token bucket-এ যোগ হয়, অর্থাৎ দীর্ঘমেয়াদে request পাস হওয়ার গতি",
+        "Request queue-তে সর্বোচ্চ কতক্ষণ অপেক্ষা করবে",
+        "একটা window কত সেকেন্ড লম্বা হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Capacity হলো bucket-এ সর্বোচ্চ কয়টা token জমতে পারে। Bucket ভরা থাকলে একসাথে capacity-সংখ্যক request পাস হতে পারে, তাই এটাই সর্বোচ্চ burst।",
+      "whyWrong": {
+        "1": "প্রতি সেকেন্ডে যোগ হওয়া token হলো refill rate, capacity না।",
+        "2": "Token bucket-এ request queue-তে অপেক্ষা করে না; token না থাকলে reject হয়।",
+        "3": "Token bucket-এ কোনো window নেই, token ক্রমাগত জমে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q06",
+      "difficulty": "easy",
+      "question": "Token bucket-এ refill rate কী নির্ধারণ করে?",
+      "options": [
+        "সবচেয়ে বড় burst-এর মাপ, অর্থাৎ ভরা bucket থেকে একসাথে কয়টা request সাথে সাথে পাস হবে",
+        "Request rejected হলে কত সেকেন্ড পরে retry হবে",
+        "টানা চাপে দীর্ঘমেয়াদে প্রতি সেকেন্ডে কয়টা request পাস হবে",
+        "একটা user-এর জন্য কয়টা bucket থাকবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Bucket খালি হওয়ার পর শুধু নতুন জমা token দিয়েই request পাস হয়। তাই টানা চাপে পাস হওয়ার গতি refill rate-এর সমান, যেমন 2 token/s হলে মিনিটে 120টা।",
+      "whyWrong": {
+        "0": "সবচেয়ে বড় burst ঠিক করে capacity।",
+        "1": "Retry-র সময় client বা Retry-After ঠিক করে, refill rate না।",
+        "3": "সাধারণত প্রতি key-তে একটাই bucket; refill rate এর সংখ্যা ঠিক করে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q07",
+      "difficulty": "easy",
+      "question": "Token bucket-এ একটাও token নেই, এমন সময় নতুন request এলে সাধারণত কী হয়?",
+      "options": [
+        "Request পাস হয়, পরের সেকেন্ডের token থেকে ধার নেওয়া হয়",
+        "Request reject হয় (যেমন 429), নতুন token না জমা পর্যন্ত",
+        "Request পাস হয়, শুধু response-এ একটা warning header যায়",
+        "Server সাথে সাথে bucket পুরো ভরে দেয়, যাতে request আটকে না যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Token bucket-এ প্রতিটা request একটা token খরচ করে। Token না থাকলে request ফিরিয়ে দেওয়া হয়, সাধারণত 429 দিয়ে; refill rate অনুযায়ী নতুন token জমলে আবার পাস হবে।",
+      "whyWrong": {
+        "0": "সাধারণ token bucket ভবিষ্যতের token ধার দেয় না; দিলে limit-এর অর্থই থাকত না।",
+        "2": "শুধু warning দিয়ে ছেড়ে দিলে abuse থামত না।",
+        "3": "Bucket স্থির refill rate-এ ভরে; চাইলেই সাথে সাথে ভরে গেলে limit কাজ করত না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q08",
+      "difficulty": "easy",
+      "question": "Fixed window counter algorithm কিভাবে request গোনে?",
+      "options": [
+        "প্রতিটা request-এর timestamp একটা তালিকায় রেখে, নতুন request এলে শুধু শেষ N সেকেন্ডের timestamp-গুলো গোনে",
+        "Token স্থির গতিতে যোগ করে আর প্রতিটা request একটা token খরচ করে",
+        "Request একটা queue-তে রেখে স্থির গতিতে একটা একটা করে ছাড়ে",
+        "সময়কে সমান টুকরোয় (যেমন প্রতি মিনিট) ভাগ করে প্রতিটা টুকরোর জন্য একটা counter রাখে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Fixed window-এ প্রতিটা নির্দিষ্ট সময়ের টুকরোর (যেমন 10:05 মিনিট) জন্য একটা counter থাকে। Request এলে counter বাড়ে, limit পেরোলে reject, আর নতুন টুকরো শুরু হলে counter শূন্য থেকে।",
+      "whyWrong": {
+        "0": "Timestamp-এর তালিকা রাখে sliding window log।",
+        "1": "Token জমা আর খরচ token bucket-এর পদ্ধতি।",
+        "2": "Queue থেকে স্থির গতিতে ছাড়া leaky bucket-এর পদ্ধতি।"
+      }
+    },
+    {
+      "id": "sd-day-018-q09",
+      "difficulty": "easy",
+      "question": "Leaky bucket algorithm-এর মূল বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "Request queue-তে ঢোকে আর স্থির গতিতে বের হয়, তাই output মসৃণ থাকে",
+        "জমানো token দিয়ে burst-এর সব request সাথে সাথে পাস করিয়ে দেয়, তারপর স্থির গতিতে নতুন token জমায়",
+        "প্রতিটা request-এর সময় মনে রেখে নিখুঁতভাবে শেষ এক মিনিট গোনে",
+        "প্রতি মিনিট শেষে counter শূন্য করে নতুন করে গোনা শুরু করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Leaky bucket-এ request একটা নির্দিষ্ট মাপের queue-তে জমা হয়, আর ফুটো বালতি থেকে পানি পড়ার মতো স্থির গতিতে বের হয়। Burst এলে তা queue-তে অপেক্ষা করে, queue ভরা থাকলে বাদ পড়ে।",
+      "whyWrong": {
+        "1": "Burst সাথে সাথে পাস করানো token bucket-এর আচরণ।",
+        "2": "সময় মনে রেখে গোনা sliding window log।",
+        "3": "প্রতি মিনিটে counter শূন্য করা fixed window।"
+      }
+    },
+    {
+      "id": "sd-day-018-q10",
+      "difficulty": "easy",
+      "question": "শুধু client-side (app বা browser-এ) rate limiting কেন যথেষ্ট না?",
+      "options": [
+        "Client-এর ঘড়ি সবসময় server-এর ঘড়ি থেকে একটু আলাদা থাকে, তাই দুই দিকের হিসাব কখনোই ঠিকমতো মেলে না",
+        "Browser-এর JavaScript-এ timer চালানো যায় না বলে গোনা সম্ভব না",
+        "Attacker আপনার app ব্যবহারই না করে সরাসরি API-তে request পাঠাতে পারে",
+        "Client-side limit server-এর চেয়ে ধীর, তাই user-এর latency বাড়ে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Client-side limit শুধু ভালো client-কে ভদ্র রাখে, যেমন button দুবার চাপা আটকানো। Attacker curl বা নিজের script দিয়ে সরাসরি API call করবে, তাই আসল সুরক্ষা server বা gateway-তে লাগে।",
+      "whyWrong": {
+        "0": "ঘড়ির ছোট পার্থক্য মূল সমস্যা না; সমস্যা হলো client-কে বিশ্বাস করা যায় না।",
+        "1": "JavaScript-এ timer আছে; সমস্যা হলো attacker এই code চালায়ই না।",
+        "3": "Client-side limit-এ latency বাড়ে না; এটা নিরাপত্তা দেয় না, সেটাই সমস্যা।"
+      }
+    },
+    {
+      "id": "sd-day-018-q11",
+      "difficulty": "easy",
+      "question": "বাড়তি request যাতে backend server-এ পৌঁছানোর আগেই আটকে যায়, সেজন্য rate limiter সবচেয়ে প্রচলিতভাবে কোথায় বসানো হয়?",
+      "options": [
+        "Database-এর ভেতরে, প্রতিটা query চালানোর ঠিক আগে",
+        "API Gateway বা edge-এ, request service-এ যাওয়ার আগে",
+        "User-এর browser-এ, request পাঠানোর আগে",
+        "Response তৈরি হয়ে যাওয়ার পরে, client-এ পাঠানোর ঠিক আগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "API gateway বা edge-এ limiter বসালে বাড়তি request কোনো service-এ পৌঁছানোর আগেই 429 পায়, আর সব service-এর নিয়ম এক জায়গায় থাকে। Business context লাগলে service-এর ভেতরেও আলাদা limit দেওয়া হয়।",
+      "whyWrong": {
+        "0": "Database পর্যন্ত পৌঁছালে server-এর বেশিরভাগ খরচ আগেই হয়ে গেছে।",
+        "2": "Browser-এর limit attacker সহজেই এড়িয়ে যায়।",
+        "3": "Response তৈরির পরে আটকালে সব খরচ হয়েই গেছে, কিছুই বাঁচে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q12",
+      "difficulty": "easy",
+      "question": "Multi-tenant system-এ 'noisy neighbour' সমস্যা বলতে কী বোঝায়?",
+      "options": [
+        "একই server-এ দুটো service একই port ব্যবহার করে conflict তৈরি করা",
+        "একজন user-এর request ভুল করে অন্য user-এর data দেখিয়ে ফেলা",
+        "Load balancer একটা নির্দিষ্ট server-এ বারবার request পাঠিয়ে সেটাকে ব্যস্ত রাখে, অথচ পাশের server-গুলো অলস বসে থাকে",
+        "একজন customer shared resource এত বেশি ব্যবহার করে যে বাকি customer-রা ধীর হয়ে যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "অনেক customer একই server, database বা API ভাগ করলে একজনের ভারী ব্যবহার বাকিদের ভোগায়। Per-tenant rate limit দিলে প্রত্যেকের ভাগ আলাদা থাকে, একজনের বাড়াবাড়ি অন্যদের ছোঁয় না।",
+      "whyWrong": {
+        "0": "Port conflict configuration-এর সমস্যা, resource ভাগাভাগির ন্যায্যতার না।",
+        "1": "অন্যের data দেখা data isolation বা security-র সমস্যা।",
+        "2": "এটা load balancing-এর ভারসাম্যের সমস্যা, এক tenant-এর বাড়াবাড়ি না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q13",
+      "difficulty": "easy",
+      "question": "Retry-এর ক্ষেত্রে exponential backoff মানে কী?",
+      "options": [
+        "প্রতিবার retry-এর আগে অপেক্ষার সময় গুণিতকে বাড়ানো, যেমন 1s, 2s, 4s, 8s",
+        "প্রতিবার retry-এর আগে ঠিক একই সময় অপেক্ষা করা, যেমন সবসময় 2s",
+        "প্রতিবার ব্যর্থ হলে পরেরবার দ্বিগুণ সংখ্যক request একসাথে পাঠানো, যাতে অন্তত একটা সফল হয়",
+        "প্রতিবার retry-তে request-এর payload ছোট করে পাঠানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "Exponential backoff-এ প্রতিটা ব্যর্থতার পরে অপেক্ষা দ্বিগুণ (বা গুণিতকে) হয়, একটা সর্বোচ্চ সীমা পর্যন্ত। এতে চাপে থাকা server সেরে ওঠার সময় পায়, আর client-রা ক্রমাগত ধাক্কা দেয় না।",
+      "whyWrong": {
+        "1": "একই বিরতিতে retry হলো fixed backoff, এতে চাপ কমে না।",
+        "2": "বেশি request পাঠালে চাপ আরও বাড়বে, এটা উল্টো কাজ।",
+        "3": "Payload ছোট করা backoff না; সমস্যা request-এর সংখ্যা আর সময়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q14",
+      "difficulty": "easy",
+      "question": "Backoff-এর অপেক্ষার সময়ে jitter (random অংশ) যোগ করা হয় কেন?",
+      "options": [
+        "যাতে প্রতিটা retry আগেরটার চেয়ে দ্রুত হয়",
+        "যাতে server প্রতিটা retry-র random মান দেখে বুঝতে পারে কোন client আবার চেষ্টা করছে",
+        "যাতে অনেক client-এর retry একই মুহূর্তে না পড়ে সময়ের উপর ছড়িয়ে যায়",
+        "যাতে 429 response client-এর cache-এ জমা থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "হাজারো client একসাথে 429 পেয়ে যদি ঠিক একই বিরতিতে retry করে, server আবার একসাথে ধাক্কা খায় (thundering herd)। Random jitter retry-গুলোকে ছড়িয়ে দেয়, ফলে চাপ মসৃণ হয়।",
+      "whyWrong": {
+        "0": "Jitter গড়ে অপেক্ষা একটু কমাতে পারে, কিন্তু উদ্দেশ্য দ্রুততা না, ছড়িয়ে দেওয়া।",
+        "1": "Client পরিচয় দেয় API key বা token, jitter না।",
+        "3": "Jitter শুধু অপেক্ষার সময়ের সাথে সম্পর্কিত, caching-এর সাথে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q15",
+      "difficulty": "easy",
+      "question": "User login করার পরে rate limit-এর key হিসেবে সাধারণত কোনটা সবচেয়ে ন্যায্য?",
+      "options": [
+        "শুধু client-এর IP address",
+        "User ID বা API key",
+        "Browser-এর User-Agent string",
+        "শুধু request-এর URL path"
+      ],
+      "correctIndex": 1,
+      "explanation": "Login-এর পরে আমরা জানি request-টা কার, তাই user ID বা API key ধরে গুনলে প্রতিটা মানুষ বা app নিজের ভাগ পায়। IP-তে অনেক মানুষ একসাথে থাকতে পারে, আর User-Agent সহজেই বদলানো যায়।",
+      "whyWrong": {
+        "0": "NAT-এর পেছনে অনেক user একই IP ভাগ করে, তাই শুধু IP ধরলে নির্দোষরাও আটকায়।",
+        "2": "User-Agent client নিজে পাঠায়, attacker চাইলেই বদলাতে পারে।",
+        "3": "শুধু path ধরলে সব user মিলে একটা limit ভাগ করবে, কে বেশি পাঠাচ্ছে বোঝা যাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q16",
+      "difficulty": "easy",
+      "question": "Rate limiter বাড়তি request ফিরিয়ে দিলে server-এর খরচ এত কম হয় কেন?",
+      "options": [
+        "কারণ rejected request-এর জন্য TCP connection খোলার বা HTTP header পড়ার কোনো দরকারই পড়ে না",
+        "কারণ rejected request-গুলো পরে রাতে একসাথে batch-এ process হয়",
+        "কারণ rate limiter request-কে compress করে ছোট করে দেয়",
+        "কারণ শুধু একটা counter দেখে উত্তর দেওয়া হয়, database query বা আসল কাজ হয় না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Limiter শুধু key-র counter বা token দেখে, তারপর সাথে সাথে 429 দেয়। Request ঢুকতে দিলে database query, password hash বা টাকার খরচ হতো; reject করায় সেগুলো সব বাঁচে।",
+      "whyWrong": {
+        "0": "Request পৌঁছাতে connection লাগেই; বাঁচে ভেতরের আসল কাজের খরচ।",
+        "1": "Rejected request ফিরিয়ে দেওয়া হয়, পরে process করা হয় না।",
+        "2": "Rate limiter compression করে না, শুধু গোনে আর সিদ্ধান্ত দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q17",
+      "difficulty": "easy",
+      "question": "অনেক API response-এ থাকা X-RateLimit-Remaining header সাধারণত কী জানায়?",
+      "options": [
+        "চলতি সময়সীমায় client আর কয়টা request পাঠাতে পারবে",
+        "Server-এর queue-তে এই মুহূর্তে কয়টা request অপেক্ষা করছে",
+        "কত সেকেন্ড পরে client আবার চেষ্টা করতে পারবে",
+        "এই মুহূর্তে কয়টা server চালু আছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Remaining বলে চলতি limit-এর আর কত বাকি, যাতে client আগেভাগে নিজের গতি কমাতে পারে। এগুলো কোনো official standard না, তাই নাম আর মানে API-ভেদে একটু আলাদা হয়।",
+      "whyWrong": {
+        "1": "Queue-এর দৈর্ঘ্য server-এর ভেতরের তথ্য, এই header তা জানায় না।",
+        "2": "কতক্ষণ পরে চেষ্টা করা যাবে তা জানায় Retry-After বা Reset ধরনের header।",
+        "3": "Server সংখ্যা client-কে জানানো হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q18",
+      "difficulty": "easy",
+      "question": "Rate limit আর quota-র মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "Rate limit শুধু IP ধরে হয়, আর quota শুধু user ধরে হয়",
+        "Rate limit server-এর CPU আর memory-র চাপ দেখে চলে, আর quota চলে client-এর নিজের ঘড়ি আর timezone দেখে",
+        "Rate limit অল্প সময়ের গতি সীমিত করে, quota দীর্ঘ সময়ের মোট পরিমাণ (যেমন মাসে 10,000 call)",
+        "Rate limit-এ 429 দেয় না, কিন্তু quota শেষ হলে 429 দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Rate limit বলে 'মিনিটে 60টার বেশি না', quota বলে 'এই মাসে মোট 10,000টা'। গতি ঠিক রেখেও quota শেষ হতে পারে, আর quota সাধারণত billing বা plan-এর সাথে যুক্ত।",
+      "whyWrong": {
+        "0": "দুটোই যেকোনো key ধরে হতে পারে; পার্থক্য সময়ের মাপে।",
+        "1": "Server-এর চাপ দেখে কাজ করে load shedding; quota সময়ের মোট পরিমাণ গোনে।",
+        "3": "Rate limit পেরোলেই সাধারণত 429 দেওয়া হয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q19",
+      "difficulty": "easy",
+      "question": "Sliding window log algorithm প্রতিটা key-র জন্য কী রাখে?",
+      "options": [
+        "প্রতি মিনিটের জন্য একটা মাত্র counter",
+        "প্রতিটা request-এর timestamp-এর একটা তালিকা",
+        "শুধু token সংখ্যা আর শেষ refill-এর সময়",
+        "একটা queue, যেখান থেকে request স্থির গতিতে বের হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Sliding window log প্রতিটা request-এর সময় রাখে (Redis-এ প্রায়ই sorted set)। নতুন request এলে window-এর বাইরের পুরনো timestamp মুছে বাকিগুলো গোনে, তাই হিসাব নিখুঁত, কিন্তু memory বেশি লাগে।",
+      "whyWrong": {
+        "0": "প্রতি মিনিটে একটা counter হলো fixed window।",
+        "2": "Token সংখ্যা আর সময় রাখে token bucket।",
+        "3": "Queue থেকে স্থির গতিতে ছাড়া leaky bucket।"
+      }
+    },
+    {
+      "id": "sd-day-018-q20",
+      "difficulty": "easy",
+      "question": "/send-otp endpoint-এ rate limit দিলে কোম্পানির খরচ বাঁচে কিভাবে?",
+      "options": [
+        "Rate limit থাকলে SMS gateway প্রতিটা SMS-এ ছাড় দেয়",
+        "Rate limit বুঝে OTP-টা SMS-এর বদলে বিনামূল্যের email বা push notification-এ পাঠিয়ে দেয়",
+        "Rate limit OTP code-টা cache করে, তাই নতুন SMS লাগে না",
+        "প্রতিটা SMS-এ টাকা লাগে, আর limit abuse করে হাজারো OTP পাঠানো আটকে দেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "OTP পাঠানো মানে প্রতিবার SMS gateway-কে টাকা দেওয়া। কেউ endpoint বারবার চাপলে (SMS bombing) বিল লাফিয়ে বাড়ে; প্রতি নম্বর বা IP-তে কড়া limit সেই খরচ আর অপব্যবহার দুটোই ঠেকায়।",
+      "whyWrong": {
+        "0": "SMS gateway-র দামের সাথে আপনার rate limit-এর সম্পর্ক নেই।",
+        "1": "Rate limiter channel বদলায় না, শুধু সংখ্যা সীমিত করে।",
+        "2": "Limiter OTP cache করে না; সে বাড়তি অনুরোধ ফিরিয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q21",
+      "difficulty": "medium",
+      "question": "Token bucket-এ capacity 10, refill rate 2 token/s, আর bucket ভরা। Client টানা যত দ্রুত পারে request পাঠাচ্ছে। প্রথম 5 সেকেন্ডে সর্বোচ্চ কয়টা request পাস হবে?",
+      "options": [
+        "10টা, কারণ capacity-র বেশি কখনো পাস হয় না",
+        "20টা: শুরুতে 10টার burst, আর 5 সেকেন্ডে আরও 10টা token জমে",
+        "12টা: 10টার burst আর শেষ সেকেন্ডে জমা 2টা token",
+        "50টা: প্রতি সেকেন্ডে capacity-র সমান 10টা করে, টানা 5 সেকেন্ড ধরে"
+      ],
+      "correctIndex": 1,
+      "explanation": "T সেকেন্ডে সর্বোচ্চ পাস = capacity + rate × T = 10 + 2 × 5 = 20। প্রথমে ভরা bucket-এর 10টা token burst-এ খরচ হয়, তারপর প্রতি সেকেন্ডে যে 2টা করে জমে, সেগুলোও খরচ হয়।",
+      "whyWrong": {
+        "0": "Capacity একবারের burst-এর সীমা; সময়ের সাথে নতুন token-ও জমে।",
+        "2": "শুধু শেষ সেকেন্ড না, পুরো 5 সেকেন্ড ধরে token জমে।",
+        "3": "Capacity প্রতি সেকেন্ডে নতুন করে ভরে না; ভরে refill rate অনুযায়ী।"
+      }
+    },
+    {
+      "id": "sd-day-018-q22",
+      "difficulty": "medium",
+      "question": "আপনার API-তে fixed window counter দিয়ে limit 'প্রতি মিনিটে 100'। একজন client 10:00:59-এ 100টা আর 10:01:00-এ আরও 100টা request পাঠাল। কী হবে?",
+      "options": [
+        "২০০টাই পাস হবে, কারণ দুটো আলাদা window-এ পড়েছে; দুই সেকেন্ডে limit-এর 2 গুণ",
+        "প্রথম 100টা পাস হবে, পরের 100টা reject, কারণ শেষ ৬০ সেকেন্ডের মধ্যে আগেই 100টা পূর্ণ হয়ে গেছে",
+        "প্রথম window-এর 50টা আর দ্বিতীয় window-এর 50টা পাস হবে",
+        "সব 200টাই reject হবে, কারণ এক সেকেন্ডে 100টা পাঠানো limit ভাঙে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Fixed window প্রতিটা ঘড়ি-ধরা মিনিটে আলাদা counter রাখে, আর 10:01:00-এ নতুন counter শূন্য থেকে শুরু। তাই দুই window-ই নিয়ম মানে, অথচ প্রায় দুই সেকেন্ডে 200টা পাস হয়। এটাই fixed window-এর edge burst সমস্যা।",
+      "whyWrong": {
+        "1": "শেষ ৬০ সেকেন্ড গোনে sliding window, fixed window শুধু চলতি window-এর counter দেখে।",
+        "2": "Fixed window-এ কোনো ভাগাভাগি বা গড় হয় না, counter শুধু limit পর্যন্ত গোনে।",
+        "3": "Limit মিনিটে, সেকেন্ডে না; প্রতিটা window-এ 100টা পর্যন্ত অনুমোদিত।"
+      }
+    },
+    {
+      "id": "sd-day-018-q23",
+      "difficulty": "medium",
+      "question": "Token bucket-এর capacity 20, refill rate 5 token/s। Bucket এখন একদম খালি, আর কেউ request পাঠাচ্ছে না। পুরো ভরতে কত সময় লাগবে?",
+      "options": [
+        "20 সেকেন্ড, প্রতি সেকেন্ডে একটা করে token",
+        "5 সেকেন্ড, refill rate-এর সমান",
+        "100 সেকেন্ড, capacity আর rate-এর গুণফল",
+        "4 সেকেন্ড, capacity ÷ refill rate"
+      ],
+      "correctIndex": 3,
+      "explanation": "পুরো ভরতে লাগে capacity ÷ refill rate = 20 ÷ 5 = 4 সেকেন্ড। এর পরে token আর জমে না, কারণ bucket capacity-র বেশি ধরে না।",
+      "whyWrong": {
+        "0": "Refill rate 5/s, প্রতি সেকেন্ডে একটা না।",
+        "1": "5 হলো প্রতি সেকেন্ডে কয়টা জমে, সময় না।",
+        "2": "Capacity × rate একটা অর্থহীন সংখ্যা; সময় পেতে ভাগ করতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q24",
+      "difficulty": "medium",
+      "question": "Leaky bucket-এর queue-র মাপ 10, আর queue থেকে request বের হয় সেকেন্ডে 5টা। একসাথে 10টা request এলো। Queue-র শেষ request মোটামুটি কতক্ষণ অপেক্ষা করবে?",
+      "options": [
+        "কোনো অপেক্ষা নেই, কারণ queue-তে জায়গা আছে, তাই সব request সাথে সাথে process হয়ে যাবে",
+        "প্রায় 10 সেকেন্ড, প্রতিটা request-এ এক সেকেন্ড",
+        "প্রায় 2 সেকেন্ড, কারণ 10টা request 5/s গতিতে বের হতে 2 সেকেন্ড লাগে",
+        "প্রায় 0.5 সেকেন্ড, কারণ queue অর্ধেক ভরা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Leaky bucket-এ request queue-তে বসে স্থির গতিতে বের হয়। 5/s মানে প্রতি 200ms-এ একটা, তাই দশম request-এর পালা আসে প্রায় 2 সেকেন্ড পরে। মসৃণ output-এর দাম এই বাড়তি latency।",
+      "whyWrong": {
+        "0": "Queue-তে জায়গা থাকা মানে reject হবে না, কিন্তু বের হবে স্থির গতিতে, তাই অপেক্ষা আছে।",
+        "1": "বের হওয়ার গতি 5/s, তাই প্রতিটায় 200ms, এক সেকেন্ড না।",
+        "3": "Queue কতটা ভরা তা দিয়ে নয়, সামনে কয়টা আছে আর বের হওয়ার গতি দিয়ে অপেক্ষা ঠিক হয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q25",
+      "difficulty": "medium",
+      "question": "Sliding window counter-এ limit মিনিটে 100। আগের মিনিটে 80টা request এসেছিল, চলতি মিনিটের 15 সেকেন্ড পেরিয়েছে আর তাতে 30টা এসেছে। নতুন request-এর সময় estimate কত, আর ফল কী?",
+      "options": [
+        "Estimate 110 (80 + 30), তাই 429",
+        "Estimate 90 (80 × 0.75 + 30), তাই request পাস",
+        "Estimate 50 (80 × 0.25 + 30), তাই request পাস",
+        "Estimate 30, কারণ শুধু চলতি window গোনা হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "শেষ ৬০ সেকেন্ডের মধ্যে আগের মিনিটের শেষ 45 সেকেন্ড পড়ে, অর্থাৎ 45/60 = 0.75 অংশ। তাই estimate = 80 × 0.75 + 30 = 90, যা 100-এর কম, তাই পাস। এটা ধরে নেয় আগের মিনিটের request সমানভাবে ছড়ানো ছিল।",
+      "whyWrong": {
+        "0": "আগের window-এর পুরোটা যোগ করলে যে অংশ ইতিমধ্যে window-এর বাইরে চলে গেছে সেটাও গোনা হয়।",
+        "2": "0.25 হলো চলতি window-এর পেরোনো অংশ; ওজন হবে আগের window-এর বাকি অংশ, 0.75।",
+        "3": "শুধু চলতি window দেখলে সেটা fixed window, তাতে edge burst ফিরে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q26",
+      "difficulty": "medium",
+      "question": "আপনার API তিনটা server-এ চলে, সামনে round-robin load balancer। প্রতিটা server নিজের memory-তে প্রতি user-এর limit 'মিনিটে 100' গোনে। একজন user মিনিটে 300টা request পাঠালে কী হবে?",
+      "options": [
+        "প্রথম server 100টা হয়ে গেলে বাকি দুই server-কে জানিয়ে দেবে, তাই সব মিলিয়ে ঠিক 100টাই পাস হবে",
+        "Load balancer limit দেখে বাড়তি 200টা নিজেই আটকে দেবে",
+        "প্রতিটা server মাত্র 100টা দেখে বলে প্রায় 300টাই পাস হবে; আসল limit তিন গুণ হয়ে গেছে",
+        "তিন server মিলে গড় করে প্রায় 33টা করে মোট 100টা পাস হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Load balancer request তিন ভাগ করায় প্রতিটা server নিজের হিসাবে মাত্র 100টা দেখে, তাই কেউই আটকায় না। আলাদা local counter-এ limit server-সংখ্যা দিয়ে গুণ হয়ে যায়; ঠিক করতে shared counter (যেমন Redis) লাগে।",
+      "whyWrong": {
+        "0": "Local counter-এ server-রা নিজেরা কিছু জানাজানি করে না।",
+        "1": "সাধারণ load balancer per-user limit গোনে না, শুধু request ভাগ করে।",
+        "3": "Server-রা কোনো গড় করে না; প্রত্যেকে নিজের 100 পর্যন্ত ছেড়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q27",
+      "difficulty": "medium",
+      "question": "একটা বড় অফিসের 500 জন কর্মী একই public IP (NAT) দিয়ে আপনার API ব্যবহার করে। প্রতিদিন সকালে তারা 429 পাচ্ছে, অথচ কেউ abuse করছে না। সবচেয়ে ভালো সমাধান কোনটা?",
+      "options": [
+        "ওই IP-কে স্থায়ীভাবে block করা, কারণ একটা IP থেকে এত request সন্দেহজনক",
+        "সবার জন্য limit বন্ধ করে দেওয়া, যাতে কেউ আর আটকে না যায়",
+        "ওই অফিসকে প্রতিটা কর্মীর জন্য আলাদা public IP কিনতে বলা",
+        "Login-করা request user ID বা API key ধরে গোনা, আর IP limit ঢিলা রাখা"
+      ],
+      "correctIndex": 3,
+      "explanation": "NAT-এর পেছনে অনেক মানুষ একই IP ভাগ করে, তাই IP-ভিত্তিক limit তাদের সবাইকে একজন ধরে নেয়। User বা API key ধরে গুনলে প্রত্যেকে নিজের ভাগ পায়; IP limit শুধু login-এর আগের বা ঢিলা সুরক্ষা হিসেবে থাকে।",
+      "whyWrong": {
+        "0": "Block করলে নির্দোষ 500 জন customer হারাবেন।",
+        "1": "Limit তুলে দিলে abuse-এর দরজা খুলে যায়।",
+        "2": "Customer-কে infrastructure বদলাতে বলা অবাস্তব; সমস্যা আপনার key বাছাইয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q28",
+      "difficulty": "medium",
+      "question": "আপনার API limit পেরোলে 503 দেয়, কোনো Retry-After ছাড়া। দেখা যাচ্ছে client-রা সাথে সাথে বারবার retry করে চাপ আরও বাড়াচ্ছে। কী বদলাবেন?",
+      "options": [
+        "429 Too Many Requests দিন, সাথে Retry-After আর বাকি quota-র header",
+        "503-এর বদলে 200 দিয়ে body-তে error লিখে দিন, যাতে client retry না করে",
+        "Rejected request-গুলো ধীরে ধীরে process করে শেষে উত্তর দিন",
+        "Limit আরও কড়া করে দিন, যাতে client-রা ভয়ে কম পাঠায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "429 client-কে স্পষ্ট বলে 'আপনি বেশি পাঠাচ্ছেন', আর Retry-After বলে কখন আবার আসবে। ভালো client library এগুলো দেখে নিজেই অপেক্ষা করে; 503 অনেক সময় 'server-এর সাময়িক সমস্যা' ধরে নিয়ে দ্রুত retry ঘটায়।",
+      "whyWrong": {
+        "1": "200 দিলে monitoring, cache আর client library সবাই ভাববে সফল হয়েছে; সমস্যা লুকিয়ে যায়।",
+        "2": "Rejected request আটকে রাখলে connection আর memory খরচ হয়, চাপ কমে না।",
+        "3": "কড়া limit দিলেও client জানবে না কখন আসবে, retry storm চলতেই থাকবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q29",
+      "difficulty": "medium",
+      "question": "আপনার mobile app 429 পেলে ঠিক 5 সেকেন্ড অপেক্ষা করে retry করে। Monitoring-এ দেখছেন প্রতি 5 সেকেন্ডে traffic-এর তীক্ষ্ণ চূড়া, আর প্রতিবার আবার অনেকে 429 পায়। কী করবেন?",
+      "options": [
+        "অপেক্ষা 5 সেকেন্ড থেকে 1 সেকেন্ডে কমিয়ে দেওয়া, যাতে user কম অপেক্ষা করে আর চূড়াগুলো ছোট হয়ে যায়",
+        "Exponential backoff-এর সাথে random jitter যোগ করা, যাতে retry সময়ের উপর ছড়িয়ে যায়",
+        "সব client-কে একই NTP server দিয়ে ঘড়ি মিলিয়ে নিতে বলা",
+        "429 পেলে retry একেবারে বন্ধ করে user-কে app restart করতে বলা"
+      ],
+      "correctIndex": 1,
+      "explanation": "সবাই একই বিরতিতে retry করায় তারা একসাথে ফিরে আসে (thundering herd)। প্রতিবার অপেক্ষা বাড়ানো (exponential backoff) আর random jitter মেশালে retry ছড়িয়ে যায়, চূড়া মিলিয়ে যায়।",
+      "whyWrong": {
+        "0": "বিরতি কমালে চূড়া আরও ঘন হবে, সমস্যা বাড়বে।",
+        "2": "ঘড়ি মেলালে client-রা আরও নিখুঁতভাবে একসাথে retry করবে।",
+        "3": "Retry পুরো বন্ধ করলে সাময়িক limit-এও user-এর কাজ নষ্ট হয়; দরকার বুদ্ধিমান retry।"
+      }
+    },
+    {
+      "id": "sd-day-018-q30",
+      "difficulty": "medium",
+      "question": "একটা partner SMS gateway কড়াভাবে সেকেন্ডে সর্বোচ্চ 10টা request নেয়, বেশি হলে আপনার account সাময়িক বন্ধ করে দেয়। আপনার নিজের OTP traffic খুব ওঠানামা করে। Outbound call-এ কোন পদ্ধতি সবচেয়ে উপযুক্ত?",
+      "options": [
+        "বড় capacity-র token bucket, যাতে burst-এ একসাথে অনেক SMS যায়",
+        "Fixed window, মিনিটে 600টা, কারণ গড়ে সেটাই 10/s",
+        "Leaky bucket ধরনের queue, যেটা স্থির 10/s গতিতে SMS পাঠায়",
+        "কোনো limit না দিয়ে gateway-র error পেলে retry করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "এখানে downstream একটুও burst সহ্য করে না, তাই output স্থির রাখা দরকার। Leaky bucket ধরনের queue spike-গুলো জমিয়ে রাখে আর ঠিক 10/s গতিতে ছাড়ে; দাম হলো spike-এর সময় কিছু OTP একটু দেরিতে যায়।",
+      "whyWrong": {
+        "0": "বড় burst ঠিক সেটাই পাঠাবে যেটা gateway নিতে পারে না।",
+        "1": "মিনিটে 600-এর fixed window এক সেকেন্ডেই 600টা পাঠাতে দিতে পারে।",
+        "3": "Error-এর পরে retry করলে ততক্ষণে account বন্ধ হয়ে যাবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q31",
+      "difficulty": "medium",
+      "question": "আপনার app খুললেই একসাথে প্রায় 8টা API call যায়, তারপর অনেকক্ষণ প্রায় কিছুই না। আপনি চান এই স্বাভাবিক burst আটকে না যাক, কিন্তু কেউ টানা দ্রুত call করলে থামুক। কোনটা বাছবেন?",
+      "options": [
+        "Token bucket, capacity অন্তত 8-10 আর refill rate স্বাভাবিক গড়ের মতো",
+        "Leaky bucket, যাতে app খোলার 8টা call queue-তে বসে স্থির গতিতে একটা একটা করে process হয়",
+        "Sliding window log, প্রতি সেকেন্ডে 1টা request-এর limit দিয়ে",
+        "Fixed window, প্রতি সেকেন্ডে 2টা request-এর limit দিয়ে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Token bucket ঠিক এই আচরণের জন্য: capacity ছোট burst মেনে নেয়, refill rate দীর্ঘ চাপ থামায়। অনেকক্ষণ চুপ থাকলে bucket ভরে যায়, তাই পরেরবার app খুললেও 8টা call একসাথে পাস হবে।",
+      "whyWrong": {
+        "1": "Leaky bucket burst-কে queue-তে বসিয়ে রাখবে, app খুলতে দেরি হবে।",
+        "2": "সেকেন্ডে 1টা limit-এ 8টা call-এর 7টাই আটকে যাবে।",
+        "3": "সেকেন্ডে 2টা limit-এ app খোলার burst-এর বেশিরভাগ 429 পাবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q32",
+      "difficulty": "medium",
+      "question": "Attacker 1,000টা আলাদা IP থেকে একই account-এ password চেষ্টা করছে, প্রতিটা IP থেকে মিনিটে মাত্র 3টা। আপনার login limit 'প্রতি IP মিনিটে 5'। কী যোগ করলে এটা ধরা পড়বে?",
+      "options": [
+        "প্রতি IP-র limit কমিয়ে মিনিটে 2 করা",
+        "Login endpoint-এর জন্য বড় capacity-র token bucket, যাতে সব IP-র চেষ্টা একসাথে এক জায়গায় গোনা হয়",
+        "Login response-এ Retry-After header যোগ করা",
+        "Account বা username ধরে আলাদা limit, যেমন ১৫ মিনিটে 10টা ব্যর্থ চেষ্টা"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা IP নিজের limit-এর ভেতরে, কিন্তু সব মিলিয়ে একটা account-এ মিনিটে 3,000টা চেষ্টা। Username/account ধরে limit দিলে এই distributed brute-force ধরা পড়ে, কারণ key এখন আক্রমণের লক্ষ্য, উৎস না।",
+      "whyWrong": {
+        "0": "প্রতি IP-র 2টা চেষ্টাও 1,000 IP মিলে মিনিটে 2,000; আর নির্দোষ user বেশি ভুগবে।",
+        "1": "বড় burst দিলে আক্রমণ আরও সহজ হয়।",
+        "2": "Retry-After শুধু তথ্য দেয়, attacker সেটা মানবে কেন?"
+      }
+    },
+    {
+      "id": "sd-day-018-q33",
+      "difficulty": "medium",
+      "question": "আপনার limiter Redis-এ প্রথমে INCR, তারপর আলাদা command-এ EXPIRE পাঠায়। মাঝে মাঝে কিছু user চিরকালের জন্য 429 পাচ্ছে, কোনোদিন reset হয় না। সম্ভাব্য কারণ কী?",
+      "options": [
+        "Redis-এর INCR atomic না, তাই দুই server একসাথে বাড়ালে কিছু গণনা হারিয়ে যায় আর counter ভুল মানে আটকে থাকে",
+        "INCR-এর পরে আর EXPIRE-এর আগে app crash করলে key-র কোনো মেয়াদ থাকে না, counter থেকেই যায়",
+        "EXPIRE সেকেন্ডে না, millisecond-এ সময় নেয়, তাই key অনেক দেরিতে মোছে",
+        "Redis memory ভরে গেলে key-গুলো চিরকাল রাখতে বাধ্য হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "INCR আর EXPIRE আলাদা command হওয়ায় মাঝখানে crash বা network সমস্যা হলে key তৈরি হয় কিন্তু TTL বসে না। সেই counter আর কখনো মোছে না, তাই user স্থায়ীভাবে আটকে যায়। সমাধান: দুটো একটা Lua script বা MULTI/EXEC-এ, অথবা প্রথমে SET ... EX ... NX।",
+      "whyWrong": {
+        "0": "INCR নিজে atomic; সমস্যা দুটো command-এর মাঝের ফাঁক।",
+        "2": "EXPIRE সেকেন্ডে সময় নেয় (millisecond-এর জন্য PEXPIRE আছে)।",
+        "3": "Memory ভরলে Redis eviction policy অনুযায়ী key মুছতেও পারে; 'চিরকাল রাখতে বাধ্য' না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q34",
+      "difficulty": "medium",
+      "question": "আপনার limiter code এরকম: Redis থেকে GET count; যদি count < 100 হয়, তাহলে SET count+1 আর request পাস। High traffic-এ দেখা যাচ্ছে মাঝে মাঝে 100-এর বেশি পাস হচ্ছে। কেন?",
+      "options": [
+        "Redis-এর GET command load বেশি হলে মাঝে মাঝে cache থেকে পুরনো মান ফেরত দেয়, তাই হিসাব ভুল হয়",
+        "100 সংখ্যাটা Redis-এ string হিসেবে থাকে, তাই তুলনা ভুল হয়",
+        "দুই server একই সময়ে 99 পড়ে দুজনেই পাস করে আর 100 লেখে: read-then-write race",
+        "SET command TTL মুছে দেয়, তাই counter আগেভাগে শূন্য হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "পড়া আর লেখার মাঝে অন্য server ঢুকে পড়তে পারে, তাই দুজনেই পুরনো মান দেখে সিদ্ধান্ত নেয়। যাচাই আর বাড়ানো একসাথে atomic করতে হবে: INCR করে ফেরত মান দেখা, বা পুরো logic Lua script-এ।",
+      "whyWrong": {
+        "0": "একক Redis instance-এ GET সর্বশেষ লেখা মানই দেয়; সমস্যা দুই ধাপের মাঝের ফাঁক।",
+        "1": "Redis-এ মান string হলেও app-এ সংখ্যা হিসেবে তুলনা হয়; over-limit-এর কারণ race।",
+        "3": "SET-এ TTL মুছে যেতে পারে সেটা সত্যি একটা আলাদা সমস্যা, কিন্তু তাতে counter আগে শূন্য হয় না, বরং মোছেই না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q35",
+      "difficulty": "medium",
+      "question": "NGINX-এ limit_req zone=perip burst=5 দেওয়া আছে (rate=5r/s, nodelay নেই)। একই IP থেকে একসাথে 10টা request এলে মোটামুটি কী হবে?",
+      "options": [
+        "সব 10টা সাথে সাথে 200 পাবে, কারণ burst আছে",
+        "৬টা 200 পাবে, তবে queue-তে থাকাগুলো 200ms পরপর দেরিতে; বাকি ৪টা reject",
+        "শুধু প্রথম 5টা সাথে সাথে 200 পাবে, আর burst-এর বাইরের বাকি 5টা সাথে সাথে 429 পাবে",
+        "10টাই queue-তে বসে 2 সেকেন্ডের মধ্যে একে একে 200 পাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রথমটা সাথে সাথে যায়, পরের 5টা burst queue-তে বসে আর 5r/s অর্থাৎ 200ms পরপর ছাড়া হয়। Queue ভরা থাকায় বাকি 4টা সাথে সাথে reject হয়, default status 503। nodelay দিলে queue-র 5টাও সাথে সাথে চলে যেত।",
+      "whyWrong": {
+        "0": "nodelay ছাড়া burst-এর request অপেক্ষা করে, আর burst-এর বাইরেরগুলো reject।",
+        "2": "Default reject status 503, আর burst-এর কারণে 6টা পাস হয়, 5টা না।",
+        "3": "Queue-র মাপ burst=5, তাই সবাই queue-তে জায়গা পায় না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q36",
+      "difficulty": "medium",
+      "question": "NGINX-এর limit_req দিয়ে limit বসিয়েছেন, কিন্তু client-রা reject হলে 503 পাচ্ছে। আপনি চান তারা 429 পাক। কী করবেন?",
+      "options": [
+        "limit_req_status 429; directive যোগ করবেন",
+        "limit_req_zone-এ rate=429r/s লিখবেন",
+        "error_page 503 দিয়ে একটা 429 লেখা HTML page দেখাবেন",
+        "burst-এর মান 429 করে দেবেন"
+      ],
+      "correctIndex": 0,
+      "explanation": "limit_req module-এর default reject status 503, আর limit_req_status directive দিয়ে সেটা বদলানো যায়। 429 দিলে client বুঝবে সমস্যাটা তার পাঠানোর গতিতে, server-এ না।",
+      "whyWrong": {
+        "1": "rate হলো অনুমোদিত গতি, status code না।",
+        "2": "Page-এ 429 লেখা থাকলেও HTTP status তখনও 503, client library সেটাই দেখে।",
+        "3": "burst queue-র মাপ, status code-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-018-q37",
+      "difficulty": "medium",
+      "question": "Sliding window log ব্যবহার করতে চান: 10 লাখ user, প্রতি user-এর limit ঘণ্টায় 1,000টা request, প্রতি timestamp কমপক্ষে 8 byte। সব user limit পর্যন্ত ব্যবহার করলে শুধু timestamp-এর জন্য মোটামুটি কত memory লাগবে?",
+      "options": ["প্রায় 8 MB", "প্রায় 1 GB", "প্রায় 8 TB", "প্রায় 8 GB"],
+      "correctIndex": 3,
+      "explanation": "1,000 × 10,00,000 × 8 byte = 8,000,000,000 byte, অর্থাৎ প্রায় 8 GB, data structure-এর overhead বাদেই। এজন্য বড় scale-এ sliding window counter বা token bucket বেশি জনপ্রিয়, যেখানে প্রতি key-তে মাত্র দুটো সংখ্যা।",
+      "whyWrong": {
+        "0": "8 MB হতো যদি user মাত্র 1,000 জন হতো।",
+        "1": "1 GB হিসাবে 8 byte গুণ করা বাদ পড়েছে।",
+        "2": "8 TB হতে হলে আরও হাজার গুণ বেশি timestamp লাগত।"
+      }
+    },
+    {
+      "id": "sd-day-018-q38",
+      "difficulty": "medium",
+      "question": "ঈদের sale-এ প্রত্যেক user নিজের rate limit-এর অনেক নিচে আছে, তবু মোট traffic এত বেশি যে database ভেঙে পড়ছে। কোন পদ্ধতি এখানে সবচেয়ে বেশি সাহায্য করবে?",
+      "options": [
+        "প্রতি user-এর limit আরও বাড়ানো, যাতে কেউ 429 না পায়",
+        "সব user-এর Retry-After header-এর মান বাড়িয়ে দেওয়া, যাতে 429 পাওয়া client-রা অনেকক্ষণ পরে ফেরে",
+        "Load shedding: server-এর চাপ দেখে কম জরুরি request (যেমন analytics) আগে বাদ দেওয়া",
+        "প্রতি user-এর জন্য sliding window log চালু করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Per-user rate limit একজনের বাড়াবাড়ি থামায়, কিন্তু সবাই মিলে বেশি হলে কিছু করে না। Load shedding server-এর নিজের অবস্থা দেখে অগ্রাধিকার অনুযায়ী traffic ফেলে দেয়, যাতে payment-এর মতো জরুরি কাজ চলতে থাকে।",
+      "whyWrong": {
+        "0": "Limit বাড়ালে আরও বেশি traffic ঢুকবে, database আরও চাপে পড়বে।",
+        "1": "কেউ limit পেরোচ্ছেই না, তাই Retry-After কাজেই আসছে না।",
+        "3": "Algorithm বদলালেও per-user limit সবার মোট চাপ দেখে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q39",
+      "difficulty": "medium",
+      "question": "আপনার SaaS API-তে Free আর Pro plan-এর আলাদা limit। প্রতিটা request-এ user-এর plan জানতে database query হচ্ছে, তাই limiter নিজেই latency বাড়াচ্ছে। ভালো সমাধান কোনটা?",
+      "options": [
+        "Plan-এর তথ্য অল্প TTL দিয়ে cache করা, আর plan অনুযায়ী bucket-এর capacity ও refill rate বাছা",
+        "Plan আলাদা না করে সবার জন্য Pro plan-এর limit দিয়ে দেওয়া",
+        "প্রতিটা request-এ client-কে নিজের plan একটা header-এ পাঠাতে বলা, আর database না দেখে সেটাই বিশ্বাস করা",
+        "Plan যাচাই বাদ দিয়ে শুধু IP ধরে limit দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "Plan খুব কম বদলায়, তাই cache করলে (Day 17) প্রতিটা request-এ database যেতে হয় না। Key-র সাথে plan দেখে প্রতিটা tier-এর জন্য আলাদা capacity ও refill rate ঠিক হয়।",
+      "whyWrong": {
+        "1": "সবাইকে Pro limit দিলে plan-এর পার্থক্য আর ব্যবসার মডেল দুটোই হারায়।",
+        "2": "Client-এর পাঠানো plan বিশ্বাস করলে সবাই নিজেকে Enterprise বলবে।",
+        "3": "IP-ভিত্তিক limit plan বোঝে না, আর NAT-এর সমস্যাও আনে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q40",
+      "difficulty": "medium",
+      "question": "আপনার API-তে GET /profile খুব হালকা, কিন্তু POST /reports/export একটা পুরো বছরের report বানায়। দুটোই প্রতি user মিনিটে 60টা limit-এ। ভারী endpoint server বসিয়ে দিচ্ছে। কী করবেন?",
+      "options": [
+        "দুটো endpoint-ই 60-তে রেখে শুধু server বাড়ানো",
+        "হালকা endpoint-এর limit কমিয়ে ভারী endpoint-এর জন্য জায়গা করা",
+        "Request body-র size ধরে limit দেওয়া, কারণ export request-এর body সাধারণত বড় হয় আর বেশি bandwidth নেয়",
+        "Endpoint বা খরচ অনুযায়ী আলাদা limit, বা ভারী request-এ বেশি token কাটা (cost-based)"
+      ],
+      "correctIndex": 3,
+      "explanation": "সব request-এর দাম সমান না, তাই এক গোনায় রাখা অন্যায্য। ভারী endpoint-এ আলাদা কড়া limit, অথবা একই bucket-এ ভারী request-এ বেশি token (যেমন export = 10 token) কাটলে আসল খরচের সাথে limit মেলে।",
+      "whyWrong": {
+        "0": "Server বাড়ালেও একজন user টানা export চালিয়ে আবার বসিয়ে দেবে।",
+        "1": "হালকা endpoint কমালে ভারীটার সমস্যা মেটে না।",
+        "2": "Export-এর খরচ body-র মাপে না, server-এর কাজে; ছোট request-ও ভারী হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q41",
+      "difficulty": "hard",
+      "question": "আপনার token bucket এভাবে বানানো: app Redis থেকে tokens আর last_refill পড়ে, নিজে হিসাব করে, তারপর নতুন মান SET করে। Load test-এ দেখা গেল capacity 10 থাকলেও একসাথে 25টা পাস হচ্ছে। সবচেয়ে ঠিক সমাধান কোনটা?",
+      "options": [
+        "Redis-এ persistence (AOF) চালু করা, যাতে restart বা crash হলেও tokens-এর মান হারিয়ে না যায়",
+        "পড়া, হিসাব আর লেখা পুরোটা একটা Lua script-এ Redis-এর ভেতরে atomic ভাবে চালানো",
+        "প্রতিটা app server-এ bucket-এর একটা local copy রেখে Redis-এ কম যাওয়া",
+        "Refill rate কমিয়ে দেওয়া, যাতে token কম জমে"
+      ],
+      "correctIndex": 1,
+      "explanation": "অনেক server একই সাথে একই পুরনো মান পড়ে, প্রত্যেকে ভাবে token আছে, আর একই token বারবার খরচ হয়। Lua script Redis-এর ভেতরে এক টানে চলে, মাঝে অন্য command ঢোকে না, তাই read-compute-write atomic হয়।",
+      "whyWrong": {
+        "0": "Persistence restart-এর পরে data রাখে, race condition ঠেকায় না।",
+        "2": "Local copy রাখলে ভুল আরও বাড়বে, কারণ প্রত্যেকে আলাদা হিসাব রাখবে।",
+        "3": "Refill rate কমালেও একসাথে আসা request-রা একই token ভাগ করে খরচ করবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q42",
+      "difficulty": "hard",
+      "question": "Redis 10 মিনিট বন্ধ ছিল, আর সেই সময়ে আপনার পুরো API 500 error দিয়েছে, কারণ limiter Redis-এ connect করতে না পেরে exception throw করছিল। সবচেয়ে যুক্তিসঙ্গত নতুন design কোনটা?",
+      "options": [
+        "Endpoint ধরে: সাধারণ API-তে fail-open আর local fallback limiter, login/OTP-তে fail-closed; Redis call-এ ছোট timeout",
+        "সব endpoint-এ fail-closed রাখা, কারণ নিরাপত্তা সবসময় availability-র আগে",
+        "Rate limiter পুরোপুরি সরিয়ে দেওয়া, কারণ এটা নিজেই failure-এর কারণ",
+        "Redis-এর জায়গায় main database-এর একটা table-এ counter রাখা, কারণ database বেশি নির্ভরযোগ্য আর আগে থেকেই replicated, আলাদা কিছু চালাতে হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Limiter-এর ব্যর্থতা পুরো API বন্ধ করে দিলে limiter নিজেই single point of failure। সাধারণ endpoint-এ fail-open (সাথে ঢিলা local limit) availability রাখে, আর যেখানে abuse-এর ক্ষতি সরাসরি টাকা বা নিরাপত্তা, সেখানে fail-closed যুক্তিসঙ্গত।",
+      "whyWrong": {
+        "1": "সব জায়গায় fail-closed মানে ঠিক এই ঘটনাই আবার ঘটবে।",
+        "2": "Limiter সরালে abuse-এর সব সুরক্ষা হারাবেন; দরকার ঠিকমতো fail করা।",
+        "3": "প্রতিটা request-এ database-এ লেখা database-কেই নতুন bottleneck বানাবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q43",
+      "difficulty": "hard",
+      "question": "Redis down না, কিন্তু মাঝে মাঝে খুব ধীর (কয়েক সেকেন্ড)। তখন প্রতিটা API request limiter-এর জন্য ঝুলে থাকে আর thread শেষ হয়ে যায়। কী করবেন?",
+      "options": [
+        "Redis connection pool অনেক বড় করে দেওয়া, যাতে ধীর সময়েও প্রতিটা request-এর জন্য একটা connection অপেক্ষায় থাকে",
+        "Limiter-এর Redis call-কে API request শেষ হওয়ার পরে async করে দেওয়া",
+        "Redis call-এ ছোট timeout, বারবার fail করলে circuit breaker দিয়ে কিছুক্ষণ local limiter-এ নেমে আসা",
+        "Rate limit শুধু রাতে চালু রাখা, যখন Redis কম ব্যস্ত"
+      ],
+      "correctIndex": 2,
+      "explanation": "ধীর dependency down dependency-র চেয়েও খারাপ, কারণ সবাইকে আটকে রাখে। ছোট timeout ক্ষতি সীমিত করে, circuit breaker বারবার ব্যর্থ call বন্ধ রাখে, আর local fallback কিছুটা সুরক্ষা ধরে রাখে।",
+      "whyWrong": {
+        "0": "বড় pool মানে আরও বেশি request একসাথে ঝুলে থাকা।",
+        "1": "Request শেষে limit দেখলে বাড়তি request আটকানোই যাবে না।",
+        "3": "Abuse দিনেও হয়; সময় ধরে limiter বন্ধ রাখা সুরক্ষা হারানো।"
+      }
+    },
+    {
+      "id": "sd-day-018-q44",
+      "difficulty": "hard",
+      "question": "Hybrid design: 10টা server, প্রতি tenant-এর global limit 1,000 req/s, তাই প্রতিটা server-কে স্থির local budget 100 req/s দেওয়া হয়েছে। Load balancer এক tenant-এর 80% traffic দুটো server-এ পাঠাচ্ছে। Tenant মোট 600 req/s পাঠালে কী হবে?",
+      "options": [
+        "কোনো সমস্যা নেই, মোট 600 global 1,000-এর নিচে, তাই সব পাস",
+        "দুটো ব্যস্ত server নিজের 100-এর বেশি পেয়ে reject করবে, ফলে মোট limit-এর নিচে থেকেও tenant 429 পাবে",
+        "বাকি 8টা server-এর না-ব্যবহৃত budget আপনা আপনি ব্যস্ত দুটো server-এ চলে যাবে, তাই tenant কোনো 429 পাবে না",
+        "Global counter 1,000 ছাড়িয়ে যাবে, কারণ local budget যোগ হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "দুটো server মিলে 480 req/s পাচ্ছে, অর্থাৎ প্রতিটায় 240, অথচ local budget 100। তাই tenant মোট limit-এর অনেক নিচে থেকেও 429 পাবে। স্থির ভাগ অসমান traffic-এ ভুল করে; budget-কে traffic অনুযায়ী মাঝে মাঝে পুনর্বণ্টন বা central store-এর সাথে sync করতে হয়।",
+      "whyWrong": {
+        "0": "Local budget স্থির হওয়ায় ব্যস্ত server-রা নিজের ভাগ পেরিয়ে যায়।",
+        "2": "স্থির budget-এ কোনো আপনা আপনি পুনর্বণ্টন হয় না, সেটা আলাদা করে বানাতে হয়।",
+        "3": "স্থির local budget-এর যোগফল 1,000, তাই এই design-এ global limit পেরোয় না, বরং আগেই আটকায়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q45",
+      "difficulty": "hard",
+      "question": "আপনি sticky routing ব্যবহার করেন: user id-র hash দিয়ে প্রতিটা user সবসময় একই server-এ যায়, আর প্রতিটা server local counter রাখে। Autoscaling-এ server 4 থেকে 6 হলো। এর ঠিক পরপর কোন সমস্যা দেখা দেবে?",
+      "options": [
+        "সব user-এর request একটা server-এ জমে যাবে",
+        "Load balancer user-দের session cookie হারিয়ে ফেলবে বলে সবাই logout হবে",
+        "Counter-গুলো স্বয়ংক্রিয়ভাবে পুরনো server থেকে নতুন server-এ copy হবে, তাই কিছুক্ষণ সব request ধীর হয়ে যাবে",
+        "অনেক user নতুন server-এ সরে যাবে, যেখানে তাদের counter শূন্য, তাই কিছুক্ষণ limit-এর বেশি পাস হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Server সংখ্যা বদলালে hash-এর ফল বদলায়, অনেক user অন্য server-এ চলে যায়। নতুন server তাদের আগের হিসাব জানে না, তাই counter শূন্য থেকে শুরু হয় আর সেই সময়ে limit কার্যত ঢিলা হয়ে যায়। Sticky routing সহজ, কিন্তু এই দুর্বলতা মেনে নিতে হয়।",
+      "whyWrong": {
+        "0": "Hash user-দের নতুন server-গুলোতেও ছড়িয়ে দেয়, এক জায়গায় জমায় না।",
+        "1": "এখানে limit-এর counter local, session cookie হারানোর প্রশ্ন আসছে না।",
+        "2": "Local counter আপনা আপনি কোথাও copy হয় না; সেজন্যই হিসাব হারায়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q46",
+      "difficulty": "hard",
+      "question": "Token bucket-এর refill হিসাব প্রতিটা app server নিজের ঘড়ি (now) দিয়ে করে, state থাকে Redis-এ। একটা server-এর ঘড়ি 2 সেকেন্ড এগিয়ে। এর ফল কী হতে পারে, আর সমাধান কী?",
+      "options": [
+        "কোনো প্রভাব নেই, কারণ Redis সব সময় নিজে সময় ঠিক করে নেয়",
+        "ওই server-এর হিসাবে বেশি সময় পেরোয়, তাই বাড়তি token জমে; সমাধান: Lua script-এর ভেতরে Redis-এর TIME ব্যবহার",
+        "ওই server-এর সব request reject হবে, কারণ timestamp ভবিষ্যতের",
+        "Bucket-এর capacity কার্যত 2 গুণ হয়ে যাবে, কারণ দুই সেকেন্ডের token আগেভাগে জমে; সমাধান: capacity অর্ধেক করে দেওয়া, যাতে মোট ঠিক থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "elapsed = now − last_refill; এগিয়ে থাকা ঘড়ি elapsed বাড়িয়ে দেয়, তাই বেশি token জমে, আর পিছিয়ে থাকা server last_refill পিছিয়ে লিখে আরও গোলমাল করে। সময়ের একটাই উৎস, যেমন script-এর ভেতরে Redis TIME, নিলে সব server একই ঘড়ি দেখে।",
+      "whyWrong": {
+        "0": "Redis app-এর পাঠানো সময় বিশ্বাস করে; নিজে ঠিক করে না।",
+        "2": "ভবিষ্যতের timestamp-এ reject হয় না; হিসাবে বেশি token জমে।",
+        "3": "Capacity token-এর উপরের সীমা, ঘড়ির পার্থক্যে তা বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q47",
+      "difficulty": "hard",
+      "question": "Redis Cluster-এ আপনার limiter চলে। একজন বিশাল enterprise customer-এর একটা key সব traffic পায়, আর সেই key যে node-এ আছে সেটা CPU-তে আটকে যাচ্ছে, বাকি node প্রায় অলস। ভালো উপায় কোনটা?",
+      "options": [
+        "Cluster-এ আরও কয়েকটা node যোগ করা, তাহলে hot key-এর চাপ আপনা আপনি নতুন node-গুলোতে সমানভাবে ভাগ হয়ে যাবে",
+        "ওই customer-এর limit তুলে দেওয়া, কারণ সে টাকা দেয়",
+        "Key-টা কয়েকটা sub-key-তে ভাগ করা বা প্রতিটা server-এ local pre-aggregation করে মাঝে মাঝে Redis-এ পাঠানো",
+        "ওই key-এর TTL ছোট করা, যাতে Redis কম কাজ করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একটা key সবসময় একটা hash slot-এ, অর্থাৎ একটা node-এ থাকে, তাই node বাড়ালেও hot key ভাগ হয় না। Limit-কে কয়েকটা sub-key-তে ভাগ করা, বা local-এ গুনে batch-এ global-এ যোগ করা চাপ ছড়ায়; দাম কিছুটা কম নির্ভুলতা।",
+      "whyWrong": {
+        "0": "একটা key কখনো একাধিক node-এ ভাগ হয় না।",
+        "1": "Limit তুলে দিলে ওই customer-এর ভুল script বাকিদেরও ভোগাবে।",
+        "3": "TTL-এ প্রতি request-এর কাজ কমে না; hot key একই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q48",
+      "difficulty": "hard",
+      "question": "Fixed window counter-এ limit 'প্রতি মিনিটে 50'। সবচেয়ে খারাপ ক্ষেত্রে একজন client মাত্র এক সেকেন্ডের মধ্যে (window-এর কিনারা ঘিরে) সর্বোচ্চ কয়টা request পাস করাতে পারবে?",
+      "options": [
+        "50টা, কারণ প্রতি মিনিটে এর বেশি অনুমোদিত না",
+        "প্রায় 1টা, কারণ 50/60 সেকেন্ডে একটারও কম",
+        "75টা, কারণ কিনারায় দুই window-এর অর্ধেক অর্ধেক limit যোগ হয়ে যায়",
+        "100টা: আগের window-এর শেষ মুহূর্তে 50 আর নতুন window-এর শুরুতে 50"
+      ],
+      "correctIndex": 3,
+      "explanation": "আগের window-এর শেষ অংশে 50টা আর নতুন window শুরু হতেই আরও 50টা পাঠালে দুটোই নিজের window-এ বৈধ। তাই এক সেকেন্ডের মধ্যে 100টা, limit-এর 2 গুণ, পাস হতে পারে।",
+      "whyWrong": {
+        "0": "এটা শুধু একটা window-এর ভেতরে সত্যি; কিনারায় দুই window-এর counter আলাদা।",
+        "1": "Fixed window গড় গতি দেখে না, window-এর ভেতরে যেকোনো সময়ে পুরো 50 দিতে পারে।",
+        "2": "Fixed window-এ কোনো অর্ধেক-অর্ধেক ভাগ হয় না; দুই window-ই পুরো limit দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-018-q49",
+      "difficulty": "hard",
+      "question": "Token bucket: capacity 30, refill 10 token/s, bucket ভরা। Client 5 সেকেন্ড ধরে সমানভাবে সেকেন্ডে 20টা করে মোট 100টা request পাঠাল। মোটামুটি কয়টা পাস হবে?",
+      "options": [
+        "50টা: প্রতি সেকেন্ডে refill rate-এর সমান 10টা করে",
+        "30টা: শুধু bucket-এ জমা token",
+        "80টা: প্রথম 3 সেকেন্ডে সব 60টা, তারপর বাকি 2 সেকেন্ডে সেকেন্ডে 10টা করে 20টা",
+        "100টা: capacity 30 আর 5 সেকেন্ডের refill মিলে সব request-এর জন্য যথেষ্ট token থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতি সেকেন্ডে 20টা খরচ, 10টা জমা, তাই bucket প্রতি সেকেন্ডে 10 করে কমে; 30 থেকে শূন্য হতে 3 সেকেন্ড। এই 3 সেকেন্ডে আসা 60টাই পাস। এরপর শুধু refill-এর 10/s পাস, বাকি 2 সেকেন্ডে 20টা। মোট 80, আর 20টা 429।",
+      "whyWrong": {
+        "0": "শুরুর জমানো 30টা token-এর burst বাদ পড়েছে।",
+        "1": "সময়ের সাথে যে token জমে, সেগুলো বাদ পড়েছে।",
+        "3": "5 সেকেন্ডে সর্বোচ্চ 30 + 10×5 = 80 token পাওয়া যায়, 100 না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q50",
+      "difficulty": "hard",
+      "question": "Sliding window counter কোন পরিস্থিতিতে সবচেয়ে বেশি ভুল করে, অর্থাৎ আসল শেষ-৬০-সেকেন্ডের সংখ্যা limit-এর নিচে থাকলেও request reject করে?",
+      "options": [
+        "আগের window-এর সব request তার একদম শুরুতে এসেছিল, যেগুলো আসলে আর শেষ ৬০ সেকেন্ডে নেই",
+        "আগের window-এর request-গুলো পুরো মিনিট জুড়ে সমানভাবে ছড়ানো ছিল, প্রতি সেকেন্ডে প্রায় একই সংখ্যায়",
+        "চলতি window-এ এখনো কোনো request আসেনি",
+        "আগের window-এ একটাও request আসেনি"
+      ],
+      "correctIndex": 0,
+      "explanation": "এই algorithm ধরে নেয় আগের window-এর request সমানভাবে ছড়ানো। সবগুলো যদি শুরুতে এসে থাকে, সেগুলো আসলে window থেকে বেরিয়ে গেছে, কিন্তু ওজন দিয়ে এখনো আংশিক গোনা হচ্ছে, তাই estimate বেশি আসে। এই সামান্য ভুল কম memory-র দাম।",
+      "whyWrong": {
+        "1": "সমানভাবে ছড়ানো থাকলে algorithm-এর ধারণাই সত্যি, তাই estimate প্রায় নিখুঁত।",
+        "2": "চলতি count শূন্য হলে estimate শুধু আগের window-এর ওজনযুক্ত অংশ; এখানে মূল ভুলের উৎস না।",
+        "3": "আগের window শূন্য হলে estimate ঠিক চলতি count-এর সমান, কোনো আন্দাজই লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q51",
+      "difficulty": "hard",
+      "question": "একটা report endpoint-এর প্রতিটা request প্রায় 30 সেকেন্ড চলে। Limit 'প্রতি user সেকেন্ডে 10'। একজন user টানা পাঠালে server-এ একসাথে প্রায় 300টা ভারী request চলে, worker শেষ। কোন নিয়ন্ত্রণ এখানে সরাসরি সমস্যার মূলে যায়?",
+      "options": [
+        "Rate limit সেকেন্ডে 10 থেকে 5 করা",
+        "Report-এর response cache করা, যাতে একই report বারবার না বানাতে হয় আর worker-রা দ্রুত মুক্ত হয়",
+        "Fixed window-এর বদলে sliding window log ব্যবহার করা",
+        "Concurrent request limiter: প্রতি user একসাথে সর্বোচ্চ কয়টা request চলতে পারবে, যেমন 5টা"
+      ],
+      "correctIndex": 3,
+      "explanation": "সমস্যা প্রতি সেকেন্ডে কয়টা আসছে তা না, একসাথে কয়টা চলছে তা। লম্বা request-এ in-flight সংখ্যা ≈ rate × duration (10 × 30 = 300)। Concurrent limiter সরাসরি in-flight সংখ্যা আটকায়; Stripe-ও request rate limiter-এর পাশাপাশি এমন একটা limiter ব্যবহারের কথা লিখেছে।",
+      "whyWrong": {
+        "0": "5/s-এও 5 × 30 = 150টা একসাথে চলবে, সমস্যা অর্ধেক হলো মাত্র।",
+        "1": "Cache সাহায্য করতে পারে, কিন্তু আলাদা আলাদা report-এ concurrency-র সমস্যা থাকেই।",
+        "2": "Algorithm বদলালেও rate একই থাকে, in-flight সংখ্যা কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q52",
+      "difficulty": "hard",
+      "question": "Mobile app একটা ব্যর্থ call মোট 3 বার পর্যন্ত চেষ্টা করে। App-এর API server-ও তার downstream service-কে প্রতি call-এ মোট 3 বার পর্যন্ত চেষ্টা করে। Downstream পুরোপুরি down থাকলে একটা user tap-এ downstream সর্বোচ্চ কয়টা request পায়?",
+      "options": ["3টা", "6টা", "9টা", "27টা"],
+      "correctIndex": 2,
+      "explanation": "App-এর প্রতিটা চেষ্টা API server-এ একটা call, আর প্রতিটা call downstream-এ 3 বার চেষ্টা করে: 3 × 3 = 9। Layer যত বাড়ে, retry গুণ হয়ে বাড়ে (retry amplification); তাই retry এক layer-এ রাখা, retry budget আর rate limit জরুরি।",
+      "whyWrong": {
+        "0": "এটা শুধু এক layer-এর retry; দুই layer গুণ হয়।",
+        "1": "Retry যোগ হয় না, গুণ হয়।",
+        "3": "27 হতো তিন layer-এ তিনবার করে চেষ্টা থাকলে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q53",
+      "difficulty": "hard",
+      "question": "আপনার design-এ per-user rate limit পেরোলে 429, আর পুরো fleet চাপে পড়লে কম জরুরি traffic load shedding-এ বাদ পড়ে। একজন customer অভিযোগ করল: 'আমি নিজের limit-এর অনেক নিচে, তবু 503 পেলাম।' এটা কি bug?",
+      "options": [
+        "হ্যাঁ, এটা bug: নিজের limit-এর নিচে থাকা কোনো client-এর request কোনো অবস্থাতেই বাদ পড়া উচিত না, overload হলেও",
+        "হ্যাঁ, 503-এর বদলে 429 দেওয়া উচিত ছিল, কারণ সব rejection-ই rate limit",
+        "না, তবে সমাধান হলো তার limit বাড়িয়ে দেওয়া",
+        "না, load shedding server-এর অবস্থা দেখে কাজ করে; সবাই মিলে বেশি হলে limit-এর নিচের request-ও বাদ পড়তে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Rate limiting প্রতি client-এর ন্যায্যতা দেখে, load shedding পুরো system বাঁচায়। Overload-এ কম জরুরি request সবার কাছ থেকেই বাদ যেতে পারে, আর তখন 503 দেওয়া অর্থপূর্ণ, কারণ সমস্যা server-এর দিকে। Customer-কে Retry-After দেওয়া আর এই নীতি documentation-এ বলে রাখা ভালো।",
+      "whyWrong": {
+        "0": "এটা ধরে নেয় একমাত্র নিয়ন্ত্রণ per-user limit; fleet overload আলাদা ব্যাপার।",
+        "1": "429 বলে 'আপনি বেশি পাঠাচ্ছেন', যা এখানে সত্যি না; client ভুল সিদ্ধান্ত নেবে।",
+        "2": "তার limit বাড়ালে overload-এর সময় কিছুই বদলাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q54",
+      "difficulty": "hard",
+      "question": "একটা client library X-RateLimit-Reset-এর মানকে 'আর কত সেকেন্ড অপেক্ষা' ধরে নেয়। একটা নতুন API-তে integration-এর পর library কার্যত চিরকাল অপেক্ষা করে বসে থাকে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "ওই API Reset-এ Unix epoch timestamp পাঠায় (যেমন 1,700,000,000-এর মতো সংখ্যা), সেকেন্ডের ব্যবধান না",
+        "নতুন API rate limit-ই ব্যবহার করে না, তাই header খালি আসে",
+        "Reset header-এর মান সবসময় millisecond-এ হয়, standard অনুযায়ী",
+        "Library-র ঘড়ি API server-এর ঘড়ির চেয়ে কয়েক সেকেন্ড পিছিয়ে আছে, তাই Reset-এর হিসাব প্রতিবারই অনেক ভুল আসে"
+      ],
+      "correctIndex": 0,
+      "explanation": "X-RateLimit-* header কোনো standard না, তাই একেক API একেক মানে দেয়: কেউ বাকি সেকেন্ড, কেউ Unix epoch (যেমন GitHub-এর x-ratelimit-reset)। Epoch-কে সেকেন্ডের ব্যবধান ধরলে কয়েক দশক অপেক্ষা! Documentation দেখুন, আর থাকলে Retry-After-কে অগ্রাধিকার দিন।",
+      "whyWrong": {
+        "1": "Header খালি থাকলে library অপেক্ষাই করত না, চিরকাল তো না-ই।",
+        "2": "এমন কোনো standard নেই; আর millisecond হলেও কয়েক দশক হতো না, শুধু হাজার গুণ বেশি।",
+        "3": "কয়েক সেকেন্ডের ঘড়ির পার্থক্যে কয়েক সেকেন্ডই বাড়ে, 'চিরকাল' না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q55",
+      "difficulty": "hard",
+      "question": "আপনার GraphQL API-তে সব কিছু একটাই endpoint, /graphql। 'প্রতি user মিনিটে 100 request' limit থাকা সত্ত্বেও কয়েকটা user এমন query পাঠায় যা একবারেই হাজারো record আর nested সম্পর্ক টেনে আনে। কী করবেন?",
+      "options": [
+        "GraphQL বাদ দিয়ে REST-এ ফিরে যাওয়া, যাতে প্রতিটা resource-এর আলাদা endpoint আর আলাদা limit থাকে",
+        "Query-র জটিলতা বা আনুমানিক খরচ হিসাব করে সেই অনুযায়ী point বা token কাটা (cost-based limit)",
+        "Limit 100 থেকে 10 request করা, যাতে ভারী query কম হয়",
+        "শুধু response size ধরে limit দেওয়া, query শেষ হওয়ার পরে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এক endpoint-এ request গোনা খরচ মাপে না: একটা হালকা আর একটা ভয়ানক query একই '১টা'। Query-র depth, field আর আনুমানিক record সংখ্যা ধরে point হিসাব করলে limit আসল খরচের সাথে মেলে; GitHub-এর GraphQL API এভাবে point-ভিত্তিক limit দেয়।",
+      "whyWrong": {
+        "0": "API style বদলানো বিশাল কাজ, আর REST-এও ভারী endpoint-এর একই সমস্যা থাকে।",
+        "2": "সব user-এর হালকা query-ও শাস্তি পাবে, অথচ একটা ভারী query তবু পাস হবে।",
+        "3": "Query শেষ হওয়ার পরে মাপলে server-এর খরচ ততক্ষণে হয়েই গেছে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q56",
+      "difficulty": "hard",
+      "question": "আপনার site-এ 1 লাখ আলাদা IP থেকে আক্রমণ, প্রতিটা IP মিনিটে মাত্র 2টা request পাঠায়। আপনার limit 'প্রতি IP মিনিটে 10'। মোট মিনিটে 2 লাখ request-এ server ভেঙে পড়ছে। কী বলবেন?",
+      "options": [
+        "প্রতি IP-র limit মিনিটে 1 করলেই আক্রমণ থেমে যাবে",
+        "Per-IP rate limit এখানে যথেষ্ট না; edge-এ DDoS mitigation, global/endpoint limit আর load shedding লাগবে",
+        "Sliding window log ব্যবহার করলে আক্রমণ ধরা পড়বে",
+        "Retry-After header-এর মান অনেক বড় (যেমন পুরো এক দিন) করে দেওয়া, তাহলে bot-রা অপেক্ষা করতে করতে নিজেরাই থেমে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা IP নিজের limit-এর অনেক নিচে, তাই per-IP limiter কিছুই আটকাবে না। এমন distributed আক্রমণে লাগে edge-এ বড় capacity-র DDoS সুরক্ষা, পুরো endpoint-এর মোট limit, আচরণ বিশ্লেষণ আর load shedding। Day 81-এ এটা নিয়ে গভীরে যাব।",
+      "whyWrong": {
+        "0": "মিনিটে 1 করলেও 1 লাখ IP মিলে মিনিটে 1 লাখ, আর নির্দোষ user আটকাবে।",
+        "2": "Algorithm নিখুঁত হলেও প্রতিটা IP limit-এর নিচে, তাই কিছু ধরা পড়ে না।",
+        "3": "Attacker Retry-After মানতে বাধ্য না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q57",
+      "difficulty": "hard",
+      "question": "আপনার app দুটো region-এ চলে, প্রতিটা region-এর নিজের Redis। প্রতি user-এর limit 'মিনিটে 1,000'। একজন user দুই region-এ সমানভাবে request পাঠালে কী হবে, আর যুক্তিসঙ্গত বিকল্প কী?",
+      "options": [
+        "Redis replication-এর কারণে দুই region আপনা আপনি একই counter দেখবে, তাই সব মিলিয়ে ঠিক 1,000টাই পাস হবে, এর বেশি একটাও না",
+        "প্রতিটা region 500 পরে আটকাবে, কারণ Redis নিজেই limit ভাগ করে",
+        "প্রায় 2,000 পাস হতে পারে; বিকল্প: region-কে budget-এর ভাগ, global counter (বেশি latency), বা ভুল মেনে নেওয়া",
+        "দুই region-এর counter যোগ হয়ে user সাথে সাথে block হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "আলাদা Redis মানে আলাদা হিসাব, তাই প্রতিটা region 1,000 পর্যন্ত ছাড়ে। প্রতিটা request-এ cross-region global counter দেখলে latency অনেক বাড়ে; তাই প্রায়ই region-ভিত্তিক ভাগ (যেমন 500 + 500, প্রয়োজনে পুনর্বণ্টন) বা সামান্য ভুল মেনে নেওয়া হয়। সিদ্ধান্ত নির্ভর করে কতটা নিখুঁত দরকার।",
+      "whyWrong": {
+        "0": "আলাদা Redis instance-এর মধ্যে নিজে থেকে কোনো replication নেই; থাকলেও তা asynchronous, তাই মুহূর্তের হিসাব মিলত না।",
+        "1": "Redis কোনো limit জানে না, শুধু app-এর বলা counter রাখে।",
+        "3": "Counter আলাদা থাকায় কোনো যোগফল হচ্ছেই না।"
+      }
+    },
+    {
+      "id": "sd-day-018-q58",
+      "difficulty": "hard",
+      "question": "আপনার API-তে fixed window limit, প্রতিটা window ঘড়ির পুরো মিনিটে শুরু। 429 পাওয়া হাজারো client X-RateLimit-Reset দেখে ঠিক পরের মিনিটের :00 সেকেন্ডে ফিরে আসে। প্রতি মিনিটের শুরুতে বিশাল spike। কোনটা সমস্যার মূলে যায়?",
+      "options": [
+        "Window-এর দৈর্ঘ্য এক মিনিট থেকে এক ঘণ্টা করা",
+        "Token bucket বা sliding window, বা প্রতি key-র window প্রথম request থেকে শুরু, সাথে client-এ jitter",
+        "Server সংখ্যা দ্বিগুণ করা, যাতে :00-এর spike সামলানো যায়",
+        "Reset header পাঠানো একেবারে বন্ধ করে দেওয়া, যাতে client-রা জানতেই না পারে কখন limit আবার ভরবে আর একসাথে না ফেরে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সবার window একই মুহূর্তে reset হয় বলে সবাই একসাথে ফেরে। Token bucket-এ token ক্রমাগত জমে, কোনো সাধারণ reset মুহূর্ত নেই; per-key window বা sliding window-ও reset ছড়িয়ে দেয়। Client-এ jitter বাকিটা মসৃণ করে।",
+      "whyWrong": {
+        "0": "এক ঘণ্টার window-এ spike কম ঘনঘন হবে, কিন্তু আরও বড় হবে।",
+        "2": "Server বাড়ালে খরচ বাড়ে, কিন্তু সবার একসাথে ফেরার কারণ থেকেই যায়।",
+        "3": "তথ্য লুকালে client আন্দাজে আরও ঘন ঘন retry করবে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q59",
+      "difficulty": "hard",
+      "question": "নতুন limit 'প্রতি user মিনিটে 20' সরাসরি production-এ চালু করার পর দেখা গেল 15% সাধারণ user 429 পাচ্ছে, support-এ অভিযোগের বন্যা। পরেরবার কোন পদ্ধতিতে চালু করা উচিত?",
+      "options": [
+        "আগে কিছুদিন শুধু log (dry run) করে দেখা কারা আটকাত, তারপর limit ঠিক করে enforce",
+        "Limit সবসময় খুব বেশি (যেমন মিনিটে 10,000) রাখা, যাতে কোনো সাধারণ user কখনো আটকে না যায়",
+        "নতুন limit শুধু রাতে চালু করা, যখন user কম থাকে",
+        "429-এর বদলে 200 দিয়ে request বাদ দেওয়া, যাতে user টের না পায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "আগে না আটকে শুধু মেপে দেখলে বোঝা যায় আসল user-দের ব্যবহার কেমন, আর কোন limit-এ কারা আটকাবে। NGINX-এ limit_req_dry_run আছে, আর Stripe-ও নতুন limiter আগে dark launch করার পরামর্শ দিয়েছে। Enforce-এর সময় একটা দ্রুত বন্ধ করার switch-ও রাখা উচিত।",
+      "whyWrong": {
+        "1": "এত বড় limit দিলে কোনো সুরক্ষাই থাকে না।",
+        "2": "রাতে চালু করলে সকালেই একই সমস্যা হবে; সমস্যা limit-এর মানে, সময়ে না।",
+        "3": "চুপচাপ request ফেলে দেওয়া user আর developer দুজনকেই বিভ্রান্ত করে।"
+      }
+    },
+    {
+      "id": "sd-day-018-q60",
+      "difficulty": "hard",
+      "question": "Redis Cluster-এ sliding window counter-এর জন্য একটা Lua script দুটো key ব্যবহার করে: rl:user42:prev আর rl:user42:curr। Script চালালে CROSSSLOT error আসে। কারণ আর সমাধান কী?",
+      "options": [
+        "Lua script Redis Cluster-এ একেবারেই চলে না, তাই app থেকে দুটো আলাদা command পাঠাতে হবে একের পর এক",
+        "Key-র নাম বেশি লম্বা, ছোট করলেই একই slot-এ পড়বে",
+        "দুটো key আলাদা hash slot-এ পড়েছে; hash tag দিয়ে ({user42}) দুটোকে একই slot-এ রাখতে হবে",
+        "Cluster-এ EVAL-এর বদলে MULTI ব্যবহার করলেই এই error চলে যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Redis Cluster-এ একটা script বা multi-key command-এর সব key একই hash slot-এ থাকতে হয়। Key-র {} অংশটুকু (hash tag) দিয়েই slot ঠিক হয়, তাই rl:{user42}:prev আর rl:{user42}:curr একই slot-এ পড়ে, script atomic থাকে।",
+      "whyWrong": {
+        "0": "Cluster-এ Lua script চলে, শুধু তার সব key একই slot-এ থাকতে হয়; আলাদা command দিলে atomicity হারাবে।",
+        "1": "নামের দৈর্ঘ্য নয়, পুরো নামের hash দিয়ে slot ঠিক হয়; ছোট করলে একই slot-এ পড়ার নিশ্চয়তা নেই।",
+        "3": "MULTI transaction-এর key-গুলোকেও Cluster-এ একই slot-এ থাকতে হয়।"
+      }
+    }
+  ]
+}

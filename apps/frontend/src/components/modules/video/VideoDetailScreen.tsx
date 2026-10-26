@@ -5,12 +5,14 @@ import { getVideoAskContext } from "@/lib/data/video-ask-context";
 import { getVideoGolpo } from "@/lib/data/video-golpo";
 
 export default function VideoDetailScreen({
+  courseId,
   milestone,
   module,
   contentId,
   title,
   videoUrl,
 }: {
+  courseId: string;
   milestone: CourseMilestone;
   module: CourseModule;
   contentId: string;
@@ -21,14 +23,17 @@ export default function VideoDetailScreen({
   const askContext = getVideoAskContext(contentId);
 
   return (
-    <main className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
+    <div className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
       <ModuleBreadcrumb
         items={[
           { label: "Home", href: "/" },
-          { label: milestone.title, href: `/?milestone=${milestone.id}` },
+          {
+            label: milestone.title,
+            href: `/course/${courseId}?milestone=${milestone.id}`,
+          },
           {
             label: module.title,
-            href: `/?milestone=${milestone.id}&module=${module.id}`,
+            href: `/course/${courseId}?milestone=${milestone.id}&module=${module.id}`,
           },
           { label: title },
         ]}
@@ -42,6 +47,6 @@ export default function VideoDetailScreen({
         moduleId={askContext.moduleId}
         hasInterview={askContext.hasInterview}
       />
-    </main>
+    </div>
   );
 }

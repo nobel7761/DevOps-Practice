@@ -19,7 +19,10 @@ class AskMessageSchema implements AskMessage {
 
 @Schema({ timestamps: true, collection: 'ask_conversations' })
 export class AskConversation {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, index: true })
+  userId: string;
+
+  @Prop({ required: true })
   contentId: string;
 
   @Prop({ type: [AskMessageSchema], required: true, default: [] })
@@ -28,3 +31,4 @@ export class AskConversation {
 
 export const AskConversationSchema =
   SchemaFactory.createForClass(AskConversation);
+AskConversationSchema.index({ userId: 1, contentId: 1 }, { unique: true });

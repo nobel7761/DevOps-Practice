@@ -26,7 +26,7 @@
       "question": "VLAN মূলত কেন ব্যবহার করা হয়?",
       "options": [
         "একই physical infrastructure-এ traffic-কে logically আলাদা (segment/isolate) করার জন্য",
-        "internet speed বাড়ানোর জন্য",
+        "internet speed বাড়ানোর জন্য, কারণ VLAN প্রতিটা packet-কে আলাদা compression algorithm দিয়ে ছোট করে ফেলে পাঠানোর আগে",
         "একটা router-কে সম্পূর্ণ বন্ধ করার জন্য",
         "hard disk-এর storage বাড়ানোর জন্য"
       ],
@@ -38,7 +38,7 @@
       "difficulty": "easy",
       "question": "একই VLAN-এর অন্তর্ভুক্ত দুইটা host by default কি একে অপরের সাথে communicate করতে পারে?",
       "options": [
-        "না, কখনোই পারে না",
+        "না, কখনোই পারে না — কারণ VLAN assign করা মাত্রই প্রতিটা host automatically একটা আলাদা physical subnet-এ স্থানান্তরিত হয়ে যায় এবং switch তাদের মধ্যে ARP broadcast-ও সম্পূর্ণ বন্ধ করে দেয়",
         "হ্যাঁ, same VLAN-এর host-রা সরাসরি communicate করতে পারে",
         "শুধু router থাকলেই পারে",
         "শুধু internet connection থাকলে পারে"
@@ -51,7 +51,7 @@
       "difficulty": "easy",
       "question": "ভিন্ন ভিন্ন VLAN-এর দুইটা host by default কি সরাসরি communicate করতে পারে?",
       "options": [
-        "হ্যাঁ, সবসময় পারে",
+        "হ্যাঁ, সবসময় পারে, কারণ switch-এর MAC address table VLAN tag উপেক্ষা করে এবং প্রতিটা frame-কে শুধুমাত্র destination MAC অনুযায়ী ফরওয়ার্ড করে, VLAN membership কোনো বাধা তৈরি করে না",
         "না, by default blocked থাকে — আলাদা broadcast domain",
         "শুধু ping দিয়ে পারে, অন্য কিছু দিয়ে না",
         "শুধু শুক্রবারে পারে"
@@ -65,7 +65,7 @@
       "question": "802.1Q কী?",
       "options": [
         "VLAN tagging-এর জন্য IEEE-এর তৈরি একটা standard",
-        "একটা নতুন ধরনের router",
+        "একটা নতুন ধরনের router, যেটা প্রতিটা VLAN-এর জন্য আলাদা physical port বরাদ্দ করে এবং tagging ছাড়াই traffic আলাদা রাখে",
         "একটা file compression format",
         "একটা web server software"
       ],
@@ -94,7 +94,7 @@
       "question": "broadcast domain বলতে কী বোঝায়?",
       "options": [
         "যে গ্রুপের device-গুলো একে অপরের broadcast traffic সরাসরি পায়",
-        "একটা single physical cable-এর নাম",
+        "একটা single physical cable-এর নাম, যেটা দিয়ে একাধিক VLAN-এর broadcast traffic একসাথে আলাদা timing-এ পাঠানো হয়",
         "একটা নির্দিষ্ট IP address",
         "একটা router-এর brand name"
       ],
@@ -108,7 +108,7 @@
       "options": [
         "একটা port যা শুধুমাত্র একটা VLAN-এর host-এর সাথে connect থাকে",
         "একটা port যা একসাথে সব VLAN carry করে",
-        "একটা port যা শুধু DNS traffic পাঠায়",
+        "একটা port যা শুধু DNS traffic পাঠায়, বাকি সব protocol-এর প্যাকেট সেই port স্বয়ংক্রিয়ভাবে drop করে দেয়",
         "একটা port যা internet থেকে সরাসরি যুক্ত থাকে"
       ],
       "answerIndex": 0,
@@ -121,7 +121,7 @@
       "options": [
         "একটা port যা একাধিক VLAN-এর tagged traffic একসাথে বহন করে (সাধারণত switch-to-switch লিঙ্কে)",
         "একটা port যা শুধু ping request block করে",
-        "একটা port যা একটামাত্র device-এর সাথে connect হতে পারে",
+        "একটা port যা একটামাত্র device-এর সাথে connect হতে পারে, কারণ trunk port-এ একসাথে একাধিক MAC address allow করা হয় না নিরাপত্তার জন্য",
         "একটা port যা শুধু wireless connection-এর জন্য"
       ],
       "answerIndex": 0,
@@ -133,7 +133,7 @@
       "question": "vconfig কমান্ডের মূল কাজ কী?",
       "options": [
         "Linux-এ 802.1Q VLAN tagged sub-interface তৈরি/manage করা",
-        "নতুন user account তৈরি করা",
+        "নতুন user account তৈরি করা, এবং প্রতিটা ব্যবহারকারীর জন্য আলাদা VLAN ID স্বয়ংক্রিয়ভাবে বরাদ্দ করে দেওয়া login করার সময়",
         "file permission বদলানো",
         "disk space মাপা"
       ],
@@ -147,7 +147,7 @@
       "options": [
         "h1-eth0 interface-এর উপর VLAN ID 100-এর একটা tagged sub-interface তৈরি করে",
         "h1-eth0 interface-টা মুছে ফেলে",
-        "h1-eth0-কে 100 Mbps speed-এ limit করে দেয়",
+        "h1-eth0-কে 100 Mbps speed-এ limit করে দেয়, কারণ ভিন্ন ভিন্ন VLAN ID numerically প্রতিটা interface-এর bandwidth cap নির্দেশ করে",
         "একটা নতুন VLAN package install করে"
       ],
       "answerIndex": 0,
@@ -159,7 +159,7 @@
       "question": "VLAN simulation-এর আগে `sudo apt-get install vlan` কেন লাগে?",
       "options": [
         "vconfig কমান্ড এবং 802.1Q tagging সাপোর্ট দেওয়ার জন্য দরকারি package install করতে",
-        "Mininet install করার জন্য",
+        "Mininet install করার জন্য, কারণ Mininet-এর core engine আসলে এই \"vlan\" package-এর উপরেই নির্ভর করে তৈরি হয়েছে",
         "SSH access চালু করার জন্য",
         "python interpreter install করার জন্য"
       ],
@@ -172,7 +172,7 @@
       "question": "`ifconfig h1-eth0 inet 0` কমান্ডটা কী করে?",
       "options": [
         "h1-eth0 interface থেকে existing IP address সরিয়ে দেয়",
-        "h1-eth0 interface delete করে দেয়",
+        "h1-eth0 interface delete করে দেয়, এবং সেই নামের interface future-এ আর কখনো পুনরায় তৈরি করা যায় না একই host-এ",
         "h1-eth0-এ নতুন একটা VLAN tag বসিয়ে দেয়",
         "h1-eth0-কে shutdown করে দেয়"
       ],
@@ -199,7 +199,7 @@
       "options": [
         "network-এর সব host একে অপরকে ping করে connectivity টেস্ট করে",
         "শুধু একটা নির্দিষ্ট host-কে ping করে",
-        "network পুরোপুরি বন্ধ করে দেয়",
+        "network পুরোপুরি বন্ধ করে দেয়, কারণ pingall আসলে প্রতিটা host-এর interface simultaneously disable করে একটা diagnostic mode-এ নিয়ে যায়",
         "নতুন একটা host তৈরি করে"
       ],
       "answerIndex": 0,
@@ -213,7 +213,7 @@
         "মোট 3টা ICMP echo request পাঠিয়ে থেমে যাবে",
         "প্রতি 3 সেকেন্ডে একবার ping করবে",
         "3টা device-এ একসাথে ping পাঠাবে",
-        "ping-এর timeout 3 মিনিট হবে"
+        "ping-এর timeout 3 মিনিট হবে, অর্থাৎ কোনো response না এলেও command 3 মিনিট পর্যন্ত wait করে চলতেই থাকবে"
       ],
       "answerIndex": 0,
       "explanation": "-c (count) flag দিয়ে বলা হয় কতগুলো echo request পাঠানোর পর ping থেমে যাবে — এখানে 3টা request পাঠিয়ে বন্ধ হবে।"
@@ -226,7 +226,7 @@
         "প্রতিটা host তৈরির সময় স্বয়ংক্রিয়ভাবে VLAN tagging configure করার জন্য",
         "host-গুলোর নাম পরিবর্তনের জন্য",
         "host-গুলোর CPU limit ঠিক করার জন্য",
-        "switch-কে router বানানোর জন্য"
+        "switch-কে router বানানোর জন্য, যাতে VLANHost ক্লাস নিজে থেকেই Layer-3 routing সক্ষমতা যোগ করে প্রতিটা host-এর ভেতরে"
       ],
       "answerIndex": 0,
       "explanation": "VLANHost ক্লাস Mininet-এর সাধারণ Host ক্লাসকে extend করে config() method override করে — প্রতিটা host তৈরি হওয়ার সময় স্বয়ংক্রিয়ভাবে তার default IP সরিয়ে, VLAN tagged sub-interface বানিয়ে, সঠিক VLAN-এ জুড়ে দেয়।"
@@ -239,7 +239,7 @@
         "network segmentation ও isolation-এর মাধ্যমে নিরাপত্তা ও broadcast traffic নিয়ন্ত্রণ বাড়ানো",
         "hard disk-এর গতি বাড়ানো",
         "CPU-এর clock speed বাড়ানো",
-        "শুধুমাত্র internet bill কমানো"
+        "শুধুমাত্র internet bill কমানো, কারণ ISP প্রতিটা আলাদা VLAN-কে আলাদা billing category হিসেবে কম rate-এ চার্জ করে"
       ],
       "answerIndex": 0,
       "explanation": "VLAN দিয়ে একই physical infrastructure-এ logical segmentation করা যায়, যা security বাড়ায় এবং broadcast traffic-কে প্রতিটা VLAN-এর মধ্যেই সীমাবদ্ধ রাখে।"
@@ -249,7 +249,7 @@
       "difficulty": "easy",
       "question": "একটা single physical switch-এ কি একাধিক VLAN একসাথে রাখা যায়?",
       "options": [
-        "না, একটা switch-এ একটামাত্র VLAN রাখা যায়",
+        "না, একটা switch-এ একটামাত্র VLAN রাখা যায় — কারণ switch-এর hardware-level MAC table একসাথে একাধিক VLAN ID-র entry store করার জন্য যথেষ্ট memory রাখে না, তাই প্রতিটা নতুন VLAN-এর জন্য আলাদা switch কিনতে হয়",
         "হ্যাঁ, একটা switch VLAN-aware হলে একাধিক VLAN একসাথে রাখতে পারে",
         "শুধু দুইটা switch জোড়া লাগালে পারে",
         "শুধু wireless switch-এ পারে"
@@ -281,7 +281,7 @@
         "frame-এর traffic priority/QoS class নির্দেশ করে",
         "VLAN ID সংরক্ষণ করে",
         "frame-এর checksum হিসাব করে",
-        "source MAC address encode করে"
+        "source MAC address encode করে, যাতে প্রতিটা VLAN tag-এর ভেতরেই sender-এর hardware identity অতিরিক্তভাবে সংরক্ষিত থাকে redundancy-এর জন্য"
       ],
       "answerIndex": 0,
       "explanation": "PCP হলো 3-bit field, যা দিয়ে frame-এর traffic class/priority (যেমন voice traffic কে বেশি priority) নির্দেশ করা যায় — QoS-এর জন্য ব্যবহৃত হয়।"
@@ -294,7 +294,7 @@
         "VLAN ID 0 মানে \"tag করা হয়েছে শুধু priority-এর জন্য, VLAN membership-এর জন্য না\" এবং 4095 implementation-এর জন্য reserved",
         "কোনো কারণ নেই, random সংখ্যা",
         "0 আর 4095 শুধু wireless network-এর জন্য",
-        "0 আর 4095 ব্যবহার করলে network ক্র্যাশ করে"
+        "0 আর 4095 ব্যবহার করলে network ক্র্যাশ করে, কারণ এই দুইটা ID switch-এর firmware-এ hardcoded error trigger হিসেবে রাখা আছে — switch firmware এই দুইটা মান পেলে একটা internal safety-trigger activate করে পুরো VLAN table reset করে দেয়, যার ফলে সাময়িকভাবে পুরো network বন্ধ হয়ে যায়।"
       ],
       "answerIndex": 0,
       "explanation": "802.1Q standard অনুযায়ী VLAN ID 0 ব্যবহার হয় শুধু priority tagging-এর জন্য (actual VLAN assignment ছাড়া), আর 4095 implementation-specific কাজের জন্য reserved — তাই ব্যবহারযোগ্য VLAN ID রেঞ্জ কার্যত 1–4094।"
@@ -305,7 +305,7 @@
       "question": "native VLAN বলতে কী বোঝায়?",
       "options": [
         "trunk port-এ যে VLAN-এর traffic untagged অবস্থায় পাঠানো হয়",
-        "প্রথম তৈরি হওয়া VLAN-এর নাম",
+        "প্রথম তৈরি হওয়া VLAN-এর নাম, যেটা সবসময় স্বয়ংক্রিয়ভাবে VLAN ID 1 হিসেবে system-wide সংরক্ষিত এবং পরিবর্তনযোগ্য নয়",
         "একটা device-এর factory default IP address",
         "wireless router-এর default VLAN"
       ],
@@ -318,7 +318,7 @@
       "question": "দুইটা ভিন্ন VLAN-এর host-কে একে অপরের সাথে communicate করাতে হলে সাধারণত কী দরকার হয়?",
       "options": [
         "একটা router বা Layer-3 capable device (inter-VLAN routing)",
-        "শুধু ঐ দুইটা VLAN-কে একই switch-এ রাখলেই হয়ে যায়",
+        "শুধু ঐ দুইটা VLAN-কে একই switch-এ রাখলেই হয়ে যায়, কারণ একই hardware-এ থাকলে Layer-2 switching নিজে থেকেই VLAN boundary অতিক্রম করে যোগাযোগ করিয়ে দেয়",
         "কোনো কিছুরই দরকার নেই, automatic হয়ে যায়",
         "শুধু IP address একই subnet-এ রাখলেই হবে"
       ],
@@ -333,7 +333,7 @@
         "ovs-vsctl set port <port-name> tag=<vlan-id>",
         "ovs-vsctl add-switch <vlan-id>",
         "vconfig delete <port-name>",
-        "ifconfig <port-name> vlan=<vlan-id>"
+        "ifconfig <port-name> vlan=<vlan-id>, যেটা traditional net-tools package-এর মধ্যেই built-in VLAN tagging সাপোর্ট হিসেবে যুক্ত আছে"
       ],
       "answerIndex": 0,
       "explanation": "OVS-aware switching-এ `ovs-vsctl set port <port> tag=<vlan-id>` কমান্ড দিয়ে একটা port-কে নির্দিষ্ট VLAN-এর access port হিসেবে সেট করা হয়, যা এই lab-এ host-side vconfig-এর বিকল্প একটা approach।"
@@ -344,7 +344,7 @@
       "question": "Mininet-এ `self.addSwitch('s1')` দিয়ে যে switch তৈরি হয়, সেটা by default সাধারণত কোন টাইপের?",
       "options": [
         "OVS (Open vSwitch) kernel switch",
-        "একটা hardware Cisco switch",
+        "একটা hardware Cisco switch, যেটা Mininet process শুরু হওয়ার সময় host machine-এর সাথে physically সংযুক্ত থাকতে হয় বাধ্যতামূলকভাবে",
         "একটা wireless access point",
         "একটা firewall appliance"
       ],
@@ -357,7 +357,7 @@
       "question": "VLAN দিয়ে broadcast storm-এর প্রভাব কিভাবে কমানো যায়?",
       "options": [
         "broadcast traffic-কে শুধু ঐ VLAN-এর মধ্যে সীমাবদ্ধ রেখে, পুরো network-এ ছড়িয়ে পড়া থেকে আটকে",
-        "VLAN broadcast traffic একেবারে বন্ধ করে দেয়",
+        "VLAN broadcast traffic একেবারে বন্ধ করে দেয়, ফলে same VLAN-এর host-রাও ARP broadcast করতে না পারায় একে অপরকে কখনো resolve করতে পারে না",
         "VLAN সব device-এর MAC address মুছে ফেলে",
         "VLAN internet connection বন্ধ করে দেয়"
       ],
@@ -371,7 +371,7 @@
       "options": [
         "h1_100 আর h2_100 দুইটাই VLAN 100-এর সদস্য, তাই একই broadcast domain-এ আছে",
         "দুইটা host একই Mininet process-এ আছে বলে",
-        "ping command VLAN সম্পূর্ণভাবে ignore করে বলে",
+        "ping command VLAN সম্পূর্ণভাবে ignore করে বলে, কারণ ICMP protocol Layer-2 tagging-এর নিচে কাজ করে এবং VLAN boundary তার জন্য প্রযোজ্যই না",
         "h2_100-এ firewall বন্ধ আছে বলে"
       ],
       "answerIndex": 0,
@@ -385,7 +385,7 @@
         "h1_100 আর h1_101 ভিন্ন VLAN-এর সদস্য, এবং কোনো inter-VLAN routing configure করা নেই",
         "h1_101 নামে কোনো host আসলে তৈরিই হয়নি",
         "ping কমান্ডের syntax ভুল",
-        "দুইটা host-এর IP address একই"
+        "দুইটা host-এর IP address একই, যার ফলে IP address conflict ধরা পড়ে এবং kernel নিরাপত্তার কারণে ping request-টা স্বয়ংক্রিয়ভাবে বাতিল করে দেয়"
       ],
       "answerIndex": 0,
       "explanation": "h1_100 VLAN 100-এর আর h1_101 VLAN 101-এর সদস্য — এই দুই VLAN-এর মধ্যে কোনো router/L3 configure করা হয়নি বলে switch তাদের মধ্যে traffic forward করে না, ফলে ping fail করে, যা VLAN isolation প্রমাণ করে।"
@@ -396,7 +396,7 @@
       "question": "ifconfig কমান্ড deprecated হওয়া সত্ত্বেও এখনো অনেক Linux image/lab-এ কেন দেখা যায়?",
       "options": [
         "net-tools package-এর অংশ হিসেবে অনেক পুরনো/light-weight image-এ এখনো default দিয়ে থাকে এবং পরিচিত/সহজ syntax",
-        "ip কমান্ড আসলে কখনোই তৈরি হয়নি",
+        "ip কমান্ড আসলে কখনোই তৈরি হয়নি, iproute2 আসলে শুধুমাত্র একটা documentation project, বাস্তবে কোনো কার্যকরী টুল না",
         "ifconfig ছাড়া Mininet চালানো যায় না",
         "ifconfig-এর কোনো বিকল্প নেই"
       ],
@@ -411,7 +411,7 @@
         "প্রতিটা host স্বয়ংক্রিয়ভাবে তৈরি হওয়ার সময় VLAN tagging logic (IP সরানো, vconfig add, tagged IP সেট করা) একবারেই চালিয়ে ফেলার জন্য",
         "host-কে switch বানানোর জন্য",
         "host-এর hostname পরিবর্তনের জন্য",
-        "network link-এর bandwidth কমানোর জন্য"
+        "network link-এর bandwidth কমানোর জন্য, যাতে প্রতিটা VLAN tagged host স্বয়ংক্রিয়ভাবে rate-limited হয়ে একে অপরকে overload না করতে পারে"
       ],
       "answerIndex": 0,
       "explanation": "Mininet-এর Host ক্লাসের config() method স্বয়ংক্রিয়ভাবে interface setup করার সময় কল হয়; এটা override করে VLANHost প্রতিটা host তৈরির সাথে সাথেই VLAN tagging related তিনটা কমান্ড (ifconfig inet 0, vconfig add, ifconfig tagged inet) চালিয়ে ফেলে।"
@@ -422,7 +422,7 @@
       "question": "কোনো host যদি তার interface-এ VLAN tagging configure না করে switch-এর সাথে connected থাকে, তাহলে সেই host-এর frame সাধারণত কিভাবে দেখা হয়?",
       "options": [
         "untagged frame হিসেবে — সাধারণত access port-এর PVID বা default VLAN-এর অংশ ধরা হয়",
-        "সব VLAN-এর অংশ ধরা হয় একসাথে",
+        "সব VLAN-এর অংশ ধরা হয় একসাথে, কারণ untagged frame পেলে switch সেটাকে নিরাপত্তার জন্য প্রতিটা VLAN-এ একসাথে duplicate করে পাঠিয়ে দেয়",
         "frame-টা সরাসরি drop হয়ে যায়",
         "frame-টা automatically VLAN 4095-এর অংশ হয়ে যায়"
       ],
@@ -435,7 +435,7 @@
       "question": "একটা trunk link দিয়ে একাধিক VLAN-এর ভিন্ন ভিন্ন broadcast domain-এর ট্রাফিক একটামাত্র cable দিয়ে কিভাবে আলাদা রেখে পাঠানো সম্ভব হয়?",
       "options": [
         "প্রতিটা frame-এ VLAN tag বসিয়ে, যাতে প্রাপক switch tag দেখে বুঝতে পারে কোন VLAN-এর",
-        "প্রতিটা VLAN-এর জন্য আলাদা আলাদা physical cable লাগিয়ে",
+        "প্রতিটা VLAN-এর জন্য আলাদা আলাদা physical cable লাগিয়ে, কারণ trunk link আসলে একই সময়ে একাধিক VLAN-এর frame একই তারে বহন করতে technically অক্ষম",
         "trunk link আসলে একাধিক VLAN handle করতেই পারে না",
         "প্রতিটা VLAN-এর জন্য frame-এর গতি আলাদা রেখে"
       ],
@@ -449,7 +449,7 @@
       "options": [
         "আক্রমণকারী একটা অনুমোদিত না-থাকা VLAN-এর traffic access করার জন্য switch-এর VLAN tagging mechanism-কে exploit করা",
         "একটা VLAN থেকে আরেকটা VLAN-এ host-কে ম্যানুয়ালি physically সরিয়ে নেওয়া",
-        "VLAN ID প্রতি কয়েক সেকেন্ডে স্বয়ংক্রিয়ভাবে বদলে যাওয়া",
+        "VLAN ID প্রতি কয়েক সেকেন্ডে স্বয়ংক্রিয়ভাবে বদলে যাওয়া, যা একটা built-in randomization feature, security বাড়ানোর উদ্দেশ্যে ডিজাইন করা হয়েছে",
         "IP address পরিবর্তন করা"
       ],
       "answerIndex": 0,
@@ -461,7 +461,7 @@
       "question": "logical network segmentation (যেমন VLAN) আর physical network segmentation (আলাদা আলাদা switch/cable বসানো)-এর মধ্যে মূল পার্থক্য কী?",
       "options": [
         "logical segmentation একই physical infra ব্যবহার করে software দিয়ে আলাদা করে, physical segmentation সম্পূর্ণ আলাদা hardware দিয়ে করে",
-        "দুইটা একই জিনিস, কোনো পার্থক্য নেই",
+        "দুইটা একই জিনিস, কোনো পার্থক্য নেই — logical আর physical segmentation উভয়ই শেষ পর্যন্ত আলাদা আলাদা hardware cable বসানোর মাধ্যমেই বাস্তবায়িত হয়",
         "logical segmentation শুধু wireless network-এ কাজ করে",
         "physical segmentation শুধু একটা device-এ হতে পারে"
       ],
@@ -474,7 +474,7 @@
       "question": "কোন device/component VLAN tag দেখে সিদ্ধান্ত নেয় একটা frame কোথায় পাঠাতে হবে?",
       "options": [
         "VLAN-aware (802.1Q সাপোর্ট করা) switch",
-        "শুধু source host নিজে",
+        "শুধু source host নিজে, যে প্রতিটা outgoing frame পাঠানোর আগে destination-এর VLAN membership নিজে থেকেই যাচাই করে route ঠিক করে নেয়",
         "শুধু DNS server",
         "শুধু end-user-এর keyboard"
       ],
@@ -487,7 +487,7 @@
       "question": "একটা trunk port নষ্ট/down হয়ে গেলে কী প্রভাব পড়তে পারে?",
       "options": [
         "trunk দিয়ে বহন করা একাধিক VLAN-এর connectivity একসাথে ব্যাহত হতে পারে",
-        "শুধু একটা VLAN-এর একটা host প্রভাবিত হয়",
+        "শুধু একটা VLAN-এর একটা host প্রভাবিত হয়, কারণ trunk port প্রতিটা VLAN-এর জন্য আলাদা আলাদা physical sub-channel ব্যবহার করে redundantly",
         "কোনো প্রভাবই পড়ে না",
         "শুধু internet connection বন্ধ হয়ে যায়"
       ],
@@ -500,7 +500,7 @@
       "question": "VLAN দিয়ে security-এর দিক থেকে মূল সুবিধা কী?",
       "options": [
         "একটা VLAN-এর কেউ, by default, অন্য VLAN-এর broadcast/unicast traffic সরাসরি sniff/access করতে পারে না",
-        "VLAN সব ধরনের cyber attack সম্পূর্ণভাবে বন্ধ করে দেয়",
+        "VLAN সব ধরনের cyber attack সম্পূর্ণভাবে বন্ধ করে দেয়, কারণ VLAN tag-এর ভেতরে একটা built-in firewall/IDS engine থাকে যা malicious traffic স্বয়ংক্রিয়ভাবে চিনে ফেলে",
         "VLAN পাসওয়ার্ড-এর প্রয়োজনীয়তা শেষ করে দেয়",
         "VLAN automatically সব data encrypt করে দেয়"
       ],
@@ -514,7 +514,7 @@
       "options": [
         "switch-এর একটা নির্দিষ্ট port manually একটা নির্দিষ্ট VLAN-এ fix করে দেওয়া হয়",
         "VLAN assignment প্রতিবার random ঠিক হয়",
-        "VLAN শুধু IP address দেখে স্বয়ংক্রিয় ঠিক হয়",
+        "VLAN শুধু IP address দেখে স্বয়ংক্রিয় ঠিক হয়, switch প্রতিটা frame-এর source IP বের করে সেই অনুযায়ী VLAN assign করে — port configuration-এর কোনো ভূমিকা থাকে না",
         "VLAN assignment শুধু user login করলেই হয়"
       ],
       "answerIndex": 0,
@@ -526,7 +526,7 @@
       "question": "যদি একই physical switch-এ VLAN দিয়ে আলাদা না করে সব host একসাথে রাখা হতো, তাহলে কী সমস্যা হতো?",
       "options": [
         "সব host একটামাত্র বিশাল broadcast domain-এর অংশ হতো, isolation/security কমে যেত",
-        "কোনো সমস্যাই হতো না, বরং পারফরম্যান্স বাড়ত",
+        "কোনো সমস্যাই হতো না, বরং পারফরম্যান্স বাড়ত, কারণ VLAN tagging প্রতিটা frame-এ অতিরিক্ত processing overhead যোগ করে যা সরিয়ে ফেললে switch দ্রুত কাজ করে",
         "network-টা পুরোপুরি বন্ধ হয়ে যেত",
         "শুধু IP address conflict হতো"
       ],
@@ -539,7 +539,7 @@
       "question": "একটা host-এর VLAN membership পরিবর্তন করতে কি সবসময় physical rewiring (cable পরিবর্তন) দরকার হয়?",
       "options": [
         "না, সাধারণত শুধু port/interface-এর configuration বদলালেই হয়",
-        "হ্যাঁ, প্রতিবার cable খুলে নতুন করে লাগাতে হয়",
+        "হ্যাঁ, প্রতিবার cable খুলে নতুন করে লাগাতে হয়, কারণ VLAN membership আসলে physical port-এর ভেতরের hardwired pin configuration দিয়েই নির্ধারিত হয়ে থাকে",
         "হ্যাঁ, পুরো switch বদলে ফেলতে হয়",
         "না, কিন্তু পুরো network restart করতে হয়"
       ],
@@ -552,7 +552,7 @@
       "question": "এই lab-এ `pingall`-এর output-এ \"66% dropped (4/12 received)\" দেখানোর অর্থ কী?",
       "options": [
         "মোট 12টা ping attempt-এর মধ্যে 4টা successful হয়েছে (same-VLAN জোড়াগুলোই), বাকিগুলো VLAN isolation-এর কারণে fail করেছে",
-        "network পুরোপুরি কাজ করছে না",
+        "network পুরোপুরি কাজ করছে না, কারণ 66% drop মানে বেশিরভাগ host-ই আসলে নষ্ট হয়ে গেছে বা topology script-এ critical error হয়েছে",
         "শুধু h1_100 host-টাই ঠিকমতো কাজ করছে",
         "VLAN tagging ব্যর্থ হয়েছে"
       ],
@@ -567,7 +567,7 @@
         "কারণ VLAN isolation physical device-এর সংখ্যার উপর নয়, বরং tagging/configuration-এর উপর নির্ভর করে",
         "কারণ Mininet-এ switch বানানোই যায় না, তাই একটাই ব্যবহার হয়েছে",
         "কারণ দুইটা switch ব্যবহার করলে network ক্র্যাশ করত",
-        "কারণ VLAN শুধু একটা switch-এই কাজ করে, একাধিকটায় করে না"
+        "কারণ VLAN শুধু একটা switch-এই কাজ করে, একাধিকটায় করে না — একাধিক switch ব্যবহার করলে VLAN tag সম্পূর্ণভাবে হারিয়ে যায় প্রতিটা hop-এ"
       ],
       "answerIndex": 0,
       "explanation": "VLAN একটা logical construct — একই physical/virtual switch-এর ভেতরেই প্রতিটা host-এর tagging ও port configuration-এর মাধ্যমে একাধিক আলাদা broadcast domain তৈরি করা যায়, আলাদা আলাদা physical switch লাগে না।"
@@ -578,7 +578,7 @@
       "question": "VLAN hopping-এর একটা পরিচিত technique \"double tagging\" আসলে কিভাবে কাজ করে?",
       "options": [
         "আক্রমণকারী একটা frame-এ দুইটা VLAN tag বসায়; প্রথম (outer) tag native VLAN-এর trunk port-এ strip হয়ে যায়, আর দ্বিতীয় (inner) tag বাকি থেকে যাওয়ায় frame-টা অন্য VLAN-এ forward হয়ে যায়",
-        "আক্রমণকারী একটা frame দুইবার পাঠায়",
+        "আক্রমণকারী একটা frame দুইবার পাঠায় একই সাথে, যার ফলে switch একটা race condition-এ ভুল করে ভুল VLAN-এর port-এ forward করে দেয় — এই ধরনের duplicate frame পাঠানো হলে switch-এর MAC learning table একই সাথে দুইটা ভিন্ন VLAN entry দেখে বিভ্রান্ত হয়ে যায় এবং দ্বিতীয় কপিটাকে ভুলবশত অন্য VLAN-এর বৈধ সদস্য হিসেবে গ্রহণ করে ফেলে।",
         "আক্রমণকারী IP address দুইবার পরিবর্তন করে",
         "আক্রমণকারী switch-এর password দুইবার চেষ্টা করে"
       ],
@@ -592,7 +592,7 @@
       "options": [
         "trunk port সাধারণত native VLAN-এর frame-কে untagged ধরে এবং পাঠানোর সময় প্রথম tag-টা স্বয়ংক্রিয়ভাবে সরিয়ে ফেলে",
         "VLAN tag কখনো encrypt করা থাকে না",
-        "MAC address সবসময় predictable হয়",
+        "MAC address সবসময় predictable হয়, তাই আক্রমণকারী শুধু target-এর MAC address অনুমান করে সরাসরি double tagging ছাড়াই frame পাঠিয়ে VLAN hop করতে পারে",
         "ping কমান্ডে কোনো authentication নেই"
       ],
       "answerIndex": 0,
@@ -604,7 +604,7 @@
       "question": "QinQ (802.1ad) কী এবং এটা কেন ব্যবহার করা হয়?",
       "options": [
         "একটা frame-এ আরেকটা VLAN tag-এর ভেতরে পুরো VLAN tag (nested tagging) বসানোর standard, মূলত service-provider network-এ একাধিক কাস্টমারের VLAN একসাথে carry করার জন্য",
-        "একটা নতুন ধরনের IP addressing scheme",
+        "একটা নতুন ধরনের IP addressing scheme, যেটা classless addressing-এর বাইরে গিয়ে একটা physical network interface-এ 4096-এর অনেক বেশি আলাদা আলাদা IP subnet একইসাথে বরাদ্দ করার সুযোগ দেয়, মূলত বড় data center-এর IP exhaustion সমস্যা সমাধানের জন্য ব্যবহৃত হয়",
         "একটা encryption protocol",
         "VLAN ID সংখ্যা 4096-এর নিচে সীমাবদ্ধ রাখার একটা নিয়ম"
       ],
@@ -630,7 +630,7 @@
       "question": "per-VLAN Spanning Tree (PVST)-এর মতো concept কেন দরকার হতে পারে?",
       "options": [
         "প্রতিটা VLAN-এর জন্য আলাদা আলাদা loop-free topology maintain করতে, যাতে একটা VLAN-এর path optimization অন্য VLAN-কে প্রভাবিত না করে",
-        "প্রতিটা VLAN-এর IP address আলাদা রাখতে",
+        "প্রতিটা VLAN-এর IP address আলাদা রাখতে, কারণ PVST আসলে প্রতিটা VLAN-এর জন্য একটা পৃথক IP addressing scheme বরাদ্দ করার দায়িত্বে থাকা protocol, যা DHCP server-এর বিকল্প হিসেবে প্রতিটা VLAN-এ স্বয়ংক্রিয়ভাবে subnet বরাদ্দ করে দেয়",
         "প্রতিটা VLAN-এর password আলাদা রাখতে",
         "VLAN tag encrypt করতে"
       ],
@@ -644,7 +644,7 @@
       "options": [
         "ovs-vsctl set port <port-name> trunks=100,101",
         "vconfig add <port-name> trunk",
-        "ifconfig <port-name> trunk-mode on",
+        "ifconfig <port-name> trunk-mode on, কারণ net-tools package-এর ifconfig কমান্ডে একটা বিশেষ trunk-mode flag বিল্ট-ইন আছে ঠিক OVS-এর বিকল্প হিসেবে",
         "ovs-vsctl delete-port <port-name>"
       ],
       "answerIndex": 0,
@@ -656,7 +656,7 @@
       "question": "VLAN pruning বলতে কী বোঝায়?",
       "options": [
         "একটা trunk link দিয়ে শুধু সেই VLAN-গুলোর traffic পাঠানো, যেগুলো আসলেই অন্য প্রান্তে প্রয়োজন — অপ্রয়োজনীয় VLAN-এর broadcast/flooded traffic আটকে রাখা",
-        "পুরনো VLAN ID সম্পূর্ণ মুছে ফেলা",
+        "পুরনো VLAN ID সম্পূর্ণ মুছে ফেলা, যাতে সেই ID ভবিষ্যতে আর কখনো কোনো নতুন VLAN তৈরির জন্য পুনরায় ব্যবহার করা না যায় পুরো network infrastructure জুড়ে — এভাবে delete করা VLAN ID পরবর্তী কয়েক বছরের জন্য switch-এর firmware-এ স্থায়ীভাবে blacklisted/reserved থেকে যায়, যতক্ষণ না একটা ফ্যাক্টরি reset করা হয়।",
         "একটা VLAN-এর সব host মুছে ফেলা",
         "VLAN tag থেকে priority field সরিয়ে ফেলা"
       ],
@@ -669,7 +669,7 @@
       "question": "দুইটা trunk port-এর native VLAN mismatch হলে (যেমন একদিকে native VLAN 1, অন্যদিকে native VLAN 10) কী সমস্যা হতে পারে?",
       "options": [
         "native VLAN-এর untagged frame ভুল VLAN-এ চলে যেতে পারে, এবং এটা একটা সম্ভাব্য security/connectivity দুর্বলতা তৈরি করে",
-        "কোনো সমস্যাই হয় না, switch নিজে থেকে ঠিক করে নেয়",
+        "কোনো সমস্যাই হয় না, switch নিজে থেকে ঠিক করে নেয় — কারণ 802.1Q standard অনুযায়ী native VLAN mismatch হলে উভয় switch automatically negotiation করে একটা common native VLAN বেছে নেয়",
         "পুরো network সাথে সাথে বন্ধ হয়ে যায়",
         "শুধু ping কমান্ড কাজ করা বন্ধ করে দেয়"
       ],
@@ -684,7 +684,7 @@
         "এটা প্রায়ই default/management VLAN হিসেবে ব্যবহৃত হয়; সবাই এটা জানে বলে এটাকেই target করে attack করা সহজ, তাই আলাদা VLAN ID-তে সরিয়ে নেওয়া best practice",
         "VLAN ID 1 technically ব্যবহারই করা যায় না",
         "VLAN ID 1 শুধু wireless network-এর জন্য reserved",
-        "VLAN ID 1 সবসময় সবচেয়ে দ্রুততম VLAN"
+        "VLAN ID 1 সবসময় সবচেয়ে দ্রুততম VLAN, কারণ switch hardware-এ VLAN 1-এর জন্য একটা dedicated high-priority hardware queue আলাদাভাবে reserved রাখা থাকে — কারণ VLAN 1-এর ট্যাগ header-এ একটা বিশেষ zero-latency bit set করা থাকে ফ্যাক্টরি থেকেই, যেটা অন্য কোনো VLAN ID-তে কখনো পাওয়া যায় না।"
       ],
       "answerIndex": 0,
       "explanation": "অনেক switch-এ VLAN 1 by default সব port-এর native/management VLAN হিসেবে থাকে; এটা well-known ও predictable হওয়ায় আক্রমণকারীদের জন্য সহজ target হয়ে যায়, তাই security best practice হলো management/critical traffic-কে আলাদা, কম predictable VLAN ID-তে সরিয়ে নেওয়া।"
@@ -696,7 +696,7 @@
       "options": [
         "network congestion হলে কোন frame আগে drop করা \"যোগ্য\" (eligible), সেটা নির্দেশ করে",
         "VLAN ID নির্ধারণ করে",
-        "frame-এর destination MAC address সংরক্ষণ করে",
+        "frame-এর destination MAC address সংরক্ষণ করে, যাতে congestion-এর সময় সরাসরি সেই MAC অনুযায়ী priority routing করা যায়",
         "frame-টা tagged নাকি untagged তা বোঝায়"
       ],
       "answerIndex": 0,
@@ -709,7 +709,7 @@
       "options": [
         "একটা single router interface-কে trunk port হিসেবে configure করে, sub-interface দিয়ে একাধিক VLAN-এর মধ্যে routing করা",
         "একটা router-কে physically একটা লাঠির উপর বসিয়ে রাখা",
-        "একাধিক router একসাথে জোড়া লাগানো",
+        "একাধিক router একসাথে জোড়া লাগানো, যাতে প্রতিটা router একটা করে আলাদা VLAN-এর traffic handle করে এবং তাদের মধ্যে একটা cluster protocol দিয়ে sync থাকে",
         "একটা router যা শুধু wireless signal পাঠায়"
       ],
       "answerIndex": 0,
@@ -721,7 +721,7 @@
       "question": "একটা VLAN-এর জন্য একটামাত্র IP subnet রাখা কি technically বাধ্যতামূলক?",
       "options": [
         "না, technically বাধ্যতামূলক না, কিন্তু সহজ management ও clean inter-VLAN routing-এর জন্য 1 VLAN = 1 subnet best practice হিসেবে মানা হয়",
-        "হ্যাঁ, একটা VLAN-এ একাধিক subnet কখনোই সম্ভব না",
+        "হ্যাঁ, একটা VLAN-এ একাধিক subnet কখনোই সম্ভব না, কারণ VLAN ID নিজেই একটা subnet mask-এর অংশ হিসেবে IP address header-এর ভেতরে embedded থাকে",
         "না, VLAN আর IP subnet-এর কোনো সম্পর্কই নেই",
         "হ্যাঁ, কিন্তু শুধু IPv6-এর ক্ষেত্রে"
       ],
@@ -748,7 +748,7 @@
       "options": [
         "ip link add link h1-eth0 name h1-eth0.100 type vlan id 100",
         "ip addr add vlan 100 dev h1-eth0",
-        "ip route add vlan 100 via h1-eth0",
+        "ip route add vlan 100 via h1-eth0, কারণ modern iproute2-তে VLAN তৈরি করা routing table-এর একটা entry যোগ করার মতোই, আলাদা কোনো link type লাগে না",
         "ip vlan create h1-eth0 100"
       ],
       "answerIndex": 0,
@@ -762,7 +762,7 @@
         "ঐ port-এর জন্য আগে থেকে ঠিক করা PVID (Port VLAN ID)-এর মাধ্যমে frame-টাকে স্বয়ংক্রিয়ভাবে সেই VLAN-এ ট্যাগ করে নেয়",
         "switch frame-টা drop করে দেয়, কারণ VLAN tag ছাড়া কিছুই accept করে না",
         "frame-টা সব VLAN-এ একসাথে broadcast হয়ে যায়",
-        "switch frame-এর source MAC দেখে VLAN নির্ধারণ করে, PVID কোনো ভূমিকা রাখে না"
+        "switch frame-এর source MAC দেখে VLAN নির্ধারণ করে, PVID কোনো ভূমিকা রাখে না — প্রতিটা MAC address vendor prefix অনুযায়ী একটা নির্দিষ্ট VLAN-এ স্থায়ীভাবে map করা থাকে switch-এর internal table-এ"
       ],
       "answerIndex": 0,
       "explanation": "access port-এর একটা configured PVID (Port VLAN ID) থাকে — কোনো untagged frame এলে switch সেটাকে ঐ port-এর PVID অনুযায়ী ভেতরে ভেতরে সংশ্লিষ্ট VLAN-এ ট্যাগ করে নেয়, যদিও বাইরের দিকে (যদি সেটা আবার access port দিয়ে বের হয়) tag আবার untagged করে পাঠানো হয়।"

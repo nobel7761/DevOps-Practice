@@ -1,0 +1,1080 @@
+{
+  "topicId": "sd-day-003",
+  "questions": [
+    {
+      "id": "sd-day-003-q01",
+      "difficulty": "easy",
+      "question": "`https://boighor.com/books?page=2#reviews` খুললে browser server-কে request পাঠানোর সময় কোন অংশটা পাঠায় না?",
+      "options": [
+        "`#reviews` fragment, কারণ এটা page-এর ভেতরের অবস্থান, browser নিজেই ব্যবহার করে",
+        "`/books` path, কারণ path শুধু browser-এর history-তে রাখার জন্য থাকে",
+        "`?page=2` query, কারণ query শুধু page-এর JavaScript পড়ে, server-এর দরকার নেই",
+        "`boighor.com` host, কারণ DNS থেকে IP পাওয়ার পর নামটা আর কোথাও পাঠানোর দরকার পড়ে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Fragment (# এর পরের অংশ) page-এর ভেতরে কোন অংশে যেতে হবে তা বোঝায়, আর browser এটা নিজের কাছে রাখে। Request line-এ যায় path আর query (`GET /books?page=2`), আর host যায় Host header-এ। তাই server log-এ কখনো fragment দেখা যায় না।",
+      "whyWrong": {
+        "1": "Path request line-এ যায়, এটা দিয়েই server বোঝে কোন resource চাওয়া হচ্ছে।",
+        "2": "Query path-এর সাথে request line-এ যায়, server এটা দিয়েই filter বা page নম্বর বোঝে।",
+        "3": "Host নামটা Host header-এ যায়, কারণ একই IP-তে অনেক site থাকতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q02",
+      "difficulty": "easy",
+      "question": "URL-এ port লেখা নেই: `https://boighor.com/`। Browser কোন port-এ connect করবে?",
+      "options": [
+        "80, কারণ সব ধরনের web traffic-এর default port এটাই, http হোক বা https",
+        "8080, কারণ secure server সবসময় আলাদা একটা port-এ চলে",
+        "443, কারণ https scheme-এর default port এটাই",
+        "53, কারণ আগে DNS server-এর মাধ্যমে যেতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "URL-এ port না থাকলে browser scheme দেখে default port ধরে নেয়: http হলে 80, https হলে 443। তাই সাধারণ URL-এ port দেখা যায় না। অন্য port-এ চালালে সেটা লিখে দিতে হয়, যেমন `:8080`।",
+      "whyWrong": {
+        "0": "80 হলো http-এর default; https-এর default 443।",
+        "1": "8080 শুধু একটা প্রচলিত বিকল্প port, কোনো scheme-এর default না।",
+        "3": "53 DNS-এর port; DNS আলাদা ধাপে হয়, web server-এর connection 443-এ।"
+      }
+    },
+    {
+      "id": "sd-day-003-q03",
+      "difficulty": "easy",
+      "question": "DNS-এর মূল কাজ কী?",
+      "options": [
+        "Web page-এর content encrypt করে পাঠানো, যাতে পথের কেউ পড়তে না পারে",
+        "Browser আর web server-এর মধ্যে TCP connection খুলে খোলা রাখা",
+        "Server-এর page আর ছবিগুলো cache করে রেখে user-এর কাছে আরও দ্রুত পৌঁছে দেওয়া",
+        "Domain নামকে IP address-এ বদলানো, যাতে browser জানে কোন machine-এ যেতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "DNS হলো Internet-এর phone book: মানুষ মনে রাখে `boighor.com`, machine-এর দরকার IP। নামটা স্থায়ী থাকে, server সরালে শুধু DNS record বদলালেই হয়। Encryption, connection আর page cache অন্য অংশের কাজ।",
+      "whyWrong": {
+        "0": "Encryption করে TLS, DNS না।",
+        "1": "Connection খোলে TCP; DNS শুধু ঠিকানা বলে দেয়।",
+        "2": "Page cache করে browser cache বা CDN; DNS নাম থেকে IP দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q04",
+      "difficulty": "easy",
+      "question": "DNS-এর AAAA record কী রাখে?",
+      "options": [
+        "নামটার চারটা আলাদা IPv4 ঠিকানা, load ভাগ করার জন্য",
+        "নামটার IPv6 ঠিকানা",
+        "নামটার mail server কোনটা, সেই তথ্য",
+        "নামটার alias, মানে আরেকটা domain নাম"
+      ],
+      "correctIndex": 1,
+      "explanation": "A record নামকে IPv4 (যেমন 198.51.100.20) ঠিকানায়, আর AAAA record নামকে IPv6 (যেমন 2001:db8::20) ঠিকানায় নিয়ে যায়। IPv6 ঠিকানা ১২৮ bit, IPv4-এর চার গুণ, সেখান থেকেই নামের চারটা A। একটা নামের A আর AAAA দুটোই থাকতে পারে।",
+      "whyWrong": {
+        "0": "চারটা A দেখে এমন মনে হয়, কিন্তু AAAA মানে IPv6; একাধিক IPv4-এর জন্য একাধিক A record দেওয়া হয়।",
+        "2": "Mail server-এর তথ্য থাকে MX record-এ।",
+        "3": "নাম থেকে নামে যায় CNAME record।"
+      }
+    },
+    {
+      "id": "sd-day-003-q05",
+      "difficulty": "easy",
+      "question": "`www.boighor.com`-এর একটা CNAME record আছে যেটা `boighor.com` দেখায়। Resolver কী করবে?",
+      "options": [
+        "Browser-কে HTTP 301 দিয়ে `boighor.com`-এ redirect করতে বলবে",
+        "`boighor.com` লেখাটাকেই IP হিসেবে browser-কে দিয়ে দেবে",
+        "`boighor.com` নামটা আবার খুঁজে তার A/AAAA record থেকে IP বের করবে",
+        "Error দেবে, কারণ CNAME শুধু zone-এর মূল নামে (apex) ব্যবহার করা যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "CNAME মানে 'এই নামটা আসলে ওই নামের আরেক নাম'। Resolver তখন দ্বিতীয় নামটা খোঁজে আর তার A/AAAA record থেকে IP পায়। এটা পুরোপুরি DNS-এর ভেতরের ব্যাপার, browser-এর URL বা HTTP-র সাথে সম্পর্ক নেই।",
+      "whyWrong": {
+        "0": "CNAME DNS-এর ভেতরের alias, HTTP redirect না; address bar-এর URL বদলায় না।",
+        "1": "নাম দিয়ে connection খোলা যায় না, তাই resolver নামটা আবার খুঁজে IP বের করে।",
+        "3": "উল্টো: apex-এ CNAME দেওয়া যায় না, subdomain-এ যায়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q06",
+      "difficulty": "easy",
+      "question": "DNS উত্তরে `TTL 300` লেখা থাকলে তার মানে কী?",
+      "options": [
+        "এই উত্তরটা ৩০০ সেকেন্ড পর্যন্ত cache-এ রেখে আবার ব্যবহার করা যাবে",
+        "Record-টা ৩০০ দিন পর নিজে থেকে মুছে যাবে, তখন নতুন করে আবার বানাতে হবে",
+        "Server ৩০০ms-এর মধ্যে উত্তর না দিলে DNS request বাতিল হবে",
+        "একসাথে সর্বোচ্চ ৩০০ জন user এই নামটা খুঁজতে পারবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "TTL (Time To Live) সেকেন্ডে বলে দেয় একটা উত্তর কতক্ষণ cache-এ রাখা যাবে। এর মধ্যে browser, OS বা resolver আবার জিজ্ঞেস না করেই একই উত্তর ব্যবহার করে। মেয়াদ শেষ হলে আবার authoritative পর্যন্ত খোঁজ হয়।",
+      "whyWrong": {
+        "1": "TTL record-এর আয়ু না, cache-এ রাখার সময়, আর সেটা সেকেন্ডে।",
+        "2": "TTL কোনো timeout না, আর এর একক সেকেন্ড।",
+        "3": "TTL-এর সাথে user-এর সংখ্যার কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q07",
+      "difficulty": "easy",
+      "question": "User এমন একটা path চাইল যেটা server-এ নেই। কোন status code সবচেয়ে উপযুক্ত?",
+      "options": [
+        "500 Internal Server Error",
+        "301 Moved Permanently",
+        "403 Forbidden",
+        "404 Not Found"
+      ],
+      "correctIndex": 3,
+      "explanation": "404 মানে server request বুঝেছে, কিন্তু ওই path-এ কিছু নেই। এটা 4xx, অর্থাৎ client এমন কিছু চেয়েছে যা নেই। ভুল code দিলে monitoring আর search engine দুটোই ভুল বোঝে।",
+      "whyWrong": {
+        "0": "500 মানে server-এর code-এ কিছু ভেঙেছে; এখানে server ঠিক আছে, শুধু জিনিসটা নেই।",
+        "1": "301 মানে জিনিসটা অন্য ঠিকানায় সরে গেছে, যেটা এখানে সত্য না।",
+        "2": "403 মানে জিনিসটা আছে কিন্তু অনুমতি নেই; এখানে জিনিসটাই নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q08",
+      "difficulty": "easy",
+      "question": "একটা page-এ `503 Service Unavailable` আসছে। প্রথমে কোথায় খোঁজ শুরু করবেন?",
+      "options": [
+        "Client-এর request-এ, কারণ 5xx মানে request-এর format ভুল ছিল",
+        "Server-এর দিকে, কারণ 5xx মানে server request সামলাতে পারেনি",
+        "DNS-এ, কারণ 5xx মানে নাম থেকে IP পাওয়া যায়নি",
+        "Browser cache-এ, কারণ 5xx মানে পুরনো page দেখানো হচ্ছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Status code-এর প্রথম অঙ্কই দিক দেখায়: 4xx হলে আগে request দেখুন, 5xx হলে আগে server দেখুন। 503 সাধারণত মানে server এখন ব্যস্ত, overload বা maintenance-এ। HTTP response এসেছে মানে DNS, TCP আর TLS ঠিকমতো হয়েছে।",
+      "whyWrong": {
+        "0": "Request-এর ভুল হলে 4xx আসে, যেমন 400।",
+        "2": "DNS fail করলে HTTP response আসেই না; 503 মানে server পর্যন্ত পৌঁছানো গেছে।",
+        "3": "পুরনো copy ঠিক আছে বোঝাতে 304 আসে, 5xx না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q09",
+      "difficulty": "easy",
+      "question": "Checkout page-এ \"Order করুন\" চাপলে নতুন order তৈরি হবে। কোন HTTP method সবচেয়ে উপযুক্ত?",
+      "options": [
+        "POST, কারণ এটা server-এ নতুন কিছু তৈরি করার জন্য data পাঠায়",
+        "GET, কারণ order-এর তথ্য URL-এর query-তে দিলে সবচেয়ে দ্রুত যায়",
+        "HEAD, কারণ order দিতে শুধু header পাঠালেই যথেষ্ট, body লাগে না",
+        "DELETE, কারণ order দিলে cart থেকে জিনিসগুলো মুছে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "GET আনার জন্য, POST নতুন কিছু পাঠিয়ে তৈরি করার জন্য, PUT/PATCH বদলানোর জন্য, DELETE মুছে ফেলার জন্য। Order-এর data POST-এর body-তে যায়। GET-এ এমন কাজ রাখলে browser বা crawler link আগে থেকে খুলেই order দিয়ে ফেলতে পারে।",
+      "whyWrong": {
+        "1": "GET শুধু কিছু আনার জন্য; নতুন কিছু তৈরি করা GET-এর কাজ না, আর query-র data log আর history-তে থেকে যায়।",
+        "2": "HEAD হলো body ছাড়া GET, শুধু header আনার জন্য; কিছু তৈরি করে না।",
+        "3": "Cart খালি হওয়া পার্শ্বফল; মূল কাজ নতুন order তৈরি, যেটা POST।"
+      }
+    },
+    {
+      "id": "sd-day-003-q10",
+      "difficulty": "easy",
+      "question": "একই IP-তে ১০টা আলাদা website চলছে। Server কিভাবে বোঝে কোন site চাওয়া হয়েছে?",
+      "options": [
+        "Request-এর Host header দেখে",
+        "Client-এর IP address দেখে",
+        "Path-এর প্রথম অংশ দেখে, যেমন /site1/ দিয়ে শুরু হলে প্রথম site",
+        "DNS server request-এর সাথে site-এর নাম জুড়ে পাঠিয়ে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "IP দিয়ে শুধু machine-এ পৌঁছানো যায়। কোন site চাই, সেটা browser Host header-এ লিখে দেয়, যেমন `Host: www.boighor.com`। এভাবেই একটা server-এ অনেক site চলে (virtual hosting)।",
+      "whyWrong": {
+        "1": "Client-এর IP বলে কে চাইছে, কোন site চাইছে তা না।",
+        "2": "Path site-এর ভেতরের resource বোঝায়, কোন site তা না।",
+        "3": "DNS শুধু IP বলে দেয়, এরপর HTTP request-এ তার কোনো ভূমিকা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q11",
+      "difficulty": "easy",
+      "question": "Resolver root server-কে `www.boighor.com`-এর IP জিজ্ঞেস করলে root সাধারণত কী উত্তর দেয়?",
+      "options": [
+        "`www.boighor.com`-এর IP, কারণ root-এর কাছে পৃথিবীর সব domain-এর সব record-এর একটা copy থাকে",
+        "`.com` TLD-এর name server কারা, মানে পরের ধাপে কাকে জিজ্ঞেস করতে হবে",
+        "`boighor.com`-এর authoritative server-এর ঠিকানা সরাসরি",
+        "কোনো উত্তর দেয় না, root শুধু অন্য root server-দের সাথে কথা বলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Root DNS গাছের মাথা, কিন্তু কোনো domain চেনে না। সে শুধু referral দেয়: '`.com`-এর খবর এই server-দের কাছে।' তারপর TLD বলে domain-এর name server কে, আর authoritative server আসল উত্তর দেয়।",
+      "whyWrong": {
+        "0": "Root কোনো domain-এর record রাখে না, শুধু TLD-গুলোর দায়িত্ব কার তা জানে।",
+        "2": "এটা TLD server বলে; root শুধু `.com`-এর server পর্যন্ত দেখায়।",
+        "3": "Root resolver-দের প্রশ্নের উত্তর দেয়, শুধু সেটা referral।"
+      }
+    },
+    {
+      "id": "sd-day-003-q12",
+      "difficulty": "easy",
+      "question": "কোন server-এর কাছে `boighor.com`-এর আসল (চূড়ান্ত) A record থাকে?",
+      "options": [
+        "ISP-র recursive resolver, যে সব নামের উত্তর মনে রাখে",
+        "boighor.com-এর authoritative name server",
+        "Root server",
+        ".com TLD server"
+      ],
+      "correctIndex": 1,
+      "explanation": "Domain-এর মালিক যে DNS provider-এ record রাখেন, সেটাই authoritative server। চূড়ান্ত আর সবচেয়ে নতুন উত্তর এখান থেকেই আসে। Resolver-এর কাছে যা থাকে তা কেবল TTL পর্যন্ত রাখা copy।",
+      "whyWrong": {
+        "0": "Resolver শুধু উত্তরের cache রাখে, আসল record না; cache পুরনোও হতে পারে।",
+        "2": "Root শুধু TLD server-দের দেখায়।",
+        "3": "TLD শুধু বলে domain-এর name server কে, record রাখে না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q13",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা একটা public recursive resolver-এর ঠিকানা?",
+      "options": [
+        "a.root-servers.net",
+        "127.0.0.1",
+        "1.1.1.1 (Cloudflare)",
+        "192.168.0.1 (বাসার router)"
+      ],
+      "correctIndex": 2,
+      "explanation": "Recursive resolver আপনার হয়ে root, TLD আর authoritative ঘুরে উত্তর আনে আর cache করে। ISP-র resolver ছাড়াও Cloudflare (1.1.1.1), Google (8.8.8.8), Quad9 (9.9.9.9)-এর মতো public resolver আছে। Root server-এর কাজ আলাদা, সে শুধু পরের ধাপ দেখায়।",
+      "whyWrong": {
+        "0": "এটা একটা root server, যে শুধু referral দেয়, আপনার হয়ে পুরো খোঁজ করে না।",
+        "1": "এটা localhost, মানে আপনার নিজের machine; public কোনো resolver না।",
+        "3": "এটা private ঠিকানা; router বড়জোর প্রশ্নটা ISP-র resolver-এ পাঠিয়ে দেয়, নিজে public resolver না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q14",
+      "difficulty": "easy",
+      "question": "Login-এর পর server কিভাবে browser-কে একটা session id মনে রাখতে বলে?",
+      "options": [
+        "URL-এর fragment অংশে session id বসিয়ে",
+        "DNS-এ ওই user-এর জন্য আলাদা একটা record বানিয়ে",
+        "TCP connection-টা সারাজীবন খোলা রেখে",
+        "Response-এ Set-Cookie header পাঠিয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Server `Set-Cookie: session=...` পাঠায়, browser সেটা জমা রাখে আর ওই site-এর প্রতিটা পরের request-এ `Cookie` header-এ জুড়ে দেয়। এভাবেই stateless HTTP-তে server বুঝতে পারে আপনি কে।",
+      "whyWrong": {
+        "0": "Fragment server-এ ফেরতই আসে না, তাই এটা দিয়ে server user-কে চিনতে পারবে না।",
+        "1": "DNS নাম থেকে IP দেয়, user-এর session রাখে না।",
+        "2": "Connection বন্ধ হয়, বদলায়; HTTP stateless বলেই আলাদা পরিচয়-চিহ্ন লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q15",
+      "difficulty": "easy",
+      "question": "HTTP আর HTTPS-এর মূল পার্থক্য কী?",
+      "options": [
+        "HTTPS-এ HTTP-র data TLS দিয়ে encrypt হয়, আর server-এর পরিচয় certificate দিয়ে যাচাই হয়",
+        "HTTPS সম্পূর্ণ আলাদা আর দ্রুত একটা protocol, যেটা HTTP-র method বা status code ব্যবহারই করে না",
+        "HTTPS শুধু login আর payment page-এর জন্য, সাধারণ page-এ এটা চালানো যায় না",
+        "HTTPS-এ DNS lookup লাগে না, কারণ certificate-এর ভেতরেই server-এর IP লেখা থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "HTTPS মানে HTTP over TLS। Request আর response আগের মতোই, শুধু পুরোটা encrypt হয়ে যায়, আর browser certificate দেখে নিশ্চিত হয় এটাই আসল server। ফলে পথের কেউ পড়তে বা বদলাতে পারে না।",
+      "whyWrong": {
+        "1": "HTTPS-এর ভেতরে একই HTTP চলে, একই method আর status code।",
+        "2": "পুরো site-ই HTTPS-এ চালানো যায় আর উচিত।",
+        "3": "HTTPS-এও আগে DNS লাগে; certificate নাম যাচাই করে, IP দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q16",
+      "difficulty": "easy",
+      "question": "Browser-এ একদম নতুন একটা site-এর URL লিখে Enter চাপলে ধাপগুলো কোন ক্রমে হয়?",
+      "options": [
+        "HTTP request আগে, তারপর DNS, কারণ server নিজেই response-এর সাথে তার IP কত সেটা বলে দেয়",
+        "TLS handshake আগে, তারপর DNS, কারণ নাম খোঁজাটাও encrypt করতে হয়",
+        "TCP connection আগে, তারপর DNS, কারণ connection ছাড়া প্রশ্ন পাঠানো যায় না",
+        "DNS দিয়ে IP বের করা, তারপর TCP connection, তারপর TLS, তারপর HTTP request"
+      ],
+      "correctIndex": 3,
+      "explanation": "আগে নাম থেকে IP (DNS), তারপর সেই IP-তে TCP connection, তারপর TLS দিয়ে পরিচয় যাচাই আর encryption, শেষে HTTP request। প্রতিটা ধাপ আগেরটার উপর নির্ভর করে। Cache-এ IP থাকলে শুধু DNS ধাপটা বাদ যায়।",
+      "whyWrong": {
+        "0": "IP না জানলে request পাঠানোরই উপায় নেই, তাই DNS সবার আগে।",
+        "1": "TLS কার সাথে হবে সেটা জানতেই IP লাগে।",
+        "2": "Web server-এর সাথে TCP খুলতে তার IP লাগে; DNS প্রশ্ন আলাদা server-এ যায়, সাধারণত UDP-তে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q17",
+      "difficulty": "easy",
+      "question": "Response-এ `301` আর `Location: https://boighor.com/` header এলো। Browser কী করবে?",
+      "options": [
+        "User-কে একটা error page দেখাবে, কারণ 3xx মানে request fail করেছে",
+        "আগের URL-টাই আবার reload করবে, যতক্ষণ না 200 আসে",
+        "নিজে থেকে Location-এর ঠিকানায় নতুন একটা request পাঠাবে",
+        "Location-এর ঠিকানাটা শুধু address bar-এ দেখাবে, কোনো request পাঠাবে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "3xx redirect মানে 'যা চাইছেন সেটা অন্য ঠিকানায়'। Location header-এ নতুন ঠিকানা থাকে, আর browser নিজে থেকে সেখানে request পাঠায়। প্রতিটা redirect তাই অন্তত একটা বাড়তি round trip।",
+      "whyWrong": {
+        "0": "3xx error না, মানে 'অন্য জায়গায় দেখো'।",
+        "1": "Browser Location-এর নতুন ঠিকানায় যায়, পুরনোটায় না।",
+        "3": "Redirect মানে browser নতুন ঠিকানায় আসলে request পাঠায়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q18",
+      "difficulty": "easy",
+      "question": "একটা HTML page-এ ৩টা CSS, ৫টা ছবি আর ২টা JavaScript file আছে। কোনো cache নেই ধরে, page পুরোটা দেখাতে browser মোট কয়টা HTTP request পাঠাবে?",
+      "options": [
+        "১টা, কারণ server HTML-এর সাথে সব file একসাথে পাঠিয়ে দেয়",
+        "১০টা, কারণ HTML-টা DNS-এর উত্তরের সাথেই চলে আসে",
+        "৩টা: HTML, CSS আর JS-এর জন্য, কারণ ছবিগুলো HTML-এর ভেতরেই ঢোকানো থাকে",
+        "১১টা: HTML-এর জন্য ১টা, আর প্রতিটা file-এর জন্য আলাদা ১টা করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রথম response-এ আসে শুধু HTML। Browser সেটা পড়ে CSS, JavaScript আর ছবির ঠিকানা পায়, আর প্রতিটার জন্য আলাদা request পাঠায়: ১ + ৩ + ৫ + ২ = ১১। এজন্যই connection reuse আর caching এত গুরুত্বপূর্ণ।",
+      "whyWrong": {
+        "0": "HTML আসার পর browser পড়ে দেখে আর কী লাগবে, তারপর প্রতিটার জন্য আলাদা request পাঠায়।",
+        "1": "DNS শুধু IP দেয়; HTML-এর জন্যও আলাদা HTTP request লাগে।",
+        "2": "HTML-এ শুধু ছবির ঠিকানা থাকে, ছবির জন্য আলাদা request যায়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q19",
+      "difficulty": "easy",
+      "question": "\"HTTP stateless\" কথাটার মানে কী?",
+      "options": [
+        "HTTP দিয়ে server-এ কোনো data পাঠানো যায় না, শুধু page আনা যায়",
+        "HTTP connection একবার বন্ধ হলে সেই site-এ আর connection খোলা যায় না",
+        "Server কোনো database বা file-এ কিছু লিখতে পারে না, তাই সব data প্রতিবার client-কেই পাঠাতে হয়",
+        "প্রতিটা request নিজের মধ্যে সম্পূর্ণ; server আগের request মনে রাখতে বাধ্য না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stateless মানে protocol নিজে কোনো 'কথোপকথন' মনে রাখে না, প্রতিটা request একা বোঝা যায়। তাই client নিজের পরিচয় (cookie বা token) প্রতিটা request-এ পাঠায়। এর বড় লাভ: যেকোনো server যেকোনো request সামলাতে পারে।",
+      "whyWrong": {
+        "0": "POST-এর body দিয়ে data পাঠানো যায়; stateless-এর সাথে এর সম্পর্ক নেই।",
+        "1": "যতবার খুশি নতুন connection খোলা যায়; stateless মানে request আগেরটা মনে রাখে না।",
+        "2": "Server database-এ যা খুশি রাখতে পারে; stateless শুধু protocol-এর স্তরে, request-গুলো আলাদা।"
+      }
+    },
+    {
+      "id": "sd-day-003-q20",
+      "difficulty": "easy",
+      "question": "Browser নিজের cache-এ একটা নামের IP না পেলে সাধারণত এরপর কোথায় দেখা হয়?",
+      "options": [
+        "Operating system-এর DNS cache আর hosts file-এ",
+        "সরাসরি root server-এ",
+        "Web server-এর নিজের cache-এ",
+        "CDN-এর edge server-এর cache-এ, কারণ সেটাই user-এর সবচেয়ে কাছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "ক্রম মোটামুটি: browser cache → OS cache (আর `/etc/hosts`) → recursive resolver → দরকার হলে root, TLD আর authoritative। প্রতিটা স্তর উত্তর TTL পর্যন্ত রাখে। এজন্য বেশিরভাগ lookup প্রথম দুই-তিন ধাপেই শেষ হয়।",
+      "whyWrong": {
+        "1": "Root-এ যায় resolver, তাও শুধু cache miss হলে; browser নিজে root-কে জিজ্ঞেস করে না।",
+        "2": "Web server-এর IP-ই তো জানা নেই, সেখানে যাওয়ার উপায় নেই।",
+        "3": "CDN page বা file cache করে, নাম থেকে IP-র প্রশ্ন আগে OS আর resolver-এ যায়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q21",
+      "difficulty": "medium",
+      "question": "সকাল ১০:০০-এ আপনি `boighor.com`-এর A record বদলালেন; পুরনো record-এর TTL ছিল ৩৬০০ সেকেন্ড। TTL মানে এমন resolver ধরে, সবচেয়ে খারাপ ক্ষেত্রে কতক্ষণ পর্যন্ত কিছু user পুরনো IP পেতে পারে?",
+      "options": [
+        "১০:০০ থেকেই কেউ পাবে না, কারণ authoritative বদলালেই সব resolver-এর cache সাথে সাথে মুছে যায়",
+        "২৪-৪৮ ঘণ্টা, কারণ নতুন record পৃথিবীজুড়ে ছড়াতে এতটাই সময় লাগে",
+        "১০:০১ পর্যন্ত, কারণ resolver প্রতি মিনিটে authoritative-কে নতুন করে জিজ্ঞেস করে",
+        "প্রায় ১১:০০ পর্যন্ত, কারণ কেউ ঠিক ১০টার আগে cache করলে পুরো এক ঘণ্টা সেটা রাখতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "সবচেয়ে খারাপ ক্ষেত্রে অপেক্ষা = পুরনো TTL। যে resolver ৯:৫৯:৫৯-এ পুরনো উত্তর cache করেছে, সে প্রায় ১০:৫৯:৫৯ পর্যন্ত সেটাই দেবে। 'Propagation' আসলে হাজারো cache-এর আলাদা সময়ে মেয়াদ শেষ হওয়া।",
+      "whyWrong": {
+        "0": "Authoritative কাউকে খবর দেয় না; cache নিজের TTL শেষ হলে তবেই নতুন করে জিজ্ঞেস করে।",
+        "1": "কিছু ছড়ায় না; অপেক্ষার সীমা ঠিক করে পুরনো TTL, যা এখানে ১ ঘণ্টা।",
+        "2": "Resolver TTL শেষ না হওয়া পর্যন্ত জিজ্ঞেস করে না, আর TTL এখানে ৩৬০০ সেকেন্ড।"
+      }
+    },
+    {
+      "id": "sd-day-003-q22",
+      "difficulty": "medium",
+      "question": "আগামী শুক্রবার নতুন server-এ যাবেন। এখন record-এর TTL ৮৬,৪০০ (২৪ ঘণ্টা)। TTL কমিয়ে ৬০ করবেন কখন?",
+      "options": [
+        "Migration-এর ঠিক সময়ে, IP বদলানোর সাথে একই update-এ, কারণ তখন নতুন IP আর ছোট TTL একসাথে সবাই পেয়ে যাবে",
+        "Migration-এর অন্তত ২৪ ঘণ্টা আগে, যাতে বড় TTL-এর সব পুরনো cache মেয়াদ শেষ করে ছোট TTL পায়",
+        "Migration-এর ১ মিনিট আগে, কারণ নতুন TTL ৬০ সেকেন্ড",
+        "TTL কমানোর দরকার নেই, কারণ resolver নিজেই বুঝে নেয় record বদলেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "TTL কমানোর খবরও cache-এর ভেতর দিয়েই যায়। যে resolver ২৪ ঘণ্টার TTL নিয়ে পুরনো উত্তর রেখেছে, সে ২৪ ঘণ্টা পরেই নতুন (৬০s) TTL পাবে। তাই অন্তত পুরনো TTL-এর সমান সময় আগে কমাতে হয়, তারপর IP বদলালে এক মিনিটে সবাই নতুনটা পায়।",
+      "whyWrong": {
+        "0": "যাদের cache-এ পুরনো উত্তর ২৪ ঘণ্টার TTL নিয়ে আছে, তারা নতুন TTL দেখবেই ২৪ ঘণ্টা পরে।",
+        "2": "পুরনো cache-গুলো নতুন TTL জানে না; তাদের মেয়াদ পুরনো ২৪ ঘণ্টা ধরেই চলে।",
+        "3": "Resolver TTL শেষ না হওয়া পর্যন্ত authoritative-কে জিজ্ঞেস করে না, তাই বদল টেরই পায় না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q23",
+      "difficulty": "medium",
+      "question": "`api.boighor.com` বানানোর আগেই একজন tester নামটা খুঁজে 'নাম নেই' পেয়েছিল। এখন record যোগ করার পরেও তার কাছে কিছুক্ষণ 'নাম নেই' আসছে। কেন?",
+      "options": [
+        "নতুন record আগে root আর TLD server-এ copy হতে হয়, আর সেটা পৃথিবীর সব জায়গায় পৌঁছাতে কয়েক ঘণ্টা লাগে",
+        "'নাম নেই' (NXDOMAIN) উত্তরটাও resolver cache করে রেখেছে, আর সেই negative cache-এর মেয়াদ এখনো শেষ হয়নি",
+        "Subdomain-এর record শুধু দিনে একবার, রাতে, authoritative server-এ চালু হয়",
+        "Tester-এর browser HTTPS certificate না পেয়ে নামটাকে block করে রেখেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "DNS শুধু 'আছে' উত্তর না, 'নেই' উত্তরও cache করে (negative caching)। কতক্ষণ রাখবে, সেটা zone-এর SOA record থেকে ঠিক হয়। মেয়াদ শেষ হলে resolver আবার জিজ্ঞেস করবে আর নতুন record পাবে।",
+      "whyWrong": {
+        "0": "Subdomain-এর record শুধু domain-এর authoritative server-এ থাকে, root বা TLD-তে copy হয় না।",
+        "2": "Authoritative server-এ record সাথে সাথেই কার্যকর হয়।",
+        "3": "Certificate-এর সমস্যা হলে নাম পাওয়া যায়, TLS-এ error আসে; 'নাম নেই' DNS-এর উত্তর।"
+      }
+    },
+    {
+      "id": "sd-day-003-q24",
+      "difficulty": "medium",
+      "question": "আপনার laptop-এর stub resolver আর ISP-র resolver-এর মধ্যে কোন ধরনের query হয়, আর resolver আর root-এর মধ্যে কোন ধরনের?",
+      "options": [
+        "দুটোই recursive, কারণ root নিজেও TLD আর authoritative-কে জিজ্ঞেস করে পুরো উত্তরটা resolver-কে এনে দেয়",
+        "Stub → resolver iterative, আর resolver → root recursive, কারণ root সবচেয়ে বড় server",
+        "দুটোই iterative, কারণ laptop নিজেও root থেকে শুরু করে প্রতিটা ধাপ জিজ্ঞেস করে",
+        "Stub → resolver recursive (পুরো উত্তর চায়), resolver → root iterative (root শুধু referral দেয়)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stub resolver বলে 'পুরো উত্তর এনে দাও', এটা recursive query। Resolver তখন root, TLD আর authoritative-কে একে একে জিজ্ঞেস করে, প্রত্যেকে শুধু পরের ঠিকানা বা চূড়ান্ত উত্তর দেয়, এটা iterative। `dig +trace` এই iterative পথটাই দেখায়।",
+      "whyWrong": {
+        "0": "Root পুরো খোঁজ করে না, শুধু পরের ধাপের server দেখায়।",
+        "1": "উল্টো বলা হয়েছে; ভারী কাজ করে resolver, root শুধু referral দেয়।",
+        "2": "সাধারণ laptop নিজে root-এ যায় না; resolver-কে একবার জিজ্ঞেস করে পুরো উত্তর নেয়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q25",
+      "difficulty": "medium",
+      "question": "Root server কেন নিজে পুরো খোঁজ না করে শুধু referral দেয়?",
+      "options": [
+        "পৃথিবীর সব resolver root-কে জিজ্ঞেস করে; পুরো খোঁজ করলে root-এর কাজ বহুগুণ বাড়ত, অথচ referral দেওয়া সস্তা",
+        "Root-এর record প্রায়ই পুরনো থাকে, তাই referral দিলে উত্তর বেশি ঠিক হয়",
+        "নিরাপত্তার জন্য, কারণ root সব domain-এর IP জানলে hacker-রা root-কেই আক্রমণ করে পুরো Internet-এর ঠিকানা বদলে দিতে পারত",
+        "Root server শুধু TCP-তে চলে, আর পুরো খোঁজ করতে UDP লাগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "DNS-এর design-এ ভারী কাজ আর cache রাখা হয়েছে resolver-এ, যেটা লাখো user-এর মধ্যে ভাগ হয়। Root আর TLD শুধু 'পরের জন ওই' বলে, এতে তাদের উপর চাপ কম থাকে। আর resolver-এর cache-এ TLD-এর ঠিকানা থাকায় root পর্যন্ত যাওয়াই খুব কম লাগে।",
+      "whyWrong": {
+        "1": "Root-এর তথ্য পুরনো না; ভাগটা কাজের চাপ সামলানোর জন্য।",
+        "2": "Root-এর ভূমিকা নিরাপত্তার কারণে সীমিত না; এটা scalability-র design।",
+        "3": "Root UDP আর TCP দুটোতেই উত্তর দেয়; protocol এখানে কারণ না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q26",
+      "difficulty": "medium",
+      "question": "Login করা একজন সাধারণ user `/admin` খুলতে চাইল, যেটা শুধু admin-দের জন্য। কোন status code অর্থের দিক থেকে ঠিক?",
+      "options": [
+        "403 Forbidden, কারণ user কে তা জানা, কিন্তু তার এই কাজের অনুমতি নেই",
+        "401 Unauthorized, কারণ admin না হওয়ায় user-এর এই page দেখার কোনো অনুমতিই দেওয়া হয়নি",
+        "404 Not Found, কারণ admin panel শুধু admin-দের কাছেই আছে",
+        "400 Bad Request, কারণ user ভুল একটা page চেয়েছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "401 আর 403-এর পার্থক্য: 401 বলে 'আপনি কে জানি না, আগে login করুন', 403 বলে 'আপনাকে চিনি, কিন্তু অনুমতি নেই'। দুটোই 4xx, কারণ সমস্যা request-এর দিকে। সঠিক code দিলে client বুঝতে পারে login page দেখাবে নাকি 'অনুমতি নেই' বার্তা।",
+      "whyWrong": {
+        "1": "401 মানে পরিচয়ই দেওয়া হয়নি বা ভুল (login লাগবে); এখানে user login করা।",
+        "2": "কেউ কেউ লুকানোর জন্য 404 দেয়, কিন্তু অর্থের দিক থেকে 'আছে, অনুমতি নেই' হলো 403।",
+        "3": "400 মানে request-এর গঠনই ভুল; এখানে request ঠিক, অনুমতি নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q27",
+      "difficulty": "medium",
+      "question": "Load balancer-এর পেছনের app server বারবার crash করে connection কেটে দিচ্ছে। User সম্ভবত কোন status code দেখবে?",
+      "options": [
+        "502 Bad Gateway, কারণ মাঝের load balancer পেছনের server থেকে ভাঙা বা অচল উত্তর পেয়েছে",
+        "504 Gateway Timeout, কারণ backend-এর যেকোনো সমস্যাকেই load balancer timeout হিসেবে দেখায়",
+        "404 Not Found, কারণ server না থাকলে page-ও পাওয়া যায় না",
+        "401 Unauthorized, কারণ load balancer backend server-কে চিনতে পারেনি"
+      ],
+      "correctIndex": 0,
+      "explanation": "502 মানে gateway বা proxy (যেমন load balancer) পেছনের server-এর কাছে গিয়েছিল, কিন্তু ভাঙা, অচল বা কাটা উত্তর পেয়েছে। 504 মানে পেছনের server সময়মতো উত্তর দেয়নি। দুটোই বলে সমস্যা load balancer-এর পেছনে, user-এর request-এ না।",
+      "whyWrong": {
+        "1": "504 আসে যখন backend সময়মতো উত্তরই দেয় না; connection কেটে যাওয়া বা ভাঙা উত্তরে সাধারণত 502।",
+        "2": "404 মানে server ঠিকমতো উত্তর দিয়ে বলেছে জিনিসটা নেই; এখানে উত্তরই আসেনি।",
+        "3": "401 user-এর পরিচয়ের ব্যাপার, load balancer আর backend-এর সংযোগের না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q28",
+      "difficulty": "medium",
+      "question": "Teammate সব error-এ `200 OK` দিয়ে body-তে `{\"error\": \"...\"}` পাঠায়। সবচেয়ে বড় সমস্যা কোনটা হবে?",
+      "options": [
+        "Browser JSON body দেখলে 200 OK হলেও পুরো response বাতিল করে দেয়, তাই user-এর page একদম সাদা আর খালি অবস্থায় আসবে",
+        "200 response-এ body পাঠানোই যায় না, তাই error message পথে হারিয়ে যাবে",
+        "Monitoring, cache আর retry logic status দেখে ধরে নেবে সব ঠিক, ফলে error চোখে পড়বে না বা ভুল উত্তর cache হবে",
+        "DNS resolver 200 দেখে ভুল IP cache করে ফেলবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Status code হলো সবার জন্য মূল সংকেত: dashboard error rate গোনে, cache ঠিক করে রাখবে কিনা, client library ঠিক করে retry করবে কিনা। 200 দিলে সবাই ভাবে সফল। তাই client-এর ভুলে 4xx, server-এর ভুলে 5xx, আর বিস্তারিত body-তে।",
+      "whyWrong": {
+        "0": "Browser 200-এর body ঠিকই দেয়; সমস্যা অন্যরা error বুঝতে পারে না।",
+        "1": "200-এ body থাকা একদম স্বাভাবিক।",
+        "3": "DNS HTTP status দেখে না; দুটো আলাদা ধাপ।"
+      }
+    },
+    {
+      "id": "sd-day-003-q29",
+      "difficulty": "medium",
+      "question": "ভুল করে `/sale` থেকে `/old-sale`-এ 301 redirect দিলেন, এক ঘণ্টা পর সরিয়ে দিলেন। তবুও কিছু user `/old-sale`-এ চলে যাচ্ছে। কেন?",
+      "options": [
+        "DNS-এর TTL এখনো শেষ হয়নি, তাই তারা পুরনো server-এর IP-তে যাচ্ছে",
+        "তাদের browser 301-কে স্থায়ী ধরে cache করে রেখেছে, তাই server-কে না জিজ্ঞেস করেই পুরনো redirect মানছে",
+        "Server থেকে 301 সরালেও সেটা আরও এক দিন server-এর configuration-এ নিজে থেকে চালু থাকে, তারপর পুরোপুরি নিজে বন্ধ হয়",
+        "User-দের ISP-র resolver redirect-টা নিজের cache-এ রেখে দিয়েছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "301 মানে 'স্থায়ীভাবে সরে গেছে', তাই browser এটা cache করতে পারে, অনেক সময় দীর্ঘদিন। পরে server ঠিক করলেও যাদের browser মনে রেখেছে, তারা server-এ না গিয়েই পুরনো জায়গায় যায়। সাময়িক কাজে তাই 302 বা 307।",
+      "whyWrong": {
+        "0": "DNS নাম থেকে IP দেয়; path থেকে path-এ redirect HTTP-র ব্যাপার।",
+        "2": "Server-এ সরালে সাথে সাথে বন্ধ; সমস্যা browser-এর মনে রাখা।",
+        "3": "Resolver শুধু DNS উত্তর cache করে, HTTP redirect না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q30",
+      "difficulty": "medium",
+      "question": "একটা form-এর POST request সাময়িকভাবে অন্য endpoint-এ পাঠাতে হবে, আর body যেন না হারায়। কোন status code দেবেন?",
+      "options": [
+        "302 Found, কারণ সাময়িক redirect-এ এটা সবসময় body সহ POST রাখে",
+        "307 Temporary Redirect, কারণ এটা method আর body একই রাখে",
+        "301 Moved Permanently, কারণ POST শুধু স্থায়ী redirect-এ যেতে পারে",
+        "304 Not Modified, কারণ body বদলায়নি, তাই একই body চলবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "307 (সাময়িক) আর 308 (স্থায়ী) নিশ্চিত করে client একই method আর body দিয়ে নতুন ঠিকানায় যাবে। 301 আর 302-এ পুরনো আচরণের কারণে POST অনেক সময় GET হয়ে যায়। এখানে কাজটা সাময়িক, তাই 307।",
+      "whyWrong": {
+        "0": "302-এ বহু client ঐতিহাসিকভাবে POST-কে GET বানিয়ে body ফেলে দেয়।",
+        "2": "301 স্থায়ী, আর এতেও POST → GET হয়ে যেতে পারে।",
+        "3": "304 cache-এর জন্য, redirect না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q31",
+      "difficulty": "medium",
+      "question": "RTT ৫০ms। নতুন HTTPS connection-এ TCP ১ RTT, TLS 1.3 ১ RTT, আর request-response ১ RTT লাগে। প্রথম response আসতে কত সময়, আর একই connection-এ দ্বিতীয় request-এ কত (server-এর সময় শূন্য ধরে)?",
+      "options": [
+        "দুটোতেই প্রায় ১৫০ms, কারণ প্রতিটা request-এ নতুন করে handshake হয়",
+        "প্রথমটায় ৫০ms, দ্বিতীয়টায় ০ms, কারণ দ্বিতীয়টা browser cache থেকে আসে",
+        "প্রথমটায় প্রায় ১৫০ms, দ্বিতীয়টায় প্রায় ৫০ms",
+        "দুটোতেই প্রায় ১০০ms, কারণ TCP আর TLS একই সাথে একটা RTT-তেই হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রথমবার: TCP (৫০) + TLS (৫০) + request (৫০) = ~১৫০ms। দ্বিতীয় request একই খোলা connection-এ যায়, তাই শুধু request-response-এর ১ RTT = ~৫০ms। এটাই keep-alive আর connection pool-এর লাভ।",
+      "whyWrong": {
+        "0": "Keep-alive-এ একই connection আবার ব্যবহার হয়, handshake আর লাগে না।",
+        "1": "প্রথমবার handshake-এর দুটো RTT বাদ পড়েছে, আর connection reuse মানে cache না।",
+        "3": "TCP আর TLS 1.3 আলাদা round trip নেয়, আর দ্বিতীয় request-এ handshake-ই লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q32",
+      "difficulty": "medium",
+      "question": "User `http://boighor.com` লিখলে যায় `https://boighor.com`-এ, তারপর আবার `https://www.boighor.com`-এ। এই redirect শিকল নিয়ে কোন কথাটা ঠিক?",
+      "options": [
+        "Redirect browser-এর ভেতরেই হয়ে যায়, তাই network-এ বাড়তি কোনো round trip লাগে না, শুধু address bar-এর লেখাটা বদলে যায় মাত্র",
+        "প্রতিটা redirect অন্তত একটা বাড়তি round trip, scheme বা host বদলালে নতুন connection-ও লাগে; link চূড়ান্ত ঠিকানায় দিন",
+        "শুধু শেষ redirect-টা সময় নেয়, কারণ আগেরগুলো browser আগে থেকেই জানে",
+        "Redirect শুধু DNS-এ সময় নেয়, HTTP-তে কোনো খরচ নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা 3xx মানে একটা response, তারপর নতুন ঠিকানায় নতুন request। Scheme বদলালে (http → https) port বদলায়, host বদলালে (www) নতুন DNS lookup, TCP আর TLS লাগতে পারে। তাই ভেতরের link, ad আর QR code সবসময় চূড়ান্ত ঠিকানায় দিন।",
+      "whyWrong": {
+        "0": "Browser প্রতিবার নতুন ঠিকানায় আসল request পাঠায়, তাই প্রতিটা redirect network-এ সময় নেয়।",
+        "2": "Cache করা না থাকলে প্রতিটা redirect-এর জন্যই request যায়।",
+        "3": "Redirect-এর response আর নতুন request দুটোই HTTP-র round trip।"
+      }
+    },
+    {
+      "id": "sd-day-003-q33",
+      "difficulty": "medium",
+      "question": "Site-এ HTTP → HTTPS 301 redirect আছে। Café-র খোলা Wi-Fi-তে একজন user address bar-এ শুধু `boighor.com` টাইপ করল। কোন ঝুঁকি থেকে যায়, আর কী দিয়ে সেটা কমে?",
+      "options": [
+        "কোনো ঝুঁকি নেই, কারণ 301 redirect-টাও TLS দিয়ে encrypt হয়ে আসে, তাই মাঝের কেউ redirect পড়তে বা কোনোভাবে বদলাতে পারে না",
+        "প্রথম HTTP request encrypt হয় না, মাঝের কেউ redirect আটকে user-কে HTTP-তেই রাখতে পারে; HSTS (আর preload) এটা বন্ধ করে",
+        "DNS cache-এর কারণে ভুল IP আসতে পারে; TTL বাড়ালে এটা ঠিক হবে",
+        "Cookie বড় হলে প্রথম request ধীর হবে; cookie ছোট করলেই হবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "HTTP → HTTPS redirect-এর আগের request-টা খোলা অবস্থায় যায়, তাই একই network-এর আক্রমণকারী redirect-টাই সরিয়ে user-কে HTTP-তে রাখতে পারে (SSL stripping)। HSTS header একবার পেলে browser নিজেই সব request HTTPS-এ পাঠায়, আর preload list প্রথম visit-এর ফাঁকও বন্ধ করে।",
+      "whyWrong": {
+        "0": "Redirect-টা আসে সাধারণ HTTP-তে, তাই encrypt হয় না।",
+        "2": "TTL বাড়ানো এই আক্রমণ থামায় না; সমস্যা প্রথম unencrypted HTTP request।",
+        "3": "এটা গতির ব্যাপার, নিরাপত্তার ঝুঁকি না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q34",
+      "difficulty": "medium",
+      "question": "Site-এ একটা XSS bug আছে, attacker নিজের JavaScript চালাতে পারছে। Session cookie-তে কোন attribute থাকলে সেই script cookie-টা পড়তে পারবে না?",
+      "options": ["HttpOnly", "Secure", "SameSite=Lax", "Max-Age=86400"],
+      "correctIndex": 0,
+      "explanation": "HttpOnly cookie browser request-এর সাথে পাঠায়, কিন্তু page-এর JavaScript (`document.cookie`) দেখতে পায় না। তাই XSS থাকলেও session id সরাসরি চুরি করা কঠিন হয়। Session cookie-তে সাধারণত HttpOnly, Secure আর SameSite তিনটাই দেওয়া হয়।",
+      "whyWrong": {
+        "1": "Secure শুধু নিশ্চিত করে cookie HTTPS-এ যাবে; JavaScript তবুও পড়তে পারে।",
+        "2": "SameSite অন্য site থেকে আসা request-এ cookie যাওয়া নিয়ন্ত্রণ করে (CSRF), script-এর পড়া না।",
+        "3": "Max-Age শুধু কতদিন থাকবে বলে, কে পড়তে পারবে তা না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q35",
+      "difficulty": "medium",
+      "question": "App-এর login session প্রতিটা server-এর নিজের memory-তে রাখা হয়। Load balancer-এর পেছনে দ্বিতীয় server যোগ করার পর user-রা মাঝে মাঝে logout হয়ে যাচ্ছে। মূল কারণ আর সমাধান কী?",
+      "options": [
+        "Cookie-তে Secure flag নেই, তাই দ্বিতীয় server-এর কাছে cookie পৌঁছাচ্ছেই না; সব cookie-তে Secure flag দিলেই সমস্যাটা ঠিক হয়ে যাবে",
+        "DNS round-robin ভুল IP দিচ্ছে; TTL বাড়ালে user একই server-এ থাকবে",
+        "Request অন্য server-এ গেলে সেখানে session নেই; session একটা shared store-এ (যেমন Redis) বা সই করা token-এ রাখুন",
+        "দুই server-এর TLS certificate আলাদা; একই certificate দিলে ঠিক হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "HTTP stateless, তাই load balancer যেকোনো request যেকোনো server-এ পাঠাতে পারে। Session যদি একটা server-এর memory-তে থাকে, অন্য server user-কে চেনে না। State-টা shared store-এ বা token-এ সরালে সব server আবার বদলযোগ্য হয়ে যায় (Day 14-এ বিস্তারিত)।",
+      "whyWrong": {
+        "0": "Secure শুধু HTTPS-এর শর্ত; cookie দুই server-এই পৌঁছায়, কিন্তু দ্বিতীয়টার memory-তে session নেই।",
+        "1": "সমস্যাটা server-এর memory-তে state রাখা; DNS দিয়ে এটা নির্ভরযোগ্যভাবে ঠিক হয় না।",
+        "3": "Certificate session চেনে না; session id কোন server-এ আছে সেটাই সমস্যা।"
+      }
+    },
+    {
+      "id": "sd-day-003-q36",
+      "difficulty": "medium",
+      "question": "`boighor.com`-এ তিনটা A record দিয়ে DNS round-robin চলছে। একটা server হঠাৎ মারা গেল। কী হবে?",
+      "options": [
+        "DNS নিজেই প্রতিটা server-এর health check করে, তাই মরা server-এর IP দেওয়া সাথে সাথে বন্ধ করে দেবে আর বাকি দুটো দেবে",
+        "Resolver মরা IP-তে TCP চেষ্টা করে fail হলে নিজেই বাকি দুটো IP দেবে",
+        "Browser তিনটা IP-তেই একসাথে request পাঠায়, তাই user কিছুই টের পাবে না",
+        "DNS জানে না server মারা গেছে, তাই কিছু user তখনও ওই IP পাবে, আর cache-এ থাকা উত্তর TTL পর্যন্ত বদলাবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "সাধারণ DNS round-robin শুধু IP-গুলোর তালিকা দেয়, কোনটা বেঁচে আছে জানে না। আর resolver-এর cache-এ থাকা উত্তর TTL পর্যন্ত বদলায় না। এজন্যই health check করে বাদ দেওয়ার কাজটা load balancer করে (Day 9), অথবা health check-যুক্ত managed DNS ব্যবহার করা হয়।",
+      "whyWrong": {
+        "0": "সাধারণ DNS round-robin server-এর অবস্থা দেখে না; health check আলাদা feature।",
+        "1": "Resolver শুধু DNS উত্তর দেয়, web server-এ connection চেষ্টা করে না।",
+        "2": "Browser একটা IP-তে request পাঠায়; একই request তিন জায়গায় যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q37",
+      "difficulty": "medium",
+      "question": "ঢাকার একজন user এমন একটা resolver ব্যবহার করছেন যেটা ইউরোপের একটা data center থেকে প্রশ্ন পাঠায়। GeoDNS ব্যবহার করা একটা site তাকে ইউরোপের server দিচ্ছে। কেন?",
+      "options": [
+        "Authoritative server user-কে দেখে না, resolver-এর ঠিকানা দেখে অঞ্চল ঠিক করে; EDNS Client Subnet না থাকলে এমন ভুল হতে পারে",
+        "GeoDNS user-এর browser-এর ভাষা দেখে অঞ্চল ঠিক করে, আর ভাষা English",
+        "DNS প্রশ্নের সাথে user-এর পুরো IP সবসময় authoritative পর্যন্ত যায়, তাই এটা নিশ্চয়ই site-এর GeoDNS configuration-এর bug",
+        "TTL ছোট হলে GeoDNS নিজে থেকে ইউরোপকে default ধরে নেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "DNS প্রশ্ন authoritative-এর কাছে আসে resolver থেকে, তাই GeoDNS resolver কোথায় সেটা দেখেই কাছের server বাছে। Resolver user-এর থেকে দূরে হলে উত্তরও দূরের হয়। EDNS Client Subnet-এ resolver user-এর network-এর একটা অংশ জানিয়ে দেয়, যাতে authoritative আরও ঠিক অঞ্চল বাছতে পারে।",
+      "whyWrong": {
+        "1": "DNS প্রশ্নে browser-এর ভাষার কোনো তথ্য থাকে না।",
+        "2": "সাধারণত user-এর IP authoritative পর্যন্ত যায়ই না; সে resolver-কে দেখে।",
+        "3": "TTL-এর সাথে অঞ্চল বাছাইয়ের কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q38",
+      "difficulty": "medium",
+      "question": "`boighor.com` (zone-এর apex)-কে একটা load balancer-এর hostname-এ CNAME করতে চাইছেন, কিন্তু DNS provider দিচ্ছে না। কেন, আর বিকল্প কী?",
+      "options": [
+        "CNAME শুধু IPv6 ঠিকানার জন্য ব্যবহার করা যায়, IPv4-এর জন্য না; তার বদলে apex-এ একটা AAAA record দিলেই সমস্যা মিটে যাবে",
+        "Apex-এ NS ও SOA থাকতেই হয়, আর CNAME অন্য record-এর পাশে থাকতে পারে না; alias বা CNAME flattening ব্যবহার করুন",
+        "Apex-এ শুধু MX record চলে; MX দিয়ে load balancer দেখাতে হবে",
+        "Apex-এ CNAME-এর TTL শূন্য হয়ে যায়; TTL বড় করে দিলেই চলবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "DNS-এর নিয়মে CNAME থাকলে ওই নামে আর কোনো record থাকতে পারে না, অথচ apex-এ NS আর SOA বাধ্যতামূলক। তাই provider-রা alias record (যেমন Route 53) বা CNAME flattening (যেমন Cloudflare) দেয়: ভেতরে নামটা খুঁজে বাইরে A record হিসেবে উত্তর দেয়। Subdomain-এ (যেমন www) সাধারণ CNAME ঠিকই চলে।",
+      "whyWrong": {
+        "0": "CNAME নাম থেকে নামে যায়, IPv4/IPv6-এর সাথে সম্পর্ক নেই।",
+        "2": "MX mail-এর জন্য; apex-এ A, AAAA, NS, SOA, MX সবই থাকতে পারে, শুধু CNAME না।",
+        "3": "সমস্যাটা TTL না, CNAME-এর 'অন্য record-এর সাথে থাকতে পারবে না' নিয়ম।"
+      }
+    },
+    {
+      "id": "sd-day-003-q39",
+      "difficulty": "medium",
+      "question": "Browser-এর cache-এ `style.css` আছে, তার ETag-ও জানা। Browser `If-None-Match: <ETag>` দিয়ে জিজ্ঞেস করল, আর file-টা server-এ বদলায়নি। Server কী দেবে?",
+      "options": [
+        "200 OK সহ পুরো file আবার, কারণ HTTP stateless বলে server আগের copy-র কথা জানে না",
+        "301, কারণ file একই জায়গায় স্থায়ীভাবে আছে",
+        "204 No Content, আর browser cache থেকে file মুছে দেবে",
+        "304 Not Modified, body ছাড়া; browser নিজের cache-এর copy ব্যবহার করবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Conditional request-এ browser জিজ্ঞেস করে 'আমার কাছে এই version আছে, বদলেছে কি?'। না বদলালে server শুধু 304 পাঠায়, body ছাড়া, তাই data বাঁচে। লক্ষ করুন, ETag request-এর সাথেই এসেছে, তাই stateless HTTP-তেও এটা কাজ করে।",
+      "whyWrong": {
+        "0": "Stateless হলেও ETag request-এর সাথেই আসে, তাই server মিলিয়ে দেখতে পারে।",
+        "1": "301 মানে সরে গেছে; এখানে কিছু সরেনি।",
+        "2": "204 মানে সফল কিন্তু body নেই, cache-এর নিয়ম না; আর file মোছার কারণ নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q40",
+      "difficulty": "medium",
+      "question": "User বলছে browser-এ লেখা আসছে \"server IP address could not be found\"। কোন ধাপে সমস্যা সবচেয়ে সম্ভাব্য?",
+      "options": [
+        "HTTP: server-এর code crash করে বারবার 500 Internal Server Error পাঠাচ্ছে, আর browser সেটাই দেখাচ্ছে",
+        "TLS: certificate-এর মেয়াদ শেষ",
+        "DNS: নামটা IP-তে বদলানো যাচ্ছে না (record নেই, ভুল, বা DNS server-এ পৌঁছানো যাচ্ছে না)",
+        "TCP: server-এর port 443 বন্ধ"
+      ],
+      "correctIndex": 2,
+      "explanation": "\"IP address could not be found\" মানে DNS lookup fail করেছে, তাই TCP, TLS বা HTTP শুরুই হয়নি। `dig` দিয়ে দেখুন record আছে কিনা, ঠিক কিনা, আর resolver উত্তর দিচ্ছে কিনা। Error-এর ধরন দেখেই বোঝা যায় যাত্রার কোন ধাপে ভেঙেছে।",
+      "whyWrong": {
+        "0": "500 এলে browser সেটা দেখাত; এখানে server পর্যন্ত পৌঁছানোই যায়নি।",
+        "1": "Certificate সমস্যায় আলাদা warning আসে, আর তার আগে IP পাওয়া লাগে।",
+        "3": "Port বন্ধ হলে 'connection refused' ধরনের error আসে, IP খুঁজে পাওয়া যায় না এমন না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q41",
+      "difficulty": "hard",
+      "question": "Server A থেকে B-তে zero-downtime migration করবেন, record-এর এখনকার TTL ৩৬০০। কোন ক্রমটা সবচেয়ে নিরাপদ?",
+      "options": [
+        "IP B-তে বদল → সাথে সাথে A বন্ধ → তারপর TTL ৬০ করা, যাতে নতুন IP দ্রুত সবার কাছে ছড়িয়ে পড়ে এবং পুরনো cache তাড়াতাড়ি মুছে যায়",
+        "TTL ৬০ করা → সাথে সাথে IP বদল → A বন্ধ, কারণ ছোট TTL সাথে সাথে সব cache-এ কার্যকর হয়",
+        "A বন্ধ → IP B-তে বদল → TTL ০ করা, যাতে এরপর কোনো resolver আর cache-ই না করে",
+        "TTL ৬০ করা → অন্তত ১ ঘণ্টা অপেক্ষা → B চালু ও পরীক্ষা → IP B-তে বদল → A কিছুক্ষণ চালু রাখা → পরে TTL বাড়ানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "TTL-এর বদলও cache-এর ভেতর দিয়ে যায়, তাই আগে TTL কমিয়ে অন্তত পুরনো TTL (১ ঘণ্টা) অপেক্ষা করতে হয়। তখন IP বদলালে এক মিনিটের মধ্যে প্রায় সবাই B-তে যায়। TTL না মানা কিছু resolver আর client-এর জন্য A কিছুক্ষণ চালু রাখা, আর শেষে TTL আবার বাড়ানো, যাতে authoritative-এর চাপ কমে।",
+      "whyWrong": {
+        "0": "যাদের cache-এ পুরনো IP এক ঘণ্টার TTL নিয়ে আছে, তারা বন্ধ A-তে যাবে; পরে TTL কমিয়ে লাভ নেই।",
+        "1": "ছোট TTL-এর খবর পুরনো cache-এ পৌঁছাতে পুরনো TTL (১ ঘণ্টা) লাগে, আর A এত দ্রুত বন্ধ করা বিপজ্জনক।",
+        "2": "A আগে বন্ধ করলে অপেক্ষার পুরো সময়টা downtime; আর TTL ০ authoritative-এর উপর বিশাল চাপ দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q42",
+      "difficulty": "hard",
+      "question": "১,০০০টা আলাদা resolver সারাদিন আপনার নাম খুঁজছে (প্রত্যেকের কাছে সবসময় চাহিদা আছে ধরে, আর প্রত্যেকে TTL মানে)। TTL ৩০০ সেকেন্ড হলে দিনে authoritative server-এ মোটামুটি কতগুলো query আসবে?",
+      "options": [
+        "প্রায় ১,০০০, কারণ প্রতিটা resolver দিনে একবারই জিজ্ঞেস করে",
+        "প্রায় ৮,৬৪,০০,০০০, কারণ প্রতিটা resolver প্রতি সেকেন্ডে জিজ্ঞেস করে",
+        "প্রায় ২,৮৮,০০০",
+        "প্রায় ২৮৮, কারণ সব resolver মিলে একটাই shared cache ব্যবহার করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা resolver দিনে ৮৬,৪০০ ÷ ৩০০ = ২৮৮ বার জিজ্ঞেস করে, ১,০০০ resolver মিলে ~২,৮৮,০০০। TTL ৩৬০০ হলে এটা নেমে আসত ২৪,০০০-এ। ছোট TTL-এর দাম এটাই: দ্রুত বদলের বিনিময়ে authoritative-এ অনেক বেশি query।",
+      "whyWrong": {
+        "0": "Resolver প্রতি TTL শেষে আবার জিজ্ঞেস করে, দিনে একবার না।",
+        "1": "Cache থাকায় প্রতি সেকেন্ডে না, প্রতি ৩০০ সেকেন্ডে একবার।",
+        "3": "প্রতিটা resolver-এর নিজের cache, তাই প্রত্যেকে আলাদা জিজ্ঞেস করে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q43",
+      "difficulty": "hard",
+      "question": "একটা নামের DNS উত্তর অনেক বড় (অনেকগুলো record)। আপনার network-এর firewall শুধু UDP 53 খোলা রেখেছে, TCP 53 বন্ধ। কী সমস্যা হতে পারে?",
+      "options": [
+        "কোনো সমস্যা নেই, কারণ DNS কখনোই TCP ব্যবহার করে না; উত্তর যত বড়ই হোক, সব প্রশ্ন-উত্তর সবসময় UDP-র একটা packet-এই হয়ে যায়",
+        "বড় উত্তর নিজে থেকে HTTPS-এ (port 443) চলে যায়, তাই firewall-এ আটকায় না",
+        "বড় উত্তর UDP-তে না ধরলে truncated হয়ে আসে, তখন resolver TCP-তে আবার চায়; TCP 53 বন্ধ থাকলে সেই lookup fail করতে পারে",
+        "Resolver উত্তরের অর্ধেক নিয়েই কাজ চালাবে, শুধু কয়েকটা IP কম পাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "DNS সাধারণত UDP 53-এ চলে, কারণ ছোট প্রশ্ন-উত্তর একটা packet-এই হয়ে যায়। উত্তর বড় হলে server truncated উত্তর দেয়, আর client TCP-তে আবার চায়। তাই TCP 53 বন্ধ রাখলে বড় উত্তরের নামগুলো মাঝে মাঝে অদ্ভুতভাবে fail করে।",
+      "whyWrong": {
+        "0": "উত্তর বড় হলে বা zone transfer-এ DNS TCP ব্যবহার করে।",
+        "1": "সাধারণ DNS নিজে থেকে DoH-এ যায় না; fallback হয় TCP 53-এ।",
+        "3": "Truncated উত্তর মানে resolver পুরোটা TCP-তে আবার চায়; সেটা না পেলে lookup fail হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q44",
+      "difficulty": "hard",
+      "question": "Backend server-এর keep-alive idle timeout ৫ সেকেন্ড, কিন্তু সামনের load balancer connection ৬০ সেকেন্ড পর্যন্ত খোলা ধরে আবার ব্যবহার করে। মাঝে মাঝে কী দেখা যাবে?",
+      "options": [
+        "Backend চুপচাপ connection বন্ধ করলেও load balancer সেটাতে request পাঠায়, ফলে মাঝে মাঝে 502 আসে",
+        "সব request 504 Gateway Timeout হবে, কারণ load balancer-এর idle timeout backend-এর চেয়ে বেশি রাখা হয়েছে",
+        "DNS lookup বারবার fail করবে, কারণ connection বন্ধ হলে backend-এর IP বদলে যায়",
+        "কিছুই হবে না, কারণ HTTP/1.1-এ একবার খোলা connection কখনো বন্ধ হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Load balancer ভাবছে connection এখনো খোলা, অথচ backend ৫ সেকেন্ড চুপ থাকার পর সেটা বন্ধ করে দিয়েছে। ঠিক ওই মুহূর্তে request গেলে connection reset হয়, আর LB user-কে 502 দেয়। প্রচলিত নিয়ম: backend-এর idle timeout load balancer-এর চেয়ে বেশি রাখা।",
+      "whyWrong": {
+        "1": "সব request fail করে না; শুধু যেগুলো সদ্য বন্ধ হওয়া connection-এ যায়, আর সেগুলোতে সাধারণত 502।",
+        "2": "Connection বন্ধ হলে IP বদলায় না; DNS এখানে জড়িত না।",
+        "3": "Idle timeout-এ server connection বন্ধ করে, এটাই সমস্যার উৎস।"
+      }
+    },
+    {
+      "id": "sd-day-003-q45",
+      "difficulty": "hard",
+      "question": "একটা single-page app login-এর পর access token পায় URL-এর `#access_token=...` অংশে। Fragment ব্যবহারের একটা সুবিধা কী?",
+      "options": [
+        "Fragment TLS দিয়ে দুবার encrypt হয়, তাই URL-এর path আর query-র চেয়ে অনেক বেশি নিরাপদ থাকে সবসময়",
+        "Fragment-এর অংশ DNS resolver cache করে না, তাই token দ্রুত পৌঁছায়",
+        "Fragment-এ লেখা data browser-এর history-তে কখনোই সংরক্ষিত হয় না",
+        "Fragment server-এ পাঠানো হয় না, তাই token server-এর access log বা মাঝের proxy-র log-এ ওঠে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Browser fragment নিজের কাছে রাখে, HTTP request-এ পাঠায় না, তাই server আর proxy-র log-এ token ওঠে না। তবে এটা নিখুঁত না: history আর page-এর JavaScript fragment দেখতে পায়। আধুনিক OAuth flow এজন্য অন্য পদ্ধতি পছন্দ করে, কিন্তু 'fragment server-এ যায় না' নিয়মটাই এখানে মূল।",
+      "whyWrong": {
+        "0": "Fragment আলাদা করে encrypt হয় না; এটা শুধু network-এ যায়ই না।",
+        "1": "DNS URL-এর কোনো path, query বা fragment দেখে না।",
+        "2": "Fragment সহ পুরো URL history-তে থাকতে পারে, তাই এটাও একটা ঝুঁকি।"
+      }
+    },
+    {
+      "id": "sd-day-003-q46",
+      "difficulty": "hard",
+      "question": "Password reset link-এ token query string-এ আছে: `/reset?token=abc123`। Page-এ একটা বাইরের analytics script আর বাইরের ছবি আছে। কোন ঝুঁকিটা আসল?",
+      "options": [
+        "HTTPS-এ query string encrypt হয় না, শুধু path হয়, তাই একই café Wi-Fi-র যে কেউ পথে বসেই token পড়ে ফেলতে পারে",
+        "Query সহ পুরো URL history, server log আর Referer header-এ যেতে পারে, তাই token বাইরের site-এ ফাঁস হতে পারে",
+        "Query string DNS query-র সাথে resolver-এ যায়, তাই resolver token দেখে ফেলে",
+        "২০ অক্ষরের বেশি query string server কেটে দেয়, তাই token ভেঙে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "পথে HTTPS query-কে রক্ষা করে, কিন্তু URL অনেক জায়গায় লেখা থেকে যায়: history, server ও proxy log, আর বাইরের resource-এর request-এর Referer header। তাই এমন token এক-বার-ব্যবহারযোগ্য আর স্বল্পমেয়াদি রাখা হয়, Referrer-Policy দিয়ে Referer সীমিত করা হয়, আর স্থায়ী গোপন তথ্য POST body বা header-এ পাঠানো হয়।",
+      "whyWrong": {
+        "0": "HTTPS-এ path আর query encrypt হয়; পথে দেখা যায় শুধু host-এর মতো সীমিত তথ্য।",
+        "2": "DNS প্রশ্নে শুধু host নাম যায়, path বা query না।",
+        "3": "এমন কোনো ২০ অক্ষরের সীমা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q47",
+      "difficulty": "hard",
+      "question": "অন্য একটা site লুকানো form দিয়ে আপনার site-এ `POST /transfer` পাঠায়, আর user-এর browser নিজে থেকে session cookie জুড়ে দেয়। কোন cookie attribute এই আক্রমণ সবচেয়ে সরাসরি কমায়?",
+      "options": [
+        "HttpOnly, কারণ এতে cookie আর কোনো script পড়তে পারে না",
+        "Secure, কারণ এতে cookie শুধু HTTPS-এ যায়",
+        "SameSite (Lax বা Strict)",
+        "Max-Age ছোট করে কয়েক মিনিট রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা CSRF: অন্য site থেকে আসা request-এ browser cookie জুড়ে দেয় বলে আপনার server ভাবে user নিজেই পাঠিয়েছে। SameSite=Lax বা Strict থাকলে অন্য site থেকে আসা এমন POST-এ browser cookie পাঠায় না। সাথে CSRF token-এর মতো সুরক্ষাও রাখা হয়।",
+      "whyWrong": {
+        "0": "আক্রমণকারী cookie পড়ছে না, browser নিজেই পাঠাচ্ছে; HttpOnly এটা থামায় না।",
+        "1": "আক্রমণের request-ও HTTPS-এ যেতে পারে, তাই Secure এটা থামায় না।",
+        "3": "সময় কমালে ঝুঁকির সময় কমে, কিন্তু login থাকা অবস্থায় আক্রমণ ঠিকই কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q48",
+      "difficulty": "hard",
+      "question": "একটা API client `POST /orders` পাঠাল, server `301` দিয়ে `/v2/orders`-এ পাঠাল। দেখা গেল কিছু client নতুন ঠিকানায় body ছাড়া GET পাঠাচ্ছে। কেন, আর কী দেওয়া উচিত ছিল?",
+      "options": [
+        "301-এ body সবসময় রাখা হয়, এটা নিশ্চয়ই client library-র bug; 302 দিলেই সব client ঠিকমতো body সহ POST পাঠাত",
+        "Redirect-এ POST কখনোই যেতে পারে না, তাই কোনো status code দিয়েই এটা ঠিক করা সম্ভব না",
+        "পুরনো আচরণে 301/302-এ client POST-কে GET বানাতে পারে; method আর body রাখতে 308 দেওয়া উচিত ছিল",
+        "301 response-এর Content-Length ভুল ছিল; 304 দিলে body থেকে যেত"
+      ],
+      "correctIndex": 2,
+      "explanation": "ঐতিহাসিকভাবে browser আর অনেক client 301 আর 302-এ POST-কে GET বানিয়ে body ফেলে দিত, আর এটা এখন মেনে নেওয়া আচরণ। তাই HTTP-তে 307 (সাময়িক) আর 308 (স্থায়ী) আনা হয়েছে, যেগুলোতে method আর body বদলানো নিষেধ। API-এর স্থায়ী path বদলে তাই 308।",
+      "whyWrong": {
+        "0": "302-তেও একই POST → GET সমস্যা আছে।",
+        "1": "307 আর 308 ঠিক এই কাজের জন্যই, method আর body রেখে redirect।",
+        "3": "304 redirect না, cache-এর উত্তর।"
+      }
+    },
+    {
+      "id": "sd-day-003-q49",
+      "difficulty": "hard",
+      "question": "একটা bank site HSTS header দেয় (max-age এক বছর), কিন্তু preload list-এ নেই। একজন user নতুন phone-এ প্রথমবার public Wi-Fi থেকে `bank.example` টাইপ করল। HSTS কি তাকে প্রথম request থেকেই রক্ষা করবে?",
+      "options": [
+        "হ্যাঁ, কারণ HSTS header DNS উত্তরের সাথেই আসে, তাই প্রথম HTTP request পাঠানোর আগেই browser জেনে যায় যে HTTPS লাগবে",
+        "হ্যাঁ, কারণ max-age এক বছর মানে সব নতুন device-ও এক বছর ধরে নিজে থেকে জানে",
+        "না, এই browser এখনো header দেখেনি, তাই প্রথম HTTP request ঝুঁকিতে; preload list-এ থাকলে তবেই প্রথম দিন থেকে HTTPS",
+        "না, আর এর কোনো সমাধানই নেই; প্রথম visit সবসময় HTTP-তে হতে বাধ্য"
+      ],
+      "correctIndex": 2,
+      "explanation": "HSTS কাজ করে browser একবার HTTPS-এ header পাওয়ার পর থেকে, তাই নতুন device-এর প্রথম visit-টা অরক্ষিত (trust on first use)। HSTS preload list browser-এর ভেতরেই ছাপানো থাকে, তাই তালিকার domain-এ প্রথম request-ও HTTPS-এ যায়। Bank-এর মতো site-এর জন্য preload যুক্তিসঙ্গত।",
+      "whyWrong": {
+        "0": "HSTS একটা HTTP response header, DNS-এর অংশ না।",
+        "1": "max-age শুধু সেই browser-এর জন্য, যেটা header পেয়েছে।",
+        "3": "Preload list ঠিক এই প্রথম visit-এর ফাঁকটা বন্ধ করে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q50",
+      "difficulty": "hard",
+      "question": "`boighor.com`-এ `includeSubDomains` সহ HSTS চালু করলেন। পরদিন `intranet.boighor.com` (শুধু HTTP-তে চলে, কোনো certificate নেই) কারও browser-এ খুলছে না। কেন?",
+      "options": [
+        "includeSubDomains সব subdomain-এর DNS record মুছে দেয়, তাই browser এখন `intranet.boighor.com` নামটাই আর খুঁজে পাচ্ছে না",
+        "Browser এখন সব subdomain-এ জোর করে HTTPS চায়, আর certificate না থাকায় ঢুকতে দেয় না; intranet-এ HTTPS চালু করতে হবে",
+        "HSTS শুধু apex domain-এ কাজ করে, তাই intranet-এর সমস্যা নিশ্চয়ই অন্য কোথাও",
+        "Browser HTTP page cache করে রেখেছে; cache মুছে দিলেই সমস্যা মিটবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "includeSubDomains মানে HSTS-এর নিয়ম সব subdomain-এও খাটবে। Browser তখন `intranet` HTTP-তে খুলতে দেয় না, HTTPS চেষ্টা করে, আর certificate না থাকায় fail করে, 'তবুও এগিয়ে যান'-এর সুযোগও দেয় না। তাই চালুর আগে সব subdomain-এ HTTPS নিশ্চিত করতে হয়, আর শুরুতে ছোট max-age দিয়ে পরীক্ষা করা ভালো।",
+      "whyWrong": {
+        "0": "HSTS browser-এর নিয়ম, DNS-এ কিছু বদলায় না।",
+        "2": "includeSubDomains ঠিক এটাই করে: নিয়মটা সব subdomain-এ ছড়িয়ে দেয়।",
+        "3": "Page cache মুছলেও HSTS-এর নিয়ম থাকে; সেটা আলাদাভাবে মনে রাখা হয়।"
+      }
+    },
+    {
+      "id": "sd-day-003-q51",
+      "difficulty": "hard",
+      "question": "তিনটা A record দিয়ে DNS round-robin চালাচ্ছেন। দেখা গেল একটা server-এ বাকি দুটোর চেয়ে অনেক বেশি traffic। সবচেয়ে সম্ভাব্য কারণ কোনটা?",
+      "options": [
+        "Round-robin-এর নিয়মই হলো প্রথম record-কে সবসময় অগ্রাধিকার দেওয়া",
+        "একটা বড় ISP-র resolver একটা উত্তর cache করে তার হাজারো user-কে একই ক্রম দিচ্ছে, তাই তারা সবাই একই প্রথম IP-তে যাচ্ছে",
+        "ওই server-এর record-এর TTL বাকি দুটোর চেয়ে বড়, কারণ একই নামের প্রতিটা IP-র নিজের আলাদা TTL থাকে আর সেটাই বেশি cache হয়",
+        "ওই server-এর CPU দ্রুত, তাই DNS তাকে বেশি user পাঠায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Round-robin-এ ভাগ হয় resolver-এর স্তরে, user-এর স্তরে না। একটা বড় resolver একটা উত্তর cache করলে TTL পর্যন্ত তার সব user একই ক্রম পায়, আর বেশিরভাগ client প্রথম IP-টাই নেয়। তাই সমান ভাগের জন্য load balancer বেশি নির্ভরযোগ্য।",
+      "whyWrong": {
+        "0": "Round-robin-এর উদ্দেশ্যই ক্রম ঘুরিয়ে ভাগ করা; সমস্যা cache-এ।",
+        "2": "একই নামের একই ধরনের record-গুলো একসাথে একটা set, আর তাদের TTL একটাই।",
+        "3": "সাধারণ DNS server-এর CPU বা load জানে না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q52",
+      "difficulty": "hard",
+      "question": "HTTP/1.1-এ আপনার domain-এর মোট cookie ৪KB। একটা page-এ ৮০টা ছবি একই domain থেকে আসে। শুধু cookie-র জন্য browser থেকে মোটামুটি কত বাড়তি data upload হয়?",
+      "options": [
+        "প্রায় ৪KB, কারণ cookie একবার পাঠালে connection-টা সেটা মনে রাখে",
+        "শূন্য, কারণ ছবির request-এ browser কখনো cookie পাঠায় না",
+        "প্রায় ৩২০KB, কারণ প্রতিটা request-এ পুরো cookie যায়",
+        "প্রায় ৮০KB, কারণ প্রতিটা request-এ cookie ১KB-তে compress হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cookie ওই domain-এর প্রতিটা request-এ যায়: ৮০ × ৪KB = ~৩২০KB, আর mobile-এ upload সাধারণত ধীর। এজন্য অনেক site ছবি আর static file আলাদা cookie-বিহীন domain বা CDN থেকে দেয়। (HTTP/2-এ header compression এই খরচ অনেক কমায়, Day 42।)",
+      "whyWrong": {
+        "0": "HTTP stateless; connection cookie মনে রাখে না, প্রতিটা request-এ আবার যায়।",
+        "1": "Cookie domain-এর সব request-এ যায়, ছবিরও।",
+        "3": "HTTP/1.1-এ header compress হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q53",
+      "difficulty": "hard",
+      "question": "দ্রুত failover-এর জন্য TTL ৩০ সেকেন্ড রেখেছেন। Primary পড়ার পর record বদলালেন, তবুও কিছু user ১০ মিনিট ধরে পুরনো IP-তে যাচ্ছে। সবচেয়ে সম্ভাব্য ব্যাখ্যা কোনটা?",
+      "options": [
+        "কিছু resolver বা app (যেমন নিজের ভেতরে DNS cache রাখা client) TTL পুরোপুরি মানে না, নিজের মতো বেশি সময় cache রাখে",
+        "TTL ৩০ হলে authoritative server নিজেই প্রতি ১০ মিনিটে একবার record update করে, তাই বদলটা ১০ মিনিট পরেই কার্যকর হয়",
+        "Record বদল root server-এ পৌঁছাতে প্রায় ১০ মিনিট লাগে",
+        "TTL সেকেন্ডে না, মিনিটে গোনা হয়, তাই ৩০ মানে আসলে ৩০ মিনিট"
+      ],
+      "correctIndex": 0,
+      "explanation": "নিয়মে TTL শেষ হলে আবার জিজ্ঞেস করার কথা, কিন্তু বাস্তবে কিছু resolver ন্যূনতম cache সময় চাপিয়ে দেয়, আর কিছু app বা runtime একবার পাওয়া IP অনেকক্ষণ ধরে রাখে। তাই শুধু DNS-ভিত্তিক failover-এ কিছু দেরি মেনে নিতে হয়, আর পুরনো server বা তার জায়গায় কিছু রাখা হয়। দ্রুত আর নিশ্চিত failover-এর জন্য load balancer বা স্থির IP সামনে রাখা হয়।",
+      "whyWrong": {
+        "1": "Authoritative-এ record বদলালে সাথে সাথে কার্যকর হয়।",
+        "2": "Root-এ domain-এর record থাকেই না।",
+        "3": "TTL সবসময় সেকেন্ডে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q54",
+      "difficulty": "hard",
+      "question": "HTTP/1.1, একটা host, browser একসাথে ৬টা connection খোলা রাখে, আর প্রতিটা connection-এ একসময়ে একটাই request চলে। ৩০টা ছোট file, প্রতিটা ঠিক ১ RTT (১০০ms) নেয়, connection আগেই খোলা। মোটামুটি কত সময় লাগবে?",
+      "options": [
+        "প্রায় ১০০ms, কারণ ৬টা connection-এ সব file একসাথে চলে যায়",
+        "প্রায় ৩,০০০ms, কারণ সব file একটার পর একটা যায়",
+        "প্রায় ৬০০ms, কারণ প্রতিটা connection-এ ৬টা করে file যায়",
+        "প্রায় ৫০০ms"
+      ],
+      "correctIndex": 3,
+      "explanation": "৬টা connection একসাথে ৬টা file আনে, তাই ৩০ ÷ ৬ = ৫ দফা, প্রতিটা ১০০ms, মোট ~৫০০ms। HTTP/1.1-এর এই সীমা কাটাতেই HTTP/2 একটা connection-এ অনেক request একসাথে চালায় (Day 42)।",
+      "whyWrong": {
+        "0": "একসাথে চলে মাত্র ৬টা; ৩০টার জন্য ৫ দফা লাগে।",
+        "1": "৬টা connection parallel চলে, তাই একটার পর একটা না।",
+        "2": "৩০ ÷ ৬ = ৫টা করে, ৬টা না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q55",
+      "difficulty": "hard",
+      "question": "HTTP/1.1-এ একটা connection-এর প্রথম request-টা ধীর (২ সেকেন্ড), আর পেছনে একই connection-এ কয়েকটা ছোট request অপেক্ষায়। এটাকে কী বলে, আর কোনটা এটা কমায়?",
+      "options": [
+        "Head-of-line blocking; HTTP/2 একটা connection-এ অনেক request একসাথে চালিয়ে এটা কমায়",
+        "DNS propagation; সব resolver-এর cache-এর TTL কমিয়ে দিলে পেছনের request আর অপেক্ষা করে না",
+        "Negative caching; NXDOMAIN-এর cache সময় কমালে কমে",
+        "TLS renegotiation; certificate-এর আকার ছোট করলে কমে"
+      ],
+      "correctIndex": 0,
+      "explanation": "HTTP/1.1-এ একটা connection-এ একসময়ে একটাই request-response, তাই সামনেরটা ধীর হলে পেছনেরগুলো আটকে থাকে, একেই head-of-line blocking বলে। Browser কয়েকটা connection খুলে এটা কিছুটা কমায়, আর HTTP/2 একটা connection-এ অনেক stream একসাথে চালায়। TCP স্তরের HOL blocking কমাতে HTTP/3 QUIC ব্যবহার করে (Day 42)।",
+      "whyWrong": {
+        "1": "এটা DNS-এর ব্যাপার না; connection-এর ভেতরে request-এর লাইন।",
+        "2": "Negative caching 'নাম নেই' উত্তর cache করা; এর সাথে সম্পর্ক নেই।",
+        "3": "Certificate একবার handshake-এ লাগে; পেছনের request আটকে থাকার কারণ এটা না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q56",
+      "difficulty": "hard",
+      "question": "`curl --resolve boighor.test:8080:127.0.0.1 http://boighor.test:8080/` চালালেন। কোন কথাটা ঠিক?",
+      "options": [
+        "curl আগে DNS-এ boighor.test খোঁজে, না পেলে 127.0.0.1 নেয়, আর Host header-এ নামের বদলে 127.0.0.1 পাঠায়",
+        "curl DNS-এ যায় না, সরাসরি 127.0.0.1-এ connect করে, কিন্তু Host header-এ `boighor.test:8080` পাঠায়",
+        "curl Host header-এ 127.0.0.1 পাঠায়, কারণ IP-টাই আসল ঠিকানা",
+        "--resolve system-এর /etc/hosts file-এ একটা স্থায়ী লাইন যোগ করে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "--resolve curl-কে বলে 'এই নাম আর port-এর জন্য এই IP ব্যবহার করো', যেন একটা সাময়িক hosts entry। Connection যায় 127.0.0.1-এ, কিন্তু HTTP request-এ Host header URL-এর নামটাই বহন করে। এভাবে DNS বদলানোর আগেই নতুন server-কে আসল নাম দিয়ে পরীক্ষা করা যায়।",
+      "whyWrong": {
+        "0": "--resolve দিলে curl ওই নামের জন্য DNS-এ যায়ই না, আর Host header-এ URL-এর নামটাই থাকে।",
+        "2": "Host header URL-এর host থেকে আসে, connect করা IP থেকে না।",
+        "3": "এটা শুধু ওই একটা curl command-এর জন্য, কোনো file বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-003-q57",
+      "difficulty": "hard",
+      "question": "Partner-এর একটা script প্রতি সেকেন্ডে হাজার request পাঠাচ্ছে, তাই আপনি প্রতি client-এ একটা সীমা বেঁধে দিলেন। সীমা পার হলে কোন response সবচেয়ে উপযুক্ত?",
+      "options": [
+        "429 Too Many Requests, সাথে Retry-After header-এ কখন আবার চেষ্টা করবে",
+        "503 Service Unavailable, কারণ server ব্যস্ত দেখানোই সবচেয়ে নিরাপদ উপায়",
+        "403 Forbidden, স্থায়ীভাবে, যাতে script আর কখনো request না পাঠায়",
+        "200 OK কিন্তু খালি body, যাতে partner-এর script ভেঙে না যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "429 ঠিক এই অবস্থার জন্য: 'আপনি খুব বেশি request পাঠাচ্ছেন'। এটা 4xx, কারণ সমস্যা client-এর আচরণে। Retry-After বলে দিলে ভালো client অপেক্ষা করে আবার চেষ্টা করে। Rate limiting-এর বিস্তারিত Day 18-এ।",
+      "whyWrong": {
+        "1": "503 বলে পুরো server অচল, অথচ সমস্যা এই একজন client-এর অতিরিক্ত request।",
+        "2": "অনুমতি আছে, শুধু গতি বেশি; স্থায়ী নিষেধ ভুল সংকেত।",
+        "3": "200 মানে সফল; script বুঝবেই না যে থামতে হবে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q58",
+      "difficulty": "hard",
+      "question": "একটা page-এর response-এ `Cache-Control: max-age=60`, কিন্তু page-টা user-ভেদে আলাদা (cookie দেখে \"স্বাগতম, রিনা\" দেখায়)। মাঝে একটা shared cache (যেমন CDN) আছে। ঝুঁকি কী?",
+      "options": [
+        "কোনো ঝুঁকি নেই, কারণ request-এ cookie থাকলে কোনো cache কখনোই সেই response রাখে না, সবসময় server-এ পাঠায়",
+        "Browser ৬০ সেকেন্ড পর session cookie মুছে দেবে, তাই user logout হয়ে যাবে",
+        "DNS ৬০ সেকেন্ডের জন্য IP cache করবে, তাই server বদলালে সমস্যা হবে",
+        "Shared cache একজনের page আরেকজনকে দিয়ে দিতে পারে; user-ভেদে আলাদা response-এ `private` বা `no-store` দিন"
+      ],
+      "correctIndex": 3,
+      "explanation": "HTTP stateless বলে proxy বা CDN একটা response দেখেই ঠিক করে সেটা cache করবে কিনা, আর `max-age=60` বলছে 'করতে পারো'। তখন রিনার page অন্য user-ও পেতে পারে, যেটা গোপনীয়তার বড় ভুল। ব্যক্তিগত response-এ `Cache-Control: private` (শুধু browser রাখবে) বা `no-store` দিতে হয়।",
+      "whyWrong": {
+        "0": "অনেক cache-এর এমন default থাকলেও এটা নিশ্চিত নিয়ম না; max-age=60 সরাসরি cache করার অনুমতি দিচ্ছে।",
+        "1": "Cache-Control response cache করার নিয়ম, cookie-র মেয়াদ না।",
+        "2": "Cache-Control HTTP-র header; DNS-এর TTL-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-003-q59",
+      "difficulty": "hard",
+      "question": "\"Root server মাত্র ১৩টা, তাই এগুলোই Internet-এর সবচেয়ে দুর্বল জায়গা\", এই কথাটা কেন ভুল?",
+      "options": [
+        "Root server আসলে ১৩টা না, প্রতিটা দেশের নিজস্ব আলাদা root আছে, যেটা শুধু সেই দেশের domain-গুলোর নাম আলাদাভাবে দেখাশোনা করে",
+        "Root server শুধু নতুন domain register করার সময় লাগে, নাম resolve করতে লাগে না",
+        "Root server down হলেও সমস্যা নেই, কারণ browser নিজেই সব TLD-এর ঠিকানা জানে",
+        "১৩টা শুধু নাম; প্রতিটার পেছনে anycast দিয়ে বিশ্বজুড়ে অনেক instance, আর resolver-এর cache-এ root-এ প্রশ্নও খুব কম যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Root-এর ১৩টা নাম (a থেকে m) আছে, কিন্তু প্রতিটা নাম anycast দিয়ে বিশ্বের অনেক জায়গা থেকে announce হয়, তাই আসলে অনেকগুলো copy। তার উপর resolver-এর cache-এ TLD-এর ঠিকানা দীর্ঘ TTL নিয়ে থাকে, তাই root-এর কাছে খুব কম প্রশ্ন যায়। এই design-এর কারণেই root আক্রমণেও সহজে ভাঙে না।",
+      "whyWrong": {
+        "0": "Root zone একটাই; দেশগুলোর নিজস্ব ccTLD (যেমন .bd) আছে, আলাদা root না।",
+        "1": "Registration registrar-এর কাজ; resolution-এর গাছের মাথা root-ই।",
+        "2": "Browser TLD-এর ঠিকানা রাখে না; এটা resolver-এর cache-এর কারণে টিকে থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-003-q60",
+      "difficulty": "hard",
+      "question": "`curl -v https://boighor.com` output-এ `Connected to boighor.com (198.51.100.20) port 443` আছে, তারপরই `SSL certificate problem: certificate has expired`। সমস্যা কোথায়?",
+      "options": [
+        "DNS ভুল IP দিয়েছে, কারণ certificate error মানেই সবসময় অন্য কারও server-এ গিয়ে পৌঁছানো",
+        "Server-এর code 500 দিচ্ছে, আর curl সেটাকে certificate error হিসেবে দেখাচ্ছে",
+        "DNS আর TCP ঠিক আছে; TLS ধাপে certificate-এর মেয়াদ শেষ, তাই HTTP request পাঠানোই হয়নি",
+        "TCP connection খোলেনি, কারণ port 443 বন্ধ"
+      ],
+      "correctIndex": 2,
+      "explanation": "Output ধাপে ধাপে পড়ুন: IP পাওয়া গেছে (DNS ঠিক), 'Connected' (TCP ঠিক), তারপর TLS-এ certificate-এর মেয়াদ শেষ। TLS না মেলায় HTTP request যায়নি। সমাধান certificate নবায়ন, আর Let's Encrypt-এর মতো স্বয়ংক্রিয় নবায়ন চালু রাখা।",
+      "whyWrong": {
+        "0": "IP ভুল হলে সাধারণত নাম না মেলার error আসে; এখানে স্পষ্ট মেয়াদ শেষের কথা।",
+        "1": "TLS fail করায় HTTP পর্যন্ত যাওয়াই হয়নি, তাই 500 আসার সুযোগই নেই।",
+        "3": "'Connected to ... port 443' মানে TCP connection খুলেছে।"
+      }
+    }
+  ]
+}

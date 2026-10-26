@@ -1,17 +1,22 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { resolve } from 'path';
 import { existsSync } from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { QuizModule } from './quiz/quiz.module';
 import { InterviewModule } from './interview/interview.module';
 import { NotesModule } from './notes/notes.module';
 import { TranslateModule } from './translate/translate.module';
 import { AskModule } from './ask/ask.module';
 import { ProgressModule } from './progress/progress.module';
+import { PoridhiSyncModule } from './poridhi-sync/poridhi-sync.module';
+import { SystemDesignQuizModule } from './system-design-quiz/system-design-quiz.module';
+import { SystemDesignRecallModule } from './system-design-recall/system-design-recall.module';
 
 // Resolve .env file path - try multiple locations
 const getEnvPath = (): string => {
@@ -76,13 +81,19 @@ if (!existsSync(envPath)) {
       },
       inject: [ConfigService],
     }),
+    // Only AuthController applies ThrottlerGuard; this is its fallback limit.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     UsersModule,
+    AuthModule,
     QuizModule,
     InterviewModule,
     NotesModule,
     TranslateModule,
     AskModule,
     ProgressModule,
+    PoridhiSyncModule,
+    SystemDesignQuizModule,
+    SystemDesignRecallModule,
   ],
   controllers: [AppController],
   providers: [AppService],

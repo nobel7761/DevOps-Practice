@@ -6,6 +6,7 @@ import type { CourseRegistryEntry } from "@/lib/data/courses/registry";
 const PLATFORM_LABELS: Record<CourseRegistryEntry["platform"], string> = {
   poridhi: "Poridhi",
   udemy: "Udemy",
+  own: "Own course",
 };
 
 export default function CourseCard({ entry }: { entry: CourseRegistryEntry }) {
@@ -27,9 +28,19 @@ export default function CourseCard({ entry }: { entry: CourseRegistryEntry }) {
       className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-center justify-between gap-2">
-        <Badge variant="secondary" className="w-fit">
-          {PLATFORM_LABELS[platform]}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="w-fit">
+            {PLATFORM_LABELS[platform]}
+          </Badge>
+          {course.notEnrolled && (
+            <Badge
+              variant="outline"
+              className="w-fit text-amber-600 dark:text-amber-400"
+            >
+              Not enrolled
+            </Badge>
+          )}
+        </div>
         {totalDuration && (
           <span className="shrink-0 text-xs text-muted-foreground">
             {totalDuration}

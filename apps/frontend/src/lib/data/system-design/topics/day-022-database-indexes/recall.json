@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-022",
+  "points": [
+    {
+      "term": "Full Table Scan",
+      "prompt": "Full table scan (Seq Scan) কী, আর ছোট test data-য় কেন এটা ধরা পড়ে না?",
+      "answer": "Index না থাকলে database একটা row খুঁজতেও table-এর প্রতিটা row পড়ে শর্ত মেলায়, মিলে গেলেও থামে না; কাজ row-সংখ্যার সমানুপাতিক, O(n)। ৫০০ row-এ এটা কয়েক millisecond, তাই চোখে পড়ে না; ২০ লাখ row আর হাজার query/s হলে CPU ১০০% হয়ে যায়।",
+      "lessonLink": "#problem"
+    },
+    {
+      "term": "Index",
+      "prompt": "Index আসলে কী রাখে, আর কেন সেটা খোঁজা দ্রুত করে?",
+      "answer": "Index হলো table-এর পাশে একটা আলাদা structure, যেখানে column-এর মান (key) আর সেই row-এর ঠিকানা (row pointer) sorted ক্রমে রাখা। Sorted বলে প্রতি ধাপে বড় অংশ বাদ দেওয়া যায়, তাই খোঁজা O(log n), আর range ও ORDER BY-ও সস্তা হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "B+tree ও Fan-out",
+      "prompt": "Fan-out কী, আর কোটি row-এও B+tree lookup কেন মাত্র ৩-৪টা page পড়ে?",
+      "answer": "প্রতিটা node একটা disk page, আর একটা page-এ কয়েকশো key ও child pointer ধরে; এটাই fan-out। Fan-out ১০০ হলেও ৩ level-এ ১০০³ = ১০ লাখ, ৪ level-এ ১০ কোটি entry ধরে। Leaf-গুলো linked, তাই range scan-এ পাশের leaf-এ হেঁটে যাওয়া যায়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Clustered vs Secondary Index",
+      "prompt": "InnoDB আর PostgreSQL-এ row কোথায় থাকে, আর secondary index-এর leaf-এ কী থাকে?",
+      "answer": "InnoDB-তে table নিজেই primary key-র B+tree (clustered index), leaf-এ পুরো row; secondary index-এ থাকে PK-র মান, তাই দুই ধাপের lookup আর লম্বা PK মানে সব index মোটা। PostgreSQL-এ row heap-এ, আর PK সহ সব index সরাসরি row-এর physical ঠিকানা (TID) রাখে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Leftmost-prefix Rule",
+      "prompt": "(city, age) index দিয়ে কোন query চলে, কোনটা চলে না? Column-এর ক্রম কিভাবে ঠিক করবেন?",
+      "answer": "Composite index আগে প্রথম column দিয়ে sorted, তাই city বা city+age-এর query চলে, কিন্তু শুধু age-এর query সাধারণত চলে না, কারণ age-এর মান পুরো index-জুড়ে ছড়ানো। ক্রমের নিয়ম ESR: equality column আগে, তারপর sort column, শেষে range column।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Covering Index",
+      "prompt": "Covering index কী, আর Index Only Scan কেন সাধারণ Index Scan-এর চেয়ে সস্তা?",
+      "answer": "Query-র দরকারি সব column যদি index-এই থাকে (key হিসেবে বা INCLUDE দিয়ে), database table-এ না গিয়ে শুধু index থেকেই উত্তর দেয়। এতে প্রতিটা মিলের জন্য table page-এ লাফানোর খরচ বাঁচে; PostgreSQL-এ EXPLAIN-এ Index Only Scan আর Heap Fetches দেখায়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Selectivity ও Cardinality",
+      "prompt": "is_active (৯০% true) column-এ index দিলেও optimizer কেন Seq Scan বেছে নেয়? তাহলে কী করবেন?",
+      "answer": "Cardinality কম আর শর্তে বেশিরভাগ row মেলে, তাই index দিয়ে লাখো এলোমেলো page-এ লাফানোর চেয়ে পুরো table একটানা পড়া সস্তা। এটা optimizer-এর ঠিক সিদ্ধান্ত। দরকার হলে শুধু বিরল মানের জন্য partial index দিন, বা column-টা composite index-এর অংশ বানান।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "EXPLAIN ANALYZE",
+      "prompt": "EXPLAIN আর EXPLAIN ANALYZE-এর পার্থক্য কী, আর plan-এ কোন জিনিস দেখে সমস্যা ধরবেন?",
+      "answer": "EXPLAIN শুধু optimizer-এর অনুমিত plan দেখায়, EXPLAIN ANALYZE query আসলে চালিয়ে আসল সময় আর row সংখ্যা দেখায়। দেখবেন scan-এর ধরন (Seq, Index, Index Only, Bitmap), Filter বনাম Index Cond, আর estimated বনাম actual rows; বিশাল ফারাক মানে পুরনো statistics, তখন ANALYZE।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Expression Index",
+      "prompt": "WHERE LOWER(email) = ? কেন email-এর index ব্যবহার করে না, আর কিভাবে ঠিক করবেন?",
+      "answer": "Index-এ sorted আছে email-এর আসল মান, LOWER(email) না, তাই database প্রতিটা row-এ function চালিয়ে মেলাতে বাধ্য হয়। সমাধান: CREATE INDEX ON users (LOWER(email)) দিয়ে expression index, অথবা data আগেই lowercase করে রাখা; DATE(created_at)-এর মতো ক্ষেত্রে query-কে range-এ লেখা।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Write Amplification",
+      "prompt": "একটা table-এ ৫টা index থাকলে একটা INSERT-এর খরচ কী? অতিরিক্ত index কিভাবে খুঁজবেন?",
+      "answer": "একটা insert মানে table-এ ১টা লেখা আর ৫টা B+tree-তে ৫টা insert (কখনো page split), সাথে WAL; ২,০০০ insert/s হলে সেকেন্ডে ১২,০০০টা structure-এ লেখা। PostgreSQL-এ pg_stat_user_indexes-এ idx_scan = 0 থাকা index আর redundant (a) যখন (a, b) আছে, এগুলো সরানোর প্রার্থী।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

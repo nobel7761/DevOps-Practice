@@ -1,0 +1,141 @@
+{
+  "labId": "69d21582bfa7b7946e1a97e7",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69d21582bfa7b7946e1a97e7-01",
+      "difficulty": "easy",
+      "question": "iptables-এ একটা packet যখন আসে, সেটা প্রথমে কোন chain-এর rule-গুলোর বিপরীতে যাচাই করা হয় (লোকাল মেশিনের জন্য destined হলে)?",
+      "options": [
+        "OUTPUT chain — মেশিন থেকে বের হওয়া সব packet সবসময় প্রথমে এই chain দিয়েই যাচাই করা শুরু হয়",
+        "FORWARD chain — এই মেশিন হয়ে অন্য কোথাও যাওয়া সব packet-এর জন্যই প্রথমে এটা ব্যবহৃত হয়",
+        "INPUT chain — এই মেশিনের জন্যই destined সব packet এখান দিয়ে যায়, rule মিলিয়ে ACCEPT/DROP/REJECT ঠিক হয়",
+        "PREROUTING chain — routing decision নেওয়ার আগেই সবকিছু এই chain দিয়ে বাধ্যতামূলকভাবে পার হতে হয়, ব্যতিক্রম ছাড়াই"
+      ],
+      "answerIndex": 2,
+      "explanation": "এই মেশিনের নিজের কোনো process-এর উদ্দেশ্যে আসা (locally destined) packet INPUT chain-এর rule-গুলোর বিপরীতে যাচাই হয়; অন্য মেশিনের দিকে যাওয়া traffic FORWARD দিয়ে যায়।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-02",
+      "difficulty": "easy",
+      "question": "iptables -L -v -n --line-numbers কমান্ডের -n ফ্ল্যাগটা কী করে?",
+      "options": [
+        "hostname আর service name resolve না করে IP address আর port number সরাসরি সংখ্যায় দেখায়, আউটপুট দ্রুত আসে",
+        "rule-গুলোকে numbered list আকারে দেখায়, যাতে পরে নির্দিষ্ট নাম্বার দিয়ে একটা rule মুছে ফেলা সহজ হয়ে যায়",
+        "rule-গুলোর byte আর packet counter-ভ্যালু শূন্য থেকে নতুন করে reset করে দেয় প্রতিবার কমান্ড চালানোর সময়",
+        "শুধুমাত্র সেই rule-গুলো দেখায় যেগুলো ইতিমধ্যে কমপক্ষে একবার হলেও কোনো না কোনো packet-এর সাথে মিলেছে"
+      ],
+      "answerIndex": 0,
+      "explanation": "-n মানে numeric output — DNS lookup বা /etc/services-এ service-name resolve করার চেষ্টা না করে সরাসরি IP আর port number দেখায়, এতে আউটপুটও দ্রুত আসে।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-03",
+      "difficulty": "easy",
+      "question": "iptables -A INPUT আর iptables -I INPUT-এর মধ্যে পার্থক্য কী?",
+      "options": [
+        "দুটোই একই জায়গায় rule বসায় — শুধু -A পুরোনো syntax, -I নতুন syntax, কার্যকারিতায় আসলে কোনো তফাত নেই",
+        "-A শুধু IPv4-এর জন্য rule যোগ করে, -I শুধুমাত্র IPv6-নির্দিষ্ট rule-এর জন্যই ব্যবহার করা হয়",
+        "-A rule-টা সাথে সাথে কার্যকর হয়, -I দিয়ে যোগ করা rule কার্যকর হতে পরবর্তী reboot পর্যন্ত অপেক্ষা করতে হয়",
+        "-A rule-টা chain-এর একদম শেষে জুড়ে দেয়, -I ডিফল্টভাবে chain-এর সবার শুরুতে বসায় (আগে evaluate হবে)"
+      ],
+      "answerIndex": 3,
+      "explanation": "-A (append) chain-এর শেষে rule জোড়ে; -I (insert), position না দিলে ডিফল্টভাবে chain-এর ১ নম্বর position-এ বসায়, ফলে তালিকার বাকি rule-এর আগেই evaluate হয়।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-04",
+      "difficulty": "medium",
+      "question": "DROP আর REJECT target-এর ব্যবহারিক পার্থক্য কী?",
+      "options": [
+        "DROP শুধু TCP traffic-এর জন্য কাজ করে, REJECT শুধুমাত্র UDP traffic-এর ক্ষেত্রে প্রযোজ্য হয়ে থাকে",
+        "DROP নীরবে packet ফেলে দেয়, কোনো response পাঠায় না — REJECT packet ফেলে দেয় কিন্তু একটা error response (যেমন ICMP) ফেরত পাঠায়",
+        "দুটোই একই আচরণ করে, শুধু নাম আলাদা — কোনটা ব্যবহার করলে কী হবে তাতে বাস্তবে কোনো তফাত নেই",
+        "DROP শুধু একটা log entry তৈরি করে কিন্তু packet-টা আসলে পাস হয়ে যেতে দেয় অপরিবর্তিতভাবে, REJECT সত্যিকারভাবে packet আটকায় সবসময়ই"
+      ],
+      "answerIndex": 1,
+      "explanation": "DROP নীরবে packet মুছে দেয় — পাঠানো পক্ষ timeout না হওয়া পর্যন্ত বুঝতেও পারে না। REJECT সাথে সাথে একটা error (যেমন connection-refused ICMP) ফেরত পাঠায়, তাই দ্রুত ফেইল হয় কিন্তু সার্ভারের উপস্থিতি ফাঁস করে।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-05",
+      "difficulty": "medium",
+      "question": "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT rule-টা সাধারণত chain-এর একদম শুরুতে রাখা হয় কেন?",
+      "options": [
+        "আগে থেকে চলা connection-এর reply traffic দ্রুত, আলাদাভাবে প্রতিটা rule না মিলিয়েই accept করিয়ে দেওয়ার জন্য — efficiency আর ঠিকমতো two-way traffic চালানোর জন্য",
+        "এই rule আসলে নতুন connection-ই ব্লক করে দেয়, তাই এটা শুরুতে না রাখলে পুরো firewall-টাই কাজ করা বন্ধ করে দিত, কোনো ব্যতিক্রম ছাড়াই সম্পূর্ণভাবে এবং স্থায়ীভাবেই",
+        "এটা শুধু একটা sorting convention, কোনো functional কারণ নেই — শেষে রাখলেও সম্পূর্ণ একই ফলাফল পাওয়া যেত",
+        "এই rule chain-এর বাকি সব rule-কে সম্পূর্ণভাবে disable করে দেয়, তাই অন্য কোনো rule আদৌ কখনো evaluate হয় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "Stateful filtering-এ ইতিমধ্যে established/related connection-এর প্যাকেট শুরুতেই accept করিয়ে দিলে, বাকি rule-গুলো শুধু সত্যিকারের নতুন connection request-এর জন্যই evaluate হয় — দ্রুত আর নির্ভুল।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-06",
+      "difficulty": "medium",
+      "question": "-m limit --limit 5/min --limit-burst 10 একটা SSH rule-এ যোগ করলে এর কার্যকারিতা কী?",
+      "options": [
+        "প্রথম ৫টা connection attempt-এর পরেই ঐ IP-কে permanently সব rule থেকে block করে দেওয়া হবে, আর কখনো connect করতে পারবে না",
+        "এটা শুধু logging-এর গতি নিয়ন্ত্রণ করে, প্রতি মিনিটে সর্বোচ্চ ৫টা log entry লেখা হবে — আসল traffic flow-তে কোনো প্রভাব নেই",
+        "প্রতি মিনিটে ঠিক ৫ জন আলাদা ব্যবহারকারীকে connect করার অনুমতি দেয়, বাকি সবাইকে সেই পুরো মিনিটের জন্য সম্পূর্ণভাবে বাতিল করে দেওয়া হয় কোনো ব্যতিক্রম ছাড়াই",
+        "প্রথম ১০টা match তাৎক্ষণিক পার হয়, তারপর প্রতি মিনিটে গড়ে ৫টার বেশি নতুন match আর অনুমোদিত হবে না — brute-force চেষ্টা ধীর করার একটা rate-limit"
+      ],
+      "answerIndex": 3,
+      "explanation": "limit module token-bucket এর মতো কাজ করে — burst পর্যন্ত তাৎক্ষণিক পার হতে দেয়, তারপর average rate (এখানে 5/min)-এ সীমাবদ্ধ করে — brute-force আক্রমণ পুরোপুরি না আটকে ধীর করার জন্য ব্যবহৃত হয়।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-07",
+      "difficulty": "medium",
+      "question": "iptables -P INPUT DROP সেট করার আগে কেন established connection আর SSH-এর জন্য ACCEPT rule আগে থেকেই থাকা জরুরি?",
+      "options": [
+        "policy পরিবর্তন আসলে পরবর্তী reboot না হওয়া পর্যন্ত pending অবস্থায় থাকে, তাই আগে rule দরকার নেই, যথেষ্ট সময় পাওয়া যায় সবকিছু ঠিক করার জন্য",
+        "policy পরিবর্তনের প্রভাব শুধু নতুন তৈরি হওয়া chain-এর উপর পড়ে, বিদ্যমান INPUT chain-এ এর আসলে কোনো প্রভাবই পড়ে না",
+        "policy পরিবর্তন সাথে সাথে কার্যকর হয় — আগে থেকে matching ACCEPT rule না থাকলে, নিজের SSH session-সহ সব চলমান connection-ই তৎক্ষণাৎ কেটে যাবে",
+        "ACCEPT rule না থাকলে কমান্ডটাই syntax error দিয়ে ব্যর্থ হয়ে যায়, policy টা কখনো পরিবর্তিতই হয় না কোনো অবস্থাতেই"
+      ],
+      "answerIndex": 2,
+      "explanation": "-P দিয়ে chain policy বদলালে তা সাথে সাথেই প্রযোজ্য হয়ে যায় — ufw-র মতোই, আগে থেকে প্রয়োজনীয় ACCEPT rule না থাকলে DROP policy সেট করার মুহূর্তেই নিজের SSH session-সহ সব connection কেটে যাওয়ার ঝুঁকি থাকে।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-08",
+      "difficulty": "hard",
+      "question": "-j LOG target ব্যবহার করলে packet-টার কী হয়, আর এটা সাধারণত কীভাবে ব্যবহার করা হয়?",
+      "options": [
+        "LOG target একাই packet-টাকে সম্পূর্ণভাবে DROP করে দেয়, আলাদা কোনো DROP rule-এর আর দরকারই পড়ে না কোনো অবস্থাতেই",
+        "LOG শুধু packet-এর তথ্য kernel log-এ লিখে রাখে, নিজে কোনো accept/drop সিদ্ধান্ত নেয় না — তাই এরপর matching একটা DROP/ACCEPT rule আলাদাভাবে রাখতে হয়",
+        "LOG target packet-টাকে সরাসরি একটা remote log server-এ forward করে পাঠিয়ে দেয়, local kernel log-এ কিছুই লেখা হয় না কোনো অবস্থাতেই, কোনো configuration ছাড়াই",
+        "LOG target শুধু interactive terminal-এ ব্যবহার করা যায়, কোনো script বা automated rule-সেটের ভেতরে কখনোই কাজ করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "LOG একটা non-terminating target — packet-কে dmesg/kernel log-এ লগ করে, কিন্তু chain-এর বাকি rule evaluate হতে থাকে, তাই actual accept/drop সিদ্ধান্তের জন্য পরের একটা matching rule লাগে।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-09",
+      "difficulty": "hard",
+      "question": "netfilter-persistent save কমান্ডের কাজ কী, এবং এটা না চালালে কী হতে পারে?",
+      "options": [
+        "বর্তমান iptables rule-সেট ডিস্কে সংরক্ষণ করে — না চালালে rule-গুলো শুধু memory-তে থাকে, পরের reboot-এ সব হারিয়ে যায়",
+        "এটা সব rule মুছে ফেলে নতুন করে default policy-তে ফিরিয়ে আনে, যা না চালালে পুরোনো rule-ই স্থায়ীভাবে রয়ে যায় সবসময়",
+        "এটা rule-গুলোকে remote backup server-এ আপলোড করে, স্থানীয়ভাবে কোনো ফাইল তৈরি করে না কখনোই",
+        "এটা শুধু rule-গুলোর syntax validate করে, আসলে কোথাও কিছু সংরক্ষণ করে না, শুধু error থাকলে জানিয়ে দেয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "iptables rule ডিফল্টভাবে শুধু চলমান kernel memory-তে থাকে — netfilter-persistent save সেগুলো /etc/iptables/-এ ফাইলে লিখে রাখে, যাতে reboot-এর পরও rule টিকে থাকে।"
+    },
+    {
+      "id": "69d21582bfa7b7946e1a97e7-10",
+      "difficulty": "hard",
+      "question": "-p tcp --dport 9090 -s 100.84.0.0/16 -j ACCEPT rule-টা বাকি সব উৎস থেকে port 9090-এ আসা traffic-এর কী করে?",
+      "options": [
+        "এই rule port 9090-এ আসা সব উৎসের traffic-ই accept করে দেয়, -s অংশটা শুধু logging-এর জন্য রাখা একটা নথিভুক্তিমূলক তথ্য মাত্র, কার্যকারিতায় কোনো ভূমিকা নেই আদৌ কখনোই",
+        "এই rule port 9090-এ আসা বাকি সব উৎসের traffic সরাসরি REJECT করে দেয়, ACCEPT আর REJECT দুটোই একসাথে প্রয়োগ হয়",
+        "এই rule শুধু port 9090 বন্ধ করে দেয় সব উৎসের জন্যই, -s 100.84.0.0/16 অংশটা আসলে কোনো প্রভাবই ফেলে না চূড়ান্ত ফলাফলে",
+        "এই rule শুধু 100.84.0.0/16 থেকে আসা traffic-কেই accept করে; অন্য উৎস থেকে port 9090-এ আসা traffic chain-এর পরবর্তী rule বা শেষে default policy দিয়েই নির্ধারিত হবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "-s দিয়ে উৎস IP নির্দিষ্ট করা থাকলে rule শুধু সেই subnet-এর জন্যই প্রযোজ্য — বাকি উৎস থেকে একই port-এ আসা traffic এই rule-এর আওতায় পড়ে না, chain-এর পরের rule বা chain policy দিয়ে সিদ্ধান্ত হয়।"
+    }
+  ]
+}

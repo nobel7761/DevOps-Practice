@@ -74,6 +74,100 @@ export interface LabExamCheck {
     /** required chage max-days value */
     maxDays?: number;
   }[];
+  /** Expected state of the (single, global) git repo after the command */
+  gitState?: {
+    /** `git init` must have been run */
+    initialized?: boolean;
+    /** current branch name must equal this */
+    currentBranch?: string;
+    /** these branches must exist (regardless of current branch) */
+    branchesExist?: string[];
+    /** current branch must have at least this many commits */
+    minCommits?: number;
+    /** the most recent commit's message on the current branch must equal this */
+    lastCommitMessage?: string;
+    /** these paths (as typed in the lab, ~-relative ok) must be in the most recent commit's file list */
+    lastCommitIncludes?: string[];
+    /** these paths must currently be staged (index), not yet committed */
+    staged?: string[];
+    /** working tree must have nothing staged and nothing modified since last commit */
+    clean?: boolean;
+  };
+  /** Expected docker images after the command */
+  dockerImages?: {
+    tag: string;
+    /** set false to require the image NOT to exist */
+    exists?: boolean;
+  }[];
+  /** Expected docker containers after the command */
+  dockerContainers?: {
+    name: string;
+    /** set false to require the container NOT to exist */
+    exists?: boolean;
+    status?: "running" | "exited";
+    image?: string;
+    ports?: { host: number; container: number }[];
+  }[];
+  /** Expected kubernetes resources after the command */
+  k8sResources?: {
+    kind: string;
+    name: string;
+    /** defaults to "default" */
+    namespace?: string;
+    /** set false to require the resource NOT to exist */
+    exists?: boolean;
+    replicas?: number;
+  }[];
+  /** Expected network interface state, host stack or inside a netns */
+  netIfaceState?: {
+    name: string;
+    /** "host" (default) or a netns name */
+    context?: string;
+    state?: "up" | "down";
+    /** a CIDR this interface must have an address matching */
+    hasAddress?: string;
+  }[];
+  /** Expected routing table entries */
+  routeExists?: {
+    /** "default" or a CIDR */
+    dest: string;
+    via?: string;
+    dev?: string;
+    context?: string;
+    /** set false to require this route NOT to exist */
+    exists?: boolean;
+  }[];
+  /** These network namespaces must exist */
+  netnsExists?: string[];
+  /** Expected sockets in the ss/netstat table */
+  socketExists?: {
+    localPort: number;
+    proto?: "tcp" | "udp";
+    state?: string;
+    /** set false to require no matching socket exists */
+    exists?: boolean;
+  }[];
+  /** Expected ufw firewall state */
+  ufwState?: {
+    enabled?: boolean;
+    defaultIncoming?: "allow" | "deny";
+    defaultOutgoing?: "allow" | "deny";
+    ruleExists?: {
+      action: "allow" | "deny";
+      port?: string;
+      from?: string;
+      /** set false to require this rule NOT to exist */
+      exists?: boolean;
+    }[];
+  };
+  /** Expected iptables rules */
+  iptablesRuleExists?: {
+    chain: string;
+    target: "ACCEPT" | "DROP" | "REJECT" | "LOG";
+    dport?: string;
+    /** set false to require no matching rule exists */
+    exists?: boolean;
+  }[];
 }
 
 export interface LabExamTask {

@@ -1,0 +1,14 @@
+{
+  "type": "mistakes",
+  "text": "DNS আর HTTP নিয়ে নতুনরা যে ৩টা ভুল করে (আমিও করেছি)\nDay 3/100 · DNS, HTTP ও একটি URL-এর গল্প\n\nBrowser-এ একটা URL লিখে Enter চাপলে আগে **DNS** নামটাকে IP-তে বদলায়, তারপর browser **HTTP** request পাঠায় আর server একটা status code সহ উত্তর দেয়। শুনতে সহজ, কিন্তু ভুলগুলো হয় এখানেই।\n\n❌ ভুল ১: DNS-এ IP বদলে বলা, \"propagation-এ ২৪-৪৮ ঘণ্টা লাগবে, অপেক্ষা করি।\"\n✅ ঠিক উপায়: আসলে কিছু ছড়ায় না, সবাই পুরনো উত্তরের **TTL** শেষ হওয়ার অপেক্ষায়। Migration-এর অন্তত পুরনো TTL-এর সমান সময় আগে TTL ৬০ সেকেন্ডে নামান, তারপর IP বদলান।\n\n❌ ভুল ২: সব response-এ **200 OK**, আর error লেখা body-তে।\n✅ ঠিক উপায়: Client-এর ভুলে 4xx, server-এর ভুলে 5xx। নাহলে monitoring, cache আর retry logic কেউ বুঝবে না যে কিছু ভেঙেছে।\n\n❌ ভুল ৩: Maintenance page-এর মতো সাময়িক কাজে **301** redirect।\n✅ ঠিক উপায়: Browser 301 মনে রেখে দেয়, সরিয়ে ফেলার পরেও user পুরনো জায়গায় যায়। সাময়িক হলে 302 বা 307; 301/308 শুধু সত্যিই স্থায়ী বদলে।\n\nএকটা বোনাস শিক্ষা: HTTP থেকে HTTPS-এ redirect যথেষ্ট না। প্রথম HTTP request-টা encrypt হয় না। **HSTS** header দিলে browser নিজেই সবসময় HTTPS ব্যবহার করে।\n\n[✍️ আপনার অভিজ্ঞতা: DNS বা redirect-এর কোন ভুলে আপনার site কখনো কিছু user-এর কাছে খুলছিল না, আর সেটা কিভাবে ধরলেন?]\n\nআর কোন DNS বা HTTP ভুল এই list-এ থাকা উচিত? Comment-এ লিখুন 👇",
+  "personalPrompt": "DNS বা redirect-এর কোন ভুলে আপনার site কখনো কিছু user-এর কাছে খুলছিল না, আর সেটা কিভাবে ধরলেন?",
+  "firstComment": "URL থেকে page পর্যন্ত পুরো যাত্রা ধাপে ধাপে, DNS-এর গাছ, status code-এর তালিকা আর dig/curl দিয়ে নিজে করার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#DNS",
+    "#HTTP",
+    "#WebDevelopment"
+  ],
+  "visual": "day-003-main"
+}

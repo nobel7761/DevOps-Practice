@@ -1,0 +1,1055 @@
+{
+  "topicId": "sd-day-002",
+  "questions": [
+    {
+      "id": "sd-day-002-q01",
+      "difficulty": "easy",
+      "question": "আপনার backend যখন bKash-এর মতো একটা payment gateway-এর API call করে, তখন ওই আদান-প্রদানে আপনার backend-এর ভূমিকা কী?",
+      "options": [
+        "Client, কারণ এখানে আপনার backend নিজে request শুরু করছে আর gateway উত্তর দিচ্ছে",
+        "Server, কারণ backend সবসময়ই server, সে যে machine-এই চলুক বা যার সাথেই কথা বলুক না কেন",
+        "Server, কারণ যে machine-এ বেশি CPU আর memory, সেটাই server আর অন্যটা client",
+        "Peer, কারণ দুই পক্ষই server বলে এটা peer-to-peer যোগাযোগ"
+      ],
+      "correctIndex": 0,
+      "explanation": "Client আর server হলো ভূমিকা, machine না। যে কথা শুরু করে আর কিছু চায় সে client, যে শোনে আর উত্তর দেয় সে server। তাই আপনার backend user-দের কাছে server হলেও payment gateway-এর কাছে client।",
+      "whyWrong": {
+        "1": "Client/server ভূমিকা প্রতিটা আদান-প্রদানে ঠিক হয়, backend হলেই সবসময় server না।",
+        "2": "Machine কত শক্তিশালী তা দিয়ে না, কে request শুরু করে তা দিয়ে ভূমিকা ঠিক হয়।",
+        "3": "এখানে একজন চায় আর একজন দেয়, এটা পরিষ্কার client-server, peer-to-peer না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q02",
+      "difficulty": "easy",
+      "question": "Request/response মডেলে সাধারণত কথা শুরু করে কে?",
+      "options": [
+        "Server, সে নিজে থেকে client-দের খুঁজে data পাঠিয়ে দেয়",
+        "দুই পক্ষই একসাথে, connection খোলার সময় দুজনেই একই মুহূর্তে request পাঠায়",
+        "Client, সে request পাঠায় আর server উত্তর দেয়",
+        "যে আগে চালু হয়েছে সে; server আগে চালু থাকে বলে server-ই কথা শুরু করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Client request পাঠায়, server সেটা process করে response ফেরত দেয়। Server একটা port-এ শুনতে থাকে আর অপেক্ষা করে। এই নিয়মেই browser, app আর API কাজ করে।",
+      "whyWrong": {
+        "0": "সাধারণ request/response-এ server অপেক্ষা করে, নিজে থেকে কথা শুরু করে না।",
+        "1": "Request/response-এ একজন (client) শুরু করে, অন্যজন (server) উত্তর দেয়; দুজন একসাথে শুরু করে না।",
+        "3": "Server আগে চালু থাকে ঠিকই, কিন্তু সে শুধু port-এ শুনে অপেক্ষা করে; কথা শুরু করে client।"
+      }
+    },
+    {
+      "id": "sd-day-002-q03",
+      "difficulty": "easy",
+      "question": "আপনি laptop-এ app চালিয়ে চট্টগ্রামের বন্ধুকে link দিলেন http://localhost:3000। বন্ধু খুলতে পারল না কেন?",
+      "options": [
+        "Port 3000 Internet-এ নিষিদ্ধ, শুধু port 80 দিয়েই বাইরে website খোলা যায়",
+        "localhost মানে যে machine খুলছে সেটাই, তাই বন্ধুর laptop নিজের ভেতরেই খুঁজছে",
+        "Laptop-এর firewall বন্ধ করে দিলেই বন্ধু link-টা খুলতে পারত",
+        "http-এর বদলে https://localhost:3000 পাঠালে বন্ধুর browser ঠিকই আপনার app খুলতে পারত"
+      ],
+      "correctIndex": 1,
+      "explanation": "localhost (127.0.0.1) মানে 'এই machine নিজেই'। বন্ধুর laptop-এ localhost মানে বন্ধুর laptop, যেখানে আপনার app চলছে না। বাইরে থেকে পৌঁছাতে public IP বা domain লাগবে।",
+      "whyWrong": {
+        "0": "3000 নিষিদ্ধ না; সমস্যা হলো localhost সবসময় নিজের machine বোঝায়।",
+        "2": "Firewall খুললেও বন্ধুর browser localhost বলতে নিজের machine-ই খুঁজবে।",
+        "3": "Scheme বদলালেও localhost বন্ধুর নিজের machine-ই বোঝায়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q04",
+      "difficulty": "easy",
+      "question": "একটা packet-এ IP address আর port, এই দুটোর কাজের পার্থক্য কী?",
+      "options": [
+        "IP address বলে কোন program, আর port বলে কোন machine",
+        "Port হলো IP address-এর শেষ অংশ, যেমন 192.168.0.105-এর 105",
+        "IP address বলে কোন network-এ যেতে হবে, আর port বলে সেই network-এর কোন router",
+        "IP address বলে কোন machine, আর port বলে সেই machine-এর কোন program"
+      ],
+      "correctIndex": 3,
+      "explanation": "IP address packet-কে ঠিক machine-এ পৌঁছায়। সেখানে অনেক program চলতে পারে, তাই port বলে দেয় packet কোন program পাবে। যেমন বাসার ঠিকানা আর ফ্ল্যাট নম্বর।",
+      "whyWrong": {
+        "0": "উল্টো বলা হয়েছে: IP machine চিহ্নিত করে, port সেই machine-এর program।",
+        "1": "IP-র শেষ অংশ host-এর ঠিকানার অংশ; port আলাদা ১৬-bit সংখ্যা, ':' দিয়ে লেখা হয়।",
+        "2": "Port কোনো router বাছে না; এটা destination machine-এর ভেতরের program চিহ্নিত করে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q05",
+      "difficulty": "easy",
+      "question": "https://boighor.com খুললে, URL-এ কোনো port না লিখলে browser সাধারণত কোন port-এ যুক্ত হয়?",
+      "options": ["80", "22", "443", "3000"],
+      "correctIndex": 2,
+      "explanation": "HTTPS-এর default port 443, আর সাধারণ HTTP-র 80। URL-এ port না থাকলে browser scheme দেখে default port ধরে নেয়। তাই https:// মানে 443।",
+      "whyWrong": {
+        "0": "80 হলো সাধারণ HTTP-র default port, HTTPS-এর না।",
+        "1": "22 সাধারণত SSH-এর জন্য, web browsing-এর জন্য না।",
+        "3": "3000 development server-এ প্রচলিত, কিন্তু HTTPS-এর default না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q06",
+      "difficulty": "easy",
+      "question": "\"Internet হলো network-এর network\" কথাটার মানে কী?",
+      "options": [
+        "অসংখ্য আলাদা network (বাসা, ISP, data center) নিজেদের মধ্যে যুক্ত হয়ে Internet তৈরি করে",
+        "পৃথিবীতে একটা বিশাল কেন্দ্রীয় computer আছে, আর দুনিয়ার সব network সরাসরি সেটার সাথেই যুক্ত থাকে",
+        "Internet একটাই বড় network, যেটা একটা আন্তর্জাতিক সংস্থা চালায় আর সবাই তার গ্রাহক",
+        "Internet মানে world wide web, অর্থাৎ browser-এ খোলা website-গুলোর জাল"
+      ],
+      "correctIndex": 0,
+      "explanation": "Internet কোনো একটা জিনিস না। বাসার network, ISP, দেশের বড় network, cloud company-দের network সবাই একে অপরের সাথে যুক্ত। BGP দিয়ে তারা জানায় কোন ঠিকানা কোথায় পাওয়া যায়।",
+      "whyWrong": {
+        "1": "Internet-এ কোনো একক কেন্দ্রীয় computer বা নিয়ন্ত্রক নেই।",
+        "2": "কোনো একক সংস্থা Internet চালায় না; হাজারো স্বাধীন network পারস্পরিক চুক্তিতে যুক্ত।",
+        "3": "Web হলো Internet-এর উপর চলা একটা service; Internet নিজে network-গুলোর সংযোগ।"
+      }
+    },
+    {
+      "id": "sd-day-002-q07",
+      "difficulty": "easy",
+      "question": "ISP (Internet Service Provider)-এর মূল কাজ কী?",
+      "options": [
+        "আপনার website host করা, কারণ website-এর server সাধারণত ISP-এর কাছেই থাকে",
+        "Domain name থেকে IP খুঁজে দেওয়া, এটাই ISP-এর একমাত্র কাজ",
+        "শুধু বাসার Wi-Fi router বসানো; বাইরের network-এর সাথে তার কোনো সম্পর্ক নেই",
+        "আপনার বাসা বা phone-কে বাকি Internet-এর সাথে যুক্ত করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "ISP আপনার device-কে নিজের network-এ নেয়, আর সেখান থেকে অন্য network-এর সাথে যুক্ত করে। বিদেশে যাওয়া traffic আরও বড় network আর cable হয়ে যায়। ISP-ই আপনার Internet-এর প্রথম বড় ধাপ।",
+      "whyWrong": {
+        "0": "Website সাধারণত cloud বা hosting provider-এ থাকে; ISP-এর মূল কাজ সংযোগ দেওয়া।",
+        "1": "ISP অনেক সময় DNS resolver দেয়, কিন্তু সেটা পার্শ্ব-সেবা; মূল কাজ network সংযোগ।",
+        "2": "Router বাসার ভেতরের device; ISP বাসাকে বাইরের network-এর সাথে যুক্ত করে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q08",
+      "difficulty": "easy",
+      "question": "১ MB-র একটা ছবি পাঠানোর সময় data কেন অনেকগুলো ছোট packet-এ ভাগ হয়ে যায়?",
+      "options": [
+        "কারণ ছবি packet-এ ভাগ করলে compression হয়ে ছবির আকার এমনিতেই অর্ধেক হয়ে যায়, ফলে দ্রুত পৌঁছায়",
+        "Link-গুলো সীমিত আকারের packet নেয়, আর ছোট টুকরো হারালে শুধু সেটুকুই আবার পাঠানো যায়",
+        "কারণ প্রতিটা packet আলাদাভাবে encrypt হয়, ভাগ না করলে data নিরাপদ থাকত না",
+        "কারণ প্রতিটা packet আলাদা server-এ যায়, তাই কয়েকটা server মিলে দ্রুত ছবি পৌঁছায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "সাধারণ Ethernet-এ একটা packet মোটামুটি ১৫০০ byte পর্যন্ত হয় (MTU)। তাই বড় data কয়েকশো packet-এ ভাগ হয়। একটা হারালে শুধু সেটাই আবার পাঠাতে হয়, পুরো ছবি না।",
+      "whyWrong": {
+        "0": "Packet-এ ভাগ করলে আকার কমে না, বরং প্রতিটায় header যোগ হয়।",
+        "2": "Packet-এ ভাগ করা নিরাপত্তার জন্য না; encryption আলাদা layer (যেমন TLS)-এর কাজ।",
+        "3": "সব packet একই destination-এ যায়, আলাদা server-এ ভাগ হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q09",
+      "difficulty": "easy",
+      "question": "Packet ঢাকা থেকে Singapore-এ যাওয়ার পথে প্রতিটা router কী করে?",
+      "options": [
+        "পুরো পথের সব router-এর তালিকা packet-এ লিখে দেয়, যাতে বাকিরা অনুসরণ করে",
+        "Destination IP দেখে নিজের routing table মিলিয়ে শুধু পরের hop ঠিক করে",
+        "পুরো ছবির সব packet না আসা পর্যন্ত জমিয়ে রাখে, তারপর একসাথে পরের router-এ পাঠায়",
+        "Source IP দেখে ঠিক করে packet কোন দিকে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "কোনো router পুরো রাস্তা জানে না। প্রত্যেকে destination IP দেখে নিজের routing table অনুযায়ী পরের router-কে দেয়। ঠিক কুরিয়ারের hub-এর মতো, যে শুধু জানে কোন ট্রাকে তুলতে হবে।",
+      "whyWrong": {
+        "0": "Router পুরো পথ জানে না বা লেখে না, শুধু পরের ধাপ ঠিক করে।",
+        "2": "Router প্রতিটা packet আলাদাভাবে সাথে সাথে forward করে; জোড়া লাগে destination-এ।",
+        "3": "Forwarding-এর সিদ্ধান্ত হয় destination IP দেখে, source দেখে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q10",
+      "difficulty": "easy",
+      "question": "নিচের কোন IP address-টা private (RFC 1918), মানে Internet-এ সরাসরি route হয় না?",
+      "options": ["8.8.8.8", "11.200.100.10", "192.168.1.10", "172.32.0.5"],
+      "correctIndex": 2,
+      "explanation": "RFC 1918-এর private range তিনটা: 10.0.0.0/8, 172.16.0.0/12 আর 192.168.0.0/16। 192.168.1.10 এর মধ্যে পড়ে। এসব ঠিকানা শুধু local network-এর ভেতরে চলে, বাইরে যেতে NAT লাগে।",
+      "whyWrong": {
+        "0": "8.8.8.8 একটা public address, Internet থেকে পৌঁছানো যায়।",
+        "1": "11.200.100.10 কোনো private range-এ পড়ে না, এটা public address।",
+        "3": "Private range 172.16.0.0/12 শেষ হয় 172.31.255.255-এ, তাই 172.32.x.x private না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q11",
+      "difficulty": "easy",
+      "question": "Online shop-এর cart থেকে client দাম সহ order পাঠায়: {\"bookId\": 7, \"price\": 25}। Server-এর কী করা উচিত?",
+      "options": [
+        "Client-এর দাম উপেক্ষা করে bookId দিয়ে database থেকে আসল দাম নিয়ে হিসাব করা",
+        "Client-এর পাঠানো দামেই order নেওয়া, কারণ app-এর ভেতরে দাম আগেই সঠিক দেখানো ছিল",
+        "Frontend-এ একটা validation যোগ করা যাতে দাম কখনো বদলানো না যায়, তাহলেই যথেষ্ট",
+        "দাম encrypt করে পাঠাতে বলা, তাহলে client আর বদলাতে পারবে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Client-এর code আর request user-এর নিয়ন্ত্রণে, তাই client-এর পাঠানো দাম বিশ্বাস করা যায় না। Server শুধু কোন বই চাই সেটা নেবে, আর দাম নিজের database থেকে বের করবে। আসল নিয়ম সবসময় server-এ।",
+      "whyWrong": {
+        "1": "App-এর দাম user বদলে দিতে পারে, client-এর data বিশ্বাসযোগ্য না।",
+        "2": "Frontend validation curl বা devtools দিয়ে সহজেই এড়ানো যায়।",
+        "3": "Encrypt করা যোগাযোগেও client নিজেই যা খুশি দাম পাঠাতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q12",
+      "difficulty": "easy",
+      "question": "HTTP request \"stateless\" বলতে কী বোঝায়?",
+      "options": [
+        "Server কোনো data-ই রাখে না, তাই database ব্যবহার করা যায় না",
+        "Connection ছাড়াই data যায়, তাই HTTP আসলে UDP-র উপর চলে",
+        "Client একবার login করলে server সারা জীবন তাকে মনে রাখে, তাই পরের request-এ আর কিছু পাঠাতে হয় না",
+        "প্রতিটা request নিজেই সম্পূর্ণ, তাই পরিচয় (যেমন token) প্রতিবার সাথে পাঠাতে হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stateless মানে server আগের request মনে রাখতে বাধ্য না। তাই client প্রতিবার token বা cookie পাঠায়, যাতে request একা বোঝা যায়। এতে যেকোনো server যেকোনো request সামলাতে পারে।",
+      "whyWrong": {
+        "0": "Stateless মানে request-এর মধ্যে স্মৃতি না রাখা; server database ঠিকই ব্যবহার করে।",
+        "1": "Stateless মানে server-এর স্মৃতি না রাখা; HTTP/1.1 আর HTTP/2 TCP-র উপর চলে।",
+        "2": "এটা stateful আচরণের বর্ণনা, stateless-এর উল্টো।"
+      }
+    },
+    {
+      "id": "sd-day-002-q13",
+      "difficulty": "easy",
+      "question": "একই server-এর port 443-এ হাজার হাজার client একসাথে যুক্ত। Server প্রতিটা connection আলাদা করে চেনে কিভাবে?",
+      "options": [
+        "Server প্রতিটা client-এর জন্য আলাদা port খোলে, তাই 443 শুধু প্রথম জনের",
+        "Server একবারে একজন client-কে সামলায়, বাকিরা লাইনে অপেক্ষা করে",
+        "শুধু client-এর IP দেখে, কারণ দুটো আলাদা connection কখনো একই IP address থেকে আসে না",
+        "Client-এর IP আর client-এর port মিলিয়ে, কারণ প্রতিটা connection-এর এই জোড়া আলাদা"
+      ],
+      "correctIndex": 3,
+      "explanation": "একটা connection চেনা যায় 5-tuple দিয়ে: protocol, client IP, client port, server IP, server port। Server-এর দিক সবার জন্য একই, কিন্তু client IP আর client port আলাদা। তাই হাজারো connection মিশে যায় না।",
+      "whyWrong": {
+        "0": "সব client একই server port 443-এ আসে; পার্থক্য হয় client-এর দিকের IP আর port-এ।",
+        "1": "Server একসাথে অনেক connection রাখতে পারে, একজন একজন করে না।",
+        "2": "NAT বা একই device-এর একাধিক tab থেকে একই IP-তে অনেক connection আসে; client port-ও লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q14",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা thin client-এর ভালো উদাহরণ?",
+      "options": [
+        "Offline-এ চলা একটা mobile game, যার সব হিসাব phone-এই হয়",
+        "Server-এ HTML তৈরি হয়ে আসা একটা web page, যেখানে browser শুধু দেখায়",
+        "Browser-এ চলা একটা design tool, যেটা ভারী rendering নিজের machine-এ করে",
+        "একটা mobile app, যেটা ছবি আর data phone-এ cache করে offline-এ দেখায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Thin client-এ প্রায় সব কাজ server-এ হয়, client শুধু ফল দেখায়। Server-rendered page তাই thin। Offline game বা ভারী editor-এ কাজ client-এ হয়, সেগুলো thick।",
+      "whyWrong": {
+        "0": "এখানে বেশিরভাগ কাজ client-এ, তাই এটা thick client।",
+        "2": "ভারী rendering client-এ হলে সেটা thick client।",
+        "3": "Offline cache আর local কাজ মানে client বেশি দায়িত্ব নিচ্ছে, তাই সেটা thick-এর দিকে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q15",
+      "difficulty": "easy",
+      "question": "Thick client-এর একটা বড় সুবিধা কী?",
+      "options": [
+        "Server-এ আর কোনো validation লাগে না, কারণ সব নিয়ম client-এ আছে",
+        "Update করলে সব user সাথে সাথে নতুন version পায়, কোনো দেরি হয় না",
+        "Network না থাকলেও অনেক কাজ চলে, আর interaction তাৎক্ষণিক মনে হয়",
+        "দুর্বল আর পুরনো phone-এও সবচেয়ে ভালো চলে, battery খরচ কমে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Thick client অনেক কাজ নিজের machine-এ করে, তাই প্রতিটা click-এ round trip লাগে না। Offline-এও কাজ চলে, পরে sync হয়। বিনিময়ে update ছড়ানো ধীর আর device-এর উপর চাপ বেশি।",
+      "whyWrong": {
+        "0": "Thick client-এও আসল যাচাই server-এ রাখতেই হয়।",
+        "1": "Thick client-এ user app update না করলে পুরনো version চলতে থাকে।",
+        "3": "বেশি কাজ local-এ হওয়ায় ভালো device আর বেশি battery লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q16",
+      "difficulty": "easy",
+      "question": "বাংলাদেশ থেকে ইউরোপ বা Singapore-এর server-এ data মূলত কোন পথে যায়?",
+      "options": [
+        "সমুদ্রের নিচের submarine fiber cable, পাশাপাশি কিছু স্থলপথের cable",
+        "মূলত satellite দিয়ে, কারণ সমুদ্র পার হয়ে বিদেশে data পাঠানোর আর কোনো উপায় নেই",
+        "মূলত mobile operator-দের 4G/5G network দিয়ে, tower থেকে tower হয়ে দেশ পার হয়",
+        "প্রতিটা বিদেশি website-এর একটা copy দেশে থাকে, তাই data দেশের বাইরে যায়ই না"
+      ],
+      "correctIndex": 0,
+      "explanation": "মহাদেশের মধ্যে Internet traffic-এর বেশিরভাগ যায় submarine fiber cable দিয়ে। বাংলাদেশ SEA-ME-WE 4 আর SEA-ME-WE 5 cable-এ যুক্ত, পাশাপাশি ভারতের ভেতর দিয়ে স্থলপথের cable আছে। Satellite-এর latency আর capacity এর তুলনায় সীমিত।",
+      "whyWrong": {
+        "1": "Satellite আছে, কিন্তু আন্তর্জাতিক traffic-এর বেশিরভাগ fiber cable দিয়ে যায়।",
+        "2": "4G/5G শুধু phone থেকে operator-এর tower পর্যন্ত; দেশ পার হয় cable দিয়ে।",
+        "3": "কিছু content CDN-এ দেশে cache থাকে, কিন্তু অনেক request-কেই বিদেশের server-এ যেতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q17",
+      "difficulty": "easy",
+      "question": "traceroute command চালালে মূলত কী জানা যায়?",
+      "options": [
+        "Destination server-এর কোন কোন port খোলা আছে আর কোন service চলছে",
+        "আপনার connection-এর download আর upload speed কত Mbps",
+        "পথের router-গুলো (hop) আর প্রতিটায় পৌঁছাতে কত সময় লাগে",
+        "Domain name-টা কোন IP address-এ resolve হয়, শুধু সেটুকু"
+      ],
+      "correctIndex": 2,
+      "explanation": "traceroute TTL কৌশল ব্যবহার করে পথের প্রতিটা router থেকে উত্তর আদায় করে। প্রতিটা লাইন একটা hop। কোন hop-এ সময় হঠাৎ বাড়ছে, সেখান থেকে বোঝা যায় দূরত্ব বা ভিড় কোথায়।",
+      "whyWrong": {
+        "0": "Port খোঁজা port scanner (যেমন nmap)-এর কাজ; traceroute পথ দেখায়।",
+        "1": "Speed মাপে speed test tool; traceroute hop আর সময় দেখায়।",
+        "3": "traceroute শুরুতে নাম resolve করে ঠিকই, কিন্তু মূল output পথের router-গুলো।"
+      }
+    },
+    {
+      "id": "sd-day-002-q18",
+      "difficulty": "easy",
+      "question": "ping google.com চালালে time=45 ms দেখাল। এই সংখ্যাটা কী বোঝায়?",
+      "options": [
+        "Google-এর server ওই page তৈরি করতে কত সময় নিয়েছে, শুধু সেই processing সময়টুকু",
+        "আপনার Internet-এর গতি, প্রতি সেকেন্ডে ৪৫ megabit",
+        "Packet শুধু যেতে যে সময় লাগে, ফেরার সময় এর মধ্যে নেই",
+        "Packet যেতে আর উত্তর ফিরে আসতে মোট সময়, মানে round trip time"
+      ],
+      "correctIndex": 3,
+      "explanation": "ping একটা ছোট packet পাঠিয়ে উত্তরের অপেক্ষা করে, আর মোট সময় দেখায়। এটাই RTT। এক দিকের সময় মোটামুটি এর অর্ধেক, যদিও যাওয়া-আসার পথ সবসময় এক না।",
+      "whyWrong": {
+        "0": "ping-এ page তৈরি হয় না, এটা network-এর যাওয়া-আসার সময়।",
+        "1": "ms সময়ের একক, bandwidth-এর না।",
+        "2": "ping-এর সময় যাওয়া আর আসা দুটো মিলিয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q19",
+      "difficulty": "easy",
+      "question": "TCP আর UDP-এর মধ্যে কোনটা হারানো packet আবার পাঠায় আর ক্রম ঠিক রাখে?",
+      "options": [
+        "TCP, connection তৈরি করে প্রতিটা byte-এর হিসাব রাখে",
+        "UDP, কারণ এটা নতুন protocol আর তাই TCP-র চেয়ে বেশি নির্ভরযোগ্য",
+        "দুটোই রাখে, তবে UDP দ্রুত কারণ সে কাজটা hardware-এ করে",
+        "IP নিজেই এটা নিশ্চিত করে, তাই TCP বা UDP যেটাই হোক একই"
+      ],
+      "correctIndex": 0,
+      "explanation": "TCP handshake দিয়ে connection খোলে, হারানো packet আবার পাঠায়, আর ক্রম মিলিয়ে দেয়। UDP শুধু পাঠিয়ে দেয়, কোনো নিশ্চয়তা নেই। তাই web আর API সাধারণত TCP-র উপর চলে।",
+      "whyWrong": {
+        "1": "UDP কোনো নিশ্চয়তা দেয় না, আর এটা TCP-র চেয়ে নতুনও না।",
+        "2": "UDP retransmission বা ক্রম রাখে না; সে দ্রুত কারণ এই কাজগুলো করেই না।",
+        "3": "IP best effort; হারানো packet আর ক্রম ঠিক করার দায়িত্ব TCP-র।"
+      }
+    },
+    {
+      "id": "sd-day-002-q20",
+      "difficulty": "easy",
+      "question": "Peer-to-peer (P2P) মডেলে প্রতিটা machine-এর ভূমিকা কেমন?",
+      "options": [
+        "একটা peer সবসময় server, বাকিরা শুধু client হিসেবে তার কাছে যায়",
+        "প্রতিটা peer একই সাথে client আর server, অন্যের কাছ থেকে নেয় আবার অন্যকে দেয়",
+        "Peer মানে একই local network-এর computer; Internet-এর উপর P2P চলে না",
+        "সব peer একটা কেন্দ্রীয় database-এ লেখে আর পড়ে, তাই কোনো peer অন্যকে সরাসরি data দেয় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "P2P-তে আলাদা server আর client ভাগ নেই। BitTorrent-এ প্রত্যেকে file-এর টুকরো নামায়, আবার অন্যকে দেয়। তাই user বাড়লে capacity-ও বাড়ে।",
+      "whyWrong": {
+        "0": "এটা আসলে client-server মডেলের বর্ণনা।",
+        "2": "P2P Internet জুড়ে চলে, যেমন BitTorrent; NAT কাজটা কঠিন করে, অসম্ভব না।",
+        "3": "P2P-র মূল ধারণাই হলো peer-রা নিজেরা data দেয় ও নেয়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q21",
+      "difficulty": "medium",
+      "question": "ঢাকা থেকে Singapore সরলরেখায় প্রায় 2,900 km। Fiber-এ আলোর গতি প্রায় 200,000 km/s ধরলে, তাত্ত্বিকভাবে সবচেয়ে কম RTT কত?",
+      "options": [
+        "প্রায় 14.5 ms",
+        "প্রায় 29 ms",
+        "প্রায় 2.9 ms",
+        "প্রায় 290 ms"
+      ],
+      "correctIndex": 1,
+      "explanation": "এক দিকের সময় = 2,900 ÷ 200,000 = 0.0145 s = 14.5 ms। RTT মানে যাওয়া-আসা, তাই 29 ms। বাস্তবে cable বাঁকা পথে যায় আর পথে router আছে, তাই আসল RTT এর চেয়ে বেশি হয়।",
+      "whyWrong": {
+        "0": "14.5 ms হলো শুধু এক দিকের সময়, RTT-তে যাওয়া-আসা দুটোই ধরতে হয়।",
+        "2": "এখানে km আর km/s-এর হিসাবে ১০ গুণ ভুল হয়েছে; 2,900/200,000 s = 14.5 ms।",
+        "3": "এটা ১০ গুণ বেশি; সঠিক হিসাবে এক দিকেই মাত্র 14.5 ms।"
+      }
+    },
+    {
+      "id": "sd-day-002-q22",
+      "difficulty": "medium",
+      "question": "আপনার API server আমেরিকায়, user ঢাকায়। প্রতিটা ছোট API call (~2 KB) ধীর। Manager server-এর bandwidth 10 গুণ বাড়াতে চান। সবচেয়ে কার্যকর পরামর্শ কী?",
+      "options": [
+        "Bandwidth 10 গুণ বাড়ান, কারণ latency আর bandwidth আসলে একই জিনিস, শুধু দুই নামে মাপা হয়",
+        "Request আর response compress করুন, data ছোট হলে দূরত্বের দেরিও মিটে যাবে",
+        "Server-এর CPU বাড়ান, কারণ সব latency server-এর processing থেকেই আসে",
+        "ছোট request-এ দেরির মূল কারণ দূরত্ব, তাই server বা content কাছের region-এ আনুন"
+      ],
+      "correctIndex": 3,
+      "explanation": "2 KB data 100 Mbps-এ তুলতে এক ms-এরও কম লাগে, তাই bandwidth এখানে bottleneck না। ঢাকা থেকে আমেরিকা যাওয়া-আসাতেই আলোরও ১০০ ms-এর বেশি লাগে। কাছের region বা CDN দিয়ে দূরত্ব কমানোই আসল সমাধান।",
+      "whyWrong": {
+        "0": "Bandwidth বাড়ালে transmission কমে, কিন্তু ছোট request-এ propagation-ই মূল।",
+        "1": "2 KB data compress করলেও propagation delay একই থাকে।",
+        "2": "দূরের user-এর ক্ষেত্রে processing-এর চেয়ে propagation অনেক বড় অংশ।"
+      }
+    },
+    {
+      "id": "sd-day-002-q23",
+      "difficulty": "medium",
+      "question": "একটা 2 MB file 16 Mbps link-এ পাঠাতে শুধু transmission delay কত? (1 byte = 8 bit)",
+      "options": ["1 সেকেন্ড", "0.125 সেকেন্ড", "8 সেকেন্ড", "16 সেকেন্ড"],
+      "correctIndex": 0,
+      "explanation": "2 MB = 2 × 8 = 16 Mbit। 16 Mbit ÷ 16 Mbps = 1 s। এই অংশটা bandwidth বাড়ালে কমে, কিন্তু propagation delay এর সাথে আলাদাভাবে যোগ হয়।",
+      "whyWrong": {
+        "1": "এখানে byte-কে bit-এ রূপান্তর (×8) করা হয়নি।",
+        "2": "2 MB = 16 Mbit, 16 Mbps-এ এক সেকেন্ড; ৮ গুণ বেশি ধরা হয়েছে।",
+        "3": "Link-এর গতি আর file size গুলিয়ে ফেলা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q24",
+      "difficulty": "medium",
+      "question": "একটা code review-তে দেখলেন: server order-এর মোট দাম নিচ্ছে request body-র total field থেকে, যেটা app হিসাব করে পাঠায়। ঝুঁকি আর সমাধান কী?",
+      "options": [
+        "কোনো ঝুঁকি নেই, কারণ app-এর code store থেকে install করা, আর কেউ সেই code বা তার request বদলাতে পারে না",
+        "ঝুঁকি শুধু ভুল হিসাবের; app-এ আরও unit test লিখলেই সমস্যা মিটে যাবে",
+        "User নিজেই total বদলে কম দামে কিনতে পারে; server item আর পরিমাণ থেকে নিজে total হিসাব করবে",
+        "HTTPS ব্যবহার করলেই চলবে, কারণ HTTPS-এ request-এর data কেউ বদলাতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Client যা পাঠায় তা user-এর নিয়ন্ত্রণে। HTTPS শুধু মাঝপথে কেউ পড়া বা বদলানো আটকায়, client নিজে বানানো request না। তাই total, discount, দাম সব server database থেকে হিসাব করবে।",
+      "whyWrong": {
+        "0": "App বদলানো না গেলেও যে কেউ curl দিয়ে নিজের মতো request পাঠাতে পারে।",
+        "1": "Test app-এর ভুল কমায়, কিন্তু ইচ্ছাকৃত বদলানো request আটকায় না।",
+        "3": "HTTPS পথে অন্য কেউ বদলানো আটকায়, কিন্তু client নিজে যা পাঠায় তা আটকায় না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q25",
+      "difficulty": "medium",
+      "question": "আপনি login-এ \"এক IP থেকে মিনিটে 20-র বেশি চেষ্টা হলে block\" নিয়ম দিলেন। এরপর একটা mobile operator-এর অনেক নিরীহ user একসাথে আটকে গেল। সম্ভাব্য কারণ কী?",
+      "options": [
+        "Mobile network-এ প্রতিটা phone-এর IP প্রতি সেকেন্ডে বদলায়, তাই নিয়ম ভুল কাজ করে",
+        "নিয়মটা ঠিক আছে, user-রা নিশ্চয়ই password ভুলে বারবার চেষ্টা করছে",
+        "Mobile operator traffic encrypt করে, তাই server আসল IP পড়তে না পেরে একটাই দেখে",
+        "Operator CGNAT ব্যবহার করে, তাই হাজারো user বাইরে থেকে একই public IP-তে দেখা যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "অনেক operator CGNAT (100.64.0.0/10) দিয়ে বহু গ্রাহককে একটা public IP-র পেছনে রাখে। ফলে server-এর চোখে তারা সবাই একই IP। তাই rate limit যতটা সম্ভব account বা token ধরে করা ভালো, IP-কে শুধু একটা সংকেত হিসেবে।",
+      "whyWrong": {
+        "0": "IP বদলানো সমস্যা হলে আলাদা user একসাথে আটকাত না; মূল কারণ শেয়ার করা IP।",
+        "1": "অনেক নিরীহ user একসাথে আটকানো মানে IP অনেকের মধ্যে শেয়ার হচ্ছে।",
+        "2": "Encryption IP header লুকায় না; একই IP দেখা যায় CGNAT-এর কারণে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q26",
+      "difficulty": "medium",
+      "question": "আপনার chat server নতুন message এলে user-এর phone-কে জানাতে চায়। Phone বাসার Wi-Fi-র পেছনে (NAT)। কোন design কাজ করবে?",
+      "options": [
+        "Server phone-এর private IP (192.168.x.x)-এ সরাসরি নতুন connection খুলবে",
+        "Phone আগে নিজে server-এর সাথে একটা connection খুলে রাখবে, server সেই পথেই message পাঠাবে",
+        "Server router-এর public IP-তে যেকোনো port-এ নতুন connection খুলবে, আর router নিজেই বুঝে নেবে কার জন্য",
+        "Phone-কে server বানিয়ে দেওয়া হবে, কারণ server হলে বাইরে থেকে সবাই পৌঁছাতে পারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "NAT table-এ entry তৈরি হয় শুধু ভেতর থেকে connection শুরু হলে। তাই phone আগে connection খোলে (যেমন WebSocket), আর server সেই খোলা connection দিয়ে push করে। এটাই chat আর notification-এর সাধারণ কৌশল।",
+      "whyWrong": {
+        "0": "Private IP Internet-এ route হয় না, server সেখানে পৌঁছাতেই পারবে না।",
+        "2": "NAT table-এ entry না থাকলে router জানে না অচেনা connection কাকে দেবে।",
+        "3": "Program-কে server বানালেও NAT-এর পেছনে থাকলে বাইরে থেকে পৌঁছানো যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q27",
+      "difficulty": "medium",
+      "question": "একটা page প্রথম byte পাওয়ার আগে পরপর 4টা round trip নেয় (DNS, TCP, TLS, request)। RTT 150 ms হলে, server সময় না নিলেও কমপক্ষে কত সময় যাবে?",
+      "options": ["600 ms", "150 ms", "300 ms", "1,200 ms"],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা round trip-এ 150 ms, আর সেগুলো পরপর হচ্ছে। 4 × 150 = 600 ms। তাই round trip কমানো (connection reuse, কাছের server) latency কমানোর বড় কৌশল।",
+      "whyWrong": {
+        "1": "এটা মাত্র একটা round trip, বাকি তিনটা বাদ পড়েছে।",
+        "2": "এখানে RTT-কে এক দিকের সময় ধরে অর্ধেক করা হয়েছে।",
+        "3": "RTT আগেই যাওয়া-আসা ধরে, আবার দ্বিগুণ করা ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-002-q28",
+      "difficulty": "medium",
+      "question": "দুটো server, যেকোনোটায় request যেতে পারে। User server A-তে login করল, A session-টা নিজের memory-তে রাখল। পরের request server B-তে গেল আর user logged out দেখাল। মূল কারণ আর সমাধান কী?",
+      "options": [
+        "Server B-এর clock ভুল, তাই session আগেভাগেই expire হয়ে গেছে; সব server-এর সময় NTP দিয়ে মিলিয়ে দিন",
+        "User-এর browser cookie মুছে দিয়েছে; user-কে cookie চালু রাখতে বলুন",
+        "Session শুধু A-র memory-তে; token পাঠিয়ে বা session shared store-এ রেখে request stateless করুন",
+        "Server B ধীর, তাই login data পৌঁছাতে দেরি হয়েছে; B-এর CPU বাড়িয়ে দিন"
+      ],
+      "correctIndex": 2,
+      "explanation": "Session শুধু A-র memory-তে থাকায় B জানে না user কে। Request stateless হলে (token দিয়ে) বা session shared store-এ (যেমন Redis) থাকলে যেকোনো server request বুঝতে পারে। Day 14-এ এর পুরো আলোচনা।",
+      "whyWrong": {
+        "0": "Clock-এর সমস্যা হলে A-তেও একই হতো; সমস্যা হলো session শুধু A-র memory-তে।",
+        "1": "Cookie থাকলেও B-র কাছে A-র memory-র session নেই, তাই সমস্যা থাকবে।",
+        "3": "গতি বাড়ালেও A-র memory-তে থাকা session B কখনো দেখতে পাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q29",
+      "difficulty": "medium",
+      "question": "রাজশাহীর একজন tester আপনাকে বলল http://192.168.0.105:3000 খুলছে না। আপনার laptop ঢাকার বাসার Wi-Fi-তে। কেন?",
+      "options": [
+        "Laptop-এর firewall port 3000 আটকে রেখেছে, firewall বন্ধ করে দিলেই tester খুলতে পারবে",
+        "আপনার ISP অন্য শহর থেকে আসা connection block করে, ISP বদলালেই চলবে",
+        "192.168.0.105 একটা private IP, শুধু আপনার বাসার local network-এর ভেতরে অর্থবহ",
+        "Tester-কে http-এর বদলে https দিয়ে খুলতে হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "192.168.0.0/16 RFC 1918-এর private range। লাখো বাসায় একই ঠিকানা আছে, তাই Internet-এ এর কোনো মানে নেই। বাইরে থেকে দেখাতে cloud server, public IP বা একটা tunnel লাগবে।",
+      "whyWrong": {
+        "0": "Firewall খুললেও private IP Internet থেকে পৌঁছানো যায় না।",
+        "1": "কোনো ISP-তেই private ঠিকানা Internet-এ route হয় না, ISP বদলে লাভ নেই।",
+        "3": "Scheme বদলালেও private IP-তে বাইরে থেকে পৌঁছানো যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q30",
+      "difficulty": "medium",
+      "question": "একটা video call app media পাঠাতে UDP বেছে নিল। এর পেছনে সবচেয়ে ভালো যুক্তি কী?",
+      "options": [
+        "পুরনো হারানো frame দেরিতে আবার আনার চেয়ে বাদ দিয়ে এগোনো ভালো, UDP সেটা করতে দেয়",
+        "UDP সব packet ঠিক ক্রমে আর নিশ্চিতভাবে পৌঁছানোর guarantee দেয়, তাই video কখনো ভাঙে না",
+        "UDP-তে bandwidth বেশি পাওয়া যায়, কারণ ISP UDP traffic-কে অগ্রাধিকার দেয়",
+        "TCP connection বেশি memory নেয়, তাই অনেক user একসাথে call করলে server crash করবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Live call-এ ৫০০ ms আগের একটা হারানো frame আবার আনলে কোনো লাভ নেই, বরং পুরো stream আটকে যায়। UDP-তে app নিজে ঠিক করে কী বাদ দেবে। তাই real-time media সাধারণত UDP-র উপর চলে।",
+      "whyWrong": {
+        "1": "UDP ক্রম বা পৌঁছানোর কোনো নিশ্চয়তা দেয় না।",
+        "2": "ISP সাধারণত UDP-কে বাড়তি bandwidth দেয় না; সুবিধা হলো retransmission-এর অপেক্ষা নেই।",
+        "3": "Memory একটা বিবেচনা হলেও মূল কারণ latency; পুরনো frame আবার আনা অর্থহীন।"
+      }
+    },
+    {
+      "id": "sd-day-002-q31",
+      "difficulty": "medium",
+      "question": "traceroute-এ দেখলেন hop 6 পর্যন্ত প্রতিটায় ~10 ms, কিন্তু hop 7-এ হঠাৎ ~55 ms, আর তারপর প্রায় একই থাকে। এর সবচেয়ে সম্ভাব্য ব্যাখ্যা কী?",
+      "options": [
+        "Hop 7-এর router নষ্ট, তাই এর পরের সব packet হারিয়ে যাচ্ছে",
+        "আপনার laptop-এর CPU ঠিক ওই মুহূর্তে অন্য কাজে ব্যস্ত ছিল, তাই hop 7-এ সময় বেশি দেখাচ্ছে",
+        "Hop 7-এর router ব্যস্ত, তাই traceroute-এর probe-এর উত্তর দিতে দেরি করছে",
+        "Hop 6 আর 7-এর মাঝে লম্বা দূরত্ব পার হয়েছে, যেমন সমুদ্রের নিচের cable"
+      ],
+      "correctIndex": 3,
+      "explanation": "একটা নির্দিষ্ট hop থেকে হঠাৎ সময় বেড়ে পরে স্থির থাকা মানে সেখানে লম্বা physical দূরত্ব যোগ হয়েছে। সাধারণত এটাই দেশ বা সমুদ্র পার হওয়ার জায়গা। Propagation delay দূরত্বের সাথে বাড়ে।",
+      "whyWrong": {
+        "0": "Packet হারালে সময় না দেখিয়ে * * * আসত, আর পরের hop-এ পৌঁছানোই যেত না।",
+        "1": "Local CPU-র সমস্যা হলে সব hop-এ এলোমেলোভাবে সময় বাড়ত।",
+        "2": "শুধু ওই router ধীরে উত্তর দিলে পরের hop-গুলোতে সময় আবার কমে যেত; সব পরের hop-এ বেশি থাকা মানে দূরত্ব।"
+      }
+    },
+    {
+      "id": "sd-day-002-q32",
+      "difficulty": "medium",
+      "question": "আপনার mobile app-এ একটা bug ছিল যেটা সর্বোচ্চ ছাড়ের সীমা app-এই যাচাই করত। নতুন version দিলেন, কিন্তু অনেকে পুরনো version চালাচ্ছে। এখান থেকে কী শিক্ষা?",
+      "options": [
+        "সব user-কে জোর করে নতুন version-এ নিলেই চলবে, server-এ নিয়ম রাখার দরকার নেই",
+        "Thick client-এ update ধীরে ছড়ায়, তাই জরুরি নিয়ম server-এ রাখুন যাতে সব version-এ খাটে",
+        "Thick client-এ সব নিয়ম app-এ থাকাই ঠিক ছিল, শুধু release-এর আগে আরও ভালো করে test করা দরকার ছিল",
+        "এটা শুধু mobile-এর সমস্যা, web app-এ কখনো client-এর নিয়ম এড়ানো যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Thick client-এ user update না করলে পুরনো code চলতেই থাকে। আর যেকোনো client-এর যাচাই এড়ানো যায়। তাই ছাড়ের সীমার মতো নিয়ম server-এ থাকলে সব version আর সব request-এ একসাথে প্রযোজ্য হয়।",
+      "whyWrong": {
+        "0": "Force update-এর পরেও কেউ নিজের বানানো request পাঠাতে পারে, তাই server-এ নিয়ম লাগবেই।",
+        "2": "Test ভালো হলেও client-এর নিয়ম এড়ানো যায় আর পুরনো version থেকে যায়।",
+        "3": "Web-এও devtools বা curl দিয়ে client-এর যাচাই সহজেই এড়ানো যায়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q33",
+      "difficulty": "medium",
+      "question": "একই laptop থেকে দুটো browser tab একই server-এর 203.0.113.80:443-এ যুক্ত। দুই connection-এর 5-tuple-এ কোন অংশটা আলাদা?",
+      "options": [
+        "Client-এর source port, যেটা OS প্রতিটা connection-এ আলাদা করে দেয়",
+        "Server-এর port, কারণ server প্রতিটা নতুন tab-এর জন্য আলাদা একটা port বরাদ্দ করে দেয়",
+        "Client-এর IP address, কারণ প্রতিটা tab আলাদা IP পায়",
+        "Server-এর IP, কারণ বড় server প্রতিটা tab-কে আলাদা IP থেকে উত্তর দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Client IP, server IP, server port আর protocol দুই tab-এ একই। পার্থক্য শুধু client-এর ephemeral port-এ, যা OS প্রতিবার আলাদা দেয়। এজন্যই connection-গুলো মিশে যায় না।",
+      "whyWrong": {
+        "1": "দুই tab-ই server-এর একই 443 port-এ যায়।",
+        "2": "একই laptop-এর সব tab একই client IP ব্যবহার করে।",
+        "3": "দুই tab একই server IP-তে যুক্ত, destination একই।"
+      }
+    },
+    {
+      "id": "sd-day-002-q34",
+      "difficulty": "medium",
+      "question": "পৃথিবীর লাখো বাসায় router-এর পেছনের কোনো device-এর IP ঠিক 192.168.0.105। এতে Internet-এ গোলমাল হয় না কেন?",
+      "options": [
+        "192.168.0.105 আসলে public IP, শুধু অনেক বাসা মিলে ভাগ করে ব্যবহার করে",
+        "Router প্রতি সেকেন্ডে IP বদলায়, তাই দুটো device কখনো একই মুহূর্তে একই ঠিকানা পায় না, ফলে গোলমালও হয় না",
+        "Packet-এর সাথে router-এর MAC address পুরো Internet জুড়ে যায়, তাই একই IP হলেও আলাদা চেনা যায়",
+        "Private ঠিকানা Internet-এ যায় না; বাইরে যাওয়ার সময় NAT সেটা public IP দিয়ে বদলে দেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "RFC 1918-এর private range শুধু local network-এর ভেতরে চলে। Router NAT করে বাইরে যাওয়ার সময় নিজের public IP বসায়। তাই Internet শুধু public ঠিকানাগুলো দেখে, যেগুলো অনন্য।",
+      "whyWrong": {
+        "0": "192.168.0.0/16 private range; ভাগ করে ব্যবহার হয় router-এর public IP, private না।",
+        "1": "Private IP সাধারণত স্থির থাকে; সংঘাত এড়ায় NAT, দ্রুত বদল না।",
+        "2": "MAC address শুধু local link-এ কাজে লাগে আর প্রতি hop-এ বদলায়; আলাদা করে NAT।"
+      }
+    },
+    {
+      "id": "sd-day-002-q35",
+      "difficulty": "medium",
+      "question": "আপনার service প্রতিটা API call-এর জন্য নতুন TCP+TLS connection খোলে, server-এর RTT 60 ms। প্রতিটা call-এ অনেক সময় নষ্ট হচ্ছে। সবচেয়ে সরাসরি উন্নতি কী?",
+      "options": [
+        "প্রতিটা call-এর আগে ping পাঠিয়ে দেখে নেওয়া server জীবিত কিনা",
+        "Server-এর CPU বাড়ানো, কারণ handshake-এর হিসাব server-এর CPU-তেই সবচেয়ে বেশি সময় নেয়",
+        "Connection খোলা রেখে বারবার ব্যবহার (keep-alive, connection pool), handshake একবারই",
+        "Response-এর আকার কমানো, কারণ সব দেরি data-র আকার থেকে আসে"
+      ],
+      "correctIndex": 2,
+      "explanation": "TCP handshake-এ এক RTT, TLS-এ আরও এক বা একাধিক RTT লাগে, প্রতিটা নতুন connection-এ। 60 ms RTT-তে এটা প্রতি call-এ ১২০ ms বা বেশি। Connection reuse করলে এই খরচ শুধু প্রথমবার দিতে হয়।",
+      "whyWrong": {
+        "0": "আগে ping করলে আরেকটা round trip যোগ হয়, সময় আরও বাড়ে।",
+        "1": "Handshake-এর মূল খরচ network-এর round trip, CPU না।",
+        "3": "এখানে দেরি আসছে handshake-এর round trip থেকে, data-র আকার থেকে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q36",
+      "difficulty": "medium",
+      "question": "আপনার app-এর প্রায় সব user বাংলাদেশে। Cloud-এ Singapore আর US East region-এর মধ্যে একটা বাছতে হবে, দাম প্রায় এক। কোনটা বাছবেন, কেন?",
+      "options": [
+        "US East, কারণ বড় region মানে সব user-এর জন্য সবসময় কম latency",
+        "Singapore, কারণ দূরত্ব কম তাই propagation কম, আর প্রতিটা round trip-এ সেটা জমে",
+        "যেকোনোটা, কারণ fiber-এ আলোর গতিতে দূরত্বের কোনো প্রভাব পড়ে না",
+        "US East, কারণ সেখানে bandwidth বেশি, আর bandwidth বেশি হলে দূরত্বের দেরি নিজে থেকেই মিটে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ঢাকা থেকে Singapore প্রায় 2,900 km, US East প্রায় 12,500 km-এর মতো। Propagation-এর নিচের সীমাই চার গুণের বেশি আলাদা। প্রতিটা page-এ কয়েকটা round trip লাগে বলে পার্থক্য আরও বড় হয়।",
+      "whyWrong": {
+        "0": "Region বড় হলেও দূরত্বের propagation delay কমে না।",
+        "2": "আলোরও প্রতি 1,000 km-এ প্রায় 5 ms লাগে, দূরত্ব বড় প্রভাব ফেলে।",
+        "3": "Bandwidth transmission কমায়, দূরত্বের propagation না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q37",
+      "difficulty": "medium",
+      "question": "Cloud VM-এ আপনার server চালু, VM-এর ভেতরে curl localhost:8080 ঠিক কাজ করে, কিন্তু বাইরে থেকে VM-এর public IP:8080 কাজ করে না। Firewall খোলা। কী সমস্যা হতে পারে?",
+      "options": [
+        "Server শুধু 127.0.0.1-এ listen করছে, তাই বাইরের interface থেকে connection নিচ্ছে না",
+        "Public IP দিয়ে কখনো port 8080 খোলা যায় না, শুধু 80 আর 443 খোলা যায়",
+        "VM-এর ভেতরে curl কাজ করছে মানে server ঠিক আছে, তাই সমস্যা নিশ্চয়ই user-এর ISP বা browser-এ",
+        "Server root দিয়ে না চালালে 1024-এর উপরের port বাইরে থেকে খোলে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "127.0.0.1 (loopback)-এ listen করা server শুধু একই machine-এর connection নেয়। বাইরে থেকে নিতে 0.0.0.0 বা নির্দিষ্ট public/private interface-এ listen করতে হয়। localhost-এ কাজ করা মানেই বাইরে কাজ করা না।",
+      "whyWrong": {
+        "1": "যেকোনো port-এ public connection নেওয়া যায়, যদি server আর firewall অনুমতি দেয়।",
+        "2": "Server কোন ঠিকানায় listen করছে সেটা না দেখে ISP-কে দোষ দেওয়া ভুল।",
+        "3": "Root লাগে 1024-এর নিচের port-এ listen করতে; 8080-এ লাগে না, আর ভেতরে তো চলছেই।"
+      }
+    },
+    {
+      "id": "sd-day-002-q38",
+      "difficulty": "medium",
+      "question": "রাত ৯টায় আপনার website-এর latency দ্বিগুণ হয়ে যায়, যদিও server, user আর দূরত্ব একই। চার উৎসের মধ্যে কোনটা সবচেয়ে সম্ভাব্য দোষী?",
+      "options": [
+        "Propagation delay, কারণ ভিড়ের সময় ISP traffic অনেক দূরের ঘুরপথে পাঠায়",
+        "Transmission delay, কারণ রাতে মানুষ video বেশি দেখে, তাই প্রতিটা packet বড় হয়ে যায়",
+        "Processing delay, কারণ রাতে server-এর code নিজে থেকেই ধীরে চলে",
+        "Queuing delay, ভিড়ের সময় router বা server-এ লাইনে অপেক্ষা"
+      ],
+      "correctIndex": 3,
+      "explanation": "দূরত্ব একই হলে propagation বদলায় না। ভিড়ের সময় ISP-র link, router আর server-এ লাইন লম্বা হয়, তাই queuing delay বাড়ে। Server ব্যস্ত থাকলে processing-ও বাড়তে পারে।",
+      "whyWrong": {
+        "0": "ঘুরপথ মাঝে মাঝে হয়, কিন্তু রোজ নির্দিষ্ট সময়ে দ্বিগুণ হওয়ার সাধারণ কারণ ভিড়ে লাইনে অপেক্ষা।",
+        "1": "Packet-এর সর্বোচ্চ আকার (MTU) বদলায় না; বেশি data মানে বেশি packet, যারা ভিড়ে লাইনে দাঁড়ায়।",
+        "2": "Code-এর গতি সময়ের সাথে বদলায় না; ভিড়ে বাড়ে লাইনে অপেক্ষার সময়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q39",
+      "difficulty": "medium",
+      "question": "একটা 2 GB-র জনপ্রিয় open-source ISO file একই দিনে লাখো মানুষ নামাবে। Peer-to-peer distribution এখানে কেন কার্যকর হতে পারে?",
+      "options": [
+        "P2P-তে প্রতিটা user কাছের একটা server থেকে নামায়, তাই দূরত্ব কমে",
+        "P2P-তে NAT-এর কোনো সমস্যা নেই, তাই প্রতিটা peer অন্য সব peer-এর সাথে সহজেই সরাসরি যুক্ত হয়",
+        "যারা নামাচ্ছে তারাই টুকরো অন্যকে দেয়, তাই user বাড়লে মোট upload capacity-ও বাড়ে",
+        "P2P-তে কোনো server-ই লাগে না, এমনকি peer খুঁজে পেতেও না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Client-server-এ সব download এক server-এর bandwidth থেকে যায়, তাই user বাড়লে চাপ বাড়ে। BitTorrent-এর মতো P2P-তে প্রত্যেক downloader আবার uploader। জনপ্রিয় file তাই বরং আরও দ্রুত ছড়ায়।",
+      "whyWrong": {
+        "0": "এটা CDN-এর বর্ণনা; P2P-তে user-রা একে অপরের কাছ থেকে নেয়।",
+        "1": "NAT P2P-র অন্যতম বড় সমস্যা, NAT traversal লাগে।",
+        "3": "বাস্তবে peer খুঁজতে tracker বা অন্য কৌশল লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q40",
+      "difficulty": "medium",
+      "question": "API: GET /orders?userId=42। Server query-তে যে userId আসে তার order ফেরত দেয়। একজন user userId=43 লিখে অন্যের order দেখে ফেলল। সঠিক সমাধান কী?",
+      "options": [
+        "userId-কে সংখ্যার বদলে লম্বা random string বানানো, তাহলে কেউ অনুমান করতে পারবে না",
+        "UserId request থেকে না নিয়ে server যাচাই করা token থেকে বের করবে",
+        "Frontend থেকে userId field লুকিয়ে ফেলা, যাতে user সেটা বদলানোর সুযোগ না পায়",
+        "GET-এর বদলে POST ব্যবহার করা, কারণ POST request-এর data বদলানো যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Client-এর পাঠানো পরিচয় বিশ্বাস করা যায় না। Server login token যাচাই করে নিজেই জানবে user কে। তারপর অনুমতি দেখে শুধু তার data দেবে, যাতে request-এ কী লেখা তা কোনো ব্যাপার না।",
+      "whyWrong": {
+        "0": "অনুমান কঠিন হলেও এটা লুকানো, যাচাই না; কোনোভাবে id জানলেই সমস্যা থাকবে।",
+        "2": "লুকানো field-ও curl বা devtools দিয়ে বদলানো যায়।",
+        "3": "POST body-ও client-এর নিয়ন্ত্রণে, সহজেই বদলানো যায়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q41",
+      "difficulty": "hard",
+      "question": "আপনার server US East-এ, ঢাকা থেকে RTT 220 ms। Singapore-এ সরালে RTT 60 ms হয়। প্রথম byte পেতে 3টা round trip লাগে (TCP, TLS, request)। প্রতিটা নতুন visitor-এর প্রথম byte-এ কত সময় বাঁচবে?",
+      "options": ["160 ms", "240 ms", "480 ms", "960 ms"],
+      "correctIndex": 2,
+      "explanation": "আগে 3 × 220 = 660 ms, পরে 3 × 60 = 180 ms। পার্থক্য 480 ms, শুধু region বদলে। Round trip যত বেশি, দূরত্বের খরচ তত গুণ হয়।",
+      "whyWrong": {
+        "0": "এটা শুধু একটা round trip-এর পার্থক্য; তিনটা round trip ধরতে হবে।",
+        "1": "এখানে RTT-কে এক দিকের সময় ধরে অর্ধেক করা হয়েছে।",
+        "3": "RTT আগেই যাওয়া-আসা ধরে, আবার দ্বিগুণ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q42",
+      "difficulty": "hard",
+      "question": "ঢাকা থেকে US East প্রায় 12,500 km ধরুন, fiber-এ আলো 200,000 km/s। Page-এর প্রথম byte-এ পরপর 3টা round trip লাগলে, cable সরলরেখায় গেলেও কমপক্ষে কত সময় লাগবে?",
+      "options": ["375 ms", "187.5 ms", "125 ms", "62.5 ms"],
+      "correctIndex": 0,
+      "explanation": "এক দিক = 12,500 ÷ 200,000 = 62.5 ms, RTT = 125 ms। তিনটা round trip = 375 ms। এটা পদার্থবিজ্ঞানের নিচের সীমা, বাস্তবে আরও বেশি।",
+      "whyWrong": {
+        "1": "এখানে প্রতিটা round trip-কে এক দিকের সময় ধরা হয়েছে।",
+        "2": "এটা মাত্র একটা RTT, তিনটা round trip লাগে।",
+        "3": "এটা এক দিকের সময়, তাও একবারের।"
+      }
+    },
+    {
+      "id": "sd-day-002-q43",
+      "difficulty": "hard",
+      "question": "একটা 1,500-byte packet 12 Mbps link-এ পাঠানো হলো, link-এর দৈর্ঘ্য 1,000 km (fiber, 200,000 km/s)। Queuing আর processing বাদ দিলে এক দিকে মোট delay কত?",
+      "options": [
+        "প্রায় 1 ms, কারণ propagation শুধু খুব লম্বা link-এ হিসাব করতে হয়",
+        "প্রায় 5 ms, কারণ transmission delay সবসময় এত ছোট যে বাদ দেওয়া যায়",
+        "প্রায় 125 ms, কারণ 1,500 byte কে 12-এ ভাগ করলে 125 আসে",
+        "প্রায় 6 ms (transmission 1 ms + propagation 5 ms)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Transmission = 1,500 × 8 bit ÷ 12,000,000 bit/s = 1 ms। Propagation = 1,000 ÷ 200,000 s = 5 ms। Queuing আর processing বাদে এক দিকে প্রায় 6 ms।",
+      "whyWrong": {
+        "0": "1,000 km-এ propagation 5 ms, যেটা transmission-এর চেয়েও বড়।",
+        "1": "এখানে transmission 1 ms, মোটের তুলনায় উপেক্ষার মতো না।",
+        "2": "Byte-কে bit-এ রূপান্তর না করে আর একক না মিলিয়ে ভাগ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q44",
+      "difficulty": "hard",
+      "question": "10.0.0.0/8 private range-এ মোট কতগুলো IPv4 address আছে?",
+      "options": [
+        "2^8, মানে 256টা, কারণ /8 মানে ৮টা address",
+        "2^24, মানে প্রায় 1 কোটি 67 লাখ (16,777,216)",
+        "2^32, মানে পুরো IPv4-এর সব address, প্রায় ৪৩০ কোটি",
+        "2^16, মানে 65,536টা, কারণ ৩২-কে ভাগ করলে ১৬ আসে"
+      ],
+      "correctIndex": 1,
+      "explanation": "IPv4 address 32 bit। /8 মানে প্রথম 8 bit network-এর জন্য স্থির, বাকি 24 bit host-এর। তাই 2^24 = 16,777,216টা address। Subnet-এর বিস্তারিত হিসাব Day 38-এ।",
+      "whyWrong": {
+        "0": "/8 মানে প্রথম ৮ bit স্থির, বাকি ২৪ bit বদলাতে পারে।",
+        "2": "পুরো IPv4 হলো 2^32; /8 তার মাত্র 1/256 ভাগ।",
+        "3": "Host bit হলো 32 − 8 = 24, ভাগ না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q45",
+      "difficulty": "hard",
+      "question": "একটা Linux client machine (default ephemeral range 32768–60999) একটা নির্দিষ্ট server IP:443-এ একসাথে কতগুলো আলাদা TCP connection খুলতে পারবে, শুধু port-এর হিসাবে?",
+      "options": [
+        "28,232টা, কারণ ওই range-এ এতগুলো ephemeral port আছে",
+        "65,536টা, কারণ port ১৬-bit, তাই সব port-ই client ব্যবহার করতে পারে",
+        "মাত্র 1টা, কারণ server-এর port 443 একটাই, তাই একটার বেশি connection হয় না",
+        "সীমাহীন, কারণ প্রতিটা connection-এর জন্য OS নতুন port নম্বর বানাতে পারে"
+      ],
+      "correctIndex": 0,
+      "explanation": "একই client IP থেকে একই server IP:port-এ connection আলাদা হয় শুধু client port দিয়ে। 60999 − 32768 + 1 = 28,232। এজন্যই খুব বেশি outbound connection রাখা proxy বা load test-এ port ফুরিয়ে যাওয়ার সমস্যা দেখা যায়।",
+      "whyWrong": {
+        "1": "Client সাধারণত শুধু ephemeral range থেকে port নেয়, সব 65,536 না।",
+        "2": "Server port একই হলেও client port আলাদা হলে connection আলাদা হয়।",
+        "3": "Port ১৬-bit সংখ্যা, আর ephemeral range নির্দিষ্ট, তাই সীমা আছে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q46",
+      "difficulty": "hard",
+      "question": "আপনার একটা server সেকেন্ডে 500টা request সামলাতে পারে। 30,000 active user প্রত্যেকে গড়ে প্রতি 60 সেকেন্ডে একটা request পাঠায়। User দ্বিগুণ হলে কী হবে?",
+      "options": [
+        "এখন 30,000 req/s, তাই server আগেই ভেঙে পড়ার কথা; user দ্বিগুণ হলেও আর নতুন কোনো পার্থক্য দেখা যাবে না",
+        "এখন মাত্র 50 req/s, তাই দ্বিগুণ হলেও server-এর অনেক জায়গা বাকি থাকবে",
+        "এখন ঠিক 500 req/s, সীমায়; দ্বিগুণে 1,000 req/s, তাই queuing বেড়ে latency বাড়বে বা request fail করবে",
+        "Request সংখ্যা user-এর উপর নির্ভর করে না, তাই দ্বিগুণ user-এও load একই থাকবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "30,000 ÷ 60 = 500 req/s, ঠিক server-এর সীমায়। User দ্বিগুণে 1,000 req/s, capacity-র দ্বিগুণ। এক server-এর এই সীমাই Day 5 (Scalability) আর Day 9 (Load Balancer)-এর কারণ।",
+      "whyWrong": {
+        "0": "User সংখ্যাকে প্রতি সেকেন্ডের request ধরা হয়েছে; প্রতি 60 s-এ একটা মানে 500 req/s।",
+        "1": "30,000 ÷ 60 = 500, 50 না; হিসাবে ১০ গুণ ভুল হয়েছে।",
+        "3": "প্রতি user নির্দিষ্ট হারে request পাঠালে user বাড়লে load সরাসরি বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q47",
+      "difficulty": "hard",
+      "question": "প্রতি রাতে ঢাকা থেকে Singapore-এ 100 MB backup যায় (RTT ~60 ms)। Link 100 Mbps থেকে 1 Gbps করলে backup-এর সময়ে বড় পার্থক্য হবে কি?",
+      "options": [
+        "না, কারণ latency শুধু দূরত্বের উপর নির্ভর করে, তাই bandwidth বাড়িয়ে কিছুই হবে না",
+        "হ্যাঁ, এখানে transmission (800 Mbit) মূল খরচ: ~8 s থেকে ~0.8 s হবে",
+        "না, কারণ 60 ms RTT-র জন্য সময় সবসময় 60 ms-এর কাছাকাছিই থাকবে",
+        "হ্যাঁ, কারণ bandwidth 10 গুণ হলে RTT-ও 10 গুণ কমে 6 ms হবে, তাই সব দ্রুত"
+      ],
+      "correctIndex": 1,
+      "explanation": "100 MB = 800 Mbit। 100 Mbps-এ ~8 s, 1 Gbps-এ ~0.8 s। 60 ms RTT এর তুলনায় ছোট। তাই বড় transfer bandwidth-bound, ছোট API call latency-bound; কোনটা কোন ক্ষেত্রে, সেটা চেনাই আসল দক্ষতা।",
+      "whyWrong": {
+        "0": "ছোট request-এর জন্য কথাটা ঠিক, কিন্তু বড় transfer-এ transmission-ই মূল।",
+        "2": "100 MB তুলতেই কয়েক সেকেন্ড লাগে, শুধু RTT দিয়ে সময় হিসাব হয় না।",
+        "3": "Bandwidth RTT কমায় না; RTT দূরত্বের উপর নির্ভর করে, কমে transmission।"
+      }
+    },
+    {
+      "id": "sd-day-002-q48",
+      "difficulty": "hard",
+      "question": "একটা submarine cable মেরামতে বন্ধ। বাংলাদেশে Internet পুরো বন্ধ হলো না, কিন্তু বিদেশের website ধীর হলো। সবচেয়ে ভালো ব্যাখ্যা কী?",
+      "options": [
+        "বাকি cable-এ packet-এর আকার ছোট করতে হয়, তাই একই data-র জন্য বেশি packet লাগে",
+        "সব traffic satellite-এ চলে গেল, আর satellite link-এ HTTP ঠিকমতো চলে না বলে website ধীর",
+        "Cable বন্ধ হলে BGP কাজ করা থামিয়ে দেয়, তাই প্রতিটা packet এলোমেলো পথ খোঁজে",
+        "Traffic বাকি cable-এ সরে গেল, কিন্তু capacity কমায় ভিড়ে queuing আর packet loss বাড়ল"
+      ],
+      "correctIndex": 3,
+      "explanation": "Internet-এ একাধিক পথ থাকায় routing অন্য cable-এ সরে যায়, তাই পুরো বন্ধ হয় না। কিন্তু কম capacity-তে একই traffic মানে ভিড়। ফলে queuing delay আর packet loss বাড়ে, TCP retransmit করে, আর সব ধীর লাগে।",
+      "whyWrong": {
+        "0": "MTU cable বন্ধ হওয়ায় বদলায় না; সমস্যা মোট capacity কমে ভিড় বাড়া।",
+        "1": "বাকি cable-এ traffic সরে যায়, আর satellite-এও HTTP চলে।",
+        "2": "BGP থামে না; বরং BGP-ই traffic বাকি পথগুলোতে সরিয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q49",
+      "difficulty": "hard",
+      "question": "Fraud team চায় এক IP থেকে দিনে 5টার বেশি account খোলা হলে সেই IP স্থায়ীভাবে ban করতে। বাংলাদেশের mobile user-দের কথা ভেবে সবচেয়ে ভালো পরামর্শ কী?",
+      "options": [
+        "নিয়মটা ঠিক আছে, কারণ প্রতিটা mobile phone-এর একটা স্থায়ী, অনন্য public IP থাকে",
+        "সীমাটা 5 থেকে 50 করলেই সমস্যা মিটে যাবে, কারণ এক IP-তে কখনো 50 জনের বেশি থাকে না",
+        "Private IP দিয়ে ban করুন, কারণ server প্রতিটা phone-এর 192.168.x.x ঠিকানা দেখতে পায়",
+        "IP-কে একমাত্র ভিত্তি না করে device, phone যাচাই আর আচরণ মেলান; IP শুধু একটা সংকেত"
+      ],
+      "correctIndex": 3,
+      "explanation": "CGNAT-এ হাজারো নিরীহ user একই public IP শেয়ার করতে পারে, আর একটা ban তাদের সবাইকে আটকাবে। Server client-এর private IP দেখতেও পায় না। তাই একাধিক সংকেত মিলিয়ে সিদ্ধান্ত নেওয়া নিরাপদ।",
+      "whyWrong": {
+        "0": "CGNAT-এ অনেক phone একই public IP শেয়ার করে, আর IP বদলায়ও।",
+        "1": "CGNAT-এ এক IP-র পেছনে এর চেয়ে অনেক বেশি user থাকতে পারে।",
+        "2": "NAT-এর কারণে server client-এর private IP দেখে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q50",
+      "difficulty": "hard",
+      "question": "traceroute কিভাবে পথের প্রতিটা router-এর ঠিকানা জানতে পারে?",
+      "options": [
+        "প্রতিটা router-এর কাছে আলাদা করে HTTP request পাঠিয়ে তার নাম আর ঠিকানা একটা একটা করে জিজ্ঞেস করে নেয়",
+        "TTL 1, 2, 3... দিয়ে packet পাঠায়; যেখানে TTL শূন্য হয়, সেই router \"time exceeded\" জানায়",
+        "প্রতিটা router packet-এর header-এ নিজের IP যোগ করে, destination সেই তালিকা ফেরত পাঠায়",
+        "DNS-এর কাছে জিজ্ঞেস করে domain পর্যন্ত কোন কোন router আছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা router TTL এক কমায়, শূন্য হলে packet ফেলে দেয় আর ICMP time exceeded বার্তা পাঠায়। traceroute TTL 1 দিয়ে প্রথম router, 2 দিয়ে দ্বিতীয়টা, এভাবে খুঁজে বের করে। কিছু router উত্তর না দিলে * * * দেখায়।",
+      "whyWrong": {
+        "0": "traceroute HTTP ব্যবহার করে না, TTL শেষ হওয়ার উত্তর কাজে লাগায়।",
+        "2": "IP header-এ পথের router-দের তালিকা জমা হয় না; traceroute TTL শেষের উত্তর কাজে লাগায়।",
+        "3": "DNS নাম থেকে IP দেয়, পথের router-দের তালিকা দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q51",
+      "difficulty": "hard",
+      "question": "দুই প্রান্ত থেকে traceroute চালিয়ে দেখলেন, ঢাকা→server আর server→ঢাকা পথের router-গুলো আলাদা। এটা কী নির্দেশ করে?",
+      "options": [
+        "পথ আলাদা মানে মাঝপথে কেউ নিশ্চয়ই packet আটকে বদলে দিচ্ছে, অর্থাৎ attack চলছে",
+        "TCP connection ভেঙে গেছে, কারণ TCP-তে যাওয়া-আসার পথ এক হতেই হয়",
+        "Asymmetric routing স্বাভাবিক, কারণ প্রতিটা network নিজের নীতিতে পরের hop বাছে",
+        "একটা প্রান্তের traceroute ভুল, কারণ যাওয়া-আসার পথ সবসময় এক"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা AS নিজের BGP নীতি আর চুক্তি অনুযায়ী route বাছে, তাই দুই দিকের পথ আলাদা হতে পারে। একে asymmetric routing বলে। Latency debug করতে তাই দুই দিক থেকেই দেখা ভালো।",
+      "whyWrong": {
+        "0": "পথ আলাদা হওয়া স্বাভাবিক routing আচরণ, নিজে থেকে attack-এর প্রমাণ না।",
+        "1": "TCP-র জন্য একই পথ লাগে না, packet যেকোনো পথে আসতে পারে।",
+        "3": "যাওয়া-আসার পথ এক হওয়ার কোনো নিশ্চয়তা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-002-q52",
+      "difficulty": "hard",
+      "question": "একটা multiplayer game প্রতি 50 ms-এ player-এর অবস্থান পাঠায়। একজন engineer TCP-তে সরিয়ে নিতে চান যাতে কোনো update না হারায়। আপনার আপত্তি কী?",
+      "options": [
+        "একটা হারানো packet-এর জন্য TCP পরের সব update আটকে রাখে, অথচ পুরনো অবস্থান তখন অর্থহীন",
+        "TCP connection 50 ms-এর বেশি খোলা রাখা যায় না, তাই প্রতি update-এ নতুন handshake লাগবে",
+        "TCP সেকেন্ডে সীমিত কয়েকটা packet পাঠাতে দেয়, তাই 20 update/s ধরবে না",
+        "TCP-তে encryption বাধ্যতামূলক, তাই game-এর প্রতিটা ছোট update পাঠাতেও অনেক বেশি সময় লাগবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "TCP ক্রম বজায় রাখে, তাই একটা packet হারালে পরের সব packet সেটার জন্য অপেক্ষা করে (head-of-line blocking)। দ্রুত বদলানো অবস্থানে নতুন update-ই আসল, পুরনোটা আবার আনার মানে নেই। তাই real-time game সাধারণত UDP-র উপর নিজের হালকা নিয়ম বানায়।",
+      "whyWrong": {
+        "1": "TCP connection যতক্ষণ দরকার খোলা থাকে; সমস্যা হলো হারানো packet-এর জন্য অপেক্ষা।",
+        "2": "20টা ছোট update/s TCP সহজেই পাঠায়; সমস্যা ক্রম রাখতে গিয়ে আটকে থাকা।",
+        "3": "TCP নিজে encryption বাধ্য করে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q53",
+      "difficulty": "hard",
+      "question": "একটা online game-এ client server-কে পাঠায়: \"আমি শত্রুকে 9999 damage দিলাম\"। কিছু player cheat করছে। মৌলিক সমাধান কী?",
+      "options": [
+        "Client code obfuscate করা, যাতে কেউ বুঝতে না পারে কোথায় damage হিসাব হয়",
+        "Client শুধু input পাঠাবে; damage, অবস্থান আর ফল server নিজের নিয়মে হিসাব করবে",
+        "Damage-এর সংখ্যা encrypt করে পাঠানো, তাহলে কেউ আর কখনো নকল সংখ্যা পাঠাতে পারবে না",
+        "যারা বেশি damage দেয় তাদের সবাইকে স্বয়ংক্রিয়ভাবে ban করে দেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা server-কে authoritative বানানোর নীতি: client শুধু ইচ্ছা জানায়, ফল ঠিক করে server। Client যা-ই পাঠাক, server নিজের নিয়মে যাচাই করে। এজন্য server কখনো client-এর দাবি অন্ধভাবে বিশ্বাস করে না।",
+      "whyWrong": {
+        "0": "Obfuscation শুধু দেরি করায়; client-এর code শেষ পর্যন্ত user-এর হাতে।",
+        "2": "Encryption key-ও client-এ থাকে, তাই নকল encrypt করা সংখ্যাও পাঠানো যায়।",
+        "3": "ভালো player-ও ban হবে, আর মূল সমস্যা (client-কে বিশ্বাস) থেকেই যায়।"
+      }
+    },
+    {
+      "id": "sd-day-002-q54",
+      "difficulty": "hard",
+      "question": "দুজন user, দুজনেই বাসার NAT-এর পেছনে, WebRTC video call-এ সরাসরি যুক্ত হওয়ার চেষ্টা করছে। কিছু network-এ সরাসরি যোগাযোগ একদমই হচ্ছে না। কী হয়?",
+      "options": [
+        "STUN দিয়েও সরাসরি পথ না হলে TURN server মাঝে থেকে media relay করে",
+        "Call বাতিল হয়ে যায়, কারণ NAT-এর পেছনে কখনোই video call সম্ভব না",
+        "Signaling server দুজনের বাসার router-এ port forwarding নিজে থেকে চালু করে দেয়",
+        "দুজনের private IP বিনিময় করলেই সরাসরি connection হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "NAT বাইরের অচেনা connection ঢুকতে দেয় না। STUN দিয়ে প্রত্যেকে জানে বাইরে থেকে তাকে কোন ঠিকানায় দেখা যায়, আর অনেক সময় এতে সরাসরি পথ হয়। না হলে TURN server relay করে, যেটা আসলে client-server-এ ফিরে যাওয়া।",
+      "whyWrong": {
+        "1": "TURN relay দিয়ে কঠিন NAT-এর পেছনেও call হয়।",
+        "2": "বাইরের server বাসার router-এর settings বদলাতে পারে না; NAT পার হতে STUN/TURN লাগে।",
+        "3": "Private IP Internet-এ route হয় না, ভিন্ন বাসায় কাজে লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-002-q55",
+      "difficulty": "hard",
+      "question": "আপনার app-এ server memory-তে session রাখে, তাই load balancer-এ sticky session (একই user সবসময় একই server-এ) চালু। একজন architect token-ভিত্তিক stateless design-এ যেতে বলছেন। তার যুক্তির সবচেয়ে শক্ত দিক কী?",
+      "options": [
+        "Stateless design-এ database আর লাগেই না, তাই infrastructure খরচ অনেক কমে যায় আর maintenance-ও কমে",
+        "Sticky session-এ user-এর data দুবার save হয়, তাই database-এ duplicate জমে",
+        "Token পাঠালে প্রতিটা request ছোট হয়, তাই network latency অনেক কমে",
+        "Sticky-তে server পড়লে তার user-দের session হারায় আর load অসমান হয়; stateless-এ সেই সমস্যা নেই"
+      ],
+      "correctIndex": 3,
+      "explanation": "Sticky session-এ user একটা নির্দিষ্ট server-এর সাথে বাঁধা। সেই server crash করলে session হারায়, আর জনপ্রিয় server-এ বেশি user জমে load অসমান হয়। Stateless request-এ server যোগ বা বাদ দেওয়া সহজ; Day 14-এ বিস্তারিত।",
+      "whyWrong": {
+        "0": "Stateless মানে request-এর মধ্যে server-এর স্মৃতি না থাকা; database ঠিকই লাগে।",
+        "1": "Sticky session শুধু routing-এর নিয়ম, database-এ duplicate বানায় না।",
+        "2": "Token বরং request-এ একটু data যোগ করে; সুবিধা হলো যেকোনো server request বোঝে।"
+      }
+    },
+    {
+      "id": "sd-day-002-q56",
+      "difficulty": "hard",
+      "question": "একটা flash sale \"রাত 12টায় শেষ\"। Client order-এর সাথে নিজের device-এর সময় পাঠায়, আর server সেটা দেখে ঠিক করে offer চলছে কিনা। সমস্যা কী?",
+      "options": [
+        "কোনো সমস্যা নেই, কারণ phone-এর সময় সবসময় network থেকে আপনা আপনি ঠিক করা থাকে, তাই বদলানো যায় না",
+        "সমস্যা শুধু time zone-এর; সব সময় UTC-তে পাঠালেই ঠিক হয়ে যাবে",
+        "User ঘড়ি পিছিয়ে offer শেষ হওয়ার পরেও কিনতে পারে; server নিজের সময় ব্যবহার করবে",
+        "সমস্যা latency-র; request পৌঁছাতে দেরি হয় বলে সময় একটু ভুল হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Client-এর পাঠানো সময়ও client-এর data, তাই বদলানো যায়। Offer চলছে কিনা, তা server নিজের ঘড়িতে ঠিক করবে। একই নীতি দাম, অনুমতি আর পরিচয়ের জন্যও।",
+      "whyWrong": {
+        "0": "User ঘড়ি নিজে বদলাতে পারে, আর request-এ যেকোনো সময় লিখে পাঠানো যায়।",
+        "1": "UTC-তে পাঠালেও সময়টা client-এর দাবি, বিশ্বাসযোগ্য না।",
+        "3": "মূল সমস্যা দেরি না, বরং client-এর পাঠানো সময় বিশ্বাস করা।"
+      }
+    },
+    {
+      "id": "sd-day-002-q57",
+      "difficulty": "hard",
+      "question": "Thick mobile app-এ user like চাপলে UI সাথে সাথে \"liked\" দেখায় (optimistic update), তারপর request যায়। Server request reject করল (যেমন post মুছে গেছে)। সঠিক আচরণ কী?",
+      "options": [
+        "Client server-এর উত্তরকেই সত্য মানবে: UI আগের অবস্থায় ফিরিয়ে user-কে জানাবে",
+        "Client নিজের দেখানো অবস্থাই রাখবে, কারণ user আগেই liked দেখে ফেলেছে",
+        "Client বারবার একই request পাঠাতে থাকবে যতক্ষণ না server রাজি হয়",
+        "Server-কে client-এর অবস্থা মেনে নিয়ে মুছে যাওয়া post-টা আবার ফিরিয়ে আনতে হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Optimistic UI interaction দ্রুত করে, কিন্তু সত্য data server-এর। Server reject করলে client নিজের অনুমান বাতিল করে server-এর অবস্থায় ফিরে যায়। Thick client মানে বেশি কাজ local-এ, সত্যের মালিকানা না।",
+      "whyWrong": {
+        "1": "Server-এর সত্যের সাথে না মেলালে client ভুল তথ্য দেখাতে থাকবে।",
+        "2": "Server স্থায়ী কারণে reject করলে retry করে কিছু হবে না, শুধু load বাড়বে।",
+        "3": "Server client-এর অবস্থা মেনে নেয় না, সত্য data server-এর।"
+      }
+    },
+    {
+      "id": "sd-day-002-q58",
+      "difficulty": "hard",
+      "question": "Cloud-এ আপনার database server private subnet-এ আছে। এটাকে Internet থেকে security update নামাতে হবে, কিন্তু বাইরে থেকে কেউ যেন সরাসরি connection খুলতে না পারে। কী ব্যবহার করবেন?",
+      "options": [
+        "Database server-কে একটা public IP দিয়ে সব port খুলে দেওয়া, তারপর password শক্ত রাখা",
+        "Database-এর private IP Internet-এ প্রকাশ করে দেওয়া, যাতে update server সরাসরি পৌঁছাতে পারে",
+        "Database-কে public subnet-এ সরিয়ে শুধু update-এর সময় port খোলা, তারপর বন্ধ করা",
+        "NAT gateway: private server বাইরে connection খুলতে পারে, কিন্তু বাইরের connection ঢোকে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "NAT gateway বাসার router-এর মতোই কাজ করে: ভেতর থেকে শুরু হওয়া connection-এর উত্তর ফেরত আনে। বাইরের অচেনা connection-এর জন্য কোনো entry নেই, তাই ঢুকতে পারে না। ফলে update নামানো যায়, server-ও লুকানো থাকে।",
+      "whyWrong": {
+        "0": "Public IP আর খোলা port বাইরের যে কাউকে সরাসরি চেষ্টা করার সুযোগ দেয়।",
+        "1": "Private IP Internet-এ route হয় না, প্রকাশ করেও লাভ নেই।",
+        "2": "সাময়িক হলেও server সরাসরি Internet-এর সামনে আসে, আর হাতে খোলা-বন্ধ করতে ভুল হওয়া সহজ।"
+      }
+    },
+    {
+      "id": "sd-day-002-q59",
+      "difficulty": "hard",
+      "question": "আপনার server-এর log-এ সব request-এর client IP দেখাচ্ছে 10.0.1.5, অথচ user হাজারো। এর কারণ আর আসল client ঠিকানা কোথায় পাবেন?",
+      "options": [
+        "সব user CGNAT-এর পেছনে, তাই ISP সবার জন্য এই একটাই IP দিয়েছে",
+        "Log-এ server-এর নিজের IP লেখা হচ্ছে, কারণ access log destination ঠিকানাই লেখে",
+        "Server proxy বা load balancer-এর পেছনে; proxy-র বসানো X-Forwarded-For-এ আসল IP থাকে",
+        "Client নিজের পাঠানো X-Forwarded-For header-কে সবসময় সত্য ধরে নিন, proxy থাকুক বা না থাকুক"
+      ],
+      "correctIndex": 2,
+      "explanation": "Server-এর কাছে TCP connection আসছে load balancer থেকে, তাই সে proxy-র private IP দেখে। Proxy সাধারণত আসল client IP header-এ (যেমন X-Forwarded-For) যোগ করে। কিন্তু header client-ও বানাতে পারে, তাই শুধু নিজের বিশ্বস্ত proxy-র বসানো অংশ নিতে হবে।",
+      "whyWrong": {
+        "0": "10.0.1.5 একটা RFC 1918 private ঠিকানা, CGNAT-এর public IP না; এটা আপনার নিজের network-এর proxy।",
+        "1": "Access log সাধারণত connection-এর source লেখে; source এখানে load balancer।",
+        "3": "Client নিজেই এই header বানিয়ে পাঠাতে পারে; শুধু বিশ্বস্ত proxy-র বসানো মান বিশ্বাসযোগ্য।"
+      }
+    },
+    {
+      "id": "sd-day-002-q60",
+      "difficulty": "hard",
+      "question": "curl -w দিয়ে একটা API মাপলেন (জমা সময়, সেকেন্ডে): dns 0.02, tcp connect 0.08, tls 0.16, first byte 0.90, total 0.95। কোথায় সবচেয়ে বেশি সময় যাচ্ছে, আর কী আগে দেখবেন?",
+      "options": [
+        "DNS, কারণ এটা প্রথম ধাপ আর তাই সবসময় সবচেয়ে বেশি সময় নেয়",
+        "First byte-এর আগে ~0.74 s, মানে মূলত server processing; code আর DB query আগে দেখুন",
+        "TCP handshake, কারণ connect-এর 0.08 s-ই এখানে চোখে পড়ার মতো সবচেয়ে বড় সংখ্যা",
+        "Download, কারণ total আর first byte-এর পার্থক্যই সবসময় যেকোনো request-এর সবচেয়ে বড় অংশ"
+      ],
+      "correctIndex": 1,
+      "explanation": "সংখ্যাগুলো জমা সময়, তাই ধাপগুলো বিয়োগ করে দেখতে হয়। DNS 0.02, TCP 0.06, TLS 0.08, কিন্তু request পাঠানো থেকে first byte 0.74 s। এক RTT-র বেশি এই সময় মানে server ধীর, network না।",
+      "whyWrong": {
+        "0": "DNS মাত্র 0.02 s, মোটের খুব ছোট অংশ।",
+        "2": "0.08 হলো জমা সময়; TCP-র ভাগ 0.06 s, আর সবচেয়ে বড় ফাঁক first byte-এর আগে।",
+        "3": "এখানে total − first byte মাত্র 0.05 s।"
+      }
+    }
+  ]
+}

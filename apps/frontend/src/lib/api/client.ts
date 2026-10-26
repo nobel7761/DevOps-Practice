@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosInstance } from "axios";
+import { isAuthPath } from "@/lib/auth/auth-paths";
 
 const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
@@ -19,29 +20,12 @@ const getApiBaseUrl = () => {
 const client: AxiosInstance = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 30000,
+  // Session lives in the backend's httpOnly `access_token` cookie.
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-// Request interceptor to add auth token
-client.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken") || localStorage.getItem("token")
-        : null;
-
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
 
 // Response interceptor for error handling
 client.interceptors.response.use(
@@ -53,7 +37,10 @@ client.interceptors.response.use(
       const { status, data } = error.response;
 
       // Log error details in development
-      if (process.env.NODE_ENV === "development") {
+      // (auth 4xx like a wrong password are expected and shown in the form, not logged)
+      const expectedAuthError =
+        status < 500 && String(error.config?.url ?? "").startsWith("/auth/");
+      if (process.env.NODE_ENV === "development" && !expectedAuthError) {
         console.error(`API Error [${status}]:`, {
           url: error.config?.url,
           method: error.config?.method,
@@ -64,14 +51,15 @@ client.interceptors.response.use(
       // Handle specific error statuses
       switch (status) {
         case 401:
-          // Unauthorized - clear tokens and redirect
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("token");
-            // Only redirect if not already on login page
-            if (!window.location.pathname.includes("/login")) {
-              window.location.href = "/login";
-            }
+          // Unauthorized - session missing/expired, send to login (auth pages handle their own 401s)
+          if (
+            typeof window !== "undefined" &&
+            !isAuthPath(window.location.pathname)
+          ) {
+            const next = encodeURIComponent(
+              window.location.pathname + window.location.search,
+            );
+            window.location.href = `/login?next=${next}`;
           }
           break;
         case 403:

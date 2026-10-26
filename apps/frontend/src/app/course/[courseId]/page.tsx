@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import CourseWithLiveProgress from "@/components/modules/CourseWithLiveProgress";
+import CourseScreen from "@/components/modules/course-shell/CourseScreen";
+import { SdCourseScreen } from "@/components/system-design/shell/SdCourseScreen";
+import { SYSTEM_DESIGN_A_Z_COURSE_ID } from "@/lib/data/courses/system-design-a-z";
 import { getCourseEntry } from "@/lib/data/courses/registry";
 
 export default async function CoursePage({
@@ -17,12 +19,18 @@ export default async function CoursePage({
     notFound();
   }
 
+  // System Design A-Z has its own sidebar layout (phases → days).
+  if (entry.id === SYSTEM_DESIGN_A_Z_COURSE_ID) {
+    return <SdCourseScreen />;
+  }
+
   return (
-    <CourseWithLiveProgress
+    <CourseScreen
+      courseId={entry.id}
       course={entry.course}
       externalUrl={entry.externalUrl}
-      defaultMilestoneId={milestone}
-      defaultModuleId={module}
+      milestoneId={milestone}
+      moduleId={module}
     />
   );
 }

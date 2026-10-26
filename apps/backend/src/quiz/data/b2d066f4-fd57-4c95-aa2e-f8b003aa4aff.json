@@ -65,7 +65,7 @@
       "question": "একটা OpenFlow flow rule-এর priority field মূলত কী নিয়ন্ত্রণ করে?",
       "options": [
         "একাধিক rule একই প্যাকেটের সাথে মিললে কোনটা প্রযোজ্য হবে",
-        "প্যাকেটের গতি (speed)",
+        "প্যাকেটের গতি (speed/bandwidth rate) নিয়ন্ত্রণ করে — priority মান যত বেশি, সেই rule-এর সাথে মেলা প্যাকেট তত দ্রুতগতিতে ফরওয়ার্ড হয় বলে ধরা হয়, এবং switch সেই অনুযায়ী bandwidth বরাদ্দ করে দেয়",
         "প্যাকেটের আকার (size)",
         "rule কতদিন সক্রিয় থাকবে"
       ],
@@ -80,7 +80,7 @@
         "প্যাকেট drop হয়ে যায়",
         "switch তার নিজস্ব স্বাভাবিক (traditional) MAC-learning switching logic দিয়ে প্যাকেটটা ফরওয়ার্ড করে",
         "প্যাকেট flood করা হয় বাধ্যতামূলকভাবে",
-        "প্যাকেট controller-এর কাছে পাঠানো হয়"
+        "প্যাকেট controller-এর কাছে পাঠানো হয় (packet-in event তৈরি হয়ে), এবং controller প্রতিটা প্যাকেটের জন্য নতুন flow rule গণনা করে ইনস্টল করে দেয় — অর্থাৎ normal মানে reactive, controller-নির্ভর forwarding"
       ],
       "answerIndex": 1,
       "explanation": "normal action মানে OpenFlow rule না থাকলে switch যেভাবে স্বাভাবিকভাবে (traditional L2 switching) আচরণ করত, সেভাবেই প্যাকেট ফরওয়ার্ড করা।"
@@ -105,7 +105,7 @@
       "options": [
         "Differentiated Services Code Point",
         "Default Service Control Protocol",
-        "Data Stream Control Point",
+        "Data Stream Control Point — IP header-এর একটা পুরনো, deprecated field, যা মূলত TCP stream-এর data transfer rate সরাসরি নিয়ন্ত্রণ করত",
         "Dynamic Service Class Priority"
       ],
       "answerIndex": 0,
@@ -130,7 +130,7 @@
       "question": "mod_nw_tos:184 action কী করে?",
       "options": [
         "প্যাকেটের IP header-এর TOS field-এর মান 184-তে পরিবর্তন করে",
-        "প্যাকেটটা 184 port-এ পাঠায়",
+        "প্যাকেটটা destination port 184-এ পাঠিয়ে দেয়, অর্থাৎ এটা একটা Layer 4 port redirection action, যা TCP/UDP destination port field পরিবর্তন করে প্যাকেট route করে",
         "প্যাকেটটা 184 বার পাঠায়",
         "প্যাকেটের IP address 184 করে দেয়"
       ],
@@ -143,7 +143,7 @@
       "question": "10.0.0.0/24 নোটেশনে '/24' কী বোঝায়?",
       "options": [
         "24-bit subnet mask, অর্থাৎ 10.0.0.0 থেকে 10.0.0.255 পর্যন্ত রেঞ্জ",
-        "24টা host আছে এই নেটওয়ার্কে",
+        "এই নেটওয়ার্কে ঠিক 24টা usable host address আছে, কারণ subnet mask-এর bit সংখ্যা সরাসরি host সংখ্যা নির্দেশ করে, নেটওয়ার্ক রেঞ্জের সাথে এর কোনো সম্পর্ক নেই",
         "24 নম্বর port",
         "এটা 24 ঘণ্টা সক্রিয় থাকবে"
       ],
@@ -157,7 +157,7 @@
       "options": [
         "ARP প্যাকেট (dl_type=0x806 লেখার শর্টকাট হিসেবে)",
         "সব ধরনের প্যাকেট",
-        "শুধু IPv4 প্যাকেট",
+        "শুধু IPv4 প্যাকেট match করে, কারণ arp keyword আসলে dl_type=0x800-এর একটা shortcut, ARP header কোনো আলাদা EtherType ব্যবহার করে না বলে ধরা হয়",
         "কোনো প্যাকেট না, এটা ভুল syntax"
       ],
       "answerIndex": 0,
@@ -170,7 +170,7 @@
       "options": [
         "h3 host থেকে h1-এর IP address-এ ICMP ping পাঠিয়ে connectivity পরীক্ষা করে",
         "h1-কে h3-তে রূপান্তর করে",
-        "h1 আর h3-এর মধ্যে একটা নতুন link তৈরি করে",
+        "h1 আর h3-এর মধ্যে switch-এ একটা নতুন physical link/cable তৈরি করে দেয়, যা আগে থেকে টপোলজিতে সংজ্ঞায়িত ছিল না, এবং এই নতুন link দিয়েই ভবিষ্যতের সব ট্র্যাফিক পাঠানো হয়",
         "শুধু h3-এর নিজের IP দেখায়"
       ],
       "answerIndex": 0,
@@ -184,7 +184,7 @@
         "একটা switch, তিনটা host — L2 lab-এর মতোই একই টপোলজি",
         "দুইটা switch, দুইটা host",
         "একটাও switch নেই",
-        "পাঁচটা host, একটা switch"
+        "পাঁচটা host আর একটা switch নিয়ে গঠিত একটা টপোলজি, যেখানে প্রতিটা host আলাদা subnet-এ থাকে এবং switch-টা inter-subnet routing-ও করে"
       ],
       "answerIndex": 0,
       "explanation": "এই lab একই sudo mn --topo=single,3 ... টপোলজি ব্যবহার করে — একটা switch (s1) আর তিনটা host (h1, h2, h3)।"
@@ -214,7 +214,12 @@
       "id": "69e0e99023b200e2a4159f15-17",
       "difficulty": "easy",
       "question": "DSCP দিয়ে সর্বোচ্চ কতগুলো আলাদা QoS class define করা যায়?",
-      "options": ["64টা (2^6)", "8টা", "16টা", "256টা"],
+      "options": [
+        "64টা (2^6)",
+        "8টা",
+        "16টা",
+        "256টা (2^8), কারণ পুরো TOS byte-ই (সব 8 bit) DSCP-এর জন্য বরাদ্দ করা হয়, ECN বলে আলাদা কিছু এই হিসাবে নেই"
+      ],
       "answerIndex": 0,
       "explanation": "6-bit DSCP ফিল্ড দিয়ে 2^6 = 64টা আলাদা মান (class) প্রকাশ করা যায়।"
     },
@@ -233,7 +238,7 @@
       "options": [
         "নির্দিষ্ট port-এ পাঠায় (প্রতিটা destination host-এর জন্য আলাদা rule)",
         "সবসময় flood করে, L2 lab-এর মতোই",
-        "কোথাও পাঠায় না, ARP প্যাকেট drop করে",
+        "কোথাও পাঠায় না — এই lab-এ সব ARP প্যাকেট ইচ্ছাকৃতভাবে drop করে দেওয়া হয়, কারণ IP rule-গুলো নিজে থেকেই address resolution করে ফেলে বলে ধরে নেওয়া হয়",
         "শুধু controller-এর কাছে পাঠায়"
       ],
       "answerIndex": 0,
@@ -245,7 +250,7 @@
       "question": "এই lab-এ কেন ARP-কে flood না করে নির্দিষ্ট per-host port-এ পাঠানো হয়েছে?",
       "options": [
         "বড় নেটওয়ার্কে অপ্রয়োজনীয় সব-port broadcast এড়িয়ে efficiency বাড়ানোর জন্য",
-        "কারণ flood action Layer 3 lab-এ ব্যবহার করা যায় না",
+        "কারণ flood action টেকনিক্যালি শুধুমাত্র Layer 2 lab-এর জন্যই সংরক্ষিত, OpenFlow স্পেসিফিকেশন অনুযায়ী Layer 3 match field (nw_ প্রিফিক্স) থাকা rule-এ flood action ব্যবহার করাই সম্ভব না",
         "কারণ flood করলে ARP কাজই করবে না",
         "কারণ এটা নিরাপত্তাজনিত কারণে বাধ্যতামূলক"
       ],
@@ -258,7 +263,7 @@
       "question": "priority=500 (general subnet rule) আর priority=800 (h3-specific rule) — h3 থেকে subnet-এ পাঠানো একটা প্যাকেটের জন্য কোনটা প্রযোজ্য হবে?",
       "options": [
         "priority=800 rule-টাই, কারণ এটার priority বেশি এবং এটাও match করে",
-        "priority=500 rule-টাই, কারণ এটা আগে লেখা হয়েছিল",
+        "priority=500 rule-টাই প্রযোজ্য হবে, কারণ এটা flow table-এ আগে যোগ করা হয়েছিল এবং OpenFlow-তে rule-এর প্রবেশ ক্রম (insertion order) priority মানের চেয়ে বেশি গুরুত্বপূর্ণ বিবেচিত হয়",
         "দুটো rule-ই সমানভাবে apply হবে",
         "কোনোটাই apply হবে না, conflict হয়ে প্যাকেট drop হবে"
       ],
@@ -273,7 +278,7 @@
         "দুইটা কাজ — প্রথমে TOS field 184-তে পরিবর্তন, তারপর normal switching দিয়ে forward",
         "একটাই কাজ — শুধু TOS পরিবর্তন, forward হয় না",
         "একটাই কাজ — শুধু forward, TOS পরিবর্তন হয় না",
-        "তিনটা কাজ — TOS পরিবর্তন, flood, আর drop"
+        "তিনটা আলাদা কাজ হয় — প্রথমে TOS field পরিবর্তন, তারপর প্যাকেটটা সব port-এ flood করা হয়, এবং শেষে একটা কপি controller-এর কাছেও পাঠানো হয় লগিং-এর জন্য"
       ],
       "answerIndex": 0,
       "explanation": "comma দিয়ে আলাদা করা একাধিক action ক্রমানুসারে প্রয়োগ হয় — প্রথমে mod_nw_tos:184 দিয়ে TOS পরিবর্তন, তারপর normal দিয়ে স্বাভাবিকভাবে ফরওয়ার্ড।"
@@ -284,7 +289,7 @@
       "question": "DSCP 46 সেট করতে কেন decimal 184 ব্যবহার করা হলো, 46 নয়?",
       "options": [
         "DSCP (6 bit) TOS byte-এর মধ্যে বাম দিকের 6 bit-এ বসে, তাই DSCP মান 46-কে 2 bit বামে shift করলে 184 হয়, যা TOS field-এ বসাতে হয়",
-        "184 একটা ভুল, আসলে 46-ই লেখা উচিত ছিল",
+        "184 আসলে একটা সম্পূর্ণ আলাদা, নিজস্ব DSCP value, যার সাথে 46-এর কোনো গাণিতিক সম্পর্ক নেই — এটা শুধু ইচ্ছামতো একটা ভিন্ন QoS class বেছে নেওয়ার উদাহরণ মাত্র, shift-এর হিসাব এখানে প্রযোজ্য না",
         "184 হলো একটা আলাদা, সম্পূর্ণ ভিন্ন DSCP value",
         "এটা শুধু ঐতিহ্যগতভাবে লেখা হয়, কোনো গাণিতিক কারণ নেই"
       ],
@@ -298,7 +303,7 @@
       "options": [
         "প্রথমটা শুধু ঠিক ওই একটা IP address-কেই match করে, দ্বিতীয়টা পুরো subnet-এর (10.0.0.0–10.0.0.255) যেকোনো IP-কে match করে",
         "দুটোই আসলে একই রেঞ্জ কভার করে",
-        "প্রথমটা আসলে ভুল syntax",
+        "দ্বিতীয়টা (/24) আসলে শুধুমাত্র broadcast address (10.0.0.255)-কেই match করে, বাকি কোনো host IP-কে match করে না, কারণ CIDR notation মূলত একটা subnet-এর শেষ address নির্দেশ করতে ব্যবহৃত হয়",
         "দ্বিতীয়টা শুধু broadcast address-কে match করে"
       ],
       "answerIndex": 0,
@@ -311,7 +316,7 @@
       "options": [
         "switch তার নিজস্ব ঐতিহ্যবাহী MAC-learning ও forwarding logic ব্যবহার করে, যেমনটা একটা সাধারণ (non-SDN) Ethernet switch করত",
         "কোনো সিদ্ধান্তই নেয় না, প্যাকেট drop হয়ে যায়",
-        "সবসময় flood করে",
+        "সবসময় সব port-এ flood করে প্যাকেট পাঠায়, কারণ normal action মানে switch কোনো MAC learning table ব্যবহার না করে, নিরাপদ থাকার জন্য প্রতিটা প্যাকেট সব সংযুক্ত port-এ broadcast করে দেয়",
         "controller-কে জিজ্ঞেস করে প্রতিবার"
       ],
       "answerIndex": 0,
@@ -323,7 +328,7 @@
       "question": "L2 lab-এ ARP flood করা হতো, কিন্তু এই L3 lab-এ প্রতিটা host-এর জন্য আলাদা output-port rule দেওয়া হয়েছে — এই পার্থক্যের মূল কারণ কী বলা যায়?",
       "options": [
         "এই lab-এ দেখানো হয়েছে flood-এর বিকল্প হিসেবে, জানা destination-ভিত্তিক নির্দিষ্ট (targeted) ARP handling কীভাবে অধিক efficient হতে পারে",
-        "কারণ L3 lab-এ ARP আদৌ সমর্থিত না",
+        "কারণ flood action টেকনিক্যালিভাবে শুধু L2 lab-এর syntax-এই বৈধ; L3 lab-এ nw_ প্রিফিক্সযুক্ত match field থাকলে flood action switch প্রত্যাখ্যান করে, তাই বাধ্য হয়েই per-host output ব্যবহার করতে হয়েছে",
         "কারণ flood শুধু L2 lab-এই সম্ভব, syntax-গতভাবে ভিন্ন",
         "এলোমেলোভাবে পছন্দ করা হয়েছে, কোনো কারণ নেই"
       ],
@@ -336,7 +341,7 @@
       "question": "priority=500 rule-এ dl_type=0x800 কেন উল্লেখ করা হয়েছে?",
       "options": [
         "যাতে এই rule শুধুমাত্র IPv4 প্যাকেটের সাথেই মেলে, ARP-এর মতো অন্য ধরনের Ethernet ট্র্যাফিকের সাথে না মেলে",
-        "কারণ এটা ছাড়া nw_src/nw_dst field ব্যবহারই করা যায় না বলে syntax বাধ্য করে",
+        "এটা ছাড়া nw_src/nw_dst field আদৌ ব্যবহারই করা সম্ভব না — OpenFlow syntax বাধ্যতামূলকভাবে dl_type ছাড়া কোনো Layer 3 field লিখতে দেয় না, এটা একটা hard syntax requirement, semantic স্পষ্টতার বিষয় না",
         "কারণ এটা ARP প্যাকেট আলাদা করতে কোনো ভূমিকা রাখে না",
         "কারণ এটা শুধু decoration, বাদ দিলেও কোনো পার্থক্য হয় না"
       ],
@@ -351,7 +356,7 @@
         "h3 থেকে আসা IP প্যাকেটের TOS field-এ একটা উচ্চ-priority DSCP মান বসানো হয়, যাতে নেটওয়ার্কের বাকি অংশ (যদি QoS-aware হয়) সেটাকে অগ্রাধিকার দিয়ে handle করতে পারে",
         "h3-এর MAC address স্থায়ীভাবে পরিবর্তন করা হয়",
         "h3-এর জন্য একটা আলাদা switch বরাদ্দ করা হয়",
-        "h3-এর bandwidth সম্পূর্ণ unlimited করে দেওয়া হয়"
+        "h3-এর জন্য নেটওয়ার্কে একটা dedicated, guaranteed, সম্পূর্ণ unlimited bandwidth চ্যানেল বরাদ্দ করে দেওয়া হয়, যা অন্য কোনো host-এর ট্র্যাফিক দিয়ে কখনো প্রভাবিত হয় না"
       ],
       "answerIndex": 0,
       "explanation": "এই lab-এ 'prioritize' করার মানে হলো প্যাকেটের IP header-এ QoS marking (DSCP via TOS) বসানো — এটা একটা signal, সরাসরি bandwidth guarantee নয়।"
@@ -362,7 +367,7 @@
       "question": "DSCP, TOS field-এর সাথে কীভাবে সম্পর্কিত?",
       "options": [
         "TOS byte-এর (৮ bit) প্রথম ৬ bit DSCP-কে বরাদ্দ, বাকি ২ bit ECN-এর জন্য",
-        "DSCP আর TOS সম্পূর্ণ আলাদা দুইটা header, কোনো সম্পর্ক নেই",
+        "DSCP আসলে TOS byte-এর সম্পূর্ণ বাইরে, IP header-এর একটা আলাদা, স্বতন্ত্র 8-bit field, যা TOS-এর সাথে একইসাথে কোনোভাবেই coexist করে না",
         "DSCP পুরো TOS byte-এর বাইরে একটা আলাদা field",
         "TOS-এর সব bit-ই শুধু DSCP-এর জন্য বরাদ্দ"
       ],
@@ -375,7 +380,7 @@
       "question": "VoIP-এর মতো real-time ট্র্যাফিকে কেন EF (DSCP 46)-এর মতো উচ্চ-priority marking ব্যবহার করা হয়?",
       "options": [
         "real-time ট্র্যাফিক delay/jitter-এর প্রতি অত্যন্ত sensitive, তাই দ্রুত ও কম বিলম্বে ডেলিভারির জন্য priority marking দরকার",
-        "কারণ VoIP প্যাকেট আকারে সবচেয়ে বড়",
+        "VoIP প্যাকেট সবসময় নেটওয়ার্কের অন্য যেকোনো ট্র্যাফিকের চেয়ে আকারে (bytes) সবচেয়ে বড় হয়, আর বড় প্যাকেট দ্রুত ফরওয়ার্ড করার জন্যই EF marking ব্যবহার করা হয়, delay/jitter-এর সাথে এর সম্পর্ক নেই",
         "কারণ এটা শুধু নিরাপত্তার জন্য",
         "কারণ এটা network cost কমায়"
       ],
@@ -402,7 +407,7 @@
       "options": [
         "general rule সব subnet ট্র্যাফিককে সমানভাবে handle করে, কিন্তু h3-এর ট্র্যাফিককে বিশেষভাবে চিহ্নিত/prioritize (TOS marking) করতে একটা বেশি-specific, বেশি-priority rule প্রয়োজন ছিল",
         "কারণ priority=500 rule-এ কোনো ভুল ছিল",
-        "কারণ h3 আলাদা subnet-এ আছে",
+        "কারণ h3 আসলে একটা সম্পূর্ণ আলাদা subnet (10.0.0.0/24-এর বাইরে, ভিন্ন IP range)-এ অবস্থিত, তাই general subnet rule-এর nw_dst match condition h3-এর ট্র্যাফিক ধরতেই পারে না, এজন্য সম্পূর্ণ আলাদা, ভিন্ন subnet-নির্দিষ্ট rule প্রয়োজন হয়েছে",
         "কারণ general rule শুধু h1, h2-এর জন্য কাজ করে, h3-এর জন্য না"
       ],
       "answerIndex": 0,
@@ -415,7 +420,7 @@
       "options": [
         "TOS field পরিবর্তন হতো, কিন্তু প্যাকেট ফরওয়ার্ড করার জন্য কোনো explicit action না থাকায় এটা ঠিকমতো গন্তব্যে নাও পৌঁছাতে পারত",
         "কোনো প্রভাব পড়তো না, normal action redundant",
-        "পুরো rule-ই invalid হয়ে যেত",
+        "পুরো rule-টাই syntactically invalid হয়ে যেত এবং ovs-ofctl rule ইনস্টল করতেই প্রত্যাখ্যান করত, কারণ OpenFlow-তে অন্তত দুইটা action ছাড়া কোনো rule গ্রহণযোগ্য না",
         "mod_nw_tos নিজে থেকেই প্যাকেট ফরওয়ার্ড করে দিত, তাই কোনো সমস্যা হতো না"
       ],
       "answerIndex": 0,
@@ -427,7 +432,7 @@
       "question": "arp,nw_dst=10.0.0.1,actions=output:1 rule-টা কি bidirectional (দুই দিকেই কাজ করে)?",
       "options": [
         "না — এটা শুধু h1-কে গন্তব্য করা ARP request-কে port 1-এ পাঠায়; h1 থেকে আসা ARP-এর জন্য এটা প্রযোজ্য না",
-        "হ্যাঁ, এটা h1 থেকে আসা এবং h1-এর উদ্দেশ্যে যাওয়া — দুই দিকের ট্র্যাফিকেই কাজ করে",
+        "হ্যাঁ, এটা সম্পূর্ণ bidirectional — h1 থেকে বের হওয়া এবং h1-এর উদ্দেশ্যে আসা, উভয় দিকের ARP ট্র্যাফিকেই এই একই rule স্বয়ংক্রিয়ভাবে প্রযোজ্য হয়, কারণ nw_dst field reverse ট্র্যাফিকেও একইভাবে match করে ধরা হয়",
         "এটা শুধু h2 আর h3-এর ক্ষেত্রে প্রযোজ্য",
         "এটা switch-এর সব port-এ সমানভাবে কাজ করে"
       ],
@@ -440,7 +445,7 @@
       "question": "ARP-এর জন্য flood-এর বদলে output:N ব্যবহার করার দক্ষতাগত সুবিধা কী?",
       "options": [
         "শুধু প্রয়োজনীয় port-এ প্যাকেট পাঠানো হয়, ফলে অপ্রয়োজনীয় bandwidth খরচ ও সম্ভাব্য broadcast storm এড়ানো যায়",
-        "এটা কখনোই দ্রুততর হয় না, flood-ই দ্রুততর",
+        "output:N কখনোই flood-এর চেয়ে দ্রুততর হয় না — বরং flood সবসময় দ্রুততর, কারণ switch flood করার সময় কোনো lookup বা match condition যাচাই না করেই সরাসরি সব port-এ প্যাকেট পাঠিয়ে দেয়",
         "output:N ব্যবহারে ARP আদৌ কাজ করে না",
         "flood আর output:N technically সম্পূর্ণ একই জিনিস"
       ],
@@ -453,7 +458,7 @@
       "question": "priority উল্লেখ না করলেই কি শুধুমাত্র match field-এর specificity (কতটা নির্দিষ্ট) দিয়ে OpenFlow rule-এর precedence ঠিক হয়ে যায়?",
       "options": [
         "না — priority explicitly না দিলে default priority ধরা হয়, specificity নিজে থেকে priority override করে না",
-        "হ্যাঁ, সবসময় বেশি specific rule জেতে, priority অপ্রাসঙ্গিক",
+        "হ্যাঁ, OpenFlow সবসময় সবচেয়ে specific (সবচেয়ে বেশি match field উল্লেখ করা) rule-কেই জিতিয়ে দেয়, priority ফিল্ডের মান আসলে কোনো ভূমিকাই রাখে না এক্ষেত্রে, এটা শুধু একটা ঐচ্ছিক documentation field",
         "হ্যাঁ, কিন্তু শুধু ARP rule-এর ক্ষেত্রে",
         "না, OpenFlow-তে precedence বলে কিছু নেই"
       ],
@@ -466,7 +471,7 @@
       "question": "Layer 3 rule-এ nw_src/nw_dst-এ প্রায়ই subnet notation (/24) ব্যবহার করা হয় কেন, একক IP না দিয়ে?",
       "options": [
         "একই subnet-এর অনেক host-কে একটামাত্র rule দিয়ে কভার করা যায়, প্রতিটা host-এর জন্য আলাদা rule লেখার দরকার হয় না",
-        "কারণ একক IP OpenFlow সমর্থন করে না",
+        "subnet notation ব্যবহার করলে switch hardware-লেভেলে দ্রুততর lookup করতে পারে, কারণ /24 রেঞ্জ একটামাত্র TCAM entry-তে store হয় যেখানে একক IP-ভিত্তিক rule প্রতিটার জন্য আলাদা, ধীরগতির entry লাগে",
         "কারণ subnet notation দ্রুততর কাজ করে",
         "কারণ /24 মানে শুধু একটা IP, একক IP লেখার আরেকটা রূপ মাত্র"
       ],
@@ -479,7 +484,7 @@
       "question": "mod_nw_tos:184 action প্রয়োগের পর প্যাকেটের মূল payload/data অংশে কি কোনো পরিবর্তন হয়?",
       "options": [
         "না, এটা শুধু IP header-এর TOS byte পরিবর্তন করে, payload অপরিবর্তিত থাকে",
-        "হ্যাঁ, পুরো payload মুছে যায়",
+        "হ্যাঁ, payload-এর শুরুতে একটা নতুন QoS marking header যোগ হয়ে যায়, যা destination host-কে প্যাকেটের priority level সম্পর্কে অতিরিক্ত তথ্য দেয়, এবং এই নতুন header-এর কারণে প্যাকেটের মোট আকারও বেড়ে যায়",
         "হ্যাঁ, payload-এ নতুন একটা header যোগ হয়",
         "এটা payload-কে encrypt করে দেয়"
       ],
@@ -492,7 +497,7 @@
       "question": "priority=800 rule কি priority=500 rule-কে পুরোপুরি 'প্রতিস্থাপন' (replace) করে দেয়, নাকি শুধু নির্দিষ্ট ক্ষেত্রে override করে?",
       "options": [
         "শুধু নির্দিষ্ট ক্ষেত্রে (h3 থেকে আসা ট্র্যাফিকে) override করে — priority=500 rule অন্য সব IP ট্র্যাফিকের জন্য এখনো সক্রিয় থাকে",
-        "এটা priority=500 rule-কে সম্পূর্ণ মুছে ফেলে, যেকোনো ট্র্যাফিকের জন্যই",
+        "এটা priority=500 rule-কে সম্পূর্ণভাবে flow table থেকে মুছে ফেলে দেয়, যার ফলে এরপর থেকে শুধুমাত্র priority=800 rule-ই, h3 ছাড়া অন্য যেকোনো host-এর ট্র্যাফিকের জন্যও, একমাত্র সক্রিয় rule হিসেবে কাজ করতে থাকে",
         "দুটো rule-ই একসাথে, সবসময় সমান্তরালে কাজ করে",
         "priority=800 rule আসলে কোনো প্রভাবই ফেলে না"
       ],
@@ -505,7 +510,7 @@
       "question": "h3 ping h1 আর pingall-এর মধ্যে এই context-এ পার্থক্য কী?",
       "options": [
         "h3 ping h1 শুধু নির্দিষ্ট একটা জোড়ার ট্র্যাফিক/rule পরীক্ষা করে, আর pingall সব জোড়া host-এর connectivity একসাথে পরীক্ষা করে",
-        "দুটো একই কাজ করে, পার্থক্য নেই",
+        "h3 ping h1 কমান্ডটা আসলে কোনো connectivity test করে না, বরং শুধুমাত্র h1-এর MAC address resolve করে টার্মিনালে প্রদর্শন করে, ICMP প্যাকেট আদৌ পাঠায় না",
         "h3 ping h1 শুধু MAC address দেখায়",
         "pingall শুধু একটা host-এর জন্য কাজ করে"
       ],
@@ -518,7 +523,7 @@
       "question": "priority=500 rule-এ dl_type=0x800 না দিয়ে শুধু nw_src/nw_dst দিলে কী সমস্যা হতে পারত?",
       "options": [
         "match condition-টা কম সুনির্দিষ্ট হয়ে যেত, এবং ধারণাগতভাবে non-IPv4 ট্র্যাফিকেও প্রযোজ্য হওয়ার অস্পষ্টতা থাকত",
-        "কোনো সমস্যাই হতো না, dl_type সম্পূর্ণ অপ্রয়োজনীয়",
+        "rule-টা তখন আর কোনো প্যাকেটের সাথেই মিলত না, কারণ OpenFlow match engine-এ nw_src/nw_dst field ব্যবহার করতে dl_type অবশ্যই explicitly 0x800 দিতে হয়, নাহলে rule স্বয়ংক্রিয়ভাবে অকার্যকর (no-op) হয়ে যায়",
         "rule-টা কখনো কোনো প্যাকেটের সাথেই মিলতো না",
         "nw_src/nw_dst নিজে থেকেই dl_type=0x800 বোঝায়, তাই আলাদা করে লেখা সবসময় সম্পূর্ণ redundant"
       ],
@@ -531,7 +536,7 @@
       "question": "DSCP marking (QoS) নিজে থেকেই কি নেটওয়ার্কে priority guarantee করে দেয়?",
       "options": [
         "না — এটা শুধু একটা 'signal'/hint, বাস্তব priority পেতে পথের প্রতিটা device-কে (router/switch) সেই DSCP মান honor/respect করতে হয়",
-        "হ্যাঁ, DSCP marking করলেই সবসময় priority guaranteed হয়ে যায়",
+        "হ্যাঁ, একবার DSCP marking বসিয়ে দিলে পুরো নেটওয়ার্কের সব router/switch স্বয়ংক্রিয়ভাবে এবং বাধ্যতামূলকভাবে সেই priority অনুযায়ী ব্যান্ডউইথ guarantee করে দিতে বাধ্য থাকে, এটা একটা প্রোটোকল-level নিশ্চয়তা",
         "না, DSCP কোনো ভূমিকাই রাখে না QoS-এ",
         "DSCP marking শুধু security-এর জন্য ব্যবহার হয়, priority-এর সাথে সম্পর্কহীন"
       ],
@@ -544,7 +549,7 @@
       "question": "এই lab-এ ব্যবহৃত 'normal' action কোন ধরনের forwarding logic বোঝায়?",
       "options": [
         "switch-এর ঐতিহ্যবাহী (non-OpenFlow-specific) Layer 2 MAC-learning switching behavior",
-        "সবসময় Layer 3 routing logic",
+        "সবসময় Layer 3 routing logic অনুসরণ করে — অর্থাৎ switch নিজে IP routing table তৈরি করে, প্রতিটা প্যাকেটের TTL কমিয়ে এবং next-hop নির্ধারণ করে রুট করে, যা একটা router-এর আচরণের মতো",
         "সবসময় flood-ভিত্তিক broadcast logic",
         "controller-নির্ভর decision-making logic"
       ],
@@ -557,7 +562,7 @@
       "question": "কেন h1, h2, h3-এর প্রতিটার জন্য আলাদা ARP rule (per-destination output) দরকার হলো, একটা rule দিয়ে সবাইকে কভার করা গেল না কেন?",
       "options": [
         "প্রতিটা host আলাদা port-এ যুক্ত, তাই নির্দিষ্টভাবে কোন ARP request কোন port-এ পাঠাতে হবে তা জানাতে আলাদা nw_dst/output জোড়া প্রয়োজন",
-        "কারণ ARP rule-এ একসাথে একাধিক host কভার করার syntax নেই, কখনোই সম্ভব না",
+        "কারণ h1, h2, h3 — এই তিনটা host-এরই MAC address কাকতালীয়ভাবে একদম একই, তাই শুধুমাত্র destination IP (nw_dst) দিয়ে আলাদা করা ছাড়া switch-এর আর কোনো উপায় ছিল না প্যাকেট সঠিক host-এ পাঠানোর",
         "কারণ h1, h2, h3-এর MAC address একই",
         "কারণ এটা শুধু নান্দনিক পছন্দ, প্রযুক্তিগত কারণ নেই"
       ],
@@ -570,7 +575,7 @@
       "question": "আধুনিক নেটওয়ার্কে DSCP, পুরনো TOS precedence-ভিত্তিক ব্যবহারের তুলনায় বেশি প্রচলিত কেন?",
       "options": [
         "DSCP অনেক বেশি (৬৪টা পর্যন্ত) সূক্ষ্ম QoS ক্লাস define করতে পারে এবং DiffServ architecture-এর সাথে ভালোভাবে কাজ করে, যা স্কেলযোগ্য QoS ব্যবস্থাপনা দেয়",
-        "DSCP আসলে TOS-এর চেয়ে কম ফিচার দেয়",
+        "আসলে DSCP এখন আর ব্যবহার হয় না, এটা একটা deprecated, legacy standard যা আধুনিক নেটওয়ার্ক equipment সম্পূর্ণভাবে বাদ দিয়েছে, তাই পুরনো TOS precedence bits-ই এখনো মূলত ব্যবহৃত হয়",
         "DSCP শুধু পুরনো প্রোটোকল, এখন আর ব্যবহার হয় না",
         "TOS আর DSCP সম্পূর্ণ ভিন্ন দুই স্তরে কাজ করে, তুলনীয়ই না"
       ],
@@ -584,7 +589,7 @@
       "options": [
         "priority=800 rule, কারণ এটা nw_src=10.0.0.3 (h3) নির্দিষ্টভাবে match করে এবং priority=500-এর চেয়ে বেশি priority রাখে — উভয় rule geometrically match করলেও বেশি priority-রটা জেতে",
         "priority=500 rule, কারণ এটা প্রথমে flow table-এ যোগ করা হয়েছিল",
-        "দুটো rule-ই সমানভাবে একসাথে apply হবে, একটাই প্যাকেটে দুইবার TOS পরিবর্তন হবে",
+        "দুটো rule-ই একসাথে সমানভাবে apply হবে, ফলে প্যাকেটটার TOS field পরপর দুইবার পরিবর্তিত হবে — একবার priority=500-এর কোনো marking অংশ থেকে, আরেকবার priority=800-এর mod_nw_tos থেকে, এবং এই দুই marking যোগ হয়ে চূড়ান্ত মান তৈরি হবে",
         "কোনো rule-ই মেলে না, কারণ nw_dst=10.0.0.1 একটা একক host, subnet না"
       ],
       "answerIndex": 0,
@@ -596,7 +601,7 @@
       "question": "h1 থেকে h3-এ (বিপরীত দিকে) পাঠানো একটা প্যাকেট কি priority=800 rule (nw_src=10.0.0.3,...)-এর সাথে মেলে?",
       "options": [
         "না — ওই rule-এর nw_src শুধু 10.0.0.3 (h3) match করে; h1 থেকে আসা প্যাকেটে nw_src হবে 10.0.0.1, তাই এটা মেলে না এবং priority=500 general rule-ই প্রযোজ্য হবে",
-        "হ্যাঁ, কারণ nw_dst subnet-এর ভেতরেই আছে",
+        "হ্যাঁ, কারণ এই rule-এর nw_dst=10.0.0.0/24 subnet condition-টা source আর destination — উভয় দিকের ট্র্যাফিকের জন্যই প্রযোজ্য ধরা হয়, OpenFlow-তে nw_dst field স্বয়ংক্রিয়ভাবে reverse direction-ও কভার করে",
         "হ্যাঁ, কারণ source আর destination উভয় দিক rule-টা কভার করে",
         "কোনোটাই প্রযোজ্য না, প্যাকেট drop হবে"
       ],
@@ -609,7 +614,7 @@
       "question": "mod_nw_tos:184 দিয়ে প্যাকেট marked হওয়ার পর, বাস্তব নেটওয়ার্কে পথের অন্য router/switch-গুলো এই marking কীভাবে ব্যবহার করতে পারত?",
       "options": [
         "তারা DSCP value দেখে প্যাকেটকে priority queue-তে রাখতে পারত, কম-priority ট্র্যাফিকের আগে পাঠাতে পারত, অথবা congestion-এর সময় কম-priority প্যাকেট আগে drop করতে পারত",
-        "তারা DSCP marking সম্পূর্ণ উপেক্ষা করতে বাধ্য, কোনো ব্যবহার নেই",
+        "তারা marking দেখে প্যাকেটের source/destination IP address স্বয়ংক্রিয়ভাবে পরিবর্তন করে দিত, যাতে উচ্চ-priority ট্র্যাফিক একটা আলাদা, dedicated IP range দিয়ে রুট হয়",
         "তারা marking দেখে প্যাকেটের IP address পরিবর্তন করে দিত",
         "marking শুধু logging-এর জন্য ব্যবহৃত হয়, forwarding-এ কোনো প্রভাব নেই"
       ],
@@ -622,7 +627,7 @@
       "question": "যদি priority=500 (general) rule-এর priority 800-এর চেয়ে বেশি (যেমন 900) করে দেওয়া হতো, h3-এর ট্র্যাফিকে কী প্রভাব পড়ত?",
       "options": [
         "h3-specific rule (priority 800) আর match-winner থাকত না, h3-এর ট্র্যাফিকও general rule-এর (কোনো TOS marking ছাড়া, শুধু normal) আওতায় পড়ে যেত",
-        "কোনো প্রভাব পড়ত না, h3-এর rule-ই সবসময় জিতত",
+        "কোনো প্রভাবই পড়ত না — OpenFlow-তে priority মান পরিবর্তন করলে rule-এর ক্রম (ordering) প্রভাবিত হয় না, কারণ flow table মূলত insertion order অনুযায়ী rule মূল্যায়ন করে, priority field শুধু display/sorting-এর জন্য",
         "switch ক্র্যাশ করত",
         "দুটো rule-ই একসাথে বাতিল হয়ে যেত"
       ],
@@ -635,7 +640,7 @@
       "question": "এই L3 lab-এ যদি তিনটা per-host ARP rule-এর বদলে একটা মাত্র flood rule ব্যবহার করা হতো (L2 lab-এর মতো), কার্যকারিতার (efficiency) দিক থেকে মূল পার্থক্য কী হতো?",
       "options": [
         "flood rule প্রতিটা ARP request সব port-এ পাঠাত (অপ্রয়োজনীয় traffic বেশি, কিন্তু setup সহজ), যেখানে per-host output শুধু প্রাসঙ্গিক port-এ পাঠায় (কম traffic, কিন্তু প্রতিটা host-এর জন্য আলাদা rule লিখতে হয়)",
-        "কোনো পার্থক্যই হতো না, দুটোই হুবহু একই কাজ করে",
+        "flood rule ব্যবহার করলে ARP প্রোটোকলটাই কার্যকরভাবে ভেঙে পড়ত, কারণ OpenFlow flood action ARP-এর broadcast EtherType (0xFFFF)-কে সমর্থন করে না, ফলে কোনো ARP request-ই কোনো host-এ পৌঁছাতো না, এবং পুরো নেটওয়ার্ক-জুড়ে connectivity সম্পূর্ণ ভেঙে যেত",
         "flood rule ব্যবহার করলে ARP আদৌ কাজ করত না",
         "per-host rule ব্যবহার করলে ARP ধীরগতির হতো, flood দ্রুততর"
       ],
@@ -648,7 +653,7 @@
       "question": "যদি nw_src=10.0.0.3,nw_dst=10.0.0.0/24,actions=mod_nw_tos:184,normal rule-এর priority 100 (priority=500 general rule-এর চেয়ে কম) হতো, h3-এর ট্র্যাফিকের TOS field পরিবর্তিত হতো কি?",
       "options": [
         "না — কম priority হওয়ায় general (priority=500) rule-ই জিতত, যেটা শুধু normal forward করে, কোনো TOS marking করে না, তাই TOS field অপরিবর্তিত থাকত",
-        "হ্যাঁ, priority নির্বিশেষে h3-specific rule-ই সবসময় জিতত, কারণ এটা বেশি specific",
+        "হ্যাঁ, priority মান নির্বিশেষে h3-specific rule সবসময়ই জিতত, কারণ OpenFlow মূলত match field-এর সংখ্যা (specificity) দিয়েই rule নির্বাচন করে, priority ফিল্ড শুধু tie-breaking-এর জন্য ব্যবহৃত একটা গৌণ মানদণ্ড",
         "উভয় rule একসাথে apply হয়ে TOS দুইবার পরিবর্তিত হতো",
         "কোনো rule-ই match করত না, প্যাকেট drop হতো"
       ],
@@ -661,7 +666,7 @@
       "question": "DSCP 46 (বাইনারি 101110)-কে TOS byte-এ বসানোর পুরো গাণিতিক প্রক্রিয়া কী?",
       "options": [
         "46-এর 6-bit বাইনারি রূপ (101110)-কে 8-bit TOS byte-এর প্রথম 6 bit-এ বসাতে 2 bit বামে shift করা হয় (101110 → 10111000), যা decimal-এ 184; শেষ 2 bit (ECN) 0 ধরা হয়",
-        "46-কে সরাসরি 8-bit-এ convert করলেই 184 হয়ে যায়, কোনো shift লাগে না",
+        "46-কে সরাসরি decimal থেকে hexadecimal-এ রূপান্তর করলেই 184 পাওয়া যায় (46 → 0xB8 → 184 ধরে নেওয়া হয়), এখানে কোনো bit-shift বা bitwise অপারেশনের দরকার নেই, এটা শুধুমাত্র একটা number-base conversion",
         "184 আসলে 46-এর decimal-to-hex conversion",
         "46 আর 184 সম্পূর্ণ আলাদা, কোনো গাণিতিক সম্পর্ক নেই"
       ],
@@ -674,7 +679,7 @@
       "question": "actions=normal সম্বলিত এই OpenFlow rule আসলে কী ধরনের hybrid আচরণ প্রদর্শন করে?",
       "options": [
         "প্যাকেটটাকে এখনো OpenFlow match-action pipeline দিয়েই প্রসেস করা হয় (প্রয়োজনে TOS modify-এর মতো কাজ করে), কিন্তু চূড়ান্ত forwarding সিদ্ধান্তটা traditional (non-SDN) switch logic-এর কাছে ছেড়ে দেওয়া হয়",
-        "এটা সম্পূর্ণভাবে OpenFlow বাইরে চলে যায়, কোনো OpenFlow processing-ই হয় না",
+        "এটা প্যাকেটটাকে সম্পূর্ণভাবে OpenFlow match-action pipeline-এর বাইরে নিয়ে যায় — rule-এ লেখা আগের কোনো action (যেমন mod_nw_tos)-ই আর কার্যকর থাকে না, শুধুমাত্র traditional switching hardware সরাসরি প্যাকেট প্রসেস করে",
         "এটা controller-নির্ভর decision-making চালু করে",
         "এটা শুধু ARP প্যাকেটের জন্যই প্রযোজ্য, IP প্যাকেটে কাজ করে না"
       ],
@@ -687,7 +692,7 @@
       "question": "ARP rule-গুলোতে (arp,nw_dst=10.0.0.x,actions=output:x) কোনো priority উল্লেখ নেই — dl_type=0x800-ভিত্তিক IP rule-গুলোর সাথে এদের match করার সম্ভাবনা/conflict আছে কি?",
       "options": [
         "না — ARP রুলগুলো dl_type=0x806 (arp shortcut)-এর সাথে মেলে, আর IP rule-গুলো dl_type=0x800-এর সাথে; দুই ধরনের প্যাকেট (ARP vs IPv4) কখনোই একসাথে একই rule-এর সাথে মেলে না, তাই conflict হয় না",
-        "হ্যাঁ, যেকোনো সময় conflict হতে পারে, কারণ সবগুলোই একই default priority-তে",
+        "হ্যাঁ, যেকোনো সময় conflict হতে পারে, কারণ ARP আর IPv4 rule-গুলো সবই একই default priority মান (৩২৭৬৮) ব্যবহার করে এবং OpenFlow dl_type ফিল্ডকে priority resolution-এ একেবারেই বিবেচনা করে না, ফলে যেকোনো rule জিততে পারে",
         "হ্যাঁ, কারণ nw_dst field উভয় ধরনের rule-এই আছে",
         "conflict এড়াতে priority অবশ্যই explicitly লিখতে হতো, নাহলে rule-ই invalid"
       ],
@@ -700,7 +705,7 @@
       "question": "nw_dst=10.0.0.0/24-এর বদলে ভুলবশত nw_dst=10.0.0.0/16 লেখা হলে match scope-এ কী পরিবর্তন আসবে?",
       "options": [
         "/16 অনেক বড় একটা রেঞ্জ (10.0.0.0–10.0.255.255) কভার করবে, /24-এর তুলনায় অনেক বেশি সংখ্যক destination IP match করবে, যা এই lab-এর 3-host (10.0.0.1-3) প্রসঙ্গে অপ্রয়োজনীয়ভাবে বিস্তৃত",
-        "/16 আসলে /24-এর চেয়ে ছোট রেঞ্জ কভার করে",
+        "/16 আসলে /24-এর চেয়ে ছোট একটা রেঞ্জ কভার করবে, কারণ CIDR notation-এ সংখ্যা যত বড়, নেটওয়ার্কের আকার তত বড় ধরা হয় — তাই /16 মাত্র 10.0.0.0 থেকে 10.0.0.127 পর্যন্তই সীমাবদ্ধ থাকবে, যা /24-এর চেয়ে সংকীর্ণ",
         "কোনো পার্থক্যই হবে না, দুটো একই রেঞ্জ বোঝায়",
         "/16 ব্যবহার করলে rule-টাই invalid syntax হয়ে যাবে"
       ],
@@ -713,7 +718,7 @@
       "question": "h3→subnet rule শুধু h3 থেকে বের হওয়া ট্র্যাফিক TOS-mark করে। subnet থেকে h3-এর উদ্দেশ্যে আসা reply ট্র্যাফিক (যেমন h1→h3 ICMP reply)-এর TOS field-এর কী হবে এই lab-এর rule অনুযায়ী?",
       "options": [
         "সেটার TOS field পরিবর্তিত হবে না, কারণ কোনো rule-ই nw_src=h1/h2 and nw_dst=h3-কে বিশেষভাবে marking করে না — শুধু general priority=500 rule (normal, কোনো TOS পরিবর্তন ছাড়া) প্রযোজ্য হবে",
-        "সেটাও একইভাবে TOS 184-এ marked হবে, কারণ এটা একই conversation-এর অংশ",
+        "সেটাও একইভাবে TOS 184-এ marked হয়ে যাবে, কারণ OpenFlow flow rule stateful connection tracking ব্যবহার করে পুরো conversation (উভয় দিক)-কেই একইসাথে চিহ্নিত করে, শুধু একমুখী ট্র্যাফিক marking বলে কিছু হয় না",
         "সেই প্যাকেট পুরোপুরি drop হয়ে যাবে",
         "priority=800 rule reverse traffic-এও স্বয়ংক্রিয়ভাবে প্রযোজ্য হয়ে যাবে"
       ],
@@ -726,7 +731,7 @@
       "question": "L2 lab-এর dl_src/dl_dst-ভিত্তিক rule আর এই L3 lab-এর nw_src/nw_dst-ভিত্তিক rule একই switch-এ একসাথে, একই priority-তে থাকলে কী ঘটতে পারে?",
       "options": [
         "একই প্যাকেট উভয় ধরনের rule-এর (ভিন্ন match field হলেও) সাথে মিলে যেতে পারে, এবং একই priority হলে কোন rule প্রযোজ্য হবে তা অস্পষ্ট/implementation-নির্ভর হয়ে উঠতে পারে — তাই সুচিন্তিতভাবে priority ঠিক করা জরুরি",
-        "কোনো সমস্যাই হবে না, MAC-ভিত্তিক আর IP-ভিত্তিক rule কখনো একই প্যাকেটে মেলেই না",
+        "কোনো সমস্যাই হবে না, কারণ MAC-ভিত্তিক (dl_src/dl_dst) আর IP-ভিত্তিক (nw_src/nw_dst) match field টেকনিক্যালিভাবে কখনোই একই প্যাকেটে একসাথে উপস্থিত থাকতে পারে না, তাই এই দুই ধরনের rule কাঠামোগতভাবেই কখনো একে অপরের সাথে সাংঘর্ষিক হতে পারে না",
         "switch স্বয়ংক্রিয়ভাবে সবসময় IP-ভিত্তিক rule-কে প্রাধান্য দেয়",
         "দুই ধরনের rule একসাথে থাকলে switch error দিয়ে বন্ধ হয়ে যাবে"
       ],
@@ -739,7 +744,7 @@
       "question": "DSCP marking (QoS, প্যাকেটের ভেতরের একটা field) আর OpenFlow-এর flow rule priority (কোন rule flow table-এ জিতবে) — এই দুই ধরনের 'priority' গুলিয়ে ফেলা কেন ভুল?",
       "options": [
         "এই দুটো সম্পূর্ণ আলাদা স্তরের concept — DSCP হলো প্যাকেটের নিজের একটা marking যা নেটওয়ার্কজুড়ে QoS treatment নির্দেশ করে, আর OpenFlow priority হলো একটা single switch-এর flow table-এ rule selection-এর নিয়ম; একটা অন্যটাকে নিয়ন্ত্রণ করে না",
-        "এই দুটো আসলে একই জিনিস, flow rule priority সরাসরি DSCP মান থেকেই আসে",
+        "এই দুটো আসলে একই অন্তর্নিহিত concept — OpenFlow flow rule-এর priority মান সরাসরি সেই rule-এর actions-এ বসানো DSCP মান থেকেই গণনা করে নেওয়া হয়, তাই একটা পরিবর্তন করলে অন্যটাও স্বয়ংক্রিয়ভাবে, কোনো আলাদা configuration ছাড়াই, সমানুপাতিকভাবে পরিবর্তিত হয়ে যায়",
         "DSCP সবসময় flow rule priority-র চেয়ে বেশি গুরুত্বপূর্ণ হয়",
         "flow rule priority সবসময় DSCP মান override করে দেয়"
       ],
@@ -752,7 +757,7 @@
       "question": "actions=normal ব্যবহার করলে প্যাকেটটা কি পুরোপুরি OpenFlow pipeline থেকে বের হয়ে যায়, নাকি শুধু forwarding decision switch-এর নিজস্ব logic-এ ছেড়ে দেওয়া হয়?",
       "options": [
         "শুধু forwarding (কোন port দিয়ে পাঠানো হবে) সিদ্ধান্তটা switch-এর traditional logic-এ ছেড়ে দেওয়া হয় — বাকি match-action processing (যেমন আগের mod_nw_tos) এখনো OpenFlow rule-এর অংশ হিসেবেই ঘটে",
-        "পুরো প্যাকেট প্রসেসিং সম্পূর্ণভাবে OpenFlow-এর বাইরে চলে যায়, কোনো rule আর প্রযোজ্য থাকে না",
+        "হ্যাঁ, প্যাকেটটা পুরোপুরি OpenFlow pipeline থেকে বের হয়ে যায় — rule-এ লেখা অন্য যেকোনো action (যেমন আগে প্রয়োগ হওয়া mod_nw_tos)-ও বাতিল হয়ে যায়, এবং switch সম্পূর্ণভাবে তার নিজস্ব, OpenFlow-র সাথে সম্পর্কহীন hardware logic দিয়ে প্যাকেটটা নতুন করে প্রসেস করে",
         "এটা প্যাকেটটাকে controller-এর কাছে পাঠিয়ে দেয়",
         "এটা প্যাকেটটা সম্পূর্ণ drop করে দেয়"
       ],
@@ -765,7 +770,7 @@
       "question": "এই lab-এর priority=500/800 (IP-ভিত্তিক) rule-এর পাশাপাশি যদি L2 lab-এর dl_src=00:00:00:00:00:03,dl_dst=00:00:00:00:00:01,actions=output:1 rule (একই priority-তে) h3→h1 ট্র্যাফিকের জন্য যোগ করা হতো, তাহলে কী সমস্যা তৈরি হতে পারত?",
       "options": [
         "h3→h1 IPv4 প্যাকেট তখন একাধিক rule-এর (IP-ভিত্তিক normal+TOS-marking rule এবং MAC-ভিত্তিক direct-output rule) সাথে একই priority-তে মিলে যেতে পারত, ফলে কোনটা আসলে প্রযোজ্য হবে তা অনির্দিষ্ট (ambiguous) হয়ে উঠত — DSCP marking আদৌ apply হবে কিনা তাও নিশ্চিত থাকত না",
-        "কোনো সমস্যাই হতো না, উভয় rule স্বয়ংক্রিয়ভাবে মিলেমিশে কাজ করত",
+        "switch rule দুটোকে স্বয়ংক্রিয়ভাবে একত্রিত (merge) করে একটামাত্র নতুন, সম্মিলিত rule তৈরি করে ফেলত, যেখানে MAC আর IP — উভয় match condition এবং output+TOS marking — সব একসাথে, কোনো conflict ছাড়াই প্রয়োগ হতো, এবং এই merge প্রক্রিয়াটা OpenFlow স্ট্যান্ডার্ডের একটা স্বয়ংক্রিয় ফিচার হিসেবে ধরে নেওয়া হয়",
         "switch rule-দুটো automatically merge করে একটাই rule বানিয়ে ফেলত",
         "MAC-ভিত্তিক rule কখনো IPv4 প্যাকেটে প্রযোজ্যই হতো না, তাই কোনো conflict সম্ভবই না"
       ],

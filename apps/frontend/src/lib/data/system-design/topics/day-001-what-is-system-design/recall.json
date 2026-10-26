@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-001",
+  "points": [
+    {
+      "term": "System Design",
+      "prompt": "System design কী, আর code লেখা থেকে এটা কোথায় আলাদা?",
+      "answer": "System design হলো ঠিক করা কোন কোন component লাগবে, সেগুলো কিভাবে যুক্ত থাকবে আর data কোন পথে যাবে, যাতে system তার requirement পূরণ করে নির্দিষ্ট scale আর বাজেটে। Code উত্তর দেয় 'কাজটা কিভাবে করব'; design উত্তর দেয় 'লাখো user, failure আর বাড়ন্ত data নিয়েও কিভাবে চালু রাখব'।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Functional vs Non-functional Requirement",
+      "prompt": "Functional আর non-functional requirement-এর পার্থক্য কী? প্রতিটার একটা উদাহরণ দিন।",
+      "answer": "Functional requirement বলে system কী করবে, যেমন 'user cart-এ product যোগ করতে পারবে'। Non-functional বলে কতটা ভালোভাবে করবে, যেমন '৯৫% page ৩০০ms-এর মধ্যে খুলবে' বা 'বছরে ৯ ঘণ্টার বেশি বন্ধ না'। System design-এর কঠিন সিদ্ধান্তগুলো বেশিরভাগ non-functional দিক থেকে আসে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Scalability",
+      "prompt": "Scalability মানে কী, আর vertical ও horizontal scaling-এর মূল পার্থক্য কী?",
+      "answer": "Scalability মানে load বাড়লে resource যোগ করে system-কে বাড়ানো যায়, পুরোটা নতুন করে না লিখে। Vertical মানে একটা machine-কে বড় করা (সহজ, কিন্তু সীমা আছে আর machine একটাই), horizontal মানে আরও machine যোগ করা (প্রায় সীমাহীন, কিন্তু server-দের stateless হতে হয় আর load balancer লাগে)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Availability ও Redundancy",
+      "prompt": "Availability কিভাবে মাপা হয়? একের পর এক থাকা component আর পাশাপাশি কপি রাখলে availability-তে কী হয়?",
+      "answer": "Availability হলো user চাইলে system সাড়া দেওয়ার সময়ের অংশ, যেমন 99.9% মানে বছরে ~৮.৮ ঘণ্টা downtime। একের পর এক থাকা অংশে availability গুণ হয়ে কমে (তিনটা 99.9% মিলে ~99.7%), আর স্বাধীনভাবে fail করা কপি পাশাপাশি রাখলে বাড়ে (দুটো 99% মিলে ~99.99%)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Reliability",
+      "prompt": "Reliability আর availability কি একই? একটা উদাহরণ দিয়ে পার্থক্য বোঝান।",
+      "answer": "না। Availability বলে system চালু আছে কিনা; reliability বলে চালু থেকে সঠিক কাজ করছে কিনা, দীর্ঘ সময় ধরে, data না হারিয়ে। যে bank app সবসময় খোলে কিন্তু মাঝে মাঝে ভুল balance দেখায়, সেটা available কিন্তু reliable না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Latency vs Throughput",
+      "prompt": "Latency আর throughput-এর পার্থক্য কী? Lab-এ ২০ জন user একসাথে এলে কোনটা বদলেছিল?",
+      "answer": "Latency হলো একটা request শেষ হতে কত সময় লাগে; throughput হলো প্রতি সেকেন্ডে কতগুলো request শেষ হয়। Lab-এ একবারে একটা request সামলানো server-এ ২০ জন একসাথে এলে throughput প্রায় একই (~১০/সেকেন্ড) ছিল, কিন্তু প্রত্যেকের latency ~১০০ms থেকে ~২ সেকেন্ডে উঠেছিল, কারণ সবাই লাইনে দাঁড়িয়েছিল।",
+      "lessonLink": "#lab"
+    },
+    {
+      "term": "Building Blocks",
+      "prompt": "মূল সাতটা building block কী কী, আর প্রতিটা এক লাইনে কোন সমস্যার সমাধান করে?",
+      "answer": "Client (request শুরু হয়), Server (code চলে), Database (স্থায়ী data), Cache (বারবার পড়া data দ্রুত memory-তে), Load Balancer (request অনেক server-এ ভাগ), Queue (ধীর কাজ পরে করানো), CDN (ছবি-file user-এর কাছাকাছি থেকে দেওয়া)। প্রতিটা একটা সমস্যার উত্তর, আর প্রতিটা নতুন জটিলতাও আনে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Trade-off",
+      "prompt": "কেন বলা হয় trade-off-ই system design-এর প্রাণ? দুটো উদাহরণ দিন।",
+      "answer": "প্রায় প্রতিটা সিদ্ধান্ত কিছু দেয়, কিছু নেয়, তাই 'সবচেয়ে ভালো' design নেই, আছে requirement অনুযায়ী ঠিক design। Cache দিলে দ্রুত কিন্তু data পুরনো হতে পারে; দুটো server রাখলে availability বাড়ে কিন্তু খরচ আর জটিলতাও বাড়ে। ভালো উত্তর 'it depends' না, 'it depends on X, আর X এরকম হলে এটা বাছব'।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "HLD vs LLD",
+      "prompt": "High-Level Design আর Low-Level Design-এর পার্থক্য কী?",
+      "answer": "HLD হলো বড় ছবি: কোন component, কে কার সাথে কথা বলে, data কোথায় থাকে। LLD হলো একটা component-এর ভেতরে: class আর module-এর ভাগ, table-এর column, state কিভাবে বদলায়, কোন design pattern। এই course-এর বেশিরভাগ HLD; LLD-র পরিচিতি Day 115-এ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Back-of-the-envelope Estimation",
+      "prompt": "১০ লাখ DAU, প্রত্যেকে দিনে ২০টা request হলে গড় আর peak request/সেকেন্ড কত? এই হিসাব কেন দরকার?",
+      "answer": "১০ লাখ × ২০ = ২ কোটি request/দিন; ৮৬,৪০০ সেকেন্ডে ভাগ করলে গড়ে ~২৩০/সেকেন্ড, আর peak গড়ের ~৩ গুণ ধরলে ~৭০০/সেকেন্ড। লক্ষ্য নিখুঁত সংখ্যা না, সঠিক মাত্রা, যাতে বোঝা যায় একটা server লাগবে নাকি একশোটা, আর অপ্রয়োজনীয় জটিলতা এড়ানো যায়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

@@ -1,0 +1,1085 @@
+{
+  "topicId": "sd-day-012",
+  "questions": [
+    {
+      "id": "sd-day-012-q01",
+      "difficulty": "easy",
+      "question": "Order API যদি email, invoice PDF, warehouse আর SMS service-কে একটার পর একটা synchronously call করে, তাহলে user-এর response কেন slow হয়ে যায়?",
+      "options": [
+        "কারণ user-কে response দেওয়ার আগে চারটা service-এর কাজ শেষ হওয়ার অপেক্ষা করতে হয়, তাই সব call-এর সময় যোগ হয়ে যায়",
+        "কারণ synchronous call-এ প্রতিটা request পুরো সময় ধরে database-কে lock করে রাখে, তাই অন্য কোনো order একই সময়ে আসতেই পারে না",
+        "কারণ HTTP call সবসময় message queue-এর চেয়ে বেশি CPU খরচ করে, তাই server নিজেই ধীরে চলে",
+        "কারণ চারটা service একসাথে parallel-এ চলে আর একে অপরের network bandwidth কেড়ে নেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Synchronous design-এ order API প্রতিটা service-এর উত্তরের জন্য বসে থাকে। Email 300ms, PDF 2s, warehouse 500ms, SMS 400ms হলে user-কে প্রায় এই সবের যোগফল অপেক্ষা করতে হয়। User-এর আসলে শুধু order confirm হওয়াটা দরকার ছিল, বাকি কাজগুলো পরে হলেও চলত।",
+      "whyWrong": {
+        "1": "Slow হওয়ার মূল কারণ হলো sequential waiting, database lock নয়।",
+        "2": "সমস্যা CPU খরচ নয়, বরং প্রতিটা downstream call-এর জন্য অপেক্ষা করা।",
+        "3": "এখানে call-গুলো একটার পর একটা হচ্ছে, parallel নয়, তাই সময় যোগ হচ্ছে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q02",
+      "difficulty": "easy",
+      "question": "Synchronous order flow-তে শুধু SMS service down থাকলেও পুরো order কেন fail হয়ে যায়?",
+      "options": [
+        "কারণ SMS service down হলে database-ও automatically read-only mode-এ চলে যায় এবং order save হয় না",
+        "কারণ order API প্রতিটা service-এর সাথে tightly coupled, তাই একটা call fail করলে পুরো request-টাই error দেয়",
+        "কারণ SMS service fail করলে browser নিজে থেকেই request cancel করে দেয় এবং user কে error দেখায়",
+        "কারণ synchronous system-এ সব service একই process-এর ভেতরে চলে, তাই একটা service crash করলে বাকি service-গুলোও সাথে সাথে crash করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Synchronous chain-এ order সফল হওয়া নির্ভর করে প্রতিটা downstream call সফল হওয়ার ওপর। SMS-এর মতো ছোট একটা কাজ fail করলেও exception পুরো request-কে fail করিয়ে দেয়। এটাই tight coupling-এর দাম, আর queue এই coupling ভাঙে।",
+      "whyWrong": {
+        "0": "একটা downstream service down হলে database-এর mode বদলায় না।",
+        "2": "Browser নিজে থেকে request cancel করে না, error আসে server-এর chain থেকে।",
+        "3": "Service-গুলো আলাদা process বা server-এ চলে, সমস্যাটা হলো dependency, একই process নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q03",
+      "difficulty": "easy",
+      "question": "Message queue system-এ Producer-কে কেন consumer-এর কাজ শেষ হওয়া পর্যন্ত অপেক্ষা করতে হয় না?",
+      "options": [
+        "কারণ Producer নিজেই message-টা আগে process করে ফেলে, তারপর Consumer শুধু তৈরি হওয়া result-টা database-এ লিখে রাখে",
+        "কারণ Consumer সবসময় Producer-এর চেয়ে দ্রুত চলে, তাই অপেক্ষা করার কোনো প্রয়োজনই পড়ে না",
+        "কারণ Producer শুধু message-টা Broker-এ দিয়ে দেয়, Broker সেটা রেখে দেয় আর Consumer পরে নিজের সময়ে নেয়",
+        "কারণ queue ব্যবহার করলে network latency শূন্য হয়ে যায়, তাই উত্তর সাথে সাথে চলে আসে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Producer-এর দায়িত্ব শুধু message publish করা। Broker message-টা store করে রাখে, তাই Producer সাথে সাথে নিজের কাজে ফিরে যেতে পারে। Consumer কখন process করবে সেটা Producer-এর মাথাব্যথা নয়, এটাই asynchronous processing।",
+      "whyWrong": {
+        "0": "Producer message process করে না, process করা Consumer-এর কাজ।",
+        "1": "Consumer দ্রুত না ধীর সেটা গুরুত্বপূর্ণ নয়, Producer অপেক্ষা করে না কারণ Broker মাঝখানে আছে।",
+        "3": "Queue network latency শূন্য করে না, শুধু অপেক্ষার দরকারটা সরিয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q04",
+      "difficulty": "easy",
+      "question": "Producer আর Consumer-এর মাঝখানে Broker রাখার মূল সুবিধা কোনটা?",
+      "options": [
+        "Broker message-কে compress করে, তাই Consumer অনেক কম data পড়ে এবং দ্রুত process করতে পারে",
+        "Broker message-গুলোকে automatically validate করে, তাই Consumer-কে কোনো error handling লিখতে হয় না",
+        "Broker সব Consumer-এর code নিজের ভেতরেই চালায়, তাই আলাদা worker server রাখার বা deploy করার কোনো দরকারই হয় না",
+        "Consumer busy বা down থাকলেও Broker message ধরে রাখে, তাই দুই পাশ একে অপরের ওপর সরাসরি নির্ভর করে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Broker message-কে durable ভাবে store করে রাখে যতক্ষণ না কোনো Consumer সেটা নেয়। ফলে Consumer কিছুক্ষণ down থাকলেও message হারায় না, আর Producer-কে Consumer-এর address বা অবস্থা জানতে হয় না। এই ভাঙা dependency-কেই decoupling বলে।",
+      "whyWrong": {
+        "0": "Compression Broker-এর মূল কাজ নয়, মূল কাজ store করে রাখা ও deliver করা।",
+        "1": "Broker business validation করে না, error handling Consumer-কেই করতে হয়।",
+        "2": "Broker Consumer-এর code চালায় না, worker আলাদা process হিসেবেই চলে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q05",
+      "difficulty": "easy",
+      "question": "Order API queue-তে message publish করে দ্রুত response দিচ্ছে। কেন এটা দ্রুত?",
+      "options": [
+        "কারণ API শুধু message publish করে ফেরত আসে, ভারী কাজগুলো পরে background worker করে",
+        "কারণ queue PDF তৈরি আর email পাঠানোর কাজকেই আগের চেয়ে কয়েক গুণ দ্রুত করে দেয়",
+        "কারণ queue ব্যবহার করলে PDF আর email-এর কাজ পুরোপুরি বাদ দেওয়া যায়, শুধু order save হয়",
+        "কারণ queue request-গুলোকে cache করে রাখে, তাই একই order দ্বিতীয়বার আসলে সাথে সাথে উত্তর দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Queue কাজটাকে দ্রুত করে না, কাজটাকে user-এর request path থেকে সরিয়ে দেয়। API-কে শুধু message publish করতে হয়, যা খুব অল্প সময় নেয়। PDF বা email worker পরে করে, তাই user-এর অপেক্ষা কমে।",
+      "whyWrong": {
+        "1": "PDF তৈরিতে যতটুকু সময় লাগে ততটুকুই লাগে, queue শুধু অপেক্ষাটা user-এর কাছ থেকে সরায়।",
+        "2": "কাজগুলো বাদ যায় না, শুধু asynchronous ভাবে পরে হয়।",
+        "3": "Queue cache নয়, প্রতিটা message একবার deliver করার জন্য রাখা হয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q06",
+      "difficulty": "easy",
+      "question": "Decoupling-এর ফলে নতুন একটা SMS provider যোগ করতে গেলে order API-তে কী পরিবর্তন লাগে?",
+      "options": [
+        "Order API-কে নতুন provider-এর address, credentials আর retry logic জানতে হয়, তারপর নতুন করে deploy করতে হয়",
+        "Order API-কে আবার synchronous বানাতে হয়, কারণ নতুন service queue থেকে message পড়তে পারে না",
+        "সাধারণত কিছুই না, কারণ order API শুধু event publish করে আর Consumer দিকটা আলাদাভাবে বদলানো যায়",
+        "Order API আর SMS worker-কে একই server-এ deploy করতে হয়, নাহলে message পৌঁছায় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Decoupled design-এ Producer জানে না কে message পড়বে। SMS provider বদলানো মানে শুধু Consumer/worker-এর code বদলানো। Order API নিজের মতোই message publish করতে থাকে, তাই দুই দিক আলাদা ভাবে বদলানো ও deploy করা যায়।",
+      "whyWrong": {
+        "0": "Provider-এর details জানা Consumer-এর কাজ, Producer-এর নয়, এটাই decoupling-এর মানে।",
+        "1": "নতুন Consumer queue থেকে স্বাভাবিকভাবেই পড়তে পারে, synchronous করার দরকার নেই।",
+        "3": "Broker network-এর মাধ্যমে message পৌঁছায়, একই server-এ থাকার দরকার নেই।"
+      }
+    },
+    {
+      "id": "sd-day-012-q07",
+      "difficulty": "easy",
+      "question": "Flash sale-এ হঠাৎ অনেক order আসলে queue কীভাবে worker-দের বাঁচায়?",
+      "options": [
+        "Queue অতিরিক্ত message জমিয়ে রাখে আর worker নিজের স্থির গতিতে process করে, তাই worker overload হয় না",
+        "Queue অতিরিক্ত order-গুলো নিজে থেকে drop করে দেয়, যাতে worker-এর কাছে শুধু যতটা সামলাতে পারে ততটা যায়",
+        "Queue spike-এর সময় সব worker-এর processing speed automatically দ্বিগুণ করে দেয়",
+        "Queue একসাথে সব message প্রতিটা worker-কে পাঠায়, যাতে কাজ দ্রুত ভাগ হয়ে শেষ হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটাকে load levelling বা traffic buffering বলে। Spike-এর সময় incoming rate worker-এর capacity-র চেয়ে বেশি হলে বাকিটা queue-তে জমে থাকে। Worker স্বাভাবিক গতিতে কাজ চালিয়ে যায়, আর spike কমলে backlog ধীরে ধীরে শেষ হয়।",
+      "whyWrong": {
+        "1": "Queue message drop করে না, buffer করে রাখে, তাই order হারায় না।",
+        "2": "Queue worker-এর speed বাড়ায় না, শুধু অতিরিক্ত চাপ ধরে রাখে।",
+        "3": "Point-to-point queue-তে একটা message একজন worker-ই পায়, সবাই নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q08",
+      "difficulty": "easy",
+      "question": "Queue-এর পেছনে একই কাজের জন্য আরও worker যোগ করলে (competing consumers) কেন throughput বাড়ে?",
+      "options": [
+        "কারণ প্রতিটা worker একই message নিজের মতো process করে, তাই result আরও নির্ভুল হয়",
+        "কারণ বেশি worker থাকলে Broker প্রতিটা message ছোট ছোট টুকরো করে সবাইকে ভাগ করে দেয়",
+        "কারণ worker বাড়লে Producer আরও দ্রুত message publish করতে বাধ্য হয়, তাই পুরো pipeline একসাথে আগের চেয়ে দ্রুত চলে",
+        "কারণ worker-রা একই queue থেকে আলাদা আলাদা message নেয়, তাই একসাথে অনেকগুলো message parallel-এ process হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Competing consumers pattern-এ সব worker একই queue থেকে পড়ে, কিন্তু প্রতিটা message শুধু একজন পায়। ফলে কাজ ভাগ হয়ে parallel-এ চলে। এটাই worker-দের horizontal scaling।",
+      "whyWrong": {
+        "0": "Queue-তে একটা message একজন worker-ই পায়, সবাই একই message process করে না।",
+        "1": "Broker message টুকরো করে না, পুরো message একজন consumer-কে দেয়।",
+        "2": "Producer-এর publish rate worker সংখ্যার ওপর নির্ভর করে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q09",
+      "difficulty": "easy",
+      "question": "একটা message-এর lifecycle-এর সঠিক ক্রম কোনটা?",
+      "options": [
+        "Publish → Consumer process → Broker store → Acknowledgement → Deliver → Delete",
+        "Publish → Broker store → Deliver → In-flight → Process → Acknowledgement → Delete",
+        "Publish → Deliver → Delete → Process → Acknowledgement → Broker store → In-flight",
+        "Publish → Broker store → Delete → Deliver → Process → In-flight → Acknowledgement"
+      ],
+      "correctIndex": 1,
+      "explanation": "Producer publish করে, Broker store করে, তারপর Consumer-কে deliver করে। Process চলার সময় message in-flight থাকে। Consumer সফল হয়ে Acknowledgement দিলে তবেই Broker message delete করে।",
+      "whyWrong": {
+        "0": "Broker store না করে Consumer process করতে পারে না, আর deliver ack-এর আগে হয়।",
+        "2": "Process-এর আগে delete করলে crash হলে message চিরতরে হারিয়ে যাবে।",
+        "3": "Deliver-এর আগে delete করলে Consumer কিছুই পাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q10",
+      "difficulty": "easy",
+      "question": "Broker কেন message deliver করার সাথে সাথে delete না করে Acknowledgement-এর অপেক্ষা করে?",
+      "options": [
+        "কারণ Consumer process করার মাঝে crash করলে message যেন হারিয়ে না যায় এবং আবার deliver করা যায়",
+        "কারণ Acknowledgement না আসা পর্যন্ত Broker message-টা Producer-কে ফেরত পাঠিয়ে আবার নতুন করে confirm করিয়ে নেয়",
+        "কারণ delete করা একটা ভারী operation, তাই Broker সেটা অনেকগুলো message জমিয়ে একসাথে করে",
+        "কারণ Acknowledgement ছাড়া Consumer message-এর content পড়তেই পারে না, তাই ack আগে লাগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Deliver হওয়া মানে কাজ শেষ হওয়া নয়। Consumer যদি process-এর মাঝখানে crash করে আর Broker আগেই delete করে ফেলত, তাহলে order-এর email বা invoice চিরতরে হারিয়ে যেত। Ack পাওয়ার পর delete করলে Broker নিশ্চিত হয় কাজটা সত্যিই হয়েছে।",
+      "whyWrong": {
+        "1": "Broker Producer-কে message ফেরত পাঠায় না, ack আসে Consumer থেকে।",
+        "2": "এটা performance-এর জন্য নয়, message হারানো ঠেকানোর জন্য।",
+        "3": "Consumer ack দেওয়ার আগেই message পড়ে ও process করে, ack আসে কাজ শেষে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q11",
+      "difficulty": "easy",
+      "question": "Auto-ack mode কেন invoice তৈরির মতো গুরুত্বপূর্ণ কাজের জন্য ঝুঁকিপূর্ণ?",
+      "options": [
+        "কারণ auto-ack mode-এ Broker নিরাপত্তার জন্য প্রতিটা message দুইবার করে পাঠায়, তাই প্রতিটা invoice duplicate হয়ে যায়",
+        "কারণ auto-ack-এ worker message process করার জন্য অনেক বেশি সময় পায়, তাই queue জমে যায়",
+        "কারণ deliver হওয়া মাত্রই message 'done' ধরা হয়, তাই worker process-এর মাঝে crash করলে message হারিয়ে যায়",
+        "কারণ auto-ack শুধু pub/sub topic-এ কাজ করে, point-to-point queue-তে কাজই করে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Auto-ack-এ Broker deliver করার মুহূর্তেই ধরে নেয় কাজ শেষ। Worker যদি invoice বানানোর মাঝে crash করে, Broker আর message রাখে না, তাই redelivery হয় না। Manual ack-এ worker কাজ শেষ করে ack দেয়, তাই crash হলে message আবার আসে।",
+      "whyWrong": {
+        "0": "Auto-ack duplicate-এর কারণ নয়, বরং message হারানোর ঝুঁকি তৈরি করে।",
+        "1": "Ack mode processing time বাড়ায় না, সমস্যাটা হলো crash-এর সময় message হারানো।",
+        "3": "Auto-ack queue-তেও ব্যবহার করা যায়, সমস্যা হলো এটা safety কমায়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q12",
+      "difficulty": "easy",
+      "question": "Amazon SQS-এ একটা message worker নেওয়ার পর কিছুক্ষণ অন্যদের কাছে কেন invisible থাকে (visibility timeout)?",
+      "options": [
+        "যাতে Producer ওই সময়ের মধ্যে message-টা edit করে নতুন data যোগ করতে পারে",
+        "যাতে অন্য worker একই message একসাথে না নেয়, আর ack না আসলে timeout শেষে আবার visible হয়",
+        "যাতে message-টা timeout শেষ হলে automatically delete হয়ে যায়, ack দেওয়ার দরকার না পড়ে",
+        "যাতে Broker ওই সময়ে message-টা encrypt করে নিরাপদে Consumer-এর কাছে পাঠাতে পারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Visibility timeout চলাকালীন message in-flight থাকে, অন্য worker দেখতে পায় না। Worker সময়মতো delete/ack করলে কাজ শেষ। না করলে timeout শেষে message আবার visible হয়, যাতে অন্য কেউ retry করতে পারে।",
+      "whyWrong": {
+        "0": "Producer in-flight message edit করে না, timeout শুধু duplicate pickup ঠেকায়।",
+        "2": "Timeout শেষে message delete হয় না, বরং আবার visible হয়।",
+        "3": "Visibility timeout encryption-এর জন্য নয়, concurrency আর retry-এর জন্য।"
+      }
+    },
+    {
+      "id": "sd-day-012-q13",
+      "difficulty": "easy",
+      "question": "At-least-once delivery-তে একই message কেন কখনো কখনো দুইবার আসে?",
+      "options": [
+        "কারণ Broker load সামলাতে random ভাবে কিছু message দুইবার পাঠায়, যাতে network-এ কোনোটা হারালেও কিছুই miss না হয়",
+        "কারণ Producer প্রতিটা message ইচ্ছা করে দুইবার publish করে, যাতে backup থাকে",
+        "কারণ queue-তে message সবসময় দুইটা copy হিসেবে store হয় আর দুইটাই deliver হয়",
+        "কারণ worker কাজ শেষ করেছে কিন্তু ack দেওয়ার আগেই crash করলে Broker ধরে নেয় কাজ হয়নি এবং আবার পাঠায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Broker শুধু ack দেখে বুঝে কাজ হয়েছে কিনা। Worker email পাঠিয়ে ফেলল কিন্তু ack দেওয়ার আগেই crash করল, তাহলে Broker message আবার deliver করবে। তাই at-least-once মানে message হারাবে না, কিন্তু duplicate হতে পারে।",
+      "whyWrong": {
+        "0": "Broker random ভাবে duplicate পাঠায় না, duplicate হয় ack হারালে।",
+        "1": "Duplicate-এর স্বাভাবিক কারণ Producer-এর ইচ্ছাকৃত double publish নয়।",
+        "2": "Storage-এ copy থাকলেও Consumer-এর কাছে duplicate আসার কারণ redelivery।"
+      }
+    },
+    {
+      "id": "sd-day-012-q14",
+      "difficulty": "easy",
+      "question": "Consumer-কে idempotent বানানো কেন জরুরি?",
+      "options": [
+        "কারণ এতে একই message দুইবার process হলেও ফলাফল একবার process করার মতোই থাকে, যেমন email একবারই যায়",
+        "কারণ idempotent consumer message-গুলো অনেক দ্রুত process করে, তাই throughput বাড়ে",
+        "কারণ idempotent হলে Broker আর কখনো কোনো message redeliver করে না, তাই duplicate আসা পুরোপুরি বন্ধ হয়ে যায়",
+        "কারণ idempotent consumer-এর জন্য Acknowledgement দেওয়ার দরকার পড়ে না, কাজ সহজ হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "At-least-once system-এ duplicate আসবেই, এটা থামানো যায় না। Idempotent consumer duplicate-কে নিরীহ বানায়, যেমন processed ID দেখে আবার email না পাঠানো। তাই একই message দুবার এলেও ক্ষতি হয় না।",
+      "whyWrong": {
+        "1": "Idempotency speed-এর জন্য নয়, duplicate-এর ক্ষতি ঠেকানোর জন্য।",
+        "2": "Broker-এর redelivery আচরণ বদলায় না, consumer শুধু duplicate-কে নিরাপদে সামলায়।",
+        "3": "Idempotent হলেও ack দিতে হয়, নাহলে message বারবার ফিরে আসবে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q15",
+      "difficulty": "easy",
+      "question": "Dead Letter Queue (DLQ) রাখার মূল উদ্দেশ্য কী?",
+      "options": [
+        "বারবার fail হওয়া message-গুলোকে permanently delete করে দেওয়া, যাতে main queue সবসময় পরিষ্কার আর হালকা থাকে",
+        "সব সফল message-এর একটা backup copy রাখা, যাতে পরে audit করা যায়",
+        "বারবার fail হওয়া message আলাদা করে রেখে দেওয়া, যাতে পরে inspect করা বা আবার replay করা যায়",
+        "Queue-তে জায়গা কম হলে নতুন message-গুলোকে সাময়িকভাবে সেখানে রেখে দেওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "DLQ হলো fail হওয়া message-এর আলাদা ঘর। Message delete হয় না, তাই developer দেখতে পারে কেন fail হলো, bug fix করে আবার main queue-তে পাঠাতে পারে। এতে main queue আটকে থাকে না আবার data-ও হারায় না।",
+      "whyWrong": {
+        "0": "DLQ message delete করে না, বরং রেখে দেয়, এটাই সাধারণ ভুল ধারণা।",
+        "1": "DLQ-তে সফল message যায় না, শুধু বারবার fail হওয়াগুলো যায়।",
+        "3": "DLQ overflow storage নয়, এটা failure handling-এর জন্য।"
+      }
+    },
+    {
+      "id": "sd-day-012-q16",
+      "difficulty": "easy",
+      "question": "Point-to-point queue আর pub/sub topic-এর মূল পার্থক্য কী?",
+      "options": [
+        "Queue-তে message চিরকাল থাকে, আর topic-এ message একবার পড়ার পরই delete হয়ে যায়",
+        "Queue-তে একটা message একজন consumer পায়, আর topic-এ প্রতিটা subscriber message-এর নিজের copy পায়",
+        "Queue শুধু একটা producer সমর্থন করে, আর topic-এ একাধিক producer publish করতে পারে",
+        "Queue asynchronous ভাবে কাজ করে, কিন্তু pub/sub topic সবসময় synchronous ভাবে প্রতিটা subscriber-কে সরাসরি call করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Queue-তে competing consumers একে অপরের সাথে কাজ ভাগ করে, প্রতি message একজনের। Topic-এ fan-out হয়, তাই email, warehouse, analytics প্রত্যেকেই একই order event পায়। কোন pattern দরকার সেটা নির্ভর করে message কতজনের দরকার তার ওপর।",
+      "whyWrong": {
+        "0": "Queue-তে message ack-এর পর delete হয়, চিরকাল থাকে না।",
+        "2": "Queue-তেও একাধিক producer publish করতে পারে।",
+        "3": "Pub/sub-ও asynchronous, subscriber-রা নিজের সময়ে message নেয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q17",
+      "difficulty": "easy",
+      "question": "Apache Kafka-তে একটা consumer কেন পুরনো message আবার শুরু থেকে পড়তে (replay) পারে?",
+      "options": [
+        "কারণ Kafka প্রতিটা message consumer-এর local disk-এ একটা copy করে দেয়, আর replay-এর সময় consumer সেখান থেকেই আবার পড়ে",
+        "কারণ Kafka-তে producer-কে বললে সে পুরনো সব message আবার নতুন করে publish করে দেয়",
+        "কারণ Kafka পড়া হয়ে যাওয়া message একটা আলাদা DLQ-তে সরিয়ে রাখে replay করার জন্য",
+        "কারণ Kafka log-এ message consume করলেও delete হয় না, retention পর্যন্ত থাকে আর consumer নিজের offset track করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Kafka একটা distributed log। Message পড়লে মুছে যায় না, retention সময় পর্যন্ত থাকে। প্রতিটা consumer group নিজের offset মনে রাখে, তাই offset পিছিয়ে দিলেই পুরনো message আবার পড়া যায়।",
+      "whyWrong": {
+        "0": "Kafka consumer-এর disk-এ copy রাখে না, data broker-এর log-এ থাকে।",
+        "1": "Replay-এর জন্য producer-কে আবার publish করতে হয় না।",
+        "2": "Kafka পড়া message DLQ-তে সরায় না, log-এই রেখে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q18",
+      "difficulty": "easy",
+      "question": "Queue depth (queue-তে কতগুলো message জমে আছে) কেন একটা গুরুত্বপূর্ণ metric?",
+      "options": [
+        "কারণ depth বাড়তে থাকা মানে consumer-রা incoming rate-এর সাথে তাল রাখতে পারছে না",
+        "কারণ depth বেশি হওয়া মানে সবসময় Producer-এর code-এ কোনো bug আছে এবং সে ভুল message পাঠাচ্ছে",
+        "কারণ depth শূন্য হলে বুঝতে হবে Broker crash করেছে এবং message নিচ্ছে না",
+        "কারণ depth দিয়ে সরাসরি বোঝা যায় প্রতিটা message-এর size কত বড় হয়েছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Depth স্থির বা কমতে থাকলে consumer-রা সামলাতে পারছে। Depth লাগাতার বাড়লে বোঝা যায় processing capacity কম, delay বাড়ছে। তাই অনেক team queue depth দেখে consumer scale করে।",
+      "whyWrong": {
+        "1": "Depth বেশি হওয়া বেশিরভাগ সময় traffic বা capacity-র ব্যাপার, Producer-এর bug নয়।",
+        "2": "Depth শূন্য সাধারণত ভালো খবর, মানে consumer সব কাজ শেষ করেছে।",
+        "3": "Depth message সংখ্যা বোঝায়, message-এর size নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q19",
+      "difficulty": "easy",
+      "question": "Login-এর সময় password check-কে queue-এর মাধ্যমে asynchronous করা কেন ভালো idea নয়?",
+      "options": [
+        "কারণ queue password-এর মতো sensitive data কখনোই store করতে পারে না",
+        "কারণ queue ব্যবহার করলে login check বেশি CPU খরচ করে এবং server ধীর হয়ে যায়",
+        "কারণ user-কে একই request-এ জানতে হবে login সফল কিনা, পরে জানালে তার কোনো কাজে আসে না",
+        "কারণ login check সবসময় একসাথে লক্ষ লক্ষ request নিয়ে আসে, queue সেটা সামলাতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Queue তখনই কাজে লাগে যখন কাজটা পরে হলেও চলে। Login-এ user তখনই জানতে চায় সে ভেতরে ঢুকতে পারবে কিনা। এমন কাজ synchronous রাখাই ঠিক, নাহলে শুধু complexity বাড়ে আর UX খারাপ হয়।",
+      "whyWrong": {
+        "0": "মূল সমস্যা storage নয়, বরং user-এর তাৎক্ষণিক উত্তর দরকার।",
+        "1": "CPU খরচ নয়, সমস্যা হলো result-এর জন্য user-কে অপেক্ষা করতে হবে।",
+        "3": "Queue বড় volume সামলাতে পারে, সমস্যা হলো এখানে তাৎক্ষণিক result দরকার।"
+      }
+    },
+    {
+      "id": "sd-day-012-q20",
+      "difficulty": "easy",
+      "question": "Poison message (যে message প্রতিবারই fail করে) অসীম বার retry করা কেন খারাপ?",
+      "options": [
+        "কারণ retry করলে message-এর content প্রতিবার বদলে যায়, তাই data নষ্ট হয়",
+        "কারণ এটা কখনো সফল হবে না, অথচ বারবার worker-এর সময় খায় আর অন্য message-কে আটকে বা দেরি করিয়ে দেয়",
+        "কারণ অসীম retry করলে Broker নিজে থেকে পুরো queue delete করে দেয় নিরাপত্তার জন্য",
+        "কারণ retry শুধু Producer-এর দিক থেকেই করা যায়, Consumer-এর দিক থেকে কোনো message আবার চেষ্টা করা কখনো সম্ভবই নয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Malformed data-ওয়ালা message যতবারই চেষ্টা করুন fail করবে। অসীম retry worker-এর capacity নষ্ট করে, আর ordered queue হলে পেছনের message-গুলো আটকে যায়। তাই max retries বা maxReceiveCount দিয়ে সীমা টেনে message DLQ-তে পাঠানো হয়।",
+      "whyWrong": {
+        "0": "Retry করলে message-এর content বদলায় না, একই message বারবার আসে।",
+        "2": "Broker নিজে থেকে queue delete করে না।",
+        "3": "Consumer-এর দিক থেকেও retry হয়, যেমন ack না দিলে redelivery।"
+      }
+    },
+    {
+      "id": "sd-day-012-q21",
+      "difficulty": "medium",
+      "question": "আপনার invoice queue-তে 3টা worker আছে, প্রতিটা message process করতে 200ms লাগে। মোট throughput কত message/second?",
+      "options": [
+        "5 message/second, কারণ একজন worker যতটুকু পারে পুরো system-ও ততটুকুই পারে",
+        "600 message/second, কারণ 3 worker × 200ms গুণ করলেই মোট throughput পাওয়া যায়",
+        "15 message/second, কারণ প্রতি worker সেকেন্ডে 5টা করে করে আর 3জন parallel-এ চলে",
+        "45 message/second, কারণ প্রতিটা worker-এর throughput worker সংখ্যার বর্গ দিয়ে বাড়ে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একজন worker 200ms-এ একটা message করে, তাই সেকেন্ডে 1000/200 = 5টা। Competing consumers parallel-এ চলে, তাই 3 × 5 = 15 message/second। Worker বাড়ালে throughput মোটামুটি linear ভাবে বাড়ে, যতক্ষণ downstream সামলাতে পারে।",
+      "whyWrong": {
+        "0": "Worker-রা parallel-এ চলে, তাই একজনের capacity পুরো system-এর capacity নয়।",
+        "1": "Worker সংখ্যাকে milliseconds দিয়ে গুণ করলে throughput হয় না, ভুল unit।",
+        "3": "Throughput worker সংখ্যার বর্গে বাড়ে না, linear ভাবে বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q22",
+      "difficulty": "medium",
+      "question": "Sale-এর সময় প্রতি সেকেন্ডে 500টা order message আসছে, কিন্তু worker-রা সেকেন্ডে 300টা process করতে পারে। Spike 60 সেকেন্ড চললে spike শেষে queue-তে কতগুলো message জমবে (শুরুতে queue খালি ছিল)?",
+      "options": [
+        "12,000 message, কারণ প্রতি সেকেন্ডে (500 − 300) = 200টা জমে আর 60 সেকেন্ডে তা হয়",
+        "30,000 message, কারণ spike-এর 60 সেকেন্ডে আসা সব message-ই process না হয়ে queue-তে জমে থাকে",
+        "18,000 message, কারণ worker-রা যা process করে সেটাই queue-তে জমে যায়",
+        "200 message, কারণ backlog শুধু rate-এর পার্থক্য, সময়ের সাথে বাড়ে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Queue growth = (incoming − capacity) × সময়। এখানে (500 − 300) × 60 = 12,000। Worker-রা স্পাইকের সময়েও 300/s করে কাজ চালিয়ে যাচ্ছে, তাই শুধু অতিরিক্ত অংশটুকুই জমে।",
+      "whyWrong": {
+        "1": "Worker-রা spike-এর সময়েও কাজ করছে, তাই সব incoming message জমে না।",
+        "2": "Process হওয়া message queue থেকে চলে যায়, জমে না।",
+        "3": "200 হলো প্রতি সেকেন্ডের জমা, 60 সেকেন্ডে তা গুণ হয়ে বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q23",
+      "difficulty": "medium",
+      "question": "আপনার SQS consumer একটা invoice PDF বানাতে প্রায় 45 সেকেন্ড নেয়, আর queue-এর visibility timeout default 30 সেকেন্ডেই আছে। Customer-রা দুইটা করে invoice পাচ্ছে। কী করবেন?",
+      "options": [
+        "Worker সংখ্যা বাড়িয়ে দেবেন, যাতে প্রতিটা message আগের চেয়ে দ্রুত শেষ হয় এবং duplicate invoice তৈরি হওয়া বন্ধ হয়",
+        "Visibility timeout কমিয়ে 10 সেকেন্ড করবেন, যাতে fail হওয়া message দ্রুত retry হয়",
+        "Auto-ack চালু করে দেবেন, যাতে message হাতে আসা মাত্র delete হয় আর duplicate না হয়",
+        "Visibility timeout processing time-এর চেয়ে বেশি করবেন (যেমন কয়েক মিনিট), সাথে consumer-কে idempotent রাখবেন"
+      ],
+      "correctIndex": 3,
+      "explanation": "30 সেকেন্ডে ack না আসায় message আবার visible হয়, আর অন্য worker সেটা নিয়ে দ্বিতীয় invoice বানায়। Timeout processing time-এর চেয়ে বড় করলে এই অপ্রয়োজনীয় redelivery বন্ধ হয়। তবুও crash-এর কারণে duplicate হতে পারে, তাই idempotency রাখা ভালো।",
+      "whyWrong": {
+        "0": "Worker বাড়ালে একটা message-এর processing time কমে না, 45 সেকেন্ডই লাগে।",
+        "1": "Timeout আরও কমালে আরও বেশি duplicate হবে, কারণ কাজ শেষের আগেই message ফিরে আসবে।",
+        "2": "Auto-ack duplicate কমালেও crash হলে invoice হারিয়ে যাবে, এটা safety কমায়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q24",
+      "difficulty": "medium",
+      "question": "Queue-based design-এ email service 10 মিনিট down থাকলে নতুন order-গুলোর কী হবে?",
+      "options": [
+        "Order API-ও 10 মিনিট error দেবে, কারণ email ছাড়া order complete ধরা হয় না",
+        "Order যথারীতি নেওয়া হবে, email message-গুলো queue-তে অপেক্ষা করবে আর service ফিরলে পাঠানো হবে",
+        "Email message-গুলো Broker থেকে সাথে সাথে delete হয়ে যাবে, তাই ওই 10 মিনিটের email আর কখনো customer-এর কাছে যাবে না",
+        "Broker সব email message অন্য কোনো চালু service-কে automatically পাঠিয়ে দেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Queue order API আর email service-কে decouple করে দিয়েছে। Order API শুধু message publish করে, email worker down থাকলে message queue-তে জমে থাকে। Service ফিরলে worker backlog শেষ করে, তাই কোনো order বা email হারায় না।",
+      "whyWrong": {
+        "0": "Order API আর email-এর ওপর সরাসরি নির্ভর করে না, এটাই queue-এর সুবিধা।",
+        "2": "Broker message ধরে রাখে, consumer না থাকলে delete করে না।",
+        "3": "Broker নিজে থেকে message অন্য ধরনের service-এ পাঠায় না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q25",
+      "difficulty": "medium",
+      "question": "কিছু customer একই 'order confirmed' email দুইবার পাচ্ছে। Log দেখে বুঝলেন worker email পাঠানোর পর ack দেওয়ার আগেই মাঝে মাঝে restart হচ্ছে। সবচেয়ে ভালো fix কোনটা?",
+      "options": [
+        "Ack mode বদলে auto-ack করে দেওয়া, যাতে message হাতে আসলেই ack হয়ে যায় আর duplicate না আসে",
+        "Broker-কে exactly-once mode-এ চালু করা, তাহলে কোনো configuration ছাড়াই duplicate চিরতরে বন্ধ হবে",
+        "Message-এর orderId-কে idempotency key ধরে আগে check করা email আগে গেছে কিনা, গেলে শুধু ack দেওয়া",
+        "Worker-এর সংখ্যা কমিয়ে একটায় নামিয়ে আনা, তাহলে কোনো message আর দুইবার process হবে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা at-least-once-এর স্বাভাবিক আচরণ, crash হলে redelivery হবেই। Consumer-কে idempotent বানালে, অর্থাৎ processed ID দেখে duplicate চিনে ফেললে, দ্বিতীয়বার email যাবে না। Message হারানোর ঝুঁকি না নিয়েই সমস্যা মেটে।",
+      "whyWrong": {
+        "0": "Auto-ack-এ duplicate কমলেও crash হলে email একদমই না যাওয়ার ঝুঁকি তৈরি হয়।",
+        "1": "Exactly-once বিনা খরচে পাওয়া যায় না, বাস্তবে এটা at-least-once আর idempotent consumer দিয়েই হয়।",
+        "3": "একজন worker থাকলেও ack-এর আগে crash করলে redelivery হবে, duplicate থামবে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q26",
+      "difficulty": "medium",
+      "question": "প্রতিটা order event email, warehouse আর analytics তিনটা service-এর সবারই পাওয়া দরকার। কোন design ঠিক?",
+      "options": [
+        "Pub/sub topic ব্যবহার করা, যাতে প্রতিটা subscriber service প্রতিটা event-এর নিজের copy পায়",
+        "একটা queue রেখে তিন service-কে competing consumers হিসেবে পড়তে দেওয়া, তাহলে সবাই event পাবে",
+        "Order API থেকে তিনটা service-কে সরাসরি synchronous call করা, যাতে নিশ্চিত হওয়া যায় সবাই পেয়েছে",
+        "একটা queue রেখে প্রতিটা message-এর visibility timeout বড় করা, যাতে তিন service পালা করে পড়ে"
+      ],
+      "correctIndex": 0,
+      "explanation": "এখানে একটা event অনেকজনের দরকার, তাই fan-out চাই। Pub/sub topic-এ প্রতিটা subscriber আলাদা copy পায়। একটা queue-তে competing consumers থাকলে প্রতিটা event শুধু একটা service পেত।",
+      "whyWrong": {
+        "1": "Competing consumers কাজ ভাগ করে নেয়, তাই প্রতিটা event তিনজনের মধ্যে একজনই পাবে।",
+        "2": "Synchronous call আবার সেই slow আর tightly coupled সমস্যায় ফিরিয়ে নেবে।",
+        "3": "Visibility timeout বড় করলে message পালা করে সবাই পায় না, একজন ack দিলেই delete হয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q27",
+      "difficulty": "medium",
+      "question": "Warehouse API ক্ষণিকের জন্য down হলে আপনার consumer সাথে সাথে বারবার retry করছে, ফলে API ফিরে আসতেই আবার overload হয়ে পড়ছে। কী করবেন?",
+      "options": [
+        "Retry সংখ্যা বাড়িয়ে প্রতি সেকেন্ডে আরও বেশি চেষ্টা করা, যাতে API ফিরলেই সব কাজ শেষ হয়",
+        "Retry পুরো বন্ধ করে প্রথম fail-এই message delete করে দেওয়া, যাতে warehouse API-তে আর কোনো চাপ না পড়ে",
+        "Message-গুলো সরাসরি Producer-এর কাছে ফেরত পাঠিয়ে দেওয়া, যাতে সে পরে আবার publish করে",
+        "Retry-এর মাঝে backoff দেওয়া (যেমন 1s, 2s, 4s করে বাড়ানো), আর একটা max retries সীমা রাখা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Immediate tight-loop retry downstream-কে আরও চাপে ফেলে। Exponential backoff দিলে প্রতিবার একটু বেশি অপেক্ষা করা হয়, তাই API সামলে ওঠার সময় পায়। Max retries সীমা থাকলে স্থায়ী fail হওয়া message শেষে DLQ-তে যায়।",
+      "whyWrong": {
+        "0": "আরও ঘন ঘন retry করলে overload আরও বাড়বে, কমবে না।",
+        "1": "প্রথম fail-এ delete করলে ক্ষণিকের সমস্যাতেই order-এর কাজ হারিয়ে যাবে।",
+        "2": "Producer-কে ফেরত পাঠানো queue design-এর অংশ নয়, retry consumer দিকেই হয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q28",
+      "difficulty": "medium",
+      "question": "একটা message-এর JSON ভাঙা, তাই প্রতিবার parse error হয় আর message বারবার ফিরে আসে। Queue-তে অন্য message-ও দেরি হচ্ছে। কী সেট করবেন?",
+      "options": [
+        "Visibility timeout কমিয়ে দেবেন, যাতে ভাঙা message আরও দ্রুত বারবার retry হয়ে এক সময় নিজে থেকেই সমস্যা মিটে যায়",
+        "maxReceiveCount বা max retries সেট করে একটা DLQ যুক্ত করবেন, যাতে কয়েকবার fail-এর পর message সেখানে সরে যায়",
+        "Consumer-কে বলবেন message না পড়েই ack দিতে, যাতে queue খালি হয় এবং অন্য message আগে আসে",
+        "আরও বেশি worker যোগ করবেন, যাতে কেউ না কেউ এক সময় ভাঙা message-টা সফলভাবে process করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা poison message, যতবারই চেষ্টা করুন parse হবে না। maxReceiveCount পার হলে redrive policy message-কে DLQ-তে সরায়। Main queue আবার স্বাভাবিক চলে, আর ভাঙা message-টা পরে দেখে ঠিক করা যায়।",
+      "whyWrong": {
+        "0": "Timeout কমালে ভাঙা message আরও ঘন ঘন ফিরবে, সমস্যা বাড়বে।",
+        "2": "না পড়ে ack দিলে ভালো message-ও হারিয়ে যাবে।",
+        "3": "ভাঙা JSON কোনো worker-ই parse করতে পারবে না, worker বাড়ানো অর্থহীন।"
+      }
+    },
+    {
+      "id": "sd-day-012-q29",
+      "difficulty": "medium",
+      "question": "আপনার DLQ আছে, কিন্তু কেউ দেখে না। এক মাস পর জানলেন হাজারখানেক payment receipt কখনো পাঠানোই হয়নি। এখান থেকে শিক্ষা কী?",
+      "options": [
+        "DLQ-তে message গেলেই Broker নিজে কিছুদিন পর আবার retry করে ফেলে, তাই monitoring লাগে না",
+        "DLQ রাখাই ভুল ছিল, কারণ DLQ message delete করে দেয় আর সেগুলো আর ফেরানো যায় না",
+        "DLQ-এর depth-এর ওপর alert রাখতে হবে আর নিয়মিত inspect করে fix শেষে replay করতে হবে",
+        "DLQ শুধু development environment-এর জন্য, production-এ retry অসীম রাখাই নিরাপদ পথ"
+      ],
+      "correctIndex": 2,
+      "explanation": "DLQ message নিরাপদে রাখে, কিন্তু নিজে থেকে কোনো সমস্যা সমাধান করে না। কেউ না দেখলে ব্যর্থ কাজগুলো চুপচাপ পড়ে থাকে, আর retention শেষ হলে হারিয়েও যেতে পারে। তাই DLQ depth-এ alarm আর replay process থাকা জরুরি।",
+      "whyWrong": {
+        "0": "DLQ নিজে থেকে retry করে না, মানুষকে বা আলাদা process-কে replay করতে হয়।",
+        "1": "DLQ message delete করে না, রেখে দেয়, এখানে সমস্যা ছিল monitoring না থাকা।",
+        "3": "Production-এ অসীম retry poison message দিয়ে queue আটকে দেয়, DLQ সেখানেই সবচেয়ে দরকারি।"
+      }
+    },
+    {
+      "id": "sd-day-012-q30",
+      "difficulty": "medium",
+      "question": "Bank account-এর deposit আর withdraw event একই account-এর জন্য ক্রমানুসারে process হতে হবে, কিন্তু throughput-এর জন্য 5টা consumer দরকার। কী করবেন?",
+      "options": [
+        "Account ID-কে message group বা partition key বানাবেন, যাতে একই account-এর event ক্রমে থাকে আর ভিন্ন account parallel চলে",
+        "একটা FIFO queue-তে 5টা competing consumer চালাবেন, কারণ FIFO থাকলে consumer যতই হোক সব event নিজে থেকেই global order-এ process হবে",
+        "Consumer-দের মধ্যে random delay যোগ করবেন, যাতে আগে আসা event সাধারণত আগে শেষ হয়",
+        "5টা consumer বাদ দিয়ে একটা consumer রাখবেন আর তার CPU বাড়াবেন, এটাই একমাত্র scale করার উপায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Strict global order লাগে না, লাগে প্রতি account-এর ভেতরে order। Key দিয়ে group করলে একই account-এর event একই group/partition-এ ক্রমে যায়। ভিন্ন account-গুলো আলাদা consumer parallel-এ চালাতে পারে, তাই scale-ও হয়।",
+      "whyWrong": {
+        "1": "Message group ছাড়া একাধিক consumer একসাথে নিলে কে আগে শেষ করবে তা নিশ্চিত নয়, order ভাঙে।",
+        "2": "Random delay order-এর কোনো guarantee দেয় না।",
+        "3": "একটা consumer order রাখে, কিন্তু per-key ordering দিয়ে order রেখেও scale করা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q31",
+      "difficulty": "medium",
+      "question": "Website-এর click analytics event-এ মাঝে মাঝে দুই-একটা হারালে সমস্যা নেই, কিন্তু payment success notification হারানো চলবে না। কোন guarantee কোথায় বেছে নেবেন?",
+      "options": [
+        "দুইটার জন্যই at-most-once, কারণ এটা সবচেয়ে দ্রুত আর duplicate কখনো হয় না",
+        "Analytics-এ at-least-once আর payment-এ at-most-once, কারণ payment notification-এ duplicate আসা হারানোর চেয়েও বেশি বিপজ্জনক",
+        "দুইটার জন্যই exactly-once, কারণ আধুনিক Broker-এ এটা বিনা খরচে আর বিনা code-এ পাওয়া যায়",
+        "Analytics-এ at-most-once চলতে পারে, payment notification-এ at-least-once সাথে idempotent consumer"
+      ],
+      "correctIndex": 3,
+      "explanation": "At-most-once-এ message হারাতে পারে কিন্তু duplicate হয় না, analytics-এর জন্য এটা মেনে নেওয়া যায়। Payment notification হারানো চলবে না, তাই at-least-once লাগে। Duplicate সামলাতে consumer-কে idempotent রাখতে হয়।",
+      "whyWrong": {
+        "0": "At-most-once-এ payment notification হারিয়ে যেতে পারে, যা এখানে মেনে নেওয়া যাবে না।",
+        "1": "উল্টো হয়ে গেছে: payment-এ at-most-once মানে notification হারানোর ঝুঁকি।",
+        "2": "Exactly-once বিনা খরচে আসে না, বাস্তবে idempotency দিয়েই বানাতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q32",
+      "difficulty": "medium",
+      "question": "আপনাকে সেকেন্ডে 100টা message process করতে হবে। প্রতিটা message-এ একজন worker 250ms নেয়। কমপক্ষে কতজন worker লাগবে?",
+      "options": [
+        "4 জন worker, কারণ 1000ms ÷ 250ms = 4 আর এটাই দরকারি worker সংখ্যা",
+        "25 জন worker, কারণ প্রতিজন সেকেন্ডে 4টা করে পারে আর 100 ÷ 4 = 25",
+        "250 জন worker, কারণ প্রতিটা message-এর জন্য 250ms মানে 250জন লাগে",
+        "400 জন worker, কারণ 100 message × 4 গুণ করলে মোট worker পাওয়া যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "একজন worker সেকেন্ডে 1000/250 = 4টা message করে। লক্ষ্য 100/s, তাই 100 ÷ 4 = 25 জন worker। বাস্তবে একটু headroom রাখাও ভালো, যাতে spike সামলানো যায়।",
+      "whyWrong": {
+        "0": "4 হলো একজন worker-এর throughput, দরকারি worker সংখ্যা নয়।",
+        "2": "Processing time-কে সরাসরি worker সংখ্যা ধরা ভুল হিসাব।",
+        "3": "100 × 4 গুণ করলে অর্থহীন সংখ্যা আসে, ভাগ করতে হবে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q33",
+      "difficulty": "medium",
+      "question": "Queue-তে 18,000 message জমে আছে। Worker-রা মিলে সেকেন্ডে 400টা process করছে, আর নতুন message আসছে সেকেন্ডে 100টা। Backlog শেষ হতে কত সময় লাগবে?",
+      "options": [
+        "60 সেকেন্ড, কারণ আসল drain rate হলো (400 − 100) = 300/s আর 18,000 ÷ 300 = 60",
+        "180 সেকেন্ড, কারণ 18,000 ÷ 100 = 180, আর নতুন message-এর rate দিয়েই backlog drain হয়",
+        "45 সেকেন্ড, কারণ 18,000 ÷ 400 = 45 আর নতুন message হিসাবে ধরতে হয় না",
+        "36 সেকেন্ড, কারণ মোট rate (400 + 100) = 500/s ধরে 18,000 ÷ 500 করতে হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Worker-রা 400/s করছে কিন্তু একই সময়ে 100/s নতুন আসছে, তাই backlog আসলে কমছে 300/s হারে। 18,000 ÷ 300 = 60 সেকেন্ড। Drain time হিসাব করতে সবসময় net rate নিতে হয়।",
+      "whyWrong": {
+        "1": "Incoming rate দিয়ে ভাগ করলে drain time পাওয়া যায় না, processing আর incoming-এর পার্থক্য লাগে।",
+        "2": "নতুন message-ও queue-তে যোগ হচ্ছে, তাই সেটা বাদ দিলে সময় কম দেখাবে।",
+        "3": "Incoming message backlog কমায় না, বাড়ায়, তাই যোগ নয় বিয়োগ করতে হবে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q34",
+      "difficulty": "medium",
+      "question": "Eid sale-এ queue depth লাগাতার বাড়ছে, worker-দের CPU স্বাভাবিক, আর downstream service-ও ভালো সামলাচ্ছে। সবচেয়ে কার্যকর পদক্ষেপ কোনটা?",
+      "options": [
+        "Queue depth-এর ভিত্তিতে consumer সংখ্যা auto-scale করা, যাতে depth বাড়লে worker বাড়ে আর কমলে কমে",
+        "Producer-কে পুরো বন্ধ করে দেওয়া যতক্ষণ না queue খালি হয়, যাতে worker-রা চাপ ছাড়া ধীরে ধীরে সামলে নিতে পারে",
+        "Queue-এর message retention কমিয়ে দেওয়া, যাতে পুরনো message নিজে থেকে মুছে গিয়ে depth কমে",
+        "সব message auto-ack mode-এ নেওয়া শুরু করা, যাতে ack-এর সময় বাঁচে আর queue দ্রুত খালি হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Depth বাড়ছে মানে processing capacity কম। Downstream যেহেতু সামলাতে পারছে, worker বাড়ালেই throughput বাড়বে। Queue depth বা consumer lag দেখে auto-scale করা এই কারণেই জনপ্রিয় pattern।",
+      "whyWrong": {
+        "1": "Producer বন্ধ মানে নতুন order নেওয়া বন্ধ, যা ব্যবসার জন্য ক্ষতিকর।",
+        "2": "Retention কমালে message হারিয়ে যাবে, সমস্যা সমাধান হবে না।",
+        "3": "Auto-ack crash হলে message হারানোর ঝুঁকি আনে, আর মূল সমস্যা capacity।"
+      }
+    },
+    {
+      "id": "sd-day-012-q35",
+      "difficulty": "medium",
+      "question": "Amazon SQS-এ আপনার একই order-এর event ক্রমে চাই, আর duplicate publish হলে সেটা বাদ পড়ুক। কোনটা বেছে নেবেন?",
+      "options": [
+        "SQS Standard queue, কারণ এটা প্রতিটা message ঠিক একবার আর পুরো queue-এ কঠোর ক্রমে deliver করে",
+        "SQS Standard queue সাথে visibility timeout বড় করা, তাহলে ordering আর deduplication দুটোই পাওয়া যায়",
+        "SQS FIFO queue, কিন্তু message group ছাড়া, কারণ FIFO নিজে থেকেই সব consumer-এর মধ্যে পুরো queue-জুড়ে global order রাখে",
+        "SQS FIFO queue, order ID-কে message group ID হিসেবে দিয়ে, যাতে group-এর ভেতরে ক্রম আর deduplication পাওয়া যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "SQS FIFO message group-এর ভেতরে ordering দেয় আর deduplication সমর্থন করে। Order ID-কে group ID বানালে একই order-এর event ক্রমে আসে, ভিন্ন order parallel চলে। Standard queue at-least-once আর best-effort ordering দেয়।",
+      "whyWrong": {
+        "0": "Standard queue at-least-once, তাই duplicate হতে পারে আর ordering শুধু best-effort।",
+        "1": "Visibility timeout ordering বা deduplication দেয় না।",
+        "2": "SQS FIFO-তে message group ID দিতে হয়, ordering সেই group-এর ভেতরেই নিশ্চিত হয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q36",
+      "difficulty": "medium",
+      "question": "RabbitMQ-তে বারবার reject হওয়া message-কে আলাদা জায়গায় সরিয়ে রাখতে কোন feature ব্যবহার করবেন?",
+      "options": [
+        "Kafka-এর মতো offset reset করে message-টাকে শুরুর দিকে পাঠিয়ে দেওয়া",
+        "Dead-letter exchange configure করা, যাতে reject বা expire হওয়া message অন্য queue-তে route হয়",
+        "Auto-ack চালু করা, যাতে reject হওয়া message নিজে থেকেই আলাদা queue-তে চলে যায়",
+        "Producer-এ একটা retry loop লিখে দেওয়া, যাতে fail হওয়া message আবার একই queue-তে নতুন করে publish হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "RabbitMQ-তে DLQ বানানো হয় dead-letter exchange দিয়ে। Message reject হলে বা expire হলে broker সেটা ওই exchange-এ পাঠায়, সেখান থেকে একটা আলাদা queue-তে যায়। এতে main queue পরিষ্কার থাকে আর fail হওয়া message inspect করা যায়।",
+      "whyWrong": {
+        "0": "Offset Kafka-এর ধারণা, RabbitMQ-তে reject হওয়া message সরানোর উপায় নয়।",
+        "2": "Auto-ack message আলাদা queue-তে পাঠায় না, শুধু delivery-তেই done ধরে।",
+        "3": "Producer-এর retry fail হওয়া message আলাদা করে না, বরং একই সমস্যা আবার queue-তে আনে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q37",
+      "difficulty": "medium",
+      "question": "একটা Kafka topic-এ 6টা partition আছে। একই consumer group-এ আপনি 8টা consumer চালালেন। কী হবে?",
+      "options": [
+        "সব 8টা consumer-ই কাজ পাবে, কারণ Kafka প্রতিটা partition-কে সমান ভাগে টুকরো করে consumer-দের দেয়",
+        "প্রতিটা message 8 বার process হবে, কারণ group-এর সব consumer প্রতিটা message পায়",
+        "6টা consumer একটা করে partition পাবে, বাকি 2টা idle থাকবে, কারণ group-এ এক partition একজনই পড়ে",
+        "Kafka অতিরিক্ত 2টা consumer-এর জন্য নিজে থেকে 2টা নতুন partition তৈরি করে নেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একটা consumer group-এর ভেতরে প্রতিটা partition একই সময়ে একজন consumer-কে দেওয়া হয়। 6 partition মানে সর্বোচ্চ 6 জন একসাথে কাজ করতে পারে। তাই parallelism বাড়াতে চাইলে partition সংখ্যা আগে ভেবে রাখতে হয়।",
+      "whyWrong": {
+        "0": "Kafka partition টুকরো করে ভাগ করে না, পুরো partition একজনকে দেয়।",
+        "1": "একই group-এর ভেতরে message ভাগ হয়, সবাই সব message পায় না।",
+        "3": "Consumer বাড়ালে Kafka নিজে থেকে partition তৈরি করে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q38",
+      "difficulty": "medium",
+      "question": "Checkout-এর সময় card payment authorization-কে queue-তে পাঠিয়ে user-কে বলা হচ্ছে 'পরে জানানো হবে'। এটা কেন সমস্যা?",
+      "options": [
+        "User-কে তখনই জানতে হবে payment approved কিনা, তাই authorization synchronous রাখা উচিত আর পরের কাজগুলো queue-তে",
+        "কারণ payment message queue-তে রাখলে সেটা কখনো encrypt হয় না, তাই সব card data সবার কাছে খোলা অবস্থায় পড়ে থাকে",
+        "কারণ queue payment-এর মতো বড় message রাখতে পারে না, তাই সব payment request ভেঙে যায়",
+        "কারণ queue ব্যবহার করলে payment সবসময় দুইবার কাটা হয়, তাই কখনোই queue ব্যবহার করা যাবে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Payment authorization-এর result-এর ওপর নির্ভর করে order হবে কি হবে না, তাই user-কে একই request-এ উত্তর দিতে হবে। Queue এখানে শুধু অনিশ্চয়তা বাড়ায়। Approved হওয়ার পর email, invoice, warehouse-এর কাজ asynchronous করা যায়।",
+      "whyWrong": {
+        "1": "Encryption আলাদা বিষয়, মূল সমস্যা হলো user-এর তাৎক্ষণিক result দরকার।",
+        "2": "Payment request সাধারণ ছোট message, size এখানে সমস্যা নয়।",
+        "3": "Queue নিজে double charge করে না, আর idempotency দিয়ে duplicate সামলানো যায়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q39",
+      "difficulty": "medium",
+      "question": "Manual ack mode-এ email worker ঠিক কখন ack দেবে?",
+      "options": [
+        "Message হাতে পাওয়ার সাথে সাথে, যাতে Broker দ্রুত জানে message পৌঁছেছে আর বাকিটা পরে হয়",
+        "Email পাঠানো শুরু করার আগে, যাতে ack আর email পাঠানো দুটো parallel-এ চলে সময় বাঁচায়",
+        "নির্দিষ্ট সময় পরপর batch-এ, কাজ শেষ হোক বা না হোক, যাতে Broker-এ চাপ কম পড়ে",
+        "Email সফলভাবে পাঠানো আর দরকারি DB update শেষ হওয়ার পরে, যাতে crash হলে message আবার আসে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Ack মানে Broker-কে বলা কাজ শেষ, এখন delete করো। কাজ শেষ হওয়ার আগে ack দিলে crash-এ message হারায়। তাই সব side effect সফল হওয়ার পরেই ack দেওয়া at-least-once-এর মূল নিয়ম।",
+      "whyWrong": {
+        "0": "হাতে পেয়েই ack দেওয়া আসলে auto-ack-এর মতো, crash-এ message হারায়।",
+        "1": "Email-এর আগে ack দিলে email fail হলে message আর ফিরে আসবে না।",
+        "2": "কাজ শেষ না হলেও ack দিলে অসমাপ্ত কাজের message হারিয়ে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q40",
+      "difficulty": "medium",
+      "question": "নতুন একটা fraud-analysis team গত 3 দিনের সব order event আবার শুরু থেকে process করতে চায়। কোন system এটা সহজে দেয়?",
+      "options": [
+        "RabbitMQ-এর সাধারণ queue, কারণ ack হওয়া message সেখানে চিরকাল থেকে যায় আর আবার পড়া যায়",
+        "SQS Standard queue, কারণ consumer delete করে দেওয়া message-ও SQS 14 দিন পর্যন্ত replay-এর জন্য আলাদা করে রেখে দেয়",
+        "Kafka, কারণ message consume করলেও retention পর্যন্ত log-এ থাকে আর নতুন consumer group শুরুর offset থেকে পড়তে পারে",
+        "যেকোনো queue-এর DLQ, কারণ সব সফল message process শেষে DLQ-তে জমা হয় replay-এর জন্য"
+      ],
+      "correctIndex": 2,
+      "explanation": "Kafka-তে consume করা মানে delete নয়, শুধু offset এগোনো। Retention-এর মধ্যে থাকলে নতুন consumer group পুরনো offset থেকে পড়ে replay করতে পারে। সাধারণ queue-তে ack হওয়া message delete হয়ে যায়।",
+      "whyWrong": {
+        "0": "RabbitMQ queue-তে ack হওয়া message delete হয়, পরে আবার পড়া যায় না।",
+        "1": "SQS-এ delete করা message ফেরত পাওয়া যায় না, 14 দিন হলো un-deleted message-এর সর্বোচ্চ retention।",
+        "3": "DLQ-তে শুধু fail হওয়া message যায়, সফলগুলো নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q41",
+      "difficulty": "hard",
+      "question": "Worker A একটা SQS message t=0 সেকেন্ডে নিল। Processing-এ 45 সেকেন্ড লাগে, visibility timeout 30 সেকেন্ড, আর আরেকটা Worker B idle বসে আছে। কী ঘটবে?",
+      "options": [
+        "t=45-এ A কাজ শেষ করে delete করবে, এর আগে message কারো কাছে যাবে না, কারণ in-flight message কখনো visible হয় না",
+        "t=30-এ message আবার visible হবে, B সেটা নিয়ে নতুন করে process শুরু করবে, ফলে একই invoice দুইবার তৈরি হতে পারে",
+        "t=30-এ SQS message-টা সরাসরি DLQ-তে পাঠিয়ে দেবে, কারণ timeout পার হওয়া মানেই message fail হয়েছে",
+        "t=30-এ SQS A-এর processing জোর করে থামিয়ে দেবে আর message-টা সাথে সাথে delete করে দেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Visibility timeout শেষ হলে SQS ধরে নেয় worker হয়তো মারা গেছে, তাই message আবার visible করে। B তখন সেটা নিয়ে কাজ শুরু করে, অথচ A-ও তখনো কাজ করছে। ফলে duplicate side effect হয়, তাই timeout processing time-এর চেয়ে বড় রাখা আর consumer idempotent রাখা দরকার।",
+      "whyWrong": {
+        "0": "In-flight message চিরকাল invisible থাকে না, timeout শেষে আবার visible হয়।",
+        "2": "একবার timeout পার হলেই DLQ-তে যায় না, maxReceiveCount পার হলে তবেই যায়।",
+        "3": "SQS worker-এর process থামাতে পারে না, আর timeout-এ message delete হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q42",
+      "difficulty": "hard",
+      "question": "Payment success হলে 'receipt email' পাঠানোর consumer effectively-once বানাতে চান। কোন design সবচেয়ে নির্ভরযোগ্য?",
+      "options": [
+        "Broker-এ একটা exactly-once flag চালু করে দেওয়া, তাহলে consumer-এ কোনো বাড়তি check বা DB লেখা ছাড়াই duplicate আর কখনো আসবে না",
+        "Message পাওয়া মাত্র ack দিয়ে তারপর email পাঠানো, যাতে Broker আর কখনো একই message আবার না পাঠায়",
+        "প্রতিবার email পাঠানোর আগে consumer-এর memory-তে রাখা একটা list দেখা, যেটা restart হলে খালি হয়ে যায়",
+        "At-least-once delivery রেখে, message-এর ID বা payment ID unique constraint সহ DB-তে লিখে আগে check করা, তারপর কাজ ও ack"
+      ],
+      "correctIndex": 3,
+      "explanation": "বাস্তবে 'exactly-once' মানে at-least-once delivery আর idempotent consumer একসাথে। Durable DB-তে unique key রাখলে restart-এর পরেও বোঝা যায় কোন message আগে process হয়েছে। Duplicate এলে কাজ skip করে শুধু ack দিলেই হয়।",
+      "whyWrong": {
+        "0": "Exactly-once বিনা খরচে আসে না, consumer-এর দিকে idempotency লাগেই।",
+        "1": "আগে ack দিলে এটা at-most-once হয়ে যায়, crash হলে email হারায়।",
+        "2": "Memory-তে রাখা list restart-এ মুছে যায়, তাই crash-এর পর duplicate ধরতে পারে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q43",
+      "difficulty": "hard",
+      "question": "একটা consumer-এর flow হলো: message receive → সাথে সাথে ack → তারপর process। এই design কোন delivery guarantee দেয়?",
+      "options": [
+        "At-least-once, কারণ ack আগে দেওয়ায় Broker নিশ্চিত হয় message পৌঁছেছে আর দরকারে আবার পাঠাবে",
+        "Exactly-once, কারণ ack আগে দিলে duplicate আসে না আর process তো একবার হবেই",
+        "At-most-once, কারণ ack-এর পরে crash করলে message আর ফেরত আসবে না, ফলে কাজটা হারাতে পারে",
+        "Guarantee-টা নির্ভর করে worker সংখ্যার ওপর, বেশি worker হলে at-least-once আর কম হলে exactly-once"
+      ],
+      "correctIndex": 2,
+      "explanation": "Ack দেওয়ার সাথে সাথে Broker message delete করে দেয়। এরপর process-এর মাঝে crash হলে কাজটা আর কখনো হবে না। তাই duplicate হয় না কিন্তু হারাতে পারে, এটাই at-most-once।",
+      "whyWrong": {
+        "0": "At-least-once-এর জন্য process শেষ করে তারপর ack দিতে হয়।",
+        "1": "Duplicate না আসলেও কাজ হারাতে পারে, তাই এটা exactly-once নয়।",
+        "3": "Delivery guarantee ack-এর সময়ের ওপর নির্ভর করে, worker সংখ্যার ওপর নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q44",
+      "difficulty": "hard",
+      "question": "Idempotency key হিসেবে কোনটা ব্যবহার করা সবচেয়ে ঠিক, যাতে redelivery-তে duplicate ধরা পড়ে?",
+      "options": [
+        "Producer-এর দেওয়া stable ID, যেমন orderId + event type বা message ID, যা প্রতিবার redelivery-তে একই থাকে",
+        "Consumer message পাওয়ার মুহূর্তের timestamp, কারণ প্রতিটা processing-এর সময় আলাদা হওয়ায় key unique থাকে",
+        "Consumer-এ প্রতিবার নতুন করে বানানো random UUID, কারণ random value কখনো collide করে না বলে নিরাপদ",
+        "যে worker process করছে তার hostname, কারণ একই worker সাধারণত একই message আবার নেয় না বলে ধরা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Duplicate ধরতে হলে একই message-এর জন্য key প্রতিবার একই হতে হবে। Producer-এর দেওয়া business ID বা message ID redelivery-তে বদলায় না। Consumer-এ বানানো timestamp বা UUID প্রতিবার আলাদা, তাই duplicate চেনা যায় না।",
+      "whyWrong": {
+        "1": "Timestamp প্রতিবার আলাদা, তাই একই message দুইবার এলে দুইটা আলাদা key হবে।",
+        "2": "প্রতিবার নতুন UUID মানে redelivery-কেও নতুন message মনে হবে।",
+        "3": "Redelivery প্রায়ই অন্য worker-এর কাছে যায়, hostname duplicate চেনায় না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q45",
+      "difficulty": "hard",
+      "question": "Product team চায় পুরো system-এর সব event কঠোর global order-এ process হোক, আবার 20টা consumer দিয়ে scale-ও হোক। আপনার পরামর্শ কী?",
+      "options": [
+        "20টা consumer-কে একটা FIFO queue-তে লাগিয়ে দিন, কারণ FIFO থাকলে global order আর scale দুটোই একসাথে পাওয়া যায়",
+        "Global order আর scale একসাথে সম্ভব না, তাই দেখুন কোন key-তে order আসলে দরকার আর সেই key দিয়ে partition করুন",
+        "প্রতিটা consumer-এর processing শেষে একটা global lock নিন, তাহলে 20 জনই parallel চলবে আবার order-ও থাকবে",
+        "Kafka-তে 20টা partition বানান, Kafka partition-গুলোর মধ্যেও পুরো topic-জুড়ে global order রাখে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Global order মানে প্রতিটা event আগেরটা শেষ হওয়ার পরে, যা আসলে একজন consumer-এর গতিতেই আটকে থাকে। বেশিরভাগ business-এ order দরকার শুধু একটা order বা user-এর ভেতরে। সেই key দিয়ে partition করলে per-key order থাকে আর ভিন্ন key parallel চলে।",
+      "whyWrong": {
+        "0": "Competing consumers একসাথে নিলে কে আগে শেষ করবে নিশ্চিত নয়, global order ভাঙে।",
+        "2": "Global lock দিলে কার্যত একজন একজন করে চলে, parallelism নষ্ট হয়।",
+        "3": "Kafka ordering শুধু একটা partition-এর ভেতরে guarantee করে, পুরো topic-এ নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q46",
+      "difficulty": "hard",
+      "question": "Kafka producer আগে userId-কে key হিসেবে দিত। এক developer key বাদ দিয়ে দিল, এখন message partition-গুলোতে ছড়িয়ে যাচ্ছে। কোন সমস্যা দেখা দেবে?",
+      "options": [
+        "কোনো সমস্যা হবে না, কারণ Kafka পুরো topic-জুড়ে সবসময় message-এর global order বজায় রাখে",
+        "Consumer group আর message পড়তে পারবে না, কারণ key ছাড়া লেখা message কোনো offset পায় না বলে হারিয়ে যায়",
+        "সব message এখন একটা partition-এই জমবে, কারণ key না থাকলে Kafka শুধু প্রথম partition ব্যবহার করে",
+        "একই user-এর event ভিন্ন partition-এ যেতে পারে, তাই সেই user-এর event-গুলোর ক্রম আর guarantee থাকবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Kafka ordering শুধু একটা partition-এর ভেতরে guarantee দেয়। Key থাকলে একই user-এর সব event একই partition-এ যায়, তাই ক্রমে থাকে। Key না থাকলে event ভিন্ন partition-এ ছড়ায়, আর ভিন্ন consumer আলাদা গতিতে পড়ায় ক্রম ভাঙতে পারে।",
+      "whyWrong": {
+        "0": "Kafka global order রাখে না, শুধু partition-এর ভেতরে রাখে।",
+        "1": "Key ছাড়াও message offset পায় আর পড়া যায়, সমস্যাটা ordering-এ।",
+        "2": "Key না থাকলে message ছড়িয়ে যায়, সব একটা partition-এ যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q47",
+      "difficulty": "hard",
+      "question": "আপনি Kafka-তে country-কে partition key বানিয়েছেন। 90% traffic Bangladesh থেকে, তাই একটা partition-এর consumer-এর lag বিশাল, বাকিরা প্রায় idle। Ordering দরকার শুধু প্রতিটা order-এর ভেতরে। কী করবেন?",
+      "options": [
+        "Partition key বদলে orderId-এর মতো বেশি ছড়ানো key দিন, তাতে load সমানভাবে ভাগ হবে আর প্রতি order-এর ক্রম থাকবে",
+        "একই consumer group-এ আরও অনেক consumer যোগ করুন, তাহলে Bangladesh partition-টা কয়েকজন মিলে ভাগ করে একসাথে পড়বে",
+        "Bangladesh partition-এর retention কমিয়ে দিন, যাতে পুরনো message মুছে গিয়ে lag নিজে থেকেই কমে যায়",
+        "Key পুরো বাদ দিয়ে দিন আর একটা মাত্র partition রাখুন, তাহলে সব event global order-এ থাকবে আর lag কমবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Country key-তে বেশিরভাগ traffic একটা partition-এ যায়, তাই সেটা hot partition হয়ে যায়। যেহেতু ordering দরকার শুধু order-এর ভেতরে, orderId key দিলে message অনেক partition-এ ছড়ায়। Load ভাগ হয়, আর একই order-এর event তবুও একই partition-এ থাকে।",
+      "whyWrong": {
+        "1": "Group-এ একটা partition একজনই পড়ে, তাই consumer বাড়ালে hot partition ভাগ হয় না।",
+        "2": "Retention কমালে unprocessed message হারিয়ে যাবে, এটা সমাধান নয়।",
+        "3": "একটা partition মানে একজন consumer, তাতে lag আরও বাড়বে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q48",
+      "difficulty": "hard",
+      "question": "আপনার retry policy: প্রথম fail-এর পর 1s অপেক্ষা, তারপর প্রতিবার অপেক্ষা দ্বিগুণ (1s, 2s, 4s, 8s)। প্রথম attempt fail হওয়ার পর পঞ্চম attempt শুরু হওয়া পর্যন্ত মোট কত সেকেন্ড অপেক্ষা হবে (processing time বাদে)?",
+      "options": [
+        "8 সেকেন্ড, কারণ শেষ retry-এর অপেক্ষাটাই মোট অপেক্ষা হিসেবে গোনা হয়",
+        "16 সেকেন্ড, কারণ 5টা attempt আর প্রতিটার আগে গড়ে প্রায় 3-4 সেকেন্ড অপেক্ষা ধরা যায়",
+        "15 সেকেন্ড, কারণ attempt 2 থেকে 5-এর আগের অপেক্ষাগুলো 1 + 2 + 4 + 8 যোগ করলে হয়",
+        "31 সেকেন্ড, কারণ 1, 2, 4, 8 আর 16 এই পাঁচটা অপেক্ষা যোগ করতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "পঞ্চম attempt-এর আগে মোট চারটা অপেক্ষা হয়: attempt 2-এর আগে 1s, 3-এর আগে 2s, 4-এর আগে 4s, 5-এর আগে 8s। যোগফল 15 সেকেন্ড। Exponential backoff-এ এভাবে অপেক্ষা দ্রুত বাড়ে, তাই downstream সামলানোর সময় পায়।",
+      "whyWrong": {
+        "0": "শুধু শেষ অপেক্ষাটা নয়, আগের সব অপেক্ষাও যোগ করতে হবে।",
+        "1": "এটা গড় ধরে আন্দাজ, সঠিক হিসাবে 1 + 2 + 4 + 8 = 15।",
+        "3": "16s অপেক্ষাটা ষষ্ঠ attempt-এর আগে হতো, পঞ্চমের আগে নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q49",
+      "difficulty": "hard",
+      "question": "SQS queue-এ redrive policy-তে maxReceiveCount = 3 সেট করা। একটা message প্রতিবার processing-এ fail করে আর ack/delete হয় না। কী হবে?",
+      "options": [
+        "প্রথম fail-এর সাথে সাথেই message DLQ-তে চলে যাবে, কারণ maxReceiveCount শুধু সর্বোচ্চ সীমা",
+        "Message প্রায় 3 বার receive হয়ে process-এর চেষ্টা হবে, receive count সীমা পার হলে SQS সেটা DLQ-তে সরাবে",
+        "Message 3 বার fail করার পর SQS সেটা permanently delete করে দেবে, যাতে queue আটকে না থাকে",
+        "Message অসীম বার retry হতে থাকবে, কারণ maxReceiveCount শুধু monitoring-এর একটা সংখ্যা, delivery-তে এর কোনো প্রভাব নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিবার message receive হলে তার receive count বাড়ে। Count maxReceiveCount পার হলে redrive policy message-কে DLQ-তে সরিয়ে দেয়। Message delete হয় না, DLQ-তে inspect বা replay-এর জন্য থাকে।",
+      "whyWrong": {
+        "0": "এক fail-এই DLQ-তে যায় না, receive count সীমা পর্যন্ত retry হয়।",
+        "2": "Redrive policy message delete করে না, DLQ-তে সরায়।",
+        "3": "maxReceiveCount আসলেই message সরানো নিয়ন্ত্রণ করে, শুধু monitoring নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q50",
+      "difficulty": "hard",
+      "question": "একটা bug-এর কারণে 2,000 order message DLQ-তে জমেছে। Bug fix deploy হয়ে গেছে। এখন সবচেয়ে নিরাপদ পদক্ষেপ কোনটা?",
+      "options": [
+        "DLQ purge করে সব message মুছে ফেলা, কারণ bug fix হয়ে গেছে তাই নতুন order-গুলো এখন ঠিক চলবে",
+        "DLQ-কে main queue বানিয়ে দেওয়া, যাতে ভবিষ্যতের সব message সরাসরি সেখানে আসে আর আবার fail না হয়",
+        "Message-গুলো main queue-তে redrive/replay করা, আর নিশ্চিত হওয়া consumer idempotent, কারণ কিছু হয়তো আংশিক process হয়েছিল",
+        "Producer-কে বলা প্রতিটা fail হওয়া order নতুন ID দিয়ে আবার publish করতে, যাতে পুরনো message-এর সাথে কোনো রকম conflict না হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "DLQ-এর আসল কাজ হলো fix-এর পর replay করার সুযোগ দেওয়া। Main queue-তে redrive করলে fixed consumer সেগুলো process করবে। কিছু message হয়তো fail-এর আগে আংশিক কাজ করেছিল, তাই idempotency না থাকলে duplicate হতে পারে।",
+      "whyWrong": {
+        "0": "Purge করলে ওই 2,000 order-এর কাজ চিরতরে হারিয়ে যাবে।",
+        "1": "DLQ failure আলাদা রাখার জায়গা, main queue হিসেবে ব্যবহার করলে design ভেঙে যায়।",
+        "3": "নতুন ID দিলে idempotency check আর কাজ করবে না, duplicate-এর ঝুঁকি বাড়বে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q51",
+      "difficulty": "hard",
+      "question": "Queue depth দেখে আপনি consumer 200টা পর্যন্ত auto-scale করেন। কিন্তু প্রতিটা consumer warehouse API call করে, যেটা সেকেন্ডে মাত্র 50টা request সামলাতে পারে। Spike-এ warehouse ভেঙে পড়ছে। কী করবেন?",
+      "options": [
+        "Consumer আরও বাড়িয়ে 400 করা, যাতে queue আগের চেয়ে দ্রুত খালি হয়ে warehouse-এর ওপর চাপ থাকার মোট সময়টা কমে আসে",
+        "Queue বাদ দিয়ে order API থেকে সরাসরি warehouse call করা, তাহলে API নিজেই rate বুঝে চলবে",
+        "সব warehouse message auto-ack-এ নেওয়া, যাতে warehouse fail করলেও consumer আটকে না থাকে",
+        "Consumer concurrency বা rate-কে warehouse-এর capacity অনুযায়ী সীমা দেওয়া, বাকি চাপ queue-তে buffer হতে দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Consumer scale করা তখনই কাজে লাগে যখন downstream সামলাতে পারে। এখানে bottleneck warehouse, তাই consumer rate তার capacity-তে বেঁধে দিতে হবে। Queue বাড়তি চাপ ধরে রাখবে, এটাই backpressure-এর মূল ধারণা।",
+      "whyWrong": {
+        "0": "Consumer বাড়ালে warehouse-এ request আরও বাড়বে, ভেঙে পড়া আরও খারাপ হবে।",
+        "1": "Sync call দিলে warehouse-এর সমস্যা সরাসরি order API-কে fail করাবে।",
+        "2": "Auto-ack দিলে warehouse fail করা message হারিয়ে যাবে।"
+      }
+    },
+    {
+      "id": "sd-day-012-q52",
+      "difficulty": "hard",
+      "question": "Flash sale-এ 300 সেকেন্ড ধরে প্রতি সেকেন্ডে 2,000 message আসছে, consumer capacity 1,200/s (শুরুতে queue খালি)। Sale শেষে incoming নেমে 200/s হলো, capacity একই। Sale শেষ হওয়ার পর backlog পুরো শেষ হতে কত সময় লাগবে?",
+      "options": [
+        "200 সেকেন্ড, কারণ backlog 240,000 আর 1,200/s capacity দিয়ে ভাগ করলেই হয়",
+        "240 সেকেন্ড, কারণ backlog (2,000 − 1,200) × 300 = 240,000 আর net drain (1,200 − 200) = 1,000/s",
+        "1,200 সেকেন্ড, কারণ backlog 240,000 আর নতুন incoming 200/s দিয়ে ভাগ করতে হয়",
+        "500 সেকেন্ড, কারণ sale-এ মোট 600,000 message জমেছে আর সেটা 1,200/s capacity দিয়ে ভাগ করতে হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Sale চলাকালীন প্রতি সেকেন্ডে 800টা জমে, 300 সেকেন্ডে 240,000। Sale-এর পর consumer 1,200/s করে, কিন্তু 200/s নতুন আসছে, তাই net 1,000/s হারে কমে। 240,000 ÷ 1,000 = 240 সেকেন্ড বা 4 মিনিট।",
+      "whyWrong": {
+        "0": "নতুন 200/s incoming বাদ দেওয়া হয়েছে, net rate 1,000/s ধরতে হবে।",
+        "2": "Incoming rate দিয়ে ভাগ করলে drain time হয় না, capacity আর incoming-এর পার্থক্য লাগে।",
+        "3": "Sale-এর সময় consumer-রাও কাজ করছিল, তাই সব 600,000 জমেনি।"
+      }
+    },
+    {
+      "id": "sd-day-012-q53",
+      "difficulty": "hard",
+      "question": "Queue-তে 36,000 message-এর backlog আছে, নতুন message আসছে 30/s। প্রতিটা consumer একটা message-এ 200ms নেয়। 10 মিনিটের মধ্যে backlog শেষ করতে কমপক্ষে কতজন consumer লাগবে?",
+      "options": [
+        "18 জন, কারণ backlog-এর জন্য 60/s আর নতুন message-এর জন্য 30/s মিলে 90/s, প্রতিজন 5/s",
+        "6 জন, কারণ নতুন 30/s message প্রতি consumer-এর 5/s দিয়ে ভাগ করলেই দরকারি সংখ্যা আসে",
+        "12 জন, কারণ 36,000 ÷ 600 = 60/s দরকার আর প্রতি consumer 5/s, তাই 60 ÷ 5 = 12",
+        "180 জন, কারণ 36,000 message ÷ 200ms হিসাব করলে মোট consumer সংখ্যা পাওয়া যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "10 মিনিট = 600 সেকেন্ডে backlog শেষ করতে 36,000 ÷ 600 = 60/s বাড়তি লাগে। একই সময়ে নতুন 30/s-ও সামলাতে হবে, মোট 90/s। প্রতিজন 1000/200 = 5/s করে, তাই 90 ÷ 5 = 18 জন।",
+      "whyWrong": {
+        "1": "6 জন শুধু নতুন message সামলাবে, backlog একটুও কমবে না।",
+        "2": "নতুন 30/s incoming বাদ গেছে, তাতে backlog সময়মতো শেষ হবে না।",
+        "3": "Message সংখ্যাকে milliseconds দিয়ে ভাগ করা ভুল unit-এর হিসাব।"
+      }
+    },
+    {
+      "id": "sd-day-012-q54",
+      "difficulty": "hard",
+      "question": "একটা SQS queue-এর consumer deployment bug-এর কারণে 6 দিন বন্ধ ছিল। Queue-এর message retention default-এই রাখা ছিল। কী হয়েছে আর ভবিষ্যতে কী করবেন?",
+      "options": [
+        "কিছুই হারায়নি, কারণ SQS কোনো message consume না হওয়া পর্যন্ত চিরকাল রেখে দেয়, তাই এখন শুধু consumer আবার চালু করলেই সব message process হবে",
+        "সব message নিজে থেকে DLQ-তে চলে গেছে, কারণ consumer না থাকলে SQS 6 দিন পর redrive করে দেয়",
+        "Default retention 4 দিন হওয়ায় 4 দিনের পুরনো message মুছে গেছে, তাই retention বাড়ান (সর্বোচ্চ 14 দিন) আর depth/age-এ alert রাখুন",
+        "Default retention 30 দিন, তাই এবার কিছু হারায়নি, কিন্তু ভবিষ্যতে consumer সংখ্যা বাড়িয়ে রাখা দরকার"
+      ],
+      "correctIndex": 2,
+      "explanation": "SQS-এর default message retention 4 দিন, সর্বোচ্চ 14 দিন পর্যন্ত বাড়ানো যায়। 6 দিন consumer বন্ধ থাকায় যেসব message 4 দিনের বেশি পুরনো সেগুলো মুছে গেছে। তাই গুরুত্বপূর্ণ queue-তে retention বাড়ানো আর queue depth বা oldest message age-এ alarm রাখা দরকার।",
+      "whyWrong": {
+        "0": "SQS message চিরকাল রাখে না, retention শেষে মুছে যায়।",
+        "1": "DLQ-তে যায় maxReceiveCount পার হলে, শুধু consumer বন্ধ থাকলে নয়।",
+        "3": "SQS-এর default retention 4 দিন, 30 দিন নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q55",
+      "difficulty": "hard",
+      "question": "Order event-এর জন্য invoice service-এর 3টা instance কাজ ভাগ করে নেবে, আর email service-এর 2টা instance-ও কাজ ভাগ করবে। কিন্তু দুই service-কেই প্রতিটা event পেতে হবে। সঠিক design কোনটা?",
+      "options": [
+        "একটা queue-তে পাঁচটা instance-কেই competing consumer হিসেবে লাগানো, তাহলে প্রতিটা event দুই service-ই পাবে",
+        "একটা pub/sub topic রেখে প্রতিটা instance-কে আলাদা subscriber বানানো, যাতে পাঁচটা instance-ই প্রতিটা event-এর copy পায়",
+        "Order API থেকে প্রতিটা event দুইবার একই queue-তে publish করা, একবার invoice-এর জন্য আর একবার email-এর জন্য",
+        "Topic থেকে প্রতিটা service-এর জন্য আলাদা queue বা consumer group, আর service-এর ভেতরে instance-রা competing consumers"
+      ],
+      "correctIndex": 3,
+      "explanation": "Service-এর মধ্যে fan-out দরকার, আবার একই service-এর instance-দের মধ্যে কাজ ভাগ দরকার। তাই topic থেকে প্রতি service-এর নিজস্ব queue বা Kafka consumer group রাখা হয়। প্রতিটা service সব event পায়, কিন্তু service-এর ভেতরে প্রতি event একজন instance-ই process করে।",
+      "whyWrong": {
+        "0": "একটা queue-তে পাঁচজন থাকলে প্রতিটা event শুধু একজন instance পাবে, অন্য service হয়তো পাবেই না।",
+        "1": "প্রতিটা instance আলাদা subscriber হলে invoice তিনবার আর email দুইবার তৈরি হবে।",
+        "2": "একই queue-তে দুইবার publish করলে কোন copy কোন service পাবে তার কোনো guarantee নেই।"
+      }
+    },
+    {
+      "id": "sd-day-012-q56",
+      "difficulty": "hard",
+      "question": "Kafka-তে একটা partition-এর latest offset 15,000 আর আপনার consumer group-এর committed offset 12,000। Producer সেকেন্ডে 40টা লিখছে, consumer সেকেন্ডে 100টা পড়ে process করছে। Lag কত আর ধরতে কত সময় লাগবে?",
+      "options": [
+        "Lag 3,000, আর net 60/s হারে কমায় ধরতে প্রায় 50 সেকেন্ড লাগবে",
+        "Lag 3,000, আর 100/s হারে পড়ায় ধরতে প্রায় 30 সেকেন্ড লাগবে",
+        "Lag 15,000, কারণ consumer-কে partition-এর শুরু থেকে আবার পড়তে হবে, তাই 150 সেকেন্ড",
+        "Lag 27,000, কারণ দুই offset যোগ করলে মোট unprocessed message পাওয়া যায়, তাই 450 সেকেন্ড"
+      ],
+      "correctIndex": 0,
+      "explanation": "Consumer lag = latest offset − committed offset = 15,000 − 12,000 = 3,000। Consumer 100/s পড়ছে কিন্তু 40/s নতুন আসছে, তাই lag কমছে 60/s হারে। 3,000 ÷ 60 = 50 সেকেন্ড।",
+      "whyWrong": {
+        "1": "Lag ঠিক, কিন্তু নতুন 40/s message বাদ দেওয়ায় সময় কম দেখাচ্ছে।",
+        "2": "Consumer committed offset থেকে পড়া চালিয়ে যায়, শুরু থেকে নয়।",
+        "3": "Lag হলো offset-এর পার্থক্য, যোগফল নয়।"
+      }
+    },
+    {
+      "id": "sd-day-012-q57",
+      "difficulty": "hard",
+      "question": "দুইটা requirement: (A) analytics, fraud আর search team একই event stream নিজের মতো পড়বে আর দরকারে replay করবে; (B) একটা সাধারণ background job queue, প্রতি message-এ ack আর dead-letter দরকার। কোন জুটি সবচেয়ে মানানসই?",
+      "options": [
+        "A-এর জন্য RabbitMQ আর B-এর জন্য Kafka, কারণ RabbitMQ ack হওয়া message-ও replay-এর জন্য চিরকাল নিজের queue-তে রেখে দেয়",
+        "দুইটার জন্যই Kafka, কারণ Kafka-তে প্রতিটা message-এর জন্য আলাদা ack আর built-in dead-letter exchange আছে",
+        "A-এর জন্য Kafka আর B-এর জন্য RabbitMQ, কারণ Kafka retention-সহ log আর RabbitMQ ack ও dead-letter exchange-ওয়ালা broker",
+        "দুইটার জন্যই RabbitMQ, কারণ RabbitMQ consumer group আর offset দিয়ে অনেক team-কে একসাথে replay করতে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Kafka distributed log, message retention পর্যন্ত থাকে আর প্রতিটা consumer group নিজের offset রাখে, তাই অনেক team স্বাধীনভাবে পড়তে ও replay করতে পারে। RabbitMQ একটা AMQP broker, push-based delivery, প্রতি message-এ ack আর dead-letter exchange দেয়। তাই A-তে Kafka আর B-তে RabbitMQ মানানসই।",
+      "whyWrong": {
+        "0": "RabbitMQ queue-তে ack হওয়া message delete হয়, replay-এর জন্য থাকে না।",
+        "1": "Dead-letter exchange RabbitMQ-এর feature, Kafka-এর নয়।",
+        "3": "Consumer group আর offset Kafka-এর ধারণা, RabbitMQ queue এভাবে replay দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q58",
+      "difficulty": "hard",
+      "question": "একটা ছোট internal tool, 50 জন user, একটা server, নতুন account হলে একটা welcome email যায়। এক developer Kafka cluster বসাতে চায়। আপনার মত কী?",
+      "options": [
+        "Kafka বসানো উচিত, কারণ queue থাকলেই system সবসময় দ্রুত হয় আর ভবিষ্যতে traffic বাড়লে কখনো কোনো সমস্যা হবে না",
+        "এখানে Kafka cluster শুধু operational complexity বাড়াবে, সহজ synchronous call বা হালকা background job-ই যথেষ্ট",
+        "Kafka না, বরং প্রতিটা email-এর জন্য আলাদা pub/sub topic বানানো উচিত, যাতে প্রতিটা email আলাদা থাকে",
+        "Kafka বসানো উচিত, কারণ queue ছাড়া email পাঠালে exactly-once delivery কখনো পাওয়া যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Queue-এর সুবিধা আসে বড় traffic, অনেক service বা slow downstream থাকলে। 50 জন user আর একটা email-এর জন্য cluster চালানো, monitor করা, DLQ দেখা সবই বাড়তি বোঝা। খুব সহজ app-এ queue প্রায়ই শুধু complexity যোগ করে।",
+      "whyWrong": {
+        "0": "Queue নিজে processing দ্রুত করে না, আর এটা অনেক নতুন failure mode আনে।",
+        "2": "প্রতি email-এর জন্য topic বানানো আরও বেশি জটিলতা, কোনো সমস্যার সমাধান নয়।",
+        "3": "Queue থাকলেও exactly-once বিনা খরচে আসে না, এখানে সেটা দরকারও নেই।"
+      }
+    },
+    {
+      "id": "sd-day-012-q59",
+      "difficulty": "hard",
+      "question": "আপনি SQS Standard queue ব্যবহার করছেন। মাঝে মাঝে একই 'stock update' message দুইবার আসে, আর কখনো পরের update আগে আসে। Team অবাক। কী বলবেন আর কী করবেন?",
+      "options": [
+        "এটা SQS-এর bug, AWS support-এ জানালেই ঠিক হবে, কারণ Standard queue সবসময় কঠোর order আর প্রতিটা message ঠিক একবার delivery দেয়",
+        "Visibility timeout শূন্য করে দিন, তাহলে message আর duplicate হবে না আর ক্রমও ঠিক থাকবে",
+        "Consumer সংখ্যা বাড়িয়ে দিন, বেশি consumer থাকলে message দ্রুত ও ক্রমানুসারে process হয়",
+        "Standard queue at-least-once আর best-effort ordering দেয়, তাই consumer idempotent ও version-aware করুন বা FIFO-তে যান"
+      ],
+      "correctIndex": 3,
+      "explanation": "SQS Standard design অনুযায়ী at-least-once delivery আর best-effort ordering দেয়, তাই duplicate আর out-of-order দুটোই স্বাভাবিক। Consumer-এ idempotency আর version বা sequence check রাখলে পুরনো update নতুনটার ওপর বসবে না। কঠোর per-key ক্রম লাগলে FIFO queue-তে message group ব্যবহার করুন।",
+      "whyWrong": {
+        "0": "এটা bug নয়, Standard queue-এর documented আচরণ।",
+        "1": "Visibility timeout শূন্য করলে message আরও বেশি বার redeliver হবে।",
+        "2": "বেশি competing consumer ordering আরও ভাঙে, ঠিক করে না।"
+      }
+    },
+    {
+      "id": "sd-day-012-q60",
+      "difficulty": "hard",
+      "question": "পুরনো synchronous order API নতুন করে design করছেন। কোন ভাগটা সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "সব কাজ, payment authorization সহ, queue-তে পাঠিয়ে user-কে শুধু 'order received' বলা, যাতে API সবচেয়ে দ্রুত response দিতে পারে",
+        "Payment authorization আর order save synchronous রাখা, তারপর email, invoice PDF, warehouse আর SMS-এর জন্য event publish করা",
+        "Email আর SMS synchronous রাখা যাতে user নিশ্চিত হয়, শুধু payment authorization queue-তে পাঠানো",
+        "সব কাজ synchronous রেখে শুধু timeout বাড়িয়ে দেওয়া, যাতে কোনো service ধীর হলেও request fail না হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "User-এর তখনই জানা দরকার payment হয়েছে কিনা আর order save হয়েছে কিনা, তাই এগুলো synchronous। Email, PDF, warehouse, SMS পরে হলেও চলে, তাই queue-তে দিলে response দ্রুত হয় আর একটা service fail করলে order fail হয় না। এটাই 'কোনটা এখনই দরকার' দেখে sync/async ভাগ করা।",
+      "whyWrong": {
+        "0": "Payment result user-এর এখনই দরকার, সেটা queue-তে দিলে order-এর অবস্থা অনিশ্চিত থাকে।",
+        "2": "এটা উল্টো ভাগ: যে কাজের result এখনই দরকার সেটাই async আর পরে হলেও চলে এমন কাজ sync।",
+        "3": "Timeout বাড়ালে response আরও slow হয়, আর tight coupling-এর সমস্যা থেকেই যায়।"
+      }
+    }
+  ]
+}

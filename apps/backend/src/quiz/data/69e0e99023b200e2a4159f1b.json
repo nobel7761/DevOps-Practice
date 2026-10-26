@@ -13,7 +13,7 @@
       "question": "ARP (Address Resolution Protocol) মূলত কী কাজ করে?",
       "options": [
         "একটা IP address-কে সংশ্লিষ্ট MAC address-এ resolve করে",
-        "একটা domain name-কে IP address-এ resolve করে",
+        "একটা domain name-কে সরাসরি IP address এবং তার MAC address উভয়েই resolve করে, DNS server-এর পরিবর্তে ARP protocol নিজেই এই পুরো কাজটা করে থাকে",
         "একটা file encrypt করে",
         "নতুন একটা user account তৈরি করে"
       ],
@@ -26,7 +26,7 @@
       "question": "ARP কেন দরকার হয়?",
       "options": [
         "কারণ একই local network-এ device-গুলো একে অপরকে MAC address দিয়ে চেনে, কিন্তু আমরা সাধারণত IP address ব্যবহার করি",
-        "কারণ internet-এ password secure রাখতে হয়",
+        "কারণ internet-এ password আর session token secure রাখতে হয়, আর ARP protocol সেই এনক্রিপ্টেড চ্যানেল তৈরি করে TLS handshake-এর আগেই security নিশ্চিত করে",
         "কারণ file compress করতে হয়",
         "কারণ hard disk partition করতে হয়"
       ],
@@ -39,7 +39,7 @@
       "question": "MAC address কী?",
       "options": [
         "একটা network interface card-এর hardware-level unique address",
-        "একটা website-এর নাম",
+        "একটা website-এর নাম, যেটা DNS resolution-এর সময় browser সেই নাম ব্যবহার করে সরাসরি network card-এর সাথে map করে রাখে",
         "একটা ব্যবহারকারীর password",
         "একটা file-এর extension"
       ],
@@ -52,7 +52,7 @@
       "question": "ARP request সাধারণত কীভাবে পাঠানো হয়?",
       "options": [
         "Broadcast করে, নেটওয়ার্কের সবার কাছে",
-        "শুধু destination host-এর কাছে সরাসরি",
+        "শুধু destination host-এর কাছে সরাসরি (unicast) পাঠানো হয়, কারণ ARP request পাঠানোর আগে switch নিজে থেকেই MAC address table দেখে সঠিক port বের করে ফেলে",
         "শুধু router-এর কাছে",
         "email-এর মাধ্যমে"
       ],
@@ -65,7 +65,7 @@
       "question": "ARP reply সাধারণত কীভাবে পাঠানো হয়?",
       "options": [
         "Unicast করে, সরাসরি যে request করেছিল তার কাছে",
-        "আবার broadcast করে",
+        "আবার broadcast করে পুরো নেটওয়ার্কে, যাতে ভবিষ্যতে অন্য host-রাও নিজেদের ARP cache আগে থেকেই update করে রাখতে পারে",
         "multicast করে সব router-এর কাছে",
         "কোথাও পাঠানো হয় না"
       ],
@@ -79,7 +79,7 @@
       "options": [
         "একটা অস্থায়ী তালিকা, যেখানে IP-থেকে-MAC mapping জমা থাকে",
         "একটা permanent database যেখানে সব password থাকে",
-        "একটা file যেখানে website history থাকে",
+        "একটা file যেখানে website history সংরক্ষিত থাকে, আর browser প্রতিবার নতুন site visit করলে সেই IP-MAC mapping-ও সাথে সাথে এখানে যোগ হয়",
         "একটা backup file"
       ],
       "answerIndex": 0,
@@ -91,7 +91,7 @@
       "question": "`arp -n` command মূলত কী দেখায়?",
       "options": [
         "বর্তমান ARP cache-এর entry গুলো, numeric (hostname resolve না করে)",
-        "system-এর সব running process",
+        "system-এর সব running process আর তাদের memory usage, যা মূলত network interface-এর ARP activity মনিটর করতেও ব্যবহৃত হয়",
         "disk space usage",
         "installed package-এর list"
       ],
@@ -104,7 +104,7 @@
       "question": "`arp -n` command-এ `-n` flag-এর কাজ কী?",
       "options": [
         "hostname resolve না করে numeric IP address দেখানো",
-        "নতুন একটা ARP entry যোগ করা",
+        "নতুন একটা ARP entry যোগ করা, এবং সেই entry-কে numeric IP হিসেবেই permanently store করে রাখা, hostname resolve করার প্রয়োজন ছাড়াই",
         "ARP cache সম্পূর্ণ মুছে ফেলা",
         "শুধু static entry দেখানো"
       ],
@@ -130,7 +130,7 @@
       "question": "`h1 ping -c1 10.0.0.2` command চালালে ARP-এর ক্ষেত্রে কী ঘটে?",
       "options": [
         "প্রথমে প্রয়োজনে ARP resolution হয়ে h2-এর MAC address বের করা হয়, তারপর ping পাঠানো হয়",
-        "কিছুই হয় না, ARP শুধু manual command-এ কাজ করে",
+        "কিছুই হয় না, কারণ ARP প্রোটোকল শুধুমাত্র manual command (যেমন `arp -s`) চালালেই কাজ করে, ping-এর মতো automatic traffic-এর জন্য কখনো নিজে থেকে resolution করে না",
         "ARP cache মুছে যায়",
         "h2-এর IP address পরিবর্তন হয়ে যায়"
       ],
@@ -158,7 +158,7 @@
         "manually যোগ করা একটা IP-MAC mapping, যেটা automatically expire হয় না",
         "একটা entry যেটা প্রতি সেকেন্ডে পরিবর্তন হয়",
         "শুধু router-এর জন্য reserved একটা entry",
-        "একটা entry যেটা শুধু পড়া যায়, কখনো তৈরি করা যায় না"
+        "একটা entry যেটা শুধু পড়া যায়, কখনো তৈরি করা যায় না — কারণ ARP cache-এর সব entry শুধুমাত্র kernel নিজে থেকে dynamic resolution-এর মাধ্যমেই populate করতে পারে"
       ],
       "answerIndex": 0,
       "explanation": "static ARP entry ব্যবহারকারী manually যোগ করেন, আর এটা normal dynamic entry-র মতো timeout হয়ে মুছে যায় না — স্থায়ীভাবে থেকে যায়, যতক্ষণ না কেউ সেটা সরায়।"
@@ -171,7 +171,7 @@
         "10.0.0.2 IP-এর জন্য একটা static ARP entry যোগ করা হয়, দেওয়া MAC address দিয়ে",
         "10.0.0.2 IP-র host-কে delete করা হয়",
         "পুরো ARP cache মুছে ফেলা হয়",
-        "10.0.0.2-এর জন্য একটা নতুন IP address generate করা হয়"
+        "10.0.0.2-এর জন্য একটা নতুন IP address generate করা হয়, আর পুরনো IP-টা automatically deprecated/released হয়ে যায় DHCP lease-এর মতো করে"
       ],
       "answerIndex": 0,
       "explanation": "`arp -s <IP> <MAC>` দিয়ে ওই IP-র জন্য একটা permanent (static) ARP entry তৈরি হয়, যেটা manual override হিসেবে কাজ করে।"
@@ -182,7 +182,7 @@
       "question": "`h1 ip neigh flush all` command মূলত কী করে?",
       "options": [
         "h1-এর ARP/neighbor cache-এর সব entry মুছে দেয়",
-        "h1-কে network থেকে disconnect করে",
+        "h1-কে network থেকে disconnect করে এবং সব network interface বন্ধ করে দেয়, যতক্ষণ না ম্যানুয়ালি আবার `ifconfig up` চালানো হয়",
         "h1-এর IP address পরিবর্তন করে",
         "h1-এ একটা নতুন static entry যোগ করে"
       ],
@@ -196,7 +196,7 @@
       "options": [
         "network interface-এর IP address, MAC address আর status",
         "disk-এর filesystem type",
-        "installed software-এর list",
+        "installed software-এর সম্পূর্ণ list, package manager-এর metadata সহ, যেটা প্রতিটা network interface-এর driver configuration-ও দেখিয়ে দেয়",
         "CPU তাপমাত্রা"
       ],
       "answerIndex": 0,
@@ -210,7 +210,7 @@
         "সেই frame-টা source বাদে বাকি সব port-এ পাঠিয়ে দেয় (flood করে)",
         "frame-টা সাথে সাথে বাতিল করে দেয়",
         "শুধু router-এর দিকে পাঠায়",
-        "frame-টা নিজে সংরক্ষণ করে রাখে, কাউকে পাঠায় না"
+        "frame-টা নিজে সংরক্ষণ করে রাখে, কাউকে পাঠায় না — কারণ broadcast frame প্রথমে switch-এর নিজস্ব buffer-এ জমা হয়ে পরে একসাথে batch আকারে ফরওয়ার্ড হয়"
       ],
       "answerIndex": 0,
       "explanation": "broadcast frame পেলে switch সেটাকে যে port দিয়ে এসেছে সেটা বাদে বাকি সব port-এ পাঠিয়ে দেয় (flood করে), যাতে সব host-ই request-টা পায়।"
@@ -222,7 +222,7 @@
       "options": [
         "একটা network emulator, যা দিয়ে software-এ virtual host, switch আর link তৈরি করে নেটওয়ার্ক simulate করা যায়",
         "একটা word processor",
-        "একটা database management system",
+        "একটা database management system, যেটা দিয়ে network topology-র তথ্য structured table আকারে সংরক্ষণ ও query করা যায়",
         "একটা image editing টুল"
       ],
       "answerIndex": 0,
@@ -235,7 +235,7 @@
       "options": [
         "script-টাকে execute permission দেওয়ার জন্য, যাতে সরাসরি একটা program হিসেবে চালানো যায়",
         "file-টা delete করার জন্য",
-        "file-টা compress করার জন্য",
+        "file-টা compress করার জন্য, যাতে disk space কম লাগে এবং পরে `tar` কমান্ড ছাড়াই সরাসরি extract করে চালানো যায়",
         "file-টার নাম পরিবর্তন করার জন্য"
       ],
       "answerIndex": 0,
@@ -247,7 +247,7 @@
       "question": "Mininet topology script `sudo` দিয়ে চালানো হয় কেন?",
       "options": [
         "কারণ virtual network namespace/interface তৈরি করতে root-level privilege লাগে",
-        "কারণ internet access দরকার",
+        "কারণ Mininet topology চালানোর সময় internet access দরকার হয়, আর sudo ছাড়া outbound connection establish করা সম্ভব হয় না",
         "কারণ password পরিবর্তন করতে হয়",
         "কারণ নতুন user account তৈরি করতে হয়"
       ],
@@ -275,7 +275,7 @@
         "h1 নিজের ARP cache চেক করে → না পেলে broadcast ARP request পাঠায় → h2 unicast ARP reply পাঠায় → h1 তার ARP cache-এ mapping সেভ করে",
         "h2 প্রথমে ARP request পাঠায় → h1 reply দেয়",
         "switch নিজে MAC address generate করে দেয়",
-        "router প্রথমে ARP cache তৈরি করে দেয়"
+        "router প্রথমে ARP cache তৈরি করে দেয় প্রতিটা host-এর জন্য, যাতে h1 বা h2 কাউকেই আলাদাভাবে ARP request পাঠাতে না হয় — এই pre-populated cache প্রতিটা নতুন host network-এ যোগ হওয়ার সাথে সাথে router নিজে থেকেই broadcast করে সবাইকে জানিয়ে আপডেট করে রাখে।"
       ],
       "answerIndex": 0,
       "explanation": "সঠিক sequence হলো: cache check → না পেলে broadcast request → target host unicast reply → requester cache-এ save করে। এটাই ARP-এর মূল কাজের ধারা।"
@@ -288,7 +288,7 @@
         "একটা attacker জাল (fake) ARP reply পাঠিয়ে অন্য হোস্টদের ARP cache-এ ভুল IP-MAC mapping ঢুকিয়ে দেয়",
         "একটা router নিজের IP address পরিবর্তন করে",
         "একটা host তার hostname পরিবর্তন করে",
-        "একটা switch নিজের MAC address table মুছে ফেলে"
+        "একটা switch নিজের MAC address table মুছে ফেলে এবং প্রতিটা নতুন frame-এর জন্য attacker-নির্ধারিত port-এ পাঠানো শুরু করে, যা দিয়ে traffic হাইজ্যাক হয়"
       ],
       "answerIndex": 0,
       "explanation": "ARP spoofing (বা ARP poisoning)-এ attacker জাল ARP reply পাঠিয়ে ভিকটিমের ARP cache-এ ভুল mapping ঢুকিয়ে দেয় — এর ফলে traffic attacker-এর মধ্য দিয়ে (man-in-the-middle) যেতে পারে।"
@@ -300,7 +300,7 @@
       "options": [
         "একটা host নিজে থেকেই (কারো request ছাড়া) নিজের IP-MAC mapping ঘোষণা করে ARP packet পাঠায়",
         "একটা নিষিদ্ধ (illegal) ARP packet যা সবসময় drop হয়",
-        "router-এর তৈরি করা একটা বিশেষ security alert",
+        "router-এর তৈরি করা একটা বিশেষ security alert, যা কোনো সন্দেহজনক IP conflict পেলে network admin-কে email পাঠিয়ে সতর্ক করে",
         "একটা ARP packet যেটা শুধু IPv6-এ কাজ করে"
       ],
       "answerIndex": 0,
@@ -312,7 +312,7 @@
       "question": "ARP cache-এর entry গুলো সাধারণত কী বৈশিষ্ট্যের?",
       "options": [
         "dynamic entry গুলো একটা নির্দিষ্ট সময় পর automatically expire (timeout) হয়ে যায়, যদি না static করা থাকে",
-        "সব entry চিরস্থায়ীভাবে থেকে যায়, কখনো মোছে না",
+        "সব entry চিরস্থায়ীভাবে থেকে যায়, কখনো মোছে না — কারণ kernel প্রতিটা entry-কে default ভাবে static হিসেবেই তৈরি করে, আলাদা করে static flag দেওয়ার দরকার হয় না",
         "প্রতিটা entry তৈরি হওয়ার সাথে সাথেই মুছে যায়",
         "entry গুলো শুধু reboot করলেই আপডেট হয়"
       ],
@@ -326,7 +326,7 @@
       "options": [
         "কারণ h3 ভিন্ন subnet/broadcast domain-এ, তাই h1-এর ARP broadcast সেখানে পৌঁছায় না — তাই h1 তার বদলে default gateway (router)-এর MAC resolve করে",
         "কারণ h3-এর কোনো MAC address নেই",
-        "কারণ ARP শুধু একই host-এর ভেতরে কাজ করে",
+        "কারণ ARP শুধু একই host-এর ভেতরে থাকা বিভিন্ন process-এর মধ্যে কাজ করে, এক host থেকে আরেক host-এ কখনোই ARP packet পাঠানো যায় না — কারণ ping প্রোটোকলটা নিজেই একটা Layer 2 broadcast mechanism ব্যবহার করে, যেটা router বা subnet boundary থাকা সত্ত্বেও transparently কাজ করে যায়।",
         "কারণ ping শুধু একই subnet-এর মধ্যে কাজ করে"
       ],
       "answerIndex": 0,
@@ -338,7 +338,7 @@
       "question": "default gateway-এর ARP-এর প্রেক্ষাপটে ভূমিকা কী?",
       "options": [
         "নিজের subnet-এর বাইরের destination-এর জন্য host যে router-এর MAC address resolve করে পাঠায়, সেই router হলো default gateway",
-        "default gateway মানে DNS server",
+        "default gateway মানে DNS server, যেটা প্রতিটা ARP request পাওয়ার সাথে সাথে নিজের cache থেকে mapping resolve করে দেয় যদি স্থানীয় broadcast ব্যর্থ হয়",
         "default gateway শুধু ARP cache মুছে দেয়",
         "default gateway মানে একটা software firewall"
       ],
@@ -353,7 +353,7 @@
         "এটা IPv4 packet forwarding চালু করে, যা ছাড়া host একটা subnet থেকে আরেক subnet-এ packet রুট করতে পারবে না",
         "এটা ARP cache clear করে দেয়",
         "এটা host-কে switch-এ পরিণত করে",
-        "এটা শুধু logging চালু করে"
+        "এটা শুধু logging চালু করে, যাতে প্রতিটা forwarded packet-এর একটা audit trail রাখা যায় compliance-এর জন্য — কারণ by default প্রতিটা Linux kernel নিজে থেকেই সব ধরনের routing/forwarding decision শুধুমাত্র log file-এ লিখে রাখে, প্যাকেট আদান-প্রদানের সাথে এর কোনো সরাসরি সম্পর্ক নেই।"
       ],
       "answerIndex": 0,
       "explanation": "by default একটা Linux host নিজের না এমন packet forward করে না। `net.ipv4.ip_forward=1` সেটা চালু করে, যা ছাড়া r1 দুইটা subnet-এর মধ্যে packet route করতে পারত না — তখন router হিসেবে কাজ করাটাই অসম্ভব হতো।"
@@ -364,7 +364,7 @@
       "question": "`ip route add default via 10.0.1.254` command একটা host-এ চালালে কী হয়?",
       "options": [
         "এই host-এর জন্য একটা default route সেট হয়, যা দিয়ে নিজের subnet-এর বাইরের যেকোনো destination-এর traffic 10.0.1.254-এ পাঠানো হবে",
-        "host-এর নিজের IP address 10.0.1.254-এ পরিবর্তিত হয়ে যায়",
+        "host-এর নিজের IP address 10.0.1.254-এ পরিবর্তিত হয়ে যায়, এবং পুরনো IP address স্বয়ংক্রিয়ভাবে release হয়ে DHCP pool-এ ফিরে যায়",
         "ARP cache সম্পূর্ণ মুছে যায়",
         "host আর কোনো network-এ communicate করতে পারবে না"
       ],
@@ -377,7 +377,7 @@
       "question": "ARP broadcast আর broadcast domain-এর সম্পর্ক কী?",
       "options": [
         "ARP broadcast শুধু একটা broadcast domain-এর ভেতরেই সীমাবদ্ধ থাকে — router broadcast domain-এর boundary, তাই ARP broadcast router পার হয় না",
-        "ARP broadcast সবসময় পুরো internet-এ ছড়িয়ে যায়",
+        "ARP broadcast সবসময় পুরো internet-এ ছড়িয়ে যায়, কারণ প্রতিটা router default ভাবে broadcast frame-কে পরবর্তী hop-এ forward করার জন্য ডিজাইন করা",
         "broadcast domain শুধু wireless network-এর জন্য প্রযোজ্য",
         "ARP broadcast-এর সাথে broadcast domain-এর কোনো সম্পর্ক নেই"
       ],
@@ -392,7 +392,7 @@
         "static entry manually যোগ করা হয় এবং timeout হয় না; dynamic entry automatically ARP resolution-এর মাধ্যমে তৈরি হয় এবং সময়মতো expire হয়ে যায়",
         "static entry শুধু router-এ থাকে, dynamic entry শুধু host-এ থাকে",
         "static entry-তে কোনো MAC address থাকে না",
-        "dynamic entry কখনো মোছা যায় না"
+        "dynamic entry কখনো মোছা যায় না, কারণ kernel একবার resolve হওয়া mapping-কে পরবর্তী reboot পর্যন্ত স্থায়ীভাবে সংরক্ষণ করে রাখে — কারণ kernel প্রতিটা dynamic entry-কে প্রথম ব্যবহারের সময়েই নিঃশব্দে static-এ রূপান্তরিত করে দেয়, তাই এরপর সেটা আর কখনো নিজে থেকে মুছে যায় না।"
       ],
       "answerIndex": 0,
       "explanation": "dynamic entry স্বাভাবিক ARP process-এ তৈরি হয় এবং timeout-এ মুছে যায়, আর static entry ব্যবহারকারী নিজ হাতে যোগ করেন এবং সেটা permanent থাকে, যতক্ষণ না manually সরানো হয়।"
@@ -404,7 +404,7 @@
       "options": [
         "`arp -n` command-টা h1 নামের host-এর নিজস্ব network namespace-এর ভেতরে execute হবে",
         "h1 নামের একটা নতুন host তৈরি হবে",
-        "`arp -n` command পুরো physical machine-এ চলবে, শুধু h1-এ না",
+        "`arp -n` command পুরো physical machine-এ চলবে, শুধু h1-এ না — কারণ Mininet-এর সব host আসলে একই network namespace শেয়ার করে",
         "h1-কে network থেকে বিচ্ছিন্ন করা হবে"
       ],
       "answerIndex": 0,
@@ -418,7 +418,7 @@
         "কারণ r1-কে দুইটা আলাদা subnet-এর সাথে connected থাকতে হবে, আর প্রতিটা subnet-এর জন্য আলাদা gateway IP লাগে",
         "কারণ একটা interface দিয়ে ARP কাজ করে না",
         "কারণ Mininet-এ প্রতিটা host-এর কমপক্ষে দুইটা interface বাধ্যতামূলক",
-        "কারণ switch চালাতে দুইটা interface লাগে"
+        "কারণ switch চালাতে দুইটা interface লাগে, নইলে switch নিজের MAC address table তৈরি করতে পারে না এবং flooding বন্ধ হয়ে যায়"
       ],
       "answerIndex": 0,
       "explanation": "r1 দুইটা আলাদা subnet (10.0.1.0/24 ও 10.0.2.0/24)-এর মধ্যে route করছে, তাই প্রতিটা subnet-এ তার একটা করে ইন্টারফেস ও সেই subnet-এর gateway IP থাকা দরকার — তবেই সে উভয় পাশের ARP ও traffic handle করতে পারবে।"
@@ -431,7 +431,7 @@
         "sender-এর IP ও MAC address, এবং target-এর IP address (ও প্রযোজ্য হলে MAC address)",
         "শুধু একটা password",
         "শুধু file-এর নাম ও size",
-        "শুধু একটা timestamp"
+        "শুধু একটা timestamp, যেটা দিয়ে বোঝা যায় প্যাকেটটা কখন তৈরি হয়েছে এবং কতক্ষণ পর সেটা ARP cache থেকে expire হবে"
       ],
       "answerIndex": 0,
       "explanation": "ARP packet-এ sender-এর IP/MAC, আর target-এর IP (request-এ MAC অজানা থাকে, reply-তে MAC-ও যোগ হয়) — এই তথ্যগুলো থাকে, যাতে receiver বুঝতে পারে কে জিজ্ঞেস করছে আর কার উত্তর দিচ্ছে।"
@@ -455,7 +455,7 @@
       "question": "ARP কি IPv6-এর জন্যও ব্যবহৃত হয়?",
       "options": [
         "না, IPv6-এ এই কাজটা একটা ভিন্ন protocol, NDP (Neighbor Discovery Protocol) করে",
-        "হ্যাঁ, ARP সব IP version-এর জন্য একই রকম কাজ করে",
+        "হ্যাঁ, ARP সব IP version-এর জন্য একই রকম কাজ করে, শুধু IPv6-এ packet header-এর format একটু আলাদা হওয়ায় field-এর নাম বদলে যায়",
         "IPv6-এ address resolution-এর কোনো দরকারই নেই",
         "ARP শুধু IPv6-এর জন্যই তৈরি হয়েছিল"
       ],
@@ -469,7 +469,7 @@
       "options": [
         "একই destination-এর জন্য বারবার ARP request পাঠানো এড়িয়ে network overhead কমানো যায়",
         "এতে file size ছোট হয়ে যায়",
-        "এতে password সুরক্ষিত থাকে",
+        "এতে password সুরক্ষিত থাকে, কারণ ARP cache-এ থাকা প্রতিটা mapping entry-র সাথে encrypted authentication token জুড়ে দেওয়া থাকে",
         "এতে disk space বেঁচে যায়"
       ],
       "answerIndex": 0,
@@ -481,7 +481,7 @@
       "question": "কেন router সাধারণত ARP broadcast request পরের subnet-এ ফরওয়ার্ড করে না?",
       "options": [
         "কারণ router প্রতিটা connected subnet-কে আলাদা broadcast domain হিসেবে treat করে, আর broadcast frame নিজের subnet-এর বাইরে ফরওয়ার্ড করে না",
-        "কারণ router-এর ARP সাপোর্ট নেই",
+        "কারণ router-এর ARP সাপোর্ট নেই, তাই router নিজে কোনো ARP packet পড়তে বা তৈরি করতে পারে না, শুধু blindly forward বা drop করে — কারণ router firmware-এ ARP-সম্পর্কিত কোনো module compile করে রাখা হয় না, তাই router পাওয়া কোনো ARP broadcast ঠিক কী সেটাই বুঝতে পারে না।",
         "কারণ router শুধু email packet ফরওয়ার্ড করে",
         "কারণ এটা একটা bug, ভবিষ্যতে ঠিক করা হবে"
       ],
@@ -494,7 +494,7 @@
       "question": "একাধিক host একই subnet-এ ARP request broadcast পেলে, কেন শুধু একজনই reply পাঠায়?",
       "options": [
         "কারণ ARP request-এ উল্লেখ করা target IP শুধু একজন host-এরই, বাকিরা নিজের না ভেবে ignore করে",
-        "কারণ switch নিজে থেকেই বাকি সবার কাছে পাঠানো বন্ধ করে দেয়",
+        "কারণ switch নিজে থেকেই বাকি সবার কাছে পাঠানো বন্ধ করে দেয়, target IP দেখে সঠিক port চিনে নিয়ে শুধু সেই একটা port-এই request ফরওয়ার্ড করে",
         "কারণ ARP request-এ উল্লেখ করা IP প্রতিবার random ভাবে বদলে যায়",
         "কারণ শুধু একজন host-ই ARP বোঝে"
       ],
@@ -508,7 +508,7 @@
       "options": [
         "যদি switch-এ matching flow rule না থাকে, তখন ARP packet controller-এর কাছে পাঠানো হতে পারে, আর controller নিজের নেটওয়ার্কের জ্ঞান দিয়ে উত্তর দিতে বা নতুন flow rule বসাতে পারে",
         "controller কখনোই ARP-এর সাথে সম্পর্কিত হয় না",
-        "controller শুধু ARP packet delete করে দেয়",
+        "controller শুধু ARP packet delete করে দেয়, কারণ SDN নেটওয়ার্কে broadcast traffic সম্পূর্ণভাবে নিষিদ্ধ এবং কোনো flow rule-ই broadcast allow করে না — SDN controller প্রতিটা OpenFlow switch-কে একটা strict default-deny নীতি দিয়ে চালায়, ফলে broadcast ধরনের যেকোনো traffic পেলেই সেটা নিরাপত্তার কারণে সরাসরি discard করে ফেলা হয়।",
         "controller ARP-কে সম্পূর্ণভাবে বন্ধ করে দেয়"
       ],
       "answerIndex": 0,
@@ -520,7 +520,7 @@
       "question": "r1-এর ARP cache-এ communication-এর পর h1 আর h3-এর entry দেখা যাওয়ার কারণ কী?",
       "options": [
         "r1 প্রতিটা subnet-এর হোস্টদের সাথে সরাসরি যোগাযোগ করে (তাদের gateway হিসেবে), তাই তাদের IP-MAC mapping তার নিজের ARP cache-এও জমা হয়",
-        "h1 আর h3 একে অপরকে সরাসরি চেনে, তাই r1-এর cache-এ সেটা দেখায়",
+        "h1 আর h3 একে অপরকে সরাসরি চেনে, তাই r1-এর cache-এ সেটা দেখায় — কারণ ভিন্ন subnet হলেও ARP broadcast সবসময় router-এর মধ্য দিয়ে transparent ভাবে translate হয়ে চলে যায়",
         "এটা একটা error, এমন হওয়ার কথা না",
         "r1 কোনো ARP cache maintain করে না"
       ],
@@ -535,7 +535,7 @@
         "h1 host আর s1 switch-এর মধ্যে একটা virtual link (connection) তৈরি করে",
         "h1-এর IP address সেট করে",
         "s1 switch-টা delete করে দেয়",
-        "h1-এর MAC address randomly পরিবর্তন করে"
+        "h1-এর MAC address randomly পরিবর্তন করে, যাতে প্রতিবার নতুন link তৈরি হলে security বাড়ানোর জন্য একটা fresh hardware address assign হয়"
       ],
       "answerIndex": 0,
       "explanation": "`addLink` Mininet topology-তে দুইটা node (host, switch ইত্যাদি)-এর মধ্যে একটা virtual network link সংজ্ঞায়িত করে — এটাই network-এর physical connectivity (কে কার সাথে connected) নির্ধারণ করে।"
@@ -546,7 +546,7 @@
       "question": "ARP শুধুমাত্র কোন ধরনের নেটওয়ার্কের মধ্যে সীমাবদ্ধ?",
       "options": [
         "একই local network segment / broadcast domain-এর মধ্যে",
-        "পুরো internet জুড়ে",
+        "পুরো internet জুড়ে, কারণ প্রতিটা ISP নিজের backbone router-এ ARP broadcast relay করার জন্য একটা বিশেষ tunneling protocol ব্যবহার করে",
         "শুধু wireless network-এ",
         "শুধু virtual machine-এর মধ্যে"
       ],
@@ -559,7 +559,7 @@
       "question": "একটা host তার ARP cache flush করার পরপরই আবার একই destination-এ ping করলে কী ঘটবে?",
       "options": [
         "প্রথমে আবার নতুন করে ARP resolution হবে (request/reply), তারপর ping সফলভাবে চলবে",
-        "ping আর কখনো কাজ করবে না",
+        "ping আর কখনো কাজ করবে না, কারণ cache flush করলে OS-এর ARP module permanently disable হয়ে যায় এবং পুনরায় চালু করতে reboot লাগে",
         "destination host-এর IP address পরিবর্তিত হয়ে যাবে",
         "ARP cache নিজে থেকে আর কখনো আপডেট হবে না"
       ],
@@ -574,7 +574,7 @@
         "h1 এবং h2-এর মধ্যে অন্তত একবার কোনো ধরনের communication attempt (যেমন ping) হওয়া দরকার",
         "দুজনকেই reboot করতে হবে",
         "দুজনের IP address একই হতে হবে",
-        "switch-টাকে manually configure করতে হবে"
+        "switch-টাকে manually configure করতে হবে, কারণ switch নিজে থেকে কখনো কোনো ARP-related entry forward বা learn করতে পারে না"
       ],
       "answerIndex": 0,
       "explanation": "ARP cache শুধু actual communication-এর ফলে populate হয় — কোনো request/reply ছাড়া নিজে থেকে কোনো entry তৈরি হয় না, তাই কমপক্ষে একবার communicate করার চেষ্টা প্রয়োজন।"
@@ -587,7 +587,7 @@
         "`arp -n` h1-এর জানা অন্যদের IP-MAC mapping দেখায়, কিন্তু `ifconfig` h1-এর নিজের interface-এর তথ্য দেখায়",
         "দুইটাই একই কাজ করে, কোনো পার্থক্য নেই",
         "`ifconfig` শুধু ARP cache দেখায়",
-        "`arp -n` শুধু IP address দেখায়, MAC address দেখায় না"
+        "`arp -n` শুধু IP address দেখায়, MAC address দেখায় না — কারণ security কারণে MAC address সবসময় hidden রাখা হয় arp কমান্ডের আউটপুটে"
       ],
       "answerIndex": 0,
       "explanation": "`arp -n` h1-এর শেখা অন্য হোস্টদের IP-to-MAC mapping (ARP cache) দেখায়, আর `ifconfig` h1-এর নিজের network interface-এর IP, MAC, status ইত্যাদি তথ্য দেখায় — দুইটা সম্পূর্ণ ভিন্ন জিনিস দেখায়।"
@@ -598,7 +598,7 @@
       "question": "h1 (subnet 10.0.1.0/24) যখন h3 (subnet 10.0.2.0/24)-কে ping করে, communication শেষে h1-এর ARP cache-এ কার MAC address entry থাকবে?",
       "options": [
         "router r1-এর interface (10.0.1.254)-এর MAC address, h3-এর নিজের MAC address না",
-        "সরাসরি h3-এর MAC address",
+        "সরাসরি h3-এর MAC address, কারণ router transparently প্রতিটা ARP request-কে অন্য subnet-এ forward করে দেয় যেন দুই host একই local network-এ আছে",
         "s1 switch-এর MAC address",
         "কোনো entry থাকবে না"
       ],
@@ -612,7 +612,7 @@
       "options": [
         "কারণ r1 নিজে h1 ও h3 উভয়ের gateway হিসেবে প্রতিটার সাথে directly (একই subnet-এ) communicate করে, তাই প্রতিটার সাথে আলাদা ARP exchange হয়",
         "কারণ r1 স্বয়ংক্রিয়ভাবে সব host-এর MAC address জেনে যায়",
-        "কারণ ARP প্যাকেট পুরো network-এ broadcast হয়ে সবার cache-এ জমা হয়ে যায়",
+        "কারণ ARP প্যাকেট পুরো network-এ broadcast হয়ে সবার cache-এ জমা হয়ে যায়, router আলাদা subnet হলেও এই broadcast-কে block না করে transparently পাস করে দেয়",
         "কারণ h1 আর h3-এর IP address একই"
       ],
       "answerIndex": 0,
@@ -624,7 +624,7 @@
       "question": "ARP spoofing প্রতিরোধের একটা common পদ্ধতি হলো \"Dynamic ARP Inspection (DAI)\" — এটা মূলত কী করে?",
       "options": [
         "switch/router আসা ARP packet-গুলোকে একটা trusted binding (IP-MAC-port mapping) টেবিলের সাথে মিলিয়ে বৈধতা যাচাই করে, অবৈধ ARP reply বাদ দেয়",
-        "এটা সব ARP traffic সম্পূর্ণভাবে বন্ধ করে দেয়",
+        "এটা সব ARP traffic সম্পূর্ণভাবে বন্ধ করে দেয়, যার ফলে কোনো host-ই আর local network-এ কারো সাথে communicate করতে পারে না — এই পদ্ধতিতে switch প্রতিটা ARP frame-এর EtherType field দেখেই সেটাকে সন্দেহজনক ধরে নেয় এবং trusted/untrusted যাচাই ছাড়াই সরাসরি drop করে দেয়।",
         "এটা শুধু ARP request-কে encrypt করে",
         "এটা host-এর IP address প্রতি সেকেন্ডে পরিবর্তন করে দেয়"
       ],
@@ -637,7 +637,7 @@
       "question": "Proxy ARP কী?",
       "options": [
         "একটা router নিজের পেছনের কোনো host-এর হয়ে ARP request-এর উত্তরে নিজের MAC address দিয়ে reply দেয়, যাতে requester মনে করে সরাসরি সেই host-ই উত্তর দিয়েছে",
-        "একটা নকল (fake) ARP packet যা সবসময় malicious",
+        "একটা নকল (fake) ARP packet যা সবসময় malicious এবং শুধুমাত্র attacker-রাই তৈরি করতে পারে, কোনো বৈধ router কখনো এটা ব্যবহার করে না — কারণ ARP packet-এর opcode field-এ একটা আলাদা malicious flag বসানো থাকে, যেটা দেখেই receiving host সেটাকে attacker-এর তৈরি বলে শনাক্ত করতে পারে।",
         "একটা technique যা ARP সম্পূর্ণভাবে বন্ধ করে দেয়",
         "শুধু IPv6-এ ব্যবহৃত একটা feature"
       ],
@@ -651,7 +651,7 @@
       "options": [
         "সেটা সাধারণত সব-শূন্য (00:00:00:00:00:00) বা unknown থাকে, কারণ requester এই প্রশ্নটাই জিজ্ঞেস করছে",
         "সেটা target-এর সঠিক MAC address দিয়ে আগে থেকেই পূরণ করা থাকে",
-        "সেটা router-এর MAC address দিয়ে পূরণ করা থাকে",
+        "সেটা router-এর MAC address দিয়ে পূরণ করা থাকে, কারণ router সবসময় প্রতিটা ARP request-এর default target হিসেবে কাজ করে",
         "এই field ARP request packet-এ থাকেই না"
       ],
       "answerIndex": 0,
@@ -665,7 +665,7 @@
         "কারণ একটা Ethernet frame পাঠাতে destination MAC address লাগে, আর IP routing/forwarding করলেও শেষমেশ local segment-এ frame পাঠাতে হয় MAC address দিয়েই",
         "কারণ IP address দিয়ে সরাসরি frame পাঠানো সম্ভবই না — কোনো protocol stack-ই এভাবে কাজ করে না",
         "কারণ ARP না করলে IP packet-এর checksum ভুল হয়ে যায়",
-        "কারণ switch ARP ছাড়া কোনো frame গ্রহণ করে না"
+        "কারণ switch ARP ছাড়া কোনো frame গ্রহণ করে না — প্রতিটা incoming frame-এর আগে switch বাধ্যতামূলকভাবে একটা পৃথক ARP handshake দাবি করে — কারণ switch প্রতিটা incoming frame-এর header-এ একটা বাধ্যতামূলক ARP-verification tag খোঁজে, সেই tag না পেলে frame-টাকে malformed ধরে সরাসরি বাতিল করে দেয়।"
       ],
       "answerIndex": 0,
       "explanation": "network layer (IP)-এর packet পাঠাতে হলে সেটাকে data link layer-এর Ethernet frame-এ মোড়াতে হয়, আর frame-এর header-এ destination MAC address থাকা বাধ্যতামূলক — এই MAC address জানার উপায়ই হলো ARP (local segment-এর জন্য)।"
@@ -676,7 +676,7 @@
       "question": "`h1 arp -s 10.0.0.2 <ভুল-mac-address>` দিয়ে একটা static entry যোগ করলে কী ঘটবে?",
       "options": [
         "h1 সেই ভুল MAC address-কে সঠিক ধরে নিয়ে frame পাঠাবে, ফলে h2-এর সাথে communication ব্যর্থ হবে বা ভুল destination-এ যাবে",
-        "Mininet নিজে থেকেই ভুল MAC detect করে সেটা সংশোধন করে দেবে",
+        "Mininet নিজে থেকেই ভুল MAC detect করে সেটা সংশোধন করে দেবে, কারণ প্রতিটা static entry যোগ করার সময় background-এ একটা validation check চলে",
         "কিছুই হবে না, system স্বয়ংক্রিয়ভাবে সঠিক MAC ব্যবহার করবে",
         "h1 সম্পূর্ণভাবে network থেকে বিচ্ছিন্ন হয়ে যাবে"
       ],
@@ -689,7 +689,7 @@
       "question": "`h1 ip neigh flush all` চালানোর ঠিক পরপরই h2-এর সাথে communication কি সাময়িকভাবে ব্যাহত হবে?",
       "options": [
         "প্রথম packet পাঠানোর সময় সামান্য delay হতে পারে (নতুন ARP resolution-এর জন্য), কিন্তু দ্রুতই আবার communication স্বাভাবিকভাবে চলবে",
-        "h2-এর সাথে communication চিরস্থায়ীভাবে বন্ধ হয়ে যাবে",
+        "h2-এর সাথে communication চিরস্থায়ীভাবে বন্ধ হয়ে যাবে, কারণ flush করার পর ARP module পুনরায় কোনো নতুন resolution request তৈরি করতে পারে না",
         "h2-এর IP address পরিবর্তন হয়ে যাবে",
         "পুরো network-টাই restart করতে হবে"
       ],
@@ -702,7 +702,7 @@
       "question": "Gratuitous ARP সাধারণত বাস্তব জীবনে কোন ধরনের পরিস্থিতিতে ব্যবহৃত হয়?",
       "options": [
         "IP address conflict detect করতে, এবং failover/high-availability setup-এ (যেমন নতুন active server তার IP নিজের MAC-এর সাথে দ্রুত বাকিদের জানাতে) দ্রুত ARP cache আপডেট করাতে",
-        "শুধু file transfer speed বাড়াতে",
+        "শুধু file transfer speed বাড়াতে, কারণ gratuitous ARP packet পাঠিয়ে বারবার bandwidth reserve করে রাখা যায় বড় ফাইল পাঠানোর আগে — প্রতিটা gratuitous ARP broadcast পাঠানোর সময় সাময়িকভাবে বাকি সব protocol-এর traffic suspend করে পুরো bandwidth একচেটিয়াভাবে সেই transfer-এর জন্য বরাদ্দ করে দেওয়া হয় বলে এটা কাজে লাগে।",
         "শুধু password encrypt করতে",
         "এটার বাস্তবে কোনো ব্যবহার নেই, এটা পুরোপুরি তাত্ত্বিক"
       ],
@@ -715,7 +715,7 @@
       "question": "একই local network-এ static ARP entry ব্যবহার করলেও ARP spoofing থেকে কতটা সুরক্ষা পাওয়া যায়?",
       "options": [
         "যে host-এ static entry সেট করা আছে, শুধু সেই নির্দিষ্ট IP-র জন্য সেই host সুরক্ষিত থাকে — কিন্তু বাকি host বা বাকি mapping-গুলো এখনো spoofing-এর ঝুঁকিতে থাকে",
-        "পুরো network সম্পূর্ণভাবে ARP spoofing থেকে সুরক্ষিত হয়ে যায়",
+        "পুরো network সম্পূর্ণভাবে ARP spoofing থেকে সুরক্ষিত হয়ে যায়, কারণ একটা static entry যোগ করলে kernel স্বয়ংক্রিয়ভাবে বাকি সব host-এর জন্যও সেই নিয়ম broadcast করে প্রয়োগ করে",
         "static entry ARP spoofing প্রতিরোধে কোনো কাজেই আসে না",
         "static entry ব্যবহার করলে ARP প্রোটোকলটাই পুরোপুরি বন্ধ হয়ে যায়"
       ],
@@ -730,7 +730,7 @@
         "আগের session-এর virtual interface/process রয়ে যেতে পারে এবং নতুন topology-র সাথে নাম/resource সংঘর্ষ (conflict) করতে পারে — `mn -c` সেই leftover সব পরিষ্কার করে দেয়",
         "কোনো সমস্যাই হয় না, নতুন script সবসময় নির্বিঘ্নে চলে",
         "`mn -c` আসলে নতুন topology তৈরি করে, leftover পরিষ্কারের সাথে এর সম্পর্ক নেই",
-        "পুরনো session-এর সমস্যা শুধু reboot করলেই সমাধান হয়, `mn -c` দিয়ে না"
+        "পুরনো session-এর সমস্যা শুধু reboot করলেই সমাধান হয়, `mn -c` দিয়ে না — কারণ virtual interface-গুলো kernel-level permanently লক হয়ে যায় যতক্ষণ না পুরো machine restart হয়"
       ],
       "answerIndex": 0,
       "explanation": "Mininet ঠিকমতো বন্ধ না হলে আগের virtual switch/interface/namespace থেকে যেতে পারে, যা নতুন script চালানোর সময় \"already exists\" বা \"address in use\" জাতীয় error ঘটাতে পারে। `sudo mn -c` এই leftover resource গুলো পরিষ্কার করে clean state নিশ্চিত করে।"
@@ -741,7 +741,7 @@
       "question": "SDN প্রেক্ষাপটে একটা controller কীভাবে ARP-related broadcast traffic কমাতে সাহায্য করতে পারে?",
       "options": [
         "controller নেটওয়ার্কের সব host-এর IP-MAC mapping কেন্দ্রীয়ভাবে জেনে রাখতে পারে এবং নিজেই ARP request-এর উত্তর দিয়ে দিতে পারে (controller-based ARP proxy), ফলে প্রতিবার broadcast flood করার দরকার পড়ে না",
-        "controller সব ARP traffic সম্পূর্ণ বন্ধ করে দেয়, যার ফলে কোনো host কারো সাথে communicate করতে পারে না",
+        "controller সব ARP traffic সম্পূর্ণ বন্ধ করে দেয়, যার ফলে কোনো host কারো সাথে communicate করতে পারে না — এভাবেই broadcast flood সম্পূর্ণভাবে এড়ানো হয় — এই পদ্ধতিতে প্রতিটা host-এর traffic বাধ্যতামূলকভাবে controller হয়ে যাওয়ায়, কোনো প্রকৃত communication-ই আর সরাসরি ঘটে না, ফলে broadcast flood সম্পূর্ণভাবে বন্ধ হয়ে যায় চিরতরে।",
         "controller শুধু ARP packet-এর size কমিয়ে দেয়",
         "এটা সম্ভব না, SDN controller কখনো ARP-তে হস্তক্ষেপ করতে পারে না"
       ],
@@ -755,7 +755,7 @@
       "options": [
         "কারণ router (যেটা subnet-কে আলাদা করে) একইসাথে broadcast domain-এরও boundary, তাই ARP broadcast-এর scope আর IP subnet-এর scope সাধারণত মিলে যায়",
         "কারণ এটা একটা কাকতালীয় (coincidental) বিষয়, কোনো কারণ নেই",
-        "কারণ broadcast domain আসলে subnet-এর চেয়ে সবসময় অনেক বড় হয়",
+        "কারণ broadcast domain আসলে subnet-এর চেয়ে সবসময় অনেক বড় হয়, একাধিক router পার হয়েও একটা একক broadcast domain বিস্তৃত থাকতে পারে — আধুনিক network design-এ একটা router সাধারণত একাধিক subnet-কে একটামাত্র বড় broadcast domain-এর অধীনে একত্রিত করে রাখে dedicated trunking এর মাধ্যমে।",
         "কারণ ARP subnet-এর concept-ই বোঝে না"
       ],
       "answerIndex": 0,
@@ -767,7 +767,7 @@
       "question": "ARP আর RARP (Reverse ARP)-এর মূল পার্থক্য কী?",
       "options": [
         "ARP একটা known IP-র জন্য MAC address খোঁজে, আর RARP ঠিক উল্টোটা করতো — known MAC address দিয়ে IP address খোঁজার চেষ্টা করত (যেমন diskless workstation বুট করার সময়)",
-        "ARP আর RARP আসলে একই protocol, শুধু নাম ভিন্ন",
+        "ARP আর RARP আসলে একই protocol, শুধু নাম ভিন্ন — দুইটাই IP থেকে MAC এবং MAC থেকে IP, উভয় দিকের resolution একই packet format দিয়ে একসাথে করে — শুধু historically RARP শব্দটা আলাদা ব্যবহার হতো diskless workstation-এর ক্ষেত্রে, কিন্তু packet format, header structure এবং প্রতিটা field সম্পূর্ণ অভিন্ন ছিল দুইটাতেই।",
         "RARP শুধু IPv6-এ ব্যবহৃত হয়, ARP শুধু IPv4-এ",
         "RARP হলো ARP-এর একটা security-enhanced version"
       ],
@@ -781,7 +781,7 @@
       "options": [
         "সাধারণত দুইটা — একটা h1 ও তার gateway-র মধ্যে, আরেকটা gateway (router) ও h3-এর মধ্যে, যদি দুইটারই cache আগে থেকে খালি থাকে",
         "একটাও লাগে না, কারণ IP address দিয়েই সরাসরি communicate করা যায়",
-        "ঠিক একটাই, কারণ ARP একবার হলেই পুরো পথের জন্য যথেষ্ট",
+        "ঠিক একটাই, কারণ ARP একবার হলেই পুরো পথের জন্য যথেষ্ট — router নিজে থেকে সেই একটা mapping ব্যবহার করে বাকি সব subnet-এ forward করে দেয়",
         "অসীম সংখ্যক, কারণ প্রতিটা packet-এর জন্য নতুন ARP লাগে"
       ],
       "answerIndex": 0,

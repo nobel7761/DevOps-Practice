@@ -13,7 +13,7 @@
       "question": "stdin বলতে কী বোঝায়?",
       "options": [
         "standard input — একটা command যেখান থেকে data নেয়, default-এ keyboard",
-        "standard internal — program-এর ভেতরের variable",
+        "standard internal — প্রতিটা program নিজের ভেতরে যেসব temporary variable মেমোরিতে রাখে, সেগুলোকে বোঝানো হয়, বাইরের কোনো input-output-এর সাথে সম্পর্ক নেই",
         "একটা file extension",
         "একটা network port"
       ],
@@ -26,7 +26,7 @@
       "question": "stdout বলতে কী বোঝায়?",
       "options": [
         "standard output — command-এর স্বাভাবিক ফলাফল যেখানে যায়, default-এ screen",
-        "stdout মানে শুধু error message",
+        "stdout মানে শুধু error message, normal result আলাদা একটা buffer-এ জমা থাকে যেটা stdout-এর সাথে সরাসরি সম্পর্কিত না, বরং stderr-এর কাছাকাছি একটা চ্যানেল",
         "একটা command-এর নাম",
         "একটা user-এর identity"
       ],
@@ -39,7 +39,7 @@
       "question": "stderr বলতে কী বোঝায়?",
       "options": [
         "standard error — ভুল/সমস্যার বার্তা আলাদাভাবে যেখানে যায়",
-        "stdout-এর আরেকটা নাম",
+        "stdout-এর আরেকটা নাম — আসলে দুটো একই চ্যানেল, শুধু ভিন্ন context-এ ভিন্ন নামে ডাকা হয়, file descriptor নম্বরও একই থাকে",
         "একটা file-এর size",
         "shell-এর একটা variable নাম"
       ],
@@ -68,7 +68,7 @@
       "question": "pipe (|) মূলত কী কাজ করে?",
       "options": [
         "একটা command-এর stdout সরাসরি আরেকটা command-এর stdin-এ পাঠায়",
-        "একটা file মুছে ফেলে",
+        "একটা file মুছে ফেলে, ঠিক rm কমান্ডের মতোই কাজ করে কিন্তু কনফার্মেশন ছাড়া সরাসরি ফাইল সিস্টেম থেকে delete করে দেয়",
         "নতুন একটা user তৈরি করে",
         "terminal বন্ধ করে দেয়"
       ],
@@ -82,7 +82,7 @@
       "options": [
         "command-এর stdout একটা file-এ পাঠায় — file আগে থাকলে ওভাররাইট করে",
         "দুটো command-কে pipe দিয়ে জোড়া লাগায়",
-        "একটা file-এর content অন্য একটা file-এ append করে",
+        "একটা file-এর content অন্য একটা file-এ append করে, পুরনো content অক্ষত রেখে শেষে নতুন content জুড়ে দেয়, অনেকটা >> অপারেটরের মতোই আচরণ করে",
         "stderr আলাদাভাবে দেখায়"
       ],
       "answerIndex": 0,
@@ -94,7 +94,7 @@
       "question": ">> operator কী কাজ করে?",
       "options": [
         "command-এর stdout একটা file-এর শেষে append করে, পুরনো content অক্ষত রেখে",
-        "file সম্পূর্ণ মুছে নতুন করে লেখে",
+        "file সম্পূর্ণ মুছে নতুন করে লেখে, ঠিক > অপারেটরের মতোই ওভাররাইট করে, কিন্তু অতিরিক্তভাবে একটা backup কপি .bak এক্সটেনশনে রেখে দেয়",
         "file delete করে",
         "দুটো file compare করে"
       ],
@@ -107,7 +107,7 @@
       "question": "একটা file আগে থেকে থাকলে > operator চালালে কী হবে?",
       "options": [
         "file-এর পুরনো content মুছে গিয়ে নতুন content বসবে (overwrite)",
-        "নতুন content পুরনো content-এর শেষে যোগ হবে",
+        "নতুন content পুরনো content-এর শেষে যোগ হবে, যেহেতু shell ডিফল্টে সবসময় append mode-এ redirect করে, ওভাররাইট করতে হলে আলাদা -f flag লাগে",
         "command error দেবে, কিছুই হবে না",
         "দুটো আলাদা file তৈরি হবে"
       ],
@@ -132,7 +132,7 @@
       "difficulty": "easy",
       "question": "pipe ব্যবহার করলে মাঝখানে data কোথায় সেভ করতে হয়?",
       "options": [
-        "একটা অস্থায়ী file-এ",
+        "একটা অস্থায়ী file-এ, যেটা /tmp ডিরেক্টরিতে স্বয়ংক্রিয়ভাবে তৈরি হয় এবং pipeline শেষ হলে shell নিজে থেকে সেই ফাইল মুছে ফেলে",
         "কোথাও সেভ করতে হয় না, সরাসরি পরের command-এ চলে যায়",
         "clipboard-এ",
         "একটা database-এ"
@@ -146,7 +146,7 @@
       "question": "grep command মূলত কী কাজ করে?",
       "options": [
         "text-এর ভেতরে একটা নির্দিষ্ট pattern/শব্দ খোঁজে",
-        "file delete করে",
+        "file delete করে, বিশেষ করে যেসব লাইনে pattern ম্যাচ করে সেই লাইনগুলো ফাইল থেকে স্থায়ীভাবে সরিয়ে বাকি অংশ সেভ করে রাখে",
         "নতুন directory তৈরি করে",
         "internet speed মাপে"
       ],
@@ -168,7 +168,7 @@
       "options": [
         "file-এর পুরো content output হিসেবে দেখানো",
         "file delete করা",
-        "file-এর নাম পরিবর্তন করা",
+        "file-এর নাম পরিবর্তন করা, mv কমান্ডের মতোই পুরনো নাম মুছে নতুন নাম বসিয়ে দেয়, কিন্তু content অপরিবর্তিত রাখে",
         "file compress করা"
       ],
       "answerIndex": 0,
@@ -190,7 +190,7 @@
         "একসাথে অনেকগুলো কাজ করা উচিত",
         "একটামাত্র কাজ করা উচিত, কিন্তু সেটা ভালোভাবে করা উচিত",
         "কখনো কোনো output দেখানো উচিত না",
-        "শুধু root user ব্যবহার করতে পারা উচিত"
+        "শুধু root user ব্যবহার করতে পারা উচিত, যাতে সাধারণ user ভুলবশত sensitive system file-এ কোনো প্রভাব ফেলতে না পারে"
       ],
       "answerIndex": 1,
       "explanation": "Unix philosophy বলে: \"Do one thing, and do it well\" — প্রতিটা command একটামাত্র কাজে বিশেষজ্ঞ হবে, আর pipe দিয়ে সেগুলো জোড়া লাগিয়ে বড় কাজ করা হবে।"
@@ -201,7 +201,7 @@
       "question": "head command-এর কাজ কী?",
       "options": [
         "file-এর শুরুর কয়েক লাইন দেখায় (default ১০ লাইন)",
-        "file-এর শেষের কয়েক লাইন দেখায়",
+        "file-এর শেষের কয়েক লাইন দেখায়, ঠিক tail কমান্ডের মতোই কাজ করে, শুধু ভিন্ন নামে ডাকা হয় ঐতিহাসিক কারণে",
         "file-এর মাঝখানের লাইন দেখায়",
         "file delete করে"
       ],
@@ -214,7 +214,7 @@
       "question": "tail command-এর কাজ কী?",
       "options": [
         "file-এর শেষের কয়েক লাইন দেখায় (default ১০ লাইন)",
-        "file-এর শুরুর কয়েক লাইন দেখায়",
+        "file-এর শুরুর কয়েক লাইন দেখায়, head কমান্ডের মতোই আচরণ করে কারণ দুটোই আসলে একই বাইনারির ভিন্ন alias মাত্র",
         "file-এর নাম বদলায়",
         "file-এর permission বদলায়"
       ],
@@ -226,7 +226,7 @@
       "difficulty": "easy",
       "question": "একটা command-এর output pipe দিয়ে পরের command-এর input-এ পাঠানো — এর সাথে সবচেয়ে কাছাকাছি বাস্তব জীবনের উদাহরণ কোনটা?",
       "options": [
-        "একটা বই শেলফে রাখা",
+        "একটা বই শেলফে রাখা, যেখানে প্রতিটা বই আলাদাভাবে সংরক্ষিত থাকে এবং একটার সাথে আরেকটার কোনো প্রবাহ বা সংযোগ থাকে না",
         "কারখানার কনভেয়র বেল্টে এক স্টেশনের কাজ পরের স্টেশনে যাওয়া",
         "একটা ছবি তোলা",
         "একটা গান শোনা"
@@ -254,7 +254,7 @@
       "options": [
         "সরাসরি keyboard থেকে",
         "cat command-এর output থেকে, pipe-এর মাধ্যমে",
-        "একটা আলাদা file থেকে",
+        "একটা আলাদা file থেকে, কারণ grep নিজেই server.log ফাইলটা আবার খুলে পড়ে নেয়, cat-এর output সম্পূর্ণ উপেক্ষা করে",
         "internet থেকে"
       ],
       "answerIndex": 1,
@@ -286,7 +286,7 @@
       "difficulty": "medium",
       "question": "grep \"ERROR\" app.log | wc -l — এই command আসলে কী হিসেব করে?",
       "options": [
-        "app.log-এ মোট কয়টা লাইন আছে",
+        "app.log-এ মোট কয়টা লাইন আছে, কারণ grep দিয়ে filter করলেও wc -l সবসময় মূল ফাইলের সম্পূর্ণ লাইন সংখ্যাই গোনে, filter-এর প্রভাব পড়ে না",
         "app.log-এ কয়টা লাইনে 'ERROR' শব্দটা আছে",
         "ERROR শব্দটা কয় অক্ষরের",
         "app.log file-এর size কত"
@@ -299,7 +299,7 @@
       "difficulty": "medium",
       "question": "একটা pipeline-এ command1 | command2 | command3 — এটা পড়ার সঠিক ক্রম কোনটা?",
       "options": [
-        "ডান থেকে বামে",
+        "ডান থেকে বামে — ঠিক mathematical function composition-এর মতো, সবার আগে সবচেয়ে ডানের command3 চলে, তারপর তার output command2-এ যায়",
         "বাম থেকে ডানে, প্রতিটা command আগেরটার output input হিসেবে নেয়",
         "সব একসাথে, কোনো ক্রম নেই",
         "প্রথমে command3, তারপর command1"
@@ -314,7 +314,7 @@
       "options": [
         "সরাসরি internet থেকে",
         "stdin থেকে — সেটা keyboard অথবা pipe দিয়ে আসা অন্য command-এর output হতে পারে",
-        "সবসময় error দেয়, কিছুই পড়ে না",
+        "সবসময় error দেয়, কিছুই পড়ে না, কারণ grep filename ছাড়া চালানো আদৌ একটা invalid syntax, shell সাথে সাথে 'missing operand' এরর দেখিয়ে command বন্ধ করে দেয়",
         "সবচেয়ে বড় file থেকে"
       ],
       "answerIndex": 1,
@@ -325,7 +325,7 @@
       "difficulty": "medium",
       "question": "pipe ব্যবহার না করলে, grep-এর output sed-এ পাঠাতে হলে বিকল্প কী করতে হতো?",
       "options": [
-        "অসম্ভব, pipe ছাড়া কখনোই সম্ভব না",
+        "অসম্ভব, pipe ছাড়া কখনোই সম্ভব না, কারণ grep আর sed উভয়েই শুধুমাত্র pipe-connected stream-এ কাজ করতে পারে, আলাদা ফাইলে সেভ করা ডেটা পড়তেই পারে না",
         "grep-এর output একটা file-এ সেভ করে, তারপর sed-কে সেই file পড়তে বলতে হতো",
         "grep আর sed একই command",
         "শুধু grep চালালেই sed-এর কাজ হয়ে যায়"
@@ -340,7 +340,7 @@
       "options": [
         "কারণ grep ভুল করে বানানো হয়েছে",
         "কারণ প্রতিটা command একটামাত্র কাজে বিশেষজ্ঞ থাকার দর্শন মেনে চলে, আর pipe দিয়ে জোড়া লাগানো হয়",
-        "কারণ এটা technically অসম্ভব",
+        "কারণ এটা technically অসম্ভব — grep-এর internal architecture শুধুমাত্র read-only pattern matching-এর জন্য compile করা, কোনো write বা aggregate অপারেশনের কোড পথ এতে নেই, তাই এটা যোগ করতে পুরো টুল নতুন করে লিখতে হবে",
         "কারণ grep সবচেয়ে পুরনো command"
       ],
       "answerIndex": 1,
@@ -353,7 +353,7 @@
       "options": [
         "কোনো সুবিধা নেই, এটা শুধু ঐতিহ্য",
         "স্বাভাবিক ফলাফল আর error message একসাথে না মিশে, প্রয়োজনমতো আলাদাভাবে handle করা যায়",
-        "stderr সবসময় দ্রুত কাজ করে",
+        "stderr সবসময় দ্রুত কাজ করে, কারণ এটা buffered না হয়ে সরাসরি kernel-level interrupt দিয়ে পাঠানো হয়, যেখানে stdout প্রতিবার buffer flush হওয়ার জন্য অপেক্ষা করে ফলে ধীরগতির হয়",
         "stdout শুধু root user দেখতে পারে"
       ],
       "answerIndex": 1,
@@ -367,7 +367,7 @@
         "stdout-কে",
         "stderr-কে, file descriptor নম্বর 2 থেকেই এই নাম এসেছে",
         "stdin-কে",
-        "দুটো file-এর মধ্যে তুলনা করে"
+        "দুটো file-এর মধ্যে তুলনা করে, ঠিক diff কমান্ডের মতোই লাইন-বাই-লাইন পার্থক্য বের করে আলাদা একটা ফাইলে রিপোর্ট আকারে সেভ করে"
       ],
       "answerIndex": 1,
       "explanation": "2> মানে file descriptor 2 (stderr)-কে redirect করা — শুধু error message একটা file-এ পাঠানো হয়, normal output প্রভাবিত হয় না।"
@@ -378,7 +378,7 @@
       "question": "command > file 2>&1 — এখানে 2>&1-এর মানে কী?",
       "options": [
         "stderr (fd 2)-কে fd 1 (stdout) এখন যেখানে যাচ্ছে, সেখানেই পাঠাও",
-        "stdout-কে stderr-এ পাঠাও",
+        "stdout-কে stderr-এ পাঠাও, অর্থাৎ normal output এখন থেকে error channel দিয়ে বের হবে এবং সাধারণত red color-এ terminal-এ দেখা যাবে",
         "file-টা দুইবার তৈরি করো",
         "কোনো কাজই করে না, শুধু decoration"
       ],
@@ -393,7 +393,7 @@
         "কোনো সমস্যা হয় না, দুই ক্রমই সমান",
         "শেল redirection বাম থেকে ডানে প্রসেস করে, তাই এখানে stderr আগে terminal-এ যায়, তারপর শুধু stdout file-এ যায় — stderr file-এ যায় না",
         "command-টাই চলবে না",
-        "file-টা delete হয়ে যাবে"
+        "file-টা delete হয়ে যাবে, কারণ redirection ক্রম ভুল হলে shell নিরাপত্তার জন্য সেই ফাইলটা স্বয়ংক্রিয়ভাবে মুছে দিয়ে command বন্ধ করে দেয়, যাতে করাপ্টেড ডেটা না লেখা হয়"
       ],
       "answerIndex": 1,
       "explanation": "শেল বাম থেকে ডানে redirection প্রসেস করে — 2>&1 আগে লিখলে stderr তখনকার stdout (টার্মিনাল)-এ পাঠানো হয়, তারপর stdout file-এ বদলায়; ফলে stderr file-এ যায় না। সঠিক ক্রম সবসময় > file 2>&1।"
@@ -403,7 +403,7 @@
       "difficulty": "medium",
       "question": "/dev/null-এ কিছু redirect করলে কী হয়?",
       "options": [
-        "সেই data একটা বিশেষ backup file-এ সেভ হয়",
+        "সেই data একটা বিশেষ backup file-এ সেভ হয়, /var/log/devnull-backup নামের একটা hidden লগে, যেটা পরে sysadmin চাইলে পুনরুদ্ধার করতে পারে",
         "সেই data চিরতরে discard হয়ে যায় — /dev/null থেকে কিছু পড়া যায় না",
         "সেই data terminal-এ প্রিন্ট হয়",
         "command-টা আটকে যায়"
@@ -419,7 +419,7 @@
         "কোনো পার্থক্য নেই, দুটোই ঠিক একইরকম output দেয়",
         "< দিয়ে stdin-এ পড়ালে wc শুধু সংখ্যাটা দেখায়; filename argument দিলে সংখ্যার সাথে filename-ও দেখায়",
         "< ব্যবহার করলে error হয়",
-        "filename argument দিলে wc কাজই করে না"
+        "filename argument দিলে wc কাজই করে না, কারণ wc শুধুমাত্র stdin stream-এর সাথে কাজ করার জন্য ডিজাইন করা, সরাসরি ফাইলের নাম দিলে সেটা 'no such option' এরর দেয়"
       ],
       "answerIndex": 1,
       "explanation": "stdin দিয়ে input এলে wc filename জানে না, তাই শুধু সংখ্যা দেখায়; filename argument সরাসরি দিলে output-এ সংখ্যার পাশে filename-ও যোগ হয়।"
@@ -430,7 +430,7 @@
       "question": "tee command-এর বিশেষত্ব কী?",
       "options": [
         "stdin থেকে পড়ে একইসাথে stdout (screen) আর একটা file — দুই জায়গাতেই লেখে",
-        "শুধু file-এ লেখে, screen-এ কিছু দেখায় না",
+        "শুধু file-এ লেখে, screen-এ কিছু দেখায় না, কারণ tee ডিফল্টে silent mode-এ চলে আর stdout সম্পূর্ণ suppress করে রাখে, দেখতে হলে আলাদা -v flag দিতে হয়",
         "দুটো file merge করে একটা বানায়",
         "file delete করে"
       ],
@@ -444,7 +444,7 @@
       "options": [
         "শুধু প্রথম command-এ, বাকিগুলোতে কোনো প্রভাব নেই",
         "পরের command-গুলো খালি বা অপ্রত্যাশিত input পেতে পারে, কারণ তারা আগের output-এর উপর নির্ভরশীল",
-        "পুরো operating system বন্ধ হয়ে যায়",
+        "পুরো operating system বন্ধ হয়ে যায়, কারণ pipeline-এর কোনো stage fail করলে kernel সেটাকে critical system fault হিসেবে ধরে এবং পুরো OS-কে নিরাপত্তার জন্য reboot করায়",
         "pipe নিজে থেকেই error ঠিক করে দেয়"
       ],
       "answerIndex": 1,
@@ -457,7 +457,7 @@
       "options": [
         "pipe output-কে আরেকটা command-এর input বানায়, আর redirect output-কে file-এ সেভ করে — দুটো ভিন্ন উদ্দেশ্যে ব্যবহৃত হয়",
         "দুটো আসলে হুবহু একই জিনিস",
-        "pipe শুধু directory-তে কাজ করে, redirect শুধু file-এ",
+        "pipe শুধু directory-তে কাজ করে, redirect শুধু file-এ — pipe আসলে দুইটা directory listing-কে একসাথে merge করে একটা combined ফোল্ডার ভিউ তৈরি করে, ফাইলের কনটেন্টের সাথে এর সম্পর্ক নেই",
         "redirect-এর কোনো ব্যবহারিক কাজ নেই"
       ],
       "answerIndex": 0,
@@ -468,7 +468,7 @@
       "difficulty": "medium",
       "question": "grep \"ERROR\" app.log | sed 's/ERROR/ISSUE/' > issues.txt — এই লম্বা command-এ কী কী ঘটছে, ক্রমানুসারে?",
       "options": [
-        "প্রথমে file তৈরি হয়, তারপর grep চলে, তারপর sed চলে",
+        "প্রথমে file তৈরি হয়, তারপর grep চলে, তারপর sed চলে, কারণ shell সবসময় redirection অংশ (>) সবার আগে প্রসেস করে ফাইল খালি তৈরি করে রাখে, তারপরই বাম দিকের pipeline-টা চালায়",
         "প্রথমে ERROR-যুক্ত লাইন বাছাই হয়, তারপর সেই লাইনে ERROR-কে ISSUE দিয়ে বদলানো হয়, তারপর চূড়ান্ত output file-এ সেভ হয়",
         "sed আগে চলে, তারপর grep, তারপর file তৈরি হয়",
         "তিনটা কাজ সম্পূর্ণ independently, একটা আরেকটার উপর নির্ভর করে না"
@@ -494,7 +494,7 @@
       "difficulty": "medium",
       "question": "grep \"ERROR\" app.log | wc -l — আর শুধু grep -c \"ERROR\" app.log — এই দুই উপায়ে একই ফলাফল পাওয়া যায় কি?",
       "options": [
-        "না, সম্পূর্ণ ভিন্ন ফলাফল দেবে",
+        "না, সম্পূর্ণ ভিন্ন ফলাফল দেবে, কারণ grep -c শুধু pattern-এর total occurrence গোনে (একই লাইনে একাধিকবার মিললে প্রতিটাই আলাদা গোনে), আর wc -l শুধু matched লাইনের সংখ্যা গোনে, যা সবসময় কম বা সমান হয়",
         "হ্যাঁ — দুটোই একই সংখ্যা দেয়, একটায় pipe দিয়ে wc -l ব্যবহার হয়েছে, আরেকটায় grep-এর নিজের -c flag",
         "প্রথমটা শুধু directory-তে কাজ করে",
         "দ্বিতীয়টা কখনো কাজ করে না"
@@ -507,7 +507,7 @@
       "difficulty": "medium",
       "question": "head -n 5 access.log | tail -n 1 — এই pipeline কোন লাইনটা দেখাবে?",
       "options": [
-        "পুরো file-এর শেষ লাইন",
+        "পুরো file-এর শেষ লাইন, কারণ pipeline-এ পরের command সবসময় মূল ফাইলের একদম শেষ রেকর্ডটাই নির্দেশ করে, আগের head অংশটা শুধু একটা filter হিসেবে উপেক্ষিত হয়",
         "file-এর প্রথম ৫ লাইনের মধ্যে ৫ নম্বর লাইন",
         "file-এর প্রথম লাইন",
         "file-এর ১ম থেকে ৫ম লাইন, সবগুলো"
@@ -534,7 +534,7 @@
       "question": "নিচের কোনটা সবচেয়ে ভালোভাবে বোঝায় কেন ছোট ছোট command-কে pipe দিয়ে জোড়া লাগানো শক্তিশালী?",
       "options": [
         "প্রতিটা নতুন কাজের জন্য আলাদা বড় প্রোগ্রাম লেখা লাগে না, হাতে গোনা tool দিয়েই অসংখ্য কাজ করা যায়",
-        "এতে command চালাতে সময় বেশি লাগে",
+        "এতে command চালাতে সময় বেশি লাগে, কারণ প্রতিটা pipe-এর জন্য kernel একটা নতুন আলাদা virtual machine spin up করে, যেটা প্রতিটা ধাপে উল্লেখযোগ্য ওভারহেড যোগ করে",
         "এতে শুধু root user কাজ করতে পারে",
         "এতে file permission বদলে যায়"
       ],
@@ -559,7 +559,7 @@
       "difficulty": "medium",
       "question": "echo \"line1\" > out.txt চালানোর পর echo \"line2\" > out.txt চালালে out.txt-এর শেষ অবস্থা কী হবে?",
       "options": [
-        "out.txt-এ দুই লাইন থাকবে: line1 আর line2",
+        "out.txt-এ দুই লাইন থাকবে: line1 আর line2, কারণ > আসলে ডিফল্টে append mode-এই কাজ করে, শুধু ফাইল না থাকলে নতুন তৈরি করে, থাকলে শেষে যোগ করে",
         "out.txt-এ শুধু line2 থাকবে, line1 মুছে গেছে",
         "out.txt-এ শুধু line1 থাকবে",
         "out.txt খালি হয়ে যাবে"
@@ -572,7 +572,7 @@
       "difficulty": "hard",
       "question": "cat access.log | grep -i \"404\" | grep -v \"bot\" | wc -l — এই pipeline ঠিক কী হিসেব করবে?",
       "options": [
-        "মোট কতগুলো লাইনে '404' আছে, bot-সহ সবগুলো",
+        "মোট কতগুলো লাইনে '404' আছে, bot-সহ সবগুলো, কারণ -v flag আসলে filter বাদ দেওয়ার বদলে শুধু matched লাইনগুলোকে highlight করে, বাদ দেয় না",
         "যেসব লাইনে '404' আছে (case নির্বিশেষে), কিন্তু 'bot' শব্দটা নেই, এমন লাইনের সংখ্যা",
         "শুধু 'bot' শব্দযুক্ত লাইনের সংখ্যা",
         "access.log-এর মোট লাইন সংখ্যা"
@@ -587,7 +587,7 @@
       "options": [
         "command 2>> error-log.txt",
         "command > /dev/null",
-        "command | grep error",
+        "command | grep error — stdout-এর ভেতর থেকে 'error' শব্দযুক্ত লাইন বের করে স্ক্রিনে দেখাবে, কিন্তু আসল stderr চ্যানেল তাতে কখনো যুক্ত হয় না বলে grep কিছুই ধরতে পারবে না",
         "command < error-log.txt"
       ],
       "answerIndex": 0,
@@ -601,7 +601,7 @@
         "pipeline পুরোপুরি বন্ধ হয়ে যাবে, error দেবে",
         "wc -l খালি input পেয়ে 0 দেখাবে, pipeline চলতেই থাকবে",
         "আগের command-এর (cat) output আবার ফিরে আসবে",
-        "wc -l অসীম সময় ধরে অপেক্ষা করবে"
+        "wc -l অসীম সময় ধরে অপেক্ষা করবে, কারণ stdin যদি সম্পূর্ণ খালি হয় তাহলে wc কখনো EOF (end of file) সিগন্যাল না পেয়ে input আসার অপেক্ষাতেই আটকে থাকে"
       ],
       "answerIndex": 1,
       "explanation": "grep কোনো লাইন না পেলে খালি output পাঠায়, আর wc -l সেই খালি input পেয়ে স্বাভাবিকভাবেই 0 সংখ্যা দেখাবে — pipeline error ছাড়াই শেষ হবে।"
@@ -613,7 +613,7 @@
       "options": [
         "প্রতিটা ধাপে পুরো ডেটা একটা স্থায়ী file-এ লেখা হয়, তারপর পড়া হয়",
         "ডেটা সরাসরি এক command থেকে পরের command-এ প্রবাহিত হয়, কোনো স্থায়ী file ছাড়াই",
-        "শুধু শেষ command-টাই আসল কাজ করে, বাকিগুলো উপেক্ষিত হয়",
+        "শুধু শেষ command-টাই আসল কাজ করে, বাকিগুলো উপেক্ষিত হয়, কারণ shell আসলে পুরো pipeline string parse করে শুধু সবচেয়ে ডানের command-কেই execute করে, বাকিগুলো শুধু সিনট্যাক্স হিসেবে লেখা থাকলেও কখনো চলে না",
         "প্রতিটা command আলাদা আলাদা, সম্পূর্ণ অসংযুক্তভাবে চলে"
       ],
       "answerIndex": 1,
@@ -624,7 +624,7 @@
       "difficulty": "hard",
       "question": "tail -f app.log | grep \"ERROR\" — এই কমান্ডটা বাস্তব প্রোডাকশনে কেন খুব common একটা pattern?",
       "options": [
-        "এটা file delete করার জন্য ব্যবহার হয়",
+        "এটা file delete করার জন্য ব্যবহার হয়, কারণ -f flag আসলে 'force delete' বোঝায় আর grep দিয়ে ERROR-যুক্ত পুরনো entry খুঁজে সেগুলো log file থেকে স্থায়ীভাবে মুছে ফেলা হয়",
         "লাইভ, running log file-এ নতুন যোগ হতে থাকা লাইনগুলোর মধ্যে থেকে শুধু ERROR entry রিয়েল-টাইমে monitor করার জন্য",
         "এটা শুধু file-এর শুরুর অংশ দেখায়",
         "এটা একটা backup তৈরি করে"
@@ -639,7 +639,7 @@
       "options": [
         "হ্যাঁ, দুটো একই — redirection-এর ক্রম কোনো ব্যাপার না",
         "না — প্রথমটায় stdout আর stderr দুটোই file-এ যায়; দ্বিতীয়টায় stderr আগে terminal-এ যায়, শুধু stdout file-এ যায়",
-        "দুটোই শুধু stderr file-এ পাঠায়",
+        "দুটোই শুধু stderr file-এ পাঠায়, stdout কখনোই file-এ যায় না কোনো ক্রমেই, কারণ 2>&1 আসলে stdout-কে সম্পূর্ণভাবে বন্ধ (close) করে দেয় আর শুধু stderr-ই সচল থাকে",
         "দ্বিতীয়টা error দিয়ে বন্ধ হয়ে যাবে"
       ],
       "answerIndex": 1,
@@ -650,7 +650,7 @@
       "difficulty": "hard",
       "question": "stdin, stdout, stderr — এই তিনটা ধারণা pipe-এর সাথে কীভাবে সম্পর্কিত?",
       "options": [
-        "এগুলোর pipe-এর সাথে কোনো সম্পর্ক নেই",
+        "এগুলোর pipe-এর সাথে কোনো সম্পর্ক নেই, pipe আসলে সরাসরি kernel-level memory address শেয়ার করে কাজ করে, file descriptor বা stdin/stdout/stderr-এর কোনো ধারণার সাথে এর যোগ নেই",
         "pipe মূলত একটা command-এর stdout-কে পরের command-এর stdin-এর সাথে জোড়া লাগায়",
         "pipe শুধু stderr নিয়ে কাজ করে",
         "pipe একটা command-এর stderr-কে পরের command-এর stdout বানিয়ে দেয়"
@@ -665,7 +665,7 @@
       "options": [
         "command > deploy.log",
         "command > deploy.log 2>&1",
-        "command 2> deploy.log",
+        "command 2> deploy.log — শুধু stderr file-এ যাবে এবং stdout স্বয়ংক্রিয়ভাবে বন্ধ হয়ে পুরো command-ই silent mode-এ চলবে, terminal-এ কিছুই না দেখিয়ে",
         "command | deploy.log"
       ],
       "answerIndex": 1,
@@ -676,7 +676,7 @@
       "difficulty": "hard",
       "question": "grep \"ERROR\" app.log | tee errors-raw.txt | grep -v \"timeout\" | wc -l — এই লম্বা pipeline-এ tee-এর ভূমিকা কী?",
       "options": [
-        "pipeline বন্ধ করে দেয়",
+        "pipeline বন্ধ করে দেয়, কারণ tee কমান্ড নিজে stdin-এর ডেটা সম্পূর্ণ consume করে ফেলে এবং পরের grep-এর কাছে কোনো input বাকি থাকে না, ফলে বাকি pipeline deadlock-এ আটকে যায়",
         "ERROR লাইনগুলোর একটা raw copy (timeout বাদ দেওয়ার আগের অবস্থা) ফাইলে সেভ করে রাখে, আর একইসাথে ডেটা pipeline-এও এগিয়ে যেতে থাকে",
         "শুধু screen-এ দেখায়, file-এ কিছু সেভ করে না",
         "wc -l-এর কাজ করে দেয়"
@@ -692,7 +692,7 @@
         "pipeline সবসময় পুরো output আগে মেমোরিতে জমা করে, তারপর প্রসেস করে",
         "ডেটা command-গুলোর মধ্যে ক্রমান্বয়ে (stream আকারে) প্রবাহিত হয়, একসাথে পুরোটা অপেক্ষা করতে হয় না",
         "এটা অসম্ভব, pipeline কখনো আংশিক ডেটা নিয়ে কাজ করতে পারে না",
-        "এর মানে প্রথম command (cat) ভুল output দিয়েছে"
+        "এর মানে প্রথম command (cat) ভুল output দিয়েছে, কারণ সঠিকভাবে কাজ করলে প্রতিটা command সবসময় আগের command সম্পূর্ণ শেষ হওয়া পর্যন্ত অপেক্ষা করে, তারপর একসাথে পুরো output নেয়"
       ],
       "answerIndex": 1,
       "explanation": "pipe-এর মাধ্যমে ডেটা stream আকারে, লাইন ধরে ধরে প্রবাহিত হয় — এজন্যই মাঝের কোনো command পুরো আগের command শেষ হওয়ার জন্য বাধ্যতামূলকভাবে অপেক্ষা না করেই আংশিক ডেটা নিয়ে কাজ শুরু করতে পারে।"
@@ -703,7 +703,7 @@
       "question": "cat file.txt | grep \"pattern\"-এর বদলে সরাসরি grep \"pattern\" file.txt লিখলেই কাজ হয়ে যায়। তাহলে cat দিয়ে pipe শুরু করার বাস্তব কোনো দরকার আছে কি?",
       "options": [
         "না, একটা মাত্র file-এ খোঁজার জন্য এটা অপ্রয়োজনীয় (একে প্রায়ই 'Useless Use of cat' বলা হয়) — grep নিজেই filename নিতে পারে",
-        "হ্যাঁ, কারণ cat ছাড়া grep কখনো filename পড়তে পারে না",
+        "হ্যাঁ, কারণ cat ছাড়া grep কখনো filename পড়তে পারে না — grep-এর internal design অনুযায়ী এটা সবসময় stdin stream আশা করে, সরাসরি filename argument আসলে নিরবে উপেক্ষা করে ফেলে কোনো error ছাড়াই",
         "হ্যাঁ, কারণ এটা অনেক বেশি দ্রুত",
         "না, এটা error দেবে"
       ],
@@ -715,7 +715,7 @@
       "difficulty": "hard",
       "question": "একটা access log-এ IP address অনুযায়ী status code বের করতে হবে। তুমি awk '{print $1, $4}' access.log ব্যবহার করলে, এটা কী করে?",
       "options": [
-        "পুরো লাইনটা হুবহু দেখায়",
+        "পুরো লাইনটা হুবহু দেখায়, কারণ {print $1, $4} আসলে awk-কে বলে সম্পূর্ণ record (অর্থাৎ $0, সম্পূর্ণ লাইন) দুইবার প্রিন্ট করতে, কলাম আলাদা করার কোনো প্রভাব এতে পড়ে না",
         "প্রতিটা লাইনের ১ম column (IP) আর ৪র্থ column পাশাপাশি বের করে দেখায়",
         "file-এর নাম পরিবর্তন করে",
         "শুধু file-এর প্রথম লাইন দেখায়"
@@ -728,7 +728,7 @@
       "difficulty": "hard",
       "question": "নিচের কোনটা pipe আর Unix philosophy-র সম্পর্ক সবচেয়ে ভালোভাবে বর্ণনা করে?",
       "options": [
-        "pipe আর Unix philosophy সম্পূর্ণ আলাদা, একে অপরের সাথে সম্পর্কহীন",
+        "pipe আর Unix philosophy সম্পূর্ণ আলাদা, একে অপরের সাথে সম্পর্কহীন — pipe মূলত শুধুমাত্র networking layer-এ data transfer গতি বাড়ানোর জন্য তৈরি করা একটা hardware-level অপ্টিমাইজেশন কৌশল, কোনো design philosophy-র সাথে এর কোনো যোগ নেই",
         "Unix philosophy বলে প্রতিটা tool ছোট ও একক-উদ্দেশ্যবিশিষ্ট হবে; pipe হলো সেই ছোট tool-গুলোকে জোড়া লাগিয়ে জটিল কাজ করার ব্যবহারিক যন্ত্র",
         "pipe শুধু grep-এর জন্য তৈরি করা হয়েছিল",
         "Unix philosophy অনুযায়ী pipe ব্যবহার করা উচিত না"
@@ -741,7 +741,7 @@
       "difficulty": "hard",
       "question": "তুমি একটা পুরনো report file-এ প্রতিদিন নতুন ডেটা যোগ করতে চাও, কিন্তু কখনো ভুলবশত পুরনো history মুছে ফেলতে চাও না। কোন অভ্যাস সবচেয়ে নিরাপদ?",
       "options": [
-        "সবসময় > ব্যবহার করা, কারণ এটা দ্রুত",
+        "সবসময় > ব্যবহার করা, কারণ এটা দ্রুত — > অপারেটর ফাইলের পুরনো content না মুছেই নতুন content শুধু শুরুতে insert করে দেয়, তাই পুরনো history-ও অক্ষত থাকে বলে ধরা হয়",
         "সবসময় >> ব্যবহার করা, কারণ এটা পুরনো content অক্ষত রেখে নতুন content শুধু যোগ করে",
         "> আর >> আসলে একই, যেকোনোটা চলবে",
         "প্রতিদিন নতুন filename ব্যবহার করে > দিয়ে লেখা, এটাই একমাত্র উপায়"
@@ -755,7 +755,7 @@
       "question": "sed 's/ERROR/CRITICAL/' app.log | grep \"CRITICAL\" | wc -l — এই pipeline চালানোর পর তুমি একই output কি শুধু grep -c \"ERROR\" app.log দিয়েও পেতে পারতে?",
       "options": [
         "হ্যাঁ — দুটোই মূলত ERROR-যুক্ত লাইনের সংখ্যাই গুনছে, একটায় প্রথমে শব্দ বদলে তারপর নতুন শব্দ খোঁজা হয়েছে, আরেকটায় সরাসরি মূল শব্দ দিয়ে গোনা হয়েছে",
-        "না, দুটো সম্পূর্ণ আলাদা জিনিস গোনে",
+        "না, দুটো সম্পূর্ণ আলাদা জিনিস গোনে — প্রথমটা sed দিয়ে বদলানো CRITICAL শব্দের সংখ্যা গোনে, আর দ্বিতীয়টা মূল ERROR শব্দের সংখ্যা গোনে, এই দুই শব্দের frequency ফাইলে ভিন্ন হতে পারে বলে ফলাফলও আলাদা হওয়ার কথা",
         "প্রথমটা file-এর নাম গোনে",
         "দ্বিতীয়টা কাজই করবে না"
       ],

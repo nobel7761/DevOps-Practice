@@ -21,18 +21,19 @@ export class AskService {
   ) {}
 
   /** Previously-saved messages for this video, so a tab switch or page reload never loses the conversation. */
-  async getHistory(contentId: string): Promise<AskMessage[]> {
+  async getHistory(userId: string, contentId: string): Promise<AskMessage[]> {
     const conversation = await this.conversationModel
-      .findOne({ contentId })
+      .findOne({ userId, contentId })
       .exec();
     return conversation?.messages ?? [];
   }
 
   async ask(
+    userId: string,
     contentId: string,
     dto: AskQuestionDto,
   ): Promise<{ answer: string }> {
-    const history = await this.getHistory(contentId);
+    const history = await this.getHistory(userId, contentId);
 
     const systemPrompt = buildSystemPrompt(dto.context);
 
@@ -51,8 +52,9 @@ export class AskService {
 
     await this.conversationModel
       .findOneAndUpdate(
-        { contentId },
+        { userId, contentId },
         {
+          userId,
           contentId,
           messages: [
             ...history,

@@ -1,0 +1,141 @@
+{
+  "labId": "69d2157cbfa7b7946e1a97e0",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-01",
+      "difficulty": "easy",
+      "question": "ufw আসলে কীসের একটা user-friendly frontend?",
+      "options": [
+        "SSH — remote login-কে আরও নিরাপদ আর অনেক বেশি সহজ করে তোলার জন্য একটা বিশেষ বাড়তি layer হিসেবে কাজ করে থাকে",
+        "iptables — হাজারটা low-level কমান্ডের বদলে সংক্ষিপ্ত, readable instruction দেয়",
+        "DNS — ডোমেইন নাম থেকে IP address খুঁজে বের করার প্রক্রিয়াটা আরও সহজ করে দেয়",
+        "systemd — সার্ভিস চালু/বন্ধ করার কমান্ডগুলোকে আরও সংক্ষিপ্ত আর পড়ার-উপযোগী করে তোলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "ufw (Uncomplicated Firewall) হলো iptables-এর একটা frontend — একই কাজ, কিন্তু সংক্ষিপ্ত, পড়ার-উপযোগী কমান্ডে।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-02",
+      "difficulty": "easy",
+      "question": "ufw rule evaluate করার সময় কোন ক্রমে rule-গুলো চেক করে?",
+      "options": [
+        "উপর থেকে নিচে, একটা একটা করে — প্রথম মিলে যাওয়া rule-এর action প্রয়োগ হয়, তারপর থেমে যায়",
+        "একদম নিচ থেকে উপরের দিকে — সবশেষের rule-টা সবার আগে চেক করা হয়, তারপর ধাপে ধাপে ক্রমে ওপরের দিকে ওঠে",
+        "এলোমেলোভাবে, কোনো নির্দিষ্ট ক্রম ছাড়াই — প্রতিবার ভিন্ন ভিন্ন rule আগে চেক হতে পারে",
+        "সব rule একসাথে, সমান্তরালভাবে চেক হয় — যেটার priority সবচেয়ে বেশি সেটা জেতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "ufw প্রতিটা connection-কে rule-গুলোর বিপরীতে উপর থেকে নিচে, ক্রমানুসারে চেক করে — প্রথম মিলে যাওয়া rule-এর action প্রয়োগ হয়ে যায়, বাকি rule আর দেখা হয় না।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-03",
+      "difficulty": "easy",
+      "question": "একটা fresh Poridhi lab VM-এ ufw status verbose চালালে প্রথমে কী দেখা যায়?",
+      "options": [
+        "Status: active, সব port বন্ধ — কোনো কিছুই বাইরে থেকে পৌঁছাতে পারে না একেবারেই",
+        "Status: error — ufw ঠিকমতো install হয়নি বলে একটা error message দেখানো হয়",
+        "Status: active, শুধু SSH খোলা — বাকি সব বন্ধ, ডিফল্ট হিসেবেই এভাবে শুরু হয়",
+        "Status: inactive — কোনো rule প্রয়োগ হচ্ছে না, সব ট্রাফিক অবাধে চলাচল করছে"
+      ],
+      "answerIndex": 3,
+      "explanation": "fresh VM-এ ufw ডিফল্টভাবে inactive থাকে — কোনো firewall rule প্রয়োগ হচ্ছে না, সব traffic অবাধে চলাচল করছে।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-04",
+      "difficulty": "medium",
+      "question": "SSH allow করার আগে default deny incoming policy সেট করলে কী হতে পারে?",
+      "options": [
+        "কিছুই হবে না, কারণ ufw সবসময় নিজে থেকেই বুঝে নিয়ে SSH-কে সবসময় allow রাখে, পরিস্থিতি যাই হোক না কেন সবসময়",
+        "শুধু একটা warning message আসবে, কিন্তু SSH connection চালু থাকবে স্বাভাবিকভাবেই",
+        "ufw enable করার সাথে সাথেই সব incoming ট্রাফিক বন্ধ হয়ে যাবে, নিজের SSH session-সহ — permanently locked out হয়ে যাবে",
+        "ufw command-টাই আসলে চলবে না, কারণ এই নির্দিষ্ট ক্রমে কমান্ড দেওয়াটা সিস্টেম-লেভেলে সরাসরি নিষিদ্ধ করে রাখা হয়েছে, নিরাপত্তার খাতিরে"
+      ],
+      "answerIndex": 2,
+      "explanation": "default deny incoming সেট করার আগে SSH allow না করলে, ufw enable হওয়ার সাথে সাথেই SSH-সহ সব unmatched ট্রাফিক বন্ধ হয়ে যায় — নিজের session নিজেই বন্ধ করে ফেলার ঝুঁকি।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-05",
+      "difficulty": "medium",
+      "question": "ufw allow 22/tcp আর ufw allow ssh — এই দুটো কমান্ডের ফলাফলে পার্থক্য কী?",
+      "options": [
+        "কার্যত কোনো পার্থক্য নেই — ssh service-নাম /etc/services থেকে 22/tcp-তেই resolve হয়",
+        "প্রথমটা শুধু TCP allow করে, দ্বিতীয়টা TCP আর UDP দুটোই একসাথে allow করে দেয় স্বয়ংক্রিয়ভাবে",
+        "প্রথমটা শুধু IPv4-এর জন্য কাজ করে, দ্বিতীয়টা শুধু IPv6-এর জন্য নির্দিষ্টভাবে কাজ করে",
+        "প্রথমটা সবসময় স্থায়ী rule বানায়, দ্বিতীয়টা শুধুমাত্র অস্থায়ী, পরের reboot হলেই হারিয়ে যাওয়া একটা rule বানায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "service নাম (ssh) ব্যবহার করলে ufw /etc/services-এর ম্যাপিং দেখে পোর্ট বের করে — ssh মানেই 22/tcp, তাই ফলাফল 22/tcp সরাসরি লেখার সমান।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-06",
+      "difficulty": "medium",
+      "question": "ufw allow from 100.84.0.0/16 to any port 9090 — এই rule-টা একসাথে কী কী শর্ত প্রয়োগ করে?",
+      "options": [
+        "হয় উৎস IP 100.84.0.0/16-এর মধ্যে, নয়তো গন্তব্য পোর্ট 9090 — এই দুটোর মধ্যে যেকোনো একটা মিললেই rule প্রযোজ্য হয়ে যায়",
+        "শুধু গন্তব্য পোর্ট 9090 চেক হয়, উৎস IP-এর কোনো প্রভাবই আসলে এই rule-এ নেই",
+        "শুধু উৎস IP 100.84.0.0/16 চেক হয়, port 9090 অংশটা শুধু নথিভুক্ত করার জন্য, কার্যকরী নয়",
+        "উৎস IP অবশ্যই 100.84.0.0/16-এর মধ্যে হতে হবে, এবং গন্তব্য পোর্ট অবশ্যই 9090 হতে হবে — দুটো শর্তই একসাথে মিলতে হবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "এই rule দুটো শর্ত একসাথে প্রয়োগ করে — from দিয়ে উৎস subnet, আর to any port দিয়ে গন্তব্য পোর্ট — দুটোই মিললে তবেই allow হয়।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-07",
+      "difficulty": "medium",
+      "question": "port 23 ইতিমধ্যে default deny policy দিয়ে বন্ধ থাকা সত্ত্বেও, কেন explicit deny 23/tcp rule যোগ করা ভালো অভ্যাস?",
+      "options": [
+        "কারণ default deny policy আসলে মাত্র ৫ মিনিটের জন্যই কার্যকর থেকে যায়, তারপর সম্পূর্ণ স্বয়ংক্রিয়ভাবে নিজে থেকেই বন্ধ হয়ে যায়",
+        "এটা ভবিষ্যৎ administrator-দের কাছে intent স্পষ্ট করে — telnet যে consciously বন্ধ করা হয়েছে, ভুলে যাওয়া হয়নি",
+        "কারণ explicit rule ছাড়া default policy আসলে কোনো port-ই প্রকৃতপক্ষে কখনো বন্ধ করতে সক্ষম হয় না, এটা শুধুই একটা দেখানো সেটিং মাত্র",
+        "কারণ এটা না করলে ufw স্বয়ংক্রিয়ভাবে নিজে থেকেই পুরো firewall পুরোপুরি বন্ধ করে দেয়, বাড়তি নিরাপত্তাজনিত কারণে সবসময়"
+      ],
+      "answerIndex": 1,
+      "explanation": "যদিও default policy দিয়ে ইতিমধ্যে বন্ধ, একটা explicit deny rule ভবিষ্যৎ এডমিনদের বুঝিয়ে দেয় এটা ইচ্ছাকৃত সিদ্ধান্ত — শুধু ভুলে বাদ পড়া কিছু না, আর security audit টুলও এটাকে সচেতন hardening হিসেবে চেনে।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-08",
+      "difficulty": "hard",
+      "question": "ufw disable আর ufw reset-এর মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "disable শুধু enforcement বন্ধ করে, সব rule সংরক্ষিত থাকে — reset enforcement বন্ধ করে এবং rule-ও মুছে দেয়",
+        "disable একেবারে স্থায়ী একটা পরিবর্তন, reset অস্থায়ী — disable-এর পর আর কখনোই আবার enable করা যায় না কোনোভাবে",
+        "দুটোই একই কাজ করে — শুধু কমান্ডের নাম ভিন্ন, ফলাফলে কোনো পার্থক্য নেই",
+        "disable শুধু SSH rule-টা বাদ রাখে সব rule মুছে, reset একদম সব rule-সহ SSH-ও মুছে দেয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "disable অস্থায়ীভাবে enforcement বন্ধ করে কিন্তু ruleset সংরক্ষিত রাখে — পরে enable করলে একই rule ফিরে আসে। reset enforcement বন্ধ করার পাশাপাশি সব rule-ও মুছে দেয়, একদম শুরু থেকে শুরু করার জন্য।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-09",
+      "difficulty": "hard",
+      "question": "Application profile (যেমন OpenSSH) ব্যবহারের সুবিধা পোর্ট নাম্বার সরাসরি লেখার তুলনায় কী?",
+      "options": [
+        "Application profile ব্যবহার করলে rule প্রয়োগ হতে উল্লেখযোগ্যভাবে কম সময় লাগে, কারণ এটা সরাসরি kernel-এ pre-compiled থাকে",
+        "Application profile দিয়ে লেখা rule default policy-কে পুরোপুরি override করে, পোর্ট নাম্বার দিয়ে লেখা rule পারে না",
+        "সার্ভিসের পোর্ট বদলে গেলে শুধু profile ফাইল আপডেট করলেই হয় — ufw allow <AppName> ব্যবহারকারী সব সিস্টেম স্বয়ংক্রিয়ভাবে পরিবর্তনটা পায়",
+        "Application profile ব্যবহার করলে rule শুধু সেই নির্দিষ্ট application সত্যিই চালু থাকা অবস্থাতেই সক্রিয় থাকে, বন্ধ করলেই সাথে সাথে rule-ও বাতিল হয়ে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Profile নাম ব্যবহার করলে rule maintainable হয় — সার্ভিসের পোর্ট কখনো বদলালে, শুধু /etc/ufw/applications.d/-এর profile ফাইল আপডেট করলেই, সেই নাম ব্যবহার করা সব rule স্বয়ংক্রিয়ভাবে নতুন পোর্টে কাজ করে।"
+    },
+    {
+      "id": "69d2157cbfa7b7946e1a97e0-10",
+      "difficulty": "hard",
+      "question": "এই lab-এর মূল নিরাপত্তা নিয়ম কী, যা সবসময় মনে রাখতে বলা হয়েছে?",
+      "options": [
+        "যত বেশি সম্ভব পোর্ট শুরুতেই একসাথে খুলে রাখো, পরে প্রয়োজন অনুযায়ী বন্ধ করে নেওয়াটাই সবসময় সবচেয়ে সহজ পদ্ধতি",
+        "প্রথমে সব পোর্ট সম্পূর্ণভাবে বন্ধ করে দাও, তারপর firewall-টাকেই পুরোপুরি বন্ধ (disable) করে রাখো সবচেয়ে বেশি নিরাপত্তার জন্য",
+        "default policy সবসময় allow রাখো, আর শুধু explicitly ক্ষতিকর পোর্টগুলো আলাদাভাবে বন্ধ করে দাও",
+        "SSH আগে allow করো, ডিফল্টে সব বন্ধ করো, তারপর শুধু যা দরকার তাই খোলো — প্রতিটা না-খোলা পোর্টই একটা কম attack surface"
+      ],
+      "answerIndex": 3,
+      "explanation": "এই lab-এর মূল শিক্ষা — allow SSH first, deny-by-default, তারপর শুধু প্রয়োজনীয় পোর্ট খোলা। প্রতিটা না-খোলা পোর্টই একটা সম্ভাব্য attack surface যা আদৌ থাকেই না।"
+    }
+  ]
+}

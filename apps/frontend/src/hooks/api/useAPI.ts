@@ -1,9 +1,7 @@
 "use client";
 
 import { AxiosError, AxiosRequestConfig } from "axios";
-import { useRouter } from "next/navigation";
 import { useEffect, useReducer } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   RESET,
   SET_DATA_LOADED,
@@ -134,16 +132,12 @@ function useAPI<
     error: null,
   });
 
-  const { token } = useAuth();
-  const router = useRouter();
-
   const callApi = async (data?: RequestType) => {
     dispatch({ action: SET_LOADING, payload: { loading: true } });
     try {
       const res = await client.request({
         data: data ?? requestData,
         headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
           ...requestHeaders,
         },
         method,
@@ -177,16 +171,6 @@ function useAPI<
               (error as unknown as ErrorType),
           },
         });
-      }
-
-      // Handle 401/403 errors
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        // Clear token and redirect to login
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("token");
-          router.push("/login");
-        }
       }
     } finally {
       dispatch({ action: SET_LOADING, payload: { loading: false } });

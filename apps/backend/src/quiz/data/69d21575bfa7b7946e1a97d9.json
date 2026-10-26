@@ -1,0 +1,115 @@
+{
+  "labId": "69d21575bfa7b7946e1a97d9",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 3,
+    "hard": 2
+  },
+  "questions": [
+    {
+      "id": "69d21575bfa7b7946e1a97d9-01",
+      "difficulty": "easy",
+      "question": "tcpdump আসলে কী করে?",
+      "options": [
+        "একটা interface বন্ধ অথবা চালু করে, যেভাবে ip link set করে interface-এর state বদলানো যায়",
+        "একটা port খোলা না বন্ধ তা চেক করে, ঠিক যেভাবে ss বা netstat socket state দেখায়",
+        "একটা network interface দিয়ে যাওয়া-আসা প্যাকেটগুলো সরাসরি capture করে এবং সেগুলোর বিস্তারিত তথ্য দেখায়",
+        "একটা firewall rule তৈরি করে যা নির্দিষ্ট প্যাকেট আটকে দেয়, ঠিক যেভাবে iptables কাজ করে, কোনো প্রশ্ন ছাড়াই সরাসরি"
+      ],
+      "answerIndex": 2,
+      "explanation": "tcpdump একটা packet capture টুল — কোনো interface দিয়ে যাওয়া প্যাকেট সরাসরি দেখায়, firewall rule তৈরি বা interface state বদলানোর কাজ করে না।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-02",
+      "difficulty": "easy",
+      "question": "tcpdump -i lo -n কমান্ডে -n ফ্ল্যাগটার কাজ কী?",
+      "options": [
+        "hostname আর port-এর নাম resolve না করে IP address আর port সরাসরি সংখ্যায় দেখায়",
+        "শুধু নতুন (new) connection-এর প্যাকেট capture করে, আগে থেকে চলা connection-গুলো বাদ দিয়ে দেয়",
+        "capture করা প্যাকেট সংখ্যা (number) সীমিত করে, একটা নির্দিষ্ট সংখ্যার পর capture বন্ধ হয়ে যায়",
+        "capture-টা নীরব (silent) মোডে চালায়, কোনো আউটপুট টার্মিনালে প্রিন্ট না করে শুধু ফাইলে রাখে"
+      ],
+      "answerIndex": 0,
+      "explanation": "-n মানে numeric — DNS/service-name resolve করার চেষ্টা না করে সরাসরি IP address আর port number দেখায়, এতে আউটপুটও দ্রুত আসে।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-03",
+      "difficulty": "easy",
+      "question": "কোনো traffic না থাকা অবস্থায় tcpdump -i lo -n চালালে কী দেখা যাবে?",
+      "options": [
+        "একটা error message আসবে, কারণ capture শুরু করার আগে অন্তত একটা connection থাকতেই হয়",
+        "আগে থেকে capture হওয়া পুরনো সব প্যাকেটের একটা cached history সাথে সাথেই দেখানো হবে",
+        "প্রতি সেকেন্ডে একটা করে \"no traffic\" বার্তা বারবার প্রিন্ট হতে থাকবে, যতক্ষণ না বন্ধ করা হয় ম্যানুয়ালি",
+        "কিছুই না — capture শুরু হয়ে অপেক্ষা করতে থাকবে, কোনো প্যাকেট না এলে কোনো লাইনই প্রিন্ট হবে না"
+      ],
+      "answerIndex": 3,
+      "explanation": "tcpdump শুধু আসা প্যাকেট capture করে দেখায় — traffic না থাকলে আউটপুট খালি থাকে, কোনো error বা placeholder বার্তা আসে না।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-04",
+      "difficulty": "medium",
+      "question": "tcpdump -i lo -n port 9090 ফিল্টারটা ঠিক কী নির্বাচন করে?",
+      "options": [
+        "শুধু port 9090-এ আসা (incoming) প্যাকেট, port 9090 থেকে বের হওয়া প্যাকেট এই filter-এ ধরা পড়ে না",
+        "source অথবা destination যেকোনো দিকে port 9090 জড়িত এমন সব প্যাকেট — শুধু incoming বা শুধু outgoing নয়, দুটোই",
+        "শুধু port 9090 থেকে বের হওয়া (outgoing) প্যাকেট, port 9090-এ আসা প্যাকেট এই filter-এ ধরা পড়ে না",
+        "শুধু port 9090-এর TCP handshake-এর প্রথম প্যাকেট (SYN), বাকি প্যাকেটগুলো এই filter বাদ দিয়ে দেয় সম্পূর্ণভাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "\"port N\" filter দুই দিকই কভার করে — source port অথবা destination port, যেকোনো একটা 9090 হলেই প্যাকেটটা capture-এ ধরা পড়ে।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-05",
+      "difficulty": "medium",
+      "question": "tcpdump tcp and port 9090 আর শুধু tcpdump port 9090-এর মধ্যে পার্থক্য কী?",
+      "options": [
+        "প্রথমটা শুধু TCP প্রোটোকলের port-9090 ট্রাফিক দেখায়; দ্বিতীয়টা port 9090-এর TCP আর UDP দুটো প্রোটোকলের ট্রাফিকই দেখাতে পারে",
+        "দুটো কমান্ডই হুবহু একই কাজ করে — tcp and অংশটা শুধু readability-এর জন্য লেখা, filtering-এ কোনো প্রভাব ফেলে না আদৌ কখনোই, কোনো ব্যতিক্রম ছাড়াই",
+        "প্রথমটা শুধু IPv6 ট্রাফিক দেখায়, দ্বিতীয়টা শুধুমাত্র IPv4 ট্রাফিকের জন্যই সীমাবদ্ধ রাখা হয়েছে",
+        "প্রথমটা শুধু outgoing ট্রাফিক দেখায়, দ্বিতীয়টা শুধুমাত্র incoming ট্রাফিকের জন্যই প্রযোজ্য হয়ে থাকে"
+      ],
+      "answerIndex": 0,
+      "explanation": "\"tcp and port 9090\" দুটো শর্ত and দিয়ে যুক্ত করে — প্রোটোকল অবশ্যই TCP হতে হবে এবং port 9090 হতে হবে; শুধু \"port 9090\" প্রোটোকল নির্দিষ্ট করে না, তাই TCP আর UDP দুটোই ধরতে পারে।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-06",
+      "difficulty": "medium",
+      "question": "tcpdump -i lo -n not port 22 কমান্ডের \"not\" কীভাবে কাজ করে?",
+      "options": [
+        "পুরো filter expression-টাকেই বাতিল করে দেয়, ফলে tcpdump সব প্যাকেট capture করা সম্পূর্ণভাবে বন্ধ করে দেয় তাৎক্ষণিকভাবে এবং স্থায়ীভাবে",
+        "শুধু port 22-এর ট্রাফিক capture করে, কিন্তু সেই প্যাকেটগুলোকে আউটপুটে লাল রঙে হাইলাইট করে দেখায়",
+        "পরের শর্তটাকে (port 22) negate করে দেয় — port 22-এর সাথে জড়িত সব প্যাকেট capture থেকে বাদ পড়ে যায়, বাকি সব capture হয়",
+        "tcpdump-কে read-only mode-এ চালায়, কোনো প্যাকেট ফাইলে না লিখে শুধু টার্মিনালে দেখায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "\"not\" একটা negation operator — এর ঠিক পরের শর্তটাকে উল্টে দেয়, ফলে সেই শর্তে না-মেলা সব প্যাকেট capture হয়, মেলা প্যাকেটগুলো বাদ পড়ে যায়।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-07",
+      "difficulty": "hard",
+      "question": "tcpdump -i lo -n port 9090 -w capture.pcap কমান্ডে -w ফ্ল্যাগ কী করে?",
+      "options": [
+        "capture শুরু হওয়ার আগে কতগুলো প্যাকেট আগে থেকে ফাইলে ছিল সেই সংখ্যা warning হিসেবে দেখায়, প্রতিবার শুরুর সময়ই বিস্তারিতভাবে জানিয়ে দেয়",
+        "capture-এর গতি সীমিত করে দেয়, যাতে প্রতি সেকেন্ডে নির্দিষ্ট সংখ্যার বেশি প্যাকেট capture না হয়",
+        "capture শেষে একটা summary report তৈরি করে, কিন্তু প্যাকেট নিজেরা কোথাও সংরক্ষিত হয় না",
+        "ফিল্টার হওয়া প্যাকেটগুলো টার্মিনালে না দেখিয়ে সরাসরি নির্দিষ্ট ফাইলে (এখানে capture.pcap) লিখে রাখে, পরে বিশ্লেষণের জন্য"
+      ],
+      "answerIndex": 3,
+      "explanation": "-w (write) ফ্ল্যাগ capture করা প্যাকেট পড়ার-উপযোগী টার্মিনাল আউটপুটের বদলে নির্দিষ্ট ফাইলে লিখে রাখে — পরে -r দিয়ে সেই ফাইল আবার পড়া যায়, বা Wireshark-এ খোলা যায়।"
+    },
+    {
+      "id": "69d21575bfa7b7946e1a97d9-08",
+      "difficulty": "hard",
+      "question": "tcpdump -r capture.pcap কমান্ড চালানোর সময় যদি capture.pcap ফাইলটা না থাকে তাহলে কী হবে?",
+      "options": [
+        "tcpdump স্বয়ংক্রিয়ভাবে সেই নামে একটা নতুন, খালি capture.pcap ফাইল তৈরি করে দেবে এবং live capture শুরু করে দেবে",
+        "tcpdump একটা error দেখাবে যে ফাইলটা খুলতে পারেনি (No such file) এবং কোনো প্যাকেট দেখাবে না",
+        "tcpdump সবচেয়ে সাম্প্রতিক অন্য যেকোনো .pcap ফাইল খুঁজে নিয়ে তার বদলে সেটাই পড়া শুরু করে দেবে স্বয়ংক্রিয়ভাবে",
+        "tcpdump নীরবে কিছুই না করে সাথে সাথে প্রম্পট ফিরিয়ে দেবে, কোনো error বা আউটপুট ছাড়াই"
+      ],
+      "answerIndex": 1,
+      "explanation": "-r একটা read-only অপারেশন — নির্দিষ্ট ফাইল আগে থেকে না থাকলে, tcpdump সেটা তৈরি করে না, বরং একটা \"ফাইল খুলতে পারেনি\" error দেখিয়ে থেমে যায়।"
+    }
+  ]
+}

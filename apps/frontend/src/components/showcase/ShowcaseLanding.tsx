@@ -23,6 +23,27 @@ const links = [
     badge: "react-hook-form + zod",
   },
   {
+    href: "/showcase/lesson-template",
+    title: "System Design lesson template",
+    description:
+      "The 18-section System Design A-Z lesson layout, rendered with placeholder data.",
+    badge: "18 sections",
+  },
+  {
+    href: "/showcase/diagrams",
+    title: "System Design diagrams",
+    description:
+      "Shared diagram vocabulary, sequence/step-through, before/after, summary card and the simulator shell.",
+    badge: "visual system",
+  },
+  {
+    href: "/showcase/linkedin-post",
+    title: "LinkedIn post card",
+    description:
+      "Story, poll and recap posts with Unicode bold, counts, copy buttons and the experience line.",
+    badge: "5 post types",
+  },
+  {
     href: "/users",
     title: "useAPI hook",
     description: "The existing CRUD example wired to the NestJS backend.",

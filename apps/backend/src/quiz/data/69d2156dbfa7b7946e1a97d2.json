@@ -1,0 +1,141 @@
+{
+  "labId": "69d2156dbfa7b7946e1a97d2",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-01",
+      "difficulty": "easy",
+      "question": "নেটওয়ার্কিং-এ একটা \"socket\" আসলে কী বোঝায়?",
+      "options": [
+        "একটা physical hardware port, যেখানে network cable সরাসরি plug করে ল্যাপটপের সাথে সংযুক্ত করা হয় প্রতিবার ব্যবহারের আগে",
+        "একটা endpoint যেখানে IP address আর port number একসাথে মিলে একটা নির্দিষ্ট network connection-কে চিহ্নিত করে",
+        "একটা ফাইল যেখানে সব incoming আর outgoing network traffic-এর পুরো copy স্থায়ীভাবে সংরক্ষিত থাকে",
+        "একটা user account যার মাধ্যমে একজন ব্যবহারকারী network resource-এ লগইন করে অ্যাক্সেস পায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Socket হলো communication-এর একটা endpoint — IP address + port number-এর সমন্বয়, যা একটা নির্দিষ্ট process আর network connection-কে চিহ্নিত করে।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-02",
+      "difficulty": "easy",
+      "question": "TCP connection-এর LISTEN state-এর মানে কী?",
+      "options": [
+        "একটা connection সবে মাত্র বন্ধ হয়ে গেছে এবং আর কোনো data পাঠানো সম্ভব না এই মুহূর্তে",
+        "দুটো host-এর মধ্যে data সক্রিয়ভাবে আদান-প্রদান চলছে, connection ইতিমধ্যে সম্পূর্ণভাবে প্রতিষ্ঠিত",
+        "একটা connection request পাঠানো হয়েছে কিন্তু এখনো অন্য প্রান্ত থেকে কোনো সাড়া পাওয়া যায়নি",
+        "একটা process একটা port-এ bind হয়ে আছে এবং নতুন incoming connection গ্রহণ করার জন্য অপেক্ষা করছে"
+      ],
+      "answerIndex": 3,
+      "explanation": "LISTEN state মানে সার্ভার-সাইড process একটা port-এ bind হয়ে নতুন client connection-এর জন্য অপেক্ষা করছে — এখনো কোনো client connect করেনি।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-03",
+      "difficulty": "easy",
+      "question": "ss আর netstat-এর মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "ss netlink দিয়ে সরাসরি kernel-কে query করে, তাই দ্রুত — netstat পুরোনো /proc ফাইল পড়ে, যা বড় সিস্টেমে ধীর হতে পারে",
+        "ss শুধু UDP connection দেখাতে পারে, netstat শুধু TCP connection-এর জন্যই সীমাবদ্ধ রাখা হয়েছে",
+        "netstat একটা নতুন টুল আর ss পুরোনো, deprecated — তাই আধুনিক সিস্টেমে ss আর কখনোই ব্যবহার করা উচিত না কোনো অবস্থাতেই, নিরাপত্তার কারণে",
+        "দুটো টুল সম্পূর্ণ ভিন্ন তথ্য দেখায় — একটাতে যা পাওয়া যায় আরেকটাতে তা কখনোই দেখানো সম্ভব না"
+      ],
+      "answerIndex": 0,
+      "explanation": "ss (socket statistics) আধুনিক টুল, netlink interface দিয়ে সরাসরি kernel থেকে তথ্য নেয় বলে দ্রুত; netstat পুরোনো, /proc/net ফাইল parse করে, যা অনেক socket থাকলে ধীর হয়ে যায়।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-04",
+      "difficulty": "medium",
+      "question": "ss -tlnp কমান্ডের প্রতিটা ফ্ল্যাগ কী করে?",
+      "options": [
+        "-t TCP আর UDP দুটোই দেখায়, -l শুধু local connection, -n শুধু established, -p শুধু port number দেখায় সংখ্যায়",
+        "-t শুধু timeout হওয়া connection দেখায়, -l log করে, -n নতুন connection-ই শুধু দেখায়, -p পুরনোগুলো বাদ দেয়",
+        "-t শুধু TCP, -l শুধু listening socket, -n numeric output, -p প্রতিটা socket ধরে রাখা process-এর নাম/PID দেখায়",
+        "-t শুধু established connection, -l listening বাদ দেয়, -n nameserver query দেখায়, -p পোর্ট রেঞ্জ ফিল্টার করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "-t = TCP সকেট, -l = শুধু listening সকেট, -n = numeric (resolve ছাড়া), -p = সংশ্লিষ্ট process-এর নাম ও PID — একসাথে \"কে কোন port-এ listen করছে\" দেখায়।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-05",
+      "difficulty": "medium",
+      "question": "ss -tnp state established কমান্ডটা কী দেখায়?",
+      "options": [
+        "শুধু সেই TCP connection-গুলো, যেগুলো ইতিমধ্যে সম্পূর্ণভাবে প্রতিষ্ঠিত হয়ে গেছে — শুধু listen করা port নয়, বরং সক্রিয়, দুই-প্রান্ত সংযুক্ত connection",
+        "শুধু সেই port-গুলো দেখায় যেগুলো এই মুহূর্তে কোনো process ব্যবহার করছে না, একেবারে free অবস্থায় আছে",
+        "সব TCP socket-এর state একসাথে, established থেকে শুরু করে listen, close-wait, time-wait, syn-sent, সব কিছুই একই আউটপুটে একসাথে দেখায় কোনো রকম পার্থক্য বা আলাদা ফিল্টার ছাড়াই",
+        "শুধু এমন connection দেখায় যেগুলো সম্প্রতি কোনো error-এর কারণে অস্বাভাবিকভাবে বন্ধ হয়ে গেছে"
+      ],
+      "answerIndex": 0,
+      "explanation": "state established ফিল্টার দিয়ে ss শুধু সক্রিয়, দুই-প্রান্ত সংযুক্ত TCP connection-ই দেখায় — listening socket বা অন্য state-এর socket বাদ পড়ে যায়।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-06",
+      "difficulty": "medium",
+      "question": "ss-এর '( dport = :9090 or sport = :9090 )' filter expression-এর কাজ কী?",
+      "options": [
+        "শুধু port 9090-এ incoming connection-গুলো দেখায়, outgoing connection সম্পূর্ণভাবে বাদ পড়ে যায় এই filter-এ, কোনো ব্যতিক্রম ছাড়াই",
+        "port 9090 আর destination port 9090 উভয়ই একসাথে মিলতে হবে, নইলে কোনো socket-ই filter পাস করবে না",
+        "এটা আসলে port 9090 বাদ দিয়ে বাকি সব port-এর socket দেখায়, or আসলে \"not\" হিসেবে কাজ করে এখানে",
+        "port 9090 যেকোনো দিকে জড়িত এমন সব socket বের করে — হয় destination port 9090, নয়তো source port 9090"
+      ],
+      "answerIndex": 3,
+      "explanation": "dport আর sport দুটো দিক আলাদাভাবে চেক করে, or দিয়ে combine করা — port 9090 destination হিসেবে বা source হিসেবে, যেকোনো দিকে জড়িত থাকলেই মিলে যায়।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-07",
+      "difficulty": "medium",
+      "question": "netstat -tanp | grep :9090 পাইপলাইনটা কী করে?",
+      "options": [
+        "netstat-কে সরাসরি port 9090-এ শুধুমাত্র চালানোর জন্য বাধ্য করে, বাকি port-এর তথ্য কখনো সংগ্রহই করে না",
+        "netstat-এর সম্পূর্ণ আউটপুট (TCP, all states, numeric, process-সহ) থেকে শুধু সেই লাইনগুলো ফিল্টার করে যেখানে \":9090\" টেক্সটটা আছে",
+        "grep কমান্ডটা netstat-এর আউটপুট সম্পূর্ণভাবে মুছে ফেলে একটা নতুন, খালি ফাইল তৈরি করে দেয় তার বদলে, প্রতিবার চালানোর সময় কোনো সতর্কবার্তা ছাড়াই",
+        "netstat-এর আউটপুট port নম্বর অনুযায়ী sort করে দেয়, grep এখানে শুধু sorting-এর কাজে ব্যবহৃত হচ্ছে"
+      ],
+      "answerIndex": 1,
+      "explanation": "netstat পুরো আউটপুট জেনারেট করে, grep সেটা থেকে \":9090\" ম্যাচ করা লাইনগুলো বেছে নেয় — দুটো আলাদা কমান্ড pipe দিয়ে চেইন করা, filtering grep-এর কাজ, netstat নিজে filter করে না।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-08",
+      "difficulty": "hard",
+      "question": "netstat -i কমান্ড কী দেখায়, যা ss দিয়ে সরাসরি পাওয়া যায় না?",
+      "options": [
+        "প্রতিটা socket কোন application ব্যবহার করছে তার সম্পূর্ণ তালিকা, PID আর command name-সহ বিস্তারিতভাবে",
+        "এই মুহূর্তে established সব TCP connection-এর একটা সংক্ষিপ্ত সারাংশ, কোনো interface-ভিত্তিক তথ্য ছাড়াই",
+        "প্রতিটা network interface-এর packet-level counter — কতগুলো packet পাঠানো/গ্রহণ করা হয়েছে, কতগুলোতে error বা drop হয়েছে",
+        "সিস্টেমে ইনস্টল করা সব network driver আর তাদের version-এর একটা সম্পূর্ণ তালিকা বিস্তারিতভাবে, hardware তথ্যসহ পুরোপুরি ও প্রতিটা বিস্তারিত বিবরণসহ"
+      ],
+      "answerIndex": 2,
+      "explanation": "netstat -i প্রতিটা interface-এর RX/TX packet counter আর error/drop count দেখায় — এটা socket-level নয়, interface-level পরিসংখ্যান, যা ss কভার করে না।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-09",
+      "difficulty": "hard",
+      "question": "netstat -rn কমান্ডটা কী দেখায়, এবং -n ফ্ল্যাগটা কেন যোগ করা হয়?",
+      "options": [
+        "kernel routing table দেখায় — কোন destination network কোন gateway/interface হয়ে যাবে — -n দিয়ে hostname resolve না করে numeric IP দেখায়",
+        "সব শোনা (listening) port-এর তালিকা দেখায়, -n দিয়ে সেগুলোকে port number অনুযায়ী উর্ধ্বক্রমে sort করে",
+        "সব network interface-এর MAC address দেখায়, -n দিয়ে শুধু সেই address-গুলোকেই hexadecimal-এ দেখায়",
+        "সব active DNS query-র একটা log দেখায়, -n দিয়ে query resolve হওয়া পর্যন্ত অপেক্ষার সময় বাড়িয়ে দেয়, যাতে সঠিকভাবে resolve হতে পারে সবসময়ই"
+      ],
+      "answerIndex": 0,
+      "explanation": "-r মানে routing table, -n মানে numeric — hostname বা network-name resolve করার চেষ্টা না করে সরাসরি IP address আর gateway দেখায়, দ্রুত আর অস্পষ্টতাবিহীন আউটপুট।"
+    },
+    {
+      "id": "69d2156dbfa7b7946e1a97d2-10",
+      "difficulty": "hard",
+      "question": "একটা \"mystery\" service কোন port-এ শুনছে সেটা বের করতে চাইলে, কেন শুধু process list (ps) দেখাই যথেষ্ট না?",
+      "options": [
+        "ps কমান্ডটা আসলে এই সিস্টেমে একেবারেই কাজ করে না, তাই port বের করার প্রশ্নই এখানে সম্পূর্ণভাবে অবান্তর আর অর্থহীন হয়ে যায় চিরতরে, কোনো exception ছাড়াই",
+        "ps সবসময় port number সরাসরি দেখায়, কিন্তু সেটা ভুল format-এ থাকে বলে পড়া প্রায় অসম্ভব হয়ে পড়ে",
+        "ps শুধু root user-এর process দেখায়, তাই non-root service-এর জন্য port বের করাই যায় না কোনোভাবে",
+        "ps শুধু চলমান process দেখায়, কিন্তু কোন process কোন port bind করেছে তা বলে না — port-to-process mapping জানতে socket-level টুল (ss/netstat -p) লাগবেই"
+      ],
+      "answerIndex": 3,
+      "explanation": "ps প্রসেস-লেভেল তথ্য দেয় (কী চলছে), কিন্তু network binding সম্পূর্ণ আলাদা স্তরের তথ্য — কোন process কোন port-এ socket bind করেছে তা জানতে ss -p বা netstat -p-এর মতো socket-level টুল লাগে।"
+    }
+  ]
+}

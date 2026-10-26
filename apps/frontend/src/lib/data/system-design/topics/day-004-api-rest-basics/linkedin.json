@@ -1,0 +1,22 @@
+{
+  "type": "poll",
+  "text": "লিফটের বোতাম পাঁচবার চাপলে কি লিফট পাঁচবার আসে?\nDay 4/100 · API কী? REST-এর বেসিক\n\nআজ **REST API** শিখতে গিয়ে একটা প্রশ্নে আটকে গেলাম।\n\nধরুন আপনার shop-এর mobile app একটা request পাঠাল। ৫ সেকেন্ড কোনো উত্তর নেই, timeout। App জানে না request-টা server-এ পৌঁছে কাজ হয়ে গেছে, নাকি পথেই হারিয়েছে। তাই সে নিজে থেকে আবার পাঠায়।\n\nলিফটের বোতামের মতো কিছু request দশবার পাঠালেও server-এর অবস্থা একবারের মতোই থাকে (**Idempotent**)। আর কিছু request প্রতিবার নতুন কিছু তৈরি করে ফেলে।\n\nনিচের চারটার মধ্যে কোনটা কোনো বাড়তি ব্যবস্থা (যেমন **Idempotency Key**) ছাড়াই অন্ধভাবে retry করা নিরাপদ?\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ কখনো retry-র কারণে duplicate order, payment বা email হয়েছিল? কিভাবে ধরা পড়েছিল?]\n\nআপনি হলে কী করতেন? Poll-এ vote দিন, আর কেন বেছে নিলেন comment-এ লিখুন 👇\n\nউত্তর আর ব্যাখ্যা দেব কাল।",
+  "personalPrompt": "আপনার project-এ কখনো retry-র কারণে duplicate order, payment বা email হয়েছিল? কিভাবে ধরা পড়েছিল?",
+  "firstComment": "Safe বনাম idempotent, PUT বনাম PATCH, আর curl দিয়ে নিজে প্রতিটা method চালিয়ে status code দেখার lab, পুরো lesson এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#RESTAPI",
+    "#BackendEngineering"
+  ],
+  "poll": {
+    "question": "Timeout-এর পরে কোন request কোনো বাড়তি ব্যবস্থা ছাড়াই অন্ধভাবে retry করা নিরাপদ?",
+    "options": [
+      "POST /orders",
+      "PUT /users/42/address",
+      "POST /payments",
+      "PATCH stock +1"
+    ],
+    "answerComment": "উত্তর: PUT /users/42/address ✅\n\nPUT মানে \"এই ঠিকানায় resource-টা ঠিক এটাই হোক।\" একই ঠিকানা দশবার বসালেও শেষে ঠিকানা একটাই, তাই timeout-এর পরে আবার পাঠানো নিরাপদ।\n\nকেন অন্যগুলো না:\n- POST /orders: প্রতিবার নতুন order তৈরি করে। প্রথম request আসলে পৌঁছে থাকলে retry মানে দুটো order।\n- POST /payments: একই সমস্যা, আর এবার দুবার টাকা কাটা। এজন্যই payment API-গুলো Idempotency-Key header নেয়: retry-তে একই key, server বোঝে \"এটা আগেই করেছি\"।\n- PATCH stock +1: মান বসাচ্ছে না, বাড়াচ্ছে। দুবার পৌঁছালে stock +2। PATCH নিজে থেকে idempotent না; {\"stock\": 11}-এর মতো \"মান বসানো\" patch হলে হতো।\n\nমনে রাখার নিয়ম: GET, PUT, DELETE idempotent; POST না; PATCH নির্ভর করে কী পাঠাচ্ছেন তার উপর। DELETE দ্বিতীয়বার 404 দিলেও idempotent, কারণ মাপা হয় server-এর অবস্থা দিয়ে, response দিয়ে না।"
+  }
+}

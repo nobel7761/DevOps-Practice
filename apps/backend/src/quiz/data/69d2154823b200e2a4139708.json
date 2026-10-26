@@ -1,0 +1,141 @@
+{
+  "labId": "69d2154823b200e2a4139708",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "69d2154823b200e2a4139708-01",
+      "difficulty": "easy",
+      "question": "ip link show আর ip addr show-এর মধ্যে পার্থক্য কী?",
+      "options": [
+        "দুটো কমান্ডই হুবহু একই আউটপুট দেয় — শুধু syntax-এ পার্থক্য, কার্যকারিতা একদম অভিন্ন",
+        "ip link show শুধু routing table দেখায়, ip addr show শুধু DNS নেমসার্ভার-এর তালিকা দেখায়",
+        "ip link show interface-এর অবস্থা (up/down, MAC address) দেখায়; ip addr show সেগুলোর সাথে assigned IP address-ও দেখায়",
+        "ip link show শুধু wireless interface দেখায়, ip addr show শুধু wired interface-এর জন্যই সীমাবদ্ধ, কোনো ব্যতিক্রম ছাড়াই পুরোপুরি"
+      ],
+      "answerIndex": 2,
+      "explanation": "ip link interface-level তথ্য (state, MAC) দেখায়; ip addr সেই তথ্যের পাশাপাশি প্রতিটা interface-এ assigned IP address/CIDR-ও দেখায়।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-02",
+      "difficulty": "easy",
+      "question": "ip route show কমান্ড কী দেখায়?",
+      "options": [
+        "kernel routing table — কোন destination network কোন gateway বা interface হয়ে পৌঁছানো যাবে",
+        "সব network interface-এর MAC address আর driver version-এর একটা সম্পূর্ণ তালিকা",
+        "এই মুহূর্তে established সব TCP connection-এর একটা সংক্ষিপ্ত তালিকা",
+        "সিস্টেমে ইনস্টল করা সব firewall rule-এর একটা সম্পূর্ণ তালিকা, chain অনুযায়ী সাজানো এবং বিস্তারিতভাবে দেখানো"
+      ],
+      "answerIndex": 0,
+      "explanation": "ip route show kernel-এর routing table প্রিন্ট করে — প্রতিটা destination network কোন device/gateway দিয়ে যাবে, তার তালিকা।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-03",
+      "difficulty": "easy",
+      "question": "network namespace (netns) কেন ব্যবহার করা হয়?",
+      "options": [
+        "network card-এর গতি (speed) বাড়ানোর জন্য, যাতে বেশি bandwidth পাওয়া যায় একই hardware-এ কোনো বাড়তি খরচ বা hardware পরিবর্তন ছাড়াই দ্রুত এবং সহজে",
+        "firewall rule-গুলো স্থায়ীভাবে সংরক্ষণ করার জন্য, যাতে reboot-এর পরও rule টিকে থাকে",
+        "একাধিক ব্যবহারকারীর SSH password একসাথে সংরক্ষণ করার জন্য একটা নিরাপদ জায়গা হিসেবে",
+        "host-এর আসল network stack থেকে সম্পূর্ণ আলাদা, isolated একটা network পরিবেশ বানাতে, যাতে প্র্যাকটিসের সময় ভুল হলেও real SSH session নিরাপদ থাকে"
+      ],
+      "answerIndex": 3,
+      "explanation": "network namespace একটা সম্পূর্ণ আলাদা network stack (নিজস্ব interface, routing table, firewall rule) তৈরি করে — host-এর আসল network থেকে isolated, নিরাপদে experiment করার জন্য আদর্শ।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-04",
+      "difficulty": "medium",
+      "question": "ip link add veth-host type veth peer name veth-ns কমান্ডটা কী তৈরি করে?",
+      "options": [
+        "একটা একক interface যার নাম veth-host, veth-ns শুধু সেটার একটা alias বা ডাকনাম মাত্র",
+        "দুটো interface, একটা জোড়া (pair) হিসেবে সংযুক্ত — একদিকে যা পাঠানো হয়, অন্যদিকে তা সরাসরি গ্রহণ করা হয়, যেন একটা virtual network cable",
+        "দুটো সম্পূর্ণ আলাদা, একে অপরের সাথে সম্পর্কহীন interface, নাম মিল থাকা ছাড়া এদের মধ্যে কোনো connection নেই, একেবারেই আলাদা এবং সম্পূর্ণ স্বাধীন",
+        "একটা bridge device, যেটা পরে একাধিক আলাদা interface-কে নিজের ভেতর যুক্ত করার জন্য ব্যবহার করা হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth (virtual ethernet) সবসময় জোড়ায় তৈরি হয় — একটা প্রান্তে পাঠানো প্যাকেট সরাসরি অন্য প্রান্তে বেরিয়ে আসে, যেন একটা virtual network cable-এর দুই মাথা।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-05",
+      "difficulty": "medium",
+      "question": "ip link set veth-ns netns lab-net কমান্ডটার পর veth-ns interface-টা কোথায় থাকবে?",
+      "options": [
+        "host-এর interface তালিকা থেকে সরে গিয়ে সম্পূর্ণভাবে lab-net namespace-এর ভেতরে চলে যাবে — host-এর ip link show-এ আর দেখা যাবে না",
+        "একই সাথে host আর lab-net namespace দুই জায়গাতেই থাকবে, দুটো জায়গা থেকেই আলাদাভাবে access করা যাবে স্বাধীনভাবে, একসাথে, কোনো conflict ছাড়াই",
+        "veth-ns আসলে মুছে যাবে, শুধু veth-host প্রান্তটাই টিকে থাকবে — এরপর আর কোনো জোড়া থাকবে না",
+        "host-এ থেকেই যাবে, শুধু lab-net namespace থেকে সেটার একটা reference/pointer তৈরি হবে অতিরিক্তভাবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "একটা interface একসাথে শুধু একটা namespace-এর অন্তর্ভুক্ত হতে পারে — netns move করলে সেটা আগের জায়গা (host) থেকে সম্পূর্ণ সরে গিয়ে নতুন namespace-এর অংশ হয়ে যায়।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-06",
+      "difficulty": "medium",
+      "question": "ip addr add 10.10.0.1/24 dev veth-host চালানোর পর, এই কমান্ড কী স্বয়ংক্রিয়ভাবে তৈরি করে দেয়?",
+      "options": [
+        "একটা default gateway route, যা এরপর থেকে সব ধরনের ট্রাফিকের জন্যই ব্যবহার করা হবে স্বয়ংক্রিয়ভাবে, অন্য কোনো route বিবেচনা না করেই পুরোপুরি",
+        "একটা DNS entry, যা veth-host-কে একটা hostname-এর সাথে স্থায়ীভাবে সংযুক্ত করে দেয়",
+        "একটা firewall rule, যা শুধুমাত্র 10.10.0.0/24 সাবনেট থেকে আসা ট্রাফিক allow করে দেয়",
+        "একটা directly-connected route — 10.10.0.0/24 নেটওয়ার্কের জন্য veth-host device ব্যবহার করার route, যা আলাদাভাবে ip route add করতে হয় না"
+      ],
+      "answerIndex": 3,
+      "explanation": "একটা interface-এ address assign করলে kernel স্বয়ংক্রিয়ভাবে সেই subnet-এর জন্য একটা \"directly connected\" route যোগ করে দেয় — সেই subnet-এর বাকি হোস্টের সাথে যোগাযোগের জন্য আলাদা route লাগে না।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-07",
+      "difficulty": "medium",
+      "question": "ip route add 10.20.0.0/24 via 10.10.0.1 rule-টার অর্থ কী?",
+      "options": [
+        "10.20.0.0/24 নেটওয়ার্কের সব ট্রাফিক সম্পূর্ণভাবে ব্লক করে দিতে হবে, via অংশটা শুধু logging-এর জন্য রাখা একটা অতিরিক্ত তথ্য মাত্র",
+        "10.10.0.1 ঠিকানাটাকেই 10.20.0.0/24 নেটওয়ার্কের একটা অংশ হিসেবে পুনঃনামকরণ করে দিতে হবে স্থায়ীভাবে",
+        "10.20.0.0/24 নেটওয়ার্কে যাওয়া যেকোনো প্যাকেট প্রথমে 10.10.0.1 (gateway)-এর কাছে পাঠাতে হবে, সরাসরি connected না হলে",
+        "এই route-টা শুধু outgoing DNS query-র জন্য প্রযোজ্য, বাকি সব ধরনের ট্রাফিকের ক্ষেত্রে এটা উপেক্ষা করা হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "via দিয়ে একটা next-hop gateway নির্দিষ্ট করা হয় — dest network-এ সরাসরি connected না থাকলে, প্যাকেট আগে সেই gateway-তে পাঠানো হয়, যে পরে দায়িত্ব নিয়ে এগিয়ে দেয়।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-08",
+      "difficulty": "hard",
+      "question": "ip route add default via 10.10.0.1 rule-টা কখন ব্যবহার হয়, আর কেন এটাকে \"default\" বলা হয়?",
+      "options": [
+        "এটা শুধু প্রথম ১০টা প্যাকেটের জন্যই প্রযোজ্য, এরপর থেকে প্রতিটা প্যাকেটের জন্য আলাদা নির্দিষ্ট route বাধ্যতামূলক",
+        "যখন কোনো destination-এর জন্য routing table-এ আর কোনো নির্দিষ্ট (more specific) route মেলে না, তখন সেই \"বাকি সবকিছু\"-র জন্য এই catch-all route ব্যবহৃত হয়",
+        "এটা সবসময় সব ট্রাফিকের জন্যই সবচেয়ে প্রথমে ব্যবহৃত হয়, more specific route থাকলেও সেটাকে উপেক্ষা করে এটাই আগে প্রয়োগ হয় কোনো ব্যতিক্রম ছাড়াই, প্রতিটা ক্ষেত্রেই",
+        "এটা শুধু factory-default অবস্থায় প্রযোজ্য, কোনো custom route যোগ করার সাথে সাথেই এই route স্বয়ংক্রিয়ভাবে মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Routing-এ সবসময় longest-prefix-match জেতে — default route (0.0.0.0/0) সবচেয়ে কম specific, তাই শুধু তখনই ব্যবহার হয় যখন অন্য কোনো বেশি নির্দিষ্ট route মেলে না — তাই এটাকে \"বাকি সব কিছুর জন্য\" catch-all রুট বলা হয়।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-09",
+      "difficulty": "hard",
+      "question": "ip route get 10.20.0.5 কমান্ড, আর ping 10.20.0.5 কমান্ডের মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "দুটো কমান্ডই হুবহু একই কাজ করে, শুধু আউটপুটের ফরম্যাট আলাদা — route lookup আর প্যাকেট পাঠানো দুটোই একইসাথে ঘটে উভয় ক্ষেত্রে",
+        "ip route get সত্যিকারের প্যাকেট পাঠিয়ে connectivity যাচাই করে, ping শুধুমাত্র routing table lookup করে কোনো প্যাকেট না পাঠিয়েই, প্রতিবারই এভাবে ঘটে থাকে",
+        "ip route get শুধু একটা lookup — কোন route ব্যবহার হবে তা দেখায়, কোনো প্যাকেট পাঠায় না; ping সত্যিকারের প্যাকেট পাঠিয়ে বাস্তব connectivity যাচাই করে",
+        "ip route get শুধু IPv6-এর জন্য কাজ করে, ping শুধুমাত্র IPv4 ঠিকানার জন্যই ব্যবহারযোগ্য হয়ে থাকে"
+      ],
+      "answerIndex": 2,
+      "explanation": "ip route get শুধু routing decision দেখায় (কোন route, কোন gateway ব্যবহার হবে) — কোনো প্যাকেট নেটওয়ার্কে পাঠানো হয় না; ping আসলেই প্যাকেট পাঠিয়ে reply আসে কিনা দেখে বাস্তব reachability যাচাই করে।"
+    },
+    {
+      "id": "69d2154823b200e2a4139708-10",
+      "difficulty": "hard",
+      "question": "ip neigh show (ARP/neighbour cache) কমান্ড কী দেখায়, আর কেন ping করার পর নতুন entry দেখা যায়?",
+      "options": [
+        "IP address-কে MAC address-এর সাথে ম্যাপ করা একটা cache — ping করলে kernel সেই destination-এর MAC address resolve করে cache-এ রেখে দেয়, পরের বার দ্রুত পাঠানোর জন্য",
+        "DNS query-র ফলাফল cache করা একটা তালিকা — hostname থেকে IP address-এ resolve হওয়া সব ফলাফল এখানে জমা থাকে",
+        "সম্প্রতি ব্যবহৃত সব firewall rule-এর একটা history, যা debugging-এর সময় কাজে লাগে রুল ট্র্যাক করতে",
+        "routing table-এর একটা backup copy, যা মূল route হারিয়ে গেলে স্বয়ংক্রিয়ভাবে restore করার জন্য ব্যবহৃত হয়, কোনো ম্যানুয়াল হস্তক্ষেপ ছাড়াই সবসময় এবং নির্ভরযোগ্যভাবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "ARP/neighbour cache একই local network-এ থাকা IP-কে MAC address-এর সাথে ম্যাপ করে রাখে — কোনো destination-এ প্রথমবার packet পাঠানোর (যেমন ping) সময় এই resolution ঘটে এবং cache-এ সংরক্ষিত হয়।"
+    }
+  ]
+}
