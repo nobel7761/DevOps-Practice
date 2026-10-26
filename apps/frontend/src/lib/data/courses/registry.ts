@@ -31,6 +31,10 @@ import {
   systemDesignAToZCourse,
 } from "./system-design-a-z";
 import { backendPythonAwsSeason2Course } from "./backend-python-aws-season-2";
+import {
+  VPS_MIGRATION_MASTERY_COURSE_ID,
+  vpsMigrationMasteryCourse,
+} from "./vps-migration-mastery";
 
 export type CoursePlatform = "poridhi" | "udemy" | "own";
 
@@ -51,6 +55,11 @@ export const courseRegistry: CourseRegistryEntry[] = [
     id: SYSTEM_DESIGN_A_Z_COURSE_ID,
     platform: "own",
     course: systemDesignAToZCourse,
+  },
+  {
+    id: VPS_MIGRATION_MASTERY_COURSE_ID,
+    platform: "own",
+    course: vpsMigrationMasteryCourse,
   },
   {
     id: "forward-deployed-engineering",
