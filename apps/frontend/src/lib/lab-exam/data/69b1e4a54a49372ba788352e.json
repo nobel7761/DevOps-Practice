@@ -1,0 +1,157 @@
+{
+  "labId": "69b1e4a54a49372ba788352e",
+  "title": "Arrays in Bash Scripting",
+  "passPercent": 95,
+  "intro": "indexed array বানানো, element access, append/update/remove, iterate করা, আর associative array — সব এক lab-এ।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "📦 Array basics",
+        "note": "fruits=(\"a\" \"b\" \"c\") — একটা array বানায়; ${fruits[@]} দিয়ে সব element পাওয়া যায়।"
+      },
+      "prompt": "array_basics.sh বানাও — fruits নামে একটা array বানাও চারটা ফল দিয়ে (\"Apple\" \"Banana\" \"Orange\" \"Grape\"), তারপর সব element একসাথে echo করো।",
+      "answer": "cat << EOF > array_basics.sh\n#!/bin/bash\nfruits=(\"Apple\" \"Banana\" \"Orange\" \"Grape\")\necho \"All fruits: ${fruits[@]}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/array_basics.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfruits=(\"Apple\" \"Banana\" \"Orange\" \"Grape\")\necho \"All fruits: ${fruits[@]}\""
+          }
+        ]
+      },
+      "hints": [
+        "array literal: name=(\"item1\" \"item2\" ...); সব element: ${name[@]}।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "prompt": "array_basics.sh চালাও।",
+      "answer": "bash array_basics.sh",
+      "check": { "require": ["array_basics.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 14,
+      "section": {
+        "title": "🔍 Element access",
+        "note": "${arr[0]} নির্দিষ্ট index, ${!arr[@]} সব index, ${#arr[@]} মোট সংখ্যা।"
+      },
+      "prompt": "access_elements.sh বানাও — colors=(\"Red\" \"Green\" \"Blue\") বানিয়ে: প্রথম element, সব element, সব index, আর মোট সংখ্যা — চারটাই আলাদা লাইনে echo করো।",
+      "answer": "cat << EOF > access_elements.sh\n#!/bin/bash\ncolors=(\"Red\" \"Green\" \"Blue\")\necho \"First color: ${colors[0]}\"\necho \"All elements: ${colors[@]}\"\necho \"Indices: ${!colors[@]}\"\necho \"Number of elements: ${#colors[@]}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/access_elements.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncolors=(\"Red\" \"Green\" \"Blue\")\necho \"First color: ${colors[0]}\"\necho \"All elements: ${colors[@]}\"\necho \"Indices: ${!colors[@]}\"\necho \"Number of elements: ${#colors[@]}\""
+          }
+        ]
+      },
+      "hints": [
+        "নির্দিষ্ট index: ${colors[0]}। সব index: ${!colors[@]}। length: ${#colors[@]}।"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 8,
+      "prompt": "access_elements.sh চালাও।",
+      "answer": "bash access_elements.sh",
+      "check": { "require": ["access_elements.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 16,
+      "section": {
+        "title": "✏️ Array পরিবর্তন করা",
+        "note": "arr+=(...) দিয়ে append, arr[i]=val দিয়ে update, unset arr[i] দিয়ে remove করা যায়।"
+      },
+      "prompt": "modify_array.sh বানাও — languages=(\"Bash\" \"Python\") দিয়ে শুরু করে: প্রথমে \"JavaScript\" আর \"Java\" append করো, তারপর index 2-এর মান \"Ruby\" দিয়ে update করো, তারপর index 2 remove করো — প্রতিটা ধাপের পর ${languages[@]} echo করো।",
+      "answer": "cat << EOF > modify_array.sh\n#!/bin/bash\nlanguages=(\"Bash\" \"Python\")\necho \"Original Languages: ${languages[@]}\"\nlanguages+=(\"JavaScript\" \"Java\")\necho \"After Appending: ${languages[@]}\"\nlanguages[2]=\"Ruby\"\necho \"After Updating: ${languages[@]}\"\nunset languages[2]\necho \"After Removing: ${languages[@]}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/modify_array.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nlanguages=(\"Bash\" \"Python\")\necho \"Original Languages: ${languages[@]}\"\nlanguages+=(\"JavaScript\" \"Java\")\necho \"After Appending: ${languages[@]}\"\nlanguages[2]=\"Ruby\"\necho \"After Updating: ${languages[@]}\"\nunset languages[2]\necho \"After Removing: ${languages[@]}\""
+          }
+        ]
+      },
+      "hints": [
+        "append: languages+=(\"JavaScript\" \"Java\")।",
+        "update by index: languages[2]=\"Ruby\"। remove: unset languages[2]।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 8,
+      "prompt": "modify_array.sh চালাও।",
+      "answer": "bash modify_array.sh",
+      "check": { "require": ["modify_array.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 14,
+      "section": {
+        "title": "🔁 Array iterate করা",
+        "note": "for দিয়ে array-এর element বা index — দুইভাবেই loop করা যায়।"
+      },
+      "prompt": "iterate_array.sh বানাও — teams=(\"Developers\" \"Designers\" \"QA\" \"DevOps\") দিয়ে প্রথমে index সহ প্রতিটা team echo করো (\"Team $i: ${teams[$i]}\"), তারপর শুধু team-এর নাম দিয়ে আরেকটা loop চালাও (\"Processing $team...\")।",
+      "answer": "cat << EOF > iterate_array.sh\n#!/bin/bash\nteams=(\"Developers\" \"Designers\" \"QA\" \"DevOps\")\nfor i in \"${!teams[@]}\"; do\n  echo \"Team $i: ${teams[$i]}\"\ndone\nfor team in \"${teams[@]}\"; do\n  echo \"Processing $team...\"\ndone\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/iterate_array.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nteams=(\"Developers\" \"Designers\" \"QA\" \"DevOps\")\nfor i in \"${!teams[@]}\"; do\n  echo \"Team $i: ${teams[$i]}\"\ndone\nfor team in \"${teams[@]}\"; do\n  echo \"Processing $team...\"\ndone"
+          }
+        ]
+      },
+      "hints": [
+        "index সহ loop: for i in \"${!teams[@]}\"; do ... ${teams[$i]} ... done",
+        "শুধু element: for team in \"${teams[@]}\"; do ... done"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 8,
+      "prompt": "iterate_array.sh চালাও।",
+      "answer": "bash iterate_array.sh",
+      "check": { "require": ["iterate_array.sh"] }
+    },
+    {
+      "id": "t09",
+      "points": 14,
+      "section": {
+        "title": "🗂️ Associative array",
+        "note": "declare -A দিয়ে key-value map বানানো যায় — index নয়, নাম দিয়ে access করা হয়।"
+      },
+      "prompt": "associative_array.sh বানাও — declare -A দিয়ে user_roles নামে একটা associative array বানাও (\"Nabil\"=\"admin\", \"Minhaz\"=\"developer\", \"Yasin\"=\"guest\"), তারপর Nabil-এর role আর সব user-এর নাম echo করো।",
+      "answer": "cat << EOF > associative_array.sh\n#!/bin/bash\ndeclare -A user_roles\nuser_roles=(\n  [\"Nabil\"]=\"admin\"\n  [\"Minhaz\"]=\"developer\"\n  [\"Yasin\"]=\"guest\"\n)\necho \"Nabil's role: ${user_roles[\"Nabil\"]}\"\necho \"All users: ${!user_roles[@]}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/associative_array.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ndeclare -A user_roles\nuser_roles=(\n  [\"Nabil\"]=\"admin\"\n  [\"Minhaz\"]=\"developer\"\n  [\"Yasin\"]=\"guest\"\n)\necho \"Nabil's role: ${user_roles[\"Nabil\"]}\"\necho \"All users: ${!user_roles[@]}\""
+          }
+        ]
+      },
+      "hints": [
+        "প্রথমে declare -A user_roles দিয়ে ঘোষণা করো।",
+        "key-value বসাও: user_roles=([\"Nabil\"]=\"admin\" ...)। access: ${user_roles[\"Nabil\"]}।"
+      ]
+    },
+    {
+      "id": "t10",
+      "points": 10,
+      "prompt": "associative_array.sh চালাও।",
+      "answer": "bash associative_array.sh",
+      "check": { "require": ["associative_array.sh"] }
+    }
+  ]
+}

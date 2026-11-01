@@ -67,4 +67,13 @@ export class ProgressController {
     await this.progressService.markComplete(userId, labId, 'lab');
     return { completed: true };
   }
+
+  @Post('interview/:moduleId/complete')
+  async markInterviewComplete(
+    @CurrentUserId() userId: string,
+    @Param('moduleId') moduleId: string,
+  ) {
+    await this.progressService.markComplete(userId, moduleId, 'interview');
+    return { completed: true };
+  }
 }

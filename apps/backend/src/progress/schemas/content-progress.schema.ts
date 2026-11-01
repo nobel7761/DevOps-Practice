@@ -8,7 +8,7 @@ export type ContentProgressDocument = HydratedDocument<ContentProgress>;
  * 'linkedin' = a System Design topic's post marked "Post করেছি", keyed by topic id.
  */
 export type ContentProgressType =
-  'quiz' | 'video' | 'lab' | 'challenge' | 'linkedin';
+  'quiz' | 'video' | 'lab' | 'challenge' | 'linkedin' | 'interview';
 
 /**
  * One row per (userId, key, type): `key` is a lab's labId for a quiz or a manual
@@ -28,7 +28,7 @@ export class ContentProgress {
 
   @Prop({
     required: true,
-    enum: ['quiz', 'video', 'lab', 'challenge', 'linkedin'],
+    enum: ['quiz', 'video', 'lab', 'challenge', 'linkedin', 'interview'],
   })
   type: ContentProgressType;
 

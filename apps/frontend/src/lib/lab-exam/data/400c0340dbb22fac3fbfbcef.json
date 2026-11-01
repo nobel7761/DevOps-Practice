@@ -1,0 +1,275 @@
+{
+  "labId": "400c0340dbb22fac3fbfbcef",
+  "title": "LAB: CN-lab-03.2 — Connect Network NS to Root (Part 2)",
+  "passPercent": 95,
+  "intro": "Part 1-এ default route বানিয়েছিলে। এবার সেটা আবার বানাবে (দ্রুত recap), তারপর দেখবে একটা কাজ করা gateway path কী রেখে যায় (ARP cache), ইচ্ছাকৃতভাবে route মুছে exact failure-টা দেখবে, আর শেষে restore করে আবার verify করবে — একটা সম্পূর্ণ troubleshooting loop।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 4,
+      "section": {
+        "title": "🔁 পর্ব ১: app-ns পুনরায় বানানো (recap)",
+        "note": "Part 1-এর একই setup — দ্রুত করে ফেলো।"
+      },
+      "prompt": "app-ns নামে namespace বানাও।",
+      "answer": "ip netns add app-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "app-ns"],
+        "netnsExists": ["app-ns"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 7,
+      "prompt": "veth-root আর veth-app নামে veth pair বানাও।",
+      "answer": "ip link add veth-root type veth peer name veth-app",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-root",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-app"
+        ],
+        "netIfaceState": [{ "name": "veth-root" }, { "name": "veth-app" }]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 7,
+      "prompt": "veth-app প্রান্তটা app-ns namespace-এ সরিয়ে নাও।",
+      "answer": "ip link set veth-app netns app-ns",
+      "check": {
+        "require": ["ip", "link", "set", "veth-app", "netns", "app-ns"],
+        "netIfaceState": [{ "name": "veth-app", "context": "app-ns" }]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 4,
+      "prompt": "host-এর পাশে veth-root চালু করো।",
+      "answer": "ip link set veth-root up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-root", "up"],
+        "netIfaceState": [{ "name": "veth-root", "state": "up" }]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 4,
+      "prompt": "namespace-এর ভেতরে lo চালু করো।",
+      "answer": "ip netns exec app-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "app-ns", "state": "up" }]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 4,
+      "prompt": "namespace-এর ভেতরে veth-app চালু করো।",
+      "answer": "ip netns exec app-ns ip link set veth-app up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "veth-app",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-app", "context": "app-ns", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 5,
+      "prompt": "veth-root-কে 10.30.0.1/24 ঠিকানা দাও।",
+      "answer": "ip addr add 10.30.0.1/24 dev veth-root",
+      "check": {
+        "require": ["ip", "addr", "add", "10.30.0.1/24", "dev", "veth-root"],
+        "netIfaceState": [{ "name": "veth-root", "hasAddress": "10.30.0.1/24" }]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 5,
+      "prompt": "namespace-এর ভেতরে veth-app-কে 10.30.0.2/24 ঠিকানা দাও।",
+      "answer": "ip netns exec app-ns ip addr add 10.30.0.2/24 dev veth-app",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "addr",
+          "add",
+          "10.30.0.2/24",
+          "dev",
+          "veth-app"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-app",
+            "context": "app-ns",
+            "hasAddress": "10.30.0.2/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 6,
+      "prompt": "namespace-এর জন্য default route যোগ করো, 10.30.0.1 হয়ে।",
+      "answer": "ip netns exec app-ns ip route add default via 10.30.0.1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "route",
+          "add",
+          "default",
+          "via",
+          "10.30.0.1"
+        ],
+        "routeExists": [
+          { "dest": "default", "via": "10.30.0.1", "context": "app-ns" }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "section": {
+        "title": "🧭 পর্ব ২: একটা কাজ করা gateway path কী রেখে যায়",
+        "note": "ভাঙার আগে দেখো — একটা working route আসলে কী populate করে।"
+      },
+      "prompt": "namespace থেকে gateway (10.30.0.1)-এ ping করো।",
+      "answer": "ip netns exec app-ns ping -c 2 10.30.0.1",
+      "check": {
+        "require": ["ip", "netns", "exec", "app-ns", "ping", "10.30.0.1"]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "namespace-এর ARP/neighbour cache দেখো — gateway-র জন্য একটা entry থাকার কথা।",
+      "answer": "ip netns exec app-ns ip neigh show",
+      "check": {
+        "require": ["ip", "netns", "exec", "app-ns", "ip", "neigh", "show"]
+      },
+      "hints": [
+        "ARP শুধু পরের hop (gateway)-এর MAC resolve করে — দূরের destination-এর জন্য কখনো না"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 12,
+      "section": {
+        "title": "💥 পর্ব ৩: ইচ্ছাকৃতভাবে ভাঙা",
+        "note": "একটা real-world mistake সিমুলেট করছো — default route ভুলবশত মুছে যাওয়া।"
+      },
+      "prompt": "namespace থেকে default route-টা মুছে ফেলো।",
+      "answer": "ip netns exec app-ns ip route del default",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "route",
+          "del",
+          "default"
+        ],
+        "routeExists": [
+          { "dest": "default", "context": "app-ns", "exists": false }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 6,
+      "prompt": "routing table আবার দেখো — শুধু directly-connected route-টাই বাকি আছে তো?",
+      "answer": "ip netns exec app-ns ip route show",
+      "check": {
+        "require": ["ip", "netns", "exec", "app-ns", "ip", "route", "show"],
+        "routeExists": [
+          { "dest": "default", "context": "app-ns", "exists": false }
+        ]
+      },
+      "hints": [
+        "এখন 203.0.113.5-এর মতো বাইরের ঠিকানার জন্য ip route get চালিয়ে দেখো — আগের মতোই \"Network is unreachable\" আসার কথা"
+      ]
+    },
+    {
+      "id": "t14",
+      "points": 10,
+      "section": {
+        "title": "🔧 পর্ব ৪: পুনরুদ্ধার ও পুনরায় যাচাই",
+        "note": "ঠিক একই route আবার যোগ করো — কোনো নতুন কিছু না, শুধু যা মুছেছিলে তাই ফিরিয়ে আনা।"
+      },
+      "prompt": "default route-টা আবার যোগ করো, 10.30.0.1 হয়ে।",
+      "answer": "ip netns exec app-ns ip route add default via 10.30.0.1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "route",
+          "add",
+          "default",
+          "via",
+          "10.30.0.1"
+        ],
+        "routeExists": [
+          { "dest": "default", "via": "10.30.0.1", "context": "app-ns" }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 9,
+      "prompt": "fix নিশ্চিত করতে আবার 203.0.113.5-এর জন্য route lookup করো — এবার সফল হওয়ার কথা।",
+      "answer": "ip netns exec app-ns ip route get 203.0.113.5",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "route",
+          "get",
+          "203.0.113.5"
+        ]
+      }
+    }
+  ]
+}

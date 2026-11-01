@@ -1,0 +1,202 @@
+{
+  "labId": "69e0e99023b200e2a4159f11",
+  "title": "Configure and manage network flows at different layers",
+  "passPercent": 95,
+  "intro": "একটা controller ছাড়া OpenFlow switch নিজে কিছুই জানে না — প্রতিটা forwarding decision তোমাকে নিজের হাতে flow rule হিসেবে বসাতে হবে। এই ল্যাবে ৩-হোস্ট টপোলজিতে ধাপে ধাপে দেখবে: খালি flow table কী করে (কিছুই না), `action=normal` দিলে কী হয় (সাধারণ switch-এর মতো), আর তারপর নিজে হাতে port-ভিত্তিক flow বসিয়ে ঠিক কোন port কোন port-এর সাথে কথা বলবে সেটা controller করে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 6,
+      "section": {
+        "title": "🏗️ টপোলজি তৈরি",
+        "note": "৩টা host, একটা switch, কোনো controller নেই — flow rule সবই ম্যানুয়ালি বসাতে হবে।"
+      },
+      "prompt": "একটা single-switch, ৩-হোস্ট Mininet টপোলজি বানাও, controller ছাড়া, সহজ MAC সহ।",
+      "answer": "sudo mn --topo=single,3 --controller=none --mac",
+      "check": { "require": ["mn", "--topo=single,3", "--controller=none"] }
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "prompt": "Mininet টপোলজির সব node আর connection-এর বিস্তারিত অবস্থা দেখো।",
+      "answer": "dump",
+      "check": { "require": ["dump"] },
+      "hints": [
+        "প্রতিটা node-এর interface আর PID দেখানোর একটা single-word কমান্ড আছে।"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 6,
+      "prompt": "switch s1-এর OpenFlow port mapping (কোন port কোন host-এর) দেখো।",
+      "answer": "sh ovs-ofctl show s1",
+      "check": { "require": ["ovs-ofctl", "show", "s1"] }
+    },
+    {
+      "id": "t04",
+      "points": 10,
+      "section": {
+        "title": "🧪 সাধারণ switch আচরণ",
+        "note": "`action=normal` মানে switch তার built-in L2 learning logic দিয়ে কাজ করবে — ঠিক একটা traditional switch-এর মতো।"
+      },
+      "prompt": "s1-এ একটা flow যোগ করো যাতে এটা traditional switch-এর মতো আচরণ করে।",
+      "answer": "sh ovs-ofctl add-flow s1 action=normal",
+      "check": { "mininetFlowExists": [{ "switch": "s1", "action": "normal" }] }
+    },
+    {
+      "id": "t05",
+      "points": 8,
+      "prompt": "সব host-এর মধ্যে connectivity যাচাই করো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1", "to": "h2", "reachable": true },
+          { "from": "h1", "to": "h3", "reachable": true }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 8,
+      "section": {
+        "title": "🧹 Flow মুছে ফেলা",
+        "note": "flow table খালি করলে switch আবার \"অন্ধ\" হয়ে যায় — কোনো packet কোথায় যাবে জানে না।"
+      },
+      "prompt": "s1-এর সব flow মুছে ফেলো।",
+      "answer": "sh ovs-ofctl del-flows s1",
+      "check": {
+        "mininetFlowExists": [
+          { "switch": "s1", "action": "normal", "exists": false }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 6,
+      "prompt": "আবার connectivity পরীক্ষা করো — flow ছাড়া কী হয় দেখো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [{ "from": "h1", "to": "h2", "reachable": false }]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 10,
+      "section": {
+        "title": "🎯 Port-ভিত্তিক manual flow",
+        "note": "এবার শুধু নির্দিষ্ট port-জোড়ার মধ্যে traffic পাঠাও — physical port number দিয়ে, MAC/IP ছাড়াই।"
+      },
+      "prompt": "s1-এ একটা flow বসাও যাতে port 1-এ আসা সব packet port 2-তে forward হয়।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,in_port=1,actions=output:2",
+      "check": {
+        "mininetFlowExists": [
+          { "switch": "s1", "match": { "in_port": "1" }, "action": "output:2" }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 10,
+      "prompt": "একইভাবে, port 2 থেকে আসা packet port 1-এ ফেরত পাঠানোর flow বসাও (bidirectional করতে)।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,in_port=2,actions=output:1",
+      "check": {
+        "mininetFlowExists": [
+          { "switch": "s1", "match": { "in_port": "2" }, "action": "output:1" }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 8,
+      "prompt": "h1 আর h2-এর মধ্যে ping করে এই নতুন flow দুটো কাজ করছে কিনা যাচাই করো।",
+      "answer": "h1 ping -c2 h2",
+      "check": {
+        "mininetReachable": [{ "from": "h1", "to": "h2", "reachable": true }]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "s1-এর flow table আবার dump করে দেখো — port 3-এর (h3) জন্য কোনো rule নেই বলেই h3 বাকি দুজনের সাথে কথা বলতে পারছে না।",
+      "answer": "sh ovs-ofctl dump-flows s1",
+      "check": {
+        "mininetFlowExists": [
+          { "switch": "s1", "match": { "in_port": "3" }, "exists": false }
+        ]
+      },
+      "hints": [
+        "h3 থেকে h2-তে ping করে নিজে চোখেও দেখে নিতে পারো — এটা fail করার কথা।"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 8,
+      "section": {
+        "title": "🔗 সম্পূর্ণ connectivity",
+        "note": "প্রতিটা port-কে বাকি দুটো port-এ forward করতে দাও — তাহলেই সব host একে অপরের সাথে কথা বলতে পারবে।"
+      },
+      "prompt": "port 3 (h3) থেকে আসা packet port 1 আর 2 — দুটোতেই forward করার flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,in_port=3,actions=output:1,2",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "in_port": "3" },
+            "action": "output:1,output:2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "prompt": "port 1 থেকে আসা packet এখন port 2 আর 3 — দুটোতেই forward হোক, সেভাবে আগের in_port=1 flow-টা আপডেট করো।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,in_port=1,actions=output:2,3",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "in_port": "1" },
+            "action": "output:2,output:3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 4,
+      "prompt": "একইভাবে port 2-এর flow-ও আপডেট করো — port 1 আর 3, দুটোতেই forward হোক।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,in_port=2,actions=output:1,3",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "in_port": "2" },
+            "action": "output:1,output:3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 4,
+      "prompt": "সব flow একবার dump করে পুরো টেবিলটা চোখ বুলিয়ে নাও।",
+      "answer": "sh ovs-ofctl dump-flows s1",
+      "check": { "require": ["ovs-ofctl", "dump-flows", "s1"] }
+    },
+    {
+      "id": "t16",
+      "points": 6,
+      "prompt": "এখন সব host থেকে সব host-এ connectivity যাচাই করো — পুরো mesh কাজ করার কথা।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1", "to": "h2", "reachable": true },
+          { "from": "h1", "to": "h3", "reachable": true },
+          { "from": "h2", "to": "h3", "reachable": true }
+        ]
+      }
+    }
+  ]
+}

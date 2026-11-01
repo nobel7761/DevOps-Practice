@@ -5,8 +5,9 @@ import { Loader2, Send } from "lucide-react";
 import { Textarea } from "@/components/shared/shadcn";
 import AskChatMessage from "@/components/modules/video/AskChatMessage";
 import CustomButton from "@/components/shared/CustomButton";
-import client from "@/lib/api/client";
+import client, { getApiBaseUrl } from "@/lib/api/client";
 import type { RelatedLab } from "@/lib/data/video-ask-context";
+import { parseSseStream } from "@/lib/sse/parse-sse-stream";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -37,6 +38,10 @@ export default function AskAiPanel({
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [waitingForFirstToken, setWaitingForFirstToken] = useState(false);
+  const [streamingMessageIndex, setStreamingMessageIndex] = useState<
+    number | null
+  >(null);
   const [interview, setInterview] = useState<InterviewSummary | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -82,11 +87,14 @@ export default function AskAiPanel({
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setInput("");
     setSending(true);
+    setWaitingForFirstToken(true);
 
     try {
-      const res = await client.post<{ answer: string }>(
-        `/ask/${contentId}`,
-        {
+      const response = await fetch(`${getApiBaseUrl()}/ask/${contentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           question,
           context: {
             videoTitle,
@@ -94,13 +102,63 @@ export default function AskAiPanel({
             labs,
             interview: interview ?? undefined,
           },
-        },
-        { timeout: 60000 },
-      );
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: res.data.answer },
-      ]);
+        }),
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`Ask stream failed with status ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let started = false;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parsed = parseSseStream(buffer);
+        buffer = parsed.remainder;
+
+        for (const raw of parsed.events) {
+          let event: { delta?: string; error?: string; done?: boolean };
+          try {
+            event = JSON.parse(raw);
+          } catch {
+            continue;
+          }
+
+          if (event.delta) {
+            setWaitingForFirstToken(false);
+            if (!started) {
+              started = true;
+              setMessages((prev) => {
+                setStreamingMessageIndex(prev.length);
+                return [
+                  ...prev,
+                  { role: "assistant", content: event.delta as string },
+                ];
+              });
+            } else {
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = next[next.length - 1];
+                next[next.length - 1] = {
+                  ...last,
+                  content: last.content + event.delta,
+                };
+                return next;
+              });
+            }
+          } else if (event.error) {
+            setWaitingForFirstToken(false);
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: event.error as string },
+            ]);
+          }
+        }
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -111,6 +169,8 @@ export default function AskAiPanel({
       ]);
     } finally {
       setSending(false);
+      setWaitingForFirstToken(false);
+      setStreamingMessageIndex(null);
     }
   };
 
@@ -135,9 +195,10 @@ export default function AskAiPanel({
                 key={index}
                 role={message.role}
                 content={message.content}
+                isStreaming={index === streamingMessageIndex}
               />
             ))}
-            {sending && (
+            {waitingForFirstToken && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
                 ভাবছে...

@@ -1,0 +1,141 @@
+{
+  "labId": "303eb52a95ec71092940849a",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "303eb52a95ec71092940849a-01",
+      "difficulty": "easy",
+      "question": "এই lab-এ veth pair-এর দুই প্রান্তের মধ্যে মূল পার্থক্য কী, আগের host-connectivity lab-গুলোর তুলনায়?",
+      "options": [
+        "কোনো পার্থক্য নেই, veth pair সবসময় একইভাবে কাজ করে, lab ভেদে কোনো ব্যতিক্রম হয় না",
+        "এই lab-এ veth pair-এর দুই প্রান্তই namespace-এর ভেতরে যায়, কোনো প্রান্তই host-এ থাকে না — আগে এক প্রান্ত সবসময় host-এ থাকত",
+        "এই lab-এ veth pair ব্যবহারই করা হয় না, এর বদলে সরাসরি দুটো namespace একসাথে merge করে দেওয়া হয় — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "এই lab-এ veth pair শুধু IPv6 address নিতে পারে, আগের lab-গুলোতে শুধু IPv4 address নেওয়া যেত"
+      ],
+      "answerIndex": 1,
+      "explanation": "host-connectivity lab-গুলোতে এক প্রান্ত (veth-host) সবসময় host-এ থেকে যেত। এই lab-এ দুই প্রান্তই (veth-a, veth-b) আলাদা namespace-এর ভেতরে সরিয়ে নেওয়া হয়, host-এ কিছুই অবশিষ্ট থাকে না।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-02",
+      "difficulty": "easy",
+      "question": "ip link add veth-a type veth peer name veth-b কমান্ডটা চালানোর সাথে সাথে veth-a আর veth-b কোথায় থাকে?",
+      "options": [
+        "দুটোই সাথে সাথে নির্দিষ্ট namespace-এর ভেতরে চলে যায়, এই কমান্ডেই namespace উল্লেখ করা থাকে বলে",
+        "দুটোই আপাতত host-এই থাকে — পরে আলাদা ip link set ... netns কমান্ড দিয়ে namespace-এ সরাতে হয়",
+        "veth-a host-এ থাকে, veth-b স্বয়ংক্রিয়ভাবে মুছে যায়, পরে আবার নতুন করে তৈরি করতে হয় প্রয়োজনে",
+        "দুটোই সাথে সাথে delete হয়ে যায় যদি না একই কমান্ডে netns flag দেওয়া থাকে একদম শুরুতেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth pair তৈরি হওয়ার মুহূর্তে দুটো প্রান্তই host-এর নিজের interface list-এ থাকে। namespace-এ সরাতে হলে প্রতিটার জন্য আলাদাভাবে ip link set <iface> netns <name> চালাতে হয়।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-03",
+      "difficulty": "easy",
+      "question": "cache-ns আর worker-ns-কে connect করতে কোনো gateway address কেন লাগেনি?",
+      "options": [
+        "কারণ gateway সবসময় স্বয়ংক্রিয়ভাবে তৈরি হয়ে যায়, আলাদা করে কনফিগার করার দরকারই পড়ে না কখনো — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "দুই প্রান্ত একই subnet-এ সরাসরি (point-to-point) সংযুক্ত — directly-connected route-ই যথেষ্ট, কোনো তৃতীয় পক্ষের relay দরকার নেই",
+        "কারণ namespace-এর ভেতরে gateway কনফিগার করার কোনো উপায়ই নেই, এটা একটা engine limitation",
+        "কারণ ping কমান্ড gateway ছাড়াও সবসময় সফল হয়, routing table আদৌ পরীক্ষা করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth pair-এর দুই প্রান্ত সরাসরি একে অপরের সাথে সংযুক্ত। একই /24 subnet-এ ঠিকানা দিলে kernel নিজে থেকেই একটা directly-connected route বানিয়ে দেয় — আলাদা গেটওয়ে বা routing লাগে না।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-04",
+      "difficulty": "medium",
+      "question": "veth-a cache-ns-এর ভেতরে up করার পরও worker-ns-এর veth-b down থাকলে কী হবে?",
+      "options": [
+        "কোনো সমস্যা হবে না, একটা প্রান্ত up থাকলেই পুরো link সবসময় কাজ করবে, অন্য প্রান্তের অবস্থা গুরুত্বপূর্ণ না",
+        "worker-ns-এর veth-b স্বয়ংক্রিয়ভাবে up হয়ে যাবে, কারণ veth pair-এর দুই প্রান্তের administrative state সবসময় sync থাকে — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "লিংক পুরোপুরি কাজ করবে না — প্রতিটা প্রান্তের up/down অবস্থা আলাদাভাবে নিয়ন্ত্রিত হয়, দুটোই up না হলে traffic যাওয়া-আসা করবে না",
+        "শুধু ping কাজ করবে না কিন্তু ip addr add তখনও সফলভাবে চলবে, কারণ addressing আর link state সম্পূর্ণ সম্পর্কহীন"
+      ],
+      "answerIndex": 2,
+      "explanation": "veth pair ইলেকট্রিক্যালি জোড়া লাগানো থাকলেও প্রতিটা প্রান্তের up/down administrative state স্বাধীন। দুই প্রান্তই আলাদাভাবে up করতে হয়, নাহলে সম্পূর্ণ connectivity কাজ করবে না।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-05",
+      "difficulty": "medium",
+      "question": "ip netns exec cache-ns ping -c 3 10.60.0.2 কমান্ডটা ঠিক কী প্রমাণ করে?",
+      "options": [
+        "শুধু এটুকু যে ping প্রোগ্রামটা সিস্টেমে ইনস্টল করা আছে, সংযোগের সাথে এর কোনো সম্পর্ক নেই",
+        "cache-ns namespace-এর ভেতর থেকে, worker-ns-এর 10.60.0.2 ঠিকানায় সরাসরি একটা কার্যকর route আছে — veth link up, addressed, এবং host-এর কোনো সাহায্য ছাড়াই",
+        "host-এর নিজের eth0 interface ঠিকমতো কনফিগার করা আছে, namespace-এর সাথে এর কোনো সম্পর্ক নেই",
+        "worker-ns namespace-টা delete হয়ে গেছে কিনা, কারণ ping ব্যর্থ হলেই বোঝা যায় namespace আর নেই — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই ping সফল হওয়া মানে পুরো path কাজ করছে: দুই veth প্রান্তই up, দুই প্রান্তেই সঠিক ঠিকানা বসানো, এবং cache-ns-এর নিজের routing table থেকেই 10.60.0.0/24 সরাসরি veth-a দিয়ে রুট হচ্ছে — host-এর কোনো ইনভলভমেন্ট ছাড়াই।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-06",
+      "difficulty": "medium",
+      "question": "এই lab-এ তৈরি করা topology-টা বাস্তব জগতে কোন ধরনের networking-এর সাথে সবচেয়ে কাছাকাছি মেলে?",
+      "options": [
+        "একটা VM-এর public internet-এ সরাসরি connect হওয়া, কোনো local networking ছাড়াই",
+        "দুটো সম্পূর্ণ আলাদা physical server-এর মধ্যে একটা fiber optic cable দিয়ে সরাসরি সংযোগ",
+        "একই node-এ চলা দুটো container-এর মধ্যে সরাসরি private link — যেমন একটা worker process আর একটা local cache container",
+        "একটা load balancer থেকে একাধিক backend server-এ traffic বিতরণ করা, round-robin পদ্ধতিতে — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "দুটো namespace, প্রতিটা একটা container-এর স্ট্যান্ড-ইন, সরাসরি একটা veth pair দিয়ে সংযুক্ত — host-এর নিজের address space স্পর্শ না করেই। এটাই এক node-এ container-to-container direct networking-এর মূল প্যাটার্ন।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-07",
+      "difficulty": "medium",
+      "question": "veth-a আর veth-b উভয়কে namespace-এ সরানোর পর, host-এর ip link show type veth কমান্ডের ফলাফল কী হবে?",
+      "options": [
+        "দুটো interface-ই দেখাবে, কারণ namespace-এ সরানোর পরও host সবসময় সব veth interface দেখতে পায় — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "কিছুই দেখাবে না — উভয় প্রান্তই namespace-এর ভেতরে চলে যাওয়ায় host-এর নিজের interface list থেকে সম্পূর্ণ সরে যায়",
+        "শুধু veth-a দেখাবে, কারণ প্রথমে তৈরি হওয়া প্রান্তটা সবসময় host-এ আংশিকভাবে থেকে যায়",
+        "একটা error message দেখাবে, কারণ দুই প্রান্তই namespace-এ সরালে veth pair invalid হয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "যখন veth pair-এর উভয় প্রান্তই namespace-এ সরানো হয়, host-এর নিজের network stack-এ আর কিছুই অবশিষ্ট থাকে না — পুরো link দুই namespace-এর মধ্যে সম্পূর্ণভাবে lives, host-এর দৃষ্টিসীমার বাইরে।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-08",
+      "difficulty": "hard",
+      "question": "এই lab (সরাসরি veth) আর পরের bridge-ভিত্তিক lab-এর মধ্যে মূল স্কেলেবিলিটি পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই — veth pair দিয়েও যেকোনো সংখ্যক namespace একসাথে সরাসরি সংযুক্ত করা যায়, কোনো limit নেই",
+        "একটা একক veth pair ঠিক দুটো প্রান্তের মধ্যেই সীমাবদ্ধ (point-to-point) — তৃতীয় কোনো namespace যোগ করতে একটা shared device (bridge) লাগবে, যাতে একাধিক veth এক জায়গায় মিলতে পারে",
+        "veth pair শুধু একই host-এর ভেতরে কাজ করে, bridge আলাদা host-এর মধ্যেও সরাসরি কাজ করতে পারে কোনো অতিরিক্ত নেটওয়ার্কিং ছাড়াই — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "bridge আসলে veth-এরই আরেকটা নাম, দুটো টার্মের মধ্যে কোনো প্রযুক্তিগত পার্থক্যই নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth pair মৌলিকভাবে point-to-point — ঠিক দুই প্রান্ত। তিন বা তার বেশি namespace-কে একসাথে একই subnet-এ আনতে হলে একটা shared L2 device (bridge) লাগে, যেখানে প্রতিটা namespace নিজের veth দিয়ে bridge-এ connect হয়।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-09",
+      "difficulty": "hard",
+      "question": "যদি cache-ns-এর veth-a-কে 10.60.0.1/24-এর বদলে ভুলবশত 10.70.0.1/24 দেওয়া হতো (worker-ns-এর veth-b তখনও 10.60.0.2/24), তাহলে কী হতো?",
+      "options": [
+        "কোনো সমস্যা হতো না, veth pair নিজে থেকেই দুই প্রান্তের subnet মিলিয়ে নেয়, আলাদা configuration-এর দরকার নেই",
+        "ping ব্যর্থ হতো — দুই প্রান্ত ভিন্ন subnet-এ থাকায় কারো routing table-এই অন্যটার জন্য কোনো directly-connected route তৈরি হতো না",
+        "শুধু ping ব্যর্থ হতো কিন্তু ip addr add কমান্ডটাও error দিত, কারণ engine ভিন্ন subnet-এর address নিতেই রাজি হতো না — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "worker-ns স্বয়ংক্রিয়ভাবে তার subnet বদলে 10.70.0.0/24-এ চলে যেত, address mismatch ঠিক করার জন্য"
+      ],
+      "answerIndex": 1,
+      "explanation": "directly-connected route তৈরি হয় ip addr add-এর সময় assigned address-এর subnet অনুযায়ী। দুই প্রান্ত ভিন্ন subnet-এ থাকলে কারো routing table-এই অন্য প্রান্তের ঠিকানার জন্য কোনো match থাকবে না, ping routing lookup-এই ব্যর্থ হবে।"
+    },
+    {
+      "id": "303eb52a95ec71092940849a-10",
+      "difficulty": "hard",
+      "question": "এই lab-এর topology-তে host যদি দুই namespace-এর মধ্যে traffic দেখতে বা filter করতে চাইত (যেমন tcpdump দিয়ে), তাহলে কী সমস্যা হতো?",
+      "options": [
+        "কোনো সমস্যা হতো না, host সবসময় প্রতিটা namespace-এর ভেতরের সব veth traffic সরাসরি দেখতে পারে, আলাদা কোনো ব্যবস্থা ছাড়াই — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "host-এর কোনো interface-ই এই traffic path-এ নেই — পুরো veth pair দুই namespace-এর ভেতরে, তাই host থেকে সরাসরি এই লিংকের মাঝে কিছু দেখা বা filter করার উপায় নেই",
+        "host স্বয়ংক্রিয়ভাবে এই traffic-এর একটা কপি নিজের লগে রাখে, তাই আলাদা tcpdump চালানোর দরকারই পড়ে না",
+        "এই প্রশ্নটা অর্থহীন, কারণ namespace-এর মধ্যে traffic বলে বাস্তবে কিছু থাকে না এই ধরনের setup-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "যেহেতু veth pair-এর কোনো প্রান্তই host-এ নেই, host-এর নিজের কোনো interface এই নির্দিষ্ট লিংকে বসে নেই — host থেকে সরাসরি এই traffic monitor করা যায় না। (একটা bridge ব্যবহার করলে host bridge interface-এ tcpdump চালিয়ে দেখতে পারত — পরের lab-এর বিষয়।)"
+    }
+  ]
+}

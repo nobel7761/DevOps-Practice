@@ -1,0 +1,279 @@
+{
+  "labId": "5f99d269a98efa347a30b1b6",
+  "title": "LAB: Process Communication Between Namespaces",
+  "passPercent": 95,
+  "intro": "docker exec বা kubectl exec যখন একটা running container-এর ভেতরে একটা কমান্ড চালায়, তখন আসলে সে একটা process-কে সেই container-এর network namespace-এর ভেতরে চালায়। নিচের স্তরে এই পুরো mechanism-টাই ip netns exec। এই lab-এ দুটো namespace — web আর db — বানিয়ে, host থেকে ip netns exec দিয়ে প্রতিটার ভেতরে উঁকি দিয়ে দেখবে প্রতিটা namespace কতটা সম্পূর্ণভাবে আলাদা, অথচ host থেকে দুটোকেই পরিদর্শন ও সংযুক্ত করা যায়।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 5,
+      "section": {
+        "title": "🏗️ পর্ব ১: দুটো প্রসেস-জগৎ বানানো",
+        "note": "web আর db — দুটো আলাদা namespace, যেন দুটো আলাদা container।"
+      },
+      "prompt": "web নামে একটা network namespace বানাও।",
+      "answer": "ip netns add web",
+      "check": {
+        "require": ["ip", "netns", "add", "web"],
+        "netnsExists": ["web"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 5,
+      "prompt": "db নামে আরেকটা network namespace বানাও।",
+      "answer": "ip netns add db",
+      "check": {
+        "require": ["ip", "netns", "add", "db"],
+        "netnsExists": ["db"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 5,
+      "prompt": "veth-web আর veth-db নামে একজোড়া veth বানাও — এটাই হবে দুই namespace-এর মধ্যে সরাসরি সংযোগ।",
+      "answer": "ip link add veth-web type veth peer name veth-db",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-web",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-db"
+        ],
+        "netIfaceState": [
+          { "name": "veth-web", "context": "host" },
+          { "name": "veth-db", "context": "host" }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 5,
+      "prompt": "veth-web প্রান্তটা web namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-web netns web",
+      "check": {
+        "require": ["ip", "link", "set", "veth-web", "netns", "web"],
+        "netIfaceState": [{ "name": "veth-web", "context": "web" }]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 5,
+      "prompt": "veth-db প্রান্তটা db namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-db netns db",
+      "check": {
+        "require": ["ip", "link", "set", "veth-db", "netns", "db"],
+        "netIfaceState": [{ "name": "veth-db", "context": "db" }]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 4,
+      "prompt": "web namespace-এর ভেতরে lo interface-টা চালু করো।",
+      "answer": "ip netns exec web ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "web",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "web", "state": "up" }]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 4,
+      "prompt": "web namespace-এর veth-web interface-টাও চালু করো।",
+      "answer": "ip netns exec web ip link set veth-web up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "web",
+          "ip",
+          "link",
+          "set",
+          "veth-web",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-web", "context": "web", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 4,
+      "prompt": "db namespace-এর ভেতরে lo interface-টা চালু করো।",
+      "answer": "ip netns exec db ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "db",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "db", "state": "up" }]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 4,
+      "prompt": "db namespace-এর veth-db interface-টাও চালু করো।",
+      "answer": "ip netns exec db ip link set veth-db up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "db",
+          "ip",
+          "link",
+          "set",
+          "veth-db",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "veth-db", "context": "db", "state": "up" }]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 5,
+      "prompt": "web namespace-এর veth-web-কে 10.80.0.1/24 ঠিকানা দাও।",
+      "answer": "ip netns exec web ip addr add 10.80.0.1/24 dev veth-web",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "web",
+          "ip",
+          "addr",
+          "add",
+          "10.80.0.1/24",
+          "dev",
+          "veth-web"
+        ],
+        "netIfaceState": [
+          { "name": "veth-web", "context": "web", "hasAddress": "10.80.0.1/24" }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 5,
+      "prompt": "db namespace-এর veth-db-কে 10.80.0.2/24 ঠিকানা দাও।",
+      "answer": "ip netns exec db ip addr add 10.80.0.2/24 dev veth-db",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "db",
+          "ip",
+          "addr",
+          "add",
+          "10.80.0.2/24",
+          "dev",
+          "veth-db"
+        ],
+        "netIfaceState": [
+          { "name": "veth-db", "context": "db", "hasAddress": "10.80.0.2/24" }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 7,
+      "section": {
+        "title": "🔎 পর্ব ২: Host থেকে প্রতিটা জগতে উঁকি দেওয়া",
+        "note": "docker exec / kubectl exec আসলে এই একই কাজ করে — কোনো একটা namespace-এর ভেতরে একটা কমান্ড চালানো, বাইরে থেকে।"
+      },
+      "prompt": "host থেকে ip netns exec দিয়ে web namespace-এর ভেতরের IP address-গুলো দেখো — যেন তুমি একটা 'web' container-এর ভেতরে exec করে দেখছ।",
+      "answer": "ip netns exec web ip addr show",
+      "check": {
+        "require": ["ip", "netns", "exec", "web", "ip", "addr", "show"],
+        "netIfaceState": [
+          { "name": "veth-web", "context": "web", "hasAddress": "10.80.0.1/24" }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 7,
+      "prompt": "একইভাবে db namespace-এর ভেতরের IP address-গুলো দেখো।",
+      "answer": "ip netns exec db ip addr show",
+      "check": {
+        "require": ["ip", "netns", "exec", "db", "ip", "addr", "show"],
+        "netIfaceState": [
+          { "name": "veth-db", "context": "db", "hasAddress": "10.80.0.2/24" }
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 6,
+      "prompt": "web namespace-এর নিজস্ব routing table দেখো — এটা শুধু তার নিজের directly-connected subnet-টাই জানে, db-এর ভেতরের কোনো তথ্য এখানে নেই।",
+      "answer": "ip netns exec web ip route show",
+      "check": {
+        "require": ["ip", "netns", "exec", "web", "ip", "route", "show"]
+      },
+      "hints": [
+        "প্রতিটা namespace-এর নিজের আলাদা routing table আছে — একটার route অন্যটায় কখনো দেখা যায় না"
+      ]
+    },
+    {
+      "id": "t15",
+      "points": 8,
+      "section": {
+        "title": "📡 পর্ব ৩: আলাদা জগৎ, তবুও সংযুক্ত",
+        "note": "isolation মানে unreachable নয় — ঠিকভাবে wire করলে isolated namespace-ও একে অপরকে পাবে।"
+      },
+      "prompt": "web namespace থেকে db-কে ping করো, প্রমাণ করো যে isolated হয়েও তারা সংযুক্ত।",
+      "answer": "ip netns exec web ping -c 3 10.80.0.2",
+      "check": {
+        "require": ["ip", "netns", "exec", "web", "ping", "10.80.0.2"]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 8,
+      "prompt": "বিপরীত দিক থেকেও যাচাই করো — db namespace থেকে web-কে ping করো।",
+      "answer": "ip netns exec db ping -c 3 10.80.0.1",
+      "check": {
+        "require": ["ip", "netns", "exec", "db", "ping", "10.80.0.1"]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 6,
+      "section": {
+        "title": "🗂️ পর্ব ৪: সব জগৎ একসাথে দেখা",
+        "note": "individual namespace-এর ভেতর থেকে অন্য namespace-গুলো দেখা যায় না, কিন্তু host (বা একটা orchestrator) সবগুলো namespace-ই enumerate করতে পারে — এটাই docker ps-এর মতো টুলের ভিত্তি।"
+      },
+      "prompt": "host থেকে সিস্টেমে তৈরি হওয়া সব network namespace-এর তালিকা দেখো।",
+      "answer": "ip netns list",
+      "check": {
+        "require": ["ip", "netns", "list"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "labId": "1fb6040749a35a649b530e3e",
+  "title": "LAB: CN-lab-02 Connect Network NS to Host",
+  "passPercent": 95,
+  "intro": "CN-lab-01-এ দেখেছো namespace একদম isolated থাকে। এবার সেটাকে host-এর সাথে সংযুক্ত করবে — একটা veth pair দিয়ে, যেটা Docker নিজেও প্রতিটা container চালানোর সময় ঠিক এভাবেই তৈরি করে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": {
+        "title": "🏗️ পর্ব ১: Namespace বানানো",
+        "note": "CN-lab-01-এর মতোই — একটা খালি, isolated namespace দিয়ে শুরু।"
+      },
+      "prompt": "app-ns নামে একটা network namespace বানাও।",
+      "answer": "ip netns add app-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "app-ns"],
+        "netnsExists": ["app-ns"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 10,
+      "section": {
+        "title": "🔌 পর্ব ২: veth pair বানানো",
+        "note": "একটা কমান্ডেই দুটো সংযুক্ত interface তৈরি হয় — যেন একটা virtual cable-এর দুই মাথা।"
+      },
+      "prompt": "veth-host আর veth-ns নামে একজোড়া veth pair বানাও।",
+      "answer": "ip link add veth-host type veth peer name veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns"
+        ],
+        "netIfaceState": [{ "name": "veth-host" }, { "name": "veth-ns" }]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "prompt": "veth-ns প্রান্তটা app-ns namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns netns app-ns",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns", "netns", "app-ns"],
+        "netIfaceState": [{ "name": "veth-ns", "context": "app-ns" }]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 7,
+      "section": {
+        "title": "⬆️ পর্ব ৩: দুই প্রান্তই চালু করা",
+        "note": "veth pair-এর যেকোনো একটা প্রান্ত DOWN থাকলেও পুরো link কাজ করবে না।"
+      },
+      "prompt": "host-এর পাশে veth-host চালু করো।",
+      "answer": "ip link set veth-host up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host", "up"],
+        "netIfaceState": [{ "name": "veth-host", "state": "up" }]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 7,
+      "prompt": "app-ns namespace-এর ভেতরে lo interface চালু করো।",
+      "answer": "ip netns exec app-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "app-ns", "state": "up" }]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 8,
+      "prompt": "app-ns namespace-এর ভেতরে veth-ns চালু করো।",
+      "answer": "ip netns exec app-ns ip link set veth-ns up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "veth-ns",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-ns", "context": "app-ns", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 10,
+      "section": {
+        "title": "📫 পর্ব ৪: ঠিকানা বসানো",
+        "note": "দুই প্রান্তই একই subnet-এ থাকবে — veth-host হবে app-ns-এর gateway।"
+      },
+      "prompt": "veth-host-কে 10.50.0.1/24 ঠিকানা দাও।",
+      "answer": "ip addr add 10.50.0.1/24 dev veth-host",
+      "check": {
+        "require": ["ip", "addr", "add", "10.50.0.1/24", "dev", "veth-host"],
+        "netIfaceState": [{ "name": "veth-host", "hasAddress": "10.50.0.1/24" }]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 10,
+      "prompt": "namespace-এর ভেতরে veth-ns-কে 10.50.0.2/24 ঠিকানা দাও।",
+      "answer": "ip netns exec app-ns ip addr add 10.50.0.2/24 dev veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "addr",
+          "add",
+          "10.50.0.2/24",
+          "dev",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "app-ns",
+            "hasAddress": "10.50.0.2/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 15,
+      "section": {
+        "title": "✅ পর্ব ৫: Connectivity যাচাই",
+        "note": "দুই দিক থেকেই ping করে নিশ্চিত হও যে link সত্যিই কাজ করছে।"
+      },
+      "prompt": "host থেকে namespace-এর ঠিকানা 10.50.0.2-এ ping করো।",
+      "answer": "ping -c 3 10.50.0.2",
+      "check": {
+        "require": ["ping", "10.50.0.2"]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 15,
+      "prompt": "এবার namespace-এর ভেতর থেকে host-এর ঠিকানা 10.50.0.1-এ ping করো।",
+      "answer": "ip netns exec app-ns ping -c 3 10.50.0.1",
+      "check": {
+        "require": ["ip", "netns", "exec", "app-ns", "ping", "10.50.0.1"]
+      },
+      "hints": [
+        "namespace-এর ভেতর থেকে কোনো কমান্ড চালাতে হলে exec prefix দরকার"
+      ]
+    }
+  ]
+}

@@ -13,7 +13,12 @@ export function mergeProgressIntoCourse(
         ...courseModule,
         contents: courseModule.contents.map((item) => {
           if (item.completed) return item;
-          const key = item.type === "lab" ? item.labId : item.contentId;
+          const key =
+            item.type === "lab"
+              ? item.labId
+              : item.type === "ai_interview"
+                ? courseModule.id
+                : item.contentId;
           if (!key || !completedKeys.has(key)) return item;
           return { ...item, completed: true };
         }),

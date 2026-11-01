@@ -1,0 +1,214 @@
+{
+  "labId": "69b1e4a54a49372ba7883534",
+  "title": "Loops in Bash Scripting",
+  "passPercent": 95,
+  "intro": "for, while, until, break/continue, আর কীভাবে একটা while loop সত্যিই শেষ হয় (বা হয় না!) — bash-এর সব loop একসাথে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": {
+        "title": "🔁 for — word list",
+        "note": "for item in word1 word2 ...; do ... done — একটা fixed তালিকার ওপর loop চালায়।"
+      },
+      "prompt": "for_basic.sh বানাও — Apple, Banana, Orange এই তিনটা নামের ওপর loop চালিয়ে প্রতিটার জন্য \"Processing <name>...\" echo করো।",
+      "answer": "cat << EOF > for_basic.sh\n#!/bin/bash\nfor fruit in Apple Banana Orange; do\n  echo \"Processing $fruit...\"\ndone\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/for_basic.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfor fruit in Apple Banana Orange; do\n  echo \"Processing $fruit...\"\ndone"
+          }
+        ]
+      },
+      "hints": [
+        "for fruit in Apple Banana Orange; do ... done — শব্দগুলো স্পেস দিয়ে আলাদা।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "prompt": "for_basic.sh চালাও।",
+      "answer": "bash for_basic.sh",
+      "check": { "require": ["for_basic.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "section": {
+        "title": "🔁 for — array",
+        "note": "একটা array-এর ওপরেও ঠিক একই for syntax ব্যবহার করা যায়, শুধু \"${arr[@]}\" লিখতে হয়।"
+      },
+      "prompt": "for_array.sh বানাও — names=(\"Nabil\" \"Minhaz\" \"Fazlul\" \"Yasin\") array বানিয়ে প্রতিটা নামকে \"Hello, <name>!\" বলে অভিবাদন জানাও, শেষে \"Loop completed.\" echo করো।",
+      "answer": "cat << EOF > for_array.sh\n#!/bin/bash\nnames=(\"Nabil\" \"Minhaz\" \"Fazlul\" \"Yasin\")\nfor name in \"${names[@]}\"; do\n  echo \"Hello, $name!\"\ndone\necho \"Loop completed.\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/for_array.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nnames=(\"Nabil\" \"Minhaz\" \"Fazlul\" \"Yasin\")\nfor name in \"${names[@]}\"; do\n  echo \"Hello, $name!\"\ndone\necho \"Loop completed.\""
+          }
+        ]
+      },
+      "hints": ["for name in \"${names[@]}\"; do ... done।"]
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "prompt": "for_array.sh চালাও।",
+      "answer": "bash for_array.sh",
+      "check": { "require": ["for_array.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 12,
+      "section": {
+        "title": "⏳ while",
+        "note": "while [ condition ]; do ... done — condition যতক্ষণ true থাকবে ততক্ষণ চলবে। লুপের ভেতরেই কাউন্টার বদলাতে হবে, নাহলে অনন্তকাল চলবে।"
+      },
+      "prompt": "while_countdown.sh বানাও — count=3 থেকে কাউন্টডাউন করে প্রতি iteration-এ ((count--)) দিয়ে কমাও, শেষে \"Liftoff!\" echo করো।",
+      "answer": "cat << EOF > while_countdown.sh\n#!/bin/bash\ncount=3\nwhile [ $count -gt 0 ]; do\n  echo \"Countdown: $count\"\n  ((count--))\ndone\necho \"Liftoff!\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/while_countdown.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncount=3\nwhile [ $count -gt 0 ]; do\n  echo \"Countdown: $count\"\n  ((count--))\ndone\necho \"Liftoff!\""
+          }
+        ]
+      },
+      "hints": [
+        "((count--)) দিয়ে প্রতি iteration-এ count একটা করে কমবে — এটাই loop-কে শেষ হতে দেয়।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "while_countdown.sh চালাও।",
+      "answer": "bash while_countdown.sh",
+      "check": { "require": ["while_countdown.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 12,
+      "section": {
+        "title": "⏳ until",
+        "note": "until হলো while-এর উল্টো — condition যতক্ষণ false থাকবে ততক্ষণ চলবে, true হলেই থেমে যাবে।"
+      },
+      "prompt": "until_file.sh বানাও — file=\"important.log\" সেট করে, যতক্ষণ ফাইলটা না থাকে ততক্ষণ \"Waiting for important.log...\" echo করতে থাকো; ফাইল পেলে \"important.log found! Proceeding...\" echo করো।",
+      "answer": "cat << EOF > until_file.sh\n#!/bin/bash\nfile=\"important.log\"\nuntil [ -f \"$file\" ]; do\n  echo \"Waiting for $file...\"\ndone\necho \"$file found! Proceeding...\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/until_file.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfile=\"important.log\"\nuntil [ -f \"$file\" ]; do\n  echo \"Waiting for $file...\"\ndone\necho \"$file found! Proceeding...\""
+          }
+        ]
+      },
+      "hints": [
+        "until [ -f \"$file\" ]; do ... done — ফাইল না থাকা অবস্থায় loop চলতে থাকবে।"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 10,
+      "prompt": "important.log ফাইলটা আগে থেকেই বানিয়ে রাখো (touch), তারপর until_file.sh চালাও — ফাইল যেহেতু আছেই, loop একবারও না চলে সরাসরি \"found\" মেসেজ দেখাবে।",
+      "answer": "touch important.log",
+      "check": { "require": ["touch", "important.log"] },
+      "hints": ["touch <filename> — খালি ফাইল বানানোর জন্য।"]
+    },
+    {
+      "id": "t09",
+      "points": 6,
+      "prompt": "এবার until_file.sh চালাও।",
+      "answer": "bash until_file.sh",
+      "check": { "require": ["until_file.sh"] }
+    },
+    {
+      "id": "t10",
+      "points": 12,
+      "section": {
+        "title": "⏭️ break আর continue",
+        "note": "break পুরো loop থেকে বেরিয়ে যায়; continue শুধু বর্তমান iteration স্কিপ করে পরেরটায় যায়। {1..N} দিয়ে একটা range তৈরি করা যায়।"
+      },
+      "prompt": "break_statement.sh বানাও — 1 থেকে 10 পর্যন্ত loop চালাও, কিন্তু num 5-এ পৌঁছালে break দিয়ে loop থামিয়ে দাও; প্রতিটা number echo করো।",
+      "answer": "cat << EOF > break_statement.sh\n#!/bin/bash\nfor num in {1..10}; do\n  if [ $num -eq 5 ]; then\n    break\n  fi\n  echo \"Number: $num\"\ndone\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/break_statement.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfor num in {1..10}; do\n  if [ $num -eq 5 ]; then\n    break\n  fi\n  echo \"Number: $num\"\ndone"
+          }
+        ]
+      },
+      "hints": [
+        "{1..10} একটা range তৈরি করে; num -eq 5 হলে break দিয়ে পুরো loop থামাও।"
+      ]
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "break_statement.sh চালাও — লক্ষ করো শুধু 1 থেকে 4 পর্যন্ত দেখাবে।",
+      "answer": "bash break_statement.sh",
+      "check": { "require": ["break_statement.sh"] }
+    },
+    {
+      "id": "t12",
+      "points": 10,
+      "prompt": "continue_statement.sh বানাও — 1 থেকে 5 পর্যন্ত loop চালাও, num 3 হলে continue দিয়ে ওই iteration-টা স্কিপ করো (বাকি সবগুলো echo হবে)।",
+      "answer": "cat << EOF > continue_statement.sh\n#!/bin/bash\nfor num in {1..5}; do\n  if [ $num -eq 3 ]; then\n    continue\n  fi\n  echo \"Number: $num\"\ndone\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/continue_statement.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfor num in {1..5}; do\n  if [ $num -eq 3 ]; then\n    continue\n  fi\n  echo \"Number: $num\"\ndone"
+          }
+        ]
+      },
+      "hints": [
+        "continue দিলে loop থামবে না, শুধু এই iteration-এর বাকি অংশ স্কিপ হবে।"
+      ]
+    },
+    {
+      "id": "t13",
+      "points": 6,
+      "prompt": "continue_statement.sh চালাও — লক্ষ করো 3 বাদে 1,2,4,5 দেখাবে।",
+      "answer": "bash continue_statement.sh",
+      "check": { "require": ["continue_statement.sh"] }
+    },
+    {
+      "id": "t14",
+      "points": 14,
+      "section": {
+        "title": "♾️ Infinite loop — ভুল আর ঠিক",
+        "note": "while-এর ভেতরে যদি কাউন্টার কখনো না বদলায়, loop কখনোই থামবে না। ((count++)) বা count=$((count + 1)) দিয়ে প্রতি iteration-এ মান বাড়ালেই loop শেষ হবে।"
+      },
+      "prompt": "fixed_loop.sh বানাও — count=1 থেকে শুরু করে যতক্ষণ count ৫-এর ছোট-বা-সমান ততক্ষণ \"Iteration: $count\" echo করো, প্রতি iteration-এ count=$((count + 1)) দিয়ে বাড়াও (এটাই সেই লাইন যেটা না থাকলে loop কখনো থামতো না)।",
+      "answer": "cat << EOF > fixed_loop.sh\n#!/bin/bash\ncount=1\nwhile [ $count -le 5 ]; do\n  echo \"Iteration: $count\"\n  count=$((count + 1))\ndone\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/fixed_loop.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncount=1\nwhile [ $count -le 5 ]; do\n  echo \"Iteration: $count\"\n  count=$((count + 1))\ndone"
+          }
+        ]
+      },
+      "hints": [
+        "count=$((count + 1)) — এই লাইনটা while-এর ভেতরে, done-এর ঠিক আগে বসবে।"
+      ]
+    },
+    {
+      "id": "t15",
+      "points": 8,
+      "prompt": "fixed_loop.sh চালাও।",
+      "answer": "bash fixed_loop.sh",
+      "check": { "require": ["fixed_loop.sh"] }
+    }
+  ]
+}

@@ -71,6 +71,16 @@ describe("mergeProgressIntoCourse", () => {
     expect(result.milestones[0].modules[0].contents[0].completed).toBe(false);
   });
 
+  it("marks an ai_interview item completed when its module id is in completedKeys", () => {
+    const course = makeCourse([
+      { type: "ai_interview", title: "Interview A", completed: false },
+    ]);
+
+    const result = mergeProgressIntoCourse(course, new Set(["mod1"]));
+
+    expect(result.milestones[0].modules[0].contents[0].completed).toBe(true);
+  });
+
   it("does not throw for an item without labId/contentId", () => {
     const course = makeCourse([
       {

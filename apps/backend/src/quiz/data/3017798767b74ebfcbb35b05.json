@@ -1,0 +1,141 @@
+{
+  "labId": "3017798767b74ebfcbb35b05",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "3017798767b74ebfcbb35b05-01",
+      "difficulty": "easy",
+      "question": "network namespace আসলে কী?",
+      "options": [
+        "একটা physical network card, যা আলাদাভাবে কেনা আর ইনস্টল করা লাগে প্রতিটা server-এ, কোনো virtual বিকল্প নেই, হার্ডওয়্যার ছাড়া কখনোই সম্ভব না",
+        "Linux kernel-এর একটা feature, যা একটা সম্পূর্ণ আলাদা network stack তৈরি করে — নিজস্ব interface, route, firewall rule সহ",
+        "একটা DNS নাম, যা দিয়ে একাধিক server-কে একসাথে group করা হয় সুবিধার জন্য",
+        "firewall rule সংরক্ষণ করার একটা ফাইল ফরম্যাট, reboot-এর পরও rule টিকে থাকার জন্য ব্যবহৃত হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "network namespace একটা kernel-level isolation feature — একটা সম্পূর্ণ আলাদা network stack (interface, route, ARP cache, firewall rule) তৈরি করে, host-এর আসল network থেকে সম্পূর্ণ বিচ্ছিন্ন।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-02",
+      "difficulty": "easy",
+      "question": "ip netns add inspect-ns চালানোর ঠিক পরে, নতুন namespace-এ কী থাকে?",
+      "options": [
+        "host-এর সব interface-এর একটা হুবহু কপি, একই IP address সহ, সম্পূর্ণ ডুপ্লিকেট অবস্থায়",
+        "শুধু একটা lo interface, DOWN অবস্থায় — আর কিছুই না, কোনো route বা address নেই",
+        "একটা পূর্বনির্ধারিত eth0 interface, যা স্বয়ংক্রিয়ভাবে host-এর সাথে সংযুক্ত হয়ে যায়",
+        "কিছুই না — এমনকি lo-ও থাকে না, সেটা আলাদাভাবে তৈরি করে নিতে হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা নতুন namespace প্রায় খালি অবস্থায় শুরু হয় — শুধু একটা lo interface থাকে, কিন্তু সেটাও DOWN অবস্থায়; কোনো route, address, বা firewall rule থাকে না।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-03",
+      "difficulty": "easy",
+      "question": "ip netns list কী দেখায়?",
+      "options": [
+        "সিস্টেমে তৈরি করা সব network namespace-এর নাম",
+        "বর্তমানে চলমান সব docker container-এর তালিকা, namespace নির্বিশেষে",
+        "host-এর সব network interface-এর MAC address",
+        "DNS server-এর তালিকা, যেগুলো প্রতিটা namespace ব্যবহার করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "ip netns list শুধু namespace-গুলোর নাম প্রিন্ট করে — কোনগুলো এই মুহূর্তে তৈরি করা আছে।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-04",
+      "difficulty": "medium",
+      "question": "ip netns exec inspect-ns ip link show কমান্ডটা আসলে কী করে?",
+      "options": [
+        "host-এর interface list দেখায়, inspect-ns শুধু একটা লেবেল হিসেবে আউটপুটে দেখানো হয়, বাস্তবে কোনো namespace-ভিত্তিক পরিবর্তন ঘটায় না, একদমই ঘটায় না",
+        "ip link show কমান্ডটা inspect-ns namespace-এর network stack-এর প্রেক্ষাপটে চালায় — host-এর নয়, namespace-এর নিজস্ব interface list দেখায়",
+        "inspect-ns namespace-টাকে প্রথমে host-এর সাথে merge করে, তারপর একসাথে সব interface দেখায়",
+        "শুধু namespace-টা আদৌ অস্তিত্ব আছে কিনা তা যাচাই করে, কোনো প্রকৃত আউটপুট দেয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ip netns exec <name> <cmd> দেওয়া কমান্ডটাকে সেই namespace-এর network stack-এর সাথে বেঁধে চালায় — ফলে host নয়, namespace-এর নিজস্ব interface/route/address-ই দেখা যায়।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-05",
+      "difficulty": "medium",
+      "question": "nsenter আর ip netns exec-এর সম্পর্ক কী?",
+      "options": [
+        "দুটো একদমই সম্পর্কহীন টুল, একটা ফাইল সিস্টেমের জন্য আরেকটা নেটওয়ার্কের জন্য, কোনো মিল নেই",
+        "ip netns exec হলো nsenter-এর একটা পুরনো, deprecated সংস্করণ, এখন আর ব্যবহার করা উচিত না",
+        "ip netns exec হলো iproute2-তে বিল্ট-ইন, namespace-এর ভেতরে কমান্ড চালানোর আধুনিক standard উপায় — একই কাজের জন্য nsenter-এরও ব্যবহার দেখা যায় পুরনো runbook-এ",
+        "nsenter শুধু Docker-এর জন্য কাজ করে, ip netns exec শুধু Kubernetes-এর জন্য — দুটো সম্পূর্ণ আলাদা platform-নির্দিষ্ট টুল, একে অপরের সাথে কোনো বিনিময়যোগ্যতা নেই"
+      ],
+      "answerIndex": 2,
+      "explanation": "দুটোই একই কাজ করে — একটা namespace-এর context-এ একটা কমান্ড চালানো। ip netns exec হলো iproute2-তে বিল্ট-ইন আধুনিক উপায়, nsenter একই কাজের জন্য আরেকটা প্রচলিত টুল।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-06",
+      "difficulty": "medium",
+      "question": "নতুন namespace-এর lo interface কেন আলাদাভাবে up করতে হয়?",
+      "options": [
+        "lo আসলে কখনোই up করার দরকার হয় না, এটা সবসময় automatically কাজ করে, কোনো ব্যতিক্রম নেই — host হোক বা namespace, প্রতিটা ক্ষেত্রেই এটা সবসময়ই সম্পূর্ণ সত্য থাকে",
+        "namespace-এর ভেতরের lo host-এর lo-এর মতো automatic UP অবস্থায় শুরু হয় না — প্রতিটা interface-ই নতুন namespace-এ by-default DOWN থাকে, lo-ও ব্যতিক্রম না",
+        "lo আসলে শুধু IPv6-এর জন্য প্রযোজ্য, তাই আলাদা কনফিগারেশন লাগে",
+        "lo up করতে sudo-এর পরিবর্তে root login বাধ্যতামূলক, যা একটা security restriction"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা নতুন namespace-এ সব interface, এমনকি lo-ও, DOWN অবস্থায় শুরু হয় — host-এ যেটা সবসময় taken-for-granted automatic থাকে, namespace-এর ভেতরে সেটাও explicitly up করতে হয়।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-07",
+      "difficulty": "medium",
+      "question": "docker run চালানোর সময় container-এর নিজস্ব eth0 থাকার পেছনে কোন kernel feature কাজ করে?",
+      "options": [
+        "network namespace — প্রতিটা container নিজের একটা namespace পায়, তাই অনেক container-এর নিজস্ব eth0 একসাথে conflict ছাড়াই থাকতে পারে",
+        "cgroups — এটা শুধু CPU আর memory limit নিয়ন্ত্রণ করে, network-এর সাথে সরাসরি কোনো সম্পর্ক নেই, সম্পূর্ণ আলাদা একটা kernel subsystem",
+        "chroot — এটা শুধু filesystem isolation দেয়, network stack আলাদা করে না",
+        "SELinux — এটা শুধু permission policy নিয়ন্ত্রণ করে, interface তৈরি করে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "Docker প্রতিটা container-এর জন্য একটা আলাদা network namespace তৈরি করে — এই কারণেই একই host-এ চলা একাধিক container-এর প্রত্যেকের নিজস্ব eth0 থাকতে পারে, একে অপরের সাথে conflict না করে।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-08",
+      "difficulty": "hard",
+      "question": "host-এর ip link show আর ip netns exec inspect-ns ip link show-এর আউটপুট সম্পূর্ণ আলাদা কেন — এটা কী প্রমাণ করে?",
+      "options": [
+        "এটা শুধু একটা display বাগ — বাস্তবে দুটো একই network stack সম্পূর্ণভাবে শেয়ার করে, শুধু output format আলাদা দেখায়, কোনো প্রকৃত পার্থক্য আসলেই কোথাও নেই",
+        "এটা প্রমাণ করে namespace isolation আসলে কাজ করছে — host আর inspect-ns সম্পূর্ণ আলাদা interface list রাখছে, একটার পরিবর্তন অন্যটায় প্রতিফলিত হয় না",
+        "এটা শুধু permission-এর পার্থক্য — root হিসেবে চালালে দুটো আউটপুট একই হয়ে যাবে",
+        "namespace-এর ভেতরের ip কমান্ড আসলে একটা ভিন্ন, সীমিত সংস্করণ, তাই কম তথ্য দেখায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "দুটো আউটপুট আলাদা হওয়াটাই namespace isolation-এর মূল প্রমাণ — host আর namespace সম্পূর্ণ স্বতন্ত্র network stack রাখে, একটায় যা আছে তা অন্যটায় দেখা যায় না, যতক্ষণ না দুটোকে ইচ্ছাকৃতভাবে সংযুক্ত করা হয়।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-09",
+      "difficulty": "hard",
+      "question": "ip netns delete inspect-ns চালানোর পর, namespace-এর ভেতরে থাকা যেকোনো interface-এর কী হবে?",
+      "options": [
+        "স্বয়ংক্রিয়ভাবে host-এ ফিরে চলে আসবে, যেন কখনো namespace-এ পাঠানোই হয়নি",
+        "namespace-এর সাথে সাথেই সেগুলোও মুছে যাবে — namespace মোছা মানে তার ভেতরের সবকিছুও চিরতরে হারিয়ে যাওয়া",
+        "একটা \"orphaned\" অবস্থায় আলাদাভাবে টিকে থাকবে, পরে অন্য কোনো namespace-এ যুক্ত করা যাবে",
+        "শুধু DOWN অবস্থায় চলে যাবে, কিন্তু সম্পূর্ণভাবে মুছবে না — namespace-এর বাইরে থেকে access সম্ভব না হলেও অস্তিত্ব থাকবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা namespace মুছে ফেললে তার ভেতরের সবকিছু — ইন্টারফেস, রুট, নিয়ম — সবকিছুই namespace-এর সাথে চিরতরে মুছে যায়। এই কারণেই পরের lab-গুলোতে veth-এর host-সাইড প্রান্তটা সবসময় সাবধানে আলাদা রাখা হয়।"
+    },
+    {
+      "id": "3017798767b74ebfcbb35b05-10",
+      "difficulty": "hard",
+      "question": "একটা minimal container-এর ভেতরে localhost:PORT-এ connect করতে গিয়ে intermittent failure দেখা যাচ্ছে, কিন্তু container-এর মূল network configuration ঠিকঠাক মনে হচ্ছে। এই lab-এর জ্ঞান অনুযায়ী প্রথমে কী চেক করা উচিত?",
+      "options": [
+        "container-এর DNS resolver configuration, কারণ localhost resolve করতে DNS লাগে বলে অনেকেই ভুলভাবে ধারণা করে থাকেন, যদিও বাস্তবে এটা একদমই সত্য নয়",
+        "container-এর network namespace-এর ভেতরে lo interface আদৌ up অবস্থায় আছে কিনা — না থাকলে 127.0.0.1-ভিত্তিক সংযোগ ব্যর্থ হবে",
+        "host-এর firewall rule, কারণ localhost traffic সবসময় host-এর iptables দিয়ে পাস হয়",
+        "container-এর CPU limit, কারণ network timeout প্রায়ই resource starvation থেকে আসে"
+      ],
+      "answerIndex": 1,
+      "explanation": "localhost connectivity নির্ভর করে lo interface up থাকার ওপর — একটা minimal/from-scratch container runtime-এ namespace-এর lo ভুলবশত DOWN থেকে গেলে, সম্পূর্ণ ঠিকঠাক configuration থাকা সত্ত্বেও localhost-ভিত্তিক সংযোগ ব্যর্থ হবে।"
+    }
+  ]
+}

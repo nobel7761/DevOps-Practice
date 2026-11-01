@@ -1,0 +1,218 @@
+{
+  "labId": "69b1e4a54a49372ba788352c",
+  "title": "Variables in Bash Scripting",
+  "passPercent": 95,
+  "intro": "variable assign করা, string ops, system/special variables, readonly, আর export দিয়ে child script-এর সাথে ভাগাভাগি — সব এক lab-এ।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": {
+        "title": "📦 বেসিক variable",
+        "note": "bash-এ variable assign করতে = চিহ্নের দু'পাশে স্পেস দেওয়া যায় না।"
+      },
+      "prompt": "variables.sh বানাও — name=\"Nabil\", age=25, department=\"CSE\" সেট করে তিনটাই echo করবে।",
+      "answer": "cat << EOF > variables.sh\n#!/bin/bash\nname=\"Nabil\"\nage=25\ndepartment=\"CSE\"\necho \"Name: $name\"\necho \"Age: $age\"\necho \"Department: $department\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/variables.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nname=\"Nabil\"\nage=25\ndepartment=\"CSE\"\necho \"Name: $name\"\necho \"Age: $age\"\necho \"Department: $department\""
+          }
+        ]
+      },
+      "hints": [
+        "variable assign-এ = এর আশেপাশে কোনো স্পেস থাকবে না: name=\"Nabil\"।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 7,
+      "prompt": "variables.sh চালাও।",
+      "answer": "bash variables.sh",
+      "check": { "require": ["variables.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 12,
+      "section": {
+        "title": "🔤 String variable আর concatenation",
+        "note": "দুটো variable পাশাপাশি লিখলেই concatenate হয়ে যায়; ${#var} দিয়ে length, ${var:start:len} দিয়ে substring বের করা যায়।"
+      },
+      "prompt": "string_vars.sh বানাও — first_name=\"Ahnaf\", last_name=\"Nabil\" থেকে full_name concatenate করবে, তার length বের করবে, আর প্রথম ৪ character print করবে।",
+      "answer": "cat << EOF > string_vars.sh\n#!/bin/bash\nfirst_name=\"Ahnaf\"\nlast_name=\"Nabil\"\nfull_name=\"$first_name $last_name\"\necho \"Full name: $full_name\"\nname_length=${#full_name}\necho \"Length of full name: $name_length\"\necho \"First 4 characters: ${full_name:0:4}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/string_vars.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nfirst_name=\"Ahnaf\"\nlast_name=\"Nabil\"\nfull_name=\"$first_name $last_name\"\necho \"Full name: $full_name\"\nname_length=${#full_name}\necho \"Length of full name: $name_length\"\necho \"First 4 characters: ${full_name:0:4}\""
+          }
+        ]
+      },
+      "hints": [
+        "full_name=\"$first_name $last_name\" — দুটো variable পাশাপাশি রাখলেই join হয়ে যায়।",
+        "length: ${#full_name}; substring: ${full_name:0:4} (0 index থেকে 4 character)।"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 7,
+      "prompt": "string_vars.sh চালাও।",
+      "answer": "bash string_vars.sh",
+      "check": { "require": ["string_vars.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 10,
+      "section": {
+        "title": "🖥️ System variables",
+        "note": "$HOME, $USER, $PWD ইত্যাদি shell নিজেই সেট করে রাখে — আলাদা করে assign করতে হয় না।"
+      },
+      "prompt": "system_vars.sh বানাও — $HOME, $PWD এই দুটো system variable echo করবে।",
+      "answer": "cat << EOF > system_vars.sh\n#!/bin/bash\necho \"Home directory: $HOME\"\necho \"Present working directory: $PWD\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/system_vars.sh",
+            "type": "file",
+            "content": "#!/bin/bash\necho \"Home directory: $HOME\"\necho \"Present working directory: $PWD\""
+          }
+        ]
+      },
+      "hints": [
+        "$HOME আর $PWD — আলাদা করে assign করার দরকার নেই, shell আগে থেকেই এগুলো সেট করে রাখে।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "system_vars.sh চালাও।",
+      "answer": "bash system_vars.sh",
+      "check": { "require": ["system_vars.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 12,
+      "section": {
+        "title": "🎯 Special variables",
+        "note": "$1, $2... হলো script-এ পাঠানো argument; $# হলো মোট argument-সংখ্যা; $@ সব argument একসাথে।"
+      },
+      "prompt": "special_vars.sh বানাও — $1 (প্রথম argument) আর $# (মোট argument-সংখ্যা) echo করবে।",
+      "answer": "cat << EOF > special_vars.sh\n#!/bin/bash\necho \"First argument: $1\"\necho \"Number of arguments: $#\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/special_vars.sh",
+            "type": "file",
+            "content": "#!/bin/bash\necho \"First argument: $1\"\necho \"Number of arguments: $#\""
+          }
+        ]
+      },
+      "hints": [
+        "$1 প্রথম argument, $# মোট কতগুলো argument পাঠানো হয়েছে তার সংখ্যা।"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 8,
+      "prompt": "special_vars.sh-কে তিনটা argument (arg1 arg2 arg3) দিয়ে চালাও।",
+      "answer": "bash special_vars.sh arg1 arg2 arg3",
+      "check": { "require": ["special_vars.sh", "arg1", "arg2", "arg3"] }
+    },
+    {
+      "id": "t09",
+      "points": 15,
+      "section": {
+        "title": "🔒 readonly",
+        "note": "readonly দিয়ে ঘোষণা করা variable পরে আর বদলানো যায় না — চেষ্টা করলে error আসবে, কিন্তু script থেমে যায় না।"
+      },
+      "prompt": "readonly_vars.sh বানাও — MIN_AGE=18 কে readonly ঘোষণা করে প্রিন্ট করবে, তারপর আবার MIN_AGE=16 লিখে বদলানোর চেষ্টা করবে।",
+      "answer": "cat << EOF > readonly_vars.sh\n#!/bin/bash\nreadonly MIN_AGE=18\necho \"Min age: $MIN_AGE\"\nMIN_AGE=16\necho \"Min age: $MIN_AGE\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/readonly_vars.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nreadonly MIN_AGE=18\necho \"Min age: $MIN_AGE\"\nMIN_AGE=16\necho \"Min age: $MIN_AGE\""
+          }
+        ]
+      },
+      "hints": [
+        "readonly VAR=value — একবার readonly হয়ে গেলে, পরের assignment চুপচাপ fail করবে, ভ্যালু আগেরটাই থেকে যাবে।"
+      ]
+    },
+    {
+      "id": "t10",
+      "points": 5,
+      "prompt": "readonly_vars.sh চালাও — লক্ষ করো, দ্বিতীয়বার assign করার পরেও মান বদলায়নি।",
+      "answer": "bash readonly_vars.sh",
+      "check": { "require": ["readonly_vars.sh"] }
+    },
+    {
+      "id": "t11",
+      "points": 20,
+      "section": {
+        "title": "🌍 export দিয়ে child script-এর সাথে share করা",
+        "note": "সাধারণ variable শুধু বর্তমান script-এই বেঁচে থাকে; export করলে সেটা child script-এও visible হয় — কিন্তু export না করা variable কখনো child-এ পৌঁছায় না।"
+      },
+      "prompt": "child.sh বানাও — local_var আর shared_var, দুটোই echo করবে।",
+      "answer": "cat << EOF > child.sh\n#!/bin/bash\necho \"Trying to access local_var: $local_var\"\necho \"Accessing shared_var: $shared_var\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/child.sh",
+            "type": "file",
+            "content": "#!/bin/bash\necho \"Trying to access local_var: $local_var\"\necho \"Accessing shared_var: $shared_var\""
+          }
+        ]
+      },
+      "hints": [
+        "child.sh নিজে কিছু assign করবে না — শুধু দুটো variable echo করবে।"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 20,
+      "prompt": "parent.sh বানাও — local_var=\"I am local\" (সাধারণ assignment), export shared_var=\"I am shared\" (exported), তারপর ./child.sh চালাবে।",
+      "answer": "cat << EOF > parent.sh\n#!/bin/bash\nlocal_var=\"I am local\"\nexport shared_var=\"I am shared\"\n./child.sh\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/parent.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nlocal_var=\"I am local\"\nexport shared_var=\"I am shared\"\n./child.sh"
+          }
+        ]
+      },
+      "hints": [
+        "export shared_var=\"...\" — export ছাড়া assign করা variable child script দেখতে পাবে না।"
+      ]
+    },
+    {
+      "id": "t13",
+      "points": 10,
+      "prompt": "child.sh আর parent.sh — দুটোকেই একসাথে executable বানাও (একটাই chmod কমান্ডে, দুটো filename দিয়ে)।",
+      "answer": "chmod +x child.sh parent.sh",
+      "check": {
+        "require": ["chmod", "+x"],
+        "pathModes": [
+          { "path": "~/child.sh", "mode": "755" },
+          { "path": "~/parent.sh", "mode": "755" }
+        ]
+      },
+      "hints": [
+        "chmod +x একাধিক filename একসাথে নিতে পারে: chmod +x file1 file2।"
+      ]
+    },
+    {
+      "id": "t14",
+      "points": 10,
+      "prompt": "parent.sh চালাও — লক্ষ করো shared_var child-এ দেখা যাচ্ছে, কিন্তু local_var দেখা যাচ্ছে না।",
+      "answer": "./parent.sh",
+      "check": { "require": ["./parent.sh"] }
+    }
+  ]
+}

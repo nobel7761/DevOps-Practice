@@ -1,0 +1,141 @@
+{
+  "labId": "8ee88640037e2da4e82f7f0d",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "8ee88640037e2da4e82f7f0d-01",
+      "difficulty": "easy",
+      "question": "একটা নতুন network namespace-এ একটা মাত্র ইন্টারফেসে address assign করার পর, সেটার routing table-এ কয়টা entry থাকে?",
+      "options": [
+        "একটাও না — route সবসময় আলাদাভাবে ম্যানুয়ালি যোগ করতে হয়, address assign করলে কিছুই হয় না",
+        "একটা — assign করা subnet-এর জন্য directly-connected route, kernel নিজে থেকেই যোগ করে দেয়",
+        "দুটো — directly-connected route আর একটা default route, দুটোই স্বয়ংক্রিয়ভাবে তৈরি হয়ে যায়",
+        "যতগুলো সম্ভাব্য destination network থাকতে পারে, ততগুলো — kernel আগে থেকেই সবকিছুর জন্য route বানিয়ে রাখে"
+      ],
+      "answerIndex": 1,
+      "explanation": "address assign করার সাথে সাথে kernel শুধু সেই subnet-এর জন্য একটা directly-connected route যোগ করে — এর বাইরে কিছু না, default route আলাদাভাবে যোগ করতে হয়।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-02",
+      "difficulty": "easy",
+      "question": "\"default route\" কথাটার মানে কী?",
+      "options": [
+        "শুধু লগ-ইন করার সময় একবার প্রথম যে route ব্যবহার হয়, পরবর্তী কোনো lookup-এর সাথে এর আর কোনো সম্পর্ক থাকে না",
+        "আর কোনো নির্দিষ্ট (more specific) route না মিললে ব্যবহৃত হওয়ার মতো একটা catch-all route",
+        "একটা route যেটা শুধু factory-reset অবস্থায় থাকে, কোনো কনফিগারেশনের পর থাকে না",
+        "একটা backup route যা শুধু primary route ক্র্যাশ করলে চালু হয়, স্বয়ংক্রিয়ভাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "default route হলো সবচেয়ে কম specific entry — 0.0.0.0/0-এর সমতুল্য — যা তখনই ব্যবহার হয় যখন অন্য কোনো বেশি নির্দিষ্ট route মেলে না।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-03",
+      "difficulty": "easy",
+      "question": "এই lab-এ \"root namespace\"-এর সাথে connect করা মানে কী বোঝায়?",
+      "options": [
+        "namespace-টাকে host-এর root user দিয়ে, অন্য কোনো সাধারণ user-কে কখনোই অনুমতি না দিয়ে, সবসময় বাধ্যতামূলকভাবে চালাতে হবে এমন একটা কঠোর নিয়ম",
+        "namespace-কে root (host) namespace-এর মধ্যে দিয়ে একটা পথ দেওয়া, যাতে সেটা host যা reach করতে পারে তা eventually reach করতে পারে",
+        "namespace-এর ফাইলসিস্টেম root (/) directory-কে host-এর সাথে share করা",
+        "namespace-টাকে host-এর /root directory-তে mount করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "host-এর own namespace-কে \"root namespace\" বলা হয় — অন্য namespace-কে এর সাথে connect করা মানে host-এর মাধ্যমে একটা route দেওয়া, যাতে বাইরের যেকোনো কিছু পর্যন্ত পৌঁছানো যায়।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-04",
+      "difficulty": "medium",
+      "question": "ip route add default via 10.30.0.1 কমান্ডে dev অংশ উল্লেখ করা হয়নি, তবুও এটা কাজ করে কেন?",
+      "options": [
+        "কারণ default route-এর জন্য dev কখনোই দরকার হয় না, এটা অপশনাল একটা জিনিস মাত্র",
+        "কারণ kernel 10.30.0.1 ঠিকানাটা কোন directly-connected subnet-এর মধ্যে পড়ে তা দেখে স্বয়ংক্রিয়ভাবে সঠিক device বের করে নেয়",
+        "কারণ dev না দিলে এটা সব interface-এর উপর প্রযোজ্য হয়ে যায়, একসাথে সবগুলোতেই",
+        "কারণ এটা আসলে একটা ভুল কমান্ড — বাস্তবে সবসময় dev উল্লেখ করা বাধ্যতামূলক, নাহলে প্রতিবারই নিশ্চিতভাবে syntax error আসবে, কোনো ব্যতিক্রম ছাড়াই"
+      ],
+      "answerIndex": 1,
+      "explanation": "via-তে দেওয়া gateway ঠিকানাটা কোন directly-connected subnet-এর মধ্যে পড়ে, সেটা দেখে kernel নিজে থেকেই সঠিক device (interface) বের করে নিতে পারে।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-05",
+      "difficulty": "medium",
+      "question": "default route যোগ করার আগে ip route get 203.0.113.5 চালালে কী হয়?",
+      "options": [
+        "সফলভাবে চলে, কিন্তু কোনো output দেখায় না — নীরবে সফল হয়",
+        "RTNETLINK answers: Network is unreachable — কারণ এই destination-এর জন্য কোনো matching route নেই, এমনকি fallback-ও নেই",
+        "স্বয়ংক্রিয়ভাবে একটা নতুন, অস্থায়ী route তৈরি হয়ে যায় lookup-এর সময়ই, যাতে ঠিক একই destination-এর পরের বার lookup আরও দ্রুত এবং নির্ভরযোগ্যভাবে কাজ করে",
+        "host-এর routing table থেকে ধার করা একটা route ব্যবহার করে সফল হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "default route ছাড়া, subnet-এর বাইরের কোনো destination-এর জন্য kernel-এর কাছে কোনো matching entry থাকে না — lookup fail করে \"Network is unreachable\"।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-06",
+      "difficulty": "medium",
+      "question": "default route যোগ করার পর, 10.30.0.1 (সরাসরি connected gateway)-এর জন্য ip route get চালালে কোন route ব্যবহার হয়?",
+      "options": [
+        "default route, কারণ এটাই সবসময় সবার আগে প্রযোজ্য হয়, matching priority বা prefix length নির্বিশেষে, কোনো ব্যতিক্রম ছাড়াই",
+        "directly-connected route — 10.30.0.1 নিজের subnet-এর মধ্যেই আছে, তাই এর জন্য gateway-র দরকারই নেই",
+        "দুটো route-ই একসাথে ব্যবহার হয়, একইসাথে সমান্তরালভাবে",
+        "কোনোটাই না — gateway-র নিজের ঠিকানার জন্য lookup সবসময় fail করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "kernel সবসময় সবচেয়ে specific route বেছে নেয় — 10.30.0.1 directly-connected subnet-এর মধ্যে পড়ায়, এর জন্য default route-এর দরকারই হয় না।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-07",
+      "difficulty": "medium",
+      "question": "veth-app-কে app-ns namespace-এ নেওয়ার (ip link set veth-app netns app-ns) পর, host-এর ip link show-এ veth-app দেখা যায় কি?",
+      "options": [
+        "হ্যাঁ, সবসময় দেখা যায় — শুধু state-টা DOWN দেখিয়ে host-এর তালিকাতেই থেকে যায়, কোনো পরিবর্তন ছাড়াই",
+        "না — namespace move করার পর interface-টা host-এর তালিকা থেকে সম্পূর্ণ সরে যায়",
+        "শুধু sudo দিয়ে চালালে দেখা যায়, নাহলে hidden থাকে",
+        "হ্যাঁ, কিন্তু শুধু ip link show type veth দিয়ে, সাধারণ ip link show দিয়ে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা interface একই সময়ে শুধু একটা namespace-এর অংশ হতে পারে — move করার পর সেটা host-এর তালিকা থেকে পুরোপুরি সরে গিয়ে নতুন namespace-এর অংশ হয়ে যায়।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-08",
+      "difficulty": "hard",
+      "question": "একটা namespace-এর routing table-এ একইসাথে 10.30.0.0/24 (directly-connected) আর default (via 10.30.0.1) দুটো entry থাকলে, 10.30.0.50-এর জন্য lookup কোনটা বেছে নেবে, আর কেন?",
+      "options": [
+        "default route, কারণ সেটা routing table-এ সবচেয়ে পরে যোগ করা হয়েছিল — insertion order অনুযায়ী সবসময় সর্বশেষ যোগ হওয়া route-ই বাকি সব route-কে ছাপিয়ে জেতে, prefix length নির্বিশেষে",
+        "10.30.0.0/24 directly-connected route — এটা বেশি specific (longer prefix), আর routing সবসময় longest-prefix-match নিয়মে কাজ করে, default route কখনোই এটাকে ছাপিয়ে যায় না",
+        "দুটো route-ই একসাথে ব্যবহৃত হয়, load balance করে",
+        "কোনোটাই না — দুইটা matching route থাকলে lookup সবসময় ambiguous error দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "routing-এ সবসময় longest-prefix-match জেতে — /24 একটা /0 (default)-এর চেয়ে বেশি specific, তাই directly-connected subnet-এর মধ্যে পড়া যেকোনো ঠিকানা সবসময় সেই route দিয়েই resolve হবে, default route কখনো তাকে override করে না।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-09",
+      "difficulty": "hard",
+      "question": "ip route get আর আসল ট্রাফিক পাঠানোর (যেমন ping) মধ্যে পার্থক্য কী, আর কেন এই lab-এ ip route get দিয়ে default route যাচাই করা হলো?",
+      "options": [
+        "কোনো পার্থক্য নেই, দুটোই একই কাজ করে ভিন্ন syntax-এ",
+        "ip route get শুধু routing decision দেখায় — কোনো প্যাকেট না পাঠিয়েই বোঝা যায় কোন route ব্যবহার হবে; এতে destination আসলে reachable/existing হওয়ার দরকার নেই, যা একটা hypothetical ঠিকানা দিয়ে পরীক্ষা করার জন্য আদর্শ",
+        "ip route get আসলে শুধু IPv6-এর জন্যই কাজ করে, IPv4 ঠিকানার ক্ষেত্রে এটা কখনোই সঠিক বা অর্থবহ কোনো ফলাফল দেয় না, তাই IPv4 routing testing-এর জন্য এটা ব্যবহার করা সবসময়ই সম্পূর্ণ ভুল এবং একেবারেই অনির্ভরযোগ্য একটা পদ্ধতি বলে ধরা হয়",
+        "ip route get প্রকৃতপক্ষে ping-এর চেয়ে ধীর, কারণ এটা একাধিক hop পার হয়ে যাচাই করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "ip route get শুধু kernel-এর routing table lookup — কোনো প্যাকেট পাঠানো হয় না, তাই অস্তিত্বহীন বা hypothetical destination দিয়েও নিরাপদে রুট পরীক্ষা করা যায়, যা এই lab-এ 203.0.113.5-এর মতো ঠিকানা দিয়ে করা হয়েছে।"
+    },
+    {
+      "id": "8ee88640037e2da4e82f7f0d-10",
+      "difficulty": "hard",
+      "question": "যদি veth-root (host side)-এ কোনো IP address assign না করা হতো, তাহলে ip netns exec app-ns ip route add default via 10.30.0.1 কমান্ডটার কী হতো?",
+      "options": [
+        "কোনো সমস্যা হতো না, কারণ default route-এর via ঠিকানাটা আসলে শুধুই একটা descriptive label মাত্র, যার বাস্তব connectivity বা device lookup-এর সাথে কোনো প্রকৃত সম্পর্কই নেই, এটা শুধু documentation-এর জন্য রাখা হয়",
+        "fail করতো — kernel 10.30.0.1 কোন directly-connected subnet-এ পড়ে তা বের করতে পারতো না, কারণ কোনো interface-এই সেই subnet-এর address ছিল না, ফলে সঠিক device বের করার কোনো উপায় থাকতো না",
+        "স্বয়ংক্রিয়ভাবে veth-root-এ 10.30.0.1/24 assign হয়ে যেত, কমান্ডটা নিজে থেকেই সেটা করে দিত",
+        "default route-টা host-এর eth0-এ পড়ে যেত, ভুলবশত, কোনো সতর্কবার্তা ছাড়াই"
+      ],
+      "answerIndex": 1,
+      "explanation": "dev উল্লেখ না করলে kernel via ঠিকানাটা কোন directly-connected subnet-এর মধ্যে পড়ে তা দেখে device বের করে — কোনো interface-এ সেই subnet-এর address না থাকলে, কোনো matching device খুঁজে পাওয়া যায় না এবং কমান্ডটা fail করে।"
+    }
+  ]
+}

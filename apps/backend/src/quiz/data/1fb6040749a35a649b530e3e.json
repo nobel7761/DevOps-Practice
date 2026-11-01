@@ -1,0 +1,141 @@
+{
+  "labId": "1fb6040749a35a649b530e3e",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "1fb6040749a35a649b530e3e-01",
+      "difficulty": "easy",
+      "question": "veth pair কী?",
+      "options": [
+        "দুটো সম্পূর্ণ আলাদা, একে অপরের সাথে কোনো সম্পর্কই নেই এমন interface, নাম মিল থাকলেও কোনো connection নেই এদের মাঝে কখনোই",
+        "একটা single interface, যার দুটো আলাদা নাম রাখা যায় সুবিধার জন্য",
+        "একসাথে তৈরি হওয়া দুটো সংযুক্ত interface — একদিকে পাঠানো ট্রাফিক সরাসরি অন্যদিকে বেরিয়ে আসে, যেন একটা virtual cable",
+        "একটা bridge device, যা একাধিক namespace-কে একসাথে যুক্ত করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "veth pair সবসময় জোড়ায় তৈরি হয়, একটা virtual cable-এর মতো — এক প্রান্তে পাঠানো সবকিছু অন্য প্রান্তে সরাসরি বেরিয়ে আসে।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-02",
+      "difficulty": "easy",
+      "question": "ip link set veth-ns netns app-ns চালানোর পর veth-ns কোথায় থাকবে?",
+      "options": [
+        "host আর app-ns দুই জায়গাতেই, একসাথে স্বাধীনভাবে ব্যবহারযোগ্য থেকে যায়",
+        "host-এর তালিকা থেকে সরে গিয়ে সম্পূর্ণভাবে app-ns namespace-এর ভেতরে",
+        "মুছে যাবে, শুধু veth-host প্রান্তটা টিকে থাকবে",
+        "host-এই থাকবে, শুধু app-ns থেকে একটা reference তৈরি হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা interface একসাথে শুধু একটা namespace-এ থাকতে পারে — netns দিয়ে move করলে সেটা আগের জায়গা থেকে সম্পূর্ণ সরে গিয়ে নতুন namespace-এর অংশ হয়ে যায়।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-03",
+      "difficulty": "easy",
+      "question": "ip addr add 10.50.0.1/24 dev veth-host চালানোর পর কী স্বয়ংক্রিয়ভাবে তৈরি হয়?",
+      "options": [
+        "একটা default gateway route, যা সব ধরনের ট্রাফিকের জন্য ব্যবহৃত হবে",
+        "একটা directly-connected route — 10.50.0.0/24-এর জন্য veth-host ব্যবহার করার route",
+        "একটা DNS entry, veth-host-কে একটা hostname-এর সাথে যুক্ত করে",
+        "একটা firewall rule, শুধু 10.50.0.0/24 থেকে আসা ট্রাফিক allow করে, বাকি সব block করে দেয় স্বয়ংক্রিয়ভাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা interface-এ address assign করলে kernel স্বয়ংক্রিয়ভাবে সেই subnet-এর জন্য একটা directly-connected route যোগ করে — আলাদা করে ip route add করা লাগে না।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-04",
+      "difficulty": "medium",
+      "question": "veth-host up থাকলেও veth-ns namespace-এর ভেতরে DOWN অবস্থায় থাকলে কী হবে?",
+      "options": [
+        "কোনো সমস্যা হবে না, একদিক up থাকলেই পুরো link সম্পূর্ণভাবে কাজ করে, অন্যদিকের অবস্থা একেবারেই কোনো বিবেচ্য বিষয় না",
+        "link সম্পূর্ণভাবে কাজ করবে না — veth pair-এর দুই প্রান্তই up থাকতে হয়, একদিক down থাকলে পুরো সংযোগ ভেঙে যায়",
+        "শুধু ping কাজ করবে না, কিন্তু অন্যান্য প্রোটোকল ঠিকই কাজ করবে",
+        "veth-host স্বয়ংক্রিয়ভাবে veth-ns-কে up করে দেবে কয়েক সেকেন্ড পর"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা real cable-এর মতোই — একদিক unplug থাকলে পুরো link কাজ করে না। veth pair-এর দুই প্রান্তই up থাকা বাধ্যতামূলক।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-05",
+      "difficulty": "medium",
+      "question": "এই lab-এ namespace থেকে 10.50.0.0/24-এর বাইরের কোনো subnet-এ রুট করার জন্য আলাদা কোনো ip route add লাগেনি কেন?",
+      "options": [
+        "কারণ এই lab-এ শুধু directly-connected subnet-এর মধ্যেই যোগাযোগ করা হয়েছে — gateway-র বাইরের কোনো destination-এর কথা আসেনি",
+        "কারণ ip route add আসলে এই পরিবেশে কাজই করে না, একটা known limitation",
+        "কারণ veth pair নিজে থেকেই একটা default route তৈরি করে দেয় ইন্টারনেটের জন্য, তৈরি হওয়ার সাথে সাথেই পুরোপুরি স্বয়ংক্রিয়ভাবে",
+        "কারণ namespace-এর ভেতরে routing সম্পূর্ণ বন্ধ থাকে by-default"
+      ],
+      "answerIndex": 0,
+      "explanation": "address assign করলেই directly-connected subnet-এর জন্য route তৈরি হয়ে যায় — কিন্তু সেই subnet-এর বাইরে যেতে হলে static route বা default gateway লাগবে, যেটা পরের lab-এ (CN-lab-03.1/03.2) দেখানো হয়েছে।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-06",
+      "difficulty": "medium",
+      "question": "host → namespace ping কাজ করলেও namespace → host ping ব্যর্থ হচ্ছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "veth pair আসলে শুধু এক দিকেই কাজ করে by design, এটা স্বাভাবিক",
+        "namespace-এর ভেতরের veth-ns interface-টা হয়তো এখনো up করা হয়নি, অথবা তার ঠিকানা সঠিকভাবে বসানো হয়নি",
+        "host-এর veth-host আসলে কখনো ping reply পাঠাতে পারে না, এটা একটা পরিচিত known limitation এই সিমুলেটেড পরিবেশে",
+        "namespace-এর ভেতর থেকে ping কমান্ডটা sudo ছাড়া কখনোই চলে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "দুই দিকের ping ভিন্নভাবে ব্যর্থ হতে পারে — প্রতিটা দিক নির্ভর করে সংশ্লিষ্ট প্রান্তের interface up থাকা আর ঠিকানা সঠিকভাবে বসানোর ওপর। একদিক কাজ করলেও অন্যদিকের configuration আলাদাভাবে যাচাই করা দরকার।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-07",
+      "difficulty": "medium",
+      "question": "docker run চালানোর সময় dockerd ভেতরে ভেতরে কী করে, যা এই lab-এর সাথে হুবহু মেলে?",
+      "options": [
+        "একটা নতুন physical network card কেনে এবং container-এ bind করে",
+        "একটা veth pair তৈরি করে, এক প্রান্ত container-এর namespace-এ পাঠায়, আরেক প্রান্ত host-এ রাখে এবং দুই প্রান্তেই ঠিকানা বসায়",
+        "container-কে সরাসরি host-এর নিজস্ব network namespace-এ রাখে, কোনো namespace আলাদা করে না, isolation-এর কোনো দরকারই নেই এক্ষেত্রে",
+        "container-এর জন্য একটা স্বতন্ত্র physical switch চালু করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই lab-এ ম্যানুয়ালি যা করা হয়েছে — veth pair, এক প্রান্ত namespace-এ, আরেক প্রান্ত host-এ, দুই প্রান্তেই address — ঠিক সেটাই dockerd প্রতিটা docker run-এ স্বয়ংক্রিয়ভাবে করে।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-08",
+      "difficulty": "hard",
+      "question": "CN-lab-01-এর namespace আর এই lab-এর app-ns-এর মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই, দুটোই একই রকম — শুধু নাম আলাদা, বাকি সবকিছু হুবহু একই থেকে যায়",
+        "CN-lab-01-এর namespace isolated ছিল, শুধু lo ছাড়া কোনো interface নেই; app-ns-এ veth pair দিয়ে host-এর সাথে যুক্ত করায় এখন প্রকৃত connectivity আছে",
+        "app-ns namespace আসলে host-এরই একটা অংশ হয়ে গেছে veth pair যুক্ত হওয়ার সাথে সাথেই, তাই এটা আর প্রকৃতপক্ষে আলাদা, স্বতন্ত্র namespace হিসেবে থাকে না",
+        "CN-lab-01-এর namespace শুধু IPv6-এর জন্য তৈরি হয়েছিল, app-ns শুধু IPv4-এর জন্য — দুটো আলাদা protocol stack ব্যবহার করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "দুটোই namespace হিসেবে একইভাবে তৈরি হয়, কিন্তু CN-lab-01-এ কোনো সংযোগ তৈরি করা হয়নি — শুধু পর্যবেক্ষণ। এই lab-এ veth pair দিয়ে সেই isolation ভেঙে একটা প্রকৃত connected namespace বানানো হয়েছে।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-09",
+      "difficulty": "hard",
+      "question": "veth-host-কে 10.50.0.1/24 আর veth-ns-কে ভুলবশত 10.50.0.1/24 (একই ঠিকানা) দেওয়া হলে কী হবে?",
+      "options": [
+        "কোনো সমস্যা হবে না, দুটো আলাদা namespace-এ থাকায় একই ঠিকানা থাকা সম্পূর্ণ স্বাভাবিক এবং পুরোপুরি সমর্থিত, কোনো conflict দেখা দেবে না একেবারেই কোনো অবস্থাতেই",
+        "দুটো ভিন্ন device/namespace-এ একই ঠিকানা থাকলেও, একই subnet-এর মধ্যে connectivity test করার সময় ambiguity তৈরি হবে — কোন প্রান্ত কোনটা তা পরিষ্কার থাকবে না",
+        "veth pair নিজে থেকেই conflict detect করে একটা প্রান্তের ঠিকানা স্বয়ংক্রিয়ভাবে বদলে দেবে",
+        "ping কমান্ডটা সম্পূর্ণভাবে কাজ বন্ধ করে দেবে, কোনো আউটপুটই দেখাবে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "যদিও namespace আলাদা বলে টেকনিক্যালি দুই প্রান্তে একই ঠিকানা থাকা সম্ভব, কিন্তু একই subnet-এর দুই প্রান্তে একই address দেওয়া হলে কোন প্রান্তটা আসলে কোন host represent করছে তা নিয়ে বিভ্রান্তি তৈরি হয় — গেটওয়ে আর নিজের ঠিকানা আলাদা রাখাই নিরাপদ অভ্যাস।"
+    },
+    {
+      "id": "1fb6040749a35a649b530e3e-10",
+      "difficulty": "hard",
+      "question": "এই lab-এর পরে CN-lab-05-এ দুটো namespace-কে সরাসরি একে অপরের সাথে সংযুক্ত করা হবে, host ছাড়াই। সেই lab-এ veth pair-এর দুই প্রান্তের মধ্যে এই lab-এর তুলনায় মূল পার্থক্য কী হবে?",
+      "options": [
+        "কোনো পার্থক্য থাকবে না, veth pair সবসময় একই রকম আচরণ করে যেখানেই ব্যবহার হোক না কেন",
+        "এই lab-এ এক প্রান্ত host-এ থাকে, আরেক প্রান্ত namespace-এ; CN-lab-05-এ দুই প্রান্তই আলাদা আলাদা namespace-এ সরানো হবে, host-এ কোনো প্রান্তই থাকবে না",
+        "CN-lab-05-এ veth pair-এর বদলে সম্পূর্ণ আলাদা একটা নতুন, আরও অনেক বেশি জটিল একটা device type লাগবে, veth pair সেখানে আর কোনোভাবেই ব্যবহারযোগ্য থাকবে না",
+        "CN-lab-05-এ শুধু একটা প্রান্ত তৈরি করতে হবে, veth pair-এর concept-টাই প্রযোজ্য হবে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth pair তৈরির প্রক্রিয়া একই থাকে — পার্থক্যটা শুধু কোথায় প্রান্তদুটো সরানো হয়। এই lab-এ এক প্রান্ত host-এ রাখা হয়েছে; দুই namespace সরাসরি সংযুক্ত করতে দুই প্রান্তই namespace-এ সরাতে হয়, host সম্পূর্ণ বাদ পড়ে যায়।"
+    }
+  ]
+}

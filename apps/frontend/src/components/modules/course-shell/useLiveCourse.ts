@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import client from "@/lib/api/client";
 import { collectNotableContentIds } from "@/lib/data/collect-content-ids";
 import type { CourseSummary } from "@/lib/data/course-modules";
 import { mergeNotesIntoCourse } from "@/lib/data/merge-notes";
 import { mergeProgressIntoCourse } from "@/lib/data/merge-progress";
 
-/** The course with the learner's completed items and notes merged in once they load. */
-export function useLiveCourse(course: CourseSummary): CourseSummary {
+/** The course with the learner's completed items and notes merged in once they load, plus a way to re-pull progress on demand (e.g. right after marking something complete). */
+export function useLiveCourse(course: CourseSummary): {
+  liveCourse: CourseSummary;
+  refetchProgress: () => void;
+} {
   const [liveCourse, setLiveCourse] = useState(course);
 
-  useEffect(() => {
+  const fetchProgress = useCallback(() => {
     let cancelled = false;
     client
       .get<{ completedKeys: string[] }>("/progress")
@@ -25,7 +28,9 @@ export function useLiveCourse(course: CourseSummary): CourseSummary {
     return () => {
       cancelled = true;
     };
-  }, [course]);
+  }, []);
+
+  useEffect(() => fetchProgress(), [course, fetchProgress]);
 
   useEffect(() => {
     const contentIds = collectNotableContentIds(course);
@@ -45,5 +50,9 @@ export function useLiveCourse(course: CourseSummary): CourseSummary {
     };
   }, [course]);
 
-  return liveCourse;
+  const refetchProgress = useCallback(() => {
+    fetchProgress();
+  }, [fetchProgress]);
+
+  return { liveCourse, refetchProgress };
 }

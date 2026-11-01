@@ -1,0 +1,87 @@
+{
+  "labId": "69e0e99023b200e2a4159f0d",
+  "title": "Software Defined Networking (SDN)",
+  "passPercent": 95,
+  "intro": "SDN-এর তত্ত্ব (control plane বনাম data plane) এই ল্যাবের মূল বিষয় — কিন্তু তত্ত্ব হাতেকলমে না দেখলে মাথায় বসে না। তাই এখানে Mininet-এ একটা ছোট্ট ২-হোস্ট টপোলজি বানিয়ে সরাসরি দেখবে: controller/flow rule ছাড়া OpenFlow switch আসলেই কিচ্ছু forward করে না (empty data plane), আর একটা মাত্র flow rule যোগ করলেই (control plane-এর instruction) সব ঠিকঠাক চলতে শুরু করে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 15,
+      "section": {
+        "title": "🏗️ একটা SDN টপোলজি বানানো",
+        "note": "`--controller=none` মানে কোনো control plane connected নেই — switch নিজে থেকে কিছু শিখবে না, forward করবে না।"
+      },
+      "prompt": "Mininet দিয়ে একটা single-switch টপোলজি বানাও — ২টা host, কোনো controller ছাড়া, সহজ MAC address সহ।",
+      "answer": "sudo mn --topo=single,2 --controller=none --mac",
+      "check": {
+        "require": ["mn", "--topo=single,2", "--controller=none"]
+      },
+      "hints": [
+        "`--topo=single,N` দিয়ে এক switch-এ N হোস্ট জোড়া লাগানো যায়।",
+        "controller একদম বাদ দিতে একটা বিশেষ flag আছে।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 15,
+      "prompt": "switch s1-এর বর্তমান flow table দেখো — control plane কিছু instruction না দিলে এটা কেমন দেখতে, সেটাই যাচাই করো।",
+      "answer": "sh ovs-ofctl dump-flows s1",
+      "check": {
+        "require": ["ovs-ofctl", "dump-flows", "s1"]
+      },
+      "hints": [
+        "Mininet CLI-র ভেতর থেকে host-শেল কমান্ড চালাতে একটা escape-prefix লাগে।"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 20,
+      "section": {
+        "title": "📡 Data plane একা কিছু করে না",
+        "note": "flow rule ছাড়া switch প্যাকেট drop করে — এটাই traditional (hardware-based) networking-এর ঠিক উল্টো।"
+      },
+      "prompt": "দুই host-এর মধ্যে connectivity পরীক্ষা করো — এই মুহূর্তে কী হয় দেখো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [{ "from": "h1", "to": "h2", "reachable": false }]
+      },
+      "hints": ["সব host থেকে সব host-এ একসাথে ping করার একটা কমান্ড আছে।"]
+    },
+    {
+      "id": "t04",
+      "points": 25,
+      "section": {
+        "title": "🧠 Control plane থেকে একটা instruction",
+        "note": "এখন একটা flow rule বসাও — ঠিক যেমন SDN controller switch-কে flow-mod পাঠায়।"
+      },
+      "prompt": "s1-এ একটা flow যোগ করো যাতে switch সাধারণ (traditional) Layer 2 switch-এর মতো আচরণ করে।",
+      "answer": "sh ovs-ofctl add-flow s1 action=normal",
+      "check": {
+        "mininetFlowExists": [{ "switch": "s1", "action": "normal" }]
+      },
+      "hints": [
+        "built-in switch logic-কে delegate করার জন্য একটা action keyword আছে।"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 20,
+      "prompt": "আবার সব host-এর মধ্যে connectivity পরীক্ষা করো — এবার কী বদলালো দেখো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [{ "from": "h1", "to": "h2", "reachable": true }]
+      },
+      "hints": ["একই কমান্ড আগেও চালিয়েছ — ফলাফলটা এবার তুলনা করো।"]
+    },
+    {
+      "id": "t06",
+      "points": 5,
+      "prompt": "Mininet CLI থেকে বের হয়ে normal শেলে ফিরে যাও।",
+      "answer": "exit",
+      "check": {
+        "require": ["exit"]
+      }
+    }
+  ]
+}

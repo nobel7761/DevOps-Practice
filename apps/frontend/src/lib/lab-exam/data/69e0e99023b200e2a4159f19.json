@@ -1,0 +1,74 @@
+{
+  "labId": "69e0e99023b200e2a4159f19",
+  "title": "Simulating a Two-Subnet Network Topology in Mininet with One Switch",
+  "passPercent": 95,
+  "intro": "একটাই standalone switch (`br0`), কিন্তু দুটো সম্পূর্ণ আলাদা subnet — `192.168.1.0/24` আর `192.168.0.0/24`। এই ল্যাবে দেখবে: একটা plain L2 switch IP subnet নিয়ে একদম মাথা ঘামায় না (তাই একই subnet-এর মধ্যে সব ঠিকঠাক চলে), কিন্তু router ছাড়া আলাদা subnet-এর হোস্টরা একে অপরের সাথে কখনোই কথা বলতে পারবে না — কারণ ব্যর্থতাটা switch-এর না, হোস্টের নিজের routing table-এর।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 20,
+      "section": {
+        "title": "🏗️ Two-subnet টপোলজি চালু করা",
+        "note": "এই script-টা একটা standalone bridge (`br0`) আর দুই subnet মিলিয়ে ৪টা host বানায় — ফাইলটা আগে থেকেই দেওয়া আছে।"
+      },
+      "prompt": "`simple_topo.py` স্ক্রিপ্টটা চালিয়ে টপোলজি চালু করো।",
+      "answer": "python3 simple_topo.py",
+      "check": { "require": ["python3", "simple_topo.py"] }
+    },
+    {
+      "id": "t02",
+      "points": 18,
+      "section": {
+        "title": "✅ একই subnet-এর মধ্যে ping",
+        "note": "br0 একটা standalone L2 switch — কোনো flow rule ছাড়াই normal switch-এর মতো কাজ করে।"
+      },
+      "prompt": "192.168.1.0/24 subnet-এর দুই হোস্ট (h20, h21) এর মধ্যে connectivity পরীক্ষা করো।",
+      "answer": "h20 ping -c 3 h21",
+      "check": {
+        "mininetReachable": [{ "from": "h20", "to": "h21", "reachable": true }]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 18,
+      "prompt": "192.168.0.0/24 subnet-এর দুই হোস্ট (h10, h11) এর মধ্যেও একইভাবে পরীক্ষা করো।",
+      "answer": "h10 ping -c 3 h11",
+      "check": {
+        "mininetReachable": [{ "from": "h10", "to": "h11", "reachable": true }]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 24,
+      "section": {
+        "title": "🚫 আলাদা subnet-এর মধ্যে ping",
+        "note": "ব্যর্থতাটা switch-এর দোষ না — h20-এর নিজের routing table-এই 192.168.0.0/24-এর কোনো entry নেই, router বা default gateway ছাড়া।"
+      },
+      "prompt": "সব host-এর মধ্যে connectivity একসাথে পরীক্ষা করো — একই subnet-এর জোড়াগুলো সফল হবে, কিন্তু ভিন্ন subnet-এর জোড়াগুলো ব্যর্থ হবে।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h20", "to": "h21", "reachable": true },
+          { "from": "h10", "to": "h11", "reachable": true },
+          { "from": "h20", "to": "h10", "reachable": false },
+          { "from": "h21", "to": "h11", "reachable": false }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 10,
+      "prompt": "h20-এর IP কনফিগারেশন দেখো।",
+      "answer": "h20 ifconfig",
+      "check": { "require": ["h20", "ifconfig"] }
+    },
+    {
+      "id": "t06",
+      "points": 10,
+      "prompt": "পুরো টপোলজির link mapping দেখো — কোন host কোন switch port-এ যুক্ত।",
+      "answer": "net",
+      "check": { "require": ["net"] }
+    }
+  ]
+}

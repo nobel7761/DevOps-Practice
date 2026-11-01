@@ -8,6 +8,7 @@ export interface LiveCourseValue {
   courseId: string;
   course: CourseSummary;
   layout: CourseLayoutOptions;
+  refetchProgress: () => void;
 }
 
 const LiveCourseContext = createContext<LiveCourseValue | null>(null);
@@ -20,4 +21,9 @@ export function useLiveCourseContext(): LiveCourseValue {
   if (!value)
     throw new Error("useLiveCourseContext must be used inside CourseShell");
   return value;
+}
+
+/** Same as useLiveCourseContext, but returns null instead of throwing when there's no CourseShell above (e.g. a page rendered outside a course). */
+export function useOptionalLiveCourseContext(): LiveCourseValue | null {
+  return useContext(LiveCourseContext);
 }

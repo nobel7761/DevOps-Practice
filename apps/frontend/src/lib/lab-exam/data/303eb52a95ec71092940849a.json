@@ -1,0 +1,272 @@
+{
+  "labId": "303eb52a95ec71092940849a",
+  "title": "LAB: Connect Two Custom Network NS",
+  "passPercent": 95,
+  "intro": "এতক্ষণ namespace-কে host-এর সাথে connect করেছ। এবার দুটো সম্পূর্ণ আলাদা namespace-কে সরাসরি একে অপরের সাথে connect করতে হবে — host-এর কোনো address বা gateway ছাড়াই। cache-ns আর worker-ns, দুটো sibling container, একটা একক veth pair দিয়ে সরাসরি কথা বলবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 7,
+      "section": {
+        "title": "🏗️ পর্ব ১: দুটো namespace আর একটা veth pair",
+        "note": "এবার veth pair-এর কোনো প্রান্তই host-এ থাকবে না — দুটোই namespace-এর ভেতরে যাবে।"
+      },
+      "prompt": "cache-ns নামে একটা network namespace বানাও।",
+      "answer": "ip netns add cache-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "cache-ns"],
+        "netnsExists": ["cache-ns"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 7,
+      "prompt": "worker-ns নামে আরেকটা network namespace বানাও।",
+      "answer": "ip netns add worker-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "worker-ns"],
+        "netnsExists": ["worker-ns"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 8,
+      "prompt": "veth-a আর veth-b নামে একজোড়া veth pair বানাও।",
+      "answer": "ip link add veth-a type veth peer name veth-b",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-a",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-b"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-a"
+          },
+          {
+            "name": "veth-b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 8,
+      "prompt": "veth-a প্রান্তটা cache-ns namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-a netns cache-ns",
+      "check": {
+        "require": ["ip", "link", "set", "veth-a", "netns", "cache-ns"],
+        "netIfaceState": [
+          {
+            "name": "veth-a",
+            "context": "cache-ns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 8,
+      "prompt": "veth-b প্রান্তটা worker-ns namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-b netns worker-ns",
+      "check": {
+        "require": ["ip", "link", "set", "veth-b", "netns", "worker-ns"],
+        "netIfaceState": [
+          {
+            "name": "veth-b",
+            "context": "worker-ns"
+          }
+        ]
+      },
+      "hints": [
+        "host-এর ip link show type veth এখন খালি দেখানোর কথা — দুটো প্রান্তই namespace-এর ভেতরে চলে গেছে"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "section": {
+        "title": "⬆️ পর্ব ২: Interface up করা",
+        "note": "veth pair ইলেকট্রিক্যালি জোড়া লাগানো থাকলেও, প্রতিটা প্রান্তের up/down অবস্থা একদম আলাদা — দুটোই নিজে নিজে up করতে হবে।"
+      },
+      "prompt": "cache-ns-এর ভেতরে lo interface চালু করো।",
+      "answer": "ip netns exec cache-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "cache-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "lo",
+            "context": "cache-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 7,
+      "prompt": "cache-ns-এর ভেতরে veth-a চালু করো।",
+      "answer": "ip netns exec cache-ns ip link set veth-a up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "cache-ns",
+          "ip",
+          "link",
+          "set",
+          "veth-a",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-a",
+            "context": "cache-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "prompt": "worker-ns-এর ভেতরে lo interface চালু করো।",
+      "answer": "ip netns exec worker-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "worker-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "lo",
+            "context": "worker-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 7,
+      "prompt": "worker-ns-এর ভেতরে veth-b চালু করো।",
+      "answer": "ip netns exec worker-ns ip link set veth-b up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "worker-ns",
+          "ip",
+          "link",
+          "set",
+          "veth-b",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-b",
+            "context": "worker-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 9,
+      "section": {
+        "title": "📫 পর্ব ৩: ঠিকানা বসানো",
+        "note": "এখানে কোনো gateway নেই — দুটো প্রান্তই একই subnet-এ থাকলেই kernel-এর directly-connected route যথেষ্ট।"
+      },
+      "prompt": "cache-ns-এর ভেতরে veth-a-কে 10.60.0.1/24 ঠিকানা দাও।",
+      "answer": "ip netns exec cache-ns ip addr add 10.60.0.1/24 dev veth-a",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "cache-ns",
+          "ip",
+          "addr",
+          "add",
+          "10.60.0.1/24",
+          "dev",
+          "veth-a"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-a",
+            "context": "cache-ns",
+            "hasAddress": "10.60.0.1/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 9,
+      "prompt": "worker-ns-এর ভেতরে veth-b-কে 10.60.0.2/24 ঠিকানা দাও।",
+      "answer": "ip netns exec worker-ns ip addr add 10.60.0.2/24 dev veth-b",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "worker-ns",
+          "ip",
+          "addr",
+          "add",
+          "10.60.0.2/24",
+          "dev",
+          "veth-b"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-b",
+            "context": "worker-ns",
+            "hasAddress": "10.60.0.2/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 10,
+      "section": {
+        "title": "✅ পর্ব ৪: Connectivity প্রমাণ করা",
+        "note": "host কোথাও নেই এই path-এ — সরাসরি একটা namespace থেকে আরেকটায়।"
+      },
+      "prompt": "cache-ns থেকে worker-ns-এর 10.60.0.2 ঠিকানায় সরাসরি ping করে connectivity যাচাই করো।",
+      "answer": "ip netns exec cache-ns ping -c 3 10.60.0.2",
+      "check": {
+        "require": ["ip", "netns", "exec", "cache-ns", "ping", "10.60.0.2"]
+      }
+    }
+  ]
+}

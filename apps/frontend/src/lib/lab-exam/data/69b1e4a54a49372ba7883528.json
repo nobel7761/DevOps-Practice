@@ -1,0 +1,142 @@
+{
+  "labId": "69b1e4a54a49372ba7883528",
+  "title": "Introduction To jq",
+  "passPercent": 95,
+  "intro": "JSON file বানানো থেকে শুরু করে jq দিয়ে filter, drill-down, আর select() — প্রতিটা ধাপ নিজের হাতে চালাও। ৯৫% = PASSED।",
+  "targets": [
+    {
+      "path": "~/data.json",
+      "type": "file",
+      "content": "{\n  \"company\": {\n    \"name\": \"Poridhi\",\n    \"address\": {\n      \"street\": \"123 Tech Lane\",\n      \"city\": \"Dhaka\",\n      \"state\": \"Dhaka\",\n      \"postal_code\": \"1200\"\n    },\n    \"employees\": [\n      {\n        \"id\": 1,\n        \"name\": \"Nabil\",\n        \"position\": \"Junior Software Engineer\",\n        \"contact\": {\n          \"email\": \"nabil@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      },\n      {\n        \"id\": 2,\n        \"name\": \"Minhaz\",\n        \"position\": \"Data Scientist\",\n        \"contact\": {\n          \"email\": \"minhaz@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      }\n    ]\n  }\n}"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🏗️ Setup",
+        "note": "প্রথমে lab-এর sample data.json ফাইলটা বানাবে — পরের সব jq filter এই ফাইলের ওপরেই চলবে।"
+      },
+      "prompt": "ডানের দেখানো ঠিক কন্টেন্ট দিয়ে ~/data.json ফাইলটা বানাও (heredoc ব্যবহার করতে পারো: cat << EOF > data.json ... EOF)।",
+      "answer": "cat << EOF > data.json\n{\n  \"company\": {\n    \"name\": \"Poridhi\",\n    \"address\": {\n      \"street\": \"123 Tech Lane\",\n      \"city\": \"Dhaka\",\n      \"state\": \"Dhaka\",\n      \"postal_code\": \"1200\"\n    },\n    \"employees\": [\n      {\n        \"id\": 1,\n        \"name\": \"Nabil\",\n        \"position\": \"Junior Software Engineer\",\n        \"contact\": {\n          \"email\": \"nabil@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      },\n      {\n        \"id\": 2,\n        \"name\": \"Minhaz\",\n        \"position\": \"Data Scientist\",\n        \"contact\": {\n          \"email\": \"minhaz@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      }\n    ]\n  }\n}\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/data.json",
+            "type": "file",
+            "content": "{\n  \"company\": {\n    \"name\": \"Poridhi\",\n    \"address\": {\n      \"street\": \"123 Tech Lane\",\n      \"city\": \"Dhaka\",\n      \"state\": \"Dhaka\",\n      \"postal_code\": \"1200\"\n    },\n    \"employees\": [\n      {\n        \"id\": 1,\n        \"name\": \"Nabil\",\n        \"position\": \"Junior Software Engineer\",\n        \"contact\": {\n          \"email\": \"nabil@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      },\n      {\n        \"id\": 2,\n        \"name\": \"Minhaz\",\n        \"position\": \"Data Scientist\",\n        \"contact\": {\n          \"email\": \"minhaz@poridhi.com\",\n          \"phone\": \"01712345678\"\n        }\n      }\n    ]\n  }\n}"
+          }
+        ]
+      },
+      "hints": [
+        "cat আর একটা heredoc (<< EOF ... EOF) দিয়ে multi-line content সরাসরি একটা ফাইলে redirect করা যায়।",
+        "cat << EOF > data.json লিখে এন্টার দাও, তারপর JSON-টা হুবহু পেস্ট করো, শেষে একটা লাইনে শুধু EOF লিখে শেষ করো।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 10,
+      "section": {
+        "title": "🔍 নির্দিষ্ট field বের করা",
+        "note": "jq-এর dot-path syntax দিয়ে nested object থেকে সরাসরি একটা field বের করা যায়।"
+      },
+      "prompt": "company.name field-টা বের করো data.json থেকে।",
+      "answer": "cat data.json | jq '.company.name'",
+      "check": { "require": ["jq", ".company.name"] },
+      "hints": [
+        "cat data.json | jq দিয়ে pipe করো, filter-এ .company.name লিখো।"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "prompt": "company-এর address-এর ভেতরের city field-টা বের করো।",
+      "answer": "cat data.json | jq '.company.address.city'",
+      "check": { "require": ["jq", ".company.address.city"] },
+      "hints": [
+        "একাধিক level-এ drill down করতে চাইলে dot চেইন করে লিখো: .a.b.c"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 10,
+      "section": {
+        "title": "📋 সব employee নিয়ে কাজ করা",
+        "note": "[] দিয়ে array-এর প্রতিটা element নিয়ে আলাদাভাবে filter চালানো যায়।"
+      },
+      "prompt": "সব employee-র নাম একটা করে লাইনে লিস্ট করো।",
+      "answer": "cat data.json | jq '.company.employees[].name'",
+      "check": { "require": ["jq", ".company.employees[]", ".name"] },
+      "hints": [
+        "employees-এর পর [] লাগিয়ে array-টা iterate করো, তারপর .name চেইন করো।"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 10,
+      "prompt": "প্রতিটা employee-র পুরো object (সব field সহ) প্রিন্ট করো।",
+      "answer": "cat data.json | jq '.company.employees[]'",
+      "check": {
+        "require": ["jq", ".company.employees[]"],
+        "forbid": [".name", ".contact"]
+      },
+      "hints": [
+        ".name বা অন্য কোনো field চেইন না করলে পুরো object-ই বেরিয়ে আসবে।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 10,
+      "prompt": "প্রতিটা employee-র শুধু contact (email + phone) object-টা বের করো।",
+      "answer": "cat data.json | jq '.company.employees[].contact'",
+      "check": { "require": ["jq", ".company.employees[]", ".contact"] },
+      "hints": ["employees[] এর পর .contact চেইন করো।"]
+    },
+    {
+      "id": "t07",
+      "points": 10,
+      "section": {
+        "title": "🖨️ Pretty-print",
+        "note": "শুধু '.' filter দিলে jq পুরো document-টাই সুন্দরভাবে ফরম্যাট করে দেখায় — raw cat-এর চেয়ে readable।"
+      },
+      "prompt": "পুরো JSON document-টা jq দিয়ে pretty-print করো (কোনো filtering ছাড়াই)।",
+      "answer": "cat data.json | jq '.'",
+      "check": { "require": ["jq", "."] },
+      "hints": ["identity filter হলো একটা একলা ডট: '.'"]
+    },
+    {
+      "id": "t08",
+      "points": 15,
+      "section": {
+        "title": "🎯 select() দিয়ে ফিল্টার করা",
+        "note": "select() একটা condition-এর ওপর ভিত্তি করে stream থেকে শুধু matching element-গুলো বাছাই করে।"
+      },
+      "prompt": "শুধু সেই employee-দের বের করো যাদের position হলো \"Junior Software Engineer\"।",
+      "answer": "cat data.json | jq '.company.employees[] | select(.position == \"Junior Software Engineer\")'",
+      "check": {
+        "require": ["jq", "select", ".position", "Junior Software Engineer"]
+      },
+      "hints": [
+        "প্রথমে employees[] দিয়ে stream বানাও, তারপর | দিয়ে pipe করে select(...) এ শর্তটা দাও।",
+        "শর্তটা হবে: .position == \"Junior Software Engineer\""
+      ]
+    },
+    {
+      "id": "t09",
+      "points": 15,
+      "prompt": "শুধু \"Data Scientist\" position-এর employee(দের) বের করো।",
+      "answer": "cat data.json | jq '.company.employees[] | select(.position == \"Data Scientist\")'",
+      "check": { "require": ["jq", "select", ".position", "Data Scientist"] },
+      "hints": ["আগের task-এর মতোই, শুধু condition-এর ভ্যালুটা বদলাও।"]
+    },
+    {
+      "id": "t10",
+      "points": 10,
+      "prompt": "install করা jq binary-টা আসলেই আছে কিনা — sudo apt-get install jq কমান্ডটা লিখো (সিস্টেমে jq ইনস্টল করার standard উপায়)।",
+      "answer": "sudo apt-get install jq",
+      "check": { "require": ["apt-get", "install", "jq"] },
+      "hints": ["apt-get-এর install সাবকমান্ড আর প্যাকেজের নাম jq।"]
+    }
+  ]
+}

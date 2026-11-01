@@ -126,6 +126,8 @@ export interface LabExamCheck {
     state?: "up" | "down";
     /** a CIDR this interface must have an address matching */
     hasAddress?: string;
+    /** the bridge this interface must be enslaved to (via `ip link set <iface> master <bridge>`) */
+    master?: string;
   }[];
   /** Expected routing table entries */
   routeExists?: {
@@ -163,10 +165,34 @@ export interface LabExamCheck {
   /** Expected iptables rules */
   iptablesRuleExists?: {
     chain: string;
-    target: "ACCEPT" | "DROP" | "REJECT" | "LOG";
+    target: "ACCEPT" | "DROP" | "REJECT" | "LOG" | "MASQUERADE";
     dport?: string;
+    /** required outgoing interface (`-o <iface>`), for NAT/MASQUERADE rules */
+    outIface?: string;
     /** set false to require no matching rule exists */
     exists?: boolean;
+  }[];
+  /** Expected sysctl key/value state */
+  sysctlState?: {
+    key: string;
+    value: string;
+  }[];
+  /** Expected OVS flow-table state inside an active Mininet session */
+  mininetFlowExists?: {
+    switch: string;
+    /** key=value match fields as typed (e.g. {in_port: "1", dl_type: "0x800"}) — every given key must be present on a matching flow with the same value */
+    match?: Record<string, string>;
+    /** required action keyword, e.g. "normal" | "flood" | "output:2" */
+    action?: string;
+    /** set false to require no matching flow exists */
+    exists?: boolean;
+  }[];
+  /** Expected host-to-host reachability inside an active Mininet session (what `ping`/`pingall` would show) */
+  mininetReachable?: {
+    from: string;
+    /** a host name or literal IP */
+    to: string;
+    reachable: boolean;
   }[];
 }
 

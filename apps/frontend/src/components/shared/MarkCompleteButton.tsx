@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import CustomButton from "@/components/shared/CustomButton";
+import { useOptionalLiveCourseContext } from "@/components/modules/course-shell/LiveCourseContext";
 import client from "@/lib/api/client";
 
 export default function MarkCompleteButton({
@@ -10,10 +11,11 @@ export default function MarkCompleteButton({
   type,
 }: {
   contentKey: string;
-  type: "video" | "lab";
+  type: "video" | "lab" | "interview";
 }) {
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const liveCourseContext = useOptionalLiveCourseContext();
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +37,7 @@ export default function MarkCompleteButton({
     try {
       await client.post(`/progress/${type}/${contentKey}/complete`);
       setCompleted(true);
+      liveCourseContext?.refetchProgress();
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,490 @@
+{
+  "labId": "827527942e0ea4c78403cf84",
+  "title": "LAB: Bridge Networking Among Namespaces",
+  "passPercent": 95,
+  "intro": "তিনটা namespace — ns1, ns2, ns3 — কে একে অপরের সাথে কথা বলাতে হবে, কিন্তু প্রতিটার মাঝে আলাদা veth pair বসালে এটা O(n²) জোড়ার সমস্যা হয়ে যায়। এর বদলে একটা Linux bridge (br0) বানাবে — প্রতিটা namespace শুধু bridge-এর সাথেই একটা veth pair দিয়ে যুক্ত থাকবে, আর bridge নিজেই বাকি সবার মধ্যে ট্রাফিক forward করবে। এটাই Docker-এর docker0 bridge-এর পেছনের মূল mechanism।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 5,
+      "section": {
+        "title": "🌉 পর্ব ১: Bridge বানানো",
+        "note": "br0 হবে কেন্দ্রীয় switch — প্রতিটা namespace এর সাথে একটা করে veth দিয়ে যুক্ত হবে।"
+      },
+      "prompt": "br0 নামে একটা নতুন Linux bridge interface বানাও।",
+      "answer": "ip link add br0 type bridge",
+      "check": {
+        "require": ["ip", "link", "add", "br0", "type", "bridge"],
+        "netIfaceState": [{ "name": "br0", "context": "host" }]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 4,
+      "prompt": "br0 interface-টা চালু (up) করো।",
+      "answer": "ip link set br0 up",
+      "check": {
+        "require": ["ip", "link", "set", "br0", "up"],
+        "netIfaceState": [{ "name": "br0", "context": "host", "state": "up" }]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 4,
+      "section": {
+        "title": "1️⃣ পর্ব ২: ns1 সংযুক্ত করা",
+        "note": "প্রতিটা namespace-এর জন্য একই প্যাটার্ন: namespace বানাও, veth pair বানাও, host-side প্রান্তকে bridge-এ যোগ দাও, namespace-side প্রান্তে ঠিকানা বসাও।"
+      },
+      "prompt": "ns1 নামে একটা network namespace বানাও।",
+      "answer": "ip netns add ns1",
+      "check": {
+        "require": ["ip", "netns", "add", "ns1"],
+        "netnsExists": ["ns1"]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 4,
+      "prompt": "veth-host1 আর veth-ns1 নামে একজোড়া veth বানাও।",
+      "answer": "ip link add veth-host1 type veth peer name veth-ns1",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host1",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns1"
+        ],
+        "netIfaceState": [
+          { "name": "veth-host1", "context": "host" },
+          { "name": "veth-ns1", "context": "host" }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 4,
+      "prompt": "veth-ns1 প্রান্তটা ns1 namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns1 netns ns1",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns1", "netns", "ns1"],
+        "netIfaceState": [{ "name": "veth-ns1", "context": "ns1" }]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 5,
+      "prompt": "host-side veth-host1-কে br0 bridge-এর member বানাও (master সেট করো)।",
+      "answer": "ip link set veth-host1 master br0",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host1", "master", "br0"],
+        "netIfaceState": [
+          { "name": "veth-host1", "context": "host", "master": "br0" }
+        ]
+      },
+      "hints": [
+        "একটা interface-কে bridge-এ যোগ করতে master verb-টা ব্যবহার হয়"
+      ]
+    },
+    {
+      "id": "t07",
+      "points": 4,
+      "prompt": "veth-host1 interface-টা চালু করো — bridge member হিসেবে forward করতে হলে এটা up থাকতে হবে।",
+      "answer": "ip link set veth-host1 up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host1", "up"],
+        "netIfaceState": [
+          { "name": "veth-host1", "context": "host", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 4,
+      "prompt": "ns1-এর ভেতরে lo আর veth-ns1 — দুটো interfaceই চালু করো (একসাথে, দুইটা আলাদা কমান্ডে)।",
+      "answer": "ip netns exec ns1 ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns1",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "ns1", "state": "up" }]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 4,
+      "prompt": "এবার ns1-এর veth-ns1 interface-টাও চালু করো।",
+      "answer": "ip netns exec ns1 ip link set veth-ns1 up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns1",
+          "ip",
+          "link",
+          "set",
+          "veth-ns1",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-ns1", "context": "ns1", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 5,
+      "prompt": "ns1-এর veth-ns1-কে 10.70.0.11/24 ঠিকানা দাও — এটাই হবে এই bridge network-এর shared subnet।",
+      "answer": "ip netns exec ns1 ip addr add 10.70.0.11/24 dev veth-ns1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns1",
+          "ip",
+          "addr",
+          "add",
+          "10.70.0.11/24",
+          "dev",
+          "veth-ns1"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns1",
+            "context": "ns1",
+            "hasAddress": "10.70.0.11/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 4,
+      "section": {
+        "title": "2️⃣ পর্ব ৩: ns2 সংযুক্ত করা",
+        "note": "ঠিক একই প্যাটার্ন — শুধু নম্বর বদলে যাবে।"
+      },
+      "prompt": "ns2 নামে একটা network namespace বানাও।",
+      "answer": "ip netns add ns2",
+      "check": {
+        "require": ["ip", "netns", "add", "ns2"],
+        "netnsExists": ["ns2"]
+      }
+    },
+    {
+      "id": "t12",
+      "points": 4,
+      "prompt": "veth-host2 আর veth-ns2 নামে একজোড়া veth বানাও।",
+      "answer": "ip link add veth-host2 type veth peer name veth-ns2",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host2",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns2"
+        ],
+        "netIfaceState": [
+          { "name": "veth-host2", "context": "host" },
+          { "name": "veth-ns2", "context": "host" }
+        ]
+      }
+    },
+    {
+      "id": "t13",
+      "points": 4,
+      "prompt": "veth-ns2 প্রান্তটা ns2 namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns2 netns ns2",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns2", "netns", "ns2"],
+        "netIfaceState": [{ "name": "veth-ns2", "context": "ns2" }]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 5,
+      "prompt": "host-side veth-host2-কে br0 bridge-এর member বানাও।",
+      "answer": "ip link set veth-host2 master br0",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host2", "master", "br0"],
+        "netIfaceState": [
+          { "name": "veth-host2", "context": "host", "master": "br0" }
+        ]
+      }
+    },
+    {
+      "id": "t15",
+      "points": 4,
+      "prompt": "veth-host2 interface-টা চালু করো।",
+      "answer": "ip link set veth-host2 up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host2", "up"],
+        "netIfaceState": [
+          { "name": "veth-host2", "context": "host", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t16",
+      "points": 4,
+      "prompt": "ns2-এর ভেতরে lo interface-টা চালু করো।",
+      "answer": "ip netns exec ns2 ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns2",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "ns2", "state": "up" }]
+      }
+    },
+    {
+      "id": "t17",
+      "points": 4,
+      "prompt": "ns2-এর veth-ns2 interface-টাও চালু করো।",
+      "answer": "ip netns exec ns2 ip link set veth-ns2 up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns2",
+          "ip",
+          "link",
+          "set",
+          "veth-ns2",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-ns2", "context": "ns2", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t18",
+      "points": 5,
+      "prompt": "ns2-এর veth-ns2-কে একই subnet-এ 10.70.0.12/24 ঠিকানা দাও।",
+      "answer": "ip netns exec ns2 ip addr add 10.70.0.12/24 dev veth-ns2",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns2",
+          "ip",
+          "addr",
+          "add",
+          "10.70.0.12/24",
+          "dev",
+          "veth-ns2"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns2",
+            "context": "ns2",
+            "hasAddress": "10.70.0.12/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t19",
+      "points": 4,
+      "section": {
+        "title": "3️⃣ পর্ব ৪: ns3 সংযুক্ত করা",
+        "note": "তৃতীয় namespace — এটাই প্রমাণ করবে bridge আসলে কী সুবিধা দেয়।"
+      },
+      "prompt": "ns3 নামে একটা network namespace বানাও।",
+      "answer": "ip netns add ns3",
+      "check": {
+        "require": ["ip", "netns", "add", "ns3"],
+        "netnsExists": ["ns3"]
+      }
+    },
+    {
+      "id": "t20",
+      "points": 4,
+      "prompt": "veth-host3 আর veth-ns3 নামে একজোড়া veth বানাও।",
+      "answer": "ip link add veth-host3 type veth peer name veth-ns3",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host3",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns3"
+        ],
+        "netIfaceState": [
+          { "name": "veth-host3", "context": "host" },
+          { "name": "veth-ns3", "context": "host" }
+        ]
+      }
+    },
+    {
+      "id": "t21",
+      "points": 4,
+      "prompt": "veth-ns3 প্রান্তটা ns3 namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns3 netns ns3",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns3", "netns", "ns3"],
+        "netIfaceState": [{ "name": "veth-ns3", "context": "ns3" }]
+      }
+    },
+    {
+      "id": "t22",
+      "points": 5,
+      "prompt": "host-side veth-host3-কে br0 bridge-এর member বানাও।",
+      "answer": "ip link set veth-host3 master br0",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host3", "master", "br0"],
+        "netIfaceState": [
+          { "name": "veth-host3", "context": "host", "master": "br0" }
+        ]
+      }
+    },
+    {
+      "id": "t23",
+      "points": 4,
+      "prompt": "veth-host3 interface-টা চালু করো।",
+      "answer": "ip link set veth-host3 up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host3", "up"],
+        "netIfaceState": [
+          { "name": "veth-host3", "context": "host", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t24",
+      "points": 4,
+      "prompt": "ns3-এর ভেতরে lo interface-টা চালু করো।",
+      "answer": "ip netns exec ns3 ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns3",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [{ "name": "lo", "context": "ns3", "state": "up" }]
+      }
+    },
+    {
+      "id": "t25",
+      "points": 4,
+      "prompt": "ns3-এর veth-ns3 interface-টাও চালু করো।",
+      "answer": "ip netns exec ns3 ip link set veth-ns3 up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns3",
+          "ip",
+          "link",
+          "set",
+          "veth-ns3",
+          "up"
+        ],
+        "netIfaceState": [
+          { "name": "veth-ns3", "context": "ns3", "state": "up" }
+        ]
+      }
+    },
+    {
+      "id": "t26",
+      "points": 5,
+      "prompt": "ns3-এর veth-ns3-কে একই subnet-এ 10.70.0.13/24 ঠিকানা দাও।",
+      "answer": "ip netns exec ns3 ip addr add 10.70.0.13/24 dev veth-ns3",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "ns3",
+          "ip",
+          "addr",
+          "add",
+          "10.70.0.13/24",
+          "dev",
+          "veth-ns3"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns3",
+            "context": "ns3",
+            "hasAddress": "10.70.0.13/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t27",
+      "points": 7,
+      "section": {
+        "title": "🔁 পর্ব ৫: Full-mesh প্রমাণ করা",
+        "note": "ns1 আর ns3-এর মধ্যে কোনো সরাসরি veth pair নেই — তবুও br0-এর মাধ্যমে তারা একে অপরকে পাবে।"
+      },
+      "prompt": "ns1 থেকে ns2-তে ping করে bridge-এর মাধ্যমে connectivity যাচাই করো।",
+      "answer": "ip netns exec ns1 ping -c 3 10.70.0.12",
+      "check": {
+        "require": ["ip", "netns", "exec", "ns1", "ping", "10.70.0.12"]
+      }
+    },
+    {
+      "id": "t28",
+      "points": 8,
+      "prompt": "এবার ns1 থেকে সরাসরি ns3-তে ping করো — এদের মধ্যে কোনো সরাসরি veth pair কখনো বানানো হয়নি, শুধু br0-ই এদের সংযুক্ত করেছে।",
+      "answer": "ip netns exec ns1 ping -c 3 10.70.0.13",
+      "check": {
+        "require": ["ip", "netns", "exec", "ns1", "ping", "10.70.0.13"]
+      },
+      "hints": [
+        "ns1 আর ns3-এর মধ্যে কোনো veth pair নেই — তারা শুধু br0-এর member হওয়ার কারণেই একে অপরকে পায়, এটাই bridge-এর পুরো কথা"
+      ]
+    },
+    {
+      "id": "t29",
+      "points": 7,
+      "prompt": "বিপরীত দিক থেকেও যাচাই করো — ns3 থেকে ns1-কে ping করো।",
+      "answer": "ip netns exec ns3 ping -c 3 10.70.0.11",
+      "check": {
+        "require": ["ip", "netns", "exec", "ns3", "ping", "10.70.0.11"]
+      }
+    }
+  ]
+}

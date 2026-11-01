@@ -1,0 +1,141 @@
+{
+  "labId": "2b88357c904a8927cfb39ece",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "2b88357c904a8927cfb39ece-01",
+      "difficulty": "easy",
+      "question": "net.ipv4.ip_forward-এর ডিফল্ট মান 0 হওয়ার কারণ কী?",
+      "options": [
+        "কোনো কারণ নেই, এটা শুধু একটা random ডিফল্ট, বিশেষ কোনো নিরাপত্তা বা design সিদ্ধান্তের সাথে সম্পর্কিত না",
+        "একটা সাধারণ Linux host একাধিক interface-এর মধ্যে স্বয়ংক্রিয়ভাবে packet route করবে না — এটা administrator-কে ইচ্ছাকৃতভাবে চালু করতে হয়, নিরাপত্তার কারণে",
+        "forwarding চালু করলে CPU-তে অনেক বেশি চাপ পড়ে, তাই ডিফল্টভাবে বন্ধ রাখা হয় performance বাঁচানোর জন্য",
+        "forwarding শুধু IPv6-এর জন্য প্রযোজ্য, IPv4-তে এই setting আদৌ কোনো কাজ করে না বলে ডিফল্ট মান নিয়ে মাথা ঘামানোর দরকার নেই — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "একাধিক interface থাকলেই একটা host স্বয়ংক্রিয়ভাবে router হয়ে যাবে না — forwarding ডিফল্টভাবে বন্ধ থাকে, administrator ইচ্ছাকৃতভাবে sysctl দিয়ে চালু করে।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-02",
+      "difficulty": "easy",
+      "question": "sysctl -w net.ipv4.ip_forward=1 কমান্ডটার কাজ কী?",
+      "options": [
+        "একটা নতুন network interface তৈরি করে, যার নাম ip_forward হয় এবং সেটা সব traffic forward করে",
+        "একটা kernel runtime parameter সেট করে — এই ক্ষেত্রে, interface-এর মধ্যে packet forwarding চালু করে",
+        "সব iptables rule মুছে ফেলে এবং নতুন করে default policy বসিয়ে দেয়, forwarding-সহ প্রতিটা chain রিসেট করে",
+        "host-এর routing table সম্পূর্ণ খালি করে দেয়, যাতে forwarding করার মতো কোনো route আর অবশিষ্ট না থাকে"
+      ],
+      "answerIndex": 1,
+      "explanation": "sysctl -w একটা kernel parameter runtime-এ সেট করে। net.ipv4.ip_forward=1 মানে কার্নেল এখন থেকে এক interface থেকে আরেক interface-এ প্যাকেট forward করবে।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-03",
+      "difficulty": "easy",
+      "question": "iptables -t nat ব্যবহার করার মানে কী?",
+      "options": [
+        "-t flag দিয়ে একটা টেবিল বেছে নেওয়া হচ্ছে — এক্ষেত্রে nat টেবিল, ডিফল্ট filter টেবিল না",
+        "-t মানে target host, অর্থাৎ কোন remote server-এ rule apply হবে তা নির্দিষ্ট করা হচ্ছে — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "-t শুধু একটা verbose/debug flag, কোনো কার্যকরী পরিবর্তন করে না, শুধু আরো তথ্য দেখায়",
+        "-t দিয়ে বোঝানো হয় rule-টা temporary — reboot হলেই এটা নিজে থেকেই মুছে যাবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "iptables-এর একাধিক টেবিল আছে (filter, nat, mangle...) — -t দিয়ে কোন টেবিলে কাজ করা হচ্ছে তা বেছে নেওয়া হয়। ডিফল্ট হলো filter, NAT-এর জন্য আলাদাভাবে -t nat বলতে হয়।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-04",
+      "difficulty": "medium",
+      "question": "MASQUERADE target আর SNAT --to-source-এর মধ্যে মূল পার্থক্য কী?",
+      "options": [
+        "MASQUERADE শুধু IPv6-তে কাজ করে, SNAT শুধু IPv4-তে — দুটো সম্পূর্ণ আলাদা protocol-ভিত্তিক target",
+        "দুটোই হুবহু একই জিনিস, শুধু নাম আলাদা — কোনটা ব্যবহার করা হলো তাতে আচরণে কোনো পার্থক্যই হয় না",
+        "MASQUERADE আউটগোয়িং interface-এর বর্তমান IP স্বয়ংক্রিয়ভাবে ব্যবহার করে (dynamic address-এর জন্য উপযোগী); SNAT-এ একটা নির্দিষ্ট IP আগেই লিখে দিতে হয়",
+        "SNAT শুধু namespace-এর ভেতর থেকে চালানো যায়, MASQUERADE শুধু host-এর নিজের network-এর জন্যই সীমাবদ্ধ — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "MASQUERADE outgoing interface-এর যা-ই current IP থাকুক তাই ব্যবহার করে — DHCP বা dynamic IP-তে উপযোগী। SNAT-এ একটা fixed IP স্পষ্টভাবে বলে দিতে হয়, interface-এর address বদলালে rule-ও বদলাতে হয়।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-05",
+      "difficulty": "medium",
+      "question": "POSTROUTING chain-টা iptables-এর packet flow-তে কোথায় বসে, আর কেন MASQUERADE এখানেই রাখা হয়?",
+      "options": [
+        "সবচেয়ে প্রথমে — প্যাকেট host-এ ঢোকার সাথে সাথেই, যাতে প্রথমেই source rewrite হয়ে যায়",
+        "প্যাকেট host থেকে বের হওয়ার ঠিক আগে — তাই source address rewrite করার জন্য এটাই সঠিক জায়গা, এর পরে আর কোনো routing decision বাকি থাকে না",
+        "শুধু namespace-এর ভেতরের traffic-এর জন্য প্রযোজ্য, host-এর নিজের কোনো আউটগোয়িং traffic-এ এটা কখনো প্রভাব ফেলে না — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "POSTROUTING আসলে iptables-এর কোনো real chain না, এটা শুধু ডকুমেন্টেশনে ব্যবহৃত একটা conceptual নাম মাত্র"
+      ],
+      "answerIndex": 1,
+      "explanation": "POSTROUTING হলো শেষ ধাপ, প্যাকেট আসলেই বের হয়ে যাওয়ার ঠিক আগে। এখানে source rewrite করলে এর আগের routing decision-গুলো সঠিক (private) address দিয়েই হয়, শুধু শেষে বের হওয়ার সময় address বদলায়।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-06",
+      "difficulty": "medium",
+      "question": "শুধু ip_forward=1 করলেই কি app-ns-এর internet access পাওয়ার জন্য যথেষ্ট?",
+      "options": [
+        "হ্যাঁ, forwarding চালু হলেই সব কাজ শেষ — এর বাইরে আর কোনো configuration লাগবে না কোনো অবস্থাতেই",
+        "না — forwarding শুধু প্যাকেটকে এক interface থেকে আরেক interface-এ যেতে দেয়; private source address নিয়ে বের হওয়া প্যাকেটের উত্তর ফিরে আসার জন্য আলাদাভাবে NAT লাগবে",
+        "না, কারণ ip_forward শুধু namespace তৈরির জন্য দরকার, routing-এর সাথে এর কোনো সম্পর্কই নেই",
+        "হ্যাঁ, তবে শুধুমাত্র namespace-টা root namespace হলে — custom namespace-এর ক্ষেত্রে forwarding-এর কোনো প্রভাবই পড়ে না — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "forwarding আর NAT দুটো আলাদা সমস্যা সমাধান করে। forwarding প্যাকেটকে এগিয়ে যেতে দেয়, কিন্তু private address দিয়ে internet-এ বের হওয়া প্যাকেটের reply কখনো ফিরবে না — সেটার জন্য MASQUERADE/NAT লাগবেই।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-07",
+      "difficulty": "medium",
+      "question": "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE-তে -o eth0-এর ভূমিকা কী?",
+      "options": [
+        "শুধু eth0 দিয়ে বের হওয়া প্যাকেটের জন্যই এই rule প্রযোজ্য হবে — অন্য কোনো interface দিয়ে বের হওয়া traffic প্রভাবিত হবে না",
+        "-o eth0 মানে এই rule শুধু eth0 নামের একটা user-এর traffic-এর জন্য প্রযোজ্য, অন্য কোনো user-এর জন্য না — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "-o flag পুরোপুরি ঐচ্ছিক এবং বাদ দিলেও rule-এর আচরণে বিন্দুমাত্র কোনো পার্থক্য হয় না",
+        "eth0 এখানে শুধু একটা মন্তব্য/লেবেল হিসেবে কাজ করে, বাস্তবে কোনো interface-ই match করে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "-o <iface> (output interface) rule-টাকে নির্দিষ্ট একটা আউটগোয়িং interface-এ সীমাবদ্ধ রাখে — শুধু সেই interface দিয়ে বের হওয়া প্যাকেটে MASQUERADE প্রযোজ্য হয়।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-08",
+      "difficulty": "hard",
+      "question": "Docker-এর default bridge network-এ container-গুলো internet access পায় কীভাবে — এই lab-এর কোন দুটো concept-এর সাথে এটা মেলে?",
+      "options": [
+        "Docker আলাদা একটা custom protocol ব্যবহার করে, এই lab-এর ip_forward বা MASQUERADE-এর সাথে এর কোনো সম্পর্কই নেই",
+        "Docker প্রতিটা container-কে সরাসরি একটা পাবলিক IP বরাদ্দ করে, তাই কোনো forwarding বা NAT-এর প্রয়োজনই হয় না",
+        "Docker নিজেই docker0 bridge-এর জন্য ip_forward=1 সেট করে আর MASQUERADE rule যোগ করে — ঠিক এই lab-এ হাতে করা দুটো কাজই, স্বয়ংক্রিয়ভাবে",
+        "Docker container-গুলোর জন্য আলাদা একটা physical network card ব্যবহার করে, software-ভিত্তিক কোনো forwarding বা NAT দরকার হয় না — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Docker Engine চালু হওয়ার সময় (বা প্রথম container চালানোর সময়) ঠিক এই দুটো কাজই স্বয়ংক্রিয়ভাবে করে — ip_forward চালু করে আর docker0-এর জন্য MASQUERADE rule যোগ করে, যাতে container-গুলো internet-এ পৌঁছাতে পারে।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-09",
+      "difficulty": "hard",
+      "question": "এই simulator-এ ping দিয়ে সত্যিকারের NAT'd connectivity যাচাই করা যায় না কেন?",
+      "options": [
+        "কারণ simulator-এ ping কমান্ডটাই পুরোপুরি disabled, কোনো অবস্থাতেই চালানো যায় না",
+        "কারণ এই simulator-এ ping শুধু routing table-এ একটা matching route আছে কিনা তা দেখে — iptables/NAT state সম্পূর্ণ আলাদাভাবে, state check দিয়ে যাচাই করতে হয়",
+        "কারণ MASQUERADE rule থাকলে ping কমান্ড স্বয়ংক্রিয়ভাবে block হয়ে যায়, এটা simulator-এর একটা security feature — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "কারণ namespace-এর ভেতর থেকে ping চালানো প্রযুক্তিগতভাবে অসম্ভব, বাস্তব Linux-এও এটা কাজ করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই simulator-এ ping শুধু route lookup করে সফল হয় কিনা দেখে — iptables rule বা sysctl অনুযায়ী বাস্তব প্যাকেট ফরওয়ার্ডিং/rewrite ঘটায় না। তাই egress NAT-এর সঠিকতা যাচাই করতে হয় sysctlState আর iptablesRuleExists-এর মতো সরাসরি state check দিয়ে।"
+    },
+    {
+      "id": "2b88357c904a8927cfb39ece-10",
+      "difficulty": "hard",
+      "question": "যদি iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE রুল থাকে কিন্তু net.ipv4.ip_forward=0 হয়, তাহলে বাস্তব Linux-এ কী ঘটবে?",
+      "options": [
+        "কিছুই আটকাবে না — MASQUERADE rule একাই forwarding-এর প্রয়োজনীয়তা পুরোপুরি বাতিল করে দেয়, তাই traffic স্বাভাবিকভাবেই চলে যাবে — তবে এটা একটা অতিরিক্ত সাধারণীকরণ, যা বাস্তব আচরণকে ঠিকভাবে ব্যাখ্যা করে না",
+        "namespace থেকে আসা packet host-এর ভেতরে forward-ই হবে না, তাই POSTROUTING chain পর্যন্ত কখনো পৌঁছাবে না — NAT rule থাকা সত্ত্বেও কোনো কাজে আসবে না",
+        "প্যাকেট forward হবে ঠিকই, কিন্তু MASQUERADE rule-টা সেক্ষেত্রে DROP হিসেবে আচরণ করবে, ফলে connection silently বন্ধ হয়ে যাবে",
+        "iptables স্বয়ংক্রিয়ভাবে ip_forward=1 সেট করে দেবে, যেহেতু একটা nat rule চালু আছে, তাই এটা কোনো সমস্যাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "forwarding বন্ধ থাকলে কার্নেল প্যাকেটটাকে এক interface থেকে আরেক interface-এ পাঠানোর চেষ্টাই করবে না — POSTROUTING chain (এবং তার MASQUERADE rule) কখনো execute-ই হবে না। দুটো সেটিংসই আলাদাভাবে ঠিক থাকা জরুরি।"
+    }
+  ]
+}

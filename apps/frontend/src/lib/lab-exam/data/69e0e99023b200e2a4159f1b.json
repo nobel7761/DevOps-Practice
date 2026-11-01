@@ -1,0 +1,133 @@
+{
+  "labId": "69e0e99023b200e2a4159f1b",
+  "title": "ARP Fundamentals and Advanced Topologies with Mininet",
+  "passPercent": 95,
+  "intro": "ARP (Address Resolution Protocol) হলো IP ঠিকানা থেকে MAC ঠিকানা বের করার নিয়ম — প্রতিটা local network communication-এর ভিত্তি। প্রথম অংশে একটা সাধারণ ২-হোস্ট টপোলজিতে ARP cache নিজের চোখে দেখবে, manually control করবে। দ্বিতীয় অংশে একটা router দিয়ে দুটো আলাদা subnet যুক্ত করবে — আর দেখবে cross-subnet communication-এও কীভাবে ARP কাজ করে, প্রতিটা hop-এ।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": {
+        "title": "🏗️ পর্ব ১: সাধারণ ২-হোস্ট টপোলজি",
+        "note": "`arp_topo.py` ফাইলটা আগে থেকেই দেওয়া আছে — একটা switch, দুটো host।"
+      },
+      "prompt": "`arp_topo.py` চালিয়ে টপোলজিটা চালু করো।",
+      "answer": "sudo python3 arp_topo.py",
+      "check": { "require": ["python3", "arp_topo.py"] }
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "prompt": "h1-এর বর্তমান ARP cache দেখো — কোনো communication এখনো হয়নি, তাই এটা খালি থাকার কথা।",
+      "answer": "h1 arp -n",
+      "check": { "require": ["h1", "arp", "-n"] }
+    },
+    {
+      "id": "t03",
+      "points": 16,
+      "section": {
+        "title": "📡 ARP resolution trigger করা",
+        "note": "ping করলেই h1 প্রথমে h2-এর MAC জানতে ARP broadcast পাঠাবে।"
+      },
+      "prompt": "h1 থেকে 10.0.0.2 (h2)-এ একটা ping পাঠাও, ARP resolution শুরু করতে।",
+      "answer": "h1 ping -c1 10.0.0.2",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1", "to": "10.0.0.2", "reachable": true }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 10,
+      "prompt": "আবার h1-এর ARP cache দেখো — h2-এর MAC এখন সেখানে থাকার কথা।",
+      "answer": "h1 arp -n",
+      "check": { "require": ["h1", "arp", "-n"] }
+    },
+    {
+      "id": "t05",
+      "points": 10,
+      "section": {
+        "title": "🧹 ARP entry manage করা",
+        "note": "cache flush করলে সব dynamic entry মুছে যায়, resolution আবার নতুন করে করতে হয়।"
+      },
+      "prompt": "h1-এর ARP cache সম্পূর্ণ খালি করে দাও।",
+      "answer": "h1 ip neigh flush all",
+      "check": { "require": ["h1", "ip", "neigh", "flush", "all"] }
+    },
+    {
+      "id": "t06",
+      "points": 8,
+      "prompt": "h2-এর MAC address বের করো — static entry বসানোর জন্য এটা লাগবে।",
+      "answer": "h2 ifconfig",
+      "check": { "require": ["h2", "ifconfig"] }
+    },
+    {
+      "id": "t07",
+      "points": 14,
+      "prompt": "h1-এ একটা static ARP entry বসাও: 10.0.0.2 মানেই h2-এর MAC (00:00:00:00:00:02)।",
+      "answer": "h1 arp -s 10.0.0.2 00:00:00:00:00:02",
+      "check": {
+        "require": ["h1", "arp", "-s", "10.0.0.2", "00:00:00:00:00:02"]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "prompt": "আবার h1-এর ARP cache দেখো — static entry-টা নিশ্চিত করো।",
+      "answer": "h1 arp -n",
+      "check": { "require": ["h1", "arp", "-n"] }
+    },
+    {
+      "id": "t08b",
+      "points": 0,
+      "prompt": "একসাথে দুটো Mininet network চালানো যায় না — আগের টপোলজি থেকে বের হয়ে আসো।",
+      "answer": "exit",
+      "check": { "require": ["exit"] }
+    },
+    {
+      "id": "t09",
+      "points": 10,
+      "section": {
+        "title": "🏗️ পর্ব ২: Router সহ Advanced টপোলজি",
+        "note": "দুটো switch, চারটা host (দুই subnet-এ), আর একটা router `r1` — যার ip_forward চালু করা, আর সব host-এ default gateway সেট করা, স্ক্রিপ্টের ভেতরেই হয়ে গেছে।"
+      },
+      "prompt": "`advanced_arp_topo.py` চালিয়ে নতুন টপোলজিটা চালু করো।",
+      "answer": "sudo python3 advanced_arp_topo.py",
+      "check": { "require": ["python3", "advanced_arp_topo.py"] }
+    },
+    {
+      "id": "t10",
+      "points": 10,
+      "prompt": "h1 (10.0.1.0/24 subnet) থেকে h3 (10.0.2.1, ভিন্ন subnet)-এ ping করে cross-segment communication পরীক্ষা করো।",
+      "answer": "h1 ping -c1 10.0.2.1",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1", "to": "10.0.2.1", "reachable": true }
+        ]
+      }
+    },
+    {
+      "id": "t11",
+      "points": 0,
+      "prompt": "h1-এর ARP cache দেখো — router r1-এর (10.0.1.254) MAC এখানে থাকার কথা, h3-এর নিজের MAC না।",
+      "answer": "h1 arp -n",
+      "check": { "require": ["h1", "arp", "-n"] }
+    },
+    {
+      "id": "t12",
+      "points": 0,
+      "prompt": "r1-এর ARP cache দেখো — দুই subnet-এর হোস্টদের MAC-ই এখানে জমা হওয়ার কথা।",
+      "answer": "r1 arp -n",
+      "check": { "require": ["r1", "arp", "-n"] }
+    },
+    {
+      "id": "t13",
+      "points": 0,
+      "prompt": "h3-এর ARP cache দেখো — এর নিজের দিকের router interface-এর (10.0.2.254) MAC থাকার কথা।",
+      "answer": "h3 arp -n",
+      "check": { "require": ["h3", "arp", "-n"] }
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "labId": "69b1e4a54a49372ba7883532",
+  "title": "Conditional Statements in Bash Scripting",
+  "passPercent": 95,
+  "intro": "if/elif/else, numeric comparison, logical AND, ফাইল থাকা-না-থাকা চেক, আর বাস্তব একটা system-health script — সব এক lab-এ।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🔀 if বেসিক",
+        "note": "[ \"$num\" -gt 5 ] এর মতো test-এর ফলাফলের ওপর ভিত্তি করে if ব্লক চলবে কিনা ঠিক হয়।"
+      },
+      "prompt": "Simple-if.sh বানাও — num=10 সেট করে, num ৫-এর চেয়ে বড় হলে \"Number is greater than 5\" echo করো।",
+      "answer": "cat << EOF > Simple-if.sh\n#!/bin/bash\nnum=10\nif [ \"$num\" -gt 5 ]; then\n  echo \"Number is greater than 5\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/Simple-if.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nnum=10\nif [ \"$num\" -gt 5 ]; then\n  echo \"Number is greater than 5\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "if [ \"$num\" -gt 5 ]; then ... fi — ব্র্যাকেটের ভেতরে স্পেস অবশ্যই লাগবে।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 7,
+      "prompt": "Simple-if.sh চালাও।",
+      "answer": "bash Simple-if.sh",
+      "check": { "require": ["Simple-if.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 12,
+      "section": {
+        "title": "↔️ if-else",
+        "note": "else ব্লক দিয়ে condition মিথ্যা হলে কী হবে সেটা বলা যায়।"
+      },
+      "prompt": "if-else.sh বানাও — num=3 সেট করে, ৫-এর চেয়ে বড় হলে একরকম, না হলে অন্যরকম মেসেজ দেখাও।",
+      "answer": "cat << EOF > if-else.sh\n#!/bin/bash\nnum=3\nif [ \"$num\" -gt 5 ]; then\n  echo \"Number is greater than 5\"\nelse\n  echo \"Number is less than or equal to 5\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/if-else.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nnum=3\nif [ \"$num\" -gt 5 ]; then\n  echo \"Number is greater than 5\"\nelse\n  echo \"Number is less than or equal to 5\"\nfi"
+          }
+        ]
+      },
+      "hints": ["then আর else-এর মাঝে একটা করে echo বসবে।"]
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "prompt": "if-else.sh চালাও।",
+      "answer": "bash if-else.sh",
+      "check": { "require": ["if-else.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 14,
+      "section": {
+        "title": "🪜 if-elif-else",
+        "note": "elif দিয়ে একাধিক condition চেইন করে চেক করা যায় — প্রথম যেটা true হবে, সেটাই চলবে।"
+      },
+      "prompt": "if-elif-else.sh বানাও — num=5 সেট করে: ১০-এর বড় হলে এক মেসেজ, ঠিক ৫ হলে আরেক মেসেজ, নাহলে তৃতীয় মেসেজ দেখাও।",
+      "answer": "cat << EOF > if-elif-else.sh\n#!/bin/bash\nnum=5\nif [ \"$num\" -gt 10 ]; then\n  echo \"Number is greater than 10\"\nelif [ \"$num\" -eq 5 ]; then\n  echo \"Number is exactly 5\"\nelse\n  echo \"Number is less than 5\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/if-elif-else.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nnum=5\nif [ \"$num\" -gt 10 ]; then\n  echo \"Number is greater than 10\"\nelif [ \"$num\" -eq 5 ]; then\n  echo \"Number is exactly 5\"\nelse\n  echo \"Number is less than 5\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "elif [ \"$num\" -eq 5 ]; then — if আর else-এর মাঝখানে একাধিক elif বসানো যায়।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "if-elif-else.sh চালাও।",
+      "answer": "bash if-elif-else.sh",
+      "check": { "require": ["if-elif-else.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 14,
+      "section": {
+        "title": "➕ Logical AND",
+        "note": "দুটো [ ] test-কে && দিয়ে জোড়া দিলে, দুটোই true হলে তবেই পুরো condition true হবে।"
+      },
+      "prompt": "logical-operators.sh বানাও — cpu_usage=85, mem_usage=75, CPU_THRESHOLD=80, MEM_THRESHOLD=70 সেট করে, দুটো থ্রেশহোল্ডই পার হলে একটা CRITICAL মেসেজ দেখাও।",
+      "answer": "cat << EOF > logical-operators.sh\n#!/bin/bash\ncpu_usage=85\nmem_usage=75\nCPU_THRESHOLD=80\nMEM_THRESHOLD=70\nif [ \"$cpu_usage\" -gt \"$CPU_THRESHOLD\" ] && [ \"$mem_usage\" -gt \"$MEM_THRESHOLD\" ]; then\n  echo \"CRITICAL: Both CPU and memory are overloaded!\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/logical-operators.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncpu_usage=85\nmem_usage=75\nCPU_THRESHOLD=80\nMEM_THRESHOLD=70\nif [ \"$cpu_usage\" -gt \"$CPU_THRESHOLD\" ] && [ \"$mem_usage\" -gt \"$MEM_THRESHOLD\" ]; then\n  echo \"CRITICAL: Both CPU and memory are overloaded!\"\nfi"
+          }
+        ]
+      },
+      "hints": ["দুটো [ ] test-এর মাঝে && বসাও: [ a ] && [ b ]।"]
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "prompt": "logical-operators.sh চালাও।",
+      "answer": "bash logical-operators.sh",
+      "check": { "require": ["logical-operators.sh"] }
+    },
+    {
+      "id": "t09",
+      "points": 12,
+      "section": {
+        "title": "📁 ফাইল আছে কিনা চেক",
+        "note": "-f দিয়ে একটা path সত্যিই ফাইল হিসেবে আছে কিনা চেক করা যায়।"
+      },
+      "prompt": "file-existence-check.sh বানাও — LOG_FILE=\"app.log\" সেট করে, ফাইলটা থাকলে \"Processing app.log...\", না থাকলে \"Error: app.log not found!\" echo করো।",
+      "answer": "cat << EOF > file-existence-check.sh\n#!/bin/bash\nLOG_FILE=\"app.log\"\nif [ -f \"$LOG_FILE\" ]; then\n  echo \"Processing $LOG_FILE...\"\nelse\n  echo \"Error: $LOG_FILE not found!\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/file-existence-check.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nLOG_FILE=\"app.log\"\nif [ -f \"$LOG_FILE\" ]; then\n  echo \"Processing $LOG_FILE...\"\nelse\n  echo \"Error: $LOG_FILE not found!\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "[ -f \"$LOG_FILE\" ] — -f ফ্ল্যাগ দিয়ে ফাইল আছে কিনা চেক হয়।"
+      ]
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "prompt": "file-existence-check.sh চালাও — app.log তৈরি করোনি, তাই error মেসেজ আসবে।",
+      "answer": "bash file-existence-check.sh",
+      "check": { "require": ["file-existence-check.sh"] }
+    },
+    {
+      "id": "t11",
+      "points": 16,
+      "section": {
+        "title": "🩺 একসাথে কয়েকটা system health check",
+        "note": "একটা script-এ একাধিক if-else ব্লক পরপর বসিয়ে বাস্তব health-check script লেখা যায়।"
+      },
+      "prompt": "system_health.sh বানাও — CPU_THRESHOLD, MEM_THRESHOLD, DISK_THRESHOLD সবগুলো 80 সেট করে; cpu_usage=85, mem_usage=75, disk_usage=90 সেট করে; তিনটার প্রতিটার জন্য আলাদা if-else দিয়ে HIGH/OK মেসেজ দেখাও।",
+      "answer": "cat << EOF > system_health.sh\n#!/bin/bash\nCPU_THRESHOLD=80\nMEM_THRESHOLD=80\nDISK_THRESHOLD=80\ncpu_usage=85\nmem_usage=75\ndisk_usage=90\nif [ \"$cpu_usage\" -gt \"$CPU_THRESHOLD\" ]; then\n  echo \"CPU usage is HIGH: $cpu_usage% (Threshold: $CPU_THRESHOLD%)\"\nelse\n  echo \"CPU usage is OK: $cpu_usage%\"\nfi\nif [ \"$mem_usage\" -gt \"$MEM_THRESHOLD\" ]; then\n  echo \"Memory usage is HIGH: $mem_usage% (Threshold: $MEM_THRESHOLD%)\"\nelse\n  echo \"Memory usage is OK: $mem_usage%\"\nfi\nif [ \"$disk_usage\" -gt \"$DISK_THRESHOLD\" ]; then\n  echo \"Disk usage is HIGH: $disk_usage% (Threshold: $DISK_THRESHOLD%)\"\nelse\n  echo \"Disk usage is OK: $disk_usage%\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/system_health.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nCPU_THRESHOLD=80\nMEM_THRESHOLD=80\nDISK_THRESHOLD=80\ncpu_usage=85\nmem_usage=75\ndisk_usage=90\nif [ \"$cpu_usage\" -gt \"$CPU_THRESHOLD\" ]; then\n  echo \"CPU usage is HIGH: $cpu_usage% (Threshold: $CPU_THRESHOLD%)\"\nelse\n  echo \"CPU usage is OK: $cpu_usage%\"\nfi\nif [ \"$mem_usage\" -gt \"$MEM_THRESHOLD\" ]; then\n  echo \"Memory usage is HIGH: $mem_usage% (Threshold: $MEM_THRESHOLD%)\"\nelse\n  echo \"Memory usage is OK: $mem_usage%\"\nfi\nif [ \"$disk_usage\" -gt \"$DISK_THRESHOLD\" ]; then\n  echo \"Disk usage is HIGH: $disk_usage% (Threshold: $DISK_THRESHOLD%)\"\nelse\n  echo \"Disk usage is OK: $disk_usage%\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "তিনটা metric-এর জন্য তিনটা আলাদা if-else ব্লক — প্যাটার্নটা একই, শুধু variable আলাদা।"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 7,
+      "prompt": "system_health.sh চালাও — লক্ষ করো CPU আর Disk HIGH দেখাবে, Memory OK দেখাবে।",
+      "answer": "bash system_health.sh",
+      "check": { "require": ["system_health.sh"] }
+    }
+  ]
+}

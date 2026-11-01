@@ -11,6 +11,7 @@ import MarkCompleteButton from "@/components/shared/MarkCompleteButton";
 import ResizableSplitLayout from "@/components/shared/ResizableSplitLayout";
 import { getLabCommands } from "@/lib/data/commands";
 import type { CourseMilestone, CourseModule } from "@/lib/data/course-modules";
+import { getLabAskContext } from "@/lib/data/lab-ask-context";
 import { getLabTopicEssay } from "@/lib/data/lab-topic-essay";
 import type { LabContent } from "@/lib/data/lab-content";
 import { getLabExamSpec } from "@/lib/lab-exam/loader";
@@ -29,6 +30,8 @@ export default function LabDetailScreen({
   const commands = getLabCommands(lab.id);
   const labExamSpec = getLabExamSpec(lab.id);
   const topicEssay = getLabTopicEssay(lab.id);
+  const askContext = getLabAskContext(lab.id);
+  const askMarkdown = topicEssay?.markdown ?? lab.markdown ?? "";
 
   return (
     <div className="mx-auto w-[95%] max-w-[1920px] py-8 sm:py-12">
@@ -83,6 +86,10 @@ export default function LabDetailScreen({
                   commands={commands}
                   labExamSpec={labExamSpec}
                   topicEssayMarkdown={topicEssay?.markdown}
+                  askMarkdown={askMarkdown}
+                  siblingLabs={askContext.labs}
+                  moduleId={askContext.moduleId}
+                  hasInterview={askContext.hasInterview}
                 />
               ) : commands.length > 0 ? (
                 <LabCompanionPanelReadOnly
@@ -90,6 +97,10 @@ export default function LabDetailScreen({
                   labTitle={lab.title ?? "এই Lab"}
                   commands={commands}
                   topicEssayMarkdown={topicEssay?.markdown}
+                  askMarkdown={askMarkdown}
+                  siblingLabs={askContext.labs}
+                  moduleId={askContext.moduleId}
+                  hasInterview={askContext.hasInterview}
                 />
               ) : (
                 <div className="flex flex-col gap-4">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card, CardContent } from "@/components/shared/shadcn";
+import MarkCompleteButton from "@/components/shared/MarkCompleteButton";
 import InterviewQuestionCard from "@/components/modules/interview/InterviewQuestionCard";
 import InterviewSummary from "@/components/modules/interview/InterviewSummary";
 import type {
@@ -113,16 +114,19 @@ export default function InterviewScreen({
           <h1 className="text-xl font-bold">{spec.title}</h1>
           <p className="text-sm text-muted-foreground">AI Interview Practice</p>
         </div>
-        {!finished && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={answeredCount === 0}
-            onClick={() => setFinished(true)}
-          >
-            Finish Interview
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <MarkCompleteButton contentKey={moduleId} type="interview" />
+          {!finished && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={answeredCount === 0}
+              onClick={() => setFinished(true)}
+            >
+              Finish Interview
+            </Button>
+          )}
+        </div>
       </div>
 
       {language === "bn" && translating && !translatedQuestions && (

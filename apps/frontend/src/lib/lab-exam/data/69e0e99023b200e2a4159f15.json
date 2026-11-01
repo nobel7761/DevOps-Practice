@@ -1,0 +1,130 @@
+{
+  "labId": "69e0e99023b200e2a4159f15",
+  "title": "Layer 3 Traffic Forwarding Setup in Mininet with OpenFlow",
+  "passPercent": 95,
+  "intro": "এবার MAC-এর বদলে IP ঠিকানা আর subnet দিয়ে flow বানাবে, সাথে QoS marking (DSCP/TOS) আর port-নির্দিষ্ট ARP rule — flood না করে সরাসরি সঠিক port-এ।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": { "title": "🏗️ টপোলজি তৈরি" },
+      "prompt": "single-switch, ৩-হোস্ট টপোলজি বানাও, controller ছাড়া, সহজ MAC সহ।",
+      "answer": "sudo mn --topo=single,3 --controller=none --mac",
+      "check": { "require": ["mn", "--topo=single,3", "--controller=none"] }
+    },
+    {
+      "id": "t02",
+      "points": 20,
+      "section": {
+        "title": "🌐 Subnet-ভিত্তিক সাধারণ IP traffic",
+        "note": "পুরো 10.0.0.0/24 subnet-এর মধ্যে সব IP traffic সাধারণভাবে (normal) চলবে — এটাই baseline rule।"
+      },
+      "prompt": "একটা flow বসাও: 10.0.0.0/24 subnet থেকে একই subnet-এ যাওয়া সব IPv4 প্যাকেট normal action দিয়ে হ্যান্ডেল হোক।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,dl_type=0x800,nw_src=10.0.0.0/24,nw_dst=10.0.0.0/24,actions=normal",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": {
+              "dl_type": "0x800",
+              "nw_src": "10.0.0.0/24",
+              "nw_dst": "10.0.0.0/24"
+            },
+            "action": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 20,
+      "section": {
+        "title": "⭐ h3-এর ট্র্যাফিককে QoS priority দাও",
+        "note": "DSCP 46 (Expedited Forwarding) = TOS 184 — real-time ট্র্যাফিক (যেমন VoIP)-এর জন্য ব্যবহৃত হয়। higher priority-র rule টা আগে ম্যাচ হবে।"
+      },
+      "prompt": "h3 (10.0.0.3) থেকে আসা সব IP ট্র্যাফিকে TOS 184 marking দাও, higher priority সহ (general rule-এর চেয়ে বেশি), তারপর normal-ভাবে forward করো।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=800,dl_type=0x800,nw_src=10.0.0.3,nw_dst=10.0.0.0/24,actions=mod_nw_tos:184,normal",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": {
+              "dl_type": "0x800",
+              "nw_src": "10.0.0.3",
+              "nw_dst": "10.0.0.0/24"
+            },
+            "action": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 14,
+      "section": {
+        "title": "🎯 Flood না করে port-নির্দিষ্ট ARP",
+        "note": "বড় নেটওয়ার্কে সব port-এ ARP flood করা অপচয় — তার বদলে কোন IP-র ARP request কোন port-এ যাবে, সেটা সরাসরি নির্দিষ্ট করা ভালো।"
+      },
+      "prompt": "h1 (10.0.0.1)-এর জন্য আসা ARP request-গুলো সরাসরি port 1-এ পাঠানোর flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 arp,nw_dst=10.0.0.1,actions=output:1",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x806", "nw_dst": "10.0.0.1" },
+            "action": "output:1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 12,
+      "prompt": "একইভাবে h2 (10.0.0.2)-এর জন্য port 2-তে ARP পাঠানোর flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 arp,nw_dst=10.0.0.2,actions=output:2",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x806", "nw_dst": "10.0.0.2" },
+            "action": "output:2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 12,
+      "prompt": "একইভাবে h3 (10.0.0.3)-এর জন্য port 3-তে ARP পাঠানোর flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 arp,nw_dst=10.0.0.3,actions=output:3",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x806", "nw_dst": "10.0.0.3" },
+            "action": "output:3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 6,
+      "prompt": "h3 থেকে h1-এ ping করে পুরো সেটআপটা যাচাই করো।",
+      "answer": "h3 ping h1",
+      "check": {
+        "mininetReachable": [{ "from": "h3", "to": "h1", "reachable": true }]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "prompt": "h3 থেকে h2-তেও ping করো।",
+      "answer": "h3 ping h2",
+      "check": {
+        "mininetReachable": [{ "from": "h3", "to": "h2", "reachable": true }]
+      }
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "labId": "5f99d269a98efa347a30b1b6",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "5f99d269a98efa347a30b1b6-01",
+      "difficulty": "easy",
+      "question": "ip netns exec web ip addr show কমান্ডটা মূলত কী করে?",
+      "options": [
+        "host-এর নিজের সব IP address দেখায়, namespace নাম শুধু একটা লেবেল হিসেবে প্রিন্ট হয় আর কমান্ডের শেষে একটা warning যোগ করে, কার্যকরীভাবে কিছু বদলায় না",
+        "web namespace-এর ভেতরে ip addr show কমান্ডটা চালায়, যেন সেটা সেই namespace-এর নিজস্ব isolated পরিবেশ থেকে চালানো হচ্ছে",
+        "web নামের একটা নতুন namespace তৈরি করে, তারপর তার ঠিকানা দেখায়",
+        "web আর host — দুটো namespace-এর সব interface একসাথে মিলিয়ে একটা তালিকা দেখায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ip netns exec <ns> <command> দেওয়া command-টাকে সেই namespace-এর নিজস্ব isolated network stack-এর ভেতরে চালায় — ফলাফল সেই namespace-এর দৃষ্টিকোণ থেকেই আসে।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-02",
+      "difficulty": "easy",
+      "question": "docker exec কমান্ডের সাথে ip netns exec-এর সম্পর্ক কী?",
+      "options": [
+        "দুটো সম্পূর্ণ আলাদা, সম্পর্কহীন টুল — একটা Docker-এর নিজস্ব proprietary প্রযুক্তি, অন্যটা শুধু standalone netns-এর জন্য, কোনো namespace বা kernel-স্তরের মিল নেই এদের মধ্যে",
+        "docker exec আসলে নিচের স্তরে একই ধরনের namespace mechanism ব্যবহার করে — একটা container-এর network namespace-এর ভেতরে কমান্ড চালায়, ঠিক যেমন ip netns exec করে",
+        "docker exec শুধু ফাইল কপি করার জন্য ব্যবহৃত হয়, network namespace-এর সাথে এর কোনো সম্পর্ক নেই",
+        "ip netns exec শুধু Docker-এর ভেতরে চালানো যায়, স্বাধীনভাবে কখনো ব্যবহার করা যায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "একটা container আসলে একগুচ্ছ Linux namespace (network namespace সহ) দিয়ে তৈরি — docker exec সেই container-এর namespace-এর ভেতরে কমান্ড চালায়, যা ip netns exec-এর concept-গত সমতুল্য।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-03",
+      "difficulty": "easy",
+      "question": "web namespace-এর ভেতর থেকে plain ip addr show (কোনো netns exec ছাড়া) চালালে কী দেখাবে?",
+      "options": [
+        "web namespace-এর নিজের interface-গুলো — কারণ শেষবার netns exec ব্যবহার করা হয়েছিল বলে সেই namespace-টাই শেলের বর্তমান session-এর জন্য 'মনে' থেকে যায়, পরের কমান্ডগুলোতেও",
+        "host-এর নিজের interface-গুলো — কারণ কোনো netns exec prefix না থাকলে কমান্ডটা যেখান থেকে চালানো হচ্ছে (host) সেই namespace-এই চলে",
+        "web আর host দুটোরই সব interface একসাথে, মিলিয়ে",
+        "একটা error — netns exec prefix ছাড়া কোনো ip কমান্ডই চালানো যায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "বর্তমান namespace কোথা থেকে কমান্ড চালানো হচ্ছে তার উপর নির্ভর করে, আগের কোনো কমান্ডের উপর না — netns exec prefix ছাড়া কমান্ড সবসময় host-এর namespace-এই চলে।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-04",
+      "difficulty": "medium",
+      "question": "web namespace-এর ভেতর থেকে db-এর কোনো interface বা IP address দেখা যায় না কেন?",
+      "options": [
+        "এটা শুধু একটা permission সমস্যা — root হিসেবে চালালে web থেকেও db-এর interface দেখা যাবে",
+        "network namespace isolation kernel-স্তরে প্রয়োগ করা হয় — db-এর interface web namespace-এর জন্য আক্ষরিক অর্থেই অস্তিত্বহীন, শুধু hidden না",
+        "db-এর interface আসলে দেখা যায়, কিন্তু সেটা দেখাতে আলাদা একটা ফ্ল্যাগ লাগে",
+        "web আর db একই bridge-এ না থাকলে এমনটা হয়; bridge-এ যুক্ত করলেই একে অপরের সব interface, ঠিকানা, আর routing table একসাথে দৃশ্যমান হয়ে যাবে, আলাদা কোনো কমান্ড ছাড়াই"
+      ],
+      "answerIndex": 1,
+      "explanation": "network namespace একটা structural isolation — প্রতিটা namespace-এর নিজস্ব interface list, routing table, ARP cache থাকে। এটা কোনো access-control সমস্যা না, একটা namespace অন্যটার কনফিগারেশন সম্পর্কে কিছুই জানে না।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-05",
+      "difficulty": "medium",
+      "question": "web আর db একে অপরের ইন্টারফেস দেখতে না পারা সত্ত্বেও কীভাবে একে অপরকে ping করতে পারে?",
+      "options": [
+        "পারে না — isolation মানে কোনো ধরনের যোগাযোগই অসম্ভব, ping সবসময় ব্যর্থ হবে",
+        "isolation (একে অপরের কনফিগারেশন দেখা) আর reachability (একে অপরকে পাওয়া) দুটো আলাদা জিনিস — সঠিকভাবে wire (veth pair) করা থাকলে সংযোগ কাজ করে, যদিও কেউ কারো configuration জানে না",
+        "host স্বয়ংক্রিয়ভাবে উভয়ের হয়ে ping-এর জবাব পাঠিয়ে দেয়, আসল namespace-দুটো আসলে কখনো সরাসরি যোগাযোগ করে না — সবকিছুই host-এর নিজের kernel-এর ভেতরে একটা অদৃশ্য প্রক্সির মাধ্যমে ঘটে যায়",
+        "শুধুমাত্র root user হিসেবে চালালেই এটা সম্ভব, সাধারণ user হিসেবে কখনো সম্ভব না"
+      ],
+      "answerIndex": 1,
+      "explanation": "isolation শুধু 'অন্যের কনফিগারেশন দেখতে না পারা' বোঝায়, সংযোগ বিচ্ছিন্নতা না। veth pair দিয়ে সঠিকভাবে wire করা থাকলে দুটো namespace একে অপরের IP address জানলেই reach করতে পারে, কারো ভেতরের বিস্তারিত না জেনেই।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-06",
+      "difficulty": "medium",
+      "question": "web namespace-এর নিজস্ব routing table-এ db সম্পর্কে কী তথ্য থাকে?",
+      "options": [
+        "db-এর নাম, তার namespace ID, আর তার ভেতরের সব interface-এর একটা সম্পূর্ণ তালিকা",
+        "কিছুই না সরাসরি — শুধু নিজের directly-connected subnet-এর একটা route থাকে, যেটাতে db-এর ঠিকানাও পড়ে, কিন্তু db-কে নাম ধরে কোথাও উল্লেখ করা হয় না",
+        "db namespace-এ প্রবেশের জন্য একটা বিশেষ gateway route, যেটা kernel স্বয়ংক্রিয়ভাবে যোগ করে যখনই দুটো namespace একই veth pair দিয়ে সংযুক্ত থাকে, সেটা না থাকলে এই route তৈরিই হয় না",
+        "web-এর routing table-এ db-এর পুরো routing table-এর একটা কপি থাকে, সবসময় sync করা অবস্থায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "web শুধু নিজের directly-connected subnet-এর route জানে (যেটা তার নিজের ঠিকানা assign করার সময় স্বয়ংক্রিয়ভাবে তৈরি হয়)। db-এর অস্তিত্ব, নাম, বা routing table সম্পর্কে web-এর কোনো সরাসরি তথ্য নেই।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-07",
+      "difficulty": "medium",
+      "question": "host থেকে ip netns list চালালে কী দেখা যায়, আর এটা কার সাথে তুলনীয়?",
+      "options": [
+        "সিস্টেমে তৈরি হওয়া সব namespace-এর একটা তালিকা — docker ps কী দেখায় তার সাথে concept-গতভাবে তুলনীয়",
+        "শুধু সেই namespace-গুলো যেগুলোতে কোনো interface up আছে, বাকিগুলো বাদ দিয়ে",
+        "প্রতিটা namespace-এর ভেতরের সব প্রসেসের একটা বিস্তারিত তালিকা, PID, মেমরি ব্যবহার, CPU সময়, আর স্টার্ট টাইম সহ",
+        "শুধু সবচেয়ে সম্প্রতি তৈরি করা namespace-টার নাম, একটার বেশি কখনো দেখায় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "ip netns list host-এ তৈরি হওয়া প্রতিটা network namespace-এর নাম দেখায় — এটা docker ps-এর মতোই, যেখানে host (বা orchestrator) প্রতিটা isolated world-এর একটা flat inventory রাখতে পারে, যদিও সেই world-গুলো একে অপরকে দেখতে পায় না।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-08",
+      "difficulty": "hard",
+      "question": "web namespace-এর ভেতরে চলা একটা প্রসেস কি কখনো জানতে পারবে যে db নামে আরেকটা namespace সিস্টেমে আছে, শুধু নিজের namespace-এর ভেতর থেকে কমান্ড চালিয়ে?",
+      "options": [
+        "হ্যাঁ, ip netns list চালালেই সব namespace-এর নাম, তাদের ভেতরের interface-গুলো, আর প্রতিটার routing table একসাথে পাওয়া যাবে, কোনো namespace-এর ভেতর থেকে চালানো হলেও এই একই সম্পূর্ণ তথ্য ঠিক একইভাবে দেখা যায়, host থেকে চালানোর মতোই, কোনো পার্থক্য ছাড়াই",
+        "না — namespace list করাটাই host-level একটা অপারেশন; web-এর ভেতর থেকে চালানো কোনো কমান্ড দিয়ে অন্য namespace-এর অস্তিত্ব সম্পর্কে কিছু জানা যায় না, শুধু নিজের IP/subnet-এর মধ্যে থাকা ঠিকানায় reach করা যায়",
+        "হ্যাঁ, কিন্তু শুধু veth pair-এর অপর প্রান্তের নামটাই জানা যাবে, আর কিছু না",
+        "না, কারণ web namespace-এর ভেতরে কোনো ip কমান্ডই চালানো সম্ভব না"
+      ],
+      "answerIndex": 1,
+      "explanation": "namespace enumeration (ip netns list) host-এর দৃষ্টিভঙ্গি থেকে করা একটা অপারেশন। একটা namespace-এর ভেতরে থাকা প্রসেসের কাছে 'আর কোন namespace আছে' জানার কোনো উপায় নেই — শুধু যাদের IP address সে জানে, তাদের reach করতে পারে, এর বেশি কোনো দৃশ্যমানতা নেই।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-09",
+      "difficulty": "hard",
+      "question": "veth-web আর veth-db-র মধ্যে সংযোগ সরিয়ে নিলে (namespace থেকে বের করে host-এ ফিরিয়ে আনলে) web-এর নিজের routing table-এ কী পরিবর্তন হবে?",
+      "options": [
+        "কোনো পরিবর্তন হবে না, routing table সবসময় স্থায়ী থাকে ইন্টারফেস সরানো হলেও",
+        "veth-web-এর সাথে যুক্ত directly-connected route-টাও সরে যাবে, কারণ সেই route শুধু ওই interface-এর address থাকার কারণেই স্বয়ংক্রিয়ভাবে তৈরি হয়েছিল",
+        "web-এর routing table পুরোপুরি মুছে যাবে, lo interface-এর route সহ",
+        "db-এর routing table-ও একইসাথে পরিবর্তিত হবে, যেহেতু দুটো veth এক pair-এর অংশ ছিল, আর veth pair-এর দুই প্রান্তের routing table সবসময় একে অপরের সাথে sync থাকে"
+      ],
+      "answerIndex": 1,
+      "explanation": "directly-connected route একটা interface-এ address থাকার ফলাফল হিসেবে স্বয়ংক্রিয়ভাবে তৈরি হয় — সেই interface বা তার address সরিয়ে নিলে সংশ্লিষ্ট route-ও চলে যায়। db-এর namespace এতে প্রভাবিত হয় না, কারণ namespace-দুটো সম্পূর্ণ স্বাধীন।"
+    },
+    {
+      "id": "5f99d269a98efa347a30b1b6-10",
+      "difficulty": "hard",
+      "question": "একটা orchestrator (যেমন kubelet) একাধিক container/pod-এর network namespace পরিচালনা করার সময় মূলত কোন ক্ষমতাটার উপর নির্ভর করে?",
+      "options": [
+        "প্রতিটা namespace-এর ভেতরে একটা বিশেষ agent প্রসেস চালিয়ে রাখা, যেটা host-এর সাথে ক্রমাগত sync করে",
+        "host-এর সেই ক্ষমতা, যা দিয়ে প্রতিটা namespace একে অপরকে না দেখলেও, host নিজে ip netns exec-এর মতো mechanism দিয়ে যেকোনো namespace-এর ভেতরে কমান্ড চালাতে বা তার অবস্থা পরিদর্শন করতে পারে",
+        "প্রতিটা namespace-কে একটা centralized database-এর সাথে সরাসরি যুক্ত রাখা, যেখানে সব namespace-এর তথ্য জমা থাকে",
+        "namespace-গুলোর মধ্যে isolation সম্পূর্ণ বন্ধ করে দেওয়া, যাতে orchestrator সরাসরি সবকিছু এক জায়গা থেকে দেখতে পারে, যদিও এতে container-দের মধ্যে আর কোনোরকম নিরাপত্তা সীমানা অবশিষ্ট থাকে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "orchestrator-গুলো কোনো namespace-এর isolation ভাঙে না — বরং host-এর সেই বিশেষ সুবিধাটা ব্যবহার করে, যেটা দিয়ে প্রতিটা namespace একে অপরের থেকে অন্ধ থাকলেও, host নিজে যেকোনো namespace-এর ভেতরে কমান্ড চালিয়ে তার অবস্থা দেখতে বা পরিচালনা করতে পারে — ঠিক ip netns exec যেভাবে কাজ করে।"
+    }
+  ]
+}

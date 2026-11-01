@@ -68,4 +68,52 @@ export class AskService {
 
     return { answer };
   }
+
+  /** Same as ask(), but yields each text delta as it streams in from OpenAI (for a ChatGPT-style typing effect), then persists the full concatenated answer once the stream ends. */
+  async *streamAsk(
+    userId: string,
+    contentId: string,
+    dto: AskQuestionDto,
+  ): AsyncGenerator<string> {
+    const history = await this.getHistory(userId, contentId);
+
+    const systemPrompt = buildSystemPrompt(dto.context);
+
+    const stream = await withRetry(() =>
+      this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        stream: true,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...history.map((m) => ({ role: m.role, content: m.content })),
+          { role: 'user', content: dto.question },
+        ],
+      }),
+    );
+
+    let answer = '';
+    for await (const part of stream) {
+      const delta = part.choices[0]?.delta?.content ?? '';
+      if (delta) {
+        answer += delta;
+        yield delta;
+      }
+    }
+
+    await this.conversationModel
+      .findOneAndUpdate(
+        { userId, contentId },
+        {
+          userId,
+          contentId,
+          messages: [
+            ...history,
+            { role: 'user', content: dto.question },
+            { role: 'assistant', content: answer },
+          ],
+        },
+        { upsert: true },
+      )
+      .exec();
+  }
 }

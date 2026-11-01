@@ -1,0 +1,85 @@
+{
+  "labId": "69b1e4a54a49372ba788352a",
+  "title": "Introduction to Bash Scripting",
+  "passPercent": 95,
+  "intro": "প্রথম bash script লেখা থেকে শুরু — execute permission, shebang, আর interactive read, সব এক lab-এ।",
+  "targets": [{ "path": "~/greetings.sh", "type": "file" }],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🏗️ প্রথম script",
+        "note": "একটা shebang (#!/bin/bash) দিয়ে শুরু হওয়া ফাইলই bash script — execute করার আগে তাকে +x permission দিতে হবে।"
+      },
+      "prompt": "greetings.sh নামে একটা ফাইল বানাও যেটা \"Hello, welcome to Bash scripting Labs!\" প্রিন্ট করবে (heredoc ব্যবহার করো: cat << EOF > greetings.sh ... EOF)।",
+      "answer": "cat << EOF > greetings.sh\n#!/bin/bash\n# This script prints a greeting message\necho \"Hello, welcome to Bash scripting Labs!\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/greetings.sh",
+            "type": "file",
+            "content": "#!/bin/bash\n# This script prints a greeting message\necho \"Hello, welcome to Bash scripting Labs!\""
+          }
+        ]
+      },
+      "hints": [
+        "cat << EOF > greetings.sh দিয়ে শুরু করো, তিন লাইন লিখে শেষে EOF দাও।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 10,
+      "prompt": "greetings.sh-কে executable বানাও।",
+      "answer": "chmod +x greetings.sh",
+      "check": {
+        "require": ["chmod", "+x"],
+        "pathModes": [{ "path": "~/greetings.sh", "mode": "755" }]
+      },
+      "hints": ["chmod +x <file>"]
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "prompt": "script-টা রান করো।",
+      "answer": "./greetings.sh",
+      "check": { "require": ["./greetings.sh"] },
+      "hints": [
+        "executable script চালাতে হয় ./ প্রিফিক্স দিয়ে, কারণ current directory সাধারণত $PATH-এ থাকে না।"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 15,
+      "section": {
+        "title": "⌨️ ইউজারের input নেওয়া",
+        "note": "read কমান্ড দিয়ে script চলাকালীন টাইপ করা একটা লাইন একটা variable-এ জমা করা যায়।"
+      },
+      "prompt": "greetings.sh-টা বদলে এমন বানাও যেটা ইউজারের নাম জিজ্ঞেস করবে (echo \"Enter your name:\"), read দিয়ে name নামের variable-এ নেবে, তারপর \"Hello, $name! Welcome to Bash scripting Labs.\" প্রিন্ট করবে।",
+      "answer": "cat << EOF > greetings.sh\n#!/bin/bash\n# This script takes user input and prints a personalized greeting\n\necho \"Enter your name:\"\nread name\necho \"Hello, $name! Welcome to Bash scripting Labs.\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/greetings.sh",
+            "type": "file",
+            "content": "#!/bin/bash\n# This script takes user input and prints a personalized greeting\n\necho \"Enter your name:\"\nread name\necho \"Hello, $name! Welcome to Bash scripting Labs.\""
+          }
+        ]
+      },
+      "hints": [
+        "read name লাইনটা echo \"Enter your name:\"-এর ঠিক পরে বসবে।",
+        "পরের লাইনে $name ব্যবহার করে ইউজারের নামটা echo করো।"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 10,
+      "prompt": "আপডেট করা script-টা আবার চালাও, এবার সেটা তোমার নাম জিজ্ঞেস করবে — টাইপ করে এন্টার দাও।",
+      "answer": "./greetings.sh",
+      "check": { "require": ["./greetings.sh"] },
+      "hints": [
+        "chmod +x আগেই করা আছে, তাই আবার করার দরকার নেই — শুধু ./greetings.sh।"
+      ]
+    }
+  ]
+}

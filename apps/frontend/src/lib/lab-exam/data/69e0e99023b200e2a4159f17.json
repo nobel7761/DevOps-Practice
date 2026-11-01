@@ -1,0 +1,95 @@
+{
+  "labId": "69e0e99023b200e2a4159f17",
+  "title": "Layer 4 Traffic Forwarding Setup in Mininet with OpenFlow",
+  "passPercent": 95,
+  "intro": "এই ল্যাবে Transport layer (TCP port)-ভিত্তিক flow বানাবে — h3-তে একটা HTTP সার্ভার চালিয়ে, port 80-এ আসা সব ট্র্যাফিক নির্দিষ্টভাবে h3-তে পাঠানোর rule বসিয়ে, আর h3-এর রিপ্লাই ট্র্যাফিক ঠিকঠাক ফেরত পাঠানোর ব্যবস্থা করে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": { "title": "🏗️ টপোলজি আর সার্ভার" },
+      "prompt": "single-switch, ৩-হোস্ট টপোলজি বানাও, controller ছাড়া, সহজ MAC সহ।",
+      "answer": "sudo mn --topo=single,3 --controller=none --mac",
+      "check": { "require": ["mn", "--topo=single,3", "--controller=none"] }
+    },
+    {
+      "id": "t02",
+      "points": 12,
+      "prompt": "h3-তে port 80-এ একটা সাধারণ HTTP সার্ভার চালু করো, ব্যাকগ্রাউন্ডে।",
+      "answer": "h3 python -m SimpleHTTPServer 80 &",
+      "check": { "require": ["h3", "python", "SimpleHTTPServer", "80"] }
+    },
+    {
+      "id": "t03",
+      "points": 18,
+      "section": {
+        "title": "📡 প্রথমে ARP কাজ করতে দাও",
+        "note": "আগের ল্যাবের মতোই — ARP ছাড়া কোনো IP ট্র্যাফিকই শুরু হবে না।"
+      },
+      "prompt": "ARP প্যাকেট normal (built-in switch logic) দিয়ে হ্যান্ডেল করার flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 arp,actions=normal",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x806" },
+            "action": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 24,
+      "section": {
+        "title": "🎯 HTTP ট্র্যাফিক h3-তে পাঠাও",
+        "note": "destination port 80 (HTTP)-এ যাওয়া সব TCP প্যাকেট — উৎস যে-ই হোক — port 3 (h3)-তে পাঠাও।"
+      },
+      "prompt": "TCP প্যাকেট, destination port 80, port 3 (h3)-তে forward করার flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=500,dl_type=0x800,nw_proto=6,tp_dst=80,actions=output:3",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x800", "nw_proto": "6", "tp_dst": "80" },
+            "action": "output:3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 20,
+      "section": {
+        "title": "↩️ h3-এর রিপ্লাই ট্র্যাফিক",
+        "note": "h3-এর উত্তর তো আর destination port 80-তে যাচ্ছে না (সেটা h1-এর ephemeral port-এ) — তাই আলাদা, higher-priority rule লাগবে যা শুধু source (h3) দেখে।"
+      },
+      "prompt": "h3 (10.0.0.3) থেকে বের হওয়া সব IP ট্র্যাফিক normal-ভাবে ফরোয়ার্ড করার একটা higher-priority flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 priority=800,ip,nw_src=10.0.0.3,actions=normal",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x800", "nw_src": "10.0.0.3" },
+            "action": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 12,
+      "prompt": "h1 থেকে h3-তে একটা HTTP request পাঠিয়ে পুরো সেটআপ যাচাই করো।",
+      "answer": "h1 curl h3",
+      "check": { "require": ["curl", "h3"] }
+    },
+    {
+      "id": "t07",
+      "points": 6,
+      "prompt": "s1-এর installed flow-গুলো একবার dump করে পুরো টেবিলটা review করো।",
+      "answer": "sh ovs-ofctl dump-flows s1",
+      "check": { "require": ["ovs-ofctl", "dump-flows", "s1"] }
+    }
+  ]
+}

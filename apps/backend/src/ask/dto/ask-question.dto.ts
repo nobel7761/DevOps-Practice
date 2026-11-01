@@ -18,6 +18,10 @@ class AskLabDto {
 }
 
 class AskInterviewQuestionDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -28,6 +32,10 @@ class AskInterviewQuestionDto {
 }
 
 class AskInterviewDto {
+  @IsOptional()
+  @IsString()
+  moduleId?: string;
+
   @IsString()
   @IsNotEmpty()
   title: string;

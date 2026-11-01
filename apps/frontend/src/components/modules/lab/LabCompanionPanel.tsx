@@ -1,6 +1,11 @@
 "use client";
 
-import { BookOpenText, ListChecks, SquareTerminal } from "lucide-react";
+import {
+  BookOpenText,
+  ListChecks,
+  MessageCircleQuestion,
+  SquareTerminal,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,10 +14,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/shared/shadcn";
+import AskAiPanel from "@/components/modules/video/AskAiPanel";
 import LabExam from "@/components/shared/LabExam";
 import LabGolpoLesson from "@/components/modules/lab/LabGolpoLesson";
 import LabQuiz from "@/components/modules/lab/quiz/LabQuiz";
 import type { CommandEntry } from "@/lib/data/commands";
+import type { RelatedLab } from "@/lib/data/video-ask-context";
 import type { LabExamSpec } from "@/lib/lab-exam/types";
 
 export default function LabCompanionPanel({
@@ -21,12 +28,20 @@ export default function LabCompanionPanel({
   commands,
   labExamSpec,
   topicEssayMarkdown,
+  askMarkdown,
+  siblingLabs,
+  moduleId,
+  hasInterview,
 }: {
   labId: string;
   labTitle: string;
   commands: CommandEntry[];
   labExamSpec: LabExamSpec;
   topicEssayMarkdown?: string | null;
+  askMarkdown: string;
+  siblingLabs: RelatedLab[];
+  moduleId: string | null;
+  hasInterview: boolean;
 }) {
   return (
     <Tabs defaultValue="golpo">
@@ -52,6 +67,13 @@ export default function LabCompanionPanel({
           <SquareTerminal className="size-4" />
           Terminal
         </TabsTrigger>
+        <TabsTrigger
+          value="ask"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+        >
+          <MessageCircleQuestion className="size-4" />
+          Ask AI
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="golpo">
         <Card>
@@ -73,6 +95,20 @@ export default function LabCompanionPanel({
       </TabsContent>
       <TabsContent value="terminal">
         <LabExam spec={labExamSpec} />
+      </TabsContent>
+      <TabsContent value="ask">
+        <Card>
+          <CardContent>
+            <AskAiPanel
+              contentId={labId}
+              videoTitle={labTitle}
+              golpoMarkdown={askMarkdown}
+              labs={siblingLabs}
+              moduleId={moduleId}
+              hasInterview={hasInterview}
+            />
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );

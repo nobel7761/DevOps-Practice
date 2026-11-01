@@ -1,0 +1,310 @@
+{
+  "labId": "2b88357c904a8927cfb39ece",
+  "title": "LAB: Egress Traffic",
+  "passPercent": 95,
+  "intro": "app-ns namespace-টা এখন শুধু host-এর সাথেই কথা বলতে পারে। এবার এটাকে internet-এর মতো বাইরের কোনো destination-এও পৌঁছাতে হবে — ঠিক যেভাবে একটা Docker container তার host হয়ে internet-এ পৌঁছায়। দুটো আলাদা জিনিস লাগবে: kernel-এর packet forwarding চালু করা, আর namespace-এর traffic-কে host-এর নিজের address দিয়ে masquerade করা।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 5,
+      "section": {
+        "title": "🏗️ পর্ব ১: Namespace ও Veth তৈরি (recap)",
+        "note": "আগের lab-গুলোর মতোই — দ্রুত করো, এটা তুমি আগেও করেছ।"
+      },
+      "prompt": "app-ns নামে একটা network namespace বানাও।",
+      "answer": "ip netns add app-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "app-ns"],
+        "netnsExists": ["app-ns"]
+      }
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "prompt": "veth-host আর veth-ns নামে একজোড়া veth pair বানাও।",
+      "answer": "ip link add veth-host type veth peer name veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "link",
+          "add",
+          "veth-host",
+          "type",
+          "veth",
+          "peer",
+          "name",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-host"
+          },
+          {
+            "name": "veth-ns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 6,
+      "prompt": "veth-ns প্রান্তটা app-ns namespace-এর ভেতরে সরিয়ে নাও।",
+      "answer": "ip link set veth-ns netns app-ns",
+      "check": {
+        "require": ["ip", "link", "set", "veth-ns", "netns", "app-ns"],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "app-ns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 5,
+      "prompt": "host-এর পাশে veth-host চালু করো।",
+      "answer": "ip link set veth-host up",
+      "check": {
+        "require": ["ip", "link", "set", "veth-host", "up"],
+        "netIfaceState": [
+          {
+            "name": "veth-host",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 5,
+      "prompt": "app-ns-এর ভেতরে lo interface চালু করো।",
+      "answer": "ip netns exec app-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "lo",
+            "context": "app-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 5,
+      "prompt": "app-ns-এর ভেতরে veth-ns চালু করো।",
+      "answer": "ip netns exec app-ns ip link set veth-ns up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "link",
+          "set",
+          "veth-ns",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "app-ns",
+            "state": "up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 7,
+      "prompt": "veth-host-কে 10.30.0.1/24 ঠিকানা দাও (app-ns-এর জন্য এটাই gateway)।",
+      "answer": "ip addr add 10.30.0.1/24 dev veth-host",
+      "check": {
+        "require": ["ip", "addr", "add", "10.30.0.1/24", "dev", "veth-host"],
+        "netIfaceState": [
+          {
+            "name": "veth-host",
+            "hasAddress": "10.30.0.1/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "prompt": "app-ns-এর ভেতরে veth-ns-কে 10.30.0.100/24 ঠিকানা দাও।",
+      "answer": "ip netns exec app-ns ip addr add 10.30.0.100/24 dev veth-ns",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "addr",
+          "add",
+          "10.30.0.100/24",
+          "dev",
+          "veth-ns"
+        ],
+        "netIfaceState": [
+          {
+            "name": "veth-ns",
+            "context": "app-ns",
+            "hasAddress": "10.30.0.100/24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t09",
+      "points": 8,
+      "prompt": "app-ns-এর জন্য 10.30.0.1 (veth-host) হয়ে একটা default route সেট করো।",
+      "answer": "ip netns exec app-ns ip route add default via 10.30.0.1",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "app-ns",
+          "ip",
+          "route",
+          "add",
+          "default",
+          "via",
+          "10.30.0.1"
+        ],
+        "routeExists": [
+          {
+            "dest": "default",
+            "via": "10.30.0.1",
+            "context": "app-ns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "section": {
+        "title": "🚦 পর্ব ২: Kernel packet forwarding",
+        "note": "host দিয়ে দুইটা আলাদা interface-এর মধ্যে packet যেতে দিতে হলে এই flag লাগবেই।"
+      },
+      "prompt": "host-এ এখন packet forwarding চালু আছে কিনা দেখো।",
+      "answer": "sysctl net.ipv4.ip_forward",
+      "check": {
+        "require": ["sysctl", "net.ipv4.ip_forward"],
+        "sysctlState": [
+          {
+            "key": "net.ipv4.ip_forward",
+            "value": "0"
+          }
+        ]
+      },
+      "hints": [
+        "কার্নেলের একটা flag আছে যেটা ঠিক করে দেয় সে দুটো interface-এর মধ্যে packet forward করবে কিনা"
+      ]
+    },
+    {
+      "id": "t11",
+      "points": 9,
+      "prompt": "packet forwarding চালু করো।",
+      "answer": "sysctl -w net.ipv4.ip_forward=1",
+      "check": {
+        "require": ["sysctl", "-w", "net.ipv4.ip_forward=1"],
+        "sysctlState": [
+          {
+            "key": "net.ipv4.ip_forward",
+            "value": "1"
+          }
+        ]
+      },
+      "hints": [
+        "sysctl-এর -w flag দিয়ে একটা kernel parameter লেখা যায়, key=value আকারে"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 10,
+      "section": {
+        "title": "🔁 পর্ব ৩: Source NAT / MASQUERADE",
+        "note": "forwarding চালু থাকলেও, private address নিয়ে internet-এ বের হওয়া প্যাকেটের উত্তর কখনো ফিরে আসবে না — source address rewrite করতে হবে।"
+      },
+      "prompt": "nat টেবিলের POSTROUTING chain-এ eth0 দিয়ে বের হওয়া সব traffic-এর জন্য MASQUERADE rule যোগ করো।",
+      "answer": "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+      "check": {
+        "require": [
+          "iptables",
+          "-t",
+          "nat",
+          "-A",
+          "POSTROUTING",
+          "-o",
+          "eth0",
+          "-j",
+          "MASQUERADE"
+        ],
+        "iptablesRuleExists": [
+          {
+            "chain": "POSTROUTING",
+            "target": "MASQUERADE",
+            "outIface": "eth0"
+          }
+        ]
+      },
+      "hints": [
+        "ACCEPT/DROP-এর মতো filter table না — এবার আলাদা একটা table লাগবে, -t দিয়ে বেছে নিতে হয়",
+        "target-টার নাম MASQUERADE — dynamic/DHCP address-এর জন্য তৈরি, SNAT-এর মতো fixed IP লিখতে হয় না"
+      ]
+    },
+    {
+      "id": "t13",
+      "points": 7,
+      "section": {
+        "title": "✅ পর্ব ৪: যাচাই করা",
+        "note": "দুটো আলাদা state — forwarding আর NAT rule — দুটোই আলাদাভাবে নিশ্চিত হওয়া দরকার।"
+      },
+      "prompt": "packet forwarding এখন চালু আছে কিনা আবার নিশ্চিত হও।",
+      "answer": "sysctl net.ipv4.ip_forward",
+      "check": {
+        "require": ["sysctl", "net.ipv4.ip_forward"],
+        "sysctlState": [
+          {
+            "key": "net.ipv4.ip_forward",
+            "value": "1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t14",
+      "points": 7,
+      "prompt": "nat টেবিলের POSTROUTING chain-টা list করে MASQUERADE rule-টা দেখো।",
+      "answer": "iptables -t nat -L POSTROUTING",
+      "check": {
+        "require": ["iptables", "-t", "nat", "-L", "POSTROUTING"],
+        "iptablesRuleExists": [
+          {
+            "chain": "POSTROUTING",
+            "target": "MASQUERADE",
+            "outIface": "eth0"
+          }
+        ]
+      }
+    }
+  ]
+}

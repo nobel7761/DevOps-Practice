@@ -1,0 +1,111 @@
+{
+  "labId": "69e0e99023b200e2a4159f13",
+  "title": "Layer 2 Traffic Forwarding Setup in Mininet with OpenFlow",
+  "passPercent": 95,
+  "intro": "এই ল্যাবে MAC address দিয়ে flow rule বানাবে — ঠিক h1 থেকে h2-তে যাওয়া প্যাকেট, নির্দিষ্ট source/destination MAC মিলিয়ে। কিন্তু একটা চমক অপেক্ষা করছে: শুধু MAC-based flow বসালেই ping কাজ করবে না — কারণ ICMP যাওয়ার আগে ARP resolve হতে হয়, আর ARP (0x806) একদম আলাদা flow rule ছাড়া কখনোই পার হবে না।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": { "title": "🏗️ টপোলজি তৈরি" },
+      "prompt": "একটা single-switch, ৩-হোস্ট টপোলজি বানাও, controller ছাড়া, সহজ MAC সহ।",
+      "answer": "sudo mn --topo=single,3 --controller=none --mac",
+      "check": { "require": ["mn", "--topo=single,3", "--controller=none"] }
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "prompt": "h1-এর MAC address বের করো।",
+      "answer": "h1 ifconfig",
+      "check": { "require": ["h1", "ifconfig"] },
+      "hints": [
+        "প্রতিটা host-এ গিয়ে তাদের নিজের নেটওয়ার্ক কনফিগ দেখার কমান্ড একই।"
+      ]
+    },
+    {
+      "id": "t03",
+      "points": 16,
+      "section": {
+        "title": "🎯 MAC-based flow",
+        "note": "`--mac` দেওয়ায় h1=00:00:00:00:00:01, h2=00:00:00:00:00:02, h3=00:00:00:00:00:03 — predictable MAC।"
+      },
+      "prompt": "s1-এ একটা flow বসাও: h1 (00:00:00:00:00:01) থেকে h2 (00:00:00:00:00:02)-তে যাওয়া সব frame port 2-তে forward হোক।",
+      "answer": "sh ovs-ofctl add-flow s1 dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:02,actions=output:2",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": {
+              "dl_src": "00:00:00:00:00:01",
+              "dl_dst": "00:00:00:00:00:02"
+            },
+            "action": "output:2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 16,
+      "prompt": "উল্টো দিকেও একই রকম flow বসাও: h2 থেকে h1-এ।",
+      "answer": "sh ovs-ofctl add-flow s1 dl_src=00:00:00:00:00:02,dl_dst=00:00:00:00:00:01,actions=output:1",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": {
+              "dl_src": "00:00:00:00:00:02",
+              "dl_dst": "00:00:00:00:00:01"
+            },
+            "action": "output:1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 14,
+      "section": {
+        "title": "🤔 তবুও ping fail কেন?",
+        "note": "ICMP পাঠানোর আগে h1-কে জানতে হবে h2-এর MAC কী — এই resolution-টাই ARP, আর ARP হলো Layer 2-এর নিজস্ব একটা ভিন্ন প্যাকেট টাইপ (0x806), যা IP (0x800) থেকে একদম আলাদাভাবে match করতে হয়।"
+      },
+      "prompt": "সব host-এর মধ্যে connectivity পরীক্ষা করো — MAC flow থাকা সত্ত্বেও কী হয় দেখো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [{ "from": "h1", "to": "h2", "reachable": false }]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 20,
+      "section": {
+        "title": "📡 ARP-কে flood করার অনুমতি দাও",
+        "note": "ARP request broadcast প্যাকেট — তাই নির্দিষ্ট একটা port নয়, flood-ই স্বাভাবিক সমাধান।"
+      },
+      "prompt": "ARP request প্যাকেট (dl_type 0x806, opcode 1) সব port-এ flood করার একটা flow বসাও।",
+      "answer": "sh ovs-ofctl add-flow s1 dl_type=0x806,nw_proto=1,action=flood",
+      "check": {
+        "mininetFlowExists": [
+          {
+            "switch": "s1",
+            "match": { "dl_type": "0x806", "nw_proto": "1" },
+            "action": "flood"
+          }
+        ]
+      }
+    },
+    {
+      "id": "t07",
+      "points": 18,
+      "prompt": "আবার সব host-এর মধ্যে connectivity পরীক্ষা করো — h1↔h2 এখন কাজ করা উচিত, কিন্তু h3 (যার জন্য কোনো MAC flow নেই) এখনো বাদ পড়বে।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1", "to": "h2", "reachable": true },
+          { "from": "h1", "to": "h3", "reachable": false }
+        ]
+      }
+    }
+  ]
+}

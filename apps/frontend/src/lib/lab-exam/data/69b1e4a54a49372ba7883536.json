@@ -1,0 +1,175 @@
+{
+  "labId": "69b1e4a54a49372ba7883536",
+  "title": "Functions in Bash Scripting",
+  "passPercent": 95,
+  "intro": "function সংজ্ঞায়িত করা, argument নেওয়া, $() দিয়ে মান ফেরত পাওয়া, return code, local/global scope, আর multi-function workflow — bash function-এর সবকিছু।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🧩 প্রথম function",
+        "note": "name() { ... } — এভাবেই bash-এ একটা function সংজ্ঞায়িত হয়, যা শুধু নাম লিখলেই call হয়ে যায়।"
+      },
+      "prompt": "function_basic.sh বানাও — greet_user নামে একটা function বানাও যেটা \"Hello, User!\" echo করবে, তারপর সেটা call করো।",
+      "answer": "cat << EOF > function_basic.sh\n#!/bin/bash\ngreet_user() {\n  echo \"Hello, User!\"\n}\ngreet_user\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/function_basic.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ngreet_user() {\n  echo \"Hello, User!\"\n}\ngreet_user"
+          }
+        ]
+      },
+      "hints": [
+        "name() { ... } দিয়ে define করো, নিচে শুধু name লিখলেই call হবে।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "prompt": "function_basic.sh চালাও।",
+      "answer": "bash function_basic.sh",
+      "check": { "require": ["function_basic.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 16,
+      "section": {
+        "title": "📨 Argument আর মান ফেরত পাওয়া",
+        "note": "function-এর ভেতর $1, $2 দিয়ে argument পাওয়া যায়; echo করা মান $() দিয়ে caller-এ capture করা যায় — এটাই bash-এ \"return value\"-এর idiomatic উপায়।"
+      },
+      "prompt": "function_args.sh বানাও — sum নামে একটা function বানাও যেটা দুটো argument ($1, $2) নিয়ে local ভেরিয়েবলে রাখবে আর তাদের যোগফল echo করবে; তারপর sum 10 20 কল করে ফলাফলটা result ভেরিয়েবলে ধরে echo করো।",
+      "answer": "cat << EOF > function_args.sh\n#!/bin/bash\nsum() {\n  local num1=$1\n  local num2=$2\n  echo $((num1 + num2))\n}\nresult=$(sum 10 20)\necho \"Sum: $result\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/function_args.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nsum() {\n  local num1=$1\n  local num2=$2\n  echo $((num1 + num2))\n}\nresult=$(sum 10 20)\necho \"Sum: $result\""
+          }
+        ]
+      },
+      "hints": [
+        "function-এর ভেতর local num1=$1, local num2=$2 — এভাবে argument ধরো।",
+        "মান ফেরত পেতে: result=$(sum 10 20) — function-এর echo-করা আউটপুটটাই capture হয়ে যায়।"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 7,
+      "prompt": "function_args.sh চালাও।",
+      "answer": "bash function_args.sh",
+      "check": { "require": ["function_args.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 16,
+      "section": {
+        "title": "✅ Return code",
+        "note": "return N দিয়ে একটা exit status সেট হয় (0 = সফল), যেটা পরে $? দিয়ে caller-এ চেক করা যায় — এটা echo-করা মান থেকে আলাদা জিনিস।"
+      },
+      "prompt": "function_return.sh বানাও — check_file নামে একটা function বানাও যেটা একটা filename argument নিয়ে -f দিয়ে চেক করবে; থাকলে \"File exists: <name>\" বলে return 0, না থাকলে \"File not found: <name>\" বলে return 1 করবে। তারপর check_file \"passwd\" কল করে $? -eq 0 হলে \"File check passed!\" echo করো।",
+      "answer": "cat << EOF > function_return.sh\n#!/bin/bash\ncheck_file() {\n  if [ -f \"$1\" ]; then\n    echo \"File exists: $1\"\n    return 0\n  else\n    echo \"File not found: $1\"\n    return 1\n  fi\n}\ncheck_file \"passwd\"\nif [ $? -eq 0 ]; then\n  echo \"File check passed!\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/function_return.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncheck_file() {\n  if [ -f \"$1\" ]; then\n    echo \"File exists: $1\"\n    return 0\n  else\n    echo \"File not found: $1\"\n    return 1\n  fi\n}\ncheck_file \"passwd\"\nif [ $? -eq 0 ]; then\n  echo \"File check passed!\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "return 0 মানে সফল, return 1 মানে ব্যর্থ। caller-এ $? দিয়ে এটা চেক করা হয়।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "আগে নিশ্চিত করো সিস্টেমে একটা passwd ফাইল আছে, তারপর function_return.sh চালাও।",
+      "answer": "bash function_return.sh",
+      "check": { "require": ["function_return.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 16,
+      "section": {
+        "title": "🔭 Variable scope: local বনাম global",
+        "note": "function-এর বাইরে declare করা variable function-এর ভেতর থেকে visible, কিন্তু local দিয়ে declare করা variable function শেষ হলেই হারিয়ে যায় — বাইরে থেকে সেটা দেখা যায় না।"
+      },
+      "prompt": "variable_scope.sh বানাও — global_var=\"I am global\" সেট করো, test_scope নামে function বানাও যার ভেতরে local local_var=\"I am local\" declare করে দুটো variable-ই echo করবে; function call করার পর, function-এর বাইরে থেকেও দুটো variable echo করার চেষ্টা করো।",
+      "answer": "cat << EOF > variable_scope.sh\n#!/bin/bash\nglobal_var=\"I am global\"\ntest_scope() {\n  local local_var=\"I am local\"\n  echo \"Inside function: $local_var\"\n  echo \"Inside function: $global_var\"\n}\ntest_scope\necho \"Outside function: $local_var\"\necho \"Outside function: $global_var\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/variable_scope.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nglobal_var=\"I am global\"\ntest_scope() {\n  local local_var=\"I am local\"\n  echo \"Inside function: $local_var\"\n  echo \"Inside function: $global_var\"\n}\ntest_scope\necho \"Outside function: $local_var\"\necho \"Outside function: $global_var\""
+          }
+        ]
+      },
+      "hints": [
+        "function-এর বাইরে থেকে $local_var echo করলে খালি স্ট্রিং আসবে — local variable বাইরে কখনো visible হয় না।"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "prompt": "variable_scope.sh চালাও — লক্ষ করো বাইরে থেকে local_var খালি দেখাচ্ছে।",
+      "answer": "bash variable_scope.sh",
+      "check": { "require": ["variable_scope.sh"] }
+    },
+    {
+      "id": "t09",
+      "points": 10,
+      "section": {
+        "title": "⚙️ Multi-function workflow",
+        "note": "বড় কাজকে ছোট ছোট function-এ ভাগ করে, একটার পর একটা call করে একটা readable workflow বানানো যায়।"
+      },
+      "prompt": "app.log ফাইলে ৪ লাইনের একটা sample log লিখো — দুটো INFO আর দুটো ERROR লাইন (echo দিয়ে একাধিক লাইন একসাথে একটা ফাইলে redirect করো)।",
+      "answer": "cat << EOF > app.log\nINFO: System started\nERROR: Disk full\nINFO: Backup completed\nERROR: Network timeout\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/app.log",
+            "type": "file",
+            "content": "INFO: System started\nERROR: Disk full\nINFO: Backup completed\nERROR: Network timeout"
+          }
+        ]
+      },
+      "hints": [
+        "heredoc (cat << EOF > app.log ... EOF) দিয়ে একাধিক লাইন একসাথে লেখা যায়।"
+      ]
+    },
+    {
+      "id": "t10",
+      "points": 16,
+      "prompt": "log_processor.sh বানাও — LOG_FILE=\"app.log\" সেট করে তিনটা function বানাও: check_log (ফাইল না থাকলে error দিয়ে exit 1 করবে), process_log (grep -c দিয়ে ERROR লাইন গুনে echo করবে), archive_log (mkdir -p দিয়ে logs_archive বানিয়ে mv দিয়ে ফাইলটা সরাবে); শেষে তিনটা function-ই পরপর call করো।",
+      "answer": "cat << EOF > log_processor.sh\n#!/bin/bash\nLOG_FILE=\"app.log\"\nARCHIVE_DIR=\"logs_archive\"\ncheck_log() {\n  if [ ! -f \"$LOG_FILE\" ]; then\n    echo \"Error: $LOG_FILE not found!\"\n    exit 1\n  fi\n}\nprocess_log() {\n  local error_count=$(grep -c \"ERROR\" \"$LOG_FILE\")\n  echo \"Number of errors: $error_count\"\n}\narchive_log() {\n  mkdir -p \"$ARCHIVE_DIR\"\n  mv \"$LOG_FILE\" \"$ARCHIVE_DIR/app.log\"\n  echo \"Log archived to: $ARCHIVE_DIR/app.log\"\n}\ncheck_log\nprocess_log\narchive_log\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/log_processor.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nLOG_FILE=\"app.log\"\nARCHIVE_DIR=\"logs_archive\"\ncheck_log() {\n  if [ ! -f \"$LOG_FILE\" ]; then\n    echo \"Error: $LOG_FILE not found!\"\n    exit 1\n  fi\n}\nprocess_log() {\n  local error_count=$(grep -c \"ERROR\" \"$LOG_FILE\")\n  echo \"Number of errors: $error_count\"\n}\narchive_log() {\n  mkdir -p \"$ARCHIVE_DIR\"\n  mv \"$LOG_FILE\" \"$ARCHIVE_DIR/app.log\"\n  echo \"Log archived to: $ARCHIVE_DIR/app.log\"\n}\ncheck_log\nprocess_log\narchive_log"
+          }
+        ]
+      },
+      "hints": [
+        "check_log-এ [ ! -f \"$LOG_FILE\" ] — ! দিয়ে condition উল্টানো হয়।",
+        "process_log-এ grep -c \"ERROR\" \"$LOG_FILE\" দিয়ে ERROR লাইন গোনা যায়।",
+        "archive_log-এ mkdir -p দিয়ে directory বানাও, mv দিয়ে ফাইল সরাও।"
+      ]
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "log_processor.sh চালাও — তিনটা function-ই একে একে চলবে।",
+      "answer": "bash log_processor.sh",
+      "check": { "require": ["log_processor.sh"] }
+    }
+  ]
+}

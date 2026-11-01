@@ -70,6 +70,8 @@ function formatIsoDate(iso: string): string {
 }
 
 import type { LabExamCheck } from "./types";
+import { runBashScript, resumeBashRead } from "./bash-interpreter";
+import type { BashHost } from "./bash-interpreter";
 
 export interface AclEntry {
   kind: "u" | "g";
@@ -151,13 +153,38 @@ export interface UserRec {
   passwordSet?: boolean;
 }
 
-/** An in-progress multi-step prompt (e.g. `passwd`'s two masked entries). */
-export interface PendingInput {
-  kind: "passwd";
-  targetUser: string;
-  stage: "new" | "confirm";
-  firstValue?: string;
+/** A variable scope frame for the bash-script interpreter (see bash-interpreter.ts). */
+export interface BashScopeFrame {
+  [name: string]: {
+    kind: "scalar" | "indexed" | "assoc";
+    value?: string;
+    items?: Record<string, string>;
+    readonly?: boolean;
+    exported?: boolean;
+  };
 }
+
+/** An in-progress multi-step prompt (e.g. `passwd`'s two masked entries, or a paused `read` mid-script). */
+export type PendingInput =
+  | {
+      kind: "passwd";
+      targetUser: string;
+      stage: "new" | "confirm";
+      firstValue?: string;
+    }
+  | {
+      kind: "bash-read";
+      source: string;
+      ip: number;
+      scopes: BashScopeFrame[];
+      callStack: number[];
+      positional: string[];
+      scriptName: string;
+      varName?: string;
+      arrName?: string;
+      ifs: string;
+      randomSeed: number;
+    };
 
 /** An open `vim`/`vi`/`nano`/`visudo` session — a simplified stand-in for a real modal editor. */
 export interface PendingEditor {
@@ -213,6 +240,77 @@ export interface ShellState {
   /** fixed, pre-seeded packets tcpdump filters from — not genuinely generated traffic */
   trafficLog: PacketRecord[];
   firewall: { ufw: UfwState; iptables: IptablesState };
+  /** sysctl key -> value, e.g. { "net.ipv4.ip_forward": "0" } */
+  sysctl: Record<string, string>;
+  /** set while a `sudo mn ...` / `sudo python3 <topo-script>.py` Mininet session is open */
+  mininet?: MininetState;
+}
+
+/** One OVS flow-table entry, as parsed from an `ovs-ofctl add-flow` spec string. */
+export interface MininetFlow {
+  priority: number;
+  match: {
+    inPort?: number;
+    dlSrc?: string;
+    dlDst?: string;
+    /** "0x800" (IPv4) or "0x806" (ARP) — the `arp`/`ip` shorthand keywords normalize into this */
+    dlType?: string;
+    /** IP protocol number when dlType=0x800 (6=TCP, 1=ICMP), or ARP opcode when dlType=0x806 (1=request, 2=reply) */
+    nwProto?: number;
+    /** exact IP or CIDR */
+    nwSrc?: string;
+    /** exact IP or CIDR */
+    nwDst?: string;
+    tpDst?: number;
+  };
+  action:
+    | { kind: "output"; ports: number[] }
+    | { kind: "flood" }
+    | { kind: "normal" }
+    | { kind: "drop" };
+  /** secondary actions that don't affect delivery (e.g. `mod_nw_tos:184`) — kept only for `dump-flows` display/checks */
+  extraActions?: string[];
+  /** the flow spec exactly as typed after `add-flow <switch> `, for `dump-flows` display and loose check matching */
+  raw: string;
+}
+
+export interface MininetSwitch {
+  name: string;
+  /** "standalone" = acts as a normal L2 learning switch immediately (OVS's own default controller, or `failMode='standalone'`); "secure" = empty flow table drops everything until flows are added by hand (`--controller=none`) */
+  failMode: "standalone" | "secure";
+  flows: MininetFlow[];
+  /** port number -> node name (host or router) directly attached to this switch */
+  ports: Record<number, string>;
+}
+
+/** One IP-bearing attachment a host has to a switch (most hosts have exactly one; a router like `r1` has two). */
+export interface MininetAttachment {
+  switchName: string;
+  port: number;
+  /** CIDR, e.g. "10.0.1.1/24" — undefined for a router interface not yet configured */
+  ip?: string;
+}
+
+export interface MininetHost {
+  name: string;
+  mac: string;
+  attachments: MininetAttachment[];
+  /** gateway IP for cross-subnet traffic, set via `ip route add default via <ip>` */
+  defaultRoute?: string;
+  /** set via `sysctl -w net.ipv4.ip_forward=1` — lets this host act as a router between its attachments */
+  ipForward?: boolean;
+  arpCache: Record<string, { mac: string; static?: boolean }>;
+  /** VLAN tag (lab: Simulating VLAN Networks) — hosts with different tags can never reach each other, even on the same switch */
+  vlan?: number;
+  /** TCP port a `python -m SimpleHTTPServer <port> &` is listening on, if any */
+  servingPort?: number;
+}
+
+export interface MininetState {
+  /** which canned topology this session was built from, e.g. "single,3" | "simple_topo" | "arp_topo" | "advanced_arp_topo" | "vlan" — informational, drives `dump`/`net` headers */
+  preset: string;
+  switches: Record<string, MininetSwitch>;
+  hosts: Record<string, MininetHost>;
 }
 
 export interface NetIface {
@@ -222,6 +320,10 @@ export interface NetIface {
   mac?: string;
   /** veth partner interface name, if this is one end of a veth pair */
   peer?: string;
+  /** "bridge" for an `ip link add type bridge` device; undefined = normal/veth */
+  kind?: "bridge";
+  /** name of the bridge this interface is enslaved to, via `ip link set <iface> master <bridge>` */
+  master?: string;
 }
 
 export interface NetRoute {
@@ -280,11 +382,13 @@ export interface UfwState {
 }
 
 export interface IptablesRule {
-  target: "ACCEPT" | "DROP" | "REJECT" | "LOG";
+  target: "ACCEPT" | "DROP" | "REJECT" | "LOG" | "MASQUERADE";
   proto?: "tcp" | "udp";
   dport?: string;
   sport?: string;
   source?: string;
+  /** outgoing interface, from `-o <iface>` (used by NAT/MASQUERADE rules) */
+  outIface?: string;
   extra?: string[];
 }
 
@@ -610,6 +714,9 @@ export function createShell(): ShellState {
         },
       },
     },
+    sysctl: {
+      "net.ipv4.ip_forward": "0",
+    },
   };
   syncEtcFiles(state);
   return state;
@@ -738,6 +845,7 @@ function parseIptablesRule(tokens: Token[]): IptablesRule | null {
   let dport: string | undefined;
   let sport: string | undefined;
   let source: string | undefined;
+  let outIface: string | undefined;
   let target: IptablesRule["target"] | undefined;
   const extra: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
@@ -759,9 +867,19 @@ function parseIptablesRule(tokens: Token[]): IptablesRule | null {
       source = tokens[++i]?.text;
       continue;
     }
+    if (t.text === "-o" || t.text === "--out-interface") {
+      outIface = tokens[++i]?.text;
+      continue;
+    }
     if (t.text === "-j" || t.text === "--jump") {
       const j = tokens[++i]?.text;
-      if (j === "ACCEPT" || j === "DROP" || j === "REJECT" || j === "LOG")
+      if (
+        j === "ACCEPT" ||
+        j === "DROP" ||
+        j === "REJECT" ||
+        j === "LOG" ||
+        j === "MASQUERADE"
+      )
         target = j;
       continue;
     }
@@ -788,6 +906,7 @@ function parseIptablesRule(tokens: Token[]): IptablesRule | null {
     dport,
     sport,
     source,
+    outIface,
     extra: extra.length ? extra : undefined,
   };
 }
@@ -796,6 +915,560 @@ function parseIptablesRule(tokens: Token[]): IptablesRule | null {
 function parseSsPortFilter(expr: string): number[] {
   return [...expr.matchAll(/:(\d+)/g)].map((m) => Number(m[1]));
 }
+
+// ---------------------------------------------------------------------------
+// Mininet / Open vSwitch simulator
+//
+// A scoped, hand-rolled simulator covering exactly the topologies and
+// `ovs-ofctl`/mininet-CLI vocabulary the "Mininet" module's 8 labs use — not
+// a general SDN engine. See the 3 canned topology builders below for the
+// exact hosts/IPs/switches each preset reproduces.
+// ---------------------------------------------------------------------------
+
+/** Parses an `ovs-ofctl add-flow <switch> <SPEC>` spec string into a MininetFlow. */
+function parseOvsFlowSpec(specText: string): MininetFlow {
+  const actionsIdx = specText.search(/(?:^|,)\s*actions?=/);
+  const actionsRaw =
+    actionsIdx >= 0
+      ? specText.slice(specText.indexOf("=", actionsIdx) + 1).trim()
+      : "";
+  const matchPart = (
+    actionsIdx >= 0 ? specText.slice(0, actionsIdx) : specText
+  ).replace(/,$/, "");
+
+  const match: MininetFlow["match"] = {};
+  let priority = 32768;
+  for (const field of matchPart
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    if (field === "arp") {
+      match.dlType = "0x806";
+      continue;
+    }
+    if (field === "ip") {
+      match.dlType = "0x800";
+      continue;
+    }
+    const eq = field.indexOf("=");
+    if (eq === -1) continue;
+    const key = field.slice(0, eq);
+    const val = field.slice(eq + 1);
+    switch (key) {
+      case "priority":
+        priority = Number(val);
+        break;
+      case "in_port":
+        match.inPort = Number(val);
+        break;
+      case "dl_src":
+        match.dlSrc = val;
+        break;
+      case "dl_dst":
+        match.dlDst = val;
+        break;
+      case "dl_type":
+        match.dlType = val;
+        break;
+      case "nw_proto":
+        match.nwProto = Number(val);
+        break;
+      case "nw_src":
+        match.nwSrc = val;
+        break;
+      case "nw_dst":
+        match.nwDst = val;
+        break;
+      case "tp_dst":
+        match.tpDst = Number(val);
+        break;
+    }
+  }
+
+  let action: MininetFlow["action"] = { kind: "drop" };
+  const extraActions: string[] = [];
+  for (const tok of actionsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    if (tok === "normal") {
+      action = { kind: "normal" };
+      continue;
+    }
+    if (tok === "flood") {
+      action = { kind: "flood" };
+      continue;
+    }
+    if (tok === "drop") {
+      action = { kind: "drop" };
+      continue;
+    }
+    const outputMatch = tok.match(/^output:(\d+)$/);
+    if (outputMatch) {
+      const port = Number(outputMatch[1]);
+      if (action.kind === "output") action.ports.push(port);
+      else action = { kind: "output", ports: [port] };
+      continue;
+    }
+    // bare port number continuing a previous `output:N` token, as this
+    // course's lab text writes `actions=output:1,2` (real ovs-ofctl expects
+    // `output:1,output:2`, but we match what the labs actually show)
+    if (/^\d+$/.test(tok) && action.kind === "output") {
+      action.ports.push(Number(tok));
+      continue;
+    }
+    extraActions.push(tok);
+  }
+
+  return {
+    priority,
+    match,
+    action,
+    extraActions: extraActions.length ? extraActions : undefined,
+    raw: specText,
+  };
+}
+
+/** Renders one flow the way `ovs-ofctl dump-flows` would (loosely — close enough for a lab terminal). */
+function formatOvsFlow(f: MininetFlow): string {
+  const matchParts: string[] = [];
+  if (f.match.inPort !== undefined)
+    matchParts.push(`in_port=${f.match.inPort}`);
+  if (f.match.dlSrc) matchParts.push(`dl_src=${f.match.dlSrc}`);
+  if (f.match.dlDst) matchParts.push(`dl_dst=${f.match.dlDst}`);
+  if (f.match.dlType) matchParts.push(`dl_type=${f.match.dlType}`);
+  if (f.match.nwProto !== undefined)
+    matchParts.push(`nw_proto=${f.match.nwProto}`);
+  if (f.match.nwSrc) matchParts.push(`nw_src=${f.match.nwSrc}`);
+  if (f.match.nwDst) matchParts.push(`nw_dst=${f.match.nwDst}`);
+  if (f.match.tpDst !== undefined) matchParts.push(`tp_dst=${f.match.tpDst}`);
+  const actionStr =
+    f.action.kind === "output"
+      ? f.action.ports.map((p) => `output:${p}`).join(",")
+      : f.action.kind;
+  const actions = [...(f.extraActions ?? []), actionStr].join(",");
+  return `priority=${f.priority},${matchParts.join(",")} actions=${actions}`;
+}
+
+interface MininetPacket {
+  dlType: "0x806" | "0x800";
+  nwProto?: number;
+  nwSrc?: string;
+  nwDst?: string;
+  tpDst?: number;
+  dlSrc?: string;
+  dlDst?: string;
+}
+
+function mininetFlowMatches(
+  f: MininetFlow,
+  inPort: number,
+  pkt: MininetPacket,
+): boolean {
+  const m = f.match;
+  if (m.inPort !== undefined && m.inPort !== inPort) return false;
+  if (m.dlType !== undefined && m.dlType !== pkt.dlType) return false;
+  if (m.nwProto !== undefined && m.nwProto !== pkt.nwProto) return false;
+  if (m.dlSrc !== undefined && m.dlSrc !== pkt.dlSrc) return false;
+  if (m.dlDst !== undefined && m.dlDst !== pkt.dlDst) return false;
+  if (m.nwSrc !== undefined && pkt.nwSrc !== undefined) {
+    if (m.nwSrc.includes("/")) {
+      if (!cidrContains(m.nwSrc, pkt.nwSrc)) return false;
+    } else if (m.nwSrc !== pkt.nwSrc) return false;
+  }
+  if (m.nwDst !== undefined && pkt.nwDst !== undefined) {
+    if (m.nwDst.includes("/")) {
+      if (!cidrContains(m.nwDst, pkt.nwDst)) return false;
+    } else if (m.nwDst !== pkt.nwDst) return false;
+  }
+  if (m.tpDst !== undefined && m.tpDst !== pkt.tpDst) return false;
+  return true;
+}
+
+/**
+ * Resolves which ports a packet entering `inPort` would be delivered to.
+ * `normal` is simplified to "every other port" — a safe proxy in these
+ * labs' small (2-4 host) single-switch topologies, where a settled L2
+ * learning table and a flood are observationally identical for reachability.
+ */
+function mininetDeliver(
+  sw: MininetSwitch,
+  inPort: number,
+  pkt: MininetPacket,
+): number[] {
+  const candidates = sw.flows.filter((f) => mininetFlowMatches(f, inPort, pkt));
+  const allOtherPorts = Object.keys(sw.ports)
+    .map(Number)
+    .filter((p) => p !== inPort);
+  if (!candidates.length) {
+    // `failMode='standalone'` (or Mininet's own default controller, which
+    // we model the same way) behaves as a normal learning switch even with
+    // zero explicit flows — only `--controller=none` (failMode 'secure')
+    // genuinely drops unmatched traffic.
+    return sw.failMode === "standalone" ? allOtherPorts : [];
+  }
+  candidates.sort((a, b) => b.priority - a.priority);
+  const best = candidates[0];
+  switch (best.action.kind) {
+    case "output":
+      return best.action.ports;
+    case "flood":
+    case "normal":
+      return allOtherPorts;
+    case "drop":
+      return [];
+  }
+}
+
+/** ARP resolution (both directions) followed by IP delivery (both directions) between two ports on one switch. */
+function mininetArpAndIp(
+  sw: MininetSwitch,
+  fromPort: number,
+  toPort: number,
+  fromMac: string,
+  toMac: string,
+  fromIp: string,
+  toIp: string,
+  nwProto?: number,
+  tpDst?: number,
+): boolean {
+  const arpReq = mininetDeliver(sw, fromPort, {
+    dlType: "0x806",
+    nwProto: 1,
+    nwDst: toIp,
+    dlSrc: fromMac,
+    dlDst: "ff:ff:ff:ff:ff:ff",
+  });
+  if (!arpReq.includes(toPort)) return false;
+  const arpReply = mininetDeliver(sw, toPort, {
+    dlType: "0x806",
+    nwProto: 2,
+    nwDst: fromIp,
+    dlSrc: toMac,
+    dlDst: fromMac,
+  });
+  if (!arpReply.includes(fromPort)) return false;
+  const fwd = mininetDeliver(sw, fromPort, {
+    dlType: "0x800",
+    nwProto: nwProto ?? 1,
+    nwSrc: fromIp,
+    nwDst: toIp,
+    tpDst,
+    dlSrc: fromMac,
+    dlDst: toMac,
+  });
+  if (!fwd.includes(toPort)) return false;
+  const reply = mininetDeliver(sw, toPort, {
+    dlType: "0x800",
+    nwProto: nwProto ?? 1,
+    nwSrc: toIp,
+    nwDst: fromIp,
+    dlSrc: toMac,
+    dlDst: fromMac,
+  });
+  return reply.includes(fromPort);
+}
+
+function mininetHostIp(h: MininetHost): string | undefined {
+  return h.attachments[0]?.ip?.split("/")[0];
+}
+
+function mininetFindByAttachmentIp(
+  mn: MininetState,
+  ip: string,
+): { host: MininetHost; attachment: MininetAttachment } | null {
+  for (const host of Object.values(mn.hosts)) {
+    for (const att of host.attachments) {
+      if (att.ip && att.ip.split("/")[0] === ip)
+        return { host, attachment: att };
+    }
+  }
+  return null;
+}
+
+/**
+ * Whether `fromHostName` can reach `toHostNameOrIp` right now, given the
+ * current flow tables, VLAN tags, and (for the router topology) default
+ * routes + `ip_forward`. Used by both `ping`/`pingall`/`curl` and the
+ * `mininetReachable` spec check, so the two always agree.
+ */
+function mininetReachable(
+  mn: MininetState,
+  fromHostName: string,
+  toHostNameOrIp: string,
+  nwProto?: number,
+  tpDst?: number,
+): boolean {
+  const from = mn.hosts[fromHostName];
+  const fromAtt = from?.attachments[0];
+  if (!from || !fromAtt?.ip) return false;
+  const toIp = mn.hosts[toHostNameOrIp]
+    ? mininetHostIp(mn.hosts[toHostNameOrIp])
+    : /^\d+\.\d+\.\d+\.\d+$/.test(toHostNameOrIp)
+      ? toHostNameOrIp
+      : undefined;
+  if (!toIp) return false;
+  const found = mininetFindByAttachmentIp(mn, toIp);
+  if (!found) return false;
+  const { host: toHost, attachment: toAtt } = found;
+  if (
+    from.vlan !== undefined &&
+    toHost.vlan !== undefined &&
+    from.vlan !== toHost.vlan
+  )
+    return false;
+
+  if (cidrContains(fromAtt.ip, toIp)) {
+    const sw = mn.switches[fromAtt.switchName];
+    if (!sw || toAtt.switchName !== fromAtt.switchName) return false;
+    return mininetArpAndIp(
+      sw,
+      fromAtt.port,
+      toAtt.port,
+      from.mac,
+      toHost.mac,
+      fromAtt.ip.split("/")[0],
+      toIp,
+      nwProto,
+      tpDst,
+    );
+  }
+
+  // Different subnet — only reachable via a default-routed gateway on the
+  // same switch, which in turn must have `ip_forward` on and an egress
+  // attachment whose subnet contains the destination.
+  if (!from.defaultRoute) return false;
+  const gw = mininetFindByAttachmentIp(mn, from.defaultRoute);
+  if (!gw || gw.attachment.switchName !== fromAtt.switchName) return false;
+  const swIn = mn.switches[fromAtt.switchName];
+  if (!swIn) return false;
+  if (
+    !mininetArpAndIp(
+      swIn,
+      fromAtt.port,
+      gw.attachment.port,
+      from.mac,
+      gw.host.mac,
+      fromAtt.ip.split("/")[0],
+      from.defaultRoute,
+    )
+  )
+    return false;
+  if (!gw.host.ipForward) return false;
+  const egress = gw.host.attachments.find(
+    (a) => a.ip && a.ip !== gw.attachment.ip && cidrContains(a.ip, toIp),
+  );
+  if (!egress || egress.switchName !== toAtt.switchName) return false;
+  const swOut = mn.switches[egress.switchName];
+  if (!swOut) return false;
+  return mininetArpAndIp(
+    swOut,
+    egress.port,
+    toAtt.port,
+    gw.host.mac,
+    toHost.mac,
+    egress.ip!.split("/")[0],
+    toIp,
+    nwProto,
+    tpDst,
+  );
+}
+
+function mininetPingallOutput(mn: MininetState): string {
+  const names = Object.keys(mn.hosts).sort();
+  const lines = ["*** Ping: testing ping reachability"];
+  let total = 0;
+  let received = 0;
+  for (const from of names) {
+    const results: string[] = [];
+    for (const to of names) {
+      if (to === from) continue;
+      total++;
+      const reachable = mininetReachable(mn, from, to);
+      if (reachable) received++;
+      results.push(reachable ? to : "X");
+    }
+    lines.push(`${from} -> ${results.join(" ")} `);
+  }
+  const droppedPct =
+    total === 0 ? 0 : Math.floor(((total - received) / total) * 100);
+  lines.push(
+    `*** Results: ${droppedPct}% dropped (${received}/${total} received)`,
+  );
+  return lines.join("\n");
+}
+
+function mininetFakeMac(seq: number): string {
+  const hex = seq.toString(16).padStart(2, "0");
+  return `00:00:00:00:00:${hex}`;
+}
+
+/** `--topo=single,N --controller=none --mac`: one switch, N hosts, empty (secure) flow table. */
+function buildSingleTopo(n: number): MininetState {
+  const switches: Record<string, MininetSwitch> = {
+    s1: { name: "s1", failMode: "secure", flows: [], ports: {} },
+  };
+  const hosts: Record<string, MininetHost> = {};
+  for (let i = 1; i <= n; i++) {
+    switches.s1.ports[i] = `h${i}`;
+    hosts[`h${i}`] = {
+      name: `h${i}`,
+      mac: mininetFakeMac(i),
+      attachments: [{ switchName: "s1", port: i, ip: `10.0.0.${i}/8` }],
+      arpCache: {},
+    };
+  }
+  return { preset: `single,${n}`, switches, hosts };
+}
+
+/** `simple_topo.py`: standalone bridge `br0`, two isolated /24 subnets, no router. */
+function buildSimpleTopoPreset(): MininetState {
+  const switches: Record<string, MininetSwitch> = {
+    br0: { name: "br0", failMode: "standalone", flows: [], ports: {} },
+  };
+  const order: [string, string][] = [
+    ["h20", "192.168.1.20/24"],
+    ["h21", "192.168.1.21/24"],
+    ["h10", "192.168.0.10/24"],
+    ["h11", "192.168.0.11/24"],
+  ];
+  const hosts: Record<string, MininetHost> = {};
+  order.forEach(([name, ip], idx) => {
+    const port = idx + 1;
+    switches.br0.ports[port] = name;
+    hosts[name] = {
+      name,
+      mac: mininetFakeMac(port),
+      attachments: [{ switchName: "br0", port, ip }],
+      arpCache: {},
+    };
+  });
+  return { preset: "simple_topo", switches, hosts };
+}
+
+/** `arp_topo.py`: one switch, two hosts, Mininet's own default controller (acts as a normal switch immediately). */
+function buildArpTopoPreset(): MininetState {
+  return {
+    preset: "arp_topo",
+    switches: {
+      s1: {
+        name: "s1",
+        failMode: "standalone",
+        flows: [],
+        ports: { 1: "h1", 2: "h2" },
+      },
+    },
+    hosts: {
+      h1: {
+        name: "h1",
+        mac: mininetFakeMac(1),
+        attachments: [{ switchName: "s1", port: 1, ip: "10.0.0.1/24" }],
+        arpCache: {},
+      },
+      h2: {
+        name: "h2",
+        mac: mininetFakeMac(2),
+        attachments: [{ switchName: "s1", port: 2, ip: "10.0.0.2/24" }],
+        arpCache: {},
+      },
+    },
+  };
+}
+
+/** `advanced_arp_topo.py`: two switches, two 2-host subnets, router `r1` bridging them with ip_forward on. */
+function buildAdvancedArpTopoPreset(): MininetState {
+  return {
+    preset: "advanced_arp_topo",
+    switches: {
+      s1: {
+        name: "s1",
+        failMode: "standalone",
+        flows: [],
+        ports: { 1: "h1", 2: "h2", 3: "r1" },
+      },
+      s2: {
+        name: "s2",
+        failMode: "standalone",
+        flows: [],
+        ports: { 1: "h3", 2: "h4", 3: "r1" },
+      },
+    },
+    hosts: {
+      h1: {
+        name: "h1",
+        mac: mininetFakeMac(1),
+        attachments: [{ switchName: "s1", port: 1, ip: "10.0.1.1/24" }],
+        defaultRoute: "10.0.1.254",
+        arpCache: {},
+      },
+      h2: {
+        name: "h2",
+        mac: mininetFakeMac(2),
+        attachments: [{ switchName: "s1", port: 2, ip: "10.0.1.2/24" }],
+        defaultRoute: "10.0.1.254",
+        arpCache: {},
+      },
+      h3: {
+        name: "h3",
+        mac: mininetFakeMac(3),
+        attachments: [{ switchName: "s2", port: 1, ip: "10.0.2.1/24" }],
+        defaultRoute: "10.0.2.254",
+        arpCache: {},
+      },
+      h4: {
+        name: "h4",
+        mac: mininetFakeMac(4),
+        attachments: [{ switchName: "s2", port: 2, ip: "10.0.2.2/24" }],
+        defaultRoute: "10.0.2.254",
+        arpCache: {},
+      },
+      r1: {
+        name: "r1",
+        mac: mininetFakeMac(5),
+        attachments: [
+          { switchName: "s1", port: 3, ip: "10.0.1.254/24" },
+          { switchName: "s2", port: 3, ip: "10.0.2.254/24" },
+        ],
+        ipForward: true,
+        arpCache: {},
+      },
+    },
+  };
+}
+
+/** `simulate_vlan_network.py` + `vlanhost.py`: one switch, 2 VLANs x 2 hosts, VLAN-tagged isolation. */
+function buildVlanPreset(): MininetState {
+  const switches: Record<string, MininetSwitch> = {
+    s1: { name: "s1", failMode: "standalone", flows: [], ports: {} },
+  };
+  const hosts: Record<string, MininetHost> = {};
+  let port = 0;
+  let mac = 0;
+  for (const vlan of [100, 101]) {
+    for (let j = 1; j <= 2; j++) {
+      port++;
+      mac++;
+      const name = `h${j}_${vlan}`;
+      switches.s1.ports[port] = name;
+      hosts[name] = {
+        name,
+        mac: mininetFakeMac(mac),
+        attachments: [{ switchName: "s1", port, ip: `10.0.0.${port}0/24` }],
+        vlan,
+        arpCache: {},
+      };
+    }
+  }
+  return { preset: "vlan", switches, hosts };
+}
+
+/** Maps a topology-script filename (as typed, e.g. `python3 simple_topo.py`) to its canned preset builder. */
+const MININET_SCRIPT_PRESETS: Record<string, () => MininetState> = {
+  "simple_topo.py": buildSimpleTopoPreset,
+  "arp_topo.py": buildArpTopoPreset,
+  "advanced_arp_topo.py": buildAdvancedArpTopoPreset,
+  "simulate_vlan_network.py": buildVlanPreset,
+};
 
 /**
  * Appends a plausible SYN/SYN-ACK/ACK/data TCP handshake to `trafficLog` for
@@ -1205,7 +1878,7 @@ function expandGlob(state: ShellState, tok: Token): string[] {
  * mode bits and any named ACL entries (user entries win over group entries,
  * which win over the base group bits). root always passes.
  */
-function hasPerm(
+export function hasPerm(
   state: ShellState,
   node: FsNode,
   user: string,
@@ -1643,6 +2316,78 @@ function runAwkProgram(lines: string[], program: string, fs: string): string {
   return OUT.join("\n");
 }
 
+/* ── Tiny jq interpreter ───────────────────────────────────────────────
+ * Supports exactly the subset the jq lab teaches: `.`, dot-path navigation
+ * (`.a.b.c`), array iteration (`.a[]`, `.a[].b`), and `select(.f == "v")`
+ * chained with `|`. Not a real jq — no arithmetic, no `map`/`[...]`
+ * construction, no `-r`.
+ */
+
+/** Splits on top-level `|` (ignoring `|` inside quotes), for jq filter chains. */
+function splitJqPipe(filter: string): string[] {
+  const parts: string[] = [];
+  let cur = "";
+  let quote: string | null = null;
+  for (const c of filter) {
+    if (quote) {
+      cur += c;
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'") {
+      quote = c;
+      cur += c;
+    } else if (c === "|") {
+      parts.push(cur.trim());
+      cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+
+/** Walks a dot-path (segments like `a`, `a[]`) against a JSON value. */
+function evalJqPath(path: string, input: unknown): unknown[] {
+  if (path === "") return [input];
+  const m = path.match(/^([a-zA-Z_]\w*)(\[\])?(?:\.(.*))?$/);
+  if (!m) return [input];
+  const [, key, iterate, restPath] = m;
+  const obj =
+    input && typeof input === "object" && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : undefined;
+  const cur = obj ? obj[key] : undefined;
+  const values: unknown[] = iterate ? (Array.isArray(cur) ? cur : []) : [cur];
+  if (restPath === undefined) return values;
+  return values.flatMap((v) => evalJqPath(restPath, v));
+}
+
+/** `select(.field == "value")` — the only select form these labs use. */
+function evalJqSelect(cond: string, input: unknown): boolean {
+  const m = cond.match(/^\.([\w.]+)\s*==\s*"([^"]*)"$/);
+  if (!m) return false;
+  const [, path, expected] = m;
+  const vals = evalJqPath(path, input);
+  return vals[0] === expected;
+}
+
+function evalJqStage(stage: string, input: unknown): unknown[] {
+  if (stage === "." || stage === "") return [input];
+  const selectMatch = stage.match(/^select\((.+)\)$/);
+  if (selectMatch) return evalJqSelect(selectMatch[1], input) ? [input] : [];
+  if (stage.startsWith(".")) return evalJqPath(stage.slice(1), input);
+  return [input];
+}
+
+/** Runs a full `a | b | c` jq filter chain against parsed JSON. */
+function runJqFilter(filter: string, input: unknown): unknown[] {
+  let values: unknown[] = [input];
+  for (const stage of splitJqPipe(filter)) {
+    values = values.flatMap((v) => evalJqStage(stage, v));
+  }
+  return values;
+}
+
 function lsMetaLine(name: string, node: FsNode): string {
   const isDir = node.type === "dir";
   const perms = (isDir ? "d" : "-") + modeToRwx(nodeMode(node));
@@ -1707,6 +2452,22 @@ function extractRedirections(tokens: Token[]): { rest: Token[]; redir: Redir } {
       redir.mergeStderr = true;
       continue;
     }
+    if (t.text.startsWith("&>>")) {
+      const target = t.text.slice(3) || tokens[++i]?.text;
+      if (target) {
+        redir.stdout = { append: true, target };
+        redir.mergeStderr = true;
+      }
+      continue;
+    }
+    if (t.text.startsWith("&>")) {
+      const target = t.text.slice(2) || tokens[++i]?.text;
+      if (target) {
+        redir.stdout = { append: false, target };
+        redir.mergeStderr = true;
+      }
+      continue;
+    }
     if (t.text.startsWith("2>>")) {
       const target = t.text.slice(3) || tokens[++i]?.text;
       if (target) redir.stderrTarget = { append: true, target };
@@ -1753,6 +2514,10 @@ export function submitInput(prev: ShellState, value: string): ExecResult {
   if (!pending) return { state: prev, output: "", error: true };
 
   const state: ShellState = JSON.parse(JSON.stringify(prev));
+
+  if (pending.kind === "bash-read") {
+    return resumeBashRead(state, pending, value, bashHost);
+  }
 
   if (pending.kind === "passwd") {
     if (pending.stage === "new") {
@@ -1831,11 +2596,367 @@ export function discardEditorAndExit(prev: ShellState): ExecResult {
  * each stage's stdout becomes the next stage's stdin (as plain text; stages
  * that don't accept stdin just ignore it, matching real shell behavior).
  */
-export function execute(prev: ShellState, input: string): ExecResult {
+/** Real Mininet/ifconfig-style textual listing of one host's interface(s). */
+function mininetIfconfigOutput(h: MininetHost): string {
+  return h.attachments
+    .map((att, idx) => {
+      const ifName = h.vlan
+        ? `${h.name}-eth0.${h.vlan}`
+        : `${h.name}-eth${idx}`;
+      if (!att.ip) return `${ifName}   Link encap:Ethernet  HWaddr ${h.mac}`;
+      const [ip, prefix] = att.ip.split("/");
+      const net = cidrNetwork(att.ip).split("/")[0];
+      const netParts = net.split(".").map(Number);
+      const bcast = `${netParts[0]}.${netParts[1]}.${netParts[2]}.255`;
+      return (
+        `${ifName}   Link encap:Ethernet  HWaddr ${h.mac}\n` +
+        `          inet addr:${ip}  Bcast:${bcast}  Mask:255.255.255.0 (/${prefix})\n` +
+        `          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1`
+      );
+    })
+    .join("\n");
+}
+
+function mininetArpTableOutput(h: MininetHost): string {
+  const lines = [
+    "Address                  HWtype  HWaddress           Flags Mask            Iface",
+  ];
+  for (const [ip, entry] of Object.entries(h.arpCache)) {
+    lines.push(
+      `${ip.padEnd(25)}ether   ${entry.mac}   ${entry.static ? "CM" : "C "}                     ${h.name}-eth0`,
+    );
+  }
+  return lines.join("\n");
+}
+
+function mininetSinglePing(
+  mn: MininetState,
+  fromHostName: string,
+  target: string,
+  count: number,
+): { output: string; reachable: boolean } {
+  const from = mn.hosts[fromHostName];
+  const toIp = mn.hosts[target] ? mininetHostIp(mn.hosts[target]) : target;
+  const reachable = mininetReachable(mn, fromHostName, target);
+  if (reachable && toIp) {
+    // ARP now resolved — record it, same as the real thing would
+    const found = mininetFindByAttachmentIp(mn, toIp);
+    if (found) from.arpCache[toIp] = { mac: found.host.mac };
+    const lines = [`PING ${toIp} (${toIp}) 56(84) bytes of data.`];
+    for (let i = 1; i <= count; i++) {
+      lines.push(
+        `64 bytes from ${toIp}: icmp_seq=${i} ttl=64 time=0.0${i}0 ms`,
+      );
+    }
+    lines.push(`--- ${toIp} ping statistics ---`);
+    lines.push(
+      `${count} packets transmitted, ${count} received, 0% packet loss, time ${count}ms`,
+    );
+    return { output: lines.join("\n"), reachable: true };
+  }
+  const dest = toIp ?? target;
+  const lines = [`PING ${dest} (${dest}) 56(84) bytes of data.`];
+  for (let i = 1; i <= count; i++) {
+    lines.push(
+      `From ${mininetHostIp(from) ?? ""} icmp_seq=${i} Destination Host Unreachable`,
+    );
+  }
+  lines.push(`--- ${dest} ping statistics ---`);
+  lines.push(
+    `${count} packets transmitted, 0 received, +${count} errors, 100% packet loss, time ${count}ms`,
+  );
+  return { output: lines.join("\n"), reachable: false };
+}
+
+/** Dispatches one `<hostname> <command...>` line typed inside the Mininet CLI. */
+function executeMininetHostCommand(
+  state: ShellState,
+  mn: MininetState,
+  hostName: string,
+  tokens: Token[],
+): ExecResult {
+  const host = mn.hosts[hostName];
+  const cmd = tokens[0]?.text ?? "";
+  const rest = tokens.slice(1);
+  const ok = (output = ""): ExecResult => ({ state, output, error: false });
+  const fail = (output: string): ExecResult => ({ state, output, error: true });
+
+  if (cmd === "ifconfig") return ok(mininetIfconfigOutput(host));
+
+  if (cmd === "ping") {
+    const cIdx = rest.findIndex((t) => !t.quoted && t.text === "-c");
+    const count = cIdx >= 0 ? Number(rest[cIdx + 1]?.text) || 1 : 4;
+    const target = rest.find(
+      (t, i) =>
+        (t.quoted || !t.text.startsWith("-")) && (cIdx < 0 || i !== cIdx + 1),
+    )?.text;
+    if (!target) return fail("usage: ping [-c count] <destination>");
+    const { output, reachable } = mininetSinglePing(
+      mn,
+      hostName,
+      target,
+      count,
+    );
+    return reachable ? ok(output) : fail(output);
+  }
+
+  if (cmd === "curl") {
+    const target = rest.find((t) => t.quoted || !t.text.startsWith("-"))?.text;
+    if (!target) return fail("usage: curl <destination>");
+    const toHost = mn.hosts[target];
+    const toIp = toHost ? mininetHostIp(toHost) : target;
+    if (
+      toHost &&
+      toHost.servingPort &&
+      mininetReachable(mn, hostName, target, 6, toHost.servingPort)
+    ) {
+      return ok(
+        "<!DOCTYPE html>\n<html>\n<head><title>Directory listing</title></head>\n<body><h1>Directory listing</h1></body>\n</html>",
+      );
+    }
+    return fail(
+      `curl: (7) Failed to connect to ${toIp ?? target} port 80: Connection timed out`,
+    );
+  }
+
+  if (cmd === "arp") {
+    if (rest[0]?.text === "-n" || rest.length === 0) {
+      return ok(mininetArpTableOutput(host));
+    }
+    if (rest[0]?.text === "-s") {
+      const ip = rest[1]?.text;
+      const mac = rest[2]?.text;
+      if (!ip || !mac) return fail("usage: arp -s <ip> <mac>");
+      host.arpCache[ip] = { mac, static: true };
+      return ok();
+    }
+    return fail(`arp: unsupported invocation`);
+  }
+
+  if (cmd === "ip") {
+    const action = rest[0]?.text;
+    if (action === "neigh" && rest[1]?.text === "flush") {
+      host.arpCache = {};
+      return ok();
+    }
+    if (
+      action === "route" &&
+      rest[1]?.text === "add" &&
+      rest[2]?.text === "default"
+    ) {
+      const via =
+        rest[rest.findIndex((t) => !t.quoted && t.text === "via") + 1]?.text;
+      if (!via) return fail("usage: ip route add default via <ip>");
+      host.defaultRoute = via;
+      return ok();
+    }
+    if (action === "addr" || action === "a")
+      return ok(mininetIfconfigOutput(host));
+    return fail(`ip: unsupported invocation inside mininet`);
+  }
+
+  if (cmd.startsWith(`${hostName}-eth`)) {
+    // `r1.cmd('ifconfig r1-eth0 10.0.1.254/24')`-style direct interface
+    // assignment, typed interactively — accept but this is already baked
+    // into the router preset, so just acknowledge.
+    return ok();
+  }
+
+  if (cmd === "python" || cmd === "python3") {
+    const mIdx = rest.findIndex((t) => !t.quoted && t.text === "-m");
+    const mod = mIdx >= 0 ? rest[mIdx + 1]?.text : undefined;
+    if (mod === "SimpleHTTPServer" || mod === "http.server") {
+      const portTok = rest[mIdx + 2];
+      host.servingPort =
+        portTok && !portTok.quoted && !portTok.text.startsWith("-")
+          ? Number(portTok.text)
+          : 8000;
+      return ok(`Serving HTTP on 0.0.0.0 port ${host.servingPort} ...`);
+    }
+    return fail("python: unsupported invocation inside mininet");
+  }
+
+  if (cmd === "sysctl") {
+    const kv = rest.find((t) => !t.quoted && t.text.includes("="));
+    if (kv) {
+      const [key, value] = kv.text.split("=");
+      if (key === "net.ipv4.ip_forward") host.ipForward = value === "1";
+      return ok(`${key} = ${value}`);
+    }
+    return fail("usage: sysctl -w <key>=<value>");
+  }
+
+  return fail(`${hostName}: ${cmd}: command not found`);
+}
+
+/** Handles `ovs-ofctl <verb> <switch> [spec]`, invoked inside mininet via `sh ovs-ofctl ...`. */
+function executeOvsOfctl(
+  state: ShellState,
+  mn: MininetState,
+  tokens: Token[],
+): ExecResult {
+  const ok = (output = ""): ExecResult => ({ state, output, error: false });
+  const fail = (output: string): ExecResult => ({ state, output, error: true });
+  // `ovs-ofctl [-t nat-style flags ignored] <verb> <switch> [rest...]`
+  const verb = tokens[0]?.text;
+  const switchName = tokens[1]?.text;
+  const sw = switchName ? mn.switches[switchName] : undefined;
+  if (!sw) return fail(`ovs-ofctl: ${switchName}: no such switch`);
+
+  if (verb === "add-flow") {
+    const specText = tokens
+      .slice(2)
+      .map((t) => t.text)
+      .join(" ")
+      .replace(/\s*,\s*/g, ",");
+    if (!specText) return fail("usage: ovs-ofctl add-flow <switch> <spec>");
+    const flow = parseOvsFlowSpec(specText);
+    // real `add-flow` modifies an existing flow with the same match+priority
+    // in place rather than adding a duplicate entry
+    const existingIdx = sw.flows.findIndex(
+      (f) =>
+        f.priority === flow.priority &&
+        JSON.stringify(f.match) === JSON.stringify(flow.match),
+    );
+    if (existingIdx >= 0) sw.flows[existingIdx] = flow;
+    else sw.flows.push(flow);
+    return ok();
+  }
+  if (verb === "del-flows") {
+    sw.flows = [];
+    return ok();
+  }
+  if (verb === "dump-flows") {
+    return ok(sw.flows.map(formatOvsFlow).join("\n"));
+  }
+  if (verb === "show") {
+    const portLines = Object.entries(sw.ports)
+      .map(
+        ([port, node]) =>
+          `  ${port}(${sw.name}-eth${port}): connected to ${node}`,
+      )
+      .join("\n");
+    return ok(
+      `OFPT_FEATURES_REPLY: dpid:${sw.name}\nn_tables:254, n_buffers:0\n${portLines}`,
+    );
+  }
+  return fail(`ovs-ofctl: unsupported verb "${verb}"`);
+}
+
+/** Entry point for every line typed while a Mininet CLI session (`state.mininet`) is open. */
+function executeMininetLine(prev: ShellState, input: string): ExecResult {
+  const state: ShellState = JSON.parse(JSON.stringify(prev));
+  const mn = state.mininet!;
+  let rawToks = tokenize(input.trim());
+  if (!rawToks)
+    return {
+      state: prev,
+      output: "bash: syntax error: unclosed quote",
+      error: true,
+    };
+  if (
+    rawToks.length &&
+    !rawToks[rawToks.length - 1].quoted &&
+    rawToks[rawToks.length - 1].text === "&"
+  ) {
+    rawToks = rawToks.slice(0, -1);
+  }
+  if (!rawToks.length) return { state, output: "", error: false };
+  const cmd = rawToks[0].text;
+  const rest = rawToks.slice(1);
+
+  if (cmd === "exit") {
+    state.mininet = undefined;
+    return { state, output: "", error: false };
+  }
+  if (cmd === "pingall") {
+    return { state, output: mininetPingallOutput(mn), error: false };
+  }
+  if (cmd === "nodes") {
+    const names = [
+      ...Object.keys(mn.hosts),
+      ...Object.keys(mn.switches),
+    ].sort();
+    return {
+      state,
+      output: `available nodes are: \n${names.join(" ")}`,
+      error: false,
+    };
+  }
+  if (cmd === "net") {
+    const lines: string[] = [];
+    for (const h of Object.values(mn.hosts)) {
+      const parts = h.attachments.map(
+        (a, i) => `${h.name}-eth${i}:${a.switchName}-eth${a.port}`,
+      );
+      lines.push(`${h.name} ${parts.join(" ")}`);
+    }
+    for (const sw of Object.values(mn.switches)) {
+      const parts = Object.entries(sw.ports).map(
+        ([port, node]) => `${sw.name}-eth${port}:${node}-eth0`,
+      );
+      lines.push(`${sw.name} lo:  ${parts.join(" ")}`);
+    }
+    return { state, output: lines.join("\n"), error: false };
+  }
+  if (cmd === "dump") {
+    const lines: string[] = [];
+    for (const h of Object.values(mn.hosts)) {
+      const ip = mininetHostIp(h) ?? "None";
+      lines.push(`<Host ${h.name}: ${h.name}-eth0:${ip} pid=1000>`);
+    }
+    for (const sw of Object.values(mn.switches)) {
+      lines.push(`<OVSSwitch ${sw.name}: lo:127.0.0.1 pid=2000>`);
+    }
+    return { state, output: lines.join("\n"), error: false };
+  }
+  if (cmd === "links") {
+    const lines = Object.values(mn.hosts).map(
+      (h) =>
+        `${h.name}-eth0<->${h.attachments[0].switchName}-eth${h.attachments[0].port} (OK OK)`,
+    );
+    return { state, output: lines.join("\n"), error: false };
+  }
+  if (cmd === "sh") {
+    const shTokens = rest;
+    if (shTokens[0]?.text === "ovs-ofctl") {
+      return executeOvsOfctl(state, mn, shTokens.slice(1));
+    }
+    return { state, output: "", error: false };
+  }
+  if (mn.hosts[cmd]) {
+    return executeMininetHostCommand(state, mn, cmd, rest);
+  }
+  return {
+    state,
+    output: `*** Unknown command: '${input.trim()}'`,
+    error: true,
+  };
+}
+
+export function execute(
+  prev: ShellState,
+  input: string,
+  initialStdin?: string,
+): ExecResult {
+  // While a Mininet CLI session is open, every typed line is a mininet-CLI
+  // command (`h1 ping h2`, `pingall`, `sh ovs-ofctl ...`, `exit`, ...), not a
+  // regular host shell command — route it to the dedicated dispatcher first.
+  if (prev.mininet) return executeMininetLine(prev, input);
+  // A typed heredoc (`cmd << EOF ... EOF`) spans multiple source lines and
+  // can't be expressed as a single tokenize()-able command — hand the whole
+  // thing to the bash-script interpreter, which understands heredoc bodies.
+  // (A newline alone isn't enough to trigger this: existing specs/tests
+  // embed literal "\n"s inside a single quoted argument, e.g.
+  // `echo '<multi-line>' > file.yaml`, which must keep working as one
+  // ordinary single-line command.)
+  if (/<<(?!<)-?\s*['"]?\w+['"]?/.test(input)) {
+    return runBashScript(prev, input, [], "bash", bashHost);
+  }
   const stages = splitPipeline(input);
-  if (stages.length <= 1) return executeOne(prev, input);
+  if (stages.length <= 1) return executeOne(prev, input, initialStdin);
   let state = prev;
-  let stdinText: string | undefined = undefined;
+  let stdinText: string | undefined = initialStdin;
   let last: ExecResult = { state: prev, output: "", error: false };
   for (const stage of stages) {
     last = executeOne(state, stage, stdinText);
@@ -1845,6 +2966,15 @@ export function execute(prev: ShellState, input: string): ExecResult {
   }
   return last;
 }
+
+/** Dependency-injection bundle handed to the bash-script interpreter — see bash-interpreter.ts. */
+const bashHost: BashHost = {
+  execute,
+  resolvePath,
+  hasPerm,
+  currentUser,
+  nodeMode,
+};
 
 /** Executes one non-piped command line. Never mutates the given state. */
 function executeOne(
@@ -1980,6 +3110,40 @@ function executeOne(
         return fail(`bash: ${redir.stdinFile}: No such file or directory`);
       stdinText = node.content ?? "";
     }
+  }
+
+  // `bash <file> [args...]` / `./<file> [args...]` — run a real bash script
+  // through the dedicated interpreter (bash-interpreter.ts), not the
+  // single-command switch below.
+  if (cmd === "bash" && rest.length && rest[0].text !== "-c") {
+    const scriptRaw = rest[0].text;
+    const scriptArgs = rest.slice(1).map((t) => t.text);
+    const abs = resolvePath(state.cwd, scriptRaw);
+    const node = state.fs[abs];
+    if (!node) return fail(`bash: ${scriptRaw}: No such file or directory`);
+    if (node.type === "dir") return fail(`bash: ${scriptRaw}: Is a directory`);
+    return runBashScript(
+      state,
+      node.content ?? "",
+      scriptArgs,
+      scriptRaw,
+      bashHost,
+    );
+  }
+  if (cmd.startsWith("./")) {
+    const abs = resolvePath(state.cwd, cmd);
+    const node = state.fs[abs];
+    if (!node) return fail(`bash: ${cmd}: No such file or directory`);
+    if (node.type === "dir") return fail(`bash: ${cmd}: Is a directory`);
+    // Unlike read/write, the kernel still requires *some* execute bit to
+    // run a file directly (`./foo`) even for root — root only bypasses the
+    // owner/group/other permission check, not the "is this executable at
+    // all" one.
+    const mode = nodeMode(node);
+    const hasAnyExecBit = [0, 1, 2].some((i) => Number(mode[i]) & 1);
+    if (!hasAnyExecBit) return fail(`bash: ${cmd}: Permission denied`);
+    const scriptArgs = rest.map((t) => t.text);
+    return runBashScript(state, node.content ?? "", scriptArgs, cmd, bashHost);
   }
 
   switch (cmd) {
@@ -2779,6 +3943,14 @@ function executeOne(
     }
 
     case "python3": {
+      const scriptName = rest[0]?.text;
+      const presetBuilder = scriptName
+        ? MININET_SCRIPT_PRESETS[scriptName]
+        : undefined;
+      if (presetBuilder) {
+        state.mininet = presetBuilder();
+        return ok("*** Starting CLI:");
+      }
       const mIdx = rest.findIndex((t) => !t.quoted && t.text === "-m");
       const mod = mIdx >= 0 ? rest[mIdx + 1]?.text : undefined;
       if (mod === "http.server") {
@@ -2801,6 +3973,17 @@ function executeOne(
         );
       }
       return fail(`python3: unsupported invocation`);
+    }
+
+    case "mn": {
+      const topoVal = rest
+        .find((t) => !t.quoted && t.text.startsWith("--topo="))
+        ?.text.slice("--topo=".length);
+      const m = topoVal?.match(/^single,(\d+)$/);
+      if (!m)
+        return fail(`mn: unsupported --topo (only single,N is simulated)`);
+      state.mininet = buildSingleTopo(Number(m[1]));
+      return ok("*** Starting CLI:");
     }
 
     case "ss": {
@@ -3333,6 +4516,27 @@ function executeOne(
       return ok(lines.join("\n"));
     }
 
+    case "sysctl": {
+      const writeFlag = rest.some((t) => !t.quoted && t.text === "-w");
+      const kv = rest.find((t) => !t.quoted && t.text.includes("="));
+      if (kv) {
+        const [key, value] = kv.text.split("=");
+        if (!key || value === undefined)
+          return fail(`sysctl: error parsing setting "${kv.text}"`);
+        state.sysctl[key] = value;
+        return ok(`${key} = ${value}`);
+      }
+      if (writeFlag) return fail("sysctl: no variables specified");
+      const key = rest.find((t) => !t.quoted)?.text;
+      if (!key) return fail("usage: sysctl [-w] <key>[=<value>]");
+      const value = state.sysctl[key];
+      if (value === undefined)
+        return fail(
+          `sysctl: cannot stat /proc/sys/${key.replace(/\./g, "/")}: No such file or directory`,
+        );
+      return ok(`${key} = ${value}`);
+    }
+
     case "ip": {
       const action = rest[0]?.text;
       const args = rest.slice(1);
@@ -3366,7 +4570,8 @@ function executeOne(
                 : iface.state === "up"
                   ? "BROADCAST,MULTICAST,UP,LOWER_UP"
                   : "BROADCAST,MULTICAST";
-            lines.push(`${idx}: ${name}: <${flags}> mtu 1500`);
+            const masterSuffix = iface.master ? ` master ${iface.master}` : "";
+            lines.push(`${idx}: ${name}: <${flags}> mtu 1500${masterSuffix}`);
             if (iface.mac)
               lines.push(`    link/ether ${iface.mac} brd ff:ff:ff:ff:ff:ff`);
             else if (name === "lo")
@@ -3401,6 +4606,20 @@ function executeOne(
             ns.interfaces[name] = iface;
             return ok();
           }
+          if (verb === "master") {
+            const bridgeName = args[3]?.text;
+            if (!bridgeName)
+              return fail("usage: ip link set <iface> master <bridge>");
+            const bridge = state.network.interfaces[bridgeName];
+            if (!bridge || bridge.kind !== "bridge")
+              return fail(`Cannot find bridge device "${bridgeName}"`);
+            iface.master = bridgeName;
+            return ok();
+          }
+          if (verb === "nomaster") {
+            delete iface.master;
+            return ok();
+          }
           return fail(`ip link set: unknown verb "${verb}"`);
         }
         if (sub === "add") {
@@ -3430,6 +4649,18 @@ function executeOne(
               state: "down",
               addresses: [],
               peer: name,
+            };
+            return ok();
+          }
+          if (kind === "bridge") {
+            if (!name) return fail("usage: ip link add <name> type bridge");
+            if (state.network.interfaces[name])
+              return fail(`RTNETLINK answers: File exists`);
+            state.network.interfaces[name] = {
+              name,
+              state: "down",
+              addresses: [],
+              kind: "bridge",
             };
             return ok();
           }
@@ -4692,6 +5923,7 @@ function executeOne(
       }
       const text = parts.join(" ");
       if (!mode) return ok(text);
+      if (target === "/dev/null") return ok();
       const abs = resolvePath(state.cwd, target!);
       const parent = state.fs[parentOf(abs)];
       if (!parent || parent.type !== "dir")
@@ -4726,7 +5958,10 @@ function executeOne(
 
     case "cat": {
       const args = rest.filter((t) => t.quoted || !t.text.startsWith("-"));
-      if (!args.length) return fail("cat: missing operand");
+      if (!args.length) {
+        if (stdinText !== undefined) return ok(stdinText);
+        return fail("cat: missing operand");
+      }
       const out: string[] = [];
       for (const a of args) {
         const abs = resolvePath(state.cwd, a.text);
@@ -4745,6 +5980,50 @@ function executeOne(
         out.push(node.content ?? "");
       }
       return ok(out.join("\n"));
+    }
+
+    case "jq": {
+      const filterTok = rest.find((t) => t.quoted || !t.text.startsWith("-"));
+      if (!filterTok) return fail("usage: jq 'filter' [file]");
+      const fileTok = rest.find((t) => t !== filterTok);
+      let text: string | undefined;
+      if (fileTok) {
+        const abs = resolvePath(state.cwd, fileTok.text);
+        const node = state.fs[abs];
+        if (!node)
+          return fail(`jq: error: ${fileTok.text}: No such file or directory`);
+        text = node.content;
+      } else {
+        text = stdinText;
+      }
+      if (text === undefined) return fail("usage: jq 'filter' [file]");
+      let data: unknown;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        return fail("jq: error: Invalid JSON text passed to jq");
+      }
+      const results = runJqFilter(filterTok.text, data);
+      if (!results.length) return ok("");
+      return ok(results.map((r) => JSON.stringify(r, null, 2)).join("\n"));
+    }
+
+    case "date": {
+      const fmtTok = rest.find((t) => !t.quoted && t.text.startsWith("+"));
+      // Fixed fake "now" so command-substitution timestamps stay deterministic.
+      if (fmtTok) {
+        const f = fmtTok.text.slice(1);
+        return ok(
+          f
+            .replace(/%Y/g, "2026")
+            .replace(/%m/g, "03")
+            .replace(/%d/g, "10")
+            .replace(/%H/g, "22")
+            .replace(/%M/g, "01")
+            .replace(/%S/g, "05"),
+        );
+      }
+      return ok("Tue Mar 10 22:01:05 UTC 2026");
     }
 
     // A real modal editor is out of scope here — opening one hands control
@@ -5136,6 +6415,32 @@ function executeOne(
         state.fs[destAbs] = { type: "dir", owner, group };
         copyTree(state, srcAbs, destAbs, owner, group);
       }
+      return ok();
+    }
+
+    case "mv": {
+      const args = rest.filter((t) => t.quoted || !t.text.startsWith("-"));
+      if (args.length < 2) return fail("mv: missing operand");
+      const [srcRaw, destRaw] = [args[0].text, args[1].text];
+      const srcAbs = resolvePath(state.cwd, srcRaw);
+      let destAbs = resolvePath(state.cwd, destRaw);
+      const srcNode = state.fs[srcAbs];
+      if (!srcNode)
+        return fail(`mv: cannot stat '${srcRaw}': No such file or directory`);
+      // moving into an existing directory keeps the source's base name
+      if (state.fs[destAbs]?.type === "dir") {
+        destAbs = resolvePath(destAbs, baseName(srcAbs));
+      }
+      if (srcNode.type === "dir") {
+        for (const p of Object.keys(state.fs)) {
+          if (p.startsWith(srcAbs + "/")) {
+            state.fs[destAbs + p.slice(srcAbs.length)] = state.fs[p];
+            delete state.fs[p];
+          }
+        }
+      }
+      state.fs[destAbs] = srcNode;
+      delete state.fs[srcAbs];
       return ok();
     }
 
@@ -5556,6 +6861,11 @@ export function evaluateCheck(
           pass: false,
           reason: `${want.name}-এ ${want.hasAddress} address নেই`,
         };
+      if (want.master !== undefined && iface.master !== want.master)
+        return {
+          pass: false,
+          reason: `${want.name}-কে এখনো ${want.master} bridge-এ যোগ করোনি`,
+        };
     }
   }
   if (check.routeExists) {
@@ -5636,7 +6946,8 @@ export function evaluateCheck(
       const match = chain?.rules.some(
         (r) =>
           r.target === want.target &&
-          (want.dport === undefined || r.dport === want.dport),
+          (want.dport === undefined || r.dport === want.dport) &&
+          (want.outIface === undefined || r.outIface === want.outIface),
       );
       if (want.exists === false) {
         if (match)
@@ -5647,6 +6958,74 @@ export function evaluateCheck(
         return {
           pass: false,
           reason: `${want.chain}-এ এই rule-টা এখনো তৈরি হয়নি`,
+        };
+    }
+  }
+  if (check.sysctlState) {
+    for (const want of check.sysctlState) {
+      const value = ctx.result.state.sysctl[want.key];
+      if (value !== want.value)
+        return {
+          pass: false,
+          reason: `${want.key}-এর মান এখনো ${want.value} করোনি`,
+        };
+    }
+  }
+  if (check.mininetFlowExists) {
+    const mn = ctx.result.state.mininet;
+    for (const want of check.mininetFlowExists) {
+      const sw = mn?.switches[want.switch];
+      const match = sw?.flows.some((f) => {
+        const actionStr =
+          f.action.kind === "output"
+            ? f.action.ports.map((p) => `output:${p}`).join(",")
+            : f.action.kind;
+        if (want.action !== undefined && actionStr !== want.action)
+          return false;
+        if (want.match) {
+          const asRecord: Record<string, string> = {};
+          if (f.match.inPort !== undefined)
+            asRecord.in_port = String(f.match.inPort);
+          if (f.match.dlSrc) asRecord.dl_src = f.match.dlSrc;
+          if (f.match.dlDst) asRecord.dl_dst = f.match.dlDst;
+          if (f.match.dlType) asRecord.dl_type = f.match.dlType;
+          if (f.match.nwProto !== undefined)
+            asRecord.nw_proto = String(f.match.nwProto);
+          if (f.match.nwSrc) asRecord.nw_src = f.match.nwSrc;
+          if (f.match.nwDst) asRecord.nw_dst = f.match.nwDst;
+          if (f.match.tpDst !== undefined)
+            asRecord.tp_dst = String(f.match.tpDst);
+          for (const [k, v] of Object.entries(want.match)) {
+            if (asRecord[k] !== v) return false;
+          }
+        }
+        return true;
+      });
+      if (want.exists === false) {
+        if (match)
+          return {
+            pass: false,
+            reason: `${want.switch}-এ এই flow-টা এখনো আছে`,
+          };
+        continue;
+      }
+      if (!match)
+        return {
+          pass: false,
+          reason: `${want.switch}-এ এই flow-টা এখনো তৈরি হয়নি`,
+        };
+    }
+  }
+  if (check.mininetReachable) {
+    const mn = ctx.result.state.mininet;
+    for (const want of check.mininetReachable) {
+      const actual = mn ? mininetReachable(mn, want.from, want.to) : false;
+      if (actual !== want.reachable)
+        return {
+          pass: false,
+          reason: want.reachable
+            ? `${want.from} থেকে ${want.to}-এ এখনো পৌঁছানো যাচ্ছে না`
+            : `${want.from} থেকে ${want.to}-এ এখনো পৌঁছানো যাচ্ছে (isolate হওয়ার কথা ছিল)`,
         };
     }
   }

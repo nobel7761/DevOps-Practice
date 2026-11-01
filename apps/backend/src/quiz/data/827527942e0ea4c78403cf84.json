@@ -1,0 +1,141 @@
+{
+  "labId": "827527942e0ea4c78403cf84",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "827527942e0ea4c78403cf84-01",
+      "difficulty": "easy",
+      "question": "ip link add br0 type bridge কমান্ডটা কী তৈরি করে?",
+      "options": [
+        "একটা পূর্ণাঙ্গ virtual router, যেটা স্বয়ংক্রিয়ভাবে একাধিক subnet-এর মধ্যে packet route করতে শুরু করে, কোনো অতিরিক্ত কনফিগারেশন ছাড়াই",
+        "একটা খালি virtual switch (bridge) — শুরুতে কোনো member interface নেই, পরে master দিয়ে একটা একটা করে যোগ করতে হয়",
+        "দুটো সংযুক্ত interface, veth pair-এর মতো — একদিকে host, অন্যদিকে একটা namespace",
+        "একটা নতুন network namespace, যার ভেতরে সব bridge-সংক্রান্ত কমান্ড চালাতে হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ip link add <name> type bridge শুধু একটা খালি bridge interface বানায় — কোনো member interface এতে স্বয়ংক্রিয়ভাবে যুক্ত হয় না, প্রতিটা member আলাদাভাবে master দিয়ে যোগ করতে হয়।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-02",
+      "difficulty": "easy",
+      "question": "ip link set veth-host1 master br0 কমান্ডের কাজ কী?",
+      "options": [
+        "veth-host1 interface-টাকে br0 bridge-এর একটা member port বানানো",
+        "veth-host1-কে br0-এর বদলে চালিয়ে দেওয়া, যেন br0 আর দরকার না হয়",
+        "br0-এর নাম পরিবর্তন করে veth-host1 করে দেওয়া, কোনো নতুন member তৈরি না করেই",
+        "veth-host1-এর MAC address br0-এর MAC address দিয়ে প্রতিস্থাপন করা, যাতে দুটো আলাদা করা না যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "master keyword দিয়ে একটা ইতিমধ্যে-বিদ্যমান interface-কে একটা bridge-এর member port হিসেবে enslave করা হয় — bridge তখন সেই port দিয়ে frame forward করতে পারে।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-03",
+      "difficulty": "easy",
+      "question": "তিনটা namespace-কে সরাসরি veth pair দিয়ে (bridge ছাড়া) একে অপরের সাথে পুরোপুরি সংযুক্ত করতে হলে কতগুলো veth pair লাগবে?",
+      "options": [
+        "একটা — একটাই veth pair দিয়ে তিনটা namespace একসাথে যুক্ত করা সম্ভব, কোনো bridge বা অতিরিক্ত device ছাড়াই",
+        "তিনটা — প্রতিটা namespace-এর জন্য ঠিক একটা করে পেয়ার, কোনো বাড়তি সংযোগ ছাড়াই",
+        "তিনটা — প্রতিটা জোড়া namespace-এর মধ্যে একটা করে সরাসরি পেয়ার লাগবে (ns1-ns2, ns1-ns3, ns2-ns3)",
+        "দুটো — শুধু একটা namespace-কে বাকি দুটোর সাথে যুক্ত করলেই সবাই একে অপরকে পাবে"
+      ],
+      "answerIndex": 2,
+      "explanation": "সরাসরি veth pairing-এ প্রতিটা জোড়া namespace-এর মধ্যে আলাদা link লাগে — n namespace-এর জন্য n(n-1)/2টা পেয়ার দরকার হয়, যা দ্রুত অসুবিধাজনক হয়ে ওঠে; bridge এই সমস্যার সমাধান দেয়।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-04",
+      "difficulty": "medium",
+      "question": "একটা bridge-এর সব member interface কেন একই subnet-এ (যেমন সবাই 10.70.0.0/24-এ) থাকা দরকার?",
+      "options": [
+        "bridge শুধু Layer 2-তে কাজ করে — একটা shared Ethernet segment তৈরি করে, যেখানে সব member একই LAN-এ থাকার কথা, ঠিক যেমন একটা physical switch-এ প্লাগ করা সব ডিভাইস",
+        "এটা একটা নিরাপত্তা নিয়ম — আলাদা subnet-এ থাকলে kernel bridge তৈরি করতেই দেয় না, কমান্ড সরাসরি ব্যর্থ হয়ে যায়",
+        "আলাদা subnet থাকলে bridge-টা স্বয়ংক্রিয়ভাবে মুছে যায়, তাই সবাইকে এক subnet-এ বাধ্যতামূলকভাবে রাখতে হয়",
+        "এটা শুধু একটা পুরনো কনভেনশন, যেটা আধুনিক kernel version-এ আর কোনো কার্যকর প্রভাব ফেলে না — bridge প্রকৃতপক্ষে যেকোনো subnet combination-এ, এমনকি সম্পূর্ণ ভিন্ন subnet-এর member নিয়েও, একই রকম কাজ করে, কোনো পার্থক্য ছাড়াই"
+      ],
+      "answerIndex": 0,
+      "explanation": "bridge একটা Layer-2 device — এটা MAC address দেখে frame forward করে, IP routing করে না। তাই সব member-এর একই Layer-3 subnet-এ থাকা দরকার, ঠিক যেমন একটা physical switch-এ সবাই একই LAN-এর অংশ।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-05",
+      "difficulty": "medium",
+      "question": "ns1 আর ns3-এর মধ্যে কোনো সরাসরি veth pair না থাকা সত্ত্বেও ns1 থেকে ns3-কে ping করলে সফল হয় কেন?",
+      "options": [
+        "ping কমান্ডটা স্বয়ংক্রিয়ভাবে একটা temporary veth pair বানিয়ে নেয়, পরে সেটা মুছে ফেলে",
+        "দুটোই একই br0 bridge-এর member — ns1-এর packet তার নিজের veth দিয়ে br0-তে যায়, br0 সেটা ns3-এর veth-এ forward করে",
+        "একই subnet-এর ঠিকানা থাকলেই দুটো namespace স্বয়ংক্রিয়ভাবে একে অপরের সাথে সরাসরি সংযুক্ত হয়ে যায়, কোনো veth pair, বাড়তি routing, বা bridge-এর ভূমিকা ছাড়াই, শুধু ঠিকানা মিলে যাওয়ার কারণে",
+        "ns1 আসলে ns3-কে ping করছে না — host নিজেই প্রতিক্রিয়া জানাচ্ছে ns3-এর হয়ে, যেহেতু দুটোই host-এর namespace"
+      ],
+      "answerIndex": 1,
+      "explanation": "br0 একটা shared switch — প্রতিটা namespace শুধু br0-এর সাথে যুক্ত, একে অপরের সাথে নয়। br0 নিজেই destination MAC/subnet অনুযায়ী সঠিক port-এ frame forward করে, তাই কখনো সরাসরি wire না হওয়া দুটো namespace-ও একে অপরকে পায়।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-06",
+      "difficulty": "medium",
+      "question": "br0 interface-টা up না করলে কী হবে?",
+      "options": [
+        "কিছুই হবে না — শুধু bridge-টার নাম দেখাবে না, বাকি সব স্বাভাবিকভাবেই কাজ করবে",
+        "bridge member-দের মধ্যে traffic forward হবে না, যদিও প্রতিটা veth end আলাদাভাবে up থাকতে পারে",
+        "br0 স্বয়ংক্রিয়ভাবে মুছে যাবে কয়েক সেকেন্ডের মধ্যে, আবার তৈরি করতে হবে",
+        "সব member interface জোর করে down হয়ে যাবে এবং সেই bridge-এর সাথে যুক্ত প্রতিটা veth pair ধীরে ধীরে স্বয়ংক্রিয়ভাবে মুছে যেতে শুরু করবে, bridge-টাকে up না করা পর্যন্ত"
+      ],
+      "answerIndex": 1,
+      "explanation": "bridge নিজেও একটা interface — forwarding কাজ করতে হলে bridge device নিজেই up থাকতে হবে, শুধু individual veth end-গুলো up থাকলেই যথেষ্ট না।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-07",
+      "difficulty": "medium",
+      "question": "Docker-এর ডিফল্ট docker0 bridge-এর সাথে এই lab-এর br0-এর সম্পর্ক কী?",
+      "options": [
+        "কোনো সম্পর্ক নেই — docker0 একটা সম্পূর্ণ আলাদা, proprietary Docker-only প্রযুক্তি, Linux bridge-এর সাথে কোনো মিল নেই",
+        "docker0 আসলে ঠিক এই একই Linux bridge mechanism — প্রতিটা container একটা veth pair দিয়ে docker0-তে যুক্ত হয়, এই lab-এর namespace-গুলো যেভাবে br0-তে যুক্ত হয়েছে",
+        "docker0 শুধু একটা naming convention, এটা আসলে একটা iptables chain, কোনো প্রকৃত network interface না",
+        "docker0 শুধু container থেকে host-এর বাইরের internet-এ যাওয়ার জন্য ব্যবহৃত হয়, container-to-container যোগাযোগের সাথে এর কোনো সম্পর্ক নেই — সেটা সম্পূর্ণ আলাদা একটা overlay network driver দিয়ে হ্যান্ডেল করা হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "dockerd ঠিক এই lab-এর মতোই কাজ করে — একটা Linux bridge (docker0) বানায়, প্রতিটা container-এর জন্য একটা veth pair বানায়, container-side-টা container-এর namespace-এ পাঠায়, আর host-side-টাকে master দিয়ে docker0-তে যুক্ত করে।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-08",
+      "difficulty": "hard",
+      "question": "ip link show veth-host1 আউটপুটে master br0 দেখলে এর অর্থ কী?",
+      "options": [
+        "veth-host1 এখন br0-এর বদলে পুরোপুরি কাজ করে, br0 নিজে এখন অকার্যকর",
+        "veth-host1 একটা bridge member port — br0 bridge-এর অংশ হিসেবে frame পাঠানো-নেওয়ার জন্য ব্যবহৃত হচ্ছে",
+        "veth-host1-এর সব ট্রাফিক এখন শুধু br0-এর মাধ্যমেই internet-এ যাবে, অন্য কোনো পথে নয়, আর এই রুটিং ব্যবস্থা পরিবর্তন করতে হলে আবার আলাদাভাবে iptables rule যোগ করতে হবে",
+        "এটা শুধু একটা display label, bridge membership-এর সাথে কার্যকরীভাবে এর কোনো সম্পর্ক নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "master <name> flag নিশ্চিত করে যে interface-টা সত্যিই সেই bridge-এর একটা enslaved member port — এটাই bridge membership যাচাই করার সরাসরি উপায়।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-09",
+      "difficulty": "hard",
+      "question": "ns1-এর veth-ns1 interface যদি up না থাকে, কিন্তু veth-host1 br0-তে master হিসেবে যুক্ত এবং up থাকে — তাহলে ns1 থেকে ns2-কে ping করলে কী হবে?",
+      "options": [
+        "সফল হবে — শুধু host-side (veth-host1) up থাকলেই যথেষ্ট, namespace-side up থাকা জরুরি না, কারণ bridge নিজেই namespace-side-টাকে প্রয়োজনমতো স্বয়ংক্রিয়ভাবে up করে নেয়",
+        "ব্যর্থ হবে — namespace-side veth-ns1 up না থাকলে ns1-এর ভেতর থেকে সেই interface দিয়ে কোনো traffic পাঠানোই যাবে না",
+        "br0 স্বয়ংক্রিয়ভাবে veth-ns1-কে up করে দেবে, যাতে ping সফল হয়",
+        "ping-টা host-এর eth0 দিয়ে চলে যাবে, bridge সম্পূর্ণ এড়িয়ে"
+      ],
+      "answerIndex": 1,
+      "explanation": "veth pair-এর দুই প্রান্তই up থাকতে হবে, তবেই traffic দুই দিকে যাওয়া-আসা করতে পারে — শুধু host-side up থাকলে namespace-এর ভেতর থেকে packet পাঠানোর পথটাই বন্ধ থাকবে।"
+    },
+    {
+      "id": "827527942e0ea4c78403cf84-10",
+      "difficulty": "hard",
+      "question": "তিনটা namespace-এর বদলে চতুর্থ একটা namespace (ns4) যোগ করতে হলে, বিদ্যমান ns1/ns2/ns3-এর কোনো কনফিগারেশন বদলানোর দরকার আছে কি?",
+      "options": [
+        "হ্যাঁ — ns1, ns2, ns3 প্রতিটার সাথেই ns4-এর জন্য আলাদা একটা নতুন veth pair বানিয়ে সংযুক্ত করতে হবে, ঠিক যেভাবে bridge ছাড়া সরাসরি pairing-এ করতে হতো, নাহলে ns4 বাকিদের পাবে না",
+        "না — শুধু ns4-এর জন্য namespace, veth pair বানিয়ে host-side প্রান্তটা br0-তে master করলেই যথেষ্ট; ns1/ns2/ns3-এর কিছুই বদলাতে হয় না",
+        "হ্যাঁ — পুরো br0 bridge-টা মুছে নতুন করে চারটা namespace দিয়ে আবার বানাতে হবে",
+        "না, কিন্তু প্রতিটা বিদ্যমান namespace-এর IP address বদলে নতুন subnet-এ আনতে হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটাই bridge-এর আসল সুবিধা — নতুন member যোগ করতে শুধু তার নিজের একটা veth pair লাগে আর সেটাকে br0-তে master করা লাগে। বিদ্যমান member-দের কোনো কিছু স্পর্শ করতে হয় না, এটাই O(n²) direct-pairing সমস্যার সমাধান।"
+    }
+  ]
+}

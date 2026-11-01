@@ -1,0 +1,77 @@
+{
+  "labId": "69e0e99023b200e2a4159f1d",
+  "title": "Simulating VLAN Networks with Mininet",
+  "passPercent": 95,
+  "intro": "একটাই physical switch (`s1`), কিন্তু দুটো VLAN (100 আর 101) — প্রতিটায় দুটো করে host। VLAN tagging-এর পুরো কথাটাই হলো: একই তারে/একই switch-এ বসা হোস্টরাও, আলাদা VLAN-এ থাকলে একে অপরকে দেখতেই পাবে না, যতক্ষণ না কোনো router বা trunk সেতু বানায়। একই VLAN-এর হোস্টদের জন্য এটা সম্পূর্ণ transparent — তারা স্বাভাবিকভাবেই একে অপরের সাথে কথা বলতে পারবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 15,
+      "section": {
+        "title": "🏗️ VLAN টপোলজি চালু করা",
+        "note": "`vlanhost.py` আর `simulate_vlan_network.py` — দুটো ফাইলই আগে থেকে দেওয়া আছে, যা ২টা VLAN × ২টা host বানায়।"
+      },
+      "prompt": "`simulate_vlan_network.py` চালিয়ে VLAN টপোলজিটা চালু করো।",
+      "answer": "sudo python3 simulate_vlan_network.py",
+      "check": { "require": ["python3", "simulate_vlan_network.py"] }
+    },
+    {
+      "id": "t02",
+      "points": 20,
+      "section": {
+        "title": "✅ একই VLAN-এর মধ্যে communication",
+        "note": "h1_100 আর h2_100 — দুজনেই VLAN 100-এ, তাই স্বাভাবিকভাবে কথা বলতে পারবে।"
+      },
+      "prompt": "VLAN 100-এর দুই হোস্ট (h1_100, h2_100)-এর মধ্যে connectivity পরীক্ষা করো।",
+      "answer": "h1_100 ping -c 3 h2_100",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1_100", "to": "h2_100", "reachable": true }
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 20,
+      "prompt": "VLAN 101-এর দুই হোস্ট (h1_101, h2_101)-এর মধ্যেও একইভাবে পরীক্ষা করো।",
+      "answer": "h1_101 ping -c 3 h2_101",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1_101", "to": "h2_101", "reachable": true }
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "points": 25,
+      "section": {
+        "title": "🚫 ভিন্ন VLAN-এর মধ্যে isolation",
+        "note": "একই switch-এ থাকা সত্ত্বেও VLAN tag আলাদা হওয়ায় এই দুই হোস্ট একে অপরকে দেখতেই পারবে না।"
+      },
+      "prompt": "সব host-এর মধ্যে connectivity একসাথে পরীক্ষা করো — VLAN 100-এর h1_100 থেকে VLAN 101-এর h1_101 পর্যন্ত আর পৌঁছানো যাবে না, এটাই লক্ষ্য করো।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1_100", "to": "h1_101", "reachable": false }
+        ]
+      }
+    },
+    {
+      "id": "t05",
+      "points": 20,
+      "prompt": "একসাথে সব হোস্টের মধ্যে connectivity পরীক্ষা করো — একই VLAN-এর জোড়াগুলো সফল হবে, বাকি সব জোড়া isolate থাকবে।",
+      "answer": "pingall",
+      "check": {
+        "mininetReachable": [
+          { "from": "h1_100", "to": "h2_100", "reachable": true },
+          { "from": "h1_101", "to": "h2_101", "reachable": true },
+          { "from": "h1_100", "to": "h1_101", "reachable": false },
+          { "from": "h2_100", "to": "h2_101", "reachable": false },
+          { "from": "h1_100", "to": "h2_101", "reachable": false },
+          { "from": "h2_100", "to": "h1_101", "reachable": false }
+        ]
+      }
+    }
+  ]
+}

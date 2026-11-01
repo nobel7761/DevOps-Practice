@@ -1,0 +1,178 @@
+{
+  "labId": "69b1e4a54a49372ba7883538",
+  "title": "Mastering Redirection in Bash Scripting",
+  "passPercent": 95,
+  "intro": "> আর >>, stderr (2>), stdout+stderr একসাথে (&>), stdin (<), heredoc, আর /dev/null — redirection-এর পুরো টুলবক্স।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 8,
+      "section": {
+        "title": "➡️ stdout redirect",
+        "note": "> দিয়ে নতুন ফাইল বানানো বা পুরোনো ফাইল overwrite করা হয়; >> দিয়ে শেষে যোগ (append) করা হয়।"
+      },
+      "prompt": "\"Hello Poridhi\" লেখাটা output.txt নামের একটা ফাইলে লিখো (> দিয়ে)।",
+      "answer": "echo \"Hello Poridhi\" > output.txt",
+      "check": {
+        "paths": [
+          { "path": "~/output.txt", "type": "file", "content": "Hello Poridhi" }
+        ]
+      },
+      "hints": [
+        "echo \"...\" > filename — ফাইল না থাকলে বানাবে, থাকলে overwrite করবে।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 6,
+      "prompt": "output.txt-এর content দেখো।",
+      "answer": "cat output.txt",
+      "check": { "require": ["cat", "output.txt"] }
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "prompt": "\"New line\" লেখাটা output.txt-এর শেষে যোগ করো (overwrite না করে, >> দিয়ে)।",
+      "answer": "echo \"New line\" >> output.txt",
+      "check": {
+        "paths": [
+          {
+            "path": "~/output.txt",
+            "type": "file",
+            "content": "Hello Poridhi\nNew line"
+          }
+        ]
+      },
+      "hints": [
+        ">> দিয়ে existing content-এর শেষে নতুন লাইন যোগ হয়, উড়ে যায় না।"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 6,
+      "prompt": "আবার output.txt দেখো — এবার দুই লাইন থাকবে।",
+      "answer": "cat output.txt",
+      "check": { "require": ["cat", "output.txt"] }
+    },
+    {
+      "id": "t05",
+      "points": 12,
+      "section": {
+        "title": "⚠️ stderr redirect",
+        "note": "2> দিয়ে শুধু error (stderr) একটা আলাদা ফাইলে পাঠানো যায় — normal output (stdout) থেকে আলাদা।"
+      },
+      "prompt": "একটা না-থাকা ডিরেক্টরি (/non-existent-directory) লিস্ট করার চেষ্টা করো, error-টা error.log ফাইলে পাঠাও (2> দিয়ে)।",
+      "answer": "ls /non-existent-directory 2> error.log",
+      "check": { "require": ["ls", "2>", "error.log"] },
+      "hints": [
+        "2> দিয়ে শুধু error message redirect হয়, normal output প্রভাবিত হয় না।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 6,
+      "prompt": "error.log দেখো।",
+      "answer": "cat error.log",
+      "check": { "require": ["cat", "error.log"] }
+    },
+    {
+      "id": "t07",
+      "points": 10,
+      "prompt": "আরেকটা না-থাকা ডিরেক্টরি (/another-fake-dir) লিস্ট করার চেষ্টা করো, error-টা error.log-এর শেষে যোগ করো (2>> দিয়ে)।",
+      "answer": "ls /another-fake-dir 2>> error.log",
+      "check": { "require": ["ls", "2>>", "error.log"] },
+      "hints": ["2>> — append mode, stderr-এর জন্য।"]
+    },
+    {
+      "id": "t08",
+      "points": 6,
+      "prompt": "error.log আবার দেখো — এবার দুটো error message থাকবে।",
+      "answer": "cat error.log",
+      "check": { "require": ["cat", "error.log"] }
+    },
+    {
+      "id": "t09",
+      "points": 12,
+      "section": {
+        "title": "🔀 stdout + stderr একসাথে",
+        "note": "&> দিয়ে stdout আর stderr দুটোই একই ফাইলে পাঠানো যায় — আলাদা করে 2> লেখার দরকার হয় না।"
+      },
+      "prompt": "/tmp আর /non-existent — দুটো পাথ একসাথে লিস্ট করার চেষ্টা করো, সব আউটপুট (stdout + stderr) combined.log-এ পাঠাও (&> দিয়ে)।",
+      "answer": "ls /tmp /non-existent &> combined.log",
+      "check": { "require": ["ls", "&>", "combined.log"] },
+      "hints": ["&> দিয়ে stdout আর stderr — দুটোই একসাথে একই জায়গায় যায়।"]
+    },
+    {
+      "id": "t10",
+      "points": 8,
+      "prompt": "একই কমান্ডটা আবার চালাও, কিন্তু এবার &>> দিয়ে combined.log-এর শেষে যোগ করো (overwrite না করে)।",
+      "answer": "ls /tmp /non-existent &>> combined.log",
+      "check": { "require": ["ls", "&>>", "combined.log"] },
+      "hints": ["&>> — append mode, stdout+stderr দুটোর জন্যই।"]
+    },
+    {
+      "id": "t11",
+      "points": 6,
+      "prompt": "combined.log দেখো।",
+      "answer": "cat combined.log",
+      "check": { "require": ["cat", "combined.log"] }
+    },
+    {
+      "id": "t12",
+      "points": 14,
+      "section": {
+        "title": "⬅️ stdin redirect",
+        "note": "< দিয়ে একটা ফাইলের content কোনো কমান্ডের stdin হিসেবে পাঠানো যায় — pipe-এর বিকল্প।"
+      },
+      "prompt": "input.txt বানাও — banana, apple, cherry — এই তিনটা লাইন (heredoc দিয়ে একসাথে লিখতে পারো)।",
+      "answer": "cat << EOF > input.txt\nbanana\napple\ncherry\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/input.txt",
+            "type": "file",
+            "content": "banana\napple\ncherry"
+          }
+        ]
+      },
+      "hints": [
+        "cat << EOF > input.txt দিয়ে শুরু করে তিনটা লাইন লিখে EOF দিয়ে শেষ করো।"
+      ]
+    },
+    {
+      "id": "t13",
+      "points": 10,
+      "prompt": "input.txt-কে sort-এর stdin হিসেবে দাও (< দিয়ে), ফলাফল বর্ণানুক্রমে সাজানো আসবে।",
+      "answer": "sort < input.txt",
+      "check": { "require": ["sort", "<", "input.txt"] },
+      "hints": [
+        "sort < input.txt — pipe (|) না, এখানে সরাসরি stdin redirect (<)।"
+      ]
+    },
+    {
+      "id": "t14",
+      "points": 14,
+      "section": {
+        "title": "🕳️ /dev/null",
+        "note": "/dev/null একটা বিশেষ \"কালো গর্ত\" ফাইল — যা কিছু ওখানে লেখা হয় তা চিরতরে হারিয়ে যায়, কখনো error দেখতে না চাইলে এটাই ব্যবহার করা হয়।"
+      },
+      "prompt": "\"Secret Message\" লেখাটা /dev/null-এ পাঠাও — এটা কোথাও সংরক্ষিত হবে না।",
+      "answer": "echo \"Secret Message\" > /dev/null",
+      "check": { "require": ["echo", "/dev/null"] },
+      "hints": [
+        "/dev/null-এ redirect করা মানে ওই আউটপুট পুরোপুরি বাতিল করে দেওয়া।"
+      ]
+    },
+    {
+      "id": "t15",
+      "points": 10,
+      "prompt": "একটা না-থাকা ফাইল (non-existent-file) rm করার চেষ্টা করো, কিন্তু error মেসেজটা /dev/null-এ পাঠিয়ে চুপ করিয়ে দাও (2> দিয়ে)।",
+      "answer": "rm non-existent-file 2> /dev/null",
+      "check": { "require": ["rm", "non-existent-file", "2>", "/dev/null"] },
+      "hints": [
+        "rm কমান্ড error দিলেও, 2> /dev/null দিলে সেটা স্ক্রিনে দেখাবে না।"
+      ]
+    }
+  ]
+}

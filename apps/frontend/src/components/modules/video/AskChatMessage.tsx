@@ -3,9 +3,11 @@ import Markdown from "@/components/shared/Markdown";
 export default function AskChatMessage({
   role,
   content,
+  isStreaming = false,
 }: {
   role: "user" | "assistant";
   content: string;
+  isStreaming?: boolean;
 }) {
   const isUser = role === "user";
   return (
@@ -17,7 +19,16 @@ export default function AskChatMessage({
             : "bg-muted text-foreground"
         }`}
       >
-        {isUser ? content : <Markdown>{content}</Markdown>}
+        {isUser ? (
+          <span className="whitespace-pre-wrap">{content}</span>
+        ) : (
+          <>
+            <Markdown>{content}</Markdown>
+            {isStreaming && (
+              <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-foreground/70 align-text-bottom" />
+            )}
+          </>
+        )}
       </div>
     </div>
   );

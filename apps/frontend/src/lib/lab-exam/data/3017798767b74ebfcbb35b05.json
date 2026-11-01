@@ -1,0 +1,105 @@
+{
+  "labId": "3017798767b74ebfcbb35b05",
+  "title": "LAB: CN-lab-01 Network Namespace Inspecting",
+  "passPercent": 95,
+  "intro": "একটা network namespace একদম খালি অবস্থায় শুরু হয় — শুধু একটা DOWN থাকা lo interface, কোনো route বা rule ছাড়া। এই lab-এ কোনো connectivity নেই, শুধু namespace বানানো, ভেতরে ঢুকে দেখা, আর পরিষ্কার করে ফেলা — পরের lab-এ (CN-lab-02) আসল connection বানানো হবে।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 15,
+      "section": {
+        "title": "🏗️ পর্ব ১: Namespace বানানো",
+        "note": "প্রতিটা namespace একটা সম্পূর্ণ আলাদা network stack — host থেকে সম্পূর্ণ isolated।"
+      },
+      "prompt": "inspect-ns নামে একটা নতুন network namespace বানাও।",
+      "answer": "ip netns add inspect-ns",
+      "check": {
+        "require": ["ip", "netns", "add", "inspect-ns"],
+        "netnsExists": ["inspect-ns"]
+      },
+      "hints": ["ip netns-এর একটা verb আছে নতুন namespace বানানোর জন্য"]
+    },
+    {
+      "id": "t02",
+      "points": 10,
+      "prompt": "তৈরি হওয়া সব namespace-এর তালিকা দেখো — inspect-ns আছে কিনা নিশ্চিত হও।",
+      "answer": "ip netns list",
+      "check": {
+        "require": ["ip", "netns", "list"]
+      }
+    },
+    {
+      "id": "t03",
+      "points": 15,
+      "section": {
+        "title": "🔍 পর্ব ২: ভেতরে কী আছে দেখা",
+        "note": "ip netns exec হলো আধুনিক iproute2-র standard উপায় — nsenter-এরই সমতুল্য — কোনো namespace-এর ভেতরে কমান্ড চালানোর।"
+      },
+      "prompt": "inspect-ns namespace-এর ভেতরের interface list দেখো।",
+      "answer": "ip netns exec inspect-ns ip link show",
+      "check": {
+        "require": ["ip", "netns", "exec", "inspect-ns", "ip", "link", "show"]
+      },
+      "hints": [
+        "namespace-এর ভেতরে কোনো কমান্ড চালাতে হলে সামনে একটা exec prefix লাগে"
+      ]
+    },
+    {
+      "id": "t04",
+      "points": 20,
+      "prompt": "namespace-এর ভেতরে lo interface-টা up করো।",
+      "answer": "ip netns exec inspect-ns ip link set lo up",
+      "check": {
+        "require": [
+          "ip",
+          "netns",
+          "exec",
+          "inspect-ns",
+          "ip",
+          "link",
+          "set",
+          "lo",
+          "up"
+        ],
+        "netIfaceState": [
+          {
+            "name": "lo",
+            "context": "inspect-ns",
+            "state": "up"
+          }
+        ]
+      },
+      "hints": [
+        "নতুন namespace-এ lo-ও by-default DOWN থাকে, host-এর মতো automatic up না"
+      ]
+    },
+    {
+      "id": "t05",
+      "points": 15,
+      "section": {
+        "title": "⚖️ পর্ব ৩: Host-এর সাথে তুলনা",
+        "note": "host-এর নিজের interface list সম্পূর্ণ আলাদা — isolation-টা চোখে দেখার জন্য।"
+      },
+      "prompt": "এবার host-এর (namespace-এর বাইরে) নিজের interface list দেখো, namespace-এর থেকে কতটা আলাদা তুলনা করতে।",
+      "answer": "ip link show",
+      "check": {
+        "require": ["ip", "link", "show"]
+      }
+    },
+    {
+      "id": "t06",
+      "points": 25,
+      "section": {
+        "title": "🧹 পর্ব ৪: পরিষ্কার করা",
+        "note": "namespace মুছলে ভেতরের সবকিছুও মুছে যায়।"
+      },
+      "prompt": "inspect-ns namespace-টা মুছে ফেলো।",
+      "answer": "ip netns delete inspect-ns",
+      "check": {
+        "require": ["ip", "netns", "delete", "inspect-ns"]
+      },
+      "hints": ["ip netns-এর delete (বা del) verb দিয়ে namespace সরানো যায়"]
+    }
+  ]
+}

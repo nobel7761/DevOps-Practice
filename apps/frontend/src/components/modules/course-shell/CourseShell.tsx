@@ -23,12 +23,14 @@ export default function CourseShell({
   currentModuleId?: string;
   children: ReactNode;
 }) {
-  const liveCourse = useLiveCourse(course);
+  const { liveCourse, refetchProgress } = useLiveCourse(course);
   const courseHref = `/course/${courseId}`;
   const layout = getCourseLayout(courseId);
 
   return (
-    <LiveCourseProvider value={{ courseId, course: liveCourse, layout }}>
+    <LiveCourseProvider
+      value={{ courseId, course: liveCourse, layout, refetchProgress }}
+    >
       <SidebarProvider>
         <CourseSidebar
           course={liveCourse}

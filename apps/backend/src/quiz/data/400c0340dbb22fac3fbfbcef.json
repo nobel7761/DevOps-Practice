@@ -1,0 +1,141 @@
+{
+  "labId": "400c0340dbb22fac3fbfbcef",
+  "passPercent": 95,
+  "sample": {
+    "easy": 3,
+    "medium": 4,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "400c0340dbb22fac3fbfbcef-01",
+      "difficulty": "easy",
+      "question": "gateway (10.30.0.1)-এ ping করার পর ip neigh show-এ কী দেখা যায়?",
+      "options": [
+        "203.0.113.5-এর জন্য একটা entry, কারণ সেটাই এই পুরো lookup-এর চূড়ান্ত destination ছিল",
+        "10.30.0.1-এর জন্য একটা entry — gateway-র নিজের MAC address resolve হয়েছে",
+        "default route-এর একটা কপি, ARP cache-এ আলাদাভাবে সংরক্ষিত",
+        "কিছুই না — ping শুধু reachability যাচাই করে, ARP cache-এ কিছু যোগ করে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ARP শুধু পরের hop-এর (এখানে gateway, 10.30.0.1) MAC address resolve করে — ping করলে সেই resolution ঘটে এবং cache-এ সংরক্ষিত হয়।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-02",
+      "difficulty": "easy",
+      "question": "ip route del default কমান্ডটা কী মুছে দেয়?",
+      "options": [
+        "শুধু default route entry-টা, routing table-এর বাকি সব entry অক্ষত থাকে",
+        "পুরো routing table, সব route একসাথে মুছে যায়",
+        "namespace-টাই পুরোপুরি মুছে যায়, সব interface সহ",
+        "veth pair-টা পুরোপুরি মুছে যায়, দুটো প্রান্তের interface-ই একসাথে disappear করে যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "ip route del শুধু নির্দিষ্ট route entry-টাই সরায় — অন্য কোনো route, interface, বা namespace-এ কোনো প্রভাব পড়ে না।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-03",
+      "difficulty": "easy",
+      "question": "default route মুছে ফেলার পর, directly-connected subnet (10.30.0.0/24)-এর মধ্যেকার ঠিকানা reachable থাকে কি?",
+      "options": [
+        "না, পুরো namespace-ই unreachable হয়ে যায় default route ছাড়া",
+        "হ্যাঁ — directly-connected route আলাদা, সেটা default route-এর উপর নির্ভর করে না, তাই অক্ষত থাকে",
+        "শুধু আধা ঘণ্টা পর্যন্ত থাকে, তারপর সেটাও expire হয়ে যায়",
+        "শুধু gateway-টাই reachable থাকে, বাকি পুরো subnet-এর বাকি সব ঠিকানা হঠাৎ করেই unreachable হয়ে যায়, কোনো আগাম সতর্কবার্তা ছাড়াই"
+      ],
+      "answerIndex": 1,
+      "explanation": "directly-connected route কখনো default route-এর উপর নির্ভর করে না — একটা মুছলে অন্যটা অক্ষত থাকে, কারণ এরা সম্পূর্ণ আলাদা entry।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-04",
+      "difficulty": "medium",
+      "question": "ARP সম্পর্কে এই lab-এর মূল শিক্ষা কী — ARP ঠিক কী resolve করে?",
+      "options": [
+        "প্যাকেট যে চূড়ান্ত destination-এ যাচ্ছে, তার আসল MAC address — পুরো নেটওয়ার্ক পথ জুড়ে মাত্র একবারই, একদম শুরুতেই resolve হয়ে যায়",
+        "শুধু পরের hop-এর (immediate next hop, যেমন gateway)-এর MAC address — চূড়ান্ত destination-এর সাথে এর কোনো সম্পর্ক নেই",
+        "destination-এর IP address-কে একটা hostname-এ রূপান্তর করা, DNS-এর মতো",
+        "routing table-এর entry-গুলোকে priority অনুযায়ী সাজানো"
+      ],
+      "answerIndex": 1,
+      "explanation": "ARP সবসময় local link-এর পরের hop-এর MAC resolve করে — গেটওয়ের পেছনে প্যাকেট কোথায় যাবে, সেটা সম্পূর্ণ গেটওয়ের দায়িত্ব, namespace-এর ARP cache-এর বিষয় না।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-05",
+      "difficulty": "medium",
+      "question": "default route মুছে ফেলার পর 203.0.113.5-এর জন্য ip route get চালালে যে error আসে (\"Network is unreachable\"), সেটা timeout থেকে কীভাবে আলাদা?",
+      "options": [
+        "কোনো পার্থক্য নেই, দুটো শব্দই একই সমস্যা বোঝায়",
+        "\"Network is unreachable\" মানে local kernel-এরই কোনো matching route নেই — প্যাকেট আদৌ পাঠানো হয়নি; timeout মানে প্যাকেট পাঠানো হয়েছে কিন্তু কোনো উত্তর আসেনি",
+        "timeout মানে route সমস্যা, \"Network is unreachable\" মানে DNS সমস্যা",
+        "\"Network is unreachable\" আসলে শুধুমাত্র IPv6 routing-এর জন্যই প্রযোজ্য একটা error — IPv4 routing-এ এটা কখনোই দেখা যায় না, কোনো অবস্থাতেই, এটা technically অসম্ভব একটা ব্যাপার"
+      ],
+      "answerIndex": 1,
+      "explanation": "\"Network is unreachable\" একটা local, immediate error — kernel-এর routing table-এ কোনো matching entry নেই, তাই প্যাকেটই পাঠানো হয় না। timeout-এ প্যাকেট পাঠানো হয়, শুধু উত্তর আসে না।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-06",
+      "difficulty": "medium",
+      "question": "route মুছে দিয়ে আবার একই via ঠিকানা দিয়ে যোগ করলে (restore), এটা কি আগের route-এর থেকে আলাদা কোনো নতুন route তৈরি করে?",
+      "options": [
+        "হ্যাঁ, প্রতিবার route add করলে একটা নতুন, আলাদা priority-র entry তৈরি হয়, যদিও destination/via একই থাকে",
+        "না — same dest আর via দিয়ে route add করলে কার্যকরভাবে একই routing সিদ্ধান্ত ফিরে আসে, যেন কিছুই ভাঙেনি",
+        "হ্যাঁ, কারণ প্রতিটা route add-এ একটা নতুন timestamp যুক্ত হয়, যা routing decision-কে প্রভাবিত করে",
+        "না, কিন্তু restore করা route-টা শুধু অস্থায়ী হয়, কিছুক্ষণ পর আবার হারিয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "একই dest ও via দিয়ে route add করলে routing table কার্যকরভাবে আগের অবস্থায় ফিরে যায় — কোনো অতিরিক্ত state বা side effect থাকে না।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-07",
+      "difficulty": "medium",
+      "question": "এই lab-এ \"add → observe → break → confirm → restore → re-verify\" loop-টা দিয়ে কী শেখানো হচ্ছে?",
+      "options": [
+        "শুধু ip route কমান্ডের syntax মুখস্থ করা",
+        "নেটওয়ার্ক ট্রাবলশুটিং-এর একটা সাধারণ পদ্ধতি — working state জানা, failure নির্দিষ্টভাবে reproduce করা, যা ভুল ঠিক সেটাই ঠিক করা, আর একই পরীক্ষা দিয়ে confirm করা — যা tool পাল্টালেও (iptables, DNS ইত্যাদি) প্রযোজ্য থাকে",
+        "এটা শুধুই এই নির্দিষ্ট lab-এর app-ns namespace-এর জন্য প্রযোজ্য একটা একেবারে নির্দিষ্ট কৌশল, বাস্তব production সার্ভার, container বা অন্য কোনো routing সমস্যার ক্ষেত্রে এই একই পদ্ধতি মোটেও কখনোই কাজে লাগানো যাবে না, কোনো অবস্থাতেই",
+        "default route সবসময় প্রথমে সম্পূর্ণভাবে মুছে তারপর আবার নতুন করে বানানো উচিত, নাহলে এটা সঠিকভাবে কাজ করবেই না, প্রতিবারই"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই লুপ একটা সাধারণ troubleshooting discipline — নির্দিষ্ট tool পাল্টালেও (routing, firewall, DNS) একই পদ্ধতি প্রযোজ্য: জানা working state, নির্দিষ্ট failure, সঠিক fix, একই check দিয়ে পুনরায় যাচাই।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-08",
+      "difficulty": "hard",
+      "question": "যদি default route মুছে ফেলার পরেও namespace-এর ভেতর থেকে 10.30.0.1-এ ping করা হয়, এটা কি সফল হবে? কেন?",
+      "options": [
+        "না, কারণ default route ছাড়া namespace-এর সব connectivity বন্ধ হয়ে যায়, এমনকি নিজের subnet-এও",
+        "হ্যাঁ — 10.30.0.1 directly-connected subnet-এর মধ্যেই পড়ে, এর জন্য এই route কখনোই default route-এর উপর নির্ভর করেনি",
+        "না, কারণ default route মুছে ফেললে namespace-এর পুরো ARP cache-ও সাথে সাথে স্বয়ংক্রিয়ভাবে মুছে যায়, তাই gateway-র MAC address আর resolve করাই যায় না",
+        "শুধু veth-root আবার up করলে সফল হবে, নাহলে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "10.30.0.1 namespace-এর directly-connected subnet-এর মধ্যেই আছে — সেই route সবসময় address assign করার সাথে সাথেই তৈরি হয়, default route-এর সাথে এর কোনো নির্ভরতা নেই।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-09",
+      "difficulty": "hard",
+      "question": "প্রোডাকশনে একটা সার্ভার হঠাৎ \"নিজের subnet reach করতে পারছে, কিন্তু বাইরের কিছু না\" — এই lab-এর শেখা অনুযায়ী, প্রথমে কোন কমান্ড দিয়ে এটা যাচাই করা উচিত, আর কেন?",
+      "options": [
+        "ip neigh flush, কারণ ARP cache সম্পূর্ণভাবে পরিষ্কার করে দিলেই এই ধরনের সব connectivity সমস্যা স্বয়ংক্রিয়ভাবে এবং নির্ভরযোগ্যভাবে এমনিতেই ঠিক হয়ে যায়, প্রতিবারই, কোনো ব্যতিক্রম ছাড়াই",
+        "ip route show (বা নির্দিষ্ট destination-এর জন্য ip route get) — কারণ এই উপসর্গ (নিজের subnet ঠিক আছে, বাকি সব না) প্রায়ই missing বা ভুল default route-এর classic signature",
+        "ping -c 100 8.8.8.8, কারণ বেশি packet পাঠালে problem নিজে থেকেই ধরা পড়ে",
+        "systemctl restart networking, কারণ বেশিরভাগ network সমস্যা restart দিয়েই ঠিক হয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "\"নিজের subnet ঠিক আছে, বাকি সব না\" ঠিক এই lab-এ দেখা pattern — একটা missing/ভুল default route-এর classic signature। প্রথম পদক্ষেপ routing table দেখা, ARP flush বা restart না।"
+    },
+    {
+      "id": "400c0340dbb22fac3fbfbcef-10",
+      "difficulty": "hard",
+      "question": "Part 1-এ ip route get 203.0.113.5 সফল হয়েছিল, Part 2-এ route মুছে দেওয়ার পর আবার fail করলো। ঠিক কোন একক কারণে এই পার্থক্য হলো?",
+      "options": [
+        "203.0.113.5 ঠিকানাটা নিজেই Part 2-এ পরিবর্তিত হয়ে গেছে, তাই আলাদা ফলাফল",
+        "veth pair-টা দুইবার আলাদাভাবে, ভিন্ন ভিন্ন পরিবেশে ও ক্রমে তৈরি হয়েছে এবং দ্বিতীয়বার সেটা ঠিকভাবে কাজ করেনি, কোনো সুস্পষ্ট কারণ ছাড়াই",
+        "শুধু একটা জিনিস বদলেছে — default route আছে কি নেই — বাকি পুরো setup (interface, address, directly-connected route) অভিন্ন ছিল দুইবারই",
+        "namespace-এর নামই আসলে ভিন্ন ছিল, যদিও দুটো লেখাই একই রকম দেখাচ্ছিল"
+      ],
+      "answerIndex": 2,
+      "explanation": "পুরো setup অভিন্ন রেখে শুধু default route যোগ/বাদ দেওয়া হয়েছে — তাই ফলাফলের পার্থক্যটা সরাসরি এবং একক কারণেই: সেই একটা route entry-র উপস্থিতি বা অনুপস্থিতি।"
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "labId": "69b1e4a54a49372ba7883530",
+  "title": "String Operations in Bash Scripting",
+  "passPercent": 95,
+  "intro": "quote-এর ফারাক, concatenation, length, substring, replace/remove, case conversion, splitting, আর pattern check — bash string-এর পুরো টুলবক্স।",
+  "targets": [],
+  "tasks": [
+    {
+      "id": "t01",
+      "points": 10,
+      "section": {
+        "title": "🔤 Quote-এর ফারাক",
+        "note": "ডাবল কোট-এর ভেতর variable expand হয়, সিঙ্গেল কোট-এর ভেতর হয় না — একদম literal থেকে যায়।"
+      },
+      "prompt": "string_basics.sh বানাও — str1=\"Bash\" আর str2='Scripting' সেট করে, একবার ডাবল কোটে \"$str1 $str2\" echo করো, আরেকবার সিঙ্গেল কোটে '$str1 $str2' echo করো।",
+      "answer": "cat << EOF > string_basics.sh\n#!/bin/bash\nstr1=\"Bash\"\nstr2='Scripting'\necho \"$str1 $str2\"\necho '$str1 $str2'\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/string_basics.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr1=\"Bash\"\nstr2='Scripting'\necho \"$str1 $str2\"\necho '$str1 $str2'"
+          }
+        ]
+      },
+      "hints": [
+        "ডাবল কোট ভেরিয়েবল expand করে, সিঙ্গেল কোট করে না — দুটো আলাদা echo লাইনে দেখাও।"
+      ]
+    },
+    {
+      "id": "t02",
+      "points": 8,
+      "prompt": "string_basics.sh চালাও — লক্ষ করো দুই লাইনের আউটপুট আলাদা।",
+      "answer": "bash string_basics.sh",
+      "check": { "require": ["string_basics.sh"] }
+    },
+    {
+      "id": "t03",
+      "points": 10,
+      "section": {
+        "title": "🔗 Concatenation আর length",
+        "note": "দুটো variable পাশাপাশি রাখলেই join হয়ে যায়; ${#var} দিয়ে length।"
+      },
+      "prompt": "string_length.sh বানাও — str=\"Poridhi\" সেট করে তার length echo করো (ফরম্যাট: \"Length of 'Poridhi': 7\")।",
+      "answer": "cat << EOF > string_length.sh\n#!/bin/bash\nstr=\"Poridhi\"\necho \"Length of '$str': ${#str}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/string_length.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr=\"Poridhi\"\necho \"Length of '$str': ${#str}\""
+          }
+        ]
+      },
+      "hints": ["${#str} দিয়ে string-এর length পাওয়া যায়।"]
+    },
+    {
+      "id": "t04",
+      "points": 7,
+      "prompt": "string_length.sh চালাও।",
+      "answer": "bash string_length.sh",
+      "check": { "require": ["string_length.sh"] }
+    },
+    {
+      "id": "t05",
+      "points": 14,
+      "section": {
+        "title": "✂️ Substring extraction",
+        "note": "${var:start:length} দিয়ে নির্দিষ্ট জায়গা থেকে নির্দিষ্ট সংখ্যক character বের করা যায়; length বাদ দিলে শেষ পর্যন্ত।"
+      },
+      "prompt": "substring.sh বানাও — str=\"Hello Poridhi\" থেকে index 6 থেকে 7 character বের করো, আলাদাভাবে প্রথম 5 character, আর index 6 থেকে বাকি সবটুকু — তিনটাই echo করো।",
+      "answer": "cat << EOF > substring.sh\n#!/bin/bash\nstr=\"Hello Poridhi\"\nsubstr=\"${str:6:7}\"\necho \"Substring: $substr\"\necho \"First 5 chars: ${str:0:5}\"\necho \"Omitting length: ${str:6}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/substring.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr=\"Hello Poridhi\"\nsubstr=\"${str:6:7}\"\necho \"Substring: $substr\"\necho \"First 5 chars: ${str:0:5}\"\necho \"Omitting length: ${str:6}\""
+          }
+        ]
+      },
+      "hints": [
+        "${str:start:len}; length বাদ দিলে (${str:start}) শুরু থেকে শেষ পর্যন্ত বাকিটুকু বেরিয়ে আসবে।"
+      ]
+    },
+    {
+      "id": "t06",
+      "points": 7,
+      "prompt": "substring.sh চালাও।",
+      "answer": "bash substring.sh",
+      "check": { "require": ["substring.sh"] }
+    },
+    {
+      "id": "t07",
+      "points": 16,
+      "section": {
+        "title": "🔄 Replace আর remove",
+        "note": "${var/pat/repl} প্রথম মিল বদলায়, ${var//pat/repl} সবগুলো; ${var%pat} সবচেয়ে ছোট suffix-মিল মুছে দেয়।"
+      },
+      "prompt": "substitution.sh বানাও — str=\"Bash is fun. Bash is powerful.\" সেট করে: প্রথম \"Bash\"-কে \"Shell\" দিয়ে বদলাও, তারপর সবগুলো \"Bash\"-কে \"Shell\" দিয়ে বদলাও, তারপর \". \" থেকে শুরু হওয়া suffix-টা বাদ দাও — তিনটাই echo করো।",
+      "answer": "cat << EOF > substitution.sh\n#!/bin/bash\nstr=\"Bash is fun. Bash is powerful.\"\necho \"${str/Bash/Shell}\"\necho \"${str//Bash/Shell}\"\necho \"${str%. *}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/substitution.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr=\"Bash is fun. Bash is powerful.\"\necho \"${str/Bash/Shell}\"\necho \"${str//Bash/Shell}\"\necho \"${str%. *}\""
+          }
+        ]
+      },
+      "hints": [
+        "প্রথম মিল: ${str/Bash/Shell}। সবগুলো: ${str//Bash/Shell}।",
+        "suffix বাদ দিতে: ${str%পরিবর্তনযোগ্যpattern} — যেমন ${str%. *}।"
+      ]
+    },
+    {
+      "id": "t08",
+      "points": 7,
+      "prompt": "substitution.sh চালাও।",
+      "answer": "bash substitution.sh",
+      "check": { "require": ["substitution.sh"] }
+    },
+    {
+      "id": "t09",
+      "points": 10,
+      "section": {
+        "title": "🔠 Case conversion",
+        "note": "${var^^} সব বড় হাতের, ${var,,} সব ছোট হাতের, ${var^} শুধু প্রথম অক্ষর বড় করে।"
+      },
+      "prompt": "case_conversion.sh বানাও — str=\"Bash Scripting\" থেকে সব বড় হাতের, সব ছোট হাতের, আর প্রথম অক্ষর বড় করা ভার্সন — তিনটাই echo করো।",
+      "answer": "cat << EOF > case_conversion.sh\n#!/bin/bash\nstr=\"Bash Scripting\"\necho \"${str^^}\"\necho \"${str,,}\"\necho \"${str^}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/case_conversion.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr=\"Bash Scripting\"\necho \"${str^^}\"\necho \"${str,,}\"\necho \"${str^}\""
+          }
+        ]
+      },
+      "hints": [
+        "${str^^} আপারকেস, ${str,,} লোয়ারকেস, ${str^} শুধু প্রথম অক্ষর ক্যাপিটালাইজ।"
+      ]
+    },
+    {
+      "id": "t10",
+      "points": 6,
+      "prompt": "case_conversion.sh চালাও।",
+      "answer": "bash case_conversion.sh",
+      "check": { "require": ["case_conversion.sh"] }
+    },
+    {
+      "id": "t11",
+      "points": 14,
+      "section": {
+        "title": "✂️ IFS দিয়ে string split করা",
+        "note": "IFS (Internal Field Separator) বদলে দিয়ে read -ra দিয়ে একটা delimited string সরাসরি array-তে ভেঙে ফেলা যায়।"
+      },
+      "prompt": "split_string.sh বানাও — csv=\"apple,banana,grape\" কে কমা দিয়ে split করে fruits নামে array বানাও (IFS=',' read -ra fruits <<< \"$csv\"), তারপর প্রথম ফল আর সব ফল echo করো।",
+      "answer": "cat << EOF > split_string.sh\n#!/bin/bash\ncsv=\"apple,banana,grape\"\nIFS=',' read -ra fruits <<< \"$csv\"\necho \"First fruit: ${fruits[0]}\"\necho \"All fruits: ${fruits[@]}\"\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/split_string.sh",
+            "type": "file",
+            "content": "#!/bin/bash\ncsv=\"apple,banana,grape\"\nIFS=',' read -ra fruits <<< \"$csv\"\necho \"First fruit: ${fruits[0]}\"\necho \"All fruits: ${fruits[@]}\""
+          }
+        ]
+      },
+      "hints": [
+        "IFS=',' read -ra fruits <<< \"$csv\" — IFS বদলে দিয়ে read -ra দিয়ে array-তে split হয়।"
+      ]
+    },
+    {
+      "id": "t12",
+      "points": 6,
+      "prompt": "split_string.sh চালাও।",
+      "answer": "bash split_string.sh",
+      "check": { "require": ["split_string.sh"] }
+    },
+    {
+      "id": "t13",
+      "points": 12,
+      "section": {
+        "title": "🔎 Pattern check [[ ]]",
+        "note": "[[ \"$str\" == *পরিবর্তনযোগ্য* ]] দিয়ে substring আছে কিনা চেক করা যায়; -z দিয়ে string খালি কিনা।"
+      },
+      "prompt": "substring_check.sh বানাও — str=\"Linux is awesome\" এ \"is\" আছে কিনা চেক করে থাকলে \"Substring found!\" echo করো; আর একটা খালি string-এ -z দিয়ে চেক করে \"String is empty\" echo করো।",
+      "answer": "cat << EOF > substring_check.sh\n#!/bin/bash\nstr=\"Linux is awesome\"\nif [[ \"$str\" == *\"is\"* ]]; then\n  echo \"Substring found!\"\nfi\nempty_str=\"\"\nif [[ -z \"$empty_str\" ]]; then\n  echo \"String is empty\"\nfi\nEOF",
+      "check": {
+        "paths": [
+          {
+            "path": "~/substring_check.sh",
+            "type": "file",
+            "content": "#!/bin/bash\nstr=\"Linux is awesome\"\nif [[ \"$str\" == *\"is\"* ]]; then\n  echo \"Substring found!\"\nfi\nempty_str=\"\"\nif [[ -z \"$empty_str\" ]]; then\n  echo \"String is empty\"\nfi"
+          }
+        ]
+      },
+      "hints": [
+        "[[ \"$str\" == *\"is\"* ]] — দুইপাশে * দিয়ে substring match চেক করা যায়।",
+        "-z কোনো string খালি কিনা চেক করে।"
+      ]
+    },
+    {
+      "id": "t14",
+      "points": 6,
+      "prompt": "substring_check.sh চালাও।",
+      "answer": "bash substring_check.sh",
+      "check": { "require": ["substring_check.sh"] }
+    }
+  ]
+}
