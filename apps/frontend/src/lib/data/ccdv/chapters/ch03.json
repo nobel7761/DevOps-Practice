@@ -1,0 +1,938 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি Messages API-র role, stateless history, system/parameters ও stop_reason, streaming event-এর block জোড়া ও ভাঙা stream recovery, ছবি/PDF/Files API, SDK বনাম raw REST header এবং Bedrock/Vertex-এ auth, model id ও feature-ভেদ ব্যাখ্যা করে Chai-Bot-এর API-সমস্যাগুলো ধরতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর \"বড় অর্ডার\" সপ্তাহ\n\nChaiCart-এর **Chai-Bot** এখন বাস্তব গ্রাহকের সাথে কথা বলছে। জুনিয়র developer **Rafi** আগের সপ্তাহে token আর context window শিখেছে। এই সপ্তাহে সোমবার সকালে tech lead **Nusrat Apu** চারটা প্রশ্ন নিয়ে এলেন:\n\n1. \"গ্রাহক এখন অর্ডারের রসিদের ছবি আর কোম্পানির supplier PDF পাঠাচ্ছেন। Chai-Bot এগুলো পড়বে কীভাবে? আর প্রতিটা request-এ ৩ MB-র PDF আবার পাঠালে কি network আর বিল দুটোই ফুলবে না?\"\n2. \"দীর্ঘ উত্তর আসতে ২০ সেকেন্ড লাগে, গ্রাহক খালি spinner দেখে। আর কিছু উত্তর মাঝপথে কেটে যায়। কেন?\"\n3. \"আমাদের কোম্পানির নিয়ম, সব AI traffic AWS-এর ভেতর দিয়ে যাবে। তাহলে কি Anthropic-এর API ছেড়ে Bedrock-এ গেলে কোড একই থাকবে?\"\n4. \"কাল রাতে একটা request ফেল করেছিল। support-কে কী নম্বর দিলে ওরা খুঁজে পাবে?\"\n\nRafi-র উত্তর ছিল: \"আমি তো `client.messages.create()` ডাকি, ভেতরে কী হয় অত দেখিনি।\" Nusrat Apu হেসে বললেন: \"পরীক্ষাতেও ঠিক এই ভেতরের জিনিসগুলোই আসে। আজ **Messages API** খুলে দেখো।\"\n\n### আজকের মানচিত্র\n\nআজকের chapter পরীক্ষার **Domain 2 (Applications and Integration)**-এর **Claude API Mechanics** skill-এর। এই skill পুরো পরীক্ষার প্রায় **৬.৮%** (Domain 2-এর সবচেয়ে বড় skill-গুলোর একটা)। Blueprint বলে এখানে আসে: messages, tools, streaming, vision, caching, third-party vendors, data access patterns, batch API, realtime বনাম batch। আমরা আজ ছয়টা বিষয় ধরব, আর তিনটা বিষয় ছুঁয়ে যাব:\n\n| # | বিষয় | কোন গল্পের প্রশ্ন |\n|---|---|---|\n| ১ | Messages API, role ও multi-turn | কথোপকথন আসলে কীভাবে চলে |\n| ২ | System prompt ও parameters, `max_tokens`, `stop_reason`, `request-id` | মাঝপথে কাটা উত্তর, support-এর নম্বর |\n| ৩ | Streaming ও stream recovery | spinner সমস্যা, ভাঙা stream |\n| ৪ | Vision, PDF ও Files API | রসিদের ছবি, supplier PDF |\n| ৫ | SDK বনাম raw REST | header, version, কে কী পাঠায় |\n| ৬ | Bedrock / Vertex দিয়ে Claude | AWS-এর ভেতর দিয়ে traffic |\n| + | Tool (overview), batch বনাম realtime (overview), data-access pattern | ডেটা Claude-এর কাছে কীভাবে পৌঁছায় |\n\n> Tool-এর গভীরে যাব ch08-এ, batch-এর গভীরে ch02-তে। আজ শুধু \"Messages API-র ভেতরে এরা কোথায় বসে\" সেটুকু।\n\n### একটা সতর্কতা: docs বদলায়\n\nএই chapter লেখার সময় আমি সরাসরি official Anthropic docs পড়েছি (platform.claude.com/docs)। সেখানে API version `2026-10-21` লেখা আছে, আর কিছু আচরণ আগের model/version-এর সাথে আলাদা। যেখানেই এমন ফারাক আছে, আমি **\"docs অনুযায়ী\"** বলে লিখেছি এবং `callout`-এ তুলে ধরেছি। পরীক্ষার প্রশ্নের গল্পে model বা version আলাদা হলে সেটা খেয়াল করবে, কারণ একই feature পুরোনো model-এ একরকম আর নতুনে অন্যরকম হতে পারে।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. Messages API: role, content block ও multi-turn\n\n### সবচেয়ে ছোট request\n\nClaude API একটা REST API। বেস URL `https://api.anthropic.com`, আর চ্যাটের endpoint `POST /v1/messages`। সবচেয়ে ছোট বৈধ request-এ তিনটা জিনিস লাগে: `model`, `max_tokens` আর `messages`।\n\n```json\n{\n  \"model\": \"<current model id>\",\n  \"max_tokens\": 1024,\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"আমার অর্ডার কোথায়?\"}\n  ]\n}\n```\n\nResponse-এ যা আসে (docs-এর নমুনা অনুযায়ী):\n\n```json\n{\n  \"id\": \"msg_01...\",\n  \"type\": \"message\",\n  \"role\": \"assistant\",\n  \"content\": [ {\"type\": \"text\", \"text\": \"...\" } ],\n  \"model\": \"...\",\n  \"stop_reason\": \"end_turn\",\n  \"stop_sequence\": null,\n  \"usage\": { \"input_tokens\": 12, \"output_tokens\": 6 }\n}\n```\n\nলক্ষ করার বিষয়:\n\n- `content` একটা **array**, string নয়। প্রতিটা উপাদান একটা **content block** (`text`, `tool_use`, `thinking` ...)। Rafi প্রথমে `response.content[0].text` লিখেছিল। এটা ভঙ্গুর, কারণ প্রথম block text না-ও হতে পারে (যেমন thinking বা tool_use আগে আসতে পারে)। সঠিক অভ্যাস: block-এর `type` দেখে বাছাই।\n- `stop_reason` বলে Claude **কেন থামল**। এটা এই chapter-এর একটা বড় অংশ, নিচে আলাদা করে দেখব।\n- `usage` থেকে সরাসরি token হিসাব। বিল, বাজেট আর debugging-এ এটাই প্রথম দেখার জায়গা।\n\n### দুটো role, আর \"system\" কোথায়?\n\n`messages`-এর প্রতিটা উপাদানে `role` থাকে: **`user`** (মানুষ বা তোমার অ্যাপ) আর **`assistant`** (Claude)। System prompt কিন্তু `messages`-এর ভেতরের সাধারণ role নয়; সেটা request-এর **top-level `system` field**:\n\n```json\n{\n  \"model\": \"<id>\",\n  \"max_tokens\": 1024,\n  \"system\": \"তুমি ChaiCart-এর সহকারী Chai-Bot। বাংলায়, সংক্ষেপে, ভদ্রভাবে উত্তর দাও। refund-এর সিদ্ধান্ত নিজে নেবে না।\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"অর্ডার ১০২৩ কোথায়?\"}]\n}\n```\n\n> Docs অনুযায়ী কিছু নতুন model-এ `messages`-এর ভেতরে `\"role\": \"system\"` দিয়ে কথোপকথনের মাঝখানে নতুন নির্দেশ ঢোকানোও যায় (প্রথম entry হতে পারবে না, আর placement-এর নিয়ম আছে)। তবে শুরু থেকে প্রযোজ্য নির্দেশের জায়গা এখনও top-level `system`। পরীক্ষায় \"system prompt কোন field-এ যায়\" জিজ্ঞেস করলে উত্তর: top-level `system`।\n\n### Stateless: server কিছু মনে রাখে না\n\nMessages API **stateless**। প্রতিটা request-এ তোমাকে পুরো কথোপকথন পাঠাতে হয়। তিন turn-এর চ্যাট এরকম:\n\n```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"আমি দার্জিলিং চা খুঁজছি।\"},\n    {\"role\": \"assistant\", \"content\": \"ভালো পছন্দ! ১০০ গ্রাম নাকি ২৫০ গ্রাম?\"},\n    {\"role\": \"user\", \"content\": \"২৫০ গ্রাম। দাম কত?\"},   # নতুন প্রশ্ন\n]\n```\n\nতৃতীয় প্রশ্নটা Claude বুঝবে শুধু এ কারণে যে প্রথম দুটো turn আবার পাঠানো হয়েছে। Docs আরও বলে, আগের `assistant` turn-গুলো যে সত্যিই Claude-এর লেখা হতে হবে এমন নয়; তুমি **synthetic** (নিজে বানানো) assistant message-ও রাখতে পারো। এটা কাজে লাগে history ছাঁটার পর সারসংক্ষেপ বসাতে, বা few-shot উদাহরণ দিতে।\n\n**একটা সূক্ষ্ম তথ্য:** docs-এ \"message threads\" নামে একটা **beta** feature আছে, যেখানে API নিজে কথোপকথন ধরে রাখে (thread শেষ request-এর ৫ মিনিট পর expire করে)। কিন্তু ডিফল্ট আচরণ stateless, আর পরীক্ষার প্রশ্ন ডিফল্ট ধরেই আসবে।\n\n### Worked example: history ধরার ছোট ক্লাস\n\nRafi একটা ছোট ক্লাস লিখল, যা history জমায় আর প্রতিবার পুরোটা পাঠায়:\n\n```python\nimport os\nimport anthropic\n\nclient = anthropic.Anthropic()          # ANTHROPIC_API_KEY env var থেকে key নেয়\nMODEL = os.environ[\"CLAUDE_MODEL\"]      # official models পাতা থেকে নেওয়া id\n\nclass Chat:\n    def __init__(self, system):\n        self.system = system\n        self.history = []\n\n    def say(self, text):\n        self.history.append({\"role\": \"user\", \"content\": text})\n        r = client.messages.create(\n            model=MODEL,\n            max_tokens=500,\n            system=self.system,\n            messages=self.history,\n        )\n        # block type দিয়ে text বাছো\n        answer = \"\".join(b.text for b in r.content if b.type == \"text\")\n        self.history.append({\"role\": \"assistant\", \"content\": answer})\n        print(f\"in={r.usage.input_tokens} out={r.usage.output_tokens} stop={r.stop_reason}\")\n        return answer\n```\n\nপ্রতিটা `say()`-এ `input_tokens` আগের চেয়ে বাড়বে, কারণ history বড় হচ্ছে। Nusrat Apu-র আজকের প্রথম নোট: \"লম্বা চ্যাটে খরচ আর window-র চাপ বাড়ে; কখন কী ছাঁটবে সেটা ডিজাইনের অংশ।\" (এই context-management কৌশল আসবে ch06/ch10-এ।)\n\n### Prefill: পুরোনো কৌশল, নতুন model-এ নেই\n\nআগে `messages`-এর শেষে অসম্পূর্ণ `assistant` message বসিয়ে (\"prefill\") Claude-এর উত্তরের শুরু ঠিক করে দেওয়া যেত। Docs অনুযায়ী **Claude 4.6 ও পরের model-এ prefill সমর্থিত নয়**, পাঠালে `400 invalid_request_error` আসে, আর কথোপকথন **user message দিয়ে শেষ** হতে হয়। বিকল্প: structured outputs (যে model-এ আছে) বা system prompt-এর নির্দেশ।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "sequence",
+          "caption": "Stateless API: দ্বিতীয় প্রশ্নে অ্যাপকে আগের দুটো turn আবার পাঠাতে হয়। সার্ভার কিছু জমা রাখে না।",
+          "participants": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "api",
+              "kind": "gateway",
+              "label": "/v1/messages"
+            },
+            {
+              "id": "model",
+              "kind": "external",
+              "label": "Claude"
+            }
+          ],
+          "messages": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages = [user১]"
+            },
+            {
+              "from": "api",
+              "to": "model",
+              "label": "tokenize + generate"
+            },
+            {
+              "from": "model",
+              "to": "app",
+              "label": "assistant১ + usage + stop_reason",
+              "dashed": true
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages = [user১, assistant১, user২]"
+            },
+            {
+              "from": "api",
+              "to": "model",
+              "label": "পুরো history আবার process"
+            },
+            {
+              "from": "model",
+              "to": "app",
+              "label": "assistant২ (input_tokens বেশি)",
+              "dashed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'API আমার চ্যাট মনে রাখে', 'system একটা role', 'content[0].text যথেষ্ট'",
+        "markdown": "তিনটা বদ্ধমূল ভুল ধারণা, তিনটাই পরীক্ষায় distractor হয়ে আসে:\n\n1. **\"Claude আগের message মনে রাখবে, শুধু নতুনটা পাঠাও।\"** ভুল। Messages API stateless; প্রতিটা request-এ পুরো `messages` তোমাকে পাঠাতে হয়। \"Claude নাম ভুলে যাচ্ছে\" ধরনের প্রশ্নে সবচেয়ে সম্ভাব্য কারণ: history পাঠানো হয়নি।\n2. **\"system prompt হলো `messages`-এর `role: system` entry।\"** ডিফল্ট উত্তর ভুল। শুরু থেকে প্রযোজ্য নির্দেশ top-level `system` field-এ যায়।\n3. **\"উত্তর সবসময় `content[0]`-এ text।\"** ভুল। `content` block-এর array; type দেখে বাছাই করো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. System prompt ও parameters: `max_tokens`, `stop_reason`, `request-id`\n\n### System prompt কী করে\n\n`system` Claude-এর **ভূমিকা, নিয়ম ও টোন** বেঁধে দেয়, যা পুরো কথোপকথনে প্রযোজ্য। Chai-Bot-এর জন্য: \"তুমি ChaiCart-এর সহকারী; বাংলায় ভদ্রভাবে উত্তর দাও; ১০,০০০ টাকার বেশি refund-এর সিদ্ধান্ত মানুষের কাছে পাঠাও।\" মনে রাখো, system prompt-ও token গোনা হয় (ch01-এ দেখেছ) আর প্রতিটা request-এ যায়। কী লিখবে (system নাকি user turn-এ) সেই prompt-design আসছে ch06-এ। আজ শুধু API-র দিক: **কোন field-এ যায়, আর কী খরচ হয়।**\n\n### মূল parameter-গুলো\n\n| Parameter | কী করে | মনে রাখার কথা |\n|---|---|---|\n| `model` | কোন model চলবে | কোডে hardcode না করে config/env থেকে নাও (ch04-এ version pinning) |\n| `max_tokens` | **এই উত্তরে সর্বোচ্চ কত output token** | এটা সীমা, লক্ষ্য নয়; Claude এর আগে থামতে পারে। এই সীমায় ঠেকলে উত্তর **কাটা** থাকে |\n| `messages` | কথোপকথন | stateless, তাই পুরোটা |\n| `system` | নির্দেশ | top-level |\n| `stop_sequences` | কিছু নির্দিষ্ট string এলে থামো | থামলে `stop_reason: stop_sequence` আর `response.stop_sequence`-এ কোনটা মিলল |\n| `stream` | SSE streaming চালু | পরের অংশে |\n| `tools`, `tool_choice` | tool ব্যবহার | ch08 |\n\n### `max_tokens` একটা দেয়াল, ব্রেক নয়\n\nRafi `max_tokens=100` দিয়েছিল FAQ-এর উত্তরের জন্য। দীর্ঘ উত্তর মাঝপথে বাক্যের মাঝে কেটে গেল। ক্ষতি আরও বেশি যদি কাটা পড়ে একটা **JSON বা tool call-এর মাঝখানে**: তখন parse ভাঙে। তাই প্রতিটা response-এ `stop_reason` দেখা বাধ্যতামূলক অভ্যাস।\n\n### `stop_reason`: Claude কেন থামল\n\nDocs-এর \"handling stop reasons\" পাতা অনুযায়ী মান আছে সাতটা, এর বাইরে কিছু নেই:\n\n| `stop_reason` | মানে | কী করবে |\n|---|---|---|\n| `end_turn` | Claude স্বাভাবিকভাবে শেষ করেছে | উত্তর ব্যবহার করো |\n| `max_tokens` | তোমার `max_tokens` সীমায় ঠেকেছে | `max_tokens` বাড়াও বা উত্তর চালিয়ে নাও। শেষ block অসম্পূর্ণ `tool_use` হলে বেশি `max_tokens` দিয়ে আবার চেষ্টা |\n| `stop_sequence` | তোমার দেওয়া stop sequence বেরিয়েছে | `response.stop_sequence` দেখো |\n| `tool_use` | Claude একটা **client tool** চালাতে বলছে | tool চালাও, `tool_result` পাঠাও |\n| `pause_turn` | server tool (যেমন web search)-এর ভেতরের loop-এর iteration সীমা (ডিফল্ট ১০) ছুঁয়েছে | assistant content অপরিবর্তিত রেখে আবার request পাঠাও |\n| `refusal` | Claude উত্তর দিতে অস্বীকার করেছে। এটা **HTTP 200**, error নয় | `stop_details` দেখো; docs অনুযায়ী অন্য model-এ retry করা যায় |\n| `model_context_window_exceeded` | উত্তর model-এর context window ভরে ফেলেছে | উত্তর কাটা ধরো |\n\nএকটা সুন্দর নিয়ম: HTTP error (4xx/5xx) আর `stop_reason` **আলাদা জিনিস**। `refusal` ও `max_tokens` সফল (200) response-এর ভেতরের তথ্য; তাই `try/except` একা এদের ধরবে না, তোমাকে `if` দিয়ে `stop_reason` পরীক্ষা করতে হবে।\n\n```python\nr = client.messages.create(model=MODEL, max_tokens=300, messages=history)\n\nif r.stop_reason == \"end_turn\":\n    reply = \"\".join(b.text for b in r.content if b.type == \"text\")\nelif r.stop_reason == \"max_tokens\":\n    # কাটা উত্তর: বাড়ান max_tokens বা continue; গ্রাহককে অর্ধেক বাক্য দেখিয়ো না\n    ...\nelif r.stop_reason == \"tool_use\":\n    ...   # tool চালাও (ch08)\nelif r.stop_reason == \"refusal\":\n    ...   # নিরাপদ fallback বার্তা, লগ রাখো\n```\n\n**খালি `end_turn` উত্তর:** docs বলে মাঝে মাঝে tool result-এর পর Claude ২-৩ token-এর ফাঁকা উত্তর দিয়ে `end_turn` করে। কারণ সাধারণত `tool_result` block-এর ঠিক পরে অতিরিক্ত text block জুড়ে দেওয়া, বা Claude-এর আগের সম্পূর্ণ উত্তর আবার পাঠানো। সমাধান: `tool_result`-এর সাথে বাড়তি text না জোড়া; আর শেষ উপায় হিসেবে নতুন user message (\"Please continue\") দিয়ে আবার call।\n\n### `usage`: খরচের প্রথম প্রমাণ\n\n`usage.input_tokens` আর `usage.output_tokens` দিয়েই বিলের হিসাব শুরু। Streaming-এ `usage` আসে `message_start` (input) আর `message_delta` (output, **cumulative**) event-এ। বড় request আগে মাপতে চাইলে token counting API আছে (ch01-এ দেখেছ)।\n\n### `request-id`: support-এর নম্বর\n\nNusrat Apu-র চতুর্থ প্রশ্নের উত্তর: প্রতিটা API response-এ **`request-id` header** থাকে (যেমন `req_018EeWy...`)। Error response-এর body-তেও `request_id` field থাকে। Support-এ যোগাযোগ করলে এটা দাও। Python/TypeScript SDK-তে এটা response object-এর `_request_id` property। অন্য header (rate limit ইত্যাদি) পড়তে `with_raw_response`।\n\n```python\nr = client.messages.create(model=MODEL, max_tokens=200,\n                           messages=[{\"role\": \"user\", \"content\": \"হ্যালো\"}])\nprint(\"request id:\", r._request_id)       # log-এ রাখো\n\nraw = client.messages.with_raw_response.create(\n    model=MODEL, max_tokens=200,\n    messages=[{\"role\": \"user\", \"content\": \"হ্যালো\"}],\n)\nprint(raw.headers.get(\"request-id\"))      # header হিসেবে\nmsg = raw.parse()                         # তারপর স্বাভাবিক Message\n```\n\nRafi এখন প্রতিটা call-এর `request-id`, `usage`, `stop_reason` log করে। Production-এ কোন request ঠিক কী করল, সেটা না জানলে debugging অন্ধকারে ঢিল (ch12-এ আরও)।\n\n### Sampling parameter: `temperature`, `top_p`, `top_k`\n\nch01-এ দেখেছ, এগুলো model ভেদে বদলে গেছে। Docs-এর Messages API পাতা অনুযায়ী: **Claude 4.7 ও পরের model-এ non-default মান দিলে `400`**; আর API version `2026-10-21` থেকে এই তিনটা parameter-এ **যেকোনো মান** দিলে `400`। অর্থাৎ এগুলো বাদ দিয়ে prompting-এ আচরণ ঠিক করো।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: `max_tokens` উত্তরের দৈর্ঘ্য নির্ধারণ করে না, আর `refusal` কোনো HTTP error নয়",
+        "markdown": "- `max_tokens` হলো **সর্বোচ্চ সীমা**। বেশি দিলে Claude লম্বা লিখতে বাধ্য হয় না; কম দিলে উত্তর কাটতে পারে (`stop_reason: max_tokens`)। \"উত্তর ছোট করতে `max_tokens` কমাও\" প্রায় সবসময় ভুল সমাধান; কাটা উত্তর পাবে। দৈর্ঘ্য চাইলে prompt-এ বলো।\n- `refusal` ও `max_tokens` দুটোই **HTTP 200**-এর ভেতরে আসে। \"retry-on-error লজিক সব সমস্যা ধরবে\" ধরনের অপশন তাই ফাঁদ; `stop_reason` আলাদা করে পরীক্ষা করতে হয়।\n- `request-id` হলো response **header** (আর error body-র `request_id`); এটা তুমি নিজে বানাও না।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "stop_reason: একটা request, তিন রকম শেষ",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। একই API call-এর শেষ তিন রকম হতে পারে। কোড কী দেখে সিদ্ধান্ত নেয় সেটা খেয়াল করো।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "api",
+              "label": "Messages API"
+            },
+            {
+              "id": "tool",
+              "label": "ChaiCart order DB"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "request + tools=[get_order]",
+              "note": "গ্রাহক জিজ্ঞেস করেছে 'অর্ডার ১০২৩ কোথায়?'। request-এ model, max_tokens, messages আর tools পাঠানো হল।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "stop_reason: tool_use",
+              "note": "Claude নিজে ডেটা জানে না, তাই get_order চালাতে বলল। response-এ tool_use block আছে। এটা error নয়, নির্দেশ।"
+            },
+            {
+              "from": "app",
+              "to": "tool",
+              "label": "get_order(1023)",
+              "note": "tool চালায় তোমার কোড, Claude নয় (client tool)। DB-তে authz ও validation তোমার দায়িত্ব।"
+            },
+            {
+              "from": "tool",
+              "to": "app",
+              "label": "status: শিপড",
+              "note": "DB থেকে ফল ফিরল।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages + tool_result",
+              "note": "assistant-এর tool_use turn আর তার পরে user turn-এ শুধু tool_result block পাঠালে (বাড়তি text ছাড়া), Claude উত্তর বানায়। stateless বলে পুরো history আবার যায়।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "stop_reason: end_turn",
+              "note": "স্বাভাবিক সমাপ্তি। এবার text block পড়ে গ্রাহককে দেখাও।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "(বিকল্প) stop_reason: max_tokens",
+              "note": "max_tokens ছোট হলে উত্তর কাটা থাকত। কাটা tool_use block হলে বেশি max_tokens দিয়ে আবার চেষ্টা করতে হয়।"
+            }
+          ],
+          "takeaway": "stop_reason দেখে কোড ঠিক করে পরের পদক্ষেপ: ব্যবহার করো (end_turn), tool চালাও (tool_use), বা কাটা উত্তর সামলাও (max_tokens)। এটা HTTP status নয়।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Streaming: event, content block জোড়া, আর ভাঙা stream\n\n### কেন streaming\n\nChai-Bot-এর লম্বা উত্তর ২০ সেকেন্ড লাগে, গ্রাহক spinner দেখে। `stream: true` দিলে API **server-sent events (SSE)** পাঠায়, মানে উত্তর টুকরো টুকরো করে আসে, আর UI-তে লেখা ফুটে ওঠে। এর দুটো উপকার: ধারণাগত দ্রুততা (time-to-first-token), আর **লম্বা request-এর নিরাপত্তা**। Docs-এর errors পাতা বলে বড় `max_tokens` দিয়ে non-streaming call করলে network idle connection ফেলে দিতে পারে; দশ মিনিটের বেশি চলা request-এর জন্য streaming বা Batches API ব্যবহার করতে বলে। SDK-ও non-streaming request-এর সম্ভাব্য সময় ১০ মিনিটের বেশি হলে আপত্তি জানায়।\n\n> মনে রাখো (ch01-এর শিক্ষা): streaming **token সংখ্যা বা খরচ কমায় না**। শুধু কখন আংশিক উত্তর হাতে আসে সেটা বদলায়।\n\n### Event-এর ক্রম\n\nDocs অনুযায়ী প্রতিটা stream এই ক্রমে চলে:\n\n1. **`message_start`**: একটা `Message` object, কিন্তু `content` খালি। এখানে `usage.input_tokens` থাকে।\n2. একের পর এক **content block**, প্রতিটার জন্য: `content_block_start` → এক বা একাধিক `content_block_delta` → `content_block_stop`। প্রতিটা block-এর একটা `index` আছে, যা শেষ `content` array-র index-এর সাথে মেলে।\n3. এক বা একাধিক **`message_delta`**: top-level বদল, যেমন `stop_reason` আর cumulative `usage`।\n4. শেষে **`message_stop`**।\n\nমাঝে মাঝে **`ping`** আসতে পারে। আর `error` event আসতে পারে (যেমন `overloaded_error`, যা non-streaming-এ HTTP 529-এর সমতুল্য)।\n\nএকটা ছোট stream-এর ছবি:\n\n```text\nevent: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":25,...}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"ধন্যবাদ\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":15}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n```\n\n**ব্যবহারযোগ্য নিয়ম:** `stop_reason` `message_start`-এ `null`; পাওয়া যায় **`message_delta`**-তে, আর কোনো event-এ না। আর `message_delta`-র `usage` **cumulative** (যোগ করবে না, শেষেরটাই মোট)।\n\n### Delta-র ধরন: block জোড়া লাগানো\n\n`content_block_delta`-র ভেতরের `delta.type` বলে কী ধরনের টুকরো:\n\n| delta type | কোন block-এর | কী জমাবে |\n|---|---|---|\n| `text_delta` | `text` | `delta.text` জোড়া লাগাও |\n| `input_json_delta` | `tool_use` | `delta.partial_json` string জোড়া লাগাও; `content_block_stop`-এর পর পুরোটা parse করে **object** পাবে |\n| `thinking_delta` | `thinking` | `delta.thinking` জোড়া লাগাও |\n| `signature_delta` | `thinking` | `content_block_stop`-এর ঠিক আগে একটা; thinking block-এর integrity-র সই |\n\n`input_json_delta`-র ফাঁদ: টুকরোগুলো **আংশিক JSON string**, প্রতিটা আলাদাভাবে parse করা যায় না। জমিয়ে `content_block_stop`-এ parse করো। (Docs আরও বলে, বর্তমান model একবারে একটা পুরো key-value দেয়, তাই tool call-এ event-এর মাঝে বিরতি দেখা যেতে পারে।)\n\nআর একটা নিয়ম: docs বলে নতুন event type যোগ হতে পারে (versioning policy)। তাই **অচেনা event এলে ভেঙে পোড়ো না, উপেক্ষা করো**।\n\n### SDK helper: নিজে জোড়া না লাগিয়ে\n\nবেশিরভাগ ক্ষেত্রে raw event হাতে ধরা লাগে না। Python SDK-তে:\n\n```python\nwith client.messages.stream(\n    model=MODEL,\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": \"চা বানানোর ৩টা ধাপ লেখো।\"}],\n) as stream:\n    for text in stream.text_stream:\n        print(text, end=\"\", flush=True)      # UI-তে ফুটিয়ে তোলো\n    final = stream.get_final_message()       # পুরো Message, create()-এর মতোই\n\nprint(final.stop_reason, final.usage.output_tokens)\n```\n\n`get_final_message()` stream-কে ভেতরে ভেতরে ব্যবহার করে কিন্তু আগের মতোই সম্পূর্ণ `Message` ফেরত দেয়। Docs বলে, বড় `max_tokens`-এ এটাই সুপারিশকৃত পথ যেখানে তুমি টুকরো টুকরো দেখাতে চাও না কিন্তু HTTP timeout এড়াতে চাও।\n\n### Raw event হাতে জোড়া লাগানো (কীভাবে কাজ করে বোঝার জন্য)\n\n```python\nblocks = {}          # index -> {\"type\":..., \"text\":..., \"json\":...}\nstop_reason = None\n\nfor ev in client.messages.create(model=MODEL, max_tokens=512, stream=True,\n                                 messages=[{\"role\": \"user\", \"content\": \"হ্যালো\"}]):\n    if ev.type == \"content_block_start\":\n        blocks[ev.index] = {\"type\": ev.content_block.type, \"text\": \"\", \"json\": \"\"}\n    elif ev.type == \"content_block_delta\":\n        d = ev.delta\n        if d.type == \"text_delta\":\n            blocks[ev.index][\"text\"] += d.text\n        elif d.type == \"input_json_delta\":\n            blocks[ev.index][\"json\"] += d.partial_json\n        # thinking_delta, signature_delta: একইভাবে; অচেনা delta উপেক্ষা\n    elif ev.type == \"message_delta\":\n        stop_reason = ev.delta.stop_reason\n    # ping / অচেনা event: উপেক্ষা\n```\n\n### ভাঙা stream: recovery\n\nনেটওয়ার্ক কেটে গেলে বা error এলে stream মাঝপথে ভাঙতে পারে। মনে রাখো, stream শুরু হলে HTTP status ইতিমধ্যে `200` হয়ে গেছে; তাই মাঝপথের error আসে stream-এর ভেতরে **`error` event** হিসেবে, স্বাভাবিক HTTP error-handling-এ ধরা পড়ে না। Docs-এর **Error recovery** অংশ বলে মূল কৌশল তিন ধাপ:\n\n1. **আংশিক উত্তর সংরক্ষণ করো**: error-এর আগে যা সফলভাবে পেয়েছ তা রাখো।\n2. **continuation request বানাও।**\n3. **stream আবার চালাও** যেখানে থেমেছিল সেখান থেকে।\n\nদ্বিতীয় ধাপ model-ভেদে আলাদা (docs অনুযায়ী):\n\n| Model | continuation কীভাবে |\n|---|---|\n| Claude 4.5 ও আগের | আংশিক উত্তরটা নতুন request-এর শেষে **assistant message** হিসেবে বসাও |\n| Claude 4.6 ও পরের | আংশিক উত্তর ও নির্দেশ দিয়ে একটা **user message** বানাও, যেমন \"তোমার আগের উত্তর [অংশ] পর্যন্ত এসে থেমেছিল, যেখানে থেমেছিলে সেখান থেকে চালিয়ে যাও।\" |\n\nকারণটা তোমার আগের শিক্ষার সাথে মেলে: 4.6+ model-এ assistant prefill সমর্থিত নয়, তাই আংশিক assistant message দিয়ে \"জোড়া\" চলে না।\n\n**সীমা:** docs স্পষ্ট বলে, **`tool_use` ও `thinking` block আংশিকভাবে recover করা যায় না**। শুধু শেষ **text** block থেকে চালিয়ে নেওয়া যায়। অর্থাৎ ভাঙার সময় যদি একটা tool call-এর JSON অর্ধেক এসে থাকে, সেটা ফেলে দিয়ে আবার সেই call করাতে হবে।\n\n```python\ndef stream_with_recovery(history, max_attempts=3):\n    partial = \"\"\n    for attempt in range(max_attempts):\n        msgs = list(history)\n        if partial:\n            # 4.6+ model: user message দিয়ে continuation (docs অনুযায়ী)\n            msgs.append({\"role\": \"user\", \"content\":\n                f\"Your previous response was interrupted and ended with: {partial}\\n\"\n                \"Continue from where you left off.\"})\n        try:\n            with client.messages.stream(model=MODEL, max_tokens=1024, messages=msgs) as s:\n                for t in s.text_stream:\n                    partial += t\n                    print(t, end=\"\", flush=True)\n                return partial, s.get_final_message()\n        except (anthropic.APIConnectionError, anthropic.APIStatusError) as e:\n            print(f\"\\n[stream ভাঙল: {type(e).__name__}] আংশিক {len(partial)} অক্ষর রাখা হল\")\n    return partial, None\n```\n\n> এটা একটা নকশার নমুনা; production-এ দেখবে আংশিক text মূল উত্তরের সাথে জোড়ার সময় ডুপ্লিকেট বা ফাঁক আছে কি না। Docs-এর best practice: SDK-র নিজস্ব accumulation ও error-handling সুবিধা ব্যবহার করো।\n\n### SDK-র নিজের retry\n\nDocs অনুযায়ী official SDK সাময়িক ব্যর্থতায় (connection error, rate limit, 5xx) exponential backoff-এ **ডিফল্টে দুইবার** retry করে এবং `retry-after` header মানে; `max_retries` দিয়ে বদলানো যায়। Retry-র কৌশল আর error-এর শ্রেণিবিভাগ আরও গভীরে ch12-এ।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Streaming: event থেকে content block জোড়া",
+          "hint": "প্রতিটা event ধরে এগোও। লক্ষ করো কোন event-এ stop_reason আসে, আর tool_use-র JSON কখন parse করা যায়।",
+          "actors": [
+            {
+              "id": "api",
+              "label": "Messages API (SSE)"
+            },
+            {
+              "id": "code",
+              "label": "তোমার কোড/SDK"
+            },
+            {
+              "id": "ui",
+              "label": "Chai-Bot UI"
+            }
+          ],
+          "steps": [
+            {
+              "from": "api",
+              "to": "code",
+              "label": "message_start",
+              "note": "খালি content-সহ Message। এখানে usage.input_tokens আছে, stop_reason এখনও null।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "content_block_start (index 0, text)",
+              "note": "প্রথম block শুরু। index 0 মানে শেষ content array-র প্রথম উপাদান।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "content_block_delta: text_delta",
+              "note": "একটা text টুকরো। কোড block 0-এর text-এ জোড়া লাগায়।"
+            },
+            {
+              "from": "code",
+              "to": "ui",
+              "label": "টুকরোটা দেখাও",
+              "note": "UI-তে লেখা ফুটে ওঠে; গ্রাহক আর spinner দেখে না। মাঝে ping আসতে পারে, উপেক্ষা করো।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "content_block_stop (0)",
+              "note": "block 0 সম্পূর্ণ।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "content_block_start (index 1, tool_use)",
+              "note": "দ্বিতীয় block: Claude tool call করছে।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "input_json_delta × N",
+              "note": "partial_json টুকরো, যেমন {\"order_id\": \"10। প্রতিটা আলাদা parse করা যায় না; string জমাও।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "content_block_stop (1)",
+              "note": "এবার জমানো JSON string parse করো। এখন এটা পূর্ণ object।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "message_delta: stop_reason = tool_use",
+              "note": "stop_reason এই event-এ। usage এখানে cumulative।"
+            },
+            {
+              "from": "api",
+              "to": "code",
+              "label": "message_stop",
+              "note": "stream শেষ। এখন tool চালিয়ে পরের request পাঠাতে পারো।"
+            }
+          ],
+          "takeaway": "message_start (শুরু) → block-এর start/delta/stop → message_delta (stop_reason, cumulative usage) → message_stop। tool_use-র JSON block বন্ধ হলে তবেই parse করো।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: stream recovery-তে 'সব block-ই recover করা যায়' আর 'streaming খরচ কমায়'",
+        "markdown": "- ভাঙা stream-এ শুধু **text** block থেকে চালিয়ে নেওয়া যায়; **`tool_use` ও `thinking` block আংশিকভাবে recover হয় না** (docs অনুযায়ী)। \"অর্ধেক tool JSON জুড়ে নাও\" ধরনের অপশন ভুল।\n- Continuation-এর পদ্ধতি model-ভেদে ভিন্ন: Claude 4.5 ও আগে assistant message দিয়ে, 4.6 ও পরে user message দিয়ে। প্রশ্নের গল্পে model দেখো।\n- মাঝপথের error আসে stream-এর ভেতর `error` event হিসেবে, কারণ তখন status ইতিমধ্যে 200।\n- Streaming-এ `stop_reason` পাবে `message_delta`-তে (`message_start`-এ null)। `usage` সেখানে cumulative।\n- Streaming খরচ বা token কমায় না।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "ভাঙা stream recover করার তিন ধাপ (docs অনুযায়ী): রাখো, continuation বানাও, চালাও। আর tool_use/thinking block recover হয় না।",
+          "steps": [
+            {
+              "title": "১. আংশিক উত্তর রাখো",
+              "body": "error আসার আগে যত text পেয়েছ বাফারে জমা রাখো। SDK-র accumulation ব্যবহার করলে সহজ।"
+            },
+            {
+              "title": "২. continuation request বানাও",
+              "body": "Claude 4.5 ও আগে: আংশিক অংশ assistant message। Claude 4.6 ও পরে: আংশিক অংশসহ user message ('যেখানে থেমেছিলে সেখান থেকে চালাও')।"
+            },
+            {
+              "title": "৩. আবার stream চালাও",
+              "body": "নতুন stream-এর টুকরো আগের জমানো text-এর শেষে জোড়ো। ডুপ্লিকেট বা ফাঁক আছে কি না দেখো।"
+            },
+            {
+              "title": "৪. সীমা মনে রাখো",
+              "body": "অর্ধেক পাওয়া tool_use বা thinking block ব্যবহারযোগ্য নয়। শেষ সম্পূর্ণ text block থেকে চালাও, tool call প্রয়োজনে নতুন করে করাও।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Vision, PDF ও Files API: message-এর কাঠামো\n\n### ছবি পাঠানো: `image` block\n\nগ্রাহক রসিদের ছবি পাঠাল। ছবি `messages`-এর `content`-এ **একটা block** হয়ে যায়, text-এর পাশে। সাধারণ রূপ:\n\n```json\n{\n  \"role\": \"user\",\n  \"content\": [\n    {\"type\": \"image\",\n     \"source\": {\"type\": \"base64\", \"media_type\": \"image/jpeg\", \"data\": \"<base64>\"}},\n    {\"type\": \"text\", \"text\": \"এই রসিদের মোট টাকা কত?\"}\n  ]\n}\n```\n\nছবি দেওয়ার **তিনটা পথ** (docs অনুযায়ী `source.type`):\n\n| `source.type` | কী দাও | কখন |\n|---|---|---|\n| `base64` | `media_type` + base64 `data` | ছোট ফাইল, একবার ব্যবহার; সব প্ল্যাটফর্মে চলে |\n| `url` | ছবির public URL | ছবি ইতিমধ্যে ইন্টারনেটে আছে |\n| `file` | Files API থেকে পাওয়া `file_id` | একই ফাইল বারবার ব্যবহার, বড় ফাইল |\n\nDocs-এর সীমা ও তথ্য:\n\n- সমর্থিত format: `image/jpeg`, `image/png`, `image/gif`, `image/webp`। GIF অ্যানিমেটেড হলে শুধু **প্রথম frame**।\n- প্রতি request-এ ছবি: ২০০k context window-র model-এ সর্বোচ্চ **১০০**, অন্য model-এ **৬০০**। প্রতি ছবির সর্বোচ্চ মাপ ৮০০০×৮০০০ px; এক request-এ ২০টার বেশি ছবি থাকলে আরও কড়া per-image মাপ-সীমা প্রযোজ্য।\n- ফাইলের আকার: Claude API-তে base64-encoded ছবি প্রতি ছবি ১০ MB, **Bedrock-এ ৫ MB**। পুরো request-এর সীমা Claude API-তে ১২৮ MB।\n- Token খরচ: ছবি ২৮×২৮ px-এর \"patch\"-এ ভাঙা হয়, খরচ ≈ `⌈প্রস্থ/২৮⌉ × ⌈উচ্চতা/২৮⌉` visual token (model-এর সর্বোচ্চ resolution ছাড়ালে ছবি আগে ছোট করা হয়)। অর্থাৎ ছবিও **input token খায়**, window ও বিল দুটোতেই।\n- Docs-এর পরামর্শ: ছবি text-এর **আগে** রাখো। আর সীমাবদ্ধতা: নিম্নমানের, ঘোরানো বা ২০০ px-এর ছোট ছবিতে ভুল হতে পারে; গণনা আনুমানিক।\n\n### PDF: `document` block\n\nPDF পাঠানোর block-এর নাম `document`। তিনটা পথ একই:\n\n```json\n{\"type\": \"document\", \"source\": {\"type\": \"base64\", \"media_type\": \"application/pdf\", \"data\": \"<base64>\"}}\n{\"type\": \"document\", \"source\": {\"type\": \"url\",    \"url\": \"https://.../supplier-list.pdf\"}}\n{\"type\": \"document\", \"source\": {\"type\": \"file\",   \"file_id\": \"file_011...\"}}\n```\n\nPDF কীভাবে process হয় (docs অনুযায়ী): প্রতিটা **পাতা ছবিতে রূপান্তর** করা হয় **এবং** পাতার টেক্সটও আলাদা করে বের করে সাথে দেওয়া হয়। তাই Claude চার্ট, টেবিল, ডায়াগ্রামও \"দেখতে\" পারে, শুধু টেক্সট নয়। খরচ: টেক্সটের জন্য পাতাপ্রতি সাধারণত ১,৫০০–৩,০০০ token, **তার সাথে** ছবির token (কোনো আলাদা PDF ফি নেই)। সীমা: request ১২৮ MB (Claude API), পাতা সর্বোচ্চ **৬০০** (context window ১M-এর কম হলে **১০০**), পাসওয়ার্ড/এনক্রিপশন ছাড়া স্ট্যান্ডার্ড PDF। ঘন PDF পাতা-সীমার আগেই context window ভরে দিতে পারে; তখন ভাগ করো।\n\nপরামর্শ (docs): PDF text-এর **আগে** রাখো, স্পষ্ট ফন্ট, সোজা পাতা, prompt-এ PDF viewer-এর পাতা নম্বর। Excel/Word-এর মতো বাইনারি ফাইল `document` block-এ চলে না; টেক্সট বা PDF-এ রূপান্তর করো।\n\n### Files API: একবার আপলোড, বহুবার ব্যবহার\n\nNusrat Apu-র প্রথম প্রশ্ন ছিল ৩ MB PDF প্রতিবার আবার পাঠানো নিয়ে। Files API-র ধারণা: ফাইল **একবার আপলোড** (`POST /v1/files`), পাও একটা `file_id`, তারপর Messages request-এ শুধু `file_id` দাও:\n\n```python\nuploaded = client.files.upload(\n    file=(\"supplier-list.pdf\", open(\"supplier-list.pdf\", \"rb\"), \"application/pdf\"),\n)\nfile_id = uploaded.id        # \"file_011...\"\n\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=800,\n    messages=[{\"role\": \"user\", \"content\": [\n        {\"type\": \"document\", \"source\": {\"type\": \"file\", \"file_id\": file_id}},\n        {\"type\": \"text\", \"text\": \"কোন supplier দার্জিলিং চা দেয়?\"},\n    ]}],\n)\n```\n\nDocs-এর তথ্য, যা পরীক্ষায় আসতে পারে:\n\n- সর্বোচ্চ ফাইল **৫০০ MB**, প্রতিষ্ঠানপ্রতি মোট **১ TB**। আপলোড, লিস্ট, মেটাডেটা, ডিলিট: এগুলো **বিনামূল্যে**। কিন্তু Messages request-এ ব্যবহৃত ফাইলের কনটেন্ট **input token হিসেবে** গণ্য। অর্থাৎ Files API **token বাঁচায় না**; বাঁচায় আপলোডের ব্যান্ডউইথ ও request-এর আকার।\n- আপলোড করা ফাইল **ডাউনলোড করা যায় না**; শুধু skill বা code execution tool-এর বানানো ফাইল যায়।\n- ফাইল **workspace-scoped**: ওই workspace-এর যেকোনো API key সব ফাইল দেখতে পারে। **কখনও end user-এর পাঠানো `file_id` বিশ্বাস করবে না**; এক user অন্যের ফাইল পড়তে পারত। `file_id` ↔ user-এর ম্যাপিং তোমার অ্যাপ রাখবে। Multi-tenant হলে tenant-প্রতি আলাদা workspace। এটা Domain 7-এর data-leakage ধারণার সাথে সরাসরি যুক্ত।\n- ফাইল স্বয়ংক্রিয় মেয়াদ-উত্তীর্ণ করতে আপলোডের সময় `expires_in_seconds` (১ ঘণ্টা থেকে ৯০ দিন) দেওয়া যায়; পরে বদলানো যায় না।\n- ZDR (zero data retention) এর জন্য Files API যোগ্য নয়, কারণ ফাইল মুছে না ফেলা পর্যন্ত থাকে।\n- Docs-এ লেখা আছে Files API এখন beta নয়; পুরোনো `files-api-2025-04-14` beta header পাঠানো ঐচ্ছিকভাবে চালু থাকে কিন্তু প্রয়োজন নেই। পুরোনো কোড বা প্রশ্নে header দেখলে অবাক হয়ো না।\n\n### প্ল্যাটফর্ম-ভেদ\n\nDocs-এর feature table অনুযায়ী Bedrock ও Google Cloud (Google managed)-এ ছবি/PDF শুধু **base64**; **url source আর Files API নেই**। এটা ৬ নম্বর অংশে আবার আসবে।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "ছবি/PDF/ফাইল: কোন পথ কখন?",
+          "hint": "প্রতিটা পরিস্থিতির জন্য সবচেয়ে মানানসই পথ বাছো। একটা পরিস্থিতিতে দুটো পথ চলে মনে হলে সীমাবদ্ধতা (প্ল্যাটফর্ম, আকার, পুনর্ব্যবহার) দেখো।",
+          "buckets": [
+            {
+              "id": "base64",
+              "label": "base64 source"
+            },
+            {
+              "id": "url",
+              "label": "url source"
+            },
+            {
+              "id": "file",
+              "label": "Files API (file_id)"
+            }
+          ],
+          "items": [
+            {
+              "text": "গ্রাহকের তোলা ছোট রসিদের ছবি, একবারই দরকার",
+              "bucket": "base64",
+              "why": "একবার-ব্যবহার, ছোট ফাইল: সরাসরি base64 সবচেয়ে সহজ ও সব প্ল্যাটফর্মে চলে।"
+            },
+            {
+              "text": "৪০ পাতার supplier PDF, বহু গ্রাহকের প্রশ্নে বারবার পড়তে হবে",
+              "bucket": "file",
+              "why": "একবার আপলোড, বহুবার file_id। প্রতিবার ৩ MB আবার পাঠানোর দরকার নেই।"
+            },
+            {
+              "text": "ChaiCart-এর নিজের ওয়েবসাইটে ইতিমধ্যে হোস্ট করা পাবলিক প্রোডাক্ট ক্যাটালগ PDF",
+              "bucket": "url",
+              "why": "ফাইল পাবলিক URL-এ আছে, তাই url source-এ শুধু লিংক দিলেই চলে (Claude API-তে)।"
+            },
+            {
+              "text": "Amazon Bedrock-এর মাধ্যমে Claude ব্যবহার করে একটা ছবি পাঠানো",
+              "bucket": "base64",
+              "why": "docs অনুযায়ী Bedrock-এ ছবি শুধু base64; url ও Files API নেই।"
+            },
+            {
+              "text": "একই লোগো-ছবি দিয়ে প্রতিদিন হাজারো request, আর আপলোড করা ফাইল অ্যাপের server-side ম্যাপে রাখা",
+              "bucket": "file",
+              "why": "পুনর্ব্যবহার হলে Files API; আর file_id সার্ভারে রাখো, end user থেকে নিও না।"
+            },
+            {
+              "text": "request-এর আকার ছোট রাখতে চাই এবং একই ছবি ১০০টা আলাদা প্রশ্নে লাগবে",
+              "bucket": "file",
+              "why": "request payload ছোট রাখার জন্য docs নিজেই Files API-র কথা বলে।"
+            },
+            {
+              "text": "ইন্টারনেটে থাকা একটা পাবলিক ইনফোগ্রাফিকের ছবি একবার বিশ্লেষণ",
+              "bucket": "url",
+              "why": "পাবলিক URL আছে, আপলোডের ঝামেলা নেই।"
+            }
+          ],
+          "takeaway": "ছোট ও একবার = base64; পাবলিক ও একবার = url; বড় বা পুনর্ব্যবহার = Files API। Bedrock/Vertex (Google managed)-এ শুধু base64।"
+        }
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই supplier PDF: প্রতিবার base64 পাঠানো বনাম একবার আপলোড করে file_id। token খরচ একই থাকে, বদলায় request-এর আকার।",
+          "beforeTitle": "প্রতিটা request-এ base64",
+          "before": "প্রতিটা প্রশ্নে ৩ MB PDF (বড় base64 string) আবার পাঠাও।\n\nrequest বড়, upload ব্যান্ডউইথ বেশি, request-size সীমার ঝুঁকি।\nসুবিধা: কোনো আলাদা আপলোড/ডিলিট ব্যবস্থাপনা নেই, সব প্ল্যাটফর্মে চলে।",
+          "afterTitle": "Files API: একবার আপলোড",
+          "after": "POST /v1/files → file_id। পরের request-এ শুধু {\"type\":\"file\",\"file_id\":...}।\n\nrequest ছোট। কিন্তু ফাইলের কনটেন্ট তবুও input token হিসেবে গোনা হয়।\nদায়িত্ব: workspace-scope, user-ম্যাপিং, মুছে ফেলা বা expires_in_seconds।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'Files API খরচ কমায়' আর 'যেকোনো ফাইল ডাউনলোড করা যায়'",
+        "markdown": "- Files API-তে আপলোড/লিস্ট/ডিলিট বিনামূল্যে, কিন্তু Messages request-এ ফাইলের কনটেন্ট **input token** হিসেবেই গোনা হয়। সুবিধা হলো payload ছোট রাখা ও পুনর্ব্যবহার; token-খরচ কমানোর কৌশল নয় (সেটা prompt caching, ch02)।\n- আপলোড করা ফাইল ডাউনলোড করা যায় না; শুধু code execution tool/skill-এর তৈরি ফাইল যায়।\n- `file_id` workspace-ব্যাপী; end user-এর দেওয়া `file_id` সরাসরি ব্যবহার করলে ডেটা ফাঁসের ঝুঁকি।\n- PDF-এর প্রতিটা পাতা **টেক্সট ও ছবি দুই রূপেই** যায়; তাই চার্ট বুঝতে পারে, আর খরচও দুই দিক থেকে।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. SDK বনাম raw REST: header, version, কে কী করে\n\n### SDK আসলে কী\n\n`anthropic` SDK কোনো জাদু নয়; এটা **HTTPS REST call মোড়ানো লাইব্রেরি**। `client.messages.create(...)` ভেতরে `POST https://api.anthropic.com/v1/messages` পাঠায়, JSON বানায়, response parse করে typed object ফেরত দেয়। Docs অনুযায়ী অফিসিয়াল SDK আছে Python, TypeScript, C#, Go, Java, PHP ও Ruby-তে।\n\n### Raw REST-এ কোন header লাগে\n\nDocs-এর API overview অনুযায়ী request-এ থাকবে:\n\n| Header | মান | লাগে? |\n|---|---|---|\n| `x-api-key` | Console থেকে নেওয়া API key | হ্যাঁ (docs-এ `Authorization: Bearer <token>`-ও আছে; `x-api-key`-কে legacy fallback বলা হয়েছে, তবে এখনও সমর্থিত) |\n| `anthropic-version` | API version, যেমন `2026-10-21` | **হ্যাঁ, বাধ্যতামূলক** |\n| `content-type` | `application/json` | হ্যাঁ |\n| `anthropic-workspace-id` | workspace-এর id | শুধু যখন তোমার key কোনো নির্দিষ্ট workspace-এ সীমিত নয় |\n| `anthropic-beta` | beta feature-এর নাম | শুধু beta feature চাইলে (beta header পাতা দেখো) |\n\nSDK এই তিনটা (auth, version, content-type) **নিজে পাঠায়**; `anthropic-workspace-id` দরকার হলে তুমি দাও।\n\n```bash\ncurl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: $ANTHROPIC_VERSION\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\n    \"model\": \"'\"$CLAUDE_MODEL\"'\",\n    \"max_tokens\": 300,\n    \"messages\": [{\"role\": \"user\", \"content\": \"ChaiCart-কে এক বাক্যে পরিচয় দাও।\"}]\n  }'\n```\n\n> `ANTHROPIC_VERSION`-এর মান official versioning পাতা থেকে নাও (লেখার সময় সর্বশেষ `2026-10-21`; আগের `2023-06-01` এখনও ইতিহাসে আছে)। কোডে hardcode না করে config-এ রাখো এবং বদলানোর আগে migration guide পড়ো।\n\n### Version নীতি: কী ভাঙে না, কী বদলাতে পারে\n\nDocs-এর versioning নীতি অনুযায়ী কোনো নির্দিষ্ট version-এ Anthropic **বজায় রাখে** বিদ্যমান input ও output parameter। কিন্তু **যোগ করতে পারে**: নতুন optional input, response-এ নতুন field, enum-সদৃশ output-এ নতুন variant (যেমন নতুন streaming event type), আর কিছু error-এর শর্ত বদলাতে পারে। তাই তোমার client-কোডকে **অচেনা field ও event-এ সহনশীল** হতে হবে (আগে দেখা `ignore unknown event`)। আর `anthropic-version` বদলালে breaking change আসতে পারে: যেমন docs-এর `2026-10-21` version-এ `temperature`/`top_p`/`top_k` পাঠালে সব model-এ `400`।\n\n### SDK তোমার জন্য কী করে, curl-এ নিজে কী করতে হয়\n\n| কাজ | SDK | raw curl/HTTP |\n|---|---|---|\n| auth/version/content-type header | স্বয়ংক্রিয় | নিজে |\n| JSON বানানো ও response parse | typed object | নিজে `jq`/`json` |\n| সাময়িক ব্যর্থতায় retry (connection, 429, 5xx) | ডিফল্ট ২ বার, exponential backoff, `retry-after` মানে | নিজে বানাও |\n| timeout, long-request কিপ-অ্যালাইভ | ডিফল্ট ব্যবস্থা; non-streaming-এ ১০ মিনিটের বেশি সম্ভাব্য হলে আপত্তি | নিজে TCP keep-alive ইত্যাদি |\n| streaming event → পুরো `Message` জোড়া | `get_final_message()` / accumulator | নিজে event জোড়ো (curl শুধু raw stream ছাপে) |\n| typed exception | `NotFoundError`, `RateLimitError` ইত্যাদি | নিজে HTTP status দেখো |\n| request-id পড়া | `message._request_id` | response header `request-id` |\n\nRaw REST কখন যুক্তিসঙ্গত? ছোট স্ক্রিপ্ট/shell, যেখানে SDK নেই (docs-এ বলা অন্য ভাষা), debugging যেখানে হুবহু wire-ফরম্যাট দেখতে চাও। বাকি প্রায় সবক্ষেত্রে SDK।\n\n### Error shape ও HTTP কোড\n\nError সবসময় JSON, top-level `error` object-এ `type` ও `message`, সাথে `request_id`:\n\n```json\n{ \"type\": \"error\",\n  \"error\": { \"type\": \"not_found_error\", \"message\": \"...\" },\n  \"request_id\": \"req_011...\" }\n```\n\n| HTTP | `error.type` | সাধারণ অর্থ |\n|---|---|---|\n| 400 | `invalid_request_error` | request-এর ফরম্যাট/বিষয়বস্তু ভুল |\n| 401 | `authentication_error` | key-এর সমস্যা |\n| 402 | `billing_error` | বিলিং/পেমেন্ট তথ্যে সমস্যা |\n| 403 | `permission_error` | key-র এই resource-এ অনুমতি নেই |\n| 404 | `not_found_error` | resource পাওয়া যায়নি |\n| 413 | `request_too_large` | আকার সীমা ছাড়িয়েছে (Messages ১২৮ MB, Batch ২৫৬ MB, Files ৫০০ MB) |\n| 429 | `rate_limit_error` | rate/spend সীমা |\n| 500 | `api_error` | Anthropic-এর ভেতরের সমস্যা |\n| 504 | `timeout_error` | processing-এ সময় শেষ (লম্বা কাজে streaming/Batch) |\n| 529 | `overloaded_error` | API সাময়িক ভারাক্রান্ত |\n\n(Retriable বনাম terminal ভাগ আর recovery কৌশল ch12-এ। আজ শুধু টেবিলটা চেনো।)"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "SDK আসলে REST call মোড়ানো: তুমি method ডাকো, SDK header বসায়, retry করে, response parse করে।",
+          "nodes": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot কোড",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "sdk",
+              "kind": "server",
+              "label": "anthropic SDK",
+              "x": 220,
+              "y": 0
+            },
+            {
+              "id": "api",
+              "kind": "gateway",
+              "label": "api.anthropic.com",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "model",
+              "kind": "external",
+              "label": "Claude model",
+              "x": 660,
+              "y": 0
+            }
+          ],
+          "edges": [
+            {
+              "from": "app",
+              "to": "sdk",
+              "label": "SDK call"
+            },
+            {
+              "from": "sdk",
+              "to": "api",
+              "label": "HTTPS + JSON"
+            },
+            {
+              "from": "api",
+              "to": "model",
+              "label": "generate"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Amazon Bedrock ও Google Vertex AI দিয়ে Claude\n\nNusrat Apu-র তৃতীয় প্রশ্ন: \"AWS-এর ভেতর দিয়ে গেলে কোড একই থাকবে?\" উত্তর: **অনেকটা একই, কিন্তু তিনটা জায়গায় আলাদা: auth, model id আর feature availability।** Docs-এর overview বলে, Claude পাওয়া যায় প্রথম-পক্ষের Claude API ছাড়াও ক্লাউড প্ল্যাটফর্মে; **feature availability প্ল্যাটফর্মভেদে বদলায়** এবং সঠিক তথ্য প্রতিটা প্ল্যাটফর্মের পাতায়।\n\n### এই chapter-লেখার সময় দেখা দুটো বিভ্রান্তিকর বিষয়\n\n> **Docs অনুযায়ী প্ল্যাটফর্মের সংখ্যা এখন একাধিক।** Anthropic-পরিচালিত: Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed), Microsoft Foundry। অংশীদার-পরিচালিত: **Amazon Bedrock** ও **Claude Models on Google Cloud (Google managed)**, যেটা পুরোনো নামে \"Vertex AI\"-এর Claude। পরীক্ষা \"Bedrock / Vertex\" বলতে এই পরিচিত দুটোকেই বোঝাবে বলে ধরা যায়, কিন্তু নতুন নামগুলো চিনে রাখো।\n>\n> **Bedrock-এর দুটো ইন্টিগ্রেশন।** Docs-এ নতুন \"Claude in Amazon Bedrock\" (Opus 4.7 ও পরের model) আছে, যার endpoint `/anthropic/v1/messages` ও Messages API-র মতো request body, আর পুরোনোটা `InvokeModel`/`Converse` API-ভিত্তিক (ARN-versioned model identifier সহ; Opus 4.6 ও আগের জন্য legacy পাতায়)। নিচের টেবিল মূলত প্রথম-পক্ষ API-র সাথে ফারাক বোঝাতে; কোন ইন্টিগ্রেশন তা প্রশ্নে দেখো।\n\n### তিন-দিক তুলনা: Claude API বনাম Bedrock বনাম Vertex (Google managed)\n\n| দিক | Claude API (প্রথম-পক্ষ) | Amazon Bedrock | Google Cloud (Google managed, \"Vertex\") |\n|---|---|---|---|\n| **Auth** | Console API key (`x-api-key`) বা Workload Identity Federation | **AWS IAM**: service role, IAM assumed role, বা short-term bearer token; SDK AWS credential chain ও SigV4 ব্যবহার করে | **Google Cloud credentials/IAM** (`aiplatform.endpoints.predict` অনুমতি, যেমন `roles/aiplatform.user`); `gcloud auth application-default login` |\n| **SDK ক্লাস (Python)** | `anthropic.Anthropic()` | `AnthropicBedrockMantle` (নতুন ইন্টিগ্রেশন), `pip install \"anthropic[bedrock]\"` | `AnthropicVertex`, `pip install \"anthropic[vertex]\"` |\n| **Model id** | `claude-...` (যেমন `claude-opus-5-5`) | `anthropic.` prefix (যেমন `anthropic.claude-opus-5-5`) | `claude-opus-5-5`; তবে Claude 4.6-এর আগের model-এ snapshot-তারিখের আগে `@` (যেমন `claude-haiku-4-5@20251001`) |\n| **Model কোথায় নির্দিষ্ট হয়** | request body-র `model` | body-র `model` (SDK) | SDK-তে `model`; raw cURL-এ **URL-এ**, body-তে নয় |\n| **Version header** | `anthropic-version` header | `anthropic-version` (নতুন ইন্টিগ্রেশনে cURL উদাহরণে header আছে) | cURL-এ **body-তে** `anthropic_version` (`vertex-2023-10-16` বা `2026-10-21`), header-এ নয় |\n| **Endpoint** | `api.anthropic.com/v1/messages` | `bedrock-mantle.{region}.api.aws/anthropic/v1/messages` | `aiplatform.googleapis.com/.../publishers/anthropic/models/<id>:rawPredict` (streaming: `:streamRawPredict`) |\n| **Request-আকার সীমা** | ১২৮ MB | **২০ MB** | **৩০ MB** |\n| **ছবি** | base64/url/file; ১০ MB | শুধু base64; **৫ MB** | শুধু base64 |\n| **বিল, quota, সাপোর্ট** | Anthropic | AWS (সাপোর্টে AWS account ও `request-id`) | Google Cloud |\n| **Data retention** | Anthropic-এর নীতি | Amazon Bedrock-এর নিয়ম | Google Cloud-এর নিয়ম |\n\n**Region ও দাম:** দুই ক্লাউডেই \"global\" endpoint আছে (সর্বোচ্চ availability); region-নির্দিষ্ট (data residency) endpoint-এ docs অনুযায়ী **১০% দামের premium**। Bedrock-এ multi-region geography-র জন্য inference profile আছে।\n\n### কোন feature নেই (docs-এর \"Features not supported\")\n\nDocs-এর Bedrock ও Google managed দুটো পাতাই প্রায় একই তালিকা দেয়, যেগুলো **Anthropic-এর নিজস্ব API-তে আছে কিন্তু এখানে নেই**:\n\n- **Input source:** ছবি/ডকুমেন্টের **URL source** ও **Files API**\n- **Server-side tool:** code execution, web fetch, advisor (এবং Bedrock-এ web search-ও)\n- **Agent অবকাঠামো:** Agent Skills, MCP connector, programmatic tool calling\n- **API endpoint:** **Message Batches**, Models, Admin, Compliance, Usage and Cost\n- **Claude Managed Agents**\n- Server-side fallback (`fallbacks` parameter): client-side fallback pattern ব্যবহার করো\n\nযা আছে: Messages API, prompt caching, thinking, tool use (client tool সহ bash, computer use, memory, text editor), citations, structured outputs।\n\n### Chai-Bot-এর সিদ্ধান্ত\n\nChaiCart-এর নিয়ম \"AI traffic AWS-এর ভেতর\"। Rafi মিলিয়ে দেখল:\n\n1. **Auth বদলাতে হবে।** API key ছেড়ে IAM role; secret নেই, বরং রোলের অনুমতি (ch11-এ least privilege)।\n2. **Model id বদলাতে হবে** (`anthropic.` prefix)।\n3. **Files API ও URL source ছাড়তে হবে।** রসিদ-ছবি ও supplier PDF base64-এ পাঠাতে হবে, ছবি ৫ MB-র নিচে, পুরো request ২০ MB-র নিচে।\n4. **Batch API ব্যবহার করা যাবে না** (নিশি রাতে ১০ হাজার review ক্লাসিফাই করার পরিকল্পনা ছিল)। বিকল্প: নিজে queue বানিয়ে realtime call, বা Anthropic API/অন্য Anthropic-পরিচালিত প্ল্যাটফর্মে ওই কাজটুকু।\n5. Business-logic, prompt, tool-definition, `stop_reason` handling **প্রায় অপরিবর্তিত**, কারণ Messages API-র আকার একই।\n\n```python\n# Bedrock (docs-এর নতুন ইন্টিগ্রেশন): শুধু client ও model id বদলায়\nfrom anthropic import AnthropicBedrockMantle\n\nclient = AnthropicBedrockMantle(aws_region=\"us-east-1\")   # AWS credential chain থেকে auth\nr = client.messages.create(\n    model=\"anthropic.<model-name>\",    # official Bedrock পাতা থেকে id নাও\n    max_tokens=500,\n    messages=[{\"role\": \"user\", \"content\": \"হ্যালো\"}],\n)\n\n# Google Cloud (Vertex): প্রকল্প ও region\nfrom anthropic import AnthropicVertex\n\nclient = AnthropicVertex(project_id=\"my-project\", region=\"global\")\nr = client.messages.create(\n    model=\"<model-id>\",                # Google-managed পাতার id\n    max_tokens=500,\n    messages=[{\"role\": \"user\", \"content\": \"হ্যালো\"}],\n)\n```"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'Bedrock/Vertex-এ সব feature একই' আর 'শুধু endpoint URL বদলালেই হবে'",
+        "markdown": "- **Feature availability প্ল্যাটফর্মভেদে আলাদা।** তৃতীয়-পক্ষ ক্লাউডে Files API, URL source, Message Batches, MCP connector ইত্যাদি **নেই** (docs-এর unsupported তালিকা অনুযায়ী)। \"আগের সব কোড চলবে\" ধরনের অপশন ফাঁদ।\n- বদলে যায় অন্তত তিনটা জিনিস: **auth** (API key → AWS IAM বা Google credentials), **model id-র ফরম্যাট** (`anthropic.` prefix; Vertex-এ পুরোনো model-এ `@snapshot`), আর **feature set ও request-সীমা**।\n- Vertex-এ raw REST-এ model নাম **URL-এ** ও `anthropic_version` **body-তে**; Claude API-তে model **body-তে** ও version **header-এ**।\n- Bedrock-এ বিল, quota ও সাপোর্ট AWS-এর মাধ্যমে।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই Messages API-র আকার, কিন্তু auth ও feature সেট আলাদা: প্রথম-পক্ষ API বনাম Bedrock/Vertex।",
+          "beforeTitle": "Claude API (প্রথম-পক্ষ)",
+          "before": "Auth: API key (x-api-key)\nModel: claude-...\nFiles API, URL source, Batches, MCP connector: আছে\nRequest সীমা: ১২৮ MB\nবিল ও সাপোর্ট: Anthropic",
+          "afterTitle": "Bedrock / Vertex (Google managed)",
+          "after": "Auth: AWS IAM / Google credentials\nModel id ফরম্যাট আলাদা (anthropic. prefix; @snapshot)\nFiles API, URL source, Batches, MCP connector: নেই\nRequest সীমা: Bedrock ২০ MB, Vertex ৩০ MB\nবিল ও সাপোর্ট: ক্লাউড প্রদানকারী"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৭. যা ছুঁয়ে যাব: tools, batch বনাম realtime, আর data-access pattern\n\n### Messages API-র ভেতরে tool (overview)\n\nTool use (function calling) মানে Claude তোমার দেওয়া ফাংশনের **বর্ণনা** (নাম, description, `input_schema`) দেখে ঠিক করে কখন কোনটা ডাকবে। দুই ধরন, পার্থক্য **কোড কোথায় চলে**:\n\n| ধরন | কোথায় চলে | উদাহরণ | কী দেখবে |\n|---|---|---|---|\n| **Client tool** | **তোমার অ্যাপে** | `get_order`, `bash`, `text_editor` | `stop_reason: \"tool_use\"` ও `tool_use` block; তুমি `tool_result` পাঠাও |\n| **Server tool** | **Anthropic-এর অবকাঠামোতে** | `web_search`, `web_fetch`, `code_execution` | ফল একই response-এ আসে (দীর্ঘ হলে `pause_turn`) |\n\nClient tool-এর পুরো চক্র (আগের flow-stepper-এ দেখেছ): request-এ `tools` → Claude `tool_use` block ও `stop_reason: tool_use` → তুমি চালাও → পরের user message-এ **শুধু `tool_result` block** (প্রতিটা `tool_use`-র জন্য একটা, `tool_use_id` সহ; বাড়তি text নয়, আর `tools` array একই থাকবে) → Claude উত্তর। `tool_choice` default `auto`। খরচের দিক: `tools` ও `tool_use`/`tool_result` সবই input/output token। গভীরে (schema ডিজাইন, error, approval) ch08-এ।\n\n### Batch বনাম realtime (overview)\n\n| | Realtime (Messages API) | Message Batches API |\n|---|---|---|\n| ফল পাবে | এখনই (stream-ও করা যায়) | অ্যাসিঙ্ক; বেশিরভাগ batch ১ ঘণ্টার মধ্যে, সর্বোচ্চ ২৪ ঘণ্টা |\n| খরচ | স্ট্যান্ডার্ড | docs অনুযায়ী **৫০% কম** |\n| আকার | — | প্রতি batch সর্বোচ্চ **১,০০,০০০ request বা ২৫৬ MB** |\n| চিহ্নিতকরণ | response সরাসরি | প্রতিটা request-এ অনন্য **`custom_id`**; ফল `custom_id` দিয়ে মেলাও (ক্রমের ওপর নির্ভর করো না) |\n| ফলাফল ফল-ফাইলে | — | তৈরির ২৯ দিন পর্যন্ত ডাউনলোড করা যায় |\n| Streaming | হ্যাঁ | না (ফল একটা ফাইল) |\n| Bedrock/Vertex (Google managed) | আছে | **নেই** |\n\nকখন batch: রাতে ১০ হাজার পুরোনো review লেবেলিং, eval চালানো, যেখানে তাৎক্ষণিক উত্তর লাগে না। কখন realtime: গ্রাহক স্ক্রিনের সামনে অপেক্ষা করছে (Chai-Bot চ্যাট)। (ch02-তে batch-এর হিসাব আর caching-এর সাথে খরচ-মডেল।)\n\n### Data-access pattern: Claude ডেটা পায় কোন পথে?\n\nClaude কোনো database বা ফাইল সরাসরি \"খোলে\" না। ডেটা তার কাছে পৌঁছায় **তোমার request দিয়ে** বা **তোমার tool দিয়ে**। Messages API-র প্রসঙ্গে মোটামুটি পাঁচটা pattern:\n\n| Pattern | কীভাবে | কখন | ঝুঁকি/মনে রাখার কথা |\n|---|---|---|---|\n| **১. Inline** | ডেটা prompt-এ text হিসেবে (বা XML-ট্যাগে মুড়ে) | ছোট, নির্দিষ্ট ডেটা (FAQ অংশ) | window ও খরচ; প্রতি request-এ যায় |\n| **২. Media block** | `image`/`document` block (base64/url/file) | রসিদ, PDF, চার্ট | token খায়; Bedrock/Vertex-এ base64 |\n| **৩. Files API** | একবার আপলোড, `file_id` | বড়/পুনর্ব্যবহৃত ফাইল | workspace-scoped; user থেকে `file_id` নিও না |\n| **৪. Client tool** | Claude `tool_use` চায়, তোমার কোড DB থেকে এনে `tool_result` দেয় | live/বড় ডেটা, যা সব সময় prompt-এ ঢোকানো যায় না (অর্ডারের status) | **তোমার কোড authorization করে**; Claude-এর অনুরোধ অন্ধভাবে বিশ্বাস নয় |\n| **৫. Server tool / connector** | web search, web fetch, MCP connector ইত্যাদি | ইন্টারনেট বা বাইরের সার্ভিস | প্ল্যাটফর্মভেদে উপলব্ধতা; untrusted কনটেন্টে prompt injection (ch11) |\n\nনীতিবাক্য: **ছোট ও স্থির = inline; বড় ও পুনর্ব্যবহৃত = Files API; জীবন্ত বা বড় ডেটা-উৎস = tool।** আর যে-পথেই যাক, ডেটা যত বেশি যায় তত token ও খরচ, তত বেশি injection-এর পৃষ্ঠ।\n\nChai-Bot-এর সিদ্ধান্ত: refund policy (ছোট, স্থির) system prompt-এ inline; রসিদের ছবি `image` block; supplier PDF Files API; অর্ডারের status `get_order` tool দিয়ে (DB-তে user-এর নিজের অর্ডার কি না আগে যাচাই তোমার কোডে)।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন API feature কোন চাহিদার জন্য?",
+          "hint": "প্রতিটা চাহিদা সবচেয়ে মানানসই feature-এর বাকেটে ফেলো।",
+          "buckets": [
+            {
+              "id": "stream",
+              "label": "Streaming"
+            },
+            {
+              "id": "batch",
+              "label": "Batch API"
+            },
+            {
+              "id": "files",
+              "label": "Files API"
+            },
+            {
+              "id": "tool",
+              "label": "Client tool"
+            }
+          ],
+          "items": [
+            {
+              "text": "গ্রাহকের চ্যাটে উত্তর ফুটে উঠুক, spinner নয়",
+              "bucket": "stream",
+              "why": "দ্রুত আংশিক দৃশ্য ও কম time-to-first-token: streaming।"
+            },
+            {
+              "text": "গতবছরের ২০,০০০ review রাতারাতি লেবেল করা, সকালে ফল চাই",
+              "bucket": "batch",
+              "why": "তাৎক্ষণিক নয় এমন বড় কাজ; ৫০% কম খরচ; অ্যাসিঙ্ক।"
+            },
+            {
+              "text": "একই ৪০ পাতার PDF বহু request-এ ব্যবহার",
+              "bucket": "files",
+              "why": "একবার আপলোড, file_id দিয়ে পুনর্ব্যবহার।"
+            },
+            {
+              "text": "প্রতিটা প্রশ্নে লাইভ অর্ডারের status DB থেকে আনা",
+              "bucket": "tool",
+              "why": "জীবন্ত ডেটা; Claude tool_use চায়, তোমার কোড চালায়।"
+            },
+            {
+              "text": "max_tokens খুব বড় আর non-streaming call-এ network timeout-এর ভয়",
+              "bucket": "stream",
+              "why": "docs অনুযায়ী লম্বা request-এ streaming (বা get_final_message) নিরাপদ।"
+            },
+            {
+              "text": "নিয়মিত eval suite: ৫,০০০ টেস্ট কেস, ঘণ্টা-খানেক দেরি চলবে",
+              "bucket": "batch",
+              "why": "দেরি সহনীয়, খরচ কম চাই: batch।"
+            },
+            {
+              "text": "Claude 'order_id' ও 'amount' দিয়ে refund-eligibility ফাংশন ডাকবে",
+              "bucket": "tool",
+              "why": "নিজের ব্যবসার যুক্তি চালাতে client tool; কোড তোমার অ্যাপে চলে।"
+            },
+            {
+              "text": "একই লোগো-ছবি দিয়ে প্রতিদিন হাজারো request, বারবার base64 পাঠাতে চাই না",
+              "bucket": "files",
+              "why": "payload ছোট ও পুনর্ব্যবহার: Files API।"
+            }
+          ],
+          "takeaway": "দেখাতে-দ্রুত = streaming; দেরি সহনীয়, বড় ও সস্তা = batch; পুনর্ব্যবহৃত ফাইল = Files API; জীবন্ত ডেটা/নিজের যুক্তি = client tool।"
+        }
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "Production API call-এর ব্যর্থতা: কোন অভ্যাস কী ধরে",
+          "hint": "এক এক করে অভ্যাস চালু করো। দেখো কোনো একটাই সব ব্যর্থতা আটকায় না।",
+          "layers": [
+            {
+              "id": "stop",
+              "label": "প্রতিটা response-এ stop_reason পরীক্ষা",
+              "desc": "max_tokens, refusal, tool_use আলাদা শাখায়",
+              "blocks": ["truncated", "refusal-ignored"]
+            },
+            {
+              "id": "history",
+              "label": "প্রতিটা request-এ পুরো history পাঠানো",
+              "desc": "stateless বুঝে history ধরে রাখা ও ছাঁটা",
+              "blocks": ["forgot"]
+            },
+            {
+              "id": "reqid",
+              "label": "request-id, usage লগ করা",
+              "desc": "debugging ও খরচ নজরদারি",
+              "blocks": ["no-trace"]
+            },
+            {
+              "id": "stream",
+              "label": "লম্বা request-এ streaming + SDK retry",
+              "desc": "idle connection ও সাময়িক 5xx সামলানো",
+              "blocks": ["timeout"]
+            },
+            {
+              "id": "platform",
+              "label": "প্ল্যাটফর্মের feature-তালিকা আগে মেলানো",
+              "desc": "Bedrock/Vertex-এ unsupported feature ধরা",
+              "blocks": ["missing-feature"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "truncated",
+              "label": "কাটা উত্তর গ্রাহককে দেখানো",
+              "desc": "stop_reason: max_tokens উপেক্ষা"
+            },
+            {
+              "id": "refusal-ignored",
+              "label": "refusal-কে সাধারণ উত্তর ধরা",
+              "desc": "HTTP 200 তাই 'সফল' ভাবা"
+            },
+            {
+              "id": "forgot",
+              "label": "Claude আগের কথা ভুলে যাওয়া",
+              "desc": "শুধু শেষ message পাঠানো"
+            },
+            {
+              "id": "no-trace",
+              "label": "support-কে দেওয়ার নম্বর নেই",
+              "desc": "request-id লগে নেই"
+            },
+            {
+              "id": "timeout",
+              "label": "লম্বা non-streaming call timeout",
+              "desc": "idle সংযোগ কেটে যাওয়া"
+            },
+            {
+              "id": "missing-feature",
+              "label": "Bedrock-এ Files API/Batch কল করে ব্যর্থ",
+              "desc": "প্ল্যাটফর্মে unsupported"
+            }
+          ],
+          "takeaway": "প্রতিটা ব্যর্থতার আলাদা প্রতিষেধক আছে। 'try/except একাই সব ধরবে' ভুল ধারণা, কারণ refusal ও max_tokens HTTP 200-এ আসে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter-এর সব প্রশ্ন Blueprint-এর **Domain 2 (Applications and Integration, ৩৩.১%) → Claude API Mechanics (৬.৮%)** skill-এর। পুরো exam-এ Domain 2 থেকে ১৭টা প্রশ্ন আসে, তার একটা অংশ এই skill-এর। Blueprint বলে এখানে আসে: messages, tools, streaming, vision, thinking, caching, third-party vendors, data-access pattern, batch API, realtime বনাম batch।\n\n### বারবার-আসা প্রশ্নের ধরন\n\n| প্রশ্নের আকার | কী খুঁজছে | সঠিক দিকে যাওয়ার সংকেত |\n|---|---|---|\n| \"Claude আগের turn ভুলে যাচ্ছে\" | stateless বোঝা | পুরো `messages` history পাঠাও; সার্ভারে স্মৃতি নেই |\n| \"উত্তর মাঝপথে কেটে যায়\" | `stop_reason: max_tokens` | `stop_reason` পরীক্ষা, `max_tokens` বাড়ানো/চালিয়ে নেওয়া; কমানো ভুল |\n| \"stream মাঝপথে ভেঙে গেল, কী করবে?\" | recovery মডেল-ভেদ ও সীমা | আংশিক text জমাও, continuation; tool_use/thinking recover হয় না |\n| \"event assemble কীভাবে\" | event ক্রম ও delta ধরন | block `index` ধরে জোড়ো; `input_json_delta` জমিয়ে block বন্ধে parse; `stop_reason` `message_delta`-তে |\n| \"বড় PDF/ছবি বারবার ব্যবহার\" | Files API বনাম base64/url | পুনর্ব্যবহার = `file_id`; Bedrock/Vertex-এ শুধু base64 |\n| \"curl দিয়ে call, ব্যর্থ\" | বাধ্যতামূলক header | `x-api-key`, `anthropic-version`, `content-type` |\n| \"AWS/Google-এ সরালে কী বদলাবে?\" | auth, model id, feature availability | IAM/Google credentials; id ফরম্যাট; Files API/Batch নেই |\n| \"রাতে বড় কাজ, তাৎক্ষণিক নয়\" | batch বনাম realtime | batch (৫০% কম, অ্যাসিঙ্ক); chat-এ realtime |\n| \"কোন ডেটা কীভাবে Claude-এর কাছে যাবে\" | data-access pattern | ছোট স্থির = inline; বড় = Files API; জীবন্ত = tool |\n| \"Support-কে কী দেব\" | `request-id` | response header/`_request_id` |\n\n### Multiple-response (দুটো উত্তর বাছো) প্রশ্নের কৌশল\n\n\"Select TWO\"-তে সাধারণত দুটো **ভিন্ন ধারণা** জোড়া থাকে (যেমন stateless-এর কারণ আর তার প্রতিকার)। প্রতিটা অপশন আলাদাভাবে ঠিক/ভুল যাচাই করো; \"সবচেয়ে ভালো\" দুটো বাছতে হলে ঝুঁকিহীন, ডকুমেন্টেড আচরণই বাছো।\n\n### আজ মনে রাখার সংক্ষিপ্ত সূত্র\n\n> **Stateless** (history তুমি পাঠাও) → **`stop_reason` দেখো** → **stream-এ block জোড়ো, tool_use JSON শেষে parse** → **ছবি/PDF = content block; পুনর্ব্যবহার = Files API (workspace-scoped, token ফ্রি নয়)** → **SDK = REST মোড়ানো; raw-এ তিন header** → **Bedrock/Vertex = আলাদা auth, model id, feature সেট (Files API ও Batch নেই)**।"
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Rafi-র সপ্তাহের শেষ: পাঁচ লাইনের log",
+        "markdown": "Rafi এখন প্রতিটা call-এ লগ করে: `request-id`, `model`, `input_tokens`, `output_tokens`, `stop_reason`। Nusrat Apu পরের সোমবার বললেন: \"গত সপ্তাহের ২% কাটা উত্তরের উৎস `max_tokens=100`। আর কাল রাতের ফেল-করা request-এর `request-id` পেয়ে support এক ঘণ্টায় কারণ বলে দিয়েছে।\" শিক্ষা: **যা মাপো না, তা ঠিক করতে পারো না।** আর Chai-Bot AWS-এ যাওয়ার আগে feature-তালিকা মিলিয়ে নিয়েছে, তাই Files API ছাড়াই নকশা করেছে।"
+      }
+    ],
+    "recap": [
+      "Messages API stateless: প্রতিটা request-এ পুরো `messages` পাঠাও; system prompt top-level `system` field-এ যায় এবং `content` block-এর array।",
+      "প্রতিটা response-এ `stop_reason` পরীক্ষা করো (`end_turn`, `max_tokens`, `tool_use`, `refusal` ...); `max_tokens` একটা সীমা, দৈর্ঘ্য-নির্ধারক নয়, আর `refusal` HTTP 200-এ আসে। সাপোর্টের জন্য `request-id` লগ রাখো।",
+      "Streaming SSE event ক্রম: message_start → (content_block_start/delta/stop)* → message_delta (stop_reason, cumulative usage) → message_stop; `input_json_delta` জমিয়ে block বন্ধ হলে parse করো। ভাঙা stream-এ শুধু text block recover হয়, tool_use/thinking নয়।",
+      "ছবি `image` block, PDF `document` block (base64/url/file source); PDF-র পাতা টেক্সট ও ছবি দুই রূপেই যায়। Files API একবার আপলোড, `file_id` পুনর্ব্যবহার: workspace-scoped, token ফ্রি নয়, user-এর `file_id` বিশ্বাস নয়।",
+      "SDK = REST মোড়ানো (header, retry, parse); raw REST-এ লাগে `x-api-key`, `anthropic-version`, `content-type`। নতুন version-এ optional field ও event type যোগ হতে পারে, তাই অচেনা জিনিসে সহনশীল থাকো।",
+      "Bedrock/Vertex-এ auth (IAM/Google credentials), model id ফরম্যাট ও feature availability আলাদা: Files API, URL source, Batches API, MCP connector ইত্যাদি নেই (docs অনুযায়ী)।",
+      "ডেটা Claude-এর কাছে পৌঁছায় inline, media block, Files API, বা tool দিয়ে; দেখানো-দ্রুত = streaming, বড় ও দেরি-সহনীয় = batch (৫০% কম), জীবন্ত ডেটা = client tool।"
+    ]
+  },
+  "lab": {
+    "goal": "একটা ছোট স্ক্রিপ্টে উত্তর stream করা, event-ক্রম দেখা, একটা ছবি বা PDF পাঠানো এবং প্রতিবার usage, stop_reason ও request-id ছাপা; তারপর একই call raw REST দিয়ে করে SDK-র কাজ বোঝা।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install anthropic`",
+      "Console থেকে নেওয়া API key: `export ANTHROPIC_API_KEY=...` (কখনও কোডে বা git-এ রাখবে না)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>`",
+      "একটা ছোট ছবি (`.jpg`/`.png`, ৫ MB-র নিচে) অথবা একটা ছোট PDF: `export INPUT_FILE=./receipt.png` (ছবির বিষয় যেকোনো কিছু হতে পারে)",
+      "ধাপ ৫ (raw REST)-এর জন্য: official versioning পাতা থেকে `anthropic-version`-এর মান নিয়ে `export ANTHROPIC_VERSION=<মান>`",
+      "এই lab-এ `temperature`/`top_p`/`top_k` পাঠাবে না (নতুন model/version-এ `400`)"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: Stream করে উত্তর দেখা ও final message নেওয়া",
+        "body": "`lab03.py` বানাও:\n\n```python\nimport base64\nimport os\nimport anthropic\n\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\ndef report(label, msg):\n    print(f\"\\n[{label}] stop_reason={msg.stop_reason} \"\n          f\"in={msg.usage.input_tokens} out={msg.usage.output_tokens} \"\n          f\"request-id={getattr(msg, '_request_id', None)}\")\n\nwith client.messages.stream(\n    model=MODEL,\n    max_tokens=600,\n    system=\"তুমি ChaiCart-এর সহকারী Chai-Bot। বাংলায় সংক্ষেপে উত্তর দাও।\",\n    messages=[{\"role\": \"user\", \"content\": \"চা বানানোর ৩টা ধাপ লেখো।\"}],\n) as stream:\n    for text in stream.text_stream:\n        print(text, end=\"\", flush=True)\n    final = stream.get_final_message()\n\nreport(\"stream\", final)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** টেক্সট টুকরো টুকরো করে ফুটে ওঠে; শেষে `stop_reason=end_turn`, দুটো usage সংখ্যা, আর একটা `req_...` নম্বর। এটা `create()`-এর মতোই সম্পূর্ণ `Message`। `request-id`: docs শুধু সাধারণ response object-এ `_request_id`-এর কথা বলে; stream-এর final message-এ তা থাকবে কিনা docs-এ নিশ্চিত করা নেই, তাই `None` আসতে পারে (যাচাই করা হয়নি)। সেক্ষেত্রে ধাপ ৫-এর মতো header থেকে বা `with_raw_response` দিয়ে নাও।"
+      },
+      {
+        "title": "ধাপ ২: Raw event দেখা ও নিজে block জোড়া",
+        "body": "```python\nblocks = {}\nstop_reason = None\nevents = []\n\nfor ev in client.messages.create(\n    model=MODEL,\n    max_tokens=300,\n    stream=True,\n    messages=[{\"role\": \"user\", \"content\": \"ChaiCart-কে এক বাক্যে পরিচয় দাও।\"}],\n):\n    events.append(ev.type)\n    if ev.type == \"content_block_start\":\n        blocks[ev.index] = {\"type\": ev.content_block.type, \"text\": \"\"}\n    elif ev.type == \"content_block_delta\" and ev.delta.type == \"text_delta\":\n        blocks[ev.index][\"text\"] += ev.delta.text\n    elif ev.type == \"message_delta\":\n        stop_reason = ev.delta.stop_reason\n    # ping এবং অচেনা event উপেক্ষা\n\nprint(\"event ক্রম:\", events[:3], \"...\", events[-3:])\nprint(\"জোড়া text:\", blocks[0][\"text\"])\nprint(\"stop_reason (message_delta থেকে):\", stop_reason)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** শুরুতে `message_start`, `content_block_start`; শেষে `message_delta`, `message_stop` (মাঝে `ping` থাকতে পারে)। `stop_reason` পেলে `message_delta` থেকে, `message_start`-এ নয়।"
+      },
+      {
+        "title": "ধাপ ৩: ছবি বা PDF পাঠানো",
+        "body": "```python\npath = os.environ[\"INPUT_FILE\"]\nwith open(path, \"rb\") as f:\n    data = base64.standard_b64encode(f.read()).decode(\"utf-8\")\n\next = path.lower().rsplit(\".\", 1)[-1]\nif ext == \"pdf\":\n    media_block = {\"type\": \"document\",\n                   \"source\": {\"type\": \"base64\", \"media_type\": \"application/pdf\", \"data\": data}}\nelse:\n    mt = {\"png\": \"image/png\", \"jpg\": \"image/jpeg\", \"jpeg\": \"image/jpeg\",\n          \"gif\": \"image/gif\", \"webp\": \"image/webp\"}[ext]\n    media_block = {\"type\": \"image\",\n                   \"source\": {\"type\": \"base64\", \"media_type\": mt, \"data\": data}}\n\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=500,\n    messages=[{\"role\": \"user\", \"content\": [\n        media_block,                                   # ছবি/PDF text-এর আগে\n        {\"type\": \"text\", \"text\": \"এতে কী আছে? বাংলায় ৩ লাইনে বলো।\"},\n    ]}],\n)\nprint(\"\".join(b.text for b in r.content if b.type == \"text\"))\nreport(\"media\", r)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** বর্ণনা পাবে। `input_tokens` ধাপ ১-এর চেয়ে **অনেক বেশি**, কারণ ছবি (বা PDF-র প্রতিটা পাতা: টেক্সট + ছবি) token খায়। ভিন্ন আকারের ছবি দিয়ে চালিয়ে `input_tokens`-এর পার্থক্য দেখো।"
+      },
+      {
+        "title": "ধাপ ৪: `max_tokens` ছোট করে stop_reason ধরা এবং শাখা লেখা",
+        "body": "```python\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=20,                      # ইচ্ছে করে খুব ছোট\n    messages=[{\"role\": \"user\", \"content\": \"চায়ের ইতিহাস বিস্তারিত লেখো।\"}],\n)\ntext = \"\".join(b.text for b in r.content if b.type == \"text\")\n\nif r.stop_reason == \"end_turn\":\n    print(\"OK:\", text)\nelif r.stop_reason == \"max_tokens\":\n    print(\"কাটা উত্তর! গ্রাহককে এটা দেখানো যাবে না:\", repr(text))\nelif r.stop_reason == \"refusal\":\n    print(\"Claude অস্বীকার করেছে; নিরাপদ fallback দেখাও\")\nelse:\n    print(\"অন্য stop_reason:\", r.stop_reason)\nreport(\"short\", r)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `stop_reason=max_tokens`, `out=20`, উত্তর বাক্যের মাঝে কাটা। HTTP error হয়নি, তাই `try/except` এটা ধরত না। এবার `max_tokens=600` করে `end_turn` ফিরে আসা দেখো।"
+      },
+      {
+        "title": "ধাপ ৫: একই call raw REST দিয়ে (SDK কী করে দেখো)",
+        "body": "```python\nimport json\nimport urllib.request\n\nreq = urllib.request.Request(\n    \"https://api.anthropic.com/v1/messages\",\n    data=json.dumps({\n        \"model\": MODEL,\n        \"max_tokens\": 200,\n        \"messages\": [{\"role\": \"user\", \"content\": \"ChaiCart-কে এক বাক্যে পরিচয় দাও।\"}],\n    }).encode(),\n    headers={\n        \"x-api-key\": os.environ[\"ANTHROPIC_API_KEY\"],\n        \"anthropic-version\": os.environ[\"ANTHROPIC_VERSION\"],\n        \"content-type\": \"application/json\",\n    },\n)\nwith urllib.request.urlopen(req) as resp:\n    print(\"request-id header:\", resp.headers.get(\"request-id\"))\n    body = json.load(resp)\n\nprint(body[\"stop_reason\"], body[\"usage\"])\nprint(\"\".join(b[\"text\"] for b in body[\"content\"] if b[\"type\"] == \"text\"))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** একই ধরনের JSON; `request-id` এখন তুমি **header থেকে** পড়ছ। এবার `anthropic-version` header মুছে চালাও: `400` সদৃশ error আসবে (বাধ্যতামূলক header)। লক্ষ করো এখানে retry, timeout, typed exception কিছুই নেই; SDK এগুলো দিত।"
+      },
+      {
+        "title": "ধাপ ৬ (ঐচ্ছিক, শুধু পড়ো): Bedrock/Vertex-এ কী বদলাত",
+        "body": "চালাতে হবে না (ক্লাউড অ্যাকাউন্ট লাগে)। শুধু বলো ধাপ ৩-এর কোড Bedrock-এ নিলে কী বদলাত:\n\n```python\n# Bedrock (docs-এর নতুন ইন্টিগ্রেশন)\nfrom anthropic import AnthropicBedrockMantle\nclient = AnthropicBedrockMantle(aws_region=\"us-east-1\")   # AWS credential chain; API key নয়\nMODEL = \"anthropic.<model-name>\"                          # prefix আলাদা\n# base64 ছবি/PDF চলবে; url source ও Files API চলবে না (docs অনুযায়ী)\n```\n\n**প্রত্যাশিত উত্তর:** auth (IAM), model id ফরম্যাট, আর unsupported feature (Files API, URL source, Batches)। বাকি (messages, stop_reason, usage) একই।"
+      }
+    ],
+    "checkpoints": [
+      "ধাপ ২-তে `stop_reason` কোন event-এ পেলে, আর `message_start`-এ সেটা কী ছিল? `usage` কেন যোগ না করে শেষটা নিতে হয়?",
+      "ধাপ ৩-এ ছবি/PDF পাঠালে `input_tokens` কেন বেড়ে গেল? PDF হলে প্রতিটা পাতা কোন দুই রূপে যায়?",
+      "ধাপ ৪-এ HTTP error ছাড়াই উত্তর কাটা পড়ল: কোন ক্ষেত্রে `try/except` যথেষ্ট নয়, আর কোন ক্ষেত্রে `stop_reason` শাখা লাগে?",
+      "ধাপ ৫-এ SDK-র কোন কোন কাজ (header, retry, parse, request-id) তোমাকে নিজে করতে হয়েছে? কোন তিনটা header বাধ্যতামূলক?",
+      "ভাঙা stream-এ কোন block recover করা যায় আর কোনটা যায় না? Claude 4.5 ও 4.6+ model-এ continuation-এর পদ্ধতি কীভাবে আলাদা?",
+      "Bedrock-এ গেলে এই স্ক্রিপ্টে auth, model id আর feature-এর দিক থেকে কী কী বদলাত?"
+    ]
+  },
+  "notes": "## Chapter 3 cheat-sheet: Claude API mechanics\n\n### Messages API এক নজরে\n\n| বিষয় | মনে রাখো |\n|---|---|\n| Endpoint | `POST /v1/messages` (বেস `https://api.anthropic.com`) |\n| ন্যূনতম field | `model`, `max_tokens`, `messages` |\n| Role | `user`, `assistant`; system prompt = top-level `system` |\n| State | **Stateless**: প্রতিটা request-এ পুরো history |\n| Response `content` | block-এর array (`text`, `tool_use`, `thinking` ...); type দেখে বাছো |\n| খরচ | `usage.input_tokens`, `usage.output_tokens` |\n| Support নম্বর | `request-id` header / error body-র `request_id` / SDK `_request_id` |\n| Prefill | Claude 4.6+ model-এ সমর্থিত নয় (`400`) |\n| Sampling param | Claude 4.7+ non-default `400`; API version `2026-10-21` থেকে যেকোনো মান `400` (docs) |\n\n### `stop_reason` (docs-এ সাতটা)\n\n| মান | কী করবে |\n|---|---|\n| `end_turn` | ব্যবহার করো |\n| `max_tokens` | সীমা বাড়াও/চালিয়ে নাও; কাটা উত্তর দেখিও না |\n| `stop_sequence` | `response.stop_sequence` দেখো |\n| `tool_use` | client tool চালাও, শুধু `tool_result` ফেরত দাও |\n| `pause_turn` | server tool loop সীমা; content অপরিবর্তিত রেখে আবার পাঠাও |\n| `refusal` | HTTP 200, error নয়; `stop_details`; fallback |\n| `model_context_window_exceeded` | কাটা ধরো |\n\n### Streaming\n\n| বিষয় | তথ্য |\n|---|---|\n| Event ক্রম | `message_start` → [`content_block_start` → `content_block_delta`× → `content_block_stop`]× → `message_delta`× → `message_stop` |\n| অন্যান্য | `ping`, `error` (200-এর পরেও আসতে পারে); অচেনা event উপেক্ষা |\n| Delta | `text_delta`, `input_json_delta` (partial JSON string), `thinking_delta`, `signature_delta` |\n| `stop_reason` | `message_start`-এ null; পাবে `message_delta`-তে |\n| `usage` (message_delta) | cumulative |\n| SDK | `client.messages.stream(...)`, `text_stream`, `get_final_message()` |\n| Recovery | আংশিক রাখো → continuation → চালাও. Claude 4.5-: assistant message; 4.6+: user message। `tool_use`/`thinking` আংশিক recover হয় না |\n| লম্বা request | বড় `max_tokens`-এ streaming বা Batches; ১০ মিনিটের বেশি হলে বিশেষভাবে |\n\n### ছবি / PDF / Files API\n\n| | ছবি | PDF |\n|---|---|---|\n| Block | `image` | `document` |\n| Source | `base64`, `url`, `file` | একই তিনটা |\n| Format | jpeg, png, gif (প্রথম frame), webp | স্ট্যান্ডার্ড PDF (পাসওয়ার্ডহীন) |\n| সীমা | ১০০ (২০০k window) / ৬০০ ছবি; ১০ MB/ছবি (Bedrock ৫ MB) | ৬০০ পাতা (১M-এর কম window-তে ১০০); ১২৮ MB request |\n| Token | ≈ ⌈w/28⌉×⌈h/28⌉ | পাতাপ্রতি ~১,৫০০–৩,০০০ text token + ছবির token |\n| টিপ | text-এর **আগে** রাখো | text-এর আগে, স্পষ্ট ফন্ট |\n\n**Files API:** `POST /v1/files` → `file_id`; ফাইল ≤ ৫০০ MB, org-প্রতি ১ TB; আপলোড/লিস্ট/ডিলিট ফ্রি, কিন্তু Messages-এ ব্যবহৃত কনটেন্ট input token; আপলোড-করা ফাইল ডাউনলোড হয় না; **workspace-scoped**; user-এর `file_id` বিশ্বাস করো না; `expires_in_seconds` ১ ঘণ্টা–৯০ দিন; ZDR-যোগ্য নয়।\n\n### SDK বনাম raw REST\n\n| | SDK | Raw |\n|---|---|---|\n| Header | স্বয়ংক্রিয় | `x-api-key`, `anthropic-version` (বাধ্যতামূলক), `content-type` |\n| Retry | ডিফল্ট ২ বার, backoff, `retry-after` | নিজে |\n| Stream জোড়া | `get_final_message()` | নিজে |\n| Error | typed exception | HTTP status + JSON `error.type` |\n\n**HTTP:** 400 `invalid_request_error` · 401 `authentication_error` · 403 `permission_error` · 404 `not_found_error` · 413 `request_too_large` (Messages 128 MB, Batch 256 MB, Files 500 MB) · 429 `rate_limit_error` · 500 `api_error` · 529 `overloaded_error`।\n\n**Versioning:** বিদ্যমান parameter বজায় থাকে; নতুন optional input, নতুন output field, নতুন enum/event variant যোগ হতে পারে, তাই অচেনা জিনিসে সহনশীল।\n\n### Bedrock / Vertex বনাম Claude API\n\n| | Claude API | Bedrock | Vertex (Google managed) |\n|---|---|---|---|\n| Auth | API key | AWS IAM (SigV4/role/bearer) | Google credentials/IAM |\n| SDK | `Anthropic` | `AnthropicBedrockMantle` | `AnthropicVertex` |\n| Model id | `claude-...` | `anthropic.claude-...` | `claude-...`, পুরোনোতে `@snapshot` |\n| Request সীমা | 128 MB | 20 MB | 30 MB |\n| Files API, URL source, Batches, MCP connector | আছে | **নেই** | **নেই** |\n\n### কখন কী\n\n| প্রয়োজন | বেছে নাও |\n|---|---|\n| UI-তে দ্রুত দেখানো / লম্বা output | Streaming |\n| বড়, দেরি-সহনীয়, সস্তা | Batch (৫০% কম, ≤ ২৪ ঘণ্টা, ১০০k request/২৫৬ MB) |\n| একই ফাইল বহুবার | Files API |\n| লাইভ ডেটা / নিজের যুক্তি | Client tool |\n| কোম্পানির নিয়মে AWS/Google-এর ভেতরে | Bedrock/Vertex, feature তালিকা মিলিয়ে |\n\n### সাধারণ ফাঁদ\n\n- \"Claude মনে রাখে\" (ভুল: stateless).\n- `max_tokens` কমালে উত্তর \"ছোট\" হয় (ভুল: কাটা পড়ে)।\n- `refusal`/`max_tokens` HTTP error নয়।\n- tool_use/thinking block recover হয় (ভুল)।\n- Files API token বাঁচায় (ভুল)।\n- Bedrock/Vertex-এ সব feature আছে (ভুল)।\n- `content[0].text` সবসময় ঠিক (ভুল)।",
+  "flashcards": [
+    {
+      "front": "Messages API stateless মানে কী?",
+      "back": "সার্ভার কথোপকথন মনে রাখে না; প্রতিটা request-এ তোমাকে পুরো `messages` history পাঠাতে হয়।"
+    },
+    {
+      "front": "System prompt কোন field-এ যায়?",
+      "back": "Request-এর top-level `system` field-এ, `messages`-এর সাধারণ role হিসেবে নয় (শুরু থেকে প্রযোজ্য নির্দেশের জন্য)।"
+    },
+    {
+      "front": "Response `content` কেমন জিনিস?",
+      "back": "Content block-এর array (`text`, `tool_use`, `thinking` ...)। `content[0].text` ধরে না নিয়ে block `type` দেখে বাছো।"
+    },
+    {
+      "front": "`max_tokens` কী?",
+      "back": "এক উত্তরে সর্বোচ্চ output token-এর সীমা, লক্ষ্য নয়। ঠেকলে উত্তর কাটা পড়ে ও `stop_reason: max_tokens`।"
+    },
+    {
+      "front": "`stop_reason: tool_use` মানে কী?",
+      "back": "Claude একটা client tool চালাতে বলছে; তোমার কোড চালিয়ে পরের user message-এ শুধু `tool_result` block ফেরত দেবে।"
+    },
+    {
+      "front": "`stop_reason: refusal` কি HTTP error?",
+      "back": "না, এটা HTTP 200 response-এর ভেতরের মান। `stop_details` দেখে fallback করো; `try/except` একা ধরবে না।"
+    },
+    {
+      "front": "`pause_turn` কখন আসে?",
+      "back": "Server tool (যেমন web search)-এর ভেতরের loop iteration সীমা (ডিফল্ট ১০) ছুঁলে; content অপরিবর্তিত রেখে আবার পাঠাও।"
+    },
+    {
+      "front": "Support-কে কোন নম্বর দেবে?",
+      "back": "Response-এর `request-id` header (বা error body-র `request_id`; SDK-তে `_request_id`)।"
+    },
+    {
+      "front": "Streaming-এ `stop_reason` কোন event-এ আসে?",
+      "back": "`message_delta`-তে; `message_start`-এ এটা null। আর `message_delta`-র `usage` cumulative।"
+    },
+    {
+      "front": "Streaming event-এর পূর্ণ ক্রম বলো।",
+      "back": "`message_start` → (content_block_start → delta× → content_block_stop)× → `message_delta`× → `message_stop`; মাঝে `ping`, `error` আসতে পারে।"
+    },
+    {
+      "front": "`input_json_delta` কী, কীভাবে ব্যবহার করবে?",
+      "back": "tool_use block-এর `input`-এর আংশিক JSON string টুকরো; জমাও এবং `content_block_stop`-এর পর parse করো।"
+    },
+    {
+      "front": "ভাঙা stream-এ কোন block recover করা যায়?",
+      "back": "শুধু text block (শেষ সম্পূর্ণ text থেকে চালানো)। `tool_use` ও `thinking` আংশিকভাবে recover হয় না।"
+    },
+    {
+      "front": "Stream recovery-র continuation Claude 4.5 ও 4.6+ এ কীভাবে আলাদা?",
+      "back": "4.5 ও আগে: আংশিক অংশ assistant message হিসেবে। 4.6 ও পরে: আংশিক অংশ ও 'চালিয়ে যাও' নির্দেশ দিয়ে user message।"
+    },
+    {
+      "front": "Streaming কি খরচ কমায়?",
+      "back": "না। শুধু আংশিক উত্তর কখন হাতে আসে সেটা বদলায় (আর লম্বা request-এ timeout ঝুঁকি কমায়)।"
+    },
+    {
+      "front": "ছবির content block-এর কাঠামো কী?",
+      "back": "`{\"type\":\"image\",\"source\":{\"type\":\"base64\"|\"url\"|\"file\", ...}}`; base64-এ `media_type` ও `data`। text-এর আগে রাখা ভালো।"
+    },
+    {
+      "front": "PDF কীভাবে process হয়?",
+      "back": "প্রতিটা পাতা ছবিতে রূপান্তর হয় এবং পাতার text-ও বের করে সাথে দেওয়া হয়, তাই চার্ট ও টেবিলও বোঝা যায়; খরচ text ও ছবি দুই দিক থেকে।"
+    },
+    {
+      "front": "Files API কী দেয়, কী দেয় না?",
+      "back": "একবার আপলোড করে `file_id` দিয়ে পুনর্ব্যবহার ও ছোট payload দেয়। Token-খরচ কমায় না (কনটেন্ট input token হিসেবে গোনা)।"
+    },
+    {
+      "front": "Files API-র নিরাপত্তা-সতর্কতা কী?",
+      "back": "ফাইল workspace-scoped, অর্থাৎ workspace-এর যেকোনো key পড়তে পারে। end user-এর দেওয়া `file_id` বিশ্বাস করবে না; multi-tenant-এ tenant-প্রতি workspace।"
+    },
+    {
+      "front": "Raw REST-এ কোন তিন header বাধ্যতামূলক?",
+      "back": "`x-api-key` (auth), `anthropic-version`, `content-type: application/json`।"
+    },
+    {
+      "front": "SDK বনাম curl: SDK কী বাড়তি করে?",
+      "back": "Header বসায়, JSON parse করে typed object দেয়, সাময়িক ব্যর্থতায় ডিফল্টে ২ বার retry করে, stream জোড়া লাগায়, typed exception দেয়।"
+    },
+    {
+      "front": "Bedrock/Vertex-এ কী বদলায়?",
+      "back": "Auth (AWS IAM / Google credentials), model id ফরম্যাট, আর feature availability (যেমন Files API, URL source, Batches নেই)।"
+    },
+    {
+      "front": "Vertex-এ raw REST-এ model ও version কোথায় যায়?",
+      "back": "Model নাম endpoint URL-এ (body-তে নয়), আর `anthropic_version` request body-তে (header-এ নয়)।"
+    },
+    {
+      "front": "Batch API বনাম realtime কখন কোনটা?",
+      "back": "Realtime: গ্রাহক অপেক্ষা করছে। Batch: দেরি সহনীয় বড় কাজ; ৫০% কম খরচ, বেশিরভাগ ১ ঘণ্টায়, সর্বোচ্চ ২৪ ঘণ্টা; ফল `custom_id` দিয়ে মেলাও।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "Chai-Bot-এর একটা চ্যাট-ফিচারে developer প্রতিটা request-এ শুধু গ্রাহকের সর্বশেষ message পাঠায়। Claude বারবার আগের প্রশ্ন ভুলে যাচ্ছে। সবচেয়ে সম্ভাব্য কারণ ও সঠিক সমাধান কোনটা?",
+      "options": [
+        "Model-এর context window ছোট; তাই `max_tokens` বাড়াতে হবে",
+        "Claude-কে বারবার মনে করাতে `temperature` কমাতে হবে",
+        "Messages API stateless; প্রতিটা request-এ আগের user ও assistant turn সহ পুরো `messages` history পাঠাতে হবে",
+        "সার্ভার শুধু শেষ ৩টা turn মনে রাখে, তাই প্রতি ৩ turn-এ নতুন session শুরু করতে হবে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Messages API stateless, সার্ভার কোনো history রাখে না; তাই কোডকেই প্রতিটা request-এ পুরো কথোপকথন পাঠাতে হয়। `max_tokens` শুধু output-এর সীমা, স্মৃতির সাথে সম্পর্কহীন। `temperature` স্মৃতি ঠিক করে না (আর নতুন model/version-এ পাঠানো গেলে `400` আসতে পারে)। 'সার্ভার ৩টা turn মনে রাখে' ধরনের কোনো আচরণ docs-এ নেই।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "একটা request-এর response HTTP 200 এসেছে, কিন্তু উত্তরের শেষ বাক্য মাঝপথে কাটা। `try/except` কোনো exception ধরেনি। কোডে কী পরীক্ষা করা উচিত ছিল?",
+      "options": [
+        "`response.stop_reason` মান, যেখানে `max_tokens` কাটার ইঙ্গিত দেয়",
+        "`request-id` header-এর মান খালি কি না",
+        "`usage.input_tokens` শূন্য কি না",
+        "HTTP status 529 কি না"
+      ],
+      "answerIndexes": [0],
+      "explanation": "উত্তর কাটা পড়লে API তবুও সফল (200) response দেয় এবং `stop_reason: max_tokens` বসায়; তাই `stop_reason` আলাদা করে পরীক্ষা করতে হয়, `try/except` একা এটা ধরে না। `request-id` সাপোর্টের শনাক্তকারী, কাটা উত্তরের সূচক নয়। `input_tokens` শূন্য হওয়ার সাথে এর সম্পর্ক নেই। 529 হলো overloaded error, যা আলাদা ব্যাপার এবং এখানে status 200।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Chai-Bot একটা লম্বা রিপোর্ট stream করছিল। প্রায় অর্ধেক পথে নেটওয়ার্ক কেটে যায়; আংশিক text জমা আছে এবং model Claude 4.6 বা পরের। docs-অনুযায়ী সবচেয়ে উপযুক্ত recovery কোনটা?",
+      "options": [
+        "আংশিক text শেষে একটা assistant message বসিয়ে (prefill) আবার stream চালানো",
+        "আংশিক text ও 'যেখানে থেমেছিলে সেখান থেকে চালাও' নির্দেশ সহ একটা user message বানিয়ে নতুন stream চালানো",
+        "Stream-এর `temperature` কমিয়ে পুরো request আবার একই রকম উত্তরের আশায় চালানো",
+        "ভাঙা stream-এর অর্ধেক JSON টুকরো parse করে tool call পূরণ করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs অনুযায়ী Claude 4.6 ও পরের model-এ continuation হয় user message দিয়ে (আংশিক উত্তর ও চালিয়ে যাওয়ার নির্দেশ সহ), কারণ এসব model-এ assistant prefill সমর্থিত নয় (পাঠালে 400)। assistant-message পদ্ধতিটা Claude 4.5 ও আগের জন্য। temperature কমিয়ে একই উত্তর নিশ্চিত হয় না, আর বাদ দিতে হয় নতুন model-এ। `tool_use`/`thinking` block আংশিকভাবে recover করা যায় না।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Stream হাতে-হাতে প্রক্রিয়া করার সময় একটা `tool_use` block-এর জন্য একাধিক `input_json_delta` event আসছে। সঠিক ব্যবহার কোনটা? Select TWO.",
+      "options": [
+        "প্রতিটা `partial_json` টুকরোকে আলাদাভাবে `json.loads` করে তখনই tool চালানো",
+        "প্রতিটা block-এর `index` ধরে `partial_json` string গুলো জমানো",
+        "`content_block_stop` পাওয়ার পর জমানো পুরো string parse করে তবেই tool-এর input হিসেবে ব্যবহার",
+        "`message_start` event-এ পুরো tool input পেয়ে যাওয়া, তাই delta উপেক্ষা করা"
+      ],
+      "answerIndexes": [1, 2],
+      "explanation": "`input_json_delta`-র টুকরোগুলো আংশিক JSON string; block-এর `index` ধরে জমাতে হয় এবং `content_block_stop`-এর পর parse করলেই পূর্ণ object পাওয়া যায় (SDK helper-ও এটাই করে)। প্রতিটা টুকরো আলাদা parse করলে ভাঙা JSON-এ ব্যর্থ হবে। `message_start`-এ content খালি থাকে, তাই tool input সেখানে পাওয়া যায় না।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Streaming চালু করা এক request-এ developer `stop_reason` পড়তে চায়। কোন event-এ এটা পাওয়া যাবে?",
+      "options": [
+        "`message_start`, যেখানে পুরো Message object আসে",
+        "`content_block_stop`, প্রতিটা block শেষে",
+        "`ping`, যা নিয়মিত অবস্থা জানায়",
+        "`message_delta`, এবং সেখানকার `usage` cumulative"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Docs অনুযায়ী `stop_reason` `message_start`-এ null, পাওয়া যায় `message_delta` event-এ, অন্য কোনো event-এ নয়; আর `message_delta`-র `usage` cumulative। `content_block_stop` শুধু একটা block শেষের ইঙ্গিত দেয়। `ping` শুধু সংযোগ জীবিত রাখার event।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "ChaiCart-এর ৪০ পাতার supplier PDF দিনে হাজারো গ্রাহক-প্রশ্নে লাগে। Developer প্রতিবার base64-এ পুরো PDF পাঠাচ্ছে, request ভারী হচ্ছে। Claude API সরাসরি ব্যবহার করলে সবচেয়ে ভালো পদ্ধতি কোনটা?",
+      "options": [
+        "Files API-তে একবার আপলোড করে প্রতিটা request-এ `document` block-এ `file_id` ব্যবহার করা, আর `file_id`-র ম্যাপিং সার্ভারে রাখা",
+        "PDF-টা ছবিতে রূপান্তর করে প্রতিটা পাতা আলাদা `image` block হিসেবে পাঠানো, কারণ তাতে token কমে",
+        "Files API ব্যবহার করে `file_id` গ্রাহকের কাছ থেকে নেওয়া, যাতে প্রতি গ্রাহক নিজের ফাইল নির্দিষ্ট করতে পারে",
+        "PDF-এর টেক্সট কেটে আলাদা prompt-এ বসানো এবং ছবি/চার্ট বাদ দেওয়া, কারণ `document` block শুধু টেক্সট বোঝে"
+      ],
+      "answerIndexes": [0],
+      "explanation": "একই ফাইল বহুবার লাগলে Files API-ই মানানসই: একবার আপলোড, তারপর `file_id`। `file_id` সার্ভারে রাখতে হবে। end user-এর দেওয়া `file_id` বিশ্বাস করা নিরাপদ নয়, কারণ ফাইল workspace-scoped। PDF ছবিতে ভাঙলে token কমে না (প্রতিটা পাতা বরং টেক্সট ও ছবি দুই রূপেই যায়), আর `document` block চার্ট ও টেবিলও বোঝে, তাই টেক্সট-মাত্র ধারণা ভুল।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "একটা টিম Files API নিয়ে আলোচনা করছে। docs অনুযায়ী কোন দুটো বক্তব্য সঠিক? Select TWO.",
+      "options": [
+        "আপলোড করা ফাইল পরে `GET /v1/files/{id}/content` দিয়ে ডাউনলোড করা যায়",
+        "Messages request-এ ব্যবহৃত ফাইলের কনটেন্ট input token হিসেবে গণ্য হয়, তাই Files API নিজে token-খরচ কমায় না",
+        "ফাইল workspace-scoped: ওই workspace-এর যেকোনো API key সেগুলো ব্যবহার করতে পারে",
+        "ZDR (zero data retention) প্রতিষ্ঠানগুলোর জন্য Files API সম্পূর্ণ যোগ্য, কারণ ফাইল request শেষেই মুছে যায়"
+      ],
+      "answerIndexes": [1, 2],
+      "explanation": "Docs বলে ফাইলের কনটেন্ট input token হিসেবে গণ্য হয় (আপলোড/লিস্ট/ডিলিট ফ্রি) এবং ফাইল workspace-scoped, তাই untrusted `file_id` গ্রহণ ঝুঁকিপূর্ণ। আপলোড-করা ফাইল ডাউনলোড করা যায় না (শুধু skill/code execution-এর বানানো ফাইল যায়), আর Files API ZDR-যোগ্য নয় কারণ ফাইল মুছে না ফেলা পর্যন্ত থাকে।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Rafi `curl` দিয়ে Messages API ডাকছে এবং `x-api-key` ও `content-type` header দিয়েছে, কিন্তু request ব্যর্থ হচ্ছে। সবচেয়ে সম্ভাব্য বাদ-পড়া জিনিস কী?",
+      "options": [
+        "`anthropic-version` header, যা raw REST-এ বাধ্যতামূলক এবং SDK স্বয়ংক্রিয়ভাবে পাঠায়",
+        "`anthropic-beta` header, যা প্রতিটা request-এ লাগে",
+        "`x-request-id` header, যা client নিজে বানিয়ে পাঠায়",
+        "`transfer-encoding: chunked` header, নইলে JSON body গৃহীত হয় না"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Raw REST-এ বাধ্যতামূলক header: auth (`x-api-key` বা `Authorization`), `anthropic-version`, `content-type: application/json`। SDK শেষ তিনটা নিজে পাঠায়, তাই SDK-তে সমস্যা হয় না। `anthropic-beta` শুধু beta feature চাইলে লাগে। `request-id` সার্ভার response-এ দেয়, client বানায় না। chunked encoding-এর কোনো প্রয়োজন docs-এ নেই।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "কোম্পানি-নীতিতে সব AI traffic AWS-এর ভেতরে যেতে হবে, তাই ChaiCart Chai-Bot-কে Amazon Bedrock-এ নিচ্ছে। Chai-Bot এখন Files API দিয়ে PDF ও Message Batches দিয়ে রাতের কাজ চালায়। সবচেয়ে সঠিক মূল্যায়ন কোনটা?",
+      "options": [
+        "শুধু endpoint URL বদলালেই সব feature আগের মতো চলবে, কারণ API একই",
+        "শুধু model id-তে `anthropic.` prefix বসালেই হবে; auth আগের API key-ই থাকবে",
+        "Bedrock-এ Claude সংস্করণ নির্বিশেষে প্রতিটা Anthropic feature আগে থেকেই সমান উপলব্ধ",
+        "Auth হবে AWS IAM-ভিত্তিক ও model id ফরম্যাট বদলাবে; docs অনুযায়ী Files API ও Message Batches Bedrock-এ নেই, তাই PDF base64-এ পাঠাতে হবে এবং রাতের কাজ অন্যভাবে সাজাতে হবে"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Bedrock-এ auth AWS IAM (service role, assumed role বা short-term bearer token), model id-তে `anthropic.` prefix থাকে, আর docs-এর unsupported তালিকায় Files API, URL source, Message Batches ইত্যাদি আছে। তাই এই নকশা বদলাতে হবে। 'শুধু URL বদলালেই চলবে', 'শুধু prefix বদলালেই চলবে' বা 'সব feature সমান' এই তিনটাই ভুল বা ঝুঁকিপূর্ণ ধারণা।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Developer Claude-কে Google Cloud-এর Vertex-ভিত্তিক (Google managed) endpoint-এ raw REST-এ ডাকছে এবং প্রথম-পক্ষ API-র মতো `model` body-তে আর `anthropic-version` header-এ রেখেছে। docs অনুযায়ী কী ঠিক করতে হবে?",
+      "options": [
+        "Model নাম endpoint URL-এ রাখতে হবে এবং `anthropic_version` request body-তে দিতে হবে",
+        "Model নাম header-এ ও version URL-এ দিতে হবে",
+        "Vertex-এ model বা version কিছুই পাঠাতে হয় না, ডিফল্ট ধরে নেওয়া হয়",
+        "দুটোই header-এ থাকবে, শুধু `x-api-key`-এর বদলে Google token দিতে হবে"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Docs-এর Google managed পাতা অনুযায়ী Vertex-এ endpoint URL model-এর নাম নির্দেশ করে (cURL-এ body-তে `model` রাখা হয় না), এবং `anthropic_version` body-তে যায় (`vertex-2023-10-16` বা `2026-10-21`), header-এ নয়। বাকি অপশনগুলোর বিন্যাস docs-এ নেই। Auth Google credentials ও Bearer token-এ হয়, এটা ঠিক, কিন্তু model/version-এর অবস্থান সেভাবে নয়।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "ChaiCart প্রতি রাতে গত বছরের ২০,০০০ পুরোনো review-কে sentiment-এ ভাগ করতে চায়। ফল সকালে লাগবে, তাৎক্ষণিক নয়, আর খরচ কমানোই লক্ষ্য। প্রথম-পক্ষ Claude API-তে সবচেয়ে ভালো পদ্ধতি কোনটা?",
+      "options": [
+        "প্রতিটা review আলাদা streaming call-এ পাঠানো, কারণ streaming খরচ কমায়",
+        "Message Batches API ব্যবহার, যেখানে প্রতিটা request-এ অনন্য `custom_id` থাকবে এবং ফল `custom_id` দিয়ে মেলানো হবে",
+        "Files API-তে সব review আপলোড করে একটা বিশাল prompt-এ পাঠানো",
+        "Chai-Bot-এর live চ্যাট endpoint-এ ধাপে ধাপে পাঠানো, যাতে rate limit-এর সুবিধা পাওয়া যায়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "দেরি সহনীয় বড় কাজে Message Batches উপযুক্ত: docs অনুযায়ী ৫০% কম খরচ, বেশিরভাগ batch এক ঘণ্টার মধ্যে শেষ (সর্বোচ্চ ২৪ ঘণ্টা), এবং ফল যেকোনো ক্রমে আসতে পারে বলে `custom_id` দিয়ে মেলাতে হয়। Streaming খরচ কমায় না। Files API token-খরচ কমায় না আর একটা বিশাল prompt context window-তে ঠেকবে। Live endpoint-এ ঢালা বাড়তি চাপ ও বাড়তি খরচ।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Chai-Bot একটা client tool `get_order` ব্যবহার করে। Claude-এর response-এ `stop_reason: tool_use` ও একটা `tool_use` block এসেছে। পরের request কেমন হওয়া উচিত? Select TWO.",
+      "options": [
+        "Assistant-এর আগের response (tool_use block সহ) `messages`-এ যোগ করা",
+        "Tool-এর ফল user message-এ `tool_result` block হিসেবে `tool_use_id` সহ পাঠানো, বাড়তি text block ছাড়া",
+        "`tools` array বাদ দেওয়া, কারণ tool আগেই চালানো হয়ে গেছে",
+        "Tool-এর ফল assistant message হিসেবে পাঠানো, যাতে Claude নিজের উত্তরের ধারাবাহিকতা পায়"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "Client tool-চক্রে আগের assistant turn (tool_use সহ) history-তে থাকে, এবং পরের user message-এ প্রতিটা `tool_use`-র জন্য একটা `tool_result` block যায় (`tool_use_id` সহ)। docs সতর্ক করে বাড়তি text জুড়লে অদ্ভুত আচরণ (যেমন ফাঁকা `end_turn`) হতে পারে, আর `tools` array একই রাখতে হয়। ফল assistant message নয়, user message-এ যায়।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Rafi একটা ছবির base64 `image` block পাঠিয়েছে, কিন্তু তার `input_tokens` আশা করা টেক্সট-দৈর্ঘ্যের চেয়ে অনেক বেশি। এর সবচেয়ে সঠিক ব্যাখ্যা কোনটা?",
+      "options": [
+        "ছবি input token হিসেবে গণ্য হয়; ছবির মাপ অনুযায়ী ২৮×২৮ px patch-এর সংখ্যাই (আনুমানিক) খরচ নির্ধারণ করে",
+        "ছবি output token হিসেবে গণ্য হয়, তাই `input_tokens` বদলানোর কথা নয়",
+        "ছবির জন্য আলাদা কোনো খরচ নেই; বেশি `input_tokens` মানে system prompt ডুপ্লিকেট হয়েছে",
+        "Base64 string-এর প্রতিটা অক্ষর একটা করে token হিসেবে গণ্য হয়"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Docs অনুযায়ী ছবি ২৮×২৮ px patch-এ ভাঙা হয় এবং খরচ ≈ ⌈প্রস্থ/২৮⌉ × ⌈উচ্চতা/২৮⌉ visual token (model-এর সর্বোচ্চ resolution ছাড়ালে আগে ছোট করা হয়); এগুলো input token। ছবি output token নয়। base64 অক্ষর-প্রতি-token ধারণা ভুল, কারণ ছবি visual patch হিসেবে গণনা হয়। আলাদা কোনো 'ফ্রি' নেই।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Nusrat Apu জানতে চাইলেন: গত রাতের একটা ব্যর্থ API call নিয়ে Anthropic support-কে কোন তথ্য দিলে তারা সবচেয়ে দ্রুত request খুঁজে পাবে?",
+      "options": [
+        "`msg_...` শুরু হওয়া message id ও তারিখের আন্দাজ",
+        "Response-এর `request-id` header (বা error body-র `request_id`), যেমন `req_...`",
+        "ব্যবহৃত API key-র পুরো মান",
+        "ব্যবহারকারীর ইনপুট prompt-এর পুরো লেখা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs অনুযায়ী প্রতিটা response-এ বিশ্বব্যাপী অনন্য `request-id` header থাকে (error body-তেও `request_id`), এবং support-এ এটাই দিতে বলা হয়। API key প্রকাশ করা নিরাপত্তা-ঝুঁকি; এটা কখনও শেয়ার করা উচিত নয়। `msg_...` id ও prompt পুরোটা অপ্রয়োজনীয় বা সংবেদনশীল তথ্য ফাঁসের ঝুঁকি আনে এবং শনাক্তকরণে `request-id`-র মতো নির্ভরযোগ্য নয়।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    },
+    {
+      "question": "Rafi একটা পুরোনো কোড-নমুনা দেখে Claude 4.6-পরবর্তী model-এ কথোপকথনের শেষে অসম্পূর্ণ assistant message (prefill) বসিয়ে উত্তরের শুরু ঠিক করতে চাইছে। কী ঘটবে এবং কী করা উচিত?",
+      "options": [
+        "সব ঠিক চলবে; prefill সব model-এ সমান সমর্থিত",
+        "Request `400 invalid_request_error` দেবে; বিকল্প হিসেবে system prompt-এর নির্দেশ বা (সমর্থিত model-এ) structured outputs ব্যবহার করতে হবে",
+        "Request সফল হবে, কিন্তু `stop_reason` সবসময় `refusal` আসবে",
+        "API নীরবে prefill উপেক্ষা করবে এবং কোনো error দেবে না"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs অনুযায়ী Claude 4.6 ও পরের model-এ prefill সমর্থিত নয়: শেষ message assistant হলে `400 invalid_request_error` আসে ('The conversation must end with a user message')। বিকল্প: system prompt-এর নির্দেশ বা structured outputs। নীরবে উপেক্ষা বা `refusal` আচরণ docs-এ বলা নেই, আর 'সব model-এ সমান সমর্থিত' ভুল।",
+      "domain": 2,
+      "skill": "Claude API Mechanics"
+    }
+  ]
+}

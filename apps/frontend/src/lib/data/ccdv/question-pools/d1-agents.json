@@ -1,0 +1,1138 @@
+[
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A bank needs to process loan-application PDFs: extract fields, validate them against fixed compliance rules, then write a summary to the case system. The steps and their order never change from one application to the next. Which architecture best fits?",
+    "options": [
+      "A predefined workflow (prompt chain) with code controlling step order, calling Claude at each step that needs language understanding",
+      "A fully autonomous agent that decides its own steps and tools in a loop for every application",
+      "A swarm of peer agents that negotiate the order of steps among themselves",
+      "A single long prompt that asks Claude to do every step and call the case system whenever it chooses"
+    ],
+    "answerIndexes": [0],
+    "explanation": "When the path is known in advance and predictable, a workflow gives lower latency, cost and variance, and easier auditing. Agents trade those away for flexibility the task does not need."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A support team is deciding between a workflow and an agent for resolving customer tickets. Tickets vary widely: some need a refund lookup, others need log analysis, others need several rounds of clarification, and the number of steps cannot be predicted up front. Which factor most strongly favors an agent?",
+    "options": [
+      "The team wants the lowest possible per-ticket latency and cost",
+      "The required steps and number of tool calls cannot be predicted ahead of time, so the model must decide the next action from intermediate results",
+      "Compliance requires an identical sequence of steps for every ticket",
+      "The task is a single classification with a fixed output schema"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Agents suit open-ended problems where the path emerges from observations. Fixed sequences, minimal latency and single-step classification are all workflow-friendly criteria."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A team builds a code-migration tool. Their first prototype is a 12-agent hierarchy with a supervisor, planners and reviewers, but it is slow, expensive and hard to debug. Simple single-call prompts were not yet measured. What does Anthropic's guidance on agentic systems suggest as the best next step?",
+    "options": [
+      "Add more specialized subagents so each one has a narrower job",
+      "Replace the hierarchy with a framework so the abstraction hides the complexity",
+      "Start from the simplest solution (a single optimized LLM call with retrieval or examples) and add agentic complexity only when measured results justify it",
+      "Increase the supervisor's temperature so it explores more delegation options"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The guidance is to find the simplest solution possible and increase complexity only when it demonstrably improves outcomes. More layers add latency, cost and failure modes."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "An e-commerce company receives incoming messages that are either order-status questions, refund requests or product questions. Each category needs a different prompt, tools and model size. Which workflow pattern fits best?",
+    "options": [
+      "Evaluator-optimizer: loop until a judge model approves the answer",
+      "Parallelization with voting: run every handler and take the majority answer",
+      "Prompt chaining: pass each message through all three handlers in series",
+      "Routing: classify the input first, then send it to a specialized downstream prompt or handler"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Routing separates concerns by classifying the input and directing it to a specialized path, which also lets easy categories use cheaper models. The other patterns do not address category-specific handling."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A legal-tech team reviews a contract for liability clauses, termination clauses and IP clauses. The three reviews are independent of each other and the team wants lower end-to-end latency. Which pattern fits best?",
+    "options": [
+      "Parallelization (sectioning): run the three independent reviews concurrently and aggregate the results in code",
+      "Prompt chaining: run the reviews one after another so each sees the previous output",
+      "Evaluator-optimizer: have one review critique the other two",
+      "Routing: classify the contract and choose just one review to run"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Independent subtasks can run concurrently (sectioning), cutting wall-clock time to roughly the slowest branch. Chaining adds unnecessary serial latency for independent work."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A content team generates marketing copy. A first model drafts it, and a second model scores it against a rubric and gives concrete feedback. The draft is regenerated until it meets the rubric or a retry limit is reached. Which pattern is this?",
+    "options": [
+      "Orchestrator-workers",
+      "Evaluator-optimizer",
+      "Routing",
+      "Parallelization with sectioning"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Evaluator-optimizer pairs a generator with an evaluator in a feedback loop. It works best when there are clear evaluation criteria and iteration measurably improves the output."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A coding assistant must implement a feature that touches an unknown number of files. The set of files and edits depends on what exploration discovers, so the subtasks cannot be listed in advance. Which pattern fits best?",
+    "options": [
+      "Prompt chaining with a fixed list of file-edit steps",
+      "Parallelization with sectioning over a predefined list of files",
+      "Orchestrator-workers: a central LLM dynamically decomposes the task, delegates to workers and synthesizes their results",
+      "Routing each request to one of three fixed handlers"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Orchestrator-workers differs from sectioning because subtasks are not predefined; the orchestrator determines them from the specific input at run time."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A team's sales-research agent reliably produces good results, but it takes 40 seconds and several dollars per run. Analysis shows that the steps taken are almost identical in 95% of runs. Which change best reflects sound architecture judgment?",
+    "options": [
+      "Switch to a bigger model so the agent finishes in fewer iterations",
+      "Add a second supervisor agent to monitor the first",
+      "Remove all tools so the agent answers from its own knowledge",
+      "Convert the stable path into a deterministic workflow and keep agentic behavior only for the rare branches that vary"
+    ],
+    "answerIndexes": [3],
+    "explanation": "If the path is nearly always the same, a workflow captures that structure with less latency, cost and variance. Agency should be reserved for genuine variability."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A manager (supervisor) agent delegates to a billing specialist, a technical-support specialist and a shipping specialist. Which responsibility belongs to the supervisor in this hierarchy?",
+    "options": [
+      "Decomposing the user's request, choosing which specialist handles each part, and combining their results into one coherent answer",
+      "Executing every tool call itself so specialists remain stateless",
+      "Sharing its full conversation history with every specialist verbatim",
+      "Verifying specialist outputs by re-running all of their tool calls"
+    ],
+    "answerIndexes": [0],
+    "explanation": "A supervisor plans, delegates and synthesizes. Specialists carry domain-specific prompts and tools, and typically receive only the context needed for their subtask."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A research agent explores hundreds of web pages to answer one question. Its context window fills with raw page content and its reasoning quality degrades. Which architectural change most directly addresses this?",
+    "options": [
+      "Increase max_tokens so the model can write longer reasoning",
+      "Delegate page exploration to subagents that work in their own context windows and return only concise findings to the lead agent",
+      "Lower the sampling temperature to make reasoning more focused",
+      "Ask the agent to read the pages faster in a single turn"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Subagents give context isolation: the verbose intermediate tool output stays in the subagent and only a distilled result reaches the parent, preserving the lead agent's context."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "Which TWO situations are good reasons to introduce subagents into an agent design? Select TWO.",
+    "options": [
+      "A subtask would flood the main context with verbose intermediate output that is not needed afterward",
+      "The task is a short, single-step lookup that completes in one tool call",
+      "Several independent investigations could run concurrently to reduce wall-clock time",
+      "You want subagents to inherit the full parent conversation so nothing is lost",
+      "You want to avoid defining any tool restrictions for the work"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Subagents help with context isolation and parallelism. For a one-step lookup they add overhead, and restricting subagents' tools is a benefit rather than something to avoid."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A multi-agent research system spends far more tokens than a single-agent chat for the same question. A stakeholder asks when that cost is justified. Which answer is most accurate?",
+    "options": [
+      "Always, because more agents always improve answer quality",
+      "Never, because multi-agent systems cannot beat a single agent",
+      "Only when each agent uses the same prompt, to keep behavior consistent",
+      "When the task is high-value and breadth-heavy or parallelizable enough that the extra tokens buy meaningfully better results"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Multi-agent setups multiply token use, so they pay off for valuable, wide or parallelizable tasks. Tasks that need tightly shared context or few independent threads often fit a single agent better."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A healthcare-claims pipeline requires a human reviewer to approve any action that changes a patient's billing record. The agent otherwise runs autonomously. Which TWO design choices best implement this requirement? Select TWO.",
+    "options": [
+      "Place a checkpoint in the harness before the irreversible tool executes, so execution pauses until a human approves",
+      "Ask Claude in the system prompt to remember to request approval",
+      "Mention in the tool description that risky calls should be self-reported",
+      "Review a log of billing changes after they have been committed",
+      "Make the gate fail closed: if no approval arrives or the reviewer is unreachable, the tool call is not executed"
+    ],
+    "answerIndexes": [0, 4],
+    "explanation": "Approval for irreversible actions must be enforced outside the model, in code that gates the tool call, and the gate must default to not executing. Prompt instructions are guidance that can be missed, and post-hoc review cannot undo the action."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A team's agent loop sometimes runs indefinitely when a tool keeps returning ambiguous results. Which TWO architectural safeguards are most appropriate? Select TWO.",
+    "options": [
+      "Rely on the model to decide it has done enough, since it is capable",
+      "Add hard limits on iterations, tokens or spend",
+      "Remove tool results from the context so the model cannot be confused",
+      "Raise temperature so the loop eventually breaks out",
+      "Define explicit stopping conditions and an escalation path to a human when they are hit"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Agents are autonomous loops, so they need code-enforced ceilings plus defined stop and escalation behavior. Relying on the model alone to stop is not dependable, and hiding tool results or changing temperature does not bound the loop."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A document-processing system uses an LLM to extract invoice fields, then a deterministic script validates totals, and only then does another LLM call draft a summary. If validation fails, the run stops. What does this design illustrate?",
+    "options": [
+      "An orchestrator-workers system with dynamic delegation",
+      "A fully autonomous agent with open-ended tool selection",
+      "A prompt chain with a programmatic gate between steps",
+      "A parallelization design using voting"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Chaining decomposes a task into fixed sequential steps and can insert programmatic checks (gates) between them to catch errors early."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A team wants high confidence in a security-sensitive code review and is willing to pay extra. They run the same review prompt several times with different framing and flag an issue if any run reports it. Which pattern is this?",
+    "options": [
+      "Routing",
+      "Prompt chaining",
+      "Orchestrator-workers",
+      "Parallelization with voting"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Voting runs the same or similar task multiple times to get diverse outputs and raise confidence, here by flagging a finding when any run raises it."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "Two engineers disagree on how to design tools for a new agent. One wants to spend a week tuning the system prompt. The other wants to invest first in clear tool names, descriptions and parameters because the model interacts with the world only through them. Which view better matches agent design guidance?",
+    "options": [
+      "Invest in the agent-computer interface: well-documented, unambiguous tools are a core part of agent reliability",
+      "Prompts alone determine tool-use quality, so tool descriptions can stay minimal",
+      "Tool design matters only for workflows, not for agents",
+      "The framework chosen determines tool quality regardless of descriptions"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Agents depend on tool descriptions and schemas to choose and parameterize calls. Time spent on the agent-computer interface often pays off as much as prompt work."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A company evaluates whether a task should be a workflow or an agent. Which question is the MOST useful decision criterion?",
+    "options": [
+      "Does the task involve a large language model at all?",
+      "Can the sequence of steps be specified in advance, or must it be discovered from intermediate results?",
+      "Does the team prefer a particular programming language?",
+      "Is the final answer going to be shown in a chat UI?"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Predictability of the path is the core discriminator: predefined paths suggest workflows, while path-by-observation suggests agents."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A hierarchical agent system uses one supervisor and eight specialist agents. Users report that answers lose detail the specialists found. Which design issue is the MOST likely cause?",
+    "options": [
+      "Specialists are running in separate context windows, which always degrades quality",
+      "The system prompt of the supervisor is too short to be used",
+      "The supervisor's synthesis step receives only brief summaries, or the handoff between specialist and supervisor drops important details",
+      "Specialists are running tools in parallel, which discards results"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Context isolation helps, but the handoff must carry the information the supervisor needs. Overly lossy summaries are a classic failure of delegation designs."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A travel-booking assistant must decide whether to be built as a workflow or an agent. Requirements: users ask open-ended trip questions, the assistant must search flights, hotels and weather as needed, and may need to revise its plan when a flight is sold out. Which TWO characteristics of this task justify an agent over a fixed workflow? Select TWO.",
+    "options": [
+      "The next step depends on tool results, such as a sold-out flight forcing a re-plan",
+      "The three searches always run in the same order with identical parameters",
+      "The mix and order of searches differs for each user request",
+      "Every response must be byte-for-byte reproducible",
+      "The output is a fixed JSON record produced from one input document"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Open-ended requests and plans that change from observations are the hallmark of agent-suitable tasks. Fixed order, strict reproducibility and single-document extraction are workflow-suited."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "An internal DevOps assistant has a supervisor agent that delegates to a deployment agent, a monitoring agent and a ticketing agent. The security team asks for least privilege. What is the best way to apply it in this hierarchy?",
+    "options": [
+      "Give the supervisor every tool and credential so it can step in for any specialist",
+      "Give each specialist only the tools and credentials its role needs, and keep irreversible deployment tools out of the other agents' tool sets",
+      "Share one administrator credential across all agents for simplicity",
+      "Rely on each agent's system prompt to avoid tools it should not use"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Tool and credential scoping per role limits blast radius. Prompt-only restrictions are not enforcement, and a shared admin credential defeats least privilege."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A lead agent spawns subagents to investigate a production incident. The subagents keep returning vague results like 'looked into the logs, nothing found'. What is the most likely design flaw?",
+    "options": [
+      "Subagents are using separate context windows, which prevents them from working",
+      "The lead agent is using too many tools in its own context",
+      "The lead agent's delegation instructions lack a clear objective, scope, output format and guidance on tools, so subagents cannot tell what to find or when to stop",
+      "Subagent results are returned as text rather than as images"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Subagents start with fresh context, so the delegation prompt is all they know. Specific objectives, boundaries and expected output are essential for useful results."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A fintech company must give auditors a repeatable decision trail for a loan-triage system. The triage steps are defined by policy and rarely change. Which design would be MOST defensible?",
+    "options": [
+      "An autonomous agent that chooses its own steps, summarizing its reasoning at the end",
+      "A swarm of agents voting without recording intermediate results",
+      "A single prompt asking the model to apply the policy from memory",
+      "A workflow with fixed steps, deterministic checks between model calls, and logging of each step's inputs and outputs"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Policy-defined steps map to a workflow, which is easier to audit and reproduce. Open-ended autonomy adds variance that is hard to justify to auditors."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A team uses an orchestrator-workers design where the orchestrator writes the plan once and workers execute it. Mid-run, a worker discovers that an assumption in the plan is wrong. What architectural capability is missing?",
+    "options": [
+      "A feedback path that lets workers report findings back so the orchestrator can revise the plan or re-delegate",
+      "A larger context window for each worker",
+      "A higher sampling temperature for the orchestrator",
+      "More workers running the same plan in parallel"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Dynamic orchestration depends on results flowing back so plans can adapt. Without that, the orchestrator is just a one-shot planner."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Architecture",
+    "chapterId": "ch11",
+    "question": "A product manager asks why the team should not simply give a single agent all 60 available tools instead of building a supervisor with specialist subagents. Which is the strongest architectural argument for specialists?",
+    "options": [
+      "Models cannot call more than ten tools in total",
+      "Smaller, role-specific tool sets and focused prompts reduce tool-selection errors and keep each context window lean",
+      "Specialists always run cheaper because they never call tools",
+      "A supervisor removes the need for tool descriptions"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Large tool sets increase selection ambiguity and context cost. Specialists with focused tool sets are a common remedy, though they add coordination overhead."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A developer wants a coding agent with built-in file reading, editing, shell commands, and a ready-made agent loop, without implementing tool execution themselves. Which option fits best?",
+    "options": [
+      "The Messages API alone, because it runs built-in file and shell tools automatically",
+      "A Batch API job, which loops over tools until the task is done",
+      "The Claude Agent SDK, which exposes the same agent loop and built-in tools used by Claude Code as a library",
+      "A prompt-caching configuration, which provides the tool loop"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The Agent SDK ships the Claude Code agent loop with built-in tools such as file and shell tools. The plain Messages API returns tool_use blocks that your code must execute."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team writes its own agent loop with the Messages API. After Claude returns a response with stop_reason \"tool_use\", what must the loop do next?",
+    "options": [
+      "End the loop, because tool_use means the final answer is ready",
+      "Resend the original user message so Claude retries the tool call",
+      "Switch to a different model so it can execute the tool",
+      "Execute the requested tools, append the assistant message and a user message containing matching tool_result blocks, then call the API again"
+    ],
+    "answerIndexes": [3],
+    "explanation": "A manual loop runs while stop_reason is tool_use: execute the tools, return tool_result blocks referencing each tool_use id, and continue. It ends on a terminal stop reason such as end_turn."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "Which TWO elements belong to the harness (the code around the model) of a custom agent, rather than to the model itself? Select TWO.",
+    "options": [
+      "Executing tool calls and returning results to the model",
+      "Deciding semantically which tool best fits the user's request",
+      "Generating the text of each assistant reply",
+      "Enforcing iteration limits and permission checks before tools run",
+      "Reasoning about intermediate results to plan the next step"
+    ],
+    "answerIndexes": [0, 3],
+    "explanation": "The harness runs the loop, dispatches tools, applies guardrails and manages state. Choosing tools and reasoning are done by the model."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team needs a hard guarantee that an agent can never delete production data, regardless of what the model decides. Which TWO implementations are most reliable? Select TWO.",
+    "options": [
+      "Adding 'never delete production data' in capital letters to the system prompt",
+      "A PreToolUse hook that inspects the tool call and returns a deny decision for destructive commands, in code outside the model",
+      "Asking the model to double check each command before running it",
+      "Lowering temperature to 0 so the model is consistent",
+      "Running the agent with credentials and sandbox access that simply lack delete rights on production data"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Deterministic code at tool-call time and least-privilege credentials are enforced outside the model. Prompt instructions and low temperature reduce the likelihood of a bad call but give no guarantee."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "In the Claude Agent SDK, a hook should log every file the agent edits to an audit trail after the edit succeeds. Which hook event is the best fit?",
+    "options": [
+      "PreToolUse, because it runs before the tool and so sees the final result",
+      "SubagentStop, because it fires whenever a file changes",
+      "PostToolUse, matched to the file-editing tools",
+      "Notification, because it carries every tool result"
+    ],
+    "answerIndexes": [2],
+    "explanation": "PostToolUse fires after a tool returns, with the tool result, which suits audit logging. PreToolUse runs before the call and cannot see the outcome."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A security team's PreToolUse hook intended to block writes to .env files uses the matcher \"Write|Edit\". A reviewer notes that Claude can still create .env using a shell command. What explains this?",
+    "options": [
+      "Hooks never run for the Bash tool under any configuration",
+      "Matchers filter on file paths, so the hook never matched",
+      "Hooks run only after the tool has completed",
+      "The matcher only applies to the Write and Edit tools, so Bash calls bypass this hook unless a separate hook or sandbox rule covers them"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Matchers filter by tool name, not file path, and a Write|Edit matcher does not cover Bash. Cover shell writes with a Bash hook or sandbox configuration."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An engineer's PreToolUse safety hook throws an unhandled exception for certain inputs. In the Agent SDK's default behavior, the tool call may proceed to the normal permission flow. Which configuration makes the guard fail closed?",
+    "options": [
+      "Set the matcher's failure behavior to block (for example onFailure: \"block\") so a failing callback blocks the action",
+      "Return an empty object from the callback after catching all errors",
+      "Increase the callback's temperature setting",
+      "Register the hook under the Notification event instead"
+    ],
+    "answerIndexes": [0],
+    "explanation": "By default, a failing callback does not necessarily block the action. Setting onFailure to block makes a crashing guard stop the tool call. Catching errors and returning an empty object would silently allow it."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A company must run an agent that executes tools on its own network because data may not leave its infrastructure, but it does not want to build and operate its own agent loop. Which approach fits?",
+    "options": [
+      "Claude Managed Agents with the default Anthropic-hosted cloud sandbox",
+      "Claude Managed Agents with a self-hosted sandbox, where Anthropic runs the agent loop and your worker executes tool calls on your infrastructure",
+      "A custom loop built on the Messages API hosted by Anthropic",
+      "Using the Batch API so tools run inside Anthropic's data centers"
+    ],
+    "answerIndexes": [1],
+    "explanation": "A self-hosted sandbox keeps tool execution, files and network egress in your infrastructure while Anthropic runs the agent. Note that tool inputs and outputs still flow to Anthropic so the model can see results."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team wants to automate long-running, asynchronous tasks (minutes to hours) with a persistent filesystem and does not want to run any infrastructure for the agent loop or sandbox. Which option is the best fit?",
+    "options": [
+      "A hand-built loop on the Messages API running in a serverless function with a 30-second limit",
+      "A single synchronous Messages API call with a very large max_tokens",
+      "Claude Managed Agents with an Anthropic-managed cloud sandbox environment",
+      "Claude Code running interactively on a developer laptop"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Managed Agents provides a hosted harness and sandbox for long-running work with stateful sessions. A short-lived function or single call cannot sustain such runs."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A developer's Agent SDK subagent for code review should be able to read and search code but never modify it. How should this be enforced?",
+    "options": [
+      "Define the subagent with a tools list limited to read-only tools such as Read, Grep and Glob",
+      "Tell the subagent in its prompt that it must not edit files, and leave tools unrestricted",
+      "Give it Bash so it can decide whether editing is necessary",
+      "Omit the description so Claude never invokes it"
+    ],
+    "answerIndexes": [0],
+    "explanation": "A tools allowlist removes capabilities from the subagent's session entirely. Prompt-only restrictions are advisory, and a tool left out simply is not available."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An agent built with the Agent SDK defines subagents programmatically, but Claude never delegates to them and does the work itself. Which TWO fixes are most likely to help? Select TWO.",
+    "options": [
+      "Raise the main agent's temperature so it picks subagents more often",
+      "Write a clearer subagent description that states exactly when it should be used",
+      "Remove the subagent's system prompt so it relies on defaults",
+      "Make sure the Agent tool is permitted in the main agent's allowed tools",
+      "Delete the tools field from the subagent definitions"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Claude picks subagents by their description and invokes them through the Agent tool, so both a precise description and tool availability matter. Prompt content and temperature do not drive delegation."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A subagent invoked through the Agent SDK needs facts the parent learned earlier in the conversation (a failing test name and a stack trace). The subagent is not a fork. How does it get that information?",
+    "options": [
+      "It automatically inherits the parent's full message history",
+      "It reads the parent's system prompt from shared memory",
+      "The parent must include it in the prompt it passes to the subagent, since that prompt is the only channel from parent to subagent",
+      "It receives the parent's tool results through hooks"
+    ],
+    "answerIndexes": [2],
+    "explanation": "A non-fork subagent starts with a fresh context; the Agent tool's prompt string is the only thing passed down. Include paths, errors and decisions it needs."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An agent run built on the Agent SDK is spawning deeply nested subagents and costs are rising unpredictably. Which controls does the SDK offer to bound this? Select TWO.",
+    "options": [
+      "Set a maximum spend budget for the query (for example maxBudgetUsd)",
+      "Set temperature to 0 so Claude stops delegating",
+      "Disable streaming so subagents cannot run in parallel",
+      "Limit subagent nesting depth and concurrency through the supported environment variables",
+      "Shorten the subagent description to one word"
+    ],
+    "answerIndexes": [0, 3],
+    "explanation": "The SDK supports a spend cap and depth/concurrency limits to bound agent trees. Temperature, streaming and description length are not cost controls."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team's hook should automatically rewrite any Write tool call so files land in a sandbox directory. Which output from a PreToolUse hook accomplishes this?",
+    "options": [
+      "Return updatedInput containing the modified file_path, together with permissionDecision allow",
+      "Return a deny decision with the new path in the reason string",
+      "Return additionalContext telling Claude to choose another path",
+      "Modify the file after it is written using a PostToolUse hook"
+    ],
+    "answerIndexes": [0],
+    "explanation": "PreToolUse hooks can return updatedInput to rewrite arguments before the tool runs. A deny only blocks, and context only advises the model."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A development team wants a human to confirm every database write an agent proposes, while read queries proceed automatically. Which implementation best fits?",
+    "options": [
+      "Instruct the agent in its prompt to ask the user before any write",
+      "A PreToolUse hook or permission callback that returns ask (or routes to a human) for write tools and allows read-only tools",
+      "Disable the database tool entirely and let the agent guess results",
+      "Run all queries in a batch and approve them the next day"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Hooks and permission callbacks can require approval deterministically per tool or action. Prompt instructions are not enforcement, and removing the tool breaks the use case."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An engineer is choosing between the Messages API with a custom loop and the Claude Agent SDK for a new coding agent that needs file editing, shell execution and context compaction. Which statement best captures the tradeoff?",
+    "options": [
+      "A custom loop is always faster to build and requires no tool implementation",
+      "The Agent SDK cannot use custom tools or MCP servers",
+      "The Agent SDK gives a ready-made loop with built-in tools and context handling, while a custom loop gives maximum control at the cost of building and maintaining those parts",
+      "The Messages API automatically runs file and shell tools server-side"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Build-versus-adopt: use the SDK for common agent needs and a custom loop when you need fine-grained control. The SDK also supports custom tools and MCP servers."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "In a Managed Agents setup, which statement correctly describes the roles of agent, environment and session?",
+    "options": [
+      "The environment defines the system prompt, and the agent defines the sandbox",
+      "A session is a permanent definition that is shared by all users",
+      "The agent is the infrastructure that runs tool calls, and the environment is the model",
+      "The agent defines the model, prompt, tools and skills; the environment defines where sessions run; a session is a running instance of the agent in an environment"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Managed Agents separates the reusable agent configuration, the environment where it executes, and the session that is a running task instance with its own event history."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A compliance officer asks whether Managed Agents sessions can be used for a workload that requires zero data retention. What is the correct answer based on the documentation?",
+    "options": [
+      "Managed Agents is stateful and stores session transcripts until deleted, so it is not eligible for zero data retention",
+      "Yes, because the sandbox is isolated, so nothing is stored",
+      "Yes, but only if the beta header is omitted",
+      "Yes, if the self-hosted sandbox option is chosen, since data never leaves your network"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Sessions persist transcripts server-side, and the docs state Managed Agents is not ZDR-eligible, including self-hosted sandboxes, because tool inputs and outputs still flow to Anthropic."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "With a self-hosted sandbox in Managed Agents, what runs on the customer's infrastructure?",
+    "options": [
+      "The model weights and inference",
+      "An environment worker that claims work items and executes the agent's tool calls locally, posting results back",
+      "The entire agent loop, including model sampling",
+      "Only the web interface for viewing session transcripts"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Anthropic keeps running the agent loop and model; the worker you operate runs tools such as bash and file operations in your environment."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team's long-running Agent SDK job must capture the full transcript before the SDK compacts the conversation. Which hook fits?",
+    "options": [
+      "PostToolUseFailure",
+      "UserPromptSubmit",
+      "PreCompact",
+      "SubagentStart"
+    ],
+    "answerIndexes": [2],
+    "explanation": "PreCompact fires when compaction is requested, making it the place to archive the full transcript before it is summarized."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team wants to track when parallel subagents finish and aggregate their results for monitoring. Which hook event should they register?",
+    "options": [
+      "PreToolUse with a Bash matcher",
+      "SessionEnd",
+      "PermissionRequest",
+      "SubagentStop"
+    ],
+    "answerIndexes": [3],
+    "explanation": "SubagentStop fires when a subagent completes, so it suits aggregating results and observing parallel work."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A custom agent loop calls Claude, which returns three tool_use blocks in a single response that are independent of each other. How should the harness handle them?",
+    "options": [
+      "Execute all three (concurrently if safe) and return all three tool_result blocks in the next user message",
+      "Execute only the first and discard the others",
+      "Execute them and return each result in a separate API request",
+      "Ask Claude to resend each one individually"
+    ],
+    "answerIndexes": [0],
+    "explanation": "A response can include multiple tool_use blocks. The next user turn should carry a tool_result for every tool_use id, and independent calls can run in parallel."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A coding agent built on the Agent SDK runs in CI with no human present. It must never prompt for permissions yet should only use a small set of known-safe tools. Which TWO configuration choices fit best? Select TWO.",
+    "options": [
+      "Enable a mode that bypasses all permission checks for convenience",
+      "Pre-approve an explicit allowlist of safe tools and deny the rest",
+      "Leave all tools unlisted and answer permission prompts automatically with yes",
+      "Run the agent with the highest-privilege cloud credentials",
+      "Run the job in an isolated container with scoped, short-lived credentials"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "A narrow allowlist keeps unattended runs deterministic, and an isolated environment with scoped credentials limits blast radius. Bypassing permissions or auto-approving everything removes the safety layer."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team's agent must keep working well beyond a single context window on a large migration. Which TWO harness designs are most appropriate? Select TWO.",
+    "options": [
+      "Increase the temperature so the model summarizes more aggressively",
+      "Restart the run from scratch whenever the context fills",
+      "Use compaction or clearing of stale tool results in the harness to manage context",
+      "Persist progress notes or state outside the context so work can continue across windows",
+      "Disable tool results so the context never grows"
+    ],
+    "answerIndexes": [2, 3],
+    "explanation": "Long-running agents need context management (compaction, clearing stale tool results) plus externalized progress state. Restarting loses work, and temperature is irrelevant."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team wants every agent run to start by loading project-specific conventions and ending by saving a short run summary. They want this to happen deterministically, not depend on the model remembering. What is the best mechanism?",
+    "options": [
+      "Prompt text that politely asks Claude to load and save at the right moments",
+      "A higher max_tokens value to leave room for summaries",
+      "A bigger model, which will remember the process more reliably",
+      "Lifecycle hooks (for example session start and stop events) that run code at those points"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Hooks provide deterministic execution at defined lifecycle points. Prompt reminders are probabilistic."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An agent's tool execution throws an exception because an external API timed out. What should a well-built custom harness do?",
+    "options": [
+      "Return a tool_result flagged as an error with a helpful message so Claude can retry or adapt, while the harness applies its own retry limits",
+      "Crash the whole run and discard progress",
+      "Silently return an empty successful result",
+      "Remove the tool from the agent permanently"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Returning an error result lets the model recover or choose another approach. Silent empty successes hide failures and crashing loses work."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team debates using the Agent SDK's built-in tools versus writing a custom tool for looking up internal customer records. Which choice is best?",
+    "options": [
+      "Use Bash and let the agent curl the internal API with admin credentials",
+      "Create a custom tool (or MCP server) that wraps the internal API with a clear schema and least-privilege access",
+      "Paste all customer records into the system prompt",
+      "Use a built-in web search tool to find the records"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Domain-specific access belongs in a purpose-built tool with a scoped schema and credentials. Giving a shell and broad credentials is over-privileged."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "An engineer notes that two PreToolUse hooks return different decisions for the same tool call: one returns allow and the other returns deny. What happens in the Agent SDK?",
+    "options": [
+      "The first registered hook wins regardless of decision",
+      "The allow wins because it was explicit",
+      "The more restrictive decision wins, so the call is denied",
+      "The call is retried until the hooks agree"
+    ],
+    "answerIndexes": [2],
+    "explanation": "When hooks disagree, deny takes priority over defer, ask and allow, so a single deny blocks the call."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Construction with Claude",
+    "chapterId": "ch12",
+    "question": "A team builds a custom agent loop and wants to cap runaway behavior. Which combination of harness-level controls is most appropriate?",
+    "options": [
+      "A maximum number of iterations, a token or cost budget, and a defined stop condition that hands off to a human when exceeded",
+      "Only a very high temperature",
+      "Only a longer system prompt describing when to stop",
+      "Only retrying failed tool calls without bound"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Loop limits and budgets are enforced in code and give a predictable ceiling. Prompts and sampling settings do not guarantee termination."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "Every turn of a basic tool-use loop follows which cycle?",
+    "options": [
+      "Claude executes the tool server-side, then the application polls for completion with no result passing back",
+      "Send messages and tool definitions, Claude requests a tool, the application runs it, the result is appended, and the loop repeats until Claude returns a final response",
+      "The application predicts which tool is needed and runs it before calling Claude",
+      "Claude returns all possible tool outputs at once and the application picks one"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The core agent pattern is observe-decide-act: the model chooses tools, the harness executes them, and results go back into context until the model stops requesting tools."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A long-running research agent has accumulated many large tool results from earlier steps that it no longer needs. Context is nearing the limit and quality is dropping. Which approach is most suitable?",
+    "options": [
+      "Double the number of tools so the model has more options",
+      "Resend the entire raw history every turn to avoid losing detail",
+      "Clear or prune stale tool results (or compact the history) while keeping key findings, decisions and state",
+      "Lower max_tokens so the output is shorter"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Tool-result clearing and compaction reduce context bloat while preserving what matters. Keeping everything, or changing output length, does not fix an overfull context."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "An agent must remember a user's deployment preferences across separate sessions that do not share conversation history. Which design best provides this?",
+    "options": [
+      "Increase the context window so the old conversation always fits",
+      "Ask the user to repeat their preferences in every message",
+      "Rely on prompt caching to keep the previous session's context alive indefinitely",
+      "Persist preferences in an external memory store that the agent reads at session start and updates as it learns"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Cross-session memory requires external persistence. Context windows reset between sessions and caching is a cost optimization with a short lifetime, not durable memory."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "In a Claude API memory-tool design, who is responsible for storing and retrieving the memory files?",
+    "options": [
+      "Your application, which implements the storage while Claude issues the read, write and edit commands",
+      "Anthropic automatically stores files for every API key with no code needed",
+      "The model itself keeps hidden weights updates between calls",
+      "The browser local storage of the end user"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The memory tool is client-side: Claude emits commands and your code executes them against storage you control, so you own persistence, access control and deletion."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "Which TWO statements about the Strands Agents SDK multi-agent patterns are accurate? Select TWO.",
+    "options": [
+      "Agents-as-tools lets an orchestrator agent call specialist agents as if they were tools",
+      "Strands supports only a single agent and has no multi-agent capability",
+      "Graph and workflow patterns provide more developer-defined structure than a free-form swarm of handing-off agents",
+      "Strands requires every agent to use the same model provider and cannot mix them",
+      "Swarm agents always run in a fixed order set by a DAG"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Strands documents agents-as-tools, swarm, graph and workflow patterns. Swarms hand off autonomously, whereas graphs and workflows impose developer-defined structure."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team wants an LLM-driven agent where the developer defines nodes and edges, with conditional routing between steps, loops for retries, and the ability to pause for human input and resume later. Which framework capability fits best?",
+    "options": [
+      "A prompt-only template with no state",
+      "A static single-turn completion call",
+      "LangGraph, which models agents as stateful graphs with conditional edges and checkpointed state",
+      "A batch job that runs once per day"
+    ],
+    "answerIndexes": [2],
+    "explanation": "LangGraph represents workflows as graphs with state, conditional edges and persistence, which supports loops and human-in-the-loop pauses."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "In LangGraph, what enables a human-in-the-loop workflow to pause, wait for approval and later resume from the same point?",
+    "options": [
+      "A higher temperature that makes the graph wait",
+      "Calling the model twice and comparing results",
+      "Disabling state so each run starts fresh",
+      "A checkpointer that persists the thread's graph state so execution can resume with the same thread_id"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Checkpointers save state per thread, which supports pause and resume, fault tolerance, time travel and conversation continuity."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "In LangGraph, a team needs user preferences to be available across different conversation threads. Which mechanism is designed for this?",
+    "options": [
+      "A store (long-term memory) that persists data across threads, in addition to the per-thread checkpointer",
+      "The thread checkpointer alone, because it is shared across all threads",
+      "A longer system prompt copied into every request",
+      "Storing preferences in the graph edges"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Checkpointers hold short-term, thread-scoped state, whereas a store holds cross-thread long-term memory such as user preferences."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team uses PydanticAI and wants the agent's final answer to be validated into a typed Python object, with database connections made available to tools without globals. Which features address this?",
+    "options": [
+      "The temperature parameter for typing and a global variable for dependencies",
+      "output_type for validated structured output, and deps_type with RunContext to inject dependencies into tools",
+      "Plain string output and manual parsing in each tool",
+      "A graph checkpointer for typing and a store for dependencies"
+    ],
+    "answerIndexes": [1],
+    "explanation": "PydanticAI is generic over dependency and output types: Pydantic validates the output and tools receive dependencies via RunContext, which keeps code testable."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team compares frameworks for building a Claude-based agent. Which reasoning shows good judgment about using an agent framework?",
+    "options": [
+      "Frameworks always eliminate the need to understand prompts or tool schemas",
+      "Frameworks are required to call tools with Claude",
+      "Frameworks can speed up standard tasks like tool calling and loops, but extra abstraction layers can obscure prompts and responses, so understand what is underneath",
+      "Frameworks guarantee deterministic output from the model"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Frameworks help with boilerplate but can hide prompts and complicate debugging, so teams should understand the underlying behavior."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A code-review agent's context fills with irrelevant file contents because it reads whole files to answer small questions. Which tool-use pattern most reduces bloat?",
+    "options": [
+      "Preload the entire repository into the system prompt",
+      "Remove all tools and ask it to guess from filenames",
+      "Raise the context limit and keep reading entire files",
+      "Give the agent targeted tools (search, line-range reads) so it retrieves just the needed snippets just in time"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Just-in-time retrieval with targeted tools keeps context lean, compared to preloading or reading everything."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team's agent stores a running 'progress.md' file with completed steps and next actions so a fresh context window can resume after a reset. What is this technique?",
+    "options": [
+      "Externalizing state: writing structured notes outside the context window so work can continue across windows or sessions",
+      "Prompt caching, which stores the notes inside the model",
+      "Few-shot prompting, which teaches the model new weights",
+      "Temperature scheduling"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Structured note-taking persists state outside the window, helping long-horizon agents recover after compaction or restarts."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "Which TWO are good reasons to split a long-running agent task across multiple context windows with a handoff of structured state, rather than one very long conversation? Select TWO.",
+    "options": [
+      "Accumulated tool output degrades focus and cost grows as the context gets longer",
+      "Models perform better when they never see summaries of earlier work",
+      "Handoffs make every step deterministic",
+      "A clean window plus a concise progress summary reduces drift from stale, irrelevant details",
+      "Context windows cannot be used more than once per account"
+    ],
+    "answerIndexes": [0, 3],
+    "explanation": "Long contexts raise cost and can dilute attention; summarizing state into a fresh window mitigates bloat and drift. Handoffs do not make runs deterministic."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "In Strands Agents, a developer wants a fixed pipeline of tasks with dependencies, where independent tasks run in parallel and the whole pipeline is reused as one tool. Which multi-agent pattern is described?",
+    "options": [
+      "Workflow, a fixed task graph (DAG) packaged as a reusable unit",
+      "Swarm, where agents autonomously hand off to peers",
+      "Agents-as-tools, where no task ordering exists",
+      "Agent-to-Agent, where agents never run in the same codebase"
+    ],
+    "answerIndexes": [0],
+    "explanation": "In Strands, a workflow is a developer-defined task DAG with parallelism for independent tasks, as opposed to a swarm's autonomous handoffs."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A support platform wants specialist agents (billing, tech, shipping) that hand a conversation to one another as the topic changes, with no central controller deciding each step. Which pattern does this resemble?",
+    "options": [
+      "A prompt chain with fixed steps",
+      "A swarm of peer agents that hand off to each other",
+      "A parallelization pattern using voting",
+      "An evaluator-optimizer loop"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Peer-to-peer handoffs without a central controller describe a swarm; a supervisor hierarchy would instead centralize routing."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A LangGraph agent must pause before executing a payment tool call and wait for a human to approve it, possibly hours later. Which design is best?",
+    "options": [
+      "Keep the Python process blocked waiting for input for hours",
+      "Add 'ask for approval' to the prompt and trust the model",
+      "Interrupt the graph before the tool node, persist state with a checkpointer, then resume with the human's decision on the same thread",
+      "Run the payment first and refund if rejected"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Interrupts plus a checkpointer support durable human-in-the-loop pauses. Blocking a process is fragile, and executing first violates the approval requirement."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "An agent has a failing tool that returns the same transient error repeatedly, and the model keeps retrying the identical call. Which TWO harness behaviors are the best mitigations? Select TWO.",
+    "options": [
+      "Remove the error text so the model is not distracted",
+      "Retry forever with exponential backoff and no cap",
+      "Increase the context window",
+      "Track repeated failures and cap retries",
+      "Return informative, actionable errors or escalate so the model changes strategy"
+    ],
+    "answerIndexes": [3, 4],
+    "explanation": "Loops need bounded retries and actionable errors. Hiding errors or retrying without a cap hurts both cost and reliability."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "Which TWO describe good practice for the final report returned by a subagent to its lead agent? Select TWO.",
+    "options": [
+      "Return the full raw transcript of every tool call for completeness",
+      "Return a concise distilled result with the key findings and sources the lead needs",
+      "Return only 'done' to minimize tokens",
+      "Return unstructured stream-of-consciousness reasoning",
+      "Follow an output format that the lead agent specified in the delegation prompt"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Subagents exist to protect the lead's context, so reports should be dense and structured. Raw transcripts defeat isolation, and 'done' loses the findings."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team's agent can write to long-term memory freely. After weeks, answers degrade because the memory contains stale, conflicting facts. Which TWO improvements are most appropriate? Select TWO.",
+    "options": [
+      "Disable all reading of memory so it cannot conflict",
+      "Record timestamps or provenance and deduplicate entries",
+      "Store every message verbatim, forever",
+      "Increase the temperature so the model resolves conflicts creatively",
+      "Prune periodically and define rules for what is worth saving"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Unmanaged memory accumulates noise and contradictions. Provenance, deduplication, pruning and save rules keep memory useful."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "Which approach best distinguishes short-term from long-term agent memory?",
+    "options": [
+      "Short-term memory is stored on disk, while long-term memory is in the context window",
+      "They are identical, differing only in file name",
+      "Short-term memory is the working state within the current context or thread, while long-term memory persists across sessions in an external store",
+      "Long-term memory means a larger max_tokens value"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Short-term memory lives in the context or thread state; long-term memory requires external persistence that outlasts the session."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team's multi-step agent sometimes skips a required validation step. They need the step to happen every time. Which framework-agnostic design is best?",
+    "options": [
+      "Mention the step more often in the system prompt",
+      "Lower max_tokens to force shorter paths",
+      "Randomize tool order to cover all cases",
+      "Make the step a deterministic node or gate in the harness or workflow rather than relying on the model to choose it"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Required steps belong in code (a workflow node or hook), so they cannot be skipped. Prompt emphasis is probabilistic."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A developer needs to debug why an agent chose the wrong tool in a multi-step run. Which practice is most valuable?",
+    "options": [
+      "Capture traces of each step: model inputs, tool calls, tool results and decisions, then inspect where the reasoning diverged",
+      "Only read the final answer text",
+      "Re-run with temperature 2 until it works",
+      "Remove tools until the bug disappears"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Trace-level observability makes agent behavior debuggable; the final output alone does not show where things went wrong."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "An agent's tool list has grown to dozens of overlapping tools, and the model often picks the wrong one. Which TWO changes are most likely to help? Select TWO.",
+    "options": [
+      "Increase temperature so the model explores more tools",
+      "Consolidate or remove overlapping tools and make each tool's purpose distinct",
+      "Add more near-duplicate tools so one is always a match",
+      "Hide tool descriptions to save tokens",
+      "Improve tool names and descriptions to state when each should and should not be used"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Clear, non-overlapping tools with good descriptions reduce selection errors. More duplicates and hidden descriptions make it worse."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "In an orchestrator-workers system, three workers return results of very different quality. Which design best improves the final answer?",
+    "options": [
+      "Concatenate the worker outputs and return them unmodified",
+      "Always trust the longest output",
+      "Have the orchestrator evaluate and synthesize the results, re-delegate weak parts, and cite which worker output supports each claim",
+      "Randomly pick one worker output"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The orchestrator's role includes synthesis and quality control. Passing through raw outputs pushes the problem to the user."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "A team runs a PydanticAI agent in tests and wants to avoid real database connections. Which feature helps?",
+    "options": [
+      "Setting the model temperature to zero",
+      "Editing the system prompt to say 'pretend there is a database'",
+      "Using global variables for the connection",
+      "Passing a test dependency object through deps so tools use a fake implementation"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Dependency injection through RunContext lets tests substitute fakes, which is one of PydanticAI's design goals."
+  },
+  {
+    "domain": 1,
+    "skill": "Agent Patterns and Frameworks",
+    "chapterId": "ch11",
+    "question": "An agent loop runs a research task that can proceed down many paths. The team wants the model, not the code, to decide the order and number of tool calls, with a clear stop when the question is answered. Which is the best loop termination design?",
+    "options": [
+      "Continue while the model requests tools; stop when it returns a final response or when a safety limit such as max iterations or budget is hit",
+      "Stop after exactly one tool call",
+      "Stop only when the user closes the browser",
+      "Stop when the output exceeds 10 characters"
+    ],
+    "answerIndexes": [0],
+    "explanation": "A model-driven loop ends on a natural final response, with limits as a backstop. Fixed counts fit workflows rather than agents."
+  }
+]

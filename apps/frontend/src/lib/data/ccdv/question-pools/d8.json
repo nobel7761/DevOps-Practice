@@ -1,0 +1,825 @@
+[
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A support bot's Claude responses sometimes call `lookup_order` with an order number when the user actually asked about refunds. The tool's description is just \"Looks up an order.\" What is the most effective first fix?",
+    "options": [
+      "Rewrite the description to explain what the tool returns, when to use it, when not to use it (e.g. refund policy questions), and what each parameter means",
+      "Set tool_choice to {\"type\": \"any\"} so Claude must pick a tool every turn",
+      "Rename the tool to `tool_1` so Claude relies on the system prompt instead",
+      "Add a system prompt line in capital letters telling Claude never to call tools unless asked"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Tool descriptions are the main signal Claude uses to decide whether and how to call a tool; detailed descriptions covering purpose, usage boundaries and parameters are the highest-leverage fix. Forcing tool use (`any`) would make over-calling worse, and obscure names remove useful signal."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "After Claude returns a response with `stop_reason: \"tool_use\"`, what must your application do to continue the conversation correctly?",
+    "options": [
+      "Wait for Claude to execute the tool itself and poll until stop_reason becomes end_turn",
+      "Send an assistant message containing the tool output so Claude sees it as its own text",
+      "Execute the requested tool, then send a new user message containing a tool_result block whose tool_use_id matches the tool_use block's id",
+      "Resend the original request with the tool output appended to the system prompt"
+    ],
+    "answerIndexes": [2],
+    "explanation": "For client tools, your code executes the tool and replies in a user turn with a tool_result block referencing the tool_use_id. Claude does not execute client tools itself, and results belong in a user message, not an assistant message."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Claude returns one assistant message containing three tool_use blocks for independent lookups, and you also want to add a short note for Claude after the results. Select TWO. Which practices are correct when sending the results back?",
+    "options": [
+      "Send each tool_result in its own user message, one after another",
+      "Put all three tool_result blocks in a single user message, each with the tool_use_id of its matching tool_use block",
+      "Put the three results in an assistant message so Claude can merge them with its own reasoning",
+      "Place the tool_result blocks first in the content array and put any extra text after them",
+      "Concatenate all outputs into one tool_result block that uses the first tool_use_id"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Results for parallel calls belong in one user message, each matched by tool_use_id, and tool_result blocks must come first in the content array with any text after them. Splitting results across messages breaks the required structure and can discourage later parallel calls; results never go in an assistant message, and a single merged block cannot satisfy the other two ids."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A tool call to an internal inventory API times out. You want Claude to know the call failed and decide whether to retry or tell the user. Select TWO. Which practices should the harness follow?",
+    "options": [
+      "Return an empty tool_result so Claude infers the failure",
+      "Return a tool_result with is_error set to true",
+      "Raise an exception in the harness and end the conversation",
+      "Make the content message say what went wrong and what Claude might try next (for example, retry after a delay)",
+      "Return the error text as a normal tool_result with no flag"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Anthropic's docs say to return failures as a tool_result with is_error true and to write instructive messages that state what went wrong and what to try next, so Claude can retry, adjust or explain. Crashing hides the failure from the model, and empty or unflagged results are ambiguous."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Your tool validates an input and finds the date is in the wrong format. Which error content gives Claude the best chance of self-correcting on the next turn?",
+    "options": [
+      "\"Error: invalid input\"",
+      "A full Python stack trace from the validation library",
+      "\"Invalid date '03/04/25'. Expected ISO 8601 format YYYY-MM-DD, e.g. 2025-04-03.\"",
+      "An empty string with is_error true"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Actionable, specific error messages let Claude correct arguments. Vague messages give nothing to act on, and raw stack traces add noise and may leak internals."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A team uses Anthropic's web search tool and also defines a custom `get_stock_price` function. Which statement correctly describes who executes each?",
+    "options": [
+      "Anthropic executes both because tool schemas are sent to the API",
+      "Anthropic's servers execute web search; the application's harness executes get_stock_price",
+      "The application executes both because all tools are client tools",
+      "Claude executes both inside the model during generation"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Server tools such as web search run on Anthropic's infrastructure, while user-defined tools are client tools that your harness must execute and answer with tool_result. The model only emits the request to call a tool."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "An agent harness receives tool_use blocks from Claude and must dispatch to many tools. Select TWO. Which design choices make dispatch maintainable and safe?",
+    "options": [
+      "Let Claude write the handler code and exec it each time",
+      "Maintain a registry that maps tool names to handler functions",
+      "Use one large if/elif chain that evals any string Claude sends",
+      "Validate inputs against each tool's schema before running it, and return an is_error tool_result for unknown tool names or invalid input",
+      "Hard-code the order in which tools are called regardless of what Claude requests"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "A name-to-handler registry gives clear dispatch, and validating model-produced arguments plus returning structured errors for unknown names keeps the loop robust. Executing model-provided strings is a security risk, and hard-coding the call order ignores the model's decisions."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "On a model that supports forced tool use, you require that Claude always respond by calling the `extract_invoice` tool, with no other tool and no free text before it. Which setting achieves this?",
+    "options": [
+      "tool_choice: {\"type\": \"none\"}",
+      "Add \"please use the tool\" to the user message",
+      "tool_choice: {\"type\": \"tool\", \"name\": \"extract_invoice\"}",
+      "tool_choice: {\"type\": \"auto\"}"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Specifying `tool` with a name forces that tool call; the API prefills the assistant turn, so no text appears before the tool_use block. `auto` lets Claude decide, `none` prevents tool use, and prompt wording is not a guarantee. Note that some newer models reject `any`/`tool` and need `auto` with strict tool use instead."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "On a model that supports forced tool use, which tool_choice setting forces Claude to call some tool but lets it choose which one?",
+    "options": ["any", "none", "auto", "tool with no name"],
+    "answerIndexes": [0],
+    "explanation": "`any` requires a tool call while leaving the choice to Claude. `auto` may produce text only, `none` disallows tools, and `tool` requires a specific name. Some newer models reject `any` and `tool`, so check model support."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A coding assistant exposes 60 narrowly different tools and Claude frequently picks the wrong one. Which change is most likely to improve selection accuracy?",
+    "options": [
+      "Alphabetise the tools so Claude finds them faster",
+      "Add five more tools that handle the failure cases",
+      "Remove all descriptions to reduce token usage",
+      "Consolidate overlapping tools into fewer, well-scoped tools with distinct descriptions, and load rarely used ones on demand"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Large, overlapping tool sets raise token cost and ambiguity. Fewer, clearly differentiated tools (or on-demand loading via tool search) improve selection. Removing descriptions makes selection worse."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A tool accepts a `status` argument that must be one of \"open\", \"pending\" or \"closed\". Select TWO. Which practices handle this well?",
+    "options": [
+      "Accept any string and silently fix invalid values in the handler",
+      "Describe the allowed values only in the system prompt",
+      "Declare the property with a JSON Schema enum and describe what each value means",
+      "Use type number and map 1-3 to statuses",
+      "Still validate the value in the handler and return an is_error tool_result if it is invalid"
+    ],
+    "answerIndexes": [2, 4],
+    "explanation": "An enum in the input schema puts the constraint where Claude sees it and reduces invalid calls, but the harness should still validate model-produced input and report problems through an is_error result. System-prompt-only constraints, numeric codes and silent fix-ups are weaker."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A harness runs a `delete_customer_record` tool that is irreversible. Select TWO. Which practices form an appropriate approval pattern?",
+    "options": [
+      "Execute immediately and apologise if the deletion was wrong",
+      "Let Claude decide from its own reasoning whether confirmation is needed",
+      "Pause before execution and require explicit human confirmation that shows the arguments",
+      "Run the tool twice to verify the result",
+      "If the human rejects the call, return the denial to Claude as a tool_result so it can adapt"
+    ],
+    "answerIndexes": [2, 4],
+    "explanation": "Destructive actions deserve a deterministic human-in-the-loop gate in the harness rather than the model's discretion, and a denial returned as a tool_result lets Claude explain or choose another path. Executing first or running twice does nothing to prevent harm."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Select TWO. Which practices improve the reliability of tool definitions?",
+    "options": [
+      "Duplicate similar tools with slightly different names so Claude has more choices",
+      "Write descriptions stating what the tool does, when to use it, and what it does not do",
+      "Leave out the description when the tool name seems obvious",
+      "Document each parameter's meaning, format and constraints in the schema",
+      "Give tools short, deliberately cryptic names to save tokens"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Clear descriptions and well-documented parameters are the core guidance. Cryptic names, duplicated tools and missing descriptions all cause mis-selection or bad arguments."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "In the tool-use loop, what signals that Claude has finished and no further tool results are needed?",
+    "options": [
+      "The first assistant message containing any text",
+      "A response whose stop_reason is end_turn",
+      "A tool_result with is_error false",
+      "A response with zero output tokens"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The loop continues while stop_reason is tool_use and ends when Claude returns end_turn (or another terminal reason such as max_tokens). Text can appear alongside tool_use blocks, so it is not a stop signal."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A tool result includes a 40,000-token database dump, and subsequent turns become slow and expensive. What is the best fix?",
+    "options": [
+      "Ask Claude to ignore the extra data",
+      "Have the tool return only relevant, truncated or paginated fields, with a way to request more",
+      "Switch to tool_choice none",
+      "Increase max_tokens"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Tool results consume context on every later turn. Returning concise, relevant data (with pagination or filters) controls cost and focus. Telling Claude to ignore data does not remove tokens."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "An application sends a tool_result for a tool_use_id Claude never produced. What is the likely outcome?",
+    "options": [
+      "The result is queued for a later turn",
+      "The API rewrites the id automatically",
+      "Claude silently treats it as extra context",
+      "The API returns a validation error because every tool_result must correspond to a tool_use block from the previous assistant turn"
+    ],
+    "answerIndexes": [3],
+    "explanation": "tool_result blocks must reference a tool_use from the preceding assistant message; mismatched ids produce a 400-style error. This is a common bug in harnesses that reuse or fabricate ids."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "When writing the user message that returns tool results, where must the tool_result blocks go relative to any additional text in that message?",
+    "options": [
+      "tool_result blocks must come first in the content array, before any text",
+      "Text and results must be in separate messages",
+      "Order does not matter",
+      "Text must come first, then tool_result blocks"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The API requires tool_result blocks to come before any text content in the user message. Putting text first causes an error."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A coding agent wants Claude to read files and run tests. Which tool design best follows good practice?",
+    "options": [
+      "Separate, focused tools such as read_file and run_tests with typed parameters, instead of one `do_anything(command: string)` tool",
+      "One tool per line of source code",
+      "A single tool accepting arbitrary shell strings with no constraints",
+      "No tools; paste the codebase into the prompt"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Focused tools with typed inputs are easier for Claude to use correctly and for the harness to validate, log and permission. An unconstrained catch-all tool is harder to secure and describe."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Select TWO. Which are true of server-side tools compared with client-side tools?",
+    "options": [
+      "Server tools can only be used with tool_choice none",
+      "Server tools are always free of per-use charges",
+      "Anthropic runs server tools, so your harness does not execute them or supply a tool_result for them",
+      "Server tools can reduce harness code needed for capabilities like web search",
+      "Server tools require you to implement the handler in your own code"
+    ],
+    "answerIndexes": [2, 3],
+    "explanation": "With server tools the platform executes the call, so you do not write a handler or return a result; this simplifies the harness. They may carry usage-based pricing, and they are not restricted to any one tool_choice mode."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "You enable manual extended thinking (`thinking: {type: \"enabled\"}`) and also set tool_choice to force a specific tool. What should you expect?",
+    "options": [
+      "Forcing a tool (any or tool) is not supported with extended thinking; only auto or none are allowed",
+      "Everything works and thinking improves accuracy",
+      "The tool is called twice",
+      "Thinking is silently disabled"
+    ],
+    "answerIndexes": [0],
+    "explanation": "With manual extended thinking only tool_choice `auto` or `none` is supported; `any` or `tool` returns an error. If you need a forced tool call, turn thinking off for that request, or use `auto` with a prompt instruction."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A user's request needs the result of one tool to compute the arguments of another (look up customer id, then fetch their invoices). How does this typically play out in the loop?",
+    "options": [
+      "Claude calls both in parallel with guessed arguments",
+      "Claude calls the first tool, receives its result, and then calls the second tool in a later turn using that data",
+      "The harness must merge both tools into one",
+      "Claude cannot chain tools"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Dependent calls happen sequentially across loop iterations, since the second call needs the first call's output. Parallel calls are appropriate only for independent operations."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A finance-compliance agent calls a `transfer_funds` tool that returns a tool_result with is_error true and the message \"Daily limit exceeded; limit resets at 00:00 UTC\". What is the ideal behaviour from Claude's side, and what should the harness ensure?",
+    "options": [
+      "Claude explains the limit to the user or picks an alternative; the harness must return the error as a tool_result rather than swallowing it",
+      "The harness should terminate the session because any is_error is fatal",
+      "Claude should invent a successful result to keep the user happy",
+      "Claude must retry the identical call until it succeeds; the harness should hide the message"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Errors returned through tool_result with is_error let Claude reason about them and respond sensibly. They are not fatal by definition, and retrying an identical call against a hard limit is futile."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Select THREE. Which are valid values for the `type` field of the tool_choice parameter in the Messages API?",
+    "options": ["required", "auto", "tool", "force", "any"],
+    "answerIndexes": [1, 2, 4],
+    "explanation": "The documented types are auto, any, tool (with a name) and none. `required` and `force` are conventions from other APIs, not part of Claude's tool_choice."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "Your harness handles `search_docs` calls from Claude. Sometimes Claude passes a `limit` argument as the string \"5\" instead of the integer 5, crashing your handler. What is the most robust response?",
+    "options": [
+      "Assume Claude always sends perfect arguments and wrap the whole loop in try/except pass",
+      "Remove the limit parameter and hard-code 5",
+      "Disable tool use for the application",
+      "Validate inputs against the tool's JSON Schema before executing, and return an is_error tool_result describing the type problem if validation fails"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Model-produced arguments are untrusted input and should be validated in the harness; a clear error lets Claude correct itself. Ignoring failures or removing features is a poor fix."
+  },
+  {
+    "domain": 8,
+    "skill": "Tool Implementation",
+    "chapterId": "ch08",
+    "question": "A product team debates adding a `calculate_tax` tool versus asking Claude to compute tax in its head. Rates change monthly and results must be exact for invoices. What is the better design?",
+    "options": [
+      "Fine-tune on last month's rates",
+      "A tool that calls the authoritative rate source and performs deterministic arithmetic, returning the result to Claude",
+      "Ask Claude to double-check its own math",
+      "Put the rate table in the system prompt and trust the model's arithmetic"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Tools are the right choice when you need deterministic, current, authoritative results. Model arithmetic and stale prompt tables can be wrong, and self-checking is not a guarantee."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A developer is building an MCP server in Python and wants the quickest way to expose a function as a tool, with the input schema generated from type hints and docstring. Which approach fits?",
+    "options": [
+      "Use the official Python SDK's FastMCP and decorate the function with @mcp.tool()",
+      "Create a REST API and tell Claude the URL in the prompt",
+      "Hand-write a JSON-RPC parser and tool registry from scratch",
+      "Write the function as a Claude Code slash command"
+    ],
+    "answerIndexes": [0],
+    "explanation": "FastMCP in the MCP Python SDK derives tool definitions from function signatures and docstrings via @mcp.tool(). Hand-rolling the protocol is unnecessary, and a plain REST API is not an MCP server."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "An MCP server needs to expose read-only reference data (company policy documents) that the application may attach as context, not something the model decides to call. Which primitive is the best fit?",
+    "options": ["Prompts", "Resources", "Tools", "Sampling"],
+    "answerIndexes": [1],
+    "explanation": "Resources expose data/context identified by URIs and are application-controlled. Tools are model-controlled actions, and prompts are user-invoked templates."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "Which MCP primitive is designed to be user-controlled, surfacing reusable templates such as a \"review this pull request\" workflow that a user explicitly selects?",
+    "options": ["Tools", "Resources", "Prompts", "Roots"],
+    "answerIndexes": [2],
+    "explanation": "MCP prompts are reusable, parameterised message templates that users trigger explicitly (for example as slash commands in Claude Code). Tools are model-invoked and resources are application-attached."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A local stdio MCP server built in Python prints debug information with print() and Claude Code fails to connect with protocol errors. What is the most likely cause and fix?",
+    "options": [
+      "print() is blocked by the Python SDK",
+      "The server needs a larger context window",
+      "Stdout carries the JSON-RPC messages, so debug output corrupts the stream; log to stderr or a file instead",
+      "The server must use HTTP instead of stdio for any logging"
+    ],
+    "answerIndexes": [2],
+    "explanation": "With stdio transport, stdout is the protocol channel, so stray writes break framing. Logging should go to stderr or files."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A company wants one MCP server hosted centrally so many developers and remote Claude clients can connect over the network. Which transport is the right choice?",
+    "options": [
+      "Streamable HTTP",
+      "Piping through the user's terminal history",
+      "stdio",
+      "A shared local socket file on each laptop"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Streamable HTTP is the transport for remote, network-accessible MCP servers (the older HTTP+SSE transport is deprecated). stdio launches a local subprocess per client and is for local servers."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "You want to test your new MCP server's tools interactively, view their schemas and call them with sample inputs before wiring it into Claude Code. What should you use?",
+    "options": [
+      "curl against the Messages API",
+      "A unit test of the Anthropic SDK",
+      "The Claude Code /compact command",
+      "The MCP Inspector"
+    ],
+    "answerIndexes": [3],
+    "explanation": "MCP Inspector (launched with npx @modelcontextprotocol/inspector) is the official interactive tool for testing servers: listing tools/resources/prompts and invoking them."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "In Claude Code, which MCP configuration scope stores a server in a `.mcp.json` file at the project root so that it can be committed and shared with the team?",
+    "options": ["user", "local", "global-runtime", "project"],
+    "answerIndexes": [3],
+    "explanation": "Project scope writes to .mcp.json in the repo for team sharing (Claude Code asks for approval before using project servers). Local scope is private to you in that project, and user scope applies across all your projects."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A developer wants an MCP server available in every project on their machine but not shared with teammates or committed to repositories. Which scope should they use when adding it?",
+    "options": ["project", "local", "user", "enterprise managed policy"],
+    "answerIndexes": [2],
+    "explanation": "User scope makes the server available across all of your projects and stays private to your account. Project scope is shared via the repo, and local scope is private to one project."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "Select TWO. Which statements about authenticating to remote MCP servers are accurate?",
+    "options": [
+      "API keys should be committed in .mcp.json so teammates do not need setup",
+      "Remote servers commonly use OAuth, and Claude Code lets users authenticate via the /mcp command",
+      "stdio is required for any authenticated server",
+      "Secrets in shared .mcp.json should reference environment variables rather than being hard-coded",
+      "Remote MCP servers cannot be authenticated; they must be open to the internet"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "OAuth-based authorisation for remote servers is supported and Claude Code exposes authentication via /mcp; .mcp.json supports environment variable expansion so credentials stay out of source control."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A team's MCP server exposes a `run_sql` tool to production data for Claude. Select TWO. Which deployment measures matter most?",
+    "options": [
+      "Rely on Claude's good judgment to avoid dangerous queries",
+      "Authenticate and authorise callers of the server",
+      "Expose it without authentication on a public URL to simplify onboarding",
+      "Hide the tool description so Claude cannot misuse it",
+      "Connect with least-privilege (for example read-only) database credentials and log tool usage"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "MCP tools run with the server's privileges, so access control, least-privilege credentials and auditing belong in the server, not in the model's behaviour. Hiding the description or trusting model judgment is not a control."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "Which description best captures what MCP is for?",
+    "options": [
+      "A prompt caching mechanism",
+      "An open protocol that standardises how AI applications connect to external tools, data sources and prompts",
+      "A Claude-only SDK for streaming responses",
+      "A fine-tuning method for domain-specific models"
+    ],
+    "answerIndexes": [1],
+    "explanation": "MCP is an open standard for connecting AI applications to external systems via servers exposing tools, resources and prompts."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team needs Claude Code to run the same internal linting script with exactly the same flags every time, and they want it to happen automatically after each file edit. What is the best mechanism?",
+    "options": [
+      "A Skill describing how linting works",
+      "An MCP server exposing a lint tool Claude may call",
+      "A line in CLAUDE.md asking Claude to remember to lint",
+      "A hook configured for post-edit events that runs the script deterministically"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Hooks are deterministic, event-driven shell commands executed by the harness, so they happen every time. Instructions in CLAUDE.md or Skills are advisory and an MCP tool still relies on the model deciding to call it."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A company has a 3,000-token procedure for generating quarterly board reports that only matters a few times a month. Where should it live to minimise ongoing context cost while remaining available?",
+    "options": [
+      "In a Skill, so only its short name and description are loaded until it is relevant",
+      "In an MCP tool description",
+      "Pasted into every user prompt",
+      "In CLAUDE.md so it is always loaded"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Skills use progressive disclosure: metadata is loaded up front and the body only when needed. Content in CLAUDE.md or tool descriptions is paid for in every session."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Which statement best describes how custom slash commands relate to Skills in current Claude Code?",
+    "options": [
+      "Custom commands have been merged into skills: a file in .claude/commands/ and a skill in .claude/skills/ both create the same /name command, and skills add supporting files and automatic invocation by Claude",
+      "Skills require a network server, while slash commands do not",
+      "Slash commands are always chosen by the model, and Skills can never be invoked by the user",
+      "Slash commands were removed, and existing .claude/commands/ files stop working"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Claude Code docs state that custom commands have been merged into skills: both formats create /name, existing .claude/commands/ files keep working, and a skill adds a directory for supporting files, invocation-control frontmatter and automatic loading by Claude when its description matches. Skills can also be invoked directly by the user with /skill-name."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "An engineering lead wants research tasks (scanning a large codebase) to not flood the main conversation's context with file contents. Which Claude Code feature is designed for this?",
+    "options": [
+      "A longer CLAUDE.md",
+      "Increasing the temperature",
+      "A subagent, which works in its own context window and returns a summary",
+      "A hook on every Read call"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Subagents run with separate context windows and return condensed results, keeping the parent conversation focused."
+  },
+  {
+    "domain": 8,
+    "skill": "MCP Server Development",
+    "chapterId": "ch09",
+    "question": "A new MCP server written with FastMCP needs to expose a customer profile at URIs like `customers://{customer_id}/profile`. Which construct fits?",
+    "options": [
+      "A resource template registered with @mcp.resource using a URI containing a parameter",
+      "A hard-coded list of one resource per customer",
+      "A tool that must always be called first",
+      "A prompt decorated with @mcp.prompt"
+    ],
+    "answerIndexes": [0],
+    "explanation": "FastMCP supports parameterised URI templates on @mcp.resource so a single handler serves many entities. Prompts are templates for user messages and static per-customer registration does not scale."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team wants Claude Code to query their internal ticketing system, which is also needed by several other AI applications and agents the company is building. Which option best supports reuse across all of them?",
+    "options": [
+      "Hard-code the API into each application's prompt",
+      "Create a slash command that pastes API docs",
+      "Build an MCP server exposing the ticketing operations",
+      "Write the instructions in one developer's CLAUDE.md"
+    ],
+    "answerIndexes": [2],
+    "explanation": "MCP is an open protocol, so one server can serve Claude Code, other clients and agents. CLAUDE.md and slash commands are specific to Claude Code and one project/user."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team needs Claude to follow a 12-step code-review checklist with company-specific conventions, but the workflow involves no external system access beyond reading files. What is the lightest-weight reusable option?",
+    "options": [
+      "A new MCP server with a `review` tool",
+      "A custom tool that hits a remote API",
+      "Fine-tuning a model",
+      "A Skill containing the checklist and conventions (optionally with reference files)"
+    ],
+    "answerIndexes": [3],
+    "explanation": "When no external system is needed, a Skill packages instructions and resources with low context overhead. An MCP server adds infrastructure that is not warranted."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Which requirement most strongly points toward a custom tool or MCP server rather than a Skill?",
+    "options": [
+      "Claude should know team naming conventions",
+      "Claude must call a live external API with authentication and get current data",
+      "Claude should follow a documented review process",
+      "Claude needs written guidance on tone and formatting"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Skills carry instructions (and optional scripts/resources), but live external system access with credentials is what tools and MCP servers provide. The other items are knowledge and procedure."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team puts 25 MCP servers, with hundreds of tool definitions, into every Claude Code session. Responses degrade and context fills quickly. Select TWO. Which changes help most?",
+    "options": [
+      "Add more servers so Claude has more options",
+      "Enable only the servers relevant to each project or task",
+      "Move all server instructions into CLAUDE.md",
+      "Increase max_tokens",
+      "Rely on tool search so rarely used tool definitions are loaded on demand"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Every loaded tool definition costs context and adds selection ambiguity. Scoping servers to what is needed and using tool search (on by default in Claude Code) to defer rarely used tools reduces both. More servers, CLAUDE.md prose or a larger max_tokens do not help."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Select TWO. A security-conscious team requires that certain shell commands (e.g. `rm -rf`) can never run, regardless of what Claude decides. Which mechanisms enforce this deterministically?",
+    "options": [
+      "Permission deny rules in Claude Code settings",
+      "A PreToolUse hook that inspects the command and blocks it",
+      "A Skill telling Claude not to run dangerous commands",
+      "A polite request in the user's prompt",
+      "A sentence in CLAUDE.md asking Claude to be careful"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Hooks and permission rules are enforced by the harness, not by model compliance. Skills, CLAUDE.md and prompts are guidance that the model might not follow in every case."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Which statement about built-in tools (such as Read, Edit, Bash and Grep in Claude Code) versus custom tools is most accurate?",
+    "options": [
+      "Built-in tools cannot be restricted by permissions",
+      "Custom tools are always better because they can be tailored",
+      "Built-in tools should be preferred for common file and shell operations; add custom tools only for capabilities they do not cover",
+      "Built-in tools can only be used in the API, not in Claude Code"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Built-in tools are tested, maintained and tuned for Claude's workflows; custom tools add maintenance and context cost, so use them for gaps such as proprietary systems."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A developer wants a reusable, human-triggered shortcut, `/release-notes`, that runs a fixed prompt template with an argument and that Claude should not start on its own. Which Claude Code feature is the most direct fit?",
+    "options": [
+      "A subagent definition with no tools",
+      "An MCP resource",
+      "A skill (or command file) named release-notes that uses the $ARGUMENTS placeholder and sets disable-model-invocation: true",
+      "A PostToolUse hook"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Skills and command files both create /name commands and support the $ARGUMENTS placeholder; disable-model-invocation: true stops Claude from triggering it by itself. Hooks are event-driven rather than user-invoked, and an MCP resource is context data, not a command."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "An organisation builds agents with the Claude API and wants to reuse a procedure originally written as a Claude Code Skill. Which consideration is most important?",
+    "options": [
+      "Check how each surface (Claude Code, API, Agent SDK) loads and supports Skills, since packaging and availability differ",
+      "Rewrite it as a fine-tune",
+      "Assume a Claude Code Skill file works unchanged everywhere with no setup",
+      "Skills cannot be used outside Claude.ai"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Skills are supported across several Claude surfaces, but each loads them differently (for example filesystem directories in Claude Code, uploaded skills via API). Verify the target surface rather than assuming identical behaviour."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team wants a Claude Code helper that reviews diffs, must never be able to edit files, and should run on a cheaper, faster model than the main session. Which approach fits best?",
+    "options": [
+      "A custom subagent in .claude/agents/ whose frontmatter allowlists read-only tools (for example Read, Glob, Grep) and sets a smaller model",
+      "A CLAUDE.md line telling Claude to be read-only when reviewing",
+      "A Skill whose description says it only reads files",
+      "An MCP server that wraps git diff"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Subagents are Markdown files with frontmatter that can restrict tools via an allowlist and choose a model, and they run in their own context window. A CLAUDE.md line or a Skill description is guidance the model may not follow, and neither can pick a different model. An MCP server adds infrastructure without restricting file edits."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "When should a team choose a subagent over a Skill?",
+    "options": [
+      "When the task needs no tools at all and just a naming rule",
+      "When they need a static reference document",
+      "When they want the content loaded into every session",
+      "When the task benefits from an isolated context, specialised system prompt and restricted tool set, returning only a summary"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Subagents provide context isolation, specialised configuration and tool restrictions. A Skill injects instructions into the current context when invoked."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team writes project conventions that apply to nearly every task in a repository (build commands, code style, directory layout). Where is the best place?",
+    "options": [
+      "A rarely used Skill",
+      "A subagent",
+      "CLAUDE.md in the repo",
+      "A separate MCP server"
+    ],
+    "answerIndexes": [2],
+    "explanation": "CLAUDE.md is loaded at session start and suits always-relevant project context. Content that is rarely needed is better as a Skill to save context."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Select TWO. Which factors favour packaging a capability as an MCP server instead of a Claude Code-only customisation?",
+    "options": [
+      "The content is a short style guideline",
+      "Multiple different AI clients need the same integration",
+      "The capability is a one-line shell alias",
+      "The integration needs to connect to an external system with its own auth and live data",
+      "Only one developer wants a personal prompt shortcut"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "MCP shines for cross-client reuse and for connecting external systems. Personal shortcuts and short guidelines are cheaper as commands, Skills or CLAUDE.md."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A Skill's `description` field says only \"Helpers for reports.\" Claude rarely activates the Skill when users request quarterly financial summaries. What is the best fix?",
+    "options": [
+      "Put the Skill body into every user prompt",
+      "Rewrite the description to state precisely what the Skill does and when to use it, including likely trigger phrases",
+      "Rename the file extension",
+      "Move it into a hook"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Claude uses the name and description to decide when to load a Skill, so a specific description with triggering context is critical."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A solo developer has a custom Python function that formats dates and wants Claude Code to use it occasionally. They want the cheapest path with no servers. Which is best?",
+    "options": [
+      "A server tool on the API",
+      "A script bundled in a Skill (or invoked via Bash) with instructions on when to run it",
+      "Create a new foundation model",
+      "Build and host a remote MCP server"
+    ],
+    "answerIndexes": [1],
+    "explanation": "A script in a Skill, executed via existing Bash, adds code determinism without standing up a server, and costs context only when relevant."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A healthcare team wants the same patient-intake extraction behaviour in their Claude Code workflow, their web app calling the API, and their nightly Agent SDK batch jobs. Which approach is most portable?",
+    "options": [
+      "Depend on a user's local CLAUDE.md in all three",
+      "Copy-paste hooks into the web app",
+      "Rely on a Claude Code slash command in all three",
+      "Implement the logic once as an MCP server or API-level tool the three can share, keeping instructions in shared prompts"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Slash commands, CLAUDE.md and hooks are Claude Code configuration; the Messages API has none of them, and the Agent SDK only picks them up if configured to. A shared MCP server or common tool implementation is the portable core across Claude Code, the API and the Agent SDK, with shared prompts for instructions."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Which tradeoff is most accurate when comparing a Skill to an MCP server for adding deterministic computation?",
+    "options": [
+      "An MCP server runs code you control and returns exact results but needs hosting and has tool-definition context cost; a Skill's scripts avoid hosting but depend on the execution environment",
+      "Skills cannot include scripts or reference files",
+      "MCP servers cannot run code",
+      "A Skill always has lower latency and no dependencies"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Both can deliver deterministic code: MCP externalises it as a service (portable, but operational overhead), while Skill scripts rely on a code-execution environment being available."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "A team has a `deploy` Skill that pushes to production. Claude sometimes starts it on its own when a user merely mentions deployment in conversation. They still want developers to run it deliberately with /deploy. What is the best change?",
+    "options": [
+      "Set disable-model-invocation: true in the Skill's frontmatter",
+      "Set user-invocable: false in the Skill's frontmatter",
+      "Shorten the description to a single word",
+      "Move the procedure into CLAUDE.md"
+    ],
+    "answerIndexes": [0],
+    "explanation": "disable-model-invocation: true prevents Claude from invoking the skill on its own while leaving it available to the user as /deploy, which is what Claude Code docs recommend for workflows with side effects. user-invocable: false does the opposite (hides it from the / menu), a shorter description still allows auto-invocation, and CLAUDE.md content would be loaded in every session."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Which scenario is the best fit for a custom (client-side) tool defined in the API rather than a Skill?",
+    "options": [
+      "Claude should adopt a more concise writing style",
+      "Claude needs a brand voice guide",
+      "An application must let Claude look up inventory in a private database via the app's own backend",
+      "Claude should follow a code-review rubric"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Access to private backend data requires an executable function the application controls. Style, voice and rubrics are instructions suited to prompts or Skills."
+  },
+  {
+    "domain": 8,
+    "skill": "Agentic Customization",
+    "chapterId": "ch10",
+    "question": "Select TWO. A team wants to give Claude Code a recurring, multi-step data-cleanup procedure that includes a validation script. Which are sound reasons to implement it as a Skill rather than a long CLAUDE.md section?",
+    "options": [
+      "CLAUDE.md content is never loaded into context",
+      "Instructions, reference files and scripts can be packaged together as one reusable unit",
+      "Skills execute on every tool call automatically without any model decision",
+      "The body and bundled script load only when the task is relevant, saving context in other sessions",
+      "Skills are the only way to run scripts in Claude Code"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Skills offer progressive disclosure and bundle instructions with scripts and resources. They are model-selected, not automatic on every tool call (that is hooks), and CLAUDE.md is loaded at session start."
+  }
+]

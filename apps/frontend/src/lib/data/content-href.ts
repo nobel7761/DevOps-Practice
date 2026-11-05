@@ -21,6 +21,17 @@ export function resolveContentHref(
     return item.contentId ? `/system-design/lesson/${item.contentId}` : null;
   }
 
+  if (item.type === "ccdv_lesson") {
+    return item.contentId ? `/ccdv/lesson/${item.contentId}` : null;
+  }
+
+  if (item.type === "ccdv_exam") {
+    if (!item.contentId) return null;
+    return item.contentId === "ccdv-analytics"
+      ? "/ccdv/analytics"
+      : `/ccdv/exam/${item.contentId}`;
+  }
+
   if (item.type === "doc_lesson") {
     return item.contentId ? `/module/doc/${item.contentId}` : null;
   }

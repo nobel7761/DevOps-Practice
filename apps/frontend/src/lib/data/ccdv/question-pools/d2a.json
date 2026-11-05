@@ -1,0 +1,1480 @@
+[
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A support chatbot built on the Messages API forgets the customer's order number after the second turn. The developer sends only the newest user message on every request, assuming the server keeps the conversation. What is the correct fix?",
+    "options": [
+      "Enable extended thinking so the model retains earlier turns",
+      "Resend the full prior messages array (alternating user and assistant turns) plus the new user message on each request",
+      "Rely on the API to automatically remember earlier requests made with the same API key",
+      "Move the order number into the model parameter so it persists"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The Messages API is stateless: by default the client must send the whole conversation history on every call. Neither thinking nor the model parameter stores context, and the API does not silently remember earlier requests made with the same key."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A developer places 'You are a billing assistant. Answer only billing questions.' as the first entry of the messages array with role 'system'. The API returns a validation error. Which change fixes it?",
+    "options": [
+      "Pass the instruction in the top-level system parameter of the request",
+      "Wrap it in a tool_result block",
+      "Send it as an assistant message with a prefill",
+      "Use role 'developer' instead of 'system'"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The system prompt belongs in the top-level system parameter. A message with role 'system' cannot be the first entry in messages (it is only allowed after a user turn, on supported models, for mid-conversation instructions), so the request fails validation. 'developer' is not a valid role, and the other options are not ways to supply a system prompt."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An agent loop receives a response with stop_reason 'tool_use'. Which TWO things must the next request contain for the tool call to be completed correctly? Select TWO.",
+    "options": [
+      "The previous assistant message, including its tool_use block, kept in the history",
+      "A user message containing a tool_result block whose tool_use_id matches the tool_use block",
+      "A new system prompt describing the tool output",
+      "A fresh request with no history, containing the tool output as the first user message",
+      "The tool output as a plain string in an assistant message"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "The assistant turn containing the tool_use block must stay in the history, and the result goes back in a user message as a tool_result block that references the tool_use_id. Dropping history, rewriting the system prompt, or using the assistant role for results breaks the protocol."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A response comes back with stop_reason 'max_tokens' and a JSON document cut off mid-string. Which TWO responses are appropriate? Select TWO.",
+    "options": [
+      "Treat the partial output as incomplete rather than parsing it as a finished document",
+      "Raise max_tokens (using streaming for very large outputs) or ask for a shorter output",
+      "Retry the identical request, since max_tokens is a transient rate-limit error",
+      "Remove stop_sequences, because one must have matched",
+      "Accept the output, since the model finished naturally and the JSON is simply malformed"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "stop_reason 'max_tokens' means generation was truncated by the cap you set, so the output is incomplete. Fix it by raising the cap or requesting less output. Retrying unchanged truncates again, and a stop-sequence match would report stop_reason 'stop_sequence'."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A developer wants generation to halt as soon as the model emits the delimiter '###END###' in a custom report format. Which Messages API feature fits, and what signals it fired?",
+    "options": [
+      "Set temperature to 0 so the delimiter ends generation",
+      "Set stop_sequences to ['###END###']; the response has stop_reason 'stop_sequence' and a stop_sequence field showing which string matched",
+      "Set max_tokens to the length of the delimiter; stop_reason will be 'end_turn'",
+      "Use tool_choice 'none' so the delimiter is rejected"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Custom stop_sequences end generation when matched, returning stop_reason 'stop_sequence' and the matched string. max_tokens simply truncates, and temperature or tool_choice do not control stopping."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Users of a long-form drafting tool wait 40 seconds with a blank screen before seeing any text, though total generation time is acceptable. Which change most directly improves perceived latency?",
+    "options": [
+      "Send the same request twice and use the faster reply",
+      "Switch to the Message Batches API",
+      "Use stream: true and render content_block_delta text as it arrives",
+      "Lower max_tokens to 50"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Streaming returns server-sent events so text can render incrementally, cutting time to first visible token. Batches add latency, and shrinking max_tokens truncates the content."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "While consuming a streamed response containing a tool call, which delta type carries the tool arguments as they are generated?",
+    "options": [
+      "input_json_delta containing partial_json fragments",
+      "citations_delta",
+      "signature_delta",
+      "text_delta"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Tool input is streamed as input_json_delta events with partial JSON strings that you concatenate and parse after the content block stops. Parsing each fragment individually will fail."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A streaming connection drops after the model has emitted most of a long plain-text answer. The app saved the partial text. Which recovery approach is documented for the Messages API?",
+    "options": [
+      "Nothing can be done; discard and never retry",
+      "Capture the partial response and send a continuation request (the exact form depends on the model generation) so the model resumes from where it stopped",
+      "Retrieve the rest from the Message Batches results endpoint",
+      "Reconnect to the same stream ID and request events after the last offset"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Claude's docs describe capturing the partial text and issuing a continuation request; for newer models this is a user message asking Claude to continue from the supplied partial response, while older models used a trailing assistant message. There are no resumable stream IDs."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Which TWO statements about recovering a broken stream are correct? Select TWO.",
+    "options": [
+      "Tool use and thinking blocks cannot be partially recovered, so resume from the most recent complete text block or redo that part of the turn",
+      "The server stores undelivered tokens and replays them on reconnect",
+      "Successfully received text can be captured and continued with a follow-up request instead of regenerating everything",
+      "A broken stream is always billed as zero tokens",
+      "Setting stream: false guarantees no network interruption occurs"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "The docs state text can be resumed but tool_use and thinking blocks cannot be partially recovered. The API does not replay undelivered tokens, billing is not guaranteed zero, and non-streaming requests can also fail."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A medical-records team needs to extract text and tables from 80-page scanned PDFs through the API without building an OCR pipeline. Which TWO statements about Claude's documented PDF support apply? Select TWO.",
+    "options": [
+      "Send the PDF as a document content block (base64, URL, or file_id)",
+      "Each page is processed as both extracted text and an image, so scans, charts and tables can be interpreted",
+      "PDFs are supported only through the Batches API",
+      "Only PNG files can be sent, so every PDF must be converted first",
+      "Convert every PDF with a regex and send the result as the system prompt"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "The API accepts PDFs as document blocks, and each page is provided as extracted text plus an image, which is why scans and charts work without a separate OCR step. Page and size limits still apply, so very large files may need splitting."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A pipeline sends the same 20 MB reference document in many requests. Which TWO statements about avoiding repeated uploads are correct? Select TWO.",
+    "options": [
+      "Upload the file once with the Files API and reference its file_id in document or image blocks",
+      "Files API operations such as upload and listing are free; the file content used in Messages requests is billed as input tokens",
+      "Files you upload can be downloaded again at any time with the same endpoint used for code-execution outputs",
+      "Uploaded files are scoped to the individual end user, so they are safe to share by file_id with any client",
+      "Uploaded files are deleted automatically after 24 hours"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "The Files API lets you upload once and reference a file_id repeatedly; storage operations are free while content used in requests is billed as input tokens. Uploaded files cannot be downloaded, are scoped to the workspace (not an end user), and persist until deleted or until an expiry you set."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A request that includes an image and a question returns poorer answers than expected. Which adjustment aligns with Anthropic's vision guidance?",
+    "options": [
+      "Put the question in an assistant message",
+      "Always downscale every image to 32x32",
+      "Put the image in the system prompt",
+      "Place the image content block before the text question in the user message"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Docs recommend placing images before text for best results and using clear, legible images. Heavy downscaling hurts detail, and images belong in user content blocks."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A team upgrades to a newer Claude model and their existing request with thinking {type: 'enabled', budget_tokens: 10000} now fails with a 400 error. What is the documented fix?",
+    "options": [
+      "Move the thinking settings into the system prompt",
+      "Add the interleaved-thinking beta header",
+      "Switch to adaptive thinking (thinking type 'adaptive') and control depth with the effort setting instead of a token budget",
+      "Raise max_tokens until the error disappears"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Docs state that newer models reject manual extended thinking (type 'enabled' with budget_tokens) with a 400 and recommend adaptive thinking with output_config effort. Raising max_tokens or adding a header does not change that."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An agent uses extended thinking and makes tool calls. When returning tool results to the API, what should the developer do with the thinking blocks from the assistant turn?",
+    "options": [
+      "Strip them to save tokens in every case",
+      "Convert them to text blocks",
+      "Pass the thinking blocks back unmodified along with the tool_use blocks for that turn",
+      "Edit the thinking text to summarize it"
+    ],
+    "answerIndexes": [2],
+    "explanation": "During tool use with thinking enabled, the last assistant turn's thinking blocks (with their signatures) must be returned unmodified so reasoning continuity is preserved. Modified or stripped blocks can cause errors or lost reasoning."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A finance team enables thinking and notices output-token costs rise even though the visible answers are short. What explains this and where can they check it?",
+    "options": [
+      "Thinking is free and the cost increase is unrelated",
+      "Thinking tokens are billed at the input rate",
+      "Thinking is billed only on cache misses",
+      "Thinking tokens are billed as output tokens even if the thinking is summarized or not displayed; check the usage object in responses"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Reasoning tokens count as billed output tokens regardless of how much thinking is shown, so short visible answers can still be expensive. The response usage data lets you monitor it."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An e-commerce assistant sends a 6,000-token policy document plus a catalog in the system prompt on every turn. Latency and cost are high. Which feature is designed for this?",
+    "options": [
+      "Prompt caching with cache_control on the stable prefix",
+      "Increasing temperature",
+      "Switching to streaming",
+      "Splitting the system prompt into many user messages"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Prompt caching reuses a stable prefix across requests, with cached reads billed at a fraction of base input price. Streaming does not reduce input cost, and rearranging text does not create a cache hit."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A team's prompt-cache hit rate is near zero even though cache_control is set on the system prompt. Which TWO causes should they check first? Select TWO.",
+    "options": [
+      "A per-request value such as the current timestamp sits before the breakpoint, so the cached prefix never matches",
+      "The prefix is shorter than the model's minimum cacheable length, so it is processed uncached without an error",
+      "cache_control cannot be applied to system prompts",
+      "Prompt caching only works with streaming enabled",
+      "The temperature is too high for cache hits"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Caching matches an exact prefix, so volatile content ahead of the breakpoint changes the hash on every request, and prompts below the model's minimum cacheable length are silently not cached. cache_control is valid on system blocks, and neither streaming nor sampling settings affect cache hits."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Which TWO usage fields in a Messages API response help you verify that prompt caching is working? Select TWO.",
+    "options": [
+      "cache_read_input_tokens",
+      "cache_hit_ratio",
+      "cache_creation_input_tokens",
+      "model_latency_ms",
+      "stop_sequence"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "The usage object reports cache_creation_input_tokens (tokens written to cache) and cache_read_input_tokens (tokens served from cache). The other names are not usage fields."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A prompt contains tool definitions, a long system prompt, and a growing conversation. In what order does the cache prefix follow, and what is the practical consequence?",
+    "options": [
+      "The order is random per request",
+      "System, then messages, then tools; nothing invalidates anything",
+      "Tools, then system, then messages; changing an earlier layer invalidates caches of the later layers",
+      "Messages, then system, then tools; only tools changes matter"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The cache prefix is built in the order tools, system, messages. Editing tool definitions invalidates the cached system and message portions as well, so keep tools stable."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An internal tool reuses a large prefix, but calls arrive roughly every 20 minutes, so the default cache keeps expiring. What does the docs-supported option look like?",
+    "options": [
+      "Use the longer (1-hour) cache TTL option on the cache breakpoint, accepting its higher write cost",
+      "Set temperature to 0 to keep the cache alive",
+      "Raise max_tokens",
+      "Cache entries never expire, so this cannot happen"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The default ephemeral cache lasts about 5 minutes (refreshed on hits); an extended 1-hour TTL is available at a higher cache-write price. It pays off only if reuse justifies it."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A company must run Claude inside its AWS account using IAM roles and VPC controls instead of Anthropic API keys. Which option fits?",
+    "options": [
+      "Use the first-party API with a shared key in an environment variable",
+      "Call Claude through Amazon Bedrock using AWS credentials",
+      "Use the Message Batches API",
+      "Run the model weights on its own GPUs"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Claude is offered through Amazon Bedrock (and Google Vertex AI) with the cloud provider's authentication and governance. Model weights are not distributed for self-hosting."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A team moves from the first-party Anthropic API to Google Vertex AI and finds that a newly released beta feature is unavailable there. What is the sound engineering response?",
+    "options": [
+      "Wrap the call in a retry loop until it works",
+      "Assume feature parity and ship",
+      "Rename the beta header to bypass the restriction",
+      "Check the platform's feature-availability documentation and design with a fallback, since third-party platforms can lag on beta features"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Third-party platforms may differ in model IDs, auth, and available beta features. Verify support in the docs rather than assuming parity or retrying."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Which TWO things typically differ when calling Claude through Bedrock or Vertex AI compared with the first-party API? Select TWO.",
+    "options": [
+      "Claude's responses are no longer stateless",
+      "Tokens are no longer used for billing",
+      "Authentication uses the cloud provider's credentials rather than an Anthropic x-api-key",
+      "The prompt format must be completely rewritten as a different language",
+      "Model identifiers follow the platform's own naming scheme"
+    ],
+    "answerIndexes": [2, 4],
+    "explanation": "Auth and model IDs differ per platform, while the Messages-style request structure and stateless behavior remain similar. Anthropic's SDKs offer Bedrock and Vertex clients."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A nightly job must classify 60,000 support tickets; results are needed by morning, and cost matters more than latency. Which approach is best?",
+    "options": [
+      "One synchronous request per ticket in a tight loop",
+      "Streaming with extended thinking on every ticket",
+      "Message Batches API, which offers discounted pricing for asynchronous processing",
+      "One giant request containing all tickets"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The Message Batches API processes large volumes asynchronously at a 50% discount, typically within an hour and at most 24 hours. A single giant request would exceed context limits."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "After a batch finishes, the results list responses in a different order than submitted, and a few entries show errored or expired. Which TWO statements are correct? Select TWO.",
+    "options": [
+      "Match results to requests by the custom_id you supplied, because order is not guaranteed",
+      "Errored, canceled and expired requests are not billed, and you can resubmit just those",
+      "Results are always returned in submission order, so match by line number",
+      "Results stay downloadable indefinitely",
+      "One errored request causes the entire batch to be marked failed"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Batch results can come back in any order, so custom_id is the join key. Each request has its own result type (succeeded, errored, canceled, expired); only succeeded ones are billed and failures can be resubmitted alone. Results are available for a limited time (29 days), not indefinitely."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Which workloads are poor fits for the Message Batches API? Select TWO.",
+    "options": [
+      "A live chat widget answering customers in seconds",
+      "An interactive code-completion feature in an IDE",
+      "A weekly bulk summarization of archived documents",
+      "An overnight evaluation run over 10,000 test prompts",
+      "A one-off dataset labeling job with a next-day deadline"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Batches are asynchronous with no latency guarantee beyond completion within 24 hours, so interactive features need real-time requests. Bulk, deadline-tolerant jobs are ideal."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A batch request in a submitted batch fails validation for one item. What happens to the others?",
+    "options": [
+      "All requests are silently dropped",
+      "The entire batch is rejected",
+      "Remaining requests are processed twice",
+      "Each request is processed independently; one failing does not fail the rest, and the failure appears as an errored result"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Batch requests are independent, and per-request outcomes are reported individually. Check each result type and resubmit only the failures."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An API call returns HTTP 429 with a retry-after header. What is the best client behavior?",
+    "options": [
+      "Immediately retry in a tight loop",
+      "Wait at least the indicated time, then retry with exponential backoff and jitter",
+      "Switch the model name randomly",
+      "Treat it as a permanent failure and drop the request"
+    ],
+    "answerIndexes": [1],
+    "explanation": "429 is a rate-limit error; honor retry-after and back off. Tight loops worsen the limit, and it is transient rather than permanent."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "During peak hours a developer sees overloaded_error (HTTP 529), and occasionally 429s right after a sharp traffic ramp-up. Which TWO statements are accurate? Select TWO.",
+    "options": [
+      "529 is a temporary capacity condition that is appropriate to retry with backoff",
+      "Increasing traffic gradually and keeping usage consistent helps avoid acceleration-limit 429s",
+      "529 means the API key was revoked",
+      "529 means the JSON body was malformed",
+      "529 is permanent, so the request should be dropped"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "529 signals temporary overload and is retryable with backoff; a sharp usage increase can also trigger 429s from acceleration limits, so ramp traffic gradually. Revoked keys return 401 and malformed requests return 400."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "Which TWO error classes should a client NOT blindly retry unchanged? Select TWO.",
+    "options": [
+      "400 invalid_request_error",
+      "429 rate_limit_error",
+      "401 authentication_error",
+      "529 overloaded_error",
+      "500 api_error"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Errors caused by the request or credentials will fail identically on retry. Rate limit, overloaded, and transient server errors are generally retryable with backoff."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A 429 appears even though the app sends few requests, but each request has a very large prompt. Which TWO statements are accurate and useful? Select TWO.",
+    "options": [
+      "Limits are measured in input and output tokens per minute as well as requests per minute, so the token limit is likely being hit",
+      "Caching the repeated prefix helps, because on most models cache_read_input_tokens do not count toward ITPM",
+      "Rate limits only count requests, so this cannot be a rate limit",
+      "Disabling streaming raises the token limit",
+      "Raising max_tokens increases the available output-token quota"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Rate limits cover RPM, ITPM and OTPM, so large prompts can exhaust the token limit first. For most models only uncached input (input_tokens plus cache_creation_input_tokens) counts toward ITPM, so prompt caching increases effective throughput. max_tokens does not factor into OTPM limits."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A developer asks how the Anthropic SDK handles transient failures by default. Which TWO statements match the documented SDK behavior? Select TWO.",
+    "options": [
+      "It automatically retries transient failures (connection errors, 429, 5xx) with exponential backoff, twice by default, honoring retry-after when present",
+      "The retry count can be configured or disabled with the max_retries option (maxRetries in TypeScript)",
+      "It never retries and throws on the first error",
+      "It retries 400 errors until they succeed",
+      "It retries forever"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Official SDKs retry transient failures a limited number of times (two by default) and expose max_retries to change it. Retrying 400 errors would never help because the request itself is invalid."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A request omits the max_tokens parameter and fails. Why?",
+    "options": [
+      "The system parameter is required",
+      "stream must be true",
+      "max_tokens is a required parameter on the Messages API",
+      "temperature is required"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Messages API requests must specify model, messages, and max_tokens. The others are optional."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "A legal-research app needs Claude to answer from a 300-page contract set that is far larger than any one request should carry, and each question touches only a few clauses. Which Messages API data-access pattern fits best?",
+    "options": [
+      "Paste every contract into every request",
+      "Ask the user to paste the relevant clause manually",
+      "Expose a search/retrieval function as a tool so Claude fetches only relevant passages per question",
+      "Fine-tune the model on the contracts for each user"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Letting the model call a retrieval tool (or pre-retrieving relevant chunks) keeps context small, cheaper, and current. Pasting everything wastes tokens and may exceed limits."
+  },
+  {
+    "domain": 2,
+    "skill": "Claude API Mechanics",
+    "chapterId": "ch03",
+    "question": "An engineer needs every response from a current Claude model to be valid JSON matching a fixed schema for a downstream parser. Which approach is most robust on the Messages API?",
+    "options": [
+      "Use structured outputs (output_config.format with a JSON schema), and still check stop_reason for refusal or max_tokens",
+      "Prefill the assistant turn with an opening brace so the model must continue the JSON",
+      "Ask politely in the user message and extract the JSON with a regex",
+      "Set temperature to 0 and request the answer in YAML to avoid braces"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Structured outputs constrain the response to your schema, which is more reliable than prompting. Output can still be incomplete or not match the schema on a refusal or max_tokens stop, so check stop_reason. Prefill returns a 400 on Claude 4.6 and later models, and sampling settings or format tricks do not guarantee valid structure."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A CI review bot calls the Claude API to comment on pull requests. During a deployment retry, the bot posted duplicate comments on the same PR. Which design change best prevents duplicates?",
+    "options": [
+      "Retry posting three times instead of two",
+      "Increase the model's temperature",
+      "Run the bot on two servers for redundancy",
+      "Make the posting step idempotent by keying on PR number plus commit SHA and checking for an existing comment before creating one"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Idempotency keys (PR + head SHA) let retries be safe by detecting prior work. More retries or more servers increase duplication risk."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A developer builds a REST endpoint that triggers a long Claude analysis taking about two minutes. Clients time out waiting. Which pattern is most appropriate?",
+    "options": [
+      "Return 202 Accepted with a job ID immediately, process asynchronously, and let clients poll or receive a webhook",
+      "Increase the client timeout to ten minutes",
+      "Return the result in the URL query string",
+      "Block the server thread until Claude responds"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Long-running work should use an asynchronous job pattern (202 plus status resource or callback). Extending timeouts and blocking threads scales poorly."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A POST /summaries endpoint calls Claude and charges tokens. A mobile client retries on flaky networks and sometimes produces two charges. Which fix is best?",
+    "options": [
+      "Accept an Idempotency-Key header and return the stored result for repeated keys",
+      "Disable retries on the client",
+      "Cache all responses for 24 hours regardless of input",
+      "Switch the endpoint to GET"
+    ],
+    "answerIndexes": [0],
+    "explanation": "An idempotency key lets the server dedupe retried POSTs without disabling retries. GET is semantically wrong for side effects, and blind caching returns wrong results."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "An app parses Claude's text reply with JSON.parse and occasionally crashes because the model wraps the JSON in prose. What is the most defensible engineering response?",
+    "options": [
+      "Validate and handle parse failures, and constrain the output via a tool schema or stricter prompt, with a bounded retry",
+      "Assume it will not happen",
+      "Wrap JSON.parse in an empty try/catch and ignore",
+      "Parse using eval for flexibility"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Treat model output as untrusted input: validate, handle failure, and reduce variance with schemas. Swallowing errors hides data loss, and eval is a security hazard."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A Python service makes 200 independent Claude requests per job sequentially, taking minutes. Which change gives the largest speedup without breaking rate limits?",
+    "options": [
+      "Remove error handling",
+      "Increase max_tokens",
+      "Use asyncio with a bounded semaphore to run requests concurrently, with backoff on 429",
+      "Spawn 200 unbounded threads"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Concurrency with a bounded limit speeds up I/O-bound calls while respecting rate limits. Unbounded fan-out triggers 429s."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "In an async Node.js service, a developer forgot to await a Claude call and the function returns before the result exists. What symptom is most likely?",
+    "options": [
+      "The request is automatically cancelled by the SDK",
+      "Claude answers twice",
+      "The caller receives a pending Promise or undefined data and errors surface as unhandled rejections",
+      "A syntax error at startup"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Missing await yields a Promise instead of the resolved value and can leave rejections unhandled. It is a runtime logic bug, not a syntax error."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A team uses a monorepo and wants Claude Code-driven changes to be reviewable and revertible. Which version-control practice fits best?",
+    "options": [
+      "Squash a month of changes into one commit",
+      "Store generated changes outside version control",
+      "Work on a feature branch with small focused commits and open a pull request for human review",
+      "Commit directly to main to move fast"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Branches, small commits, and PRs make AI-assisted changes reviewable and easy to revert. Direct main commits remove the safety net."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A CI job runs a Claude-powered reviewer on every push to a PR, burning tokens on tiny typo commits. Which option reduces cost most sensibly?",
+    "options": [
+      "Trigger only on opened/ready-for-review events and skip draft or docs-only changes via path filters, reviewing only the diff",
+      "Disable CI entirely",
+      "Increase the model size",
+      "Review the entire repository on each push"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Narrow triggers and diff-only review cut cost without losing value. Reviewing the whole repo each time is wasteful."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A reviewer bot's comments are sometimes wrong. How should the bot be positioned in the review process?",
+    "options": [
+      "As a replacement for tests",
+      "As the sole approver that auto-merges",
+      "As something that rewrites main on its own",
+      "As an advisory first pass whose findings a human reviewer verifies before merge"
+    ],
+    "answerIndexes": [3],
+    "explanation": "LLM output can be wrong, so keep humans accountable for approval and keep automated tests as the gate. Auto-merge on model judgment is risky."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which TWO practices make a large migration refactor with Claude Code safer? Select TWO.",
+    "options": [
+      "Run the existing test suite (and add characterization tests) before and after each step",
+      "Break the migration into small, independently mergeable batches",
+      "Skip tests because the refactor is mechanical",
+      "Rewrite all 400 files in a single commit",
+      "Disable linting to avoid noisy diffs"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Tests give a safety net and small batches limit blast radius and ease review and rollback. Single huge commits and skipping tests increase risk."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A team wants to rename a widely used function across 300 files. Which approach is most reliable?",
+    "options": [
+      "Rename only half the call sites",
+      "Use a codemod or IDE/language-server rename for deterministic edits, using Claude to handle edge cases and verifying with the compiler and tests",
+      "Use find-and-replace across all text including strings and comments blindly",
+      "Ask Claude to regenerate each file from memory"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Deterministic tooling handles mechanical renames; the model can address special cases, and compilation plus tests verify. Blind regeneration risks silent changes."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A developer asks what makes a unit of refactoring 'small-scale'. Which example fits?",
+    "options": [
+      "Extracting a repeated block into a well-named function without changing behavior",
+      "Replacing the persistence layer",
+      "Migrating from a monolith to microservices",
+      "Changing the public API contract"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Small-scale refactoring improves internal structure locally (extract function, rename, simplify conditionals) while preserving behavior. The others are architectural."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A service needs to call Claude and an internal REST API. The internal API returns 503 intermittently. Which handling is most appropriate?",
+    "options": [
+      "Retry with exponential backoff and a cap, treating 503 as transient, while surfacing persistent failure",
+      "Treat 503 as success",
+      "Retry immediately forever",
+      "Parse the HTML error page as JSON"
+    ],
+    "answerIndexes": [0],
+    "explanation": "503 is typically transient; capped exponential backoff with jitter is the standard response. Infinite immediate retries create load storms."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A webhook receiver gets Claude batch-completion notifications from an internal orchestrator and sometimes sees the same event twice. What design principle handles this?",
+    "options": [
+      "Respond with an error to force more retries",
+      "Drop every second event",
+      "Assume exactly-once delivery",
+      "Make handlers idempotent by recording processed event IDs and ignoring duplicates"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Most delivery systems are at-least-once, so consumers must dedupe. Assuming exactly-once leads to double processing."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "An API returns a large JSON list of 50,000 records and the Claude-based summarizer runs out of context. What is the best pattern?",
+    "options": [
+      "Send all 50,000 records anyway",
+      "Ask the model to guess missing records",
+      "Truncate the JSON arbitrarily at a byte boundary",
+      "Paginate and aggregate or filter server-side, sending only relevant slices to the model"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Pre-process with deterministic code and pass only what the model needs. Arbitrary truncation can produce invalid JSON and lost data."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which HTTP status best represents a client sending a request body that fails schema validation to your own REST API?",
+    "options": [
+      "500",
+      "400 or 422 with a descriptive error body",
+      "301",
+      "200 with an empty body"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Validation failures are client errors (400 or 422). Returning 500 blames the server and 200 hides the problem."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A team stores prompts used by their Claude service in code. A prompt tweak caused a regression in production. Which SDLC practice would have helped most?",
+    "options": [
+      "Keep prompts only in a chat history",
+      "Avoid testing since outputs are non-deterministic",
+      "Edit prompts directly in production",
+      "Treat prompts like code: version them, review changes in PRs, and run an evaluation set in CI before release"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Prompt changes are behavior changes; versioning plus automated evals catch regressions. Non-determinism calls for statistical or rubric-based evals, not no testing."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A merge conflict arises because two engineers and a Claude Code session edited the same file. What is the best practice?",
+    "options": [
+      "Always accept the AI's version",
+      "Delete the file and start over",
+      "Force-push over the other branch",
+      "Resolve conflicts deliberately, review the merged result, and run tests; rebase frequently to keep branches short-lived"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Conflicts need human judgment, and tests validate the result. Frequent integration reduces conflict size; force-pushing destroys others' work."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A pull-request bot sends the diff to Claude and posts findings. A PR contains a 4,000-line generated lockfile change. What is the best handling?",
+    "options": [
+      "Reject all large PRs automatically",
+      "Split the lockfile into the system prompt",
+      "Send everything and hope",
+      "Exclude generated and lock files from the diff sent for review and review only meaningful source changes"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Filtering noise (lockfiles, generated code, binaries) reduces cost and improves review quality. Auto-rejecting is heavy-handed."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which TWO are good reasons to keep the Claude API key out of the repository and inject it at runtime? Select TWO.",
+    "options": [
+      "Keys must be public for the SDK to work",
+      "Git cannot store strings that look like keys",
+      "The key makes the build slower",
+      "Different environments (dev, prod) need different, rotatable credentials",
+      "Committed keys remain in git history and can leak even after deletion"
+    ],
+    "answerIndexes": [3, 4],
+    "explanation": "Secrets in history persist, and per-environment injection from a secret manager enables rotation and least privilege. The other claims are false."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A developer wants a safe rollout of a new prompt/model combination for a customer-facing assistant. Which strategy is best?",
+    "options": [
+      "Canary or percentage rollout behind a feature flag with metrics and a fast rollback",
+      "Roll out without monitoring",
+      "Test only on the developer's laptop",
+      "Switch all traffic at once on Friday evening"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Gradual exposure with monitoring and rollback limits blast radius, a standard SDLC release practice."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A JSON payload sent to a downstream service must preserve large integer IDs exactly. Why might a JavaScript client corrupt them?",
+    "options": [
+      "JavaScript numbers are IEEE-754 doubles, so integers above 2^53 lose precision; transmit IDs as strings",
+      "JSON cannot hold numbers",
+      "HTTP truncates digits",
+      "Claude changes numbers"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Large IDs should be strings in JSON for JavaScript clients. This is a classic JSON interoperability issue unrelated to the model."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A Claude-driven service writes tool-call arguments to a database. Which practice protects against malformed or malicious values?",
+    "options": [
+      "Interpolate values directly into SQL",
+      "Trust the model because it is aligned",
+      "Validate arguments against a schema and use parameterized queries",
+      "Disable logging"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Model-produced values are untrusted input; validate and parameterize to avoid injection."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A team asks when to prefer an asynchronous message queue between their web app and the Claude-calling worker.",
+    "options": [
+      "When requests can take long or spike, so a queue decouples intake from processing and smooths load",
+      "When there is only one user",
+      "When responses must be under 100 ms",
+      "Never; queues add no value"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Queues absorb bursts, enable retries, and decouple latency, at the cost of added complexity and eventual consistency."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "During code review, a Claude Code–generated change passes tests but changes a public function's return type. What should the reviewer do?",
+    "options": [
+      "Ignore public contracts",
+      "Flag it as a breaking API change requiring versioning or a migration note, even if tests pass",
+      "Approve because tests pass",
+      "Ask the AI to hide the change"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Tests may not cover consumers; contract changes need explicit review and versioning (semantic versioning principles)."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "What is the main benefit of semantic versioning for an internal SDK wrapping Claude calls?",
+    "options": [
+      "It speeds up the API",
+      "It removes the need for changelogs",
+      "Consumers can infer from the version number whether an upgrade includes breaking changes",
+      "It guarantees bug-free releases"
+    ],
+    "answerIndexes": [2],
+    "explanation": "MAJOR.MINOR.PATCH communicates compatibility expectations; it does not guarantee quality."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A refactor extracts a Claude-calling module behind an interface so tests can use a fake. Which principle does this illustrate?",
+    "options": [
+      "Monkey patching in production",
+      "Dependency inversion/injection to isolate external services and enable deterministic tests",
+      "Premature optimization",
+      "Tight coupling"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Depending on abstractions lets unit tests avoid network calls and nondeterminism."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which TWO test types are most valuable for an LLM-backed feature whose outputs vary between runs? Select TWO.",
+    "options": [
+      "Exact string equality tests on raw model output",
+      "An evaluation set scoring outputs against rubrics or expected properties",
+      "Tests that run only once manually",
+      "Deterministic unit tests of surrounding logic using a mocked client",
+      "Tests asserting the model never refuses"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Mock the model for deterministic code paths and use evals for quality. Exact-match tests on free text are brittle."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A service parses a vendor's REST response that adds new optional fields over time. Which parsing approach is most resilient?",
+    "options": [
+      "Hard-code the entire object shape",
+      "Ignore unknown fields and validate only the fields you need",
+      "Parse by character offsets",
+      "Fail on any unknown field"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Tolerant-reader design keeps clients compatible with additive changes."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A long-running migration refactor across a large codebase will take weeks. Which approach lowers risk the most?",
+    "options": [
+      "Freeze development for a month and rewrite everything",
+      "The strangler pattern: migrate module by module behind an adapter while old and new paths coexist, with tests",
+      "Delete the old code first",
+      "Run the rewrite only in a developer's local copy"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Incremental replacement keeps the system shippable and rollbackable throughout."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "In a Git workflow, a team wants bad AI-generated changes isolated from the main line until proven. What fits best?",
+    "options": [
+      "Protected main branch requiring passing CI and review before merge",
+      "Allowing force-pushes to main",
+      "Letting the bot push to main",
+      "Squashing all branches nightly"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Branch protection enforces gates. Letting automation bypass them removes the safety net."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which HTTP method semantics should a GET /reports/{id} endpoint follow?",
+    "options": [
+      "It must include a request body",
+      "Safe and idempotent: it should not change server state",
+      "It must always return 201",
+      "It may charge the customer on each call"
+    ],
+    "answerIndexes": [1],
+    "explanation": "GET is safe and idempotent by convention, so triggering Claude generation with side effects belongs in POST."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A batch of Claude-generated records is inserted by a worker that crashes midway and restarts. How do you avoid duplicates?",
+    "options": [
+      "Restart from zero and insert again",
+      "Use unique keys with upsert semantics so reprocessing the same item yields the same state",
+      "Add random sleeps",
+      "Delete the table"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Idempotent writes make at-least-once processing safe."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "An async worker consuming a queue hits a Claude 429. What is a sound approach?",
+    "options": [
+      "Retry instantly in the same loop forever",
+      "Crash the worker",
+      "Requeue with delay or backoff, limit concurrency, and cap attempts with a dead-letter queue",
+      "Drop the message"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Backoff plus bounded retries plus a dead-letter queue avoids loss and storms."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A PR bot should only comment on lines actually changed. Which data source gives the correct line mapping?",
+    "options": [
+      "The whole file contents",
+      "Commit titles",
+      "The PR's diff/patch hunk positions provided by the Git hosting API",
+      "Line numbers guessed by the model from the file"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Use the structured diff for exact positions; models may hallucinate line numbers when given raw files without mapping."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Which TWO changes make a CI-integrated Claude code review more trustworthy? Select TWO.",
+    "options": [
+      "Run it with no repository context",
+      "Require findings to cite file and line that a script verifies exist in the diff",
+      "Hide its token usage",
+      "Provide the diff plus relevant surrounding context and project conventions",
+      "Allow it to push fixes to main"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Context improves relevance, and programmatic verification of citations catches hallucinated findings."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "Why is a large refactor commit mixed with unrelated feature changes discouraged?",
+    "options": [
+      "It slows CPUs",
+      "It makes review and bisecting harder and rollback riskier",
+      "Git forbids it",
+      "It breaks semantic versioning"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Keep refactors separate from behavior changes so reviewers can verify behavior preservation."
+  },
+  {
+    "domain": 2,
+    "skill": "Software Engineering Foundations",
+    "chapterId": "ch05",
+    "question": "A team must decide between polling and webhooks for batch-completion status from an internal service. What is a key tradeoff?",
+    "options": [
+      "Webhooks reduce latency and wasted calls but need a reachable endpoint and idempotent handling; polling is simpler but wasteful",
+      "They are identical",
+      "Polling is always faster",
+      "Webhooks guarantee exactly-once"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Choose based on infrastructure and reliability needs; both can be combined (webhook plus reconciliation polling)."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A bank says 'we want an AI assistant that helps advisors.' As the engineer, what is the best first step in turning this into requirements?",
+    "options": [
+      "Pick a model and start coding",
+      "Ask for a bigger budget",
+      "Interview stakeholders to define users, tasks, success metrics, constraints, and compliance needs",
+      "Write the UI first"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Business goals must be refined into measurable functional and non-functional requirements before design."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which is a FUNCTIONAL requirement for a Claude-based support assistant?",
+    "options": [
+      "The system must be available 99.9% of the time",
+      "The system must respond within 3 seconds at p95",
+      "Logs must be retained for one year",
+      "The assistant must look up an order's status and report it to the customer"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Functional requirements describe what the system does; latency, availability, and retention are non-functional/infrastructure qualities."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which TWO items are infrastructure/non-functional requirements? Select TWO.",
+    "options": [
+      "Extract invoice totals from PDFs",
+      "Suggest a reply draft",
+      "p95 latency under 4 seconds at 200 concurrent users",
+      "Summarize a ticket into three bullets",
+      "Data must remain in the EU region"
+    ],
+    "answerIndexes": [2, 4],
+    "explanation": "Performance and data residency describe operating qualities and deployment constraints; the others are features."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A healthcare client requires that patient data never leave its cloud account. How does this affect architecture selection?",
+    "options": [
+      "It means using prompt caching",
+      "It requires disabling logging",
+      "It has no effect",
+      "It favors accessing Claude through a cloud provider platform offering data-governance controls and reviewing compliance terms"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Residency and governance requirements shape platform choice (first-party vs Bedrock/Vertex) and need verification with compliance docs."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A product owner wants 'fast and cheap and perfectly accurate.' What is the best engineering response?",
+    "options": [
+      "Promise all three",
+      "Ignore the request",
+      "Choose randomly",
+      "Make tradeoffs explicit, prioritize by business value, and quantify targets for each quality attribute"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Quality attributes conflict (model size vs cost vs latency); requirements work involves prioritization and measurable targets."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which acceptance criterion is best for a document-summarization feature?",
+    "options": [
+      "Summaries should be good",
+      "On a labeled set of 200 documents, at least 90% of summaries include all required fields as judged by a rubric",
+      "Users will like it",
+      "It should work most of the time"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Acceptance criteria must be measurable and testable."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A team must decide whether a task needs real-time responses or can be batched. Which requirement question most directly decides it?",
+    "options": [
+      "Which language is the code in?",
+      "What color is the logo?",
+      "How quickly must a user or system receive each result?",
+      "How many engineers are on call?"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Latency tolerance determines synchronous vs asynchronous (batch) architecture."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Stakeholders say the assistant 'should never be wrong about refund policy.' What requirement refinement is most realistic?",
+    "options": [
+      "Disable the policy lookup",
+      "Guarantee 100% accuracy through prompting",
+      "Ground answers in the authoritative policy document, define escalation to a human when uncertain, and set measurable accuracy targets",
+      "Remove the human agents"
+    ],
+    "answerIndexes": [2],
+    "explanation": "LLM systems cannot promise zero error; requirements should specify grounding, escalation, and tested accuracy."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "An e-commerce firm expects traffic to spike 20x during sales. Which requirement should be captured?",
+    "options": [
+      "Only average load",
+      "Peak throughput and rate-limit headroom, with graceful degradation behavior",
+      "Nothing; the API scales automatically without limits",
+      "The colour palette"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Capacity planning must account for peaks and API rate limits, with defined degradation behavior."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which stakeholder input is most important for defining data-handling requirements?",
+    "options": [
+      "Competitors",
+      "The model vendor's logo team",
+      "Security, legal, and compliance teams",
+      "Marketing only"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Data-handling rules derive from regulatory and security stakeholders."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A requirement states: 'The system shall classify support tickets into 12 categories.' What is missing for it to be testable?",
+    "options": [
+      "The server hostname",
+      "A larger font",
+      "A second language",
+      "An accuracy target and a labeled evaluation dataset"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Testable requirements include measurable thresholds and test data."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which is a sound reason to include a human-in-the-loop requirement for a loan-decision assistant?",
+    "options": [
+      "High-impact decisions need accountability, auditability, and handling of model errors",
+      "It is required for streaming",
+      "It eliminates all bias automatically",
+      "Humans are faster than models"
+    ],
+    "answerIndexes": [0],
+    "explanation": "High-stakes domains require oversight and audit trails; humans are not automatically unbiased or faster."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A client needs the solution to be maintainable by their small team. Which requirement follows?",
+    "options": [
+      "Build a custom framework",
+      "Skip documentation",
+      "Prefer managed services and simple architecture with documentation and monitoring",
+      "Use as many microservices as possible"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Operability and maintainability constraints push toward simpler, well-documented designs."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "What is the purpose of a traceability matrix in requirements management?",
+    "options": [
+      "Choosing a model",
+      "Encrypting data",
+      "Measuring tokens",
+      "Linking business requirements to design elements and tests to show coverage"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Traceability ensures each requirement is implemented and verified."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Which TWO should be recorded as constraints when planning a Claude solution? Select TWO.",
+    "options": [
+      "The exact wording of every future prompt",
+      "Budget per 1,000 requests",
+      "The model's internal weights",
+      "Required response language(s) and supported regions",
+      "Whether the model enjoys the task"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Cost ceilings and locale/regional constraints bound the architecture; prompt wording is design detail."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "Users complain the assistant answers too slowly in an interactive tool, though a batch pipeline for the same task meets needs. What requirements insight does this show?",
+    "options": [
+      "Batches should be used for chat",
+      "Latency does not matter",
+      "Different consumers of the same capability can have different latency requirements and may warrant different API modes",
+      "The model is broken"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Segment workloads by latency tolerance: real-time for interactive, batch for bulk."
+  },
+  {
+    "domain": 2,
+    "skill": "Understanding Requirements",
+    "chapterId": "ch04",
+    "question": "A vague requirement says 'support multiple languages.' What clarification is most valuable?",
+    "options": [
+      "Disable multilingual",
+      "Which languages, with what quality targets and evaluation data",
+      "Translate manually",
+      "Nothing; models speak all languages equally well"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Specify languages and measurable quality; model performance varies by language."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Which phase order best matches a classic systems development life cycle?",
+    "options": [
+      "Planning, analysis, design, implementation, testing, deployment, maintenance",
+      "Implementation only",
+      "Deployment, design, planning, analysis",
+      "Maintenance, testing, planning"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The SDLC runs from planning and analysis through design, build, test, deploy, and ongoing maintenance."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "A Claude-powered app silently degrades after a provider model version is retired. Which life-cycle practice would have prevented the surprise?",
+    "options": [
+      "Ignore announcements",
+      "Avoid versioning",
+      "Track model deprecation notices, pin model versions, and schedule migration with regression evals",
+      "Always use the newest alias"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Operations must monitor deprecations and test migrations. Pinned versions give reproducibility; evals validate replacements."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Which TWO activities belong to the operations/maintenance phase of a Claude system? Select TWO.",
+    "options": [
+      "Updating prompts and dependencies in response to production feedback",
+      "Monitoring error rates, latency, and token spend",
+      "Collecting initial stakeholder interviews",
+      "Drafting the first architecture sketch",
+      "Writing the first draft of requirements"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Maintenance and operations cover monitoring and iterative improvement; requirements and design are earlier phases."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Why is waterfall poorly suited to a prompt-heavy prototype whose requirements are unclear?",
+    "options": [
+      "It forbids testing",
+      "Prompt behavior is discovered empirically, so iterative cycles with early feedback reduce risk",
+      "It uses too many tokens",
+      "Waterfall is illegal"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Iterative/agile approaches suit uncertain requirements and empirical evaluation."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "A team wants to know if a new prompt version improves quality before release. Which life-cycle stage and artifact fit?",
+    "options": [
+      "Maintenance: wait for complaints",
+      "Planning: skip evaluation",
+      "Testing: run an evaluation suite against a representative dataset in CI",
+      "Deployment: test in production only"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Pre-release verification with evals gives regression protection."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Which operational metric set is most appropriate for monitoring a production Claude integration?",
+    "options": [
+      "Office attendance",
+      "Number of commits",
+      "Error rate by status code, latency percentiles, token usage and cost, and quality sampling",
+      "Only CPU temperature"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Observability should cover reliability, performance, cost, and quality."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "An incident occurs when a prompt update causes malformed outputs. What is the best response process?",
+    "options": [
+      "Hot-edit the prompt repeatedly in production",
+      "Roll back to the previous version, then conduct a blameless post-mortem and add a regression test",
+      "Blame the model",
+      "Delete logs"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Fast rollback restores service; post-mortems and tests prevent recurrence."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "What does a change-management process add to the maintenance of a Claude application?",
+    "options": [
+      "Removal of tests",
+      "Free tokens",
+      "Faster models",
+      "Controlled, reviewed, documented changes with approval and rollback plans"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Change management reduces risk from unreviewed modifications."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "When should a team decommission an AI feature?",
+    "options": [
+      "Never",
+      "Only after deleting the repository",
+      "Without notice",
+      "When it no longer meets business value or cost targets, with a plan for data retention, user communication, and credential revocation"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Retirement is a life-cycle phase needing planned data and access cleanup."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "A regulated client requires audit trails of which model version produced each answer. What should the system record?",
+    "options": [
+      "Nothing",
+      "Only the output",
+      "Model identifier, prompt/version identifier, timestamp, and request ID alongside the output",
+      "Only the user's name"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Auditability depends on logging provenance metadata (respecting privacy rules)."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Which TWO are benefits of infrastructure as code for deploying a Claude-backed service? Select TWO.",
+    "options": [
+      "Automatic prompt improvement",
+      "Reviewable, versioned infrastructure changes",
+      "Elimination of all outages",
+      "Free API usage",
+      "Reproducible environments"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "IaC provides repeatability and code review for infra, but not guaranteed uptime or cost savings on API use."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "A team keeps a staging environment that mirrors production. What life-cycle benefit does it provide?",
+    "options": [
+      "Automatic compliance",
+      "Lower token prices",
+      "Faster models",
+      "Safer validation of changes before release"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Staging reduces the chance that defects reach production."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "Which practice best handles technical debt in a rapidly built Claude prototype heading to production?",
+    "options": [
+      "Ship as is and never revisit",
+      "Schedule hardening: add tests, error handling, observability, and refactor prototype shortcuts before launch",
+      "Delete the tests",
+      "Rewrite in another language immediately"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Prototype-to-production transitions need explicit hardening work."
+  },
+  {
+    "domain": 2,
+    "skill": "Systems Life Cycle",
+    "chapterId": "ch04",
+    "question": "A system's cost has doubled in a month with the same user count. What operational step is most appropriate first?",
+    "options": [
+      "Analyze token usage by feature and prompt, check for prompt bloat or retries, then optimize with caching or model choice",
+      "Ignore it",
+      "Disable monitoring",
+      "Increase limits"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Cost operations (FinOps) begin with attribution and diagnosing waste before optimization."
+  }
+]

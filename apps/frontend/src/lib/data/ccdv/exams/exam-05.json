@@ -1,0 +1,807 @@
+{
+  "id": "ccdv-exam-05",
+  "number": 5,
+  "questions": [
+    {
+      "id": "e05-q01",
+      "domain": 8,
+      "skill": "Tool Implementation",
+      "chapterId": "ch08",
+      "question": "An agent harness receives tool_use blocks from Claude and must dispatch to many tools. Select TWO. Which design choices make dispatch maintainable and safe?",
+      "options": [
+        "Let Claude write the handler code and exec it each time",
+        "Validate inputs against each tool's schema before running it, and return an is_error tool_result for unknown tool names or invalid input",
+        "Hard-code the order in which tools are called regardless of what Claude requests",
+        "Use one large if/elif chain that evals any string Claude sends",
+        "Maintain a registry that maps tool names to handler functions"
+      ],
+      "answerIndexes": [1, 4],
+      "explanation": "A name-to-handler registry gives clear dispatch, and validating model-produced arguments plus returning structured errors for unknown names keeps the loop robust. Executing model-provided strings is a security risk, and hard-coding the call order ignores the model's decisions."
+    },
+    {
+      "id": "e05-q02",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch05",
+      "question": "An engineer needs to make a one-off prototype call to Claude from a shell script on a CI box with only curl available. Which statement about calling the REST API directly is accurate?",
+      "options": [
+        "It requires installing a websocket library",
+        "It works only if the API key is placed in the JSON body",
+        "It is impossible because Claude is only reachable through the SDKs",
+        "It is valid: send a POST to the Messages endpoint with the required headers and a JSON body, then parse the JSON response yourself"
+      ],
+      "answerIndexes": [3],
+      "explanation": "The SDKs are convenience layers over a public REST API, so direct HTTP is fully supported; you take on retries, parsing and error handling yourself. Auth is via headers, not the body."
+    },
+    {
+      "id": "e05-q03",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch01",
+      "question": "The Claude API returns HTTP 429 with a retry-after header during a traffic spike. Which TWO handling practices are best? Select TWO.",
+      "options": [
+        "Switch to a new API key for each retry to bypass the limit",
+        "Treat it as a permanent failure and surface an error without retry",
+        "Wait at least the indicated retry-after time, then use exponential backoff with jitter on repeated failures",
+        "Immediately resend the same request in a loop until it succeeds",
+        "Smooth outgoing traffic, for example by pacing requests using the rate-limit response headers, so spikes stay under the limits"
+      ],
+      "answerIndexes": [2, 4],
+      "explanation": "A 429 rate_limit_error is retryable after waiting; honoring retry-after and adding jittered backoff avoids a thundering herd, and pacing traffic using the anthropic-ratelimit-* headers prevents repeated hits. Rotating keys to evade limits is inappropriate and limits are enforced at the organization level, and tight retry loops make things worse."
+    },
+    {
+      "id": "e05-q04",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A multi-tenant RAG assistant stores all customers' documents in a shared vector index. Which TWO controls best prevent cross-tenant retrieval? Select TWO.",
+      "options": [
+        "Put the tenant name in the user's message and let the retriever infer it",
+        "Cache results across tenants to improve speed",
+        "Ask the model in the prompt to ignore documents from other companies",
+        "Use separate indexes or namespaces per tenant for the most sensitive customers",
+        "Apply a mandatory tenant-ID filter derived from the authenticated session on every query"
+      ],
+      "answerIndexes": [3, 4],
+      "explanation": "Isolation is achieved with server-enforced filters or physical separation, never by asking the model to disregard documents it has been given. Cross-tenant caching adds a leak path."
+    },
+    {
+      "id": "e05-q05",
+      "domain": 6,
+      "skill": "Prompt Engineering",
+      "chapterId": "ch06",
+      "question": "An engineer wants Claude to reason about a hard question before giving a final JSON answer, while the application must parse only the final answer. Which prompt design works best?",
+      "options": [
+        "Ask for reasoning and the JSON mixed together in one paragraph.",
+        "Parse the first number that appears in the response.",
+        "Forbid any reasoning to keep parsing simple.",
+        "Ask for reasoning in <thinking> tags and the final result in <answer> tags, then extract the <answer> content in code."
+      ],
+      "answerIndexes": [3],
+      "explanation": "Separating reasoning from the answer using tags gives both quality and parseability. Mixed output is hard to parse, forbidding reasoning may reduce accuracy on hard tasks, and grabbing the first number is brittle."
+    },
+    {
+      "id": "e05-q06",
+      "domain": 2,
+      "skill": "Systems Life Cycle",
+      "chapterId": "ch04",
+      "question": "A regulated client requires audit trails of which model version produced each answer. What should the system record?",
+      "options": [
+        "Only the output",
+        "Only the user's name",
+        "Nothing",
+        "Model identifier, prompt/version identifier, timestamp, and request ID alongside the output"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Auditability depends on logging provenance metadata (respecting privacy rules)."
+    },
+    {
+      "id": "e05-q07",
+      "domain": 5,
+      "skill": "LLM Fundamentals",
+      "chapterId": "ch01",
+      "question": "A startup runs a quick experiment comparing three prompting strategies for sentiment classification of product reviews: instructions only, one example, and eight examples. Which observation would most justify choosing the eight-example prompt in production?",
+      "options": [
+        "It guarantees deterministic labels, removing the need for evaluation",
+        "It makes the model permanently learn the examples so later requests can omit them",
+        "It gives meaningfully higher accuracy on a held-out evaluation set, enough to justify the extra input tokens on every request",
+        "It reduces the number of input tokens because examples are compressed"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Prompt examples are paid for in tokens on each call, so the decision should be driven by measured improvement on held-out data. In-context examples do not persist across requests and do not guarantee determinism."
+    },
+    {
+      "id": "e05-q08",
+      "domain": 2,
+      "skill": "Understanding Requirements",
+      "chapterId": "ch04",
+      "question": "Which is a sound reason to include a human-in-the-loop requirement for a loan-decision assistant?",
+      "options": [
+        "Humans are faster than models",
+        "It is required for streaming",
+        "High-impact decisions need accountability, auditability, and handling of model errors",
+        "It eliminates all bias automatically"
+      ],
+      "answerIndexes": [2],
+      "explanation": "High-stakes domains require oversight and audit trails; humans are not automatically unbiased or faster."
+    },
+    {
+      "id": "e05-q09",
+      "domain": 6,
+      "skill": "Context Engineering",
+      "chapterId": "ch07",
+      "question": "A team debates between compaction in the same session and starting a fresh session with a handoff note. The task has changed completely: the agent previously fixed a bug and must now design an unrelated feature. Which is best?",
+      "options": [
+        "Keep the full bug-fix transcript so the model has more context.",
+        "Switch to a model with a larger window and keep everything.",
+        "Keep compacting indefinitely in the same session.",
+        "Start a fresh session (or clear context) with a short brief, since the earlier history is irrelevant to the new task."
+      ],
+      "answerIndexes": [3],
+      "explanation": "When the task changes, stale history is pure noise; a clean session with a concise brief avoids drift. Compacting or keeping irrelevant history still biases the model, and a larger window does not remove the noise."
+    },
+    {
+      "id": "e05-q10",
+      "domain": 2,
+      "skill": "Understanding Requirements",
+      "chapterId": "ch04",
+      "question": "A team must decide whether a task needs real-time responses or can be batched. Which requirement question most directly decides it?",
+      "options": [
+        "How quickly must a user or system receive each result?",
+        "Which language is the code in?",
+        "How many engineers are on call?",
+        "What color is the logo?"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Latency tolerance determines synchronous vs asynchronous (batch) architecture."
+    },
+    {
+      "id": "e05-q11",
+      "domain": 3,
+      "skill": "Claude Code Operation",
+      "chapterId": "ch10",
+      "question": "A CI job needs Claude Code to review a diff non-interactively and emit machine-parseable output for a later step. Which invocation style fits?",
+      "options": [
+        "Running /init in CI",
+        "Headless print mode with `claude -p` and a JSON output format",
+        "Starting the interactive TUI and scripting keystrokes",
+        "Using plan mode interactively"
+      ],
+      "answerIndexes": [1],
+      "explanation": "`claude -p` runs a single non-interactive query and exits, and `--output-format json` returns structured output suited for scripts."
+    },
+    {
+      "id": "e05-q12",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "A medical-records team needs to extract text and tables from 80-page scanned PDFs through the API without building an OCR pipeline. Which TWO statements about Claude's documented PDF support apply? Select TWO.",
+      "options": [
+        "Each page is processed as both extracted text and an image, so scans, charts and tables can be interpreted",
+        "PDFs are supported only through the Batches API",
+        "Convert every PDF with a regex and send the result as the system prompt",
+        "Only PNG files can be sent, so every PDF must be converted first",
+        "Send the PDF as a document content block (base64, URL, or file_id)"
+      ],
+      "answerIndexes": [0, 4],
+      "explanation": "The API accepts PDFs as document blocks, and each page is provided as extracted text plus an image, which is why scans and charts work without a separate OCR step. Page and size limits still apply, so very large files may need splitting."
+    },
+    {
+      "id": "e05-q13",
+      "domain": 8,
+      "skill": "Agentic Customization",
+      "chapterId": "ch10",
+      "question": "A team writes project conventions that apply to nearly every task in a repository (build commands, code style, directory layout). Where is the best place?",
+      "options": [
+        "CLAUDE.md in the repo",
+        "A separate MCP server",
+        "A subagent",
+        "A rarely used Skill"
+      ],
+      "answerIndexes": [0],
+      "explanation": "CLAUDE.md is loaded at session start and suits always-relevant project context. Content that is rarely needed is better as a Skill to save context."
+    },
+    {
+      "id": "e05-q14",
+      "domain": 7,
+      "skill": "Identity, Secrets, and Key Management",
+      "chapterId": "ch14",
+      "question": "A security engineer finds that user chat transcripts sent to an internal tool include pasted secret tokens. Which design most reduces risk?",
+      "options": [
+        "Extend token lifetime so users paste them less often",
+        "Add secret-pattern scanning/redaction on input and logs, and educate users to use short-lived tokens",
+        "Allow tokens but only in uppercase",
+        "Store transcripts unencrypted for faster search"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Scanning and redaction reduce persistence of secrets and short-lived credentials limit impact if leaked. Longer lifetimes worsen exposure."
+    },
+    {
+      "id": "e05-q15",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "A response comes back with stop_reason 'max_tokens' and a JSON document cut off mid-string. Which TWO responses are appropriate? Select TWO.",
+      "options": [
+        "Raise max_tokens (using streaming for very large outputs) or ask for a shorter output",
+        "Treat the partial output as incomplete rather than parsing it as a finished document",
+        "Accept the output, since the model finished naturally and the JSON is simply malformed",
+        "Retry the identical request, since max_tokens is a transient rate-limit error",
+        "Remove stop_sequences, because one must have matched"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "stop_reason 'max_tokens' means generation was truncated by the cap you set, so the output is incomplete. Fix it by raising the cap or requesting less output. Retrying unchanged truncates again, and a stop-sequence match would report stop_reason 'stop_sequence'."
+    },
+    {
+      "id": "e05-q16",
+      "domain": 7,
+      "skill": "Guardrails and Safe Deployment",
+      "chapterId": "ch14",
+      "question": "An organization using Claude via a cloud provider wants to give an application the ability to invoke the model but not manage billing or other cloud resources. Which approach fits?",
+      "options": [
+        "Share an engineer's personal credentials with the app",
+        "Use the root account",
+        "Attach an administrator policy so deployments never fail on permissions",
+        "Create a dedicated IAM role/policy permitting only model invocation on the specific model resources"
+      ],
+      "answerIndexes": [3],
+      "explanation": "IAM least privilege: a narrowly scoped role for the workload. Admin, personal, or root credentials violate separation of duties and enlarge the blast radius."
+    },
+    {
+      "id": "e05-q17",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "Users of a long-form drafting tool wait 40 seconds with a blank screen before seeing any text, though total generation time is acceptable. Which change most directly improves perceived latency?",
+      "options": [
+        "Switch to the Message Batches API",
+        "Lower max_tokens to 50",
+        "Use stream: true and render content_block_delta text as it arrives",
+        "Send the same request twice and use the faster reply"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Streaming returns server-sent events so text can render incrementally, cutting time to first visible token. Batches add latency, and shrinking max_tokens truncates the content."
+    },
+    {
+      "id": "e05-q18",
+      "domain": 5,
+      "skill": "LLM Fundamentals",
+      "chapterId": "ch01",
+      "question": "An e-commerce team wants to understand why the same prompt may need different amounts of thinking for different questions, and wants the model to decide this itself. Which feature matches that intent?",
+      "options": [
+        "A fixed thinking budget that always consumes the full budget_tokens value",
+        "Single-shot prompting with one example per question type",
+        "Adaptive thinking, where Claude decides whether and how much to think for each request, steered by the effort level",
+        "Setting max_tokens to the maximum so the model always thinks longer"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Adaptive thinking lets the model calibrate reasoning depth per request, with effort guiding the tradeoff. A fixed budget forces the same allowance each time (and is deprecated or rejected on newer models), and max_tokens is only an output ceiling."
+    },
+    {
+      "id": "e05-q19",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch01",
+      "question": "A batch job sends 500 independent Claude requests sequentially with a blocking client, taking hours. The service is latency tolerant per item but wants higher throughput. Which change best increases throughput while respecting limits?",
+      "options": [
+        "Use an async client (or worker pool) with bounded concurrency and handle 429 responses with backoff, staying under the account's rate limits",
+        "Fire all 500 requests at once without limits and ignore errors",
+        "Rewrite the loop to retry every failure instantly in a tight loop",
+        "Remove timeouts so each request waits as long as needed"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Concurrency improves throughput for I/O-bound API calls, but it must be bounded and paired with backoff to respect rate limits. Unbounded bursts trigger 429s, and instant retry loops make that worse."
+    },
+    {
+      "id": "e05-q20",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "An e-commerce chatbot has low confidence in an answer about a warranty claim. Which fallback is the most appropriate for the user?",
+      "options": [
+        "Repeat the question until the user rephrases it",
+        "Give the best guess confidently to avoid friction",
+        "End the chat session",
+        "Offer a clear handoff to a human agent with the conversation context attached, instead of guessing"
+      ],
+      "answerIndexes": [3],
+      "explanation": "When the system cannot answer reliably on a consequential topic, an escalation path with context preserves trust and accuracy. Confident guessing risks wrong commitments."
+    },
+    {
+      "id": "e05-q21",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "In an async Node.js service, a developer forgot to await a Claude call and the function returns before the result exists. What symptom is most likely?",
+      "options": [
+        "The request is automatically cancelled by the SDK",
+        "A syntax error at startup",
+        "The caller receives a pending Promise or undefined data and errors surface as unhandled rejections",
+        "Claude answers twice"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Missing await yields a Promise instead of the resolved value and can leave rejections unhandled. It is a runtime logic bug, not a syntax error."
+    },
+    {
+      "id": "e05-q22",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "In a multi-tenant API service, one large customer's batch jobs consume most of the available rate limit and other customers see 429 errors. Which design addresses this?",
+      "options": [
+        "Remove retry logic",
+        "Apply per-tenant quotas and fair queuing in the application layer so a single tenant cannot exhaust shared capacity",
+        "Give all tenants the same API key and hope for the best",
+        "Ask the noisy customer to run jobs more slowly via email"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Noisy-neighbor problems are solved with per-tenant limits and fair scheduling enforced by your service. Removing retries or sharing keys makes visibility and control worse."
+    },
+    {
+      "id": "e05-q23",
+      "domain": 8,
+      "skill": "Tool Implementation",
+      "chapterId": "ch08",
+      "question": "A product team debates adding a `calculate_tax` tool versus asking Claude to compute tax in its head. Rates change monthly and results must be exact for invoices. What is the better design?",
+      "options": [
+        "Put the rate table in the system prompt and trust the model's arithmetic",
+        "A tool that calls the authoritative rate source and performs deterministic arithmetic, returning the result to Claude",
+        "Fine-tune on last month's rates",
+        "Ask Claude to double-check its own math"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Tools are the right choice when you need deterministic, current, authoritative results. Model arithmetic and stale prompt tables can be wrong, and self-checking is not a guarantee."
+    },
+    {
+      "id": "e05-q24",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs",
+      "chapterId": "ch02",
+      "question": "A coding agent must autonomously resolve complex, multi-file issues over long horizons, and failures are costly to recover from. Which starting point best matches Anthropic's model-selection guidance?",
+      "options": [
+        "An Opus-class model (built for long-running agentic coding) at a tuned effort level, validated with evals, moving up to the Fable tier only if evals at high effort still fall short",
+        "The cheapest model available, since agentic coding quality is independent of the model",
+        "A Haiku-class model, because agentic coding needs minimal reasoning",
+        "The top-tier Fable-class model for every task in the system, including trivial ones, without evaluating alternatives"
+      ],
+      "answerIndexes": [0],
+      "explanation": "The docs position the Opus tier for long-running agentic coding and suggest a capability-first start, then lowering effort or model size once evals pass; the Fable tier is the escalation when Opus at high effort still falls short. Using the smallest or cheapest tier ignores the cost of failures, and using the top tier everywhere ignores cost."
+    },
+    {
+      "id": "e05-q25",
+      "domain": 8,
+      "skill": "MCP Server Development",
+      "chapterId": "ch09",
+      "question": "A local stdio MCP server built in Python prints debug information with print() and Claude Code fails to connect with protocol errors. What is the most likely cause and fix?",
+      "options": [
+        "The server needs a larger context window",
+        "Stdout carries the JSON-RPC messages, so debug output corrupts the stream; log to stderr or a file instead",
+        "The server must use HTTP instead of stdio for any logging",
+        "print() is blocked by the Python SDK"
+      ],
+      "answerIndexes": [1],
+      "explanation": "With stdio transport, stdout is the protocol channel, so stray writes break framing. Logging should go to stderr or files."
+    },
+    {
+      "id": "e05-q26",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "An agent uses extended thinking and makes tool calls. When returning tool results to the API, what should the developer do with the thinking blocks from the assistant turn?",
+      "options": [
+        "Edit the thinking text to summarize it",
+        "Convert them to text blocks",
+        "Pass the thinking blocks back unmodified along with the tool_use blocks for that turn",
+        "Strip them to save tokens in every case"
+      ],
+      "answerIndexes": [2],
+      "explanation": "During tool use with thinking enabled, the last assistant turn's thinking blocks (with their signatures) must be returned unmodified so reasoning continuity is preserved. Modified or stripped blocks can cause errors or lost reasoning."
+    },
+    {
+      "id": "e05-q27",
+      "domain": 6,
+      "skill": "Context Engineering",
+      "chapterId": "ch07",
+      "question": "An agent's conversation is approaching the context limit during a long refactoring task. The team wants to continue the same task without restarting. Which approach best fits?",
+      "options": [
+        "Compact the history: summarise earlier progress, decisions and open items, then continue with the summary plus the most recent turns.",
+        "Start a brand-new conversation with only the original user request.",
+        "Truncate the oldest messages blindly until the request fits.",
+        "Disable tool use so fewer tokens are consumed."
+      ],
+      "answerIndexes": [0],
+      "explanation": "Compaction preserves task-critical state (what was done, what remains, key decisions) while freeing space. Restarting from the original request repeats work, blind truncation can drop critical early constraints, and disabling tools removes the agent's ability to act."
+    },
+    {
+      "id": "e05-q28",
+      "domain": 8,
+      "skill": "Tool Implementation",
+      "chapterId": "ch08",
+      "question": "A coding assistant exposes 60 narrowly different tools and Claude frequently picks the wrong one. Which change is most likely to improve selection accuracy?",
+      "options": [
+        "Remove all descriptions to reduce token usage",
+        "Consolidate overlapping tools into fewer, well-scoped tools with distinct descriptions, and load rarely used ones on demand",
+        "Add five more tools that handle the failure cases",
+        "Alphabetise the tools so Claude finds them faster"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Large, overlapping tool sets raise token cost and ambiguity. Fewer, clearly differentiated tools (or on-demand loading via tool search) improve selection. Removing descriptions makes selection worse."
+    },
+    {
+      "id": "e05-q29",
+      "domain": 6,
+      "skill": "Prompt Engineering",
+      "chapterId": "ch06",
+      "question": "An internal tool uses the same prompt for a short sales email and a technical design doc, and the tone is wrong for one of them. What should change?",
+      "options": [
+        "Ask the model to detect the tone it prefers.",
+        "Increase top_p.",
+        "Parameterise the prompt with audience, purpose and tone for each use case, and provide a matching example for each.",
+        "Use one universal tone and accept the mismatch."
+      ],
+      "answerIndexes": [2],
+      "explanation": "Context about audience and purpose, with fitting examples, drives appropriate style. A universal tone ignores requirements, the model's preference is not the requirement, and sampling parameters do not fix tone intent."
+    },
+    {
+      "id": "e05-q30",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "A team wants an LLM-driven agent where the developer defines nodes and edges, with conditional routing between steps, loops for retries, and the ability to pause for human input and resume later. Which framework capability fits best?",
+      "options": [
+        "A static single-turn completion call",
+        "A batch job that runs once per day",
+        "LangGraph, which models agents as stateful graphs with conditional edges and checkpointed state",
+        "A prompt-only template with no state"
+      ],
+      "answerIndexes": [2],
+      "explanation": "LangGraph represents workflows as graphs with state, conditional edges and persistence, which supports loops and human-in-the-loop pauses."
+    },
+    {
+      "id": "e05-q31",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "A reviewer bot's comments are sometimes wrong. How should the bot be positioned in the review process?",
+      "options": [
+        "As an advisory first pass whose findings a human reviewer verifies before merge",
+        "As something that rewrites main on its own",
+        "As the sole approver that auto-merges",
+        "As a replacement for tests"
+      ],
+      "answerIndexes": [0],
+      "explanation": "LLM output can be wrong, so keep humans accountable for approval and keep automated tests as the gate. Auto-merge on model judgment is risky."
+    },
+    {
+      "id": "e05-q32",
+      "domain": 8,
+      "skill": "Agentic Customization",
+      "chapterId": "ch10",
+      "question": "An organisation builds agents with the Claude API and wants to reuse a procedure originally written as a Claude Code Skill. Which consideration is most important?",
+      "options": [
+        "Check how each surface (Claude Code, API, Agent SDK) loads and supports Skills, since packaging and availability differ",
+        "Skills cannot be used outside Claude.ai",
+        "Assume a Claude Code Skill file works unchanged everywhere with no setup",
+        "Rewrite it as a fine-tune"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Skills are supported across several Claude surfaces, but each loads them differently (for example filesystem directories in Claude Code, uploaded skills via API). Verify the target surface rather than assuming identical behaviour."
+    },
+    {
+      "id": "e05-q33",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs",
+      "chapterId": "ch02",
+      "question": "A fintech company processes millions of short customer messages per day to route them into ten categories. Cost and latency dominate, and an evaluation shows the smallest model class meets the accuracy target. Which model choice fits best?",
+      "options": [
+        "An Opus-class model, because the most capable model is always the right default",
+        "A Sonnet-class model with maximum effort on every request regardless of the evaluation",
+        "Whichever model has the largest context window, since routing requires long context",
+        "A Haiku-class model, since it is the fastest and lowest-cost tier and the evaluation shows it meets the accuracy requirement"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Model selection should be driven by evaluation against requirements. High-volume, simple classification is a classic fit for the small, fast, cheap tier; paying for a larger model buys nothing if accuracy is already met."
+    },
+    {
+      "id": "e05-q34",
+      "domain": 7,
+      "skill": "AI Application Security",
+      "chapterId": "ch14",
+      "question": "Which statement about authentication and authorization in an LLM application is correct?",
+      "options": [
+        "API gateways make per-user authorization redundant",
+        "If a user says they are an admin in chat, the model can grant admin tools",
+        "Authentication is unnecessary if the system prompt restricts topics",
+        "Authorization decisions should be made by application code using the verified user identity, since the model cannot reliably verify identity claims in text"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Identity claims in prompt text are attacker-controlled. Verified identity and server-side authz checks must gate tools and data."
+    },
+    {
+      "id": "e05-q35",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "After five rounds of corrections, Claude Code keeps repeating the same wrong approach to a migration script. Earlier failed attempts and contradictory corrections fill the context. What is the best next step?",
+      "options": [
+        "Start a fresh session with a concise prompt that includes what was learned (what failed and the constraints), instead of continuing to patch the polluted context",
+        "Keep correcting with increasingly emphatic language in capital letters",
+        "Switch temperature to the maximum",
+        "Ask Claude to try again without any new information"
+      ],
+      "answerIndexes": [0],
+      "explanation": "A context cluttered with failed attempts causes context drift and repeated errors; a fresh session with a distilled, better prompt usually does better than a sixth correction. Emphasis and sampling changes do not remove the clutter."
+    },
+    {
+      "id": "e05-q36",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A healthcare-adjacent assistant displays streamed text to users, but compliance requires blocking answers that contain certain disallowed disclosures before anyone sees them. What is a sensible design?",
+      "options": [
+        "Stream everything and delete bad messages afterward",
+        "Buffer and check output (or chunks) with a moderation/validation step before display, accepting the added latency for regulated responses",
+        "Rely only on the system prompt to avoid disallowed content",
+        "Disable all checks when responses are short"
+      ],
+      "answerIndexes": [1],
+      "explanation": "If content must never be shown, the output has to pass a check before display, trading streaming immediacy for control. Post-hoc deletion exposes users first, and prompts alone are not an enforcement layer."
+    },
+    {
+      "id": "e05-q37",
+      "domain": 6,
+      "skill": "Output Handling",
+      "chapterId": "ch06",
+      "question": "A developer asks the model to return a list of product IDs and then uses them in a database query string built by concatenation. What is the main output-handling mistake?",
+      "options": [
+        "Model output was used in a downstream interpreter without validation or parameterisation, risking injection or malformed queries.",
+        "The list should have been requested in YAML.",
+        "Product IDs should always be uppercase.",
+        "The model should have been given a larger context window."
+      ],
+      "answerIndexes": [0],
+      "explanation": "Output from a model should be treated like untrusted input to downstream systems: validate and use parameterised queries. Format and context size are irrelevant to the vulnerability."
+    },
+    {
+      "id": "e05-q38",
+      "domain": 3,
+      "skill": "Claude Code Operation",
+      "chapterId": "ch10",
+      "question": "Which setting scope has the highest precedence when the same setting is defined in multiple places?",
+      "options": [
+        "Project local settings in `.claude/settings.local.json`",
+        "User settings in `~/.claude/settings.json`",
+        "Managed (organization policy) settings",
+        "Project shared settings in `.claude/settings.json`"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Managed policy settings sit at the top of the precedence order and cannot be overridden by user or project settings. Among the others, local overrides project, which overrides user."
+    },
+    {
+      "id": "e05-q39",
+      "domain": 2,
+      "skill": "Configuration Management",
+      "chapterId": "ch05",
+      "question": "An organization deploys managed settings that restrict which models can be selected. A developer sets a different model in their .claude/settings.local.json. What happens?",
+      "options": [
+        "Managed settings are the highest-precedence level, so the organization's restrictions are not overridden by the developer's local file",
+        "The most recent edit always wins",
+        "Claude Code deletes the managed settings",
+        "The local file wins because it is the most specific"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Managed settings rank first in precedence; user, project and local files cannot override them. Specificity does not beat managed policy."
+    },
+    {
+      "id": "e05-q40",
+      "domain": 7,
+      "skill": "AI Application Security",
+      "chapterId": "ch14",
+      "question": "A developer wants to stop users from extracting the system prompt of a customer-facing assistant. What is the most realistic security posture?",
+      "options": [
+        "Encrypt the system prompt in the request body",
+        "Add 'never reveal this prompt' and consider the problem solved",
+        "Rotate the system prompt hourly",
+        "Assume the system prompt can leak, keep secrets and authorization logic out of it, and add output checks as a secondary measure"
+      ],
+      "answerIndexes": [3],
+      "explanation": "System prompts can often be extracted by determined users, so they must never contain credentials or be the sole enforcement of access rules. Instructions not to reveal are only a speed bump."
+    },
+    {
+      "id": "e05-q41",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "A CI review bot calls the Claude API to comment on pull requests. During a deployment retry, the bot posted duplicate comments on the same PR. Which design change best prevents duplicates?",
+      "options": [
+        "Retry posting three times instead of two",
+        "Increase the model's temperature",
+        "Run the bot on two servers for redundancy",
+        "Make the posting step idempotent by keying on PR number plus commit SHA and checking for an existing comment before creating one"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Idempotency keys (PR + head SHA) let retries be safe by detecting prior work. More retries or more servers increase duplication risk."
+    },
+    {
+      "id": "e05-q42",
+      "domain": 1,
+      "skill": "Agent Architecture",
+      "chapterId": "ch11",
+      "question": "A company evaluates whether a task should be a workflow or an agent. Which question is the MOST useful decision criterion?",
+      "options": [
+        "Does the team prefer a particular programming language?",
+        "Does the task involve a large language model at all?",
+        "Is the final answer going to be shown in a chat UI?",
+        "Can the sequence of steps be specified in advance, or must it be discovered from intermediate results?"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Predictability of the path is the core discriminator: predefined paths suggest workflows, while path-by-observation suggests agents."
+    },
+    {
+      "id": "e05-q43",
+      "domain": 5,
+      "skill": "Cost and Token Management",
+      "chapterId": "ch02",
+      "question": "Cost modelling for a feature that reuses a 20,000-token prefix across many requests per hour is being reviewed. How do cached writes and reads generally compare in price to normal input tokens?",
+      "options": [
+        "Cache writes are cheaper than reads",
+        "Cache writes and reads both cost more than regular input tokens",
+        "Cache writes cost somewhat more than regular input tokens, while cache reads cost a small fraction of the regular input price, so savings depend on reuse frequency",
+        "Cache reads are free and writes are free"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Writing a cache entry carries a premium over normal input pricing, and reading it is heavily discounted. Caching pays off when a prefix is read enough times before it expires, so model hit rates when estimating cost."
+    },
+    {
+      "id": "e05-q44",
+      "domain": 6,
+      "skill": "Prompt Engineering",
+      "chapterId": "ch06",
+      "question": "A summarisation prompt needs to return exactly three bullet points under 20 words each, and no preamble. Which prompt change best enforces this?",
+      "options": [
+        "State the exact constraints explicitly ('exactly 3 bullets, each under 20 words, no introduction') and show one example of the target output.",
+        "Set temperature to 1.0.",
+        "Ask for a long answer and truncate it in code.",
+        "Say 'be brief'."
+      ],
+      "answerIndexes": [0],
+      "explanation": "Explicit, testable constraints plus an example make the target unambiguous. 'Be brief' is vague, temperature does not enforce constraints, and truncating can cut sentences mid-thought."
+    },
+    {
+      "id": "e05-q45",
+      "domain": 1,
+      "skill": "Agent Architecture",
+      "chapterId": "ch11",
+      "question": "A support team is deciding between a workflow and an agent for resolving customer tickets. Tickets vary widely: some need a refund lookup, others need log analysis, others need several rounds of clarification, and the number of steps cannot be predicted up front. Which factor most strongly favors an agent?",
+      "options": [
+        "Compliance requires an identical sequence of steps for every ticket",
+        "The team wants the lowest possible per-ticket latency and cost",
+        "The required steps and number of tool calls cannot be predicted ahead of time, so the model must decide the next action from intermediate results",
+        "The task is a single classification with a fixed output schema"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Agents suit open-ended problems where the path emerges from observations. Fixed sequences, minimal latency and single-step classification are all workflow-friendly criteria."
+    },
+    {
+      "id": "e05-q46",
+      "domain": 1,
+      "skill": "Agent Construction with Claude",
+      "chapterId": "ch12",
+      "question": "In a Managed Agents setup, which statement correctly describes the roles of agent, environment and session?",
+      "options": [
+        "The agent is the infrastructure that runs tool calls, and the environment is the model",
+        "The environment defines the system prompt, and the agent defines the sandbox",
+        "The agent defines the model, prompt, tools and skills; the environment defines where sessions run; a session is a running instance of the agent in an environment",
+        "A session is a permanent definition that is shared by all users"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Managed Agents separates the reusable agent configuration, the environment where it executes, and the session that is a running task instance with its own event history."
+    },
+    {
+      "id": "e05-q47",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "A developer needs to debug why an agent chose the wrong tool in a multi-step run. Which practice is most valuable?",
+      "options": [
+        "Capture traces of each step: model inputs, tool calls, tool results and decisions, then inspect where the reasoning diverged",
+        "Re-run with temperature 2 until it works",
+        "Only read the final answer text",
+        "Remove tools until the bug disappears"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Trace-level observability makes agent behavior debuggable; the final output alone does not show where things went wrong."
+    },
+    {
+      "id": "e05-q48",
+      "domain": 1,
+      "skill": "Agent Architecture",
+      "chapterId": "ch11",
+      "question": "A product manager asks why the team should not simply give a single agent all 60 available tools instead of building a supervisor with specialist subagents. Which is the strongest architectural argument for specialists?",
+      "options": [
+        "Specialists always run cheaper because they never call tools",
+        "Smaller, role-specific tool sets and focused prompts reduce tool-selection errors and keep each context window lean",
+        "Models cannot call more than ten tools in total",
+        "A supervisor removes the need for tool descriptions"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Large tool sets increase selection ambiguity and context cost. Specialists with focused tool sets are a common remedy, though they add coordination overhead."
+    },
+    {
+      "id": "e05-q49",
+      "domain": 5,
+      "skill": "LLM Fundamentals",
+      "chapterId": "ch01",
+      "question": "A developer compares the same 10,000-character English prompt on two different Claude models and finds the token counts differ noticeably. A teammate suspects an API bug. What is the most likely explanation?",
+      "options": [
+        "Prompt caching removes some tokens from the count on the second model",
+        "Different model generations can use different tokenizers, so the same text can map to a different number of tokens",
+        "The API randomly adds padding tokens to prompts on newer models",
+        "Token counts depend on the time of day because servers use dynamic vocabularies"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Tokenization is model-specific; docs note that models from Claude Opus 4.7 onward use a newer tokenizer that produces roughly 30 percent more tokens for the same text. Re-measure with the token counting endpoint or response usage when changing models instead of assuming counts carry over."
+    },
+    {
+      "id": "e05-q50",
+      "domain": 4,
+      "skill": "Debugging and Error Handling",
+      "chapterId": "ch13",
+      "question": "A team gets intermittent 'request timed out' failures on non-streaming requests with a very large max_tokens. Which change most directly addresses this?",
+      "options": [
+        "Switch from HTTPS to HTTP.",
+        "Reduce the prompt to a single word.",
+        "Use streaming (or the Batch API for non-urgent work) for long requests so connections do not sit idle.",
+        "Disable retries."
+      ],
+      "answerIndexes": [2],
+      "explanation": "Long non-streaming requests risk idle-connection timeouts; streaming or batch mitigates that. The other options do not address the cause, and HTTP is insecure and unsupported."
+    },
+    {
+      "id": "e05-q51",
+      "domain": 1,
+      "skill": "Agent Construction with Claude",
+      "chapterId": "ch12",
+      "question": "A team wants to track when parallel subagents finish and aggregate their results for monitoring. Which hook event should they register?",
+      "options": [
+        "SessionEnd",
+        "PreToolUse with a Bash matcher",
+        "SubagentStop",
+        "PermissionRequest"
+      ],
+      "answerIndexes": [2],
+      "explanation": "SubagentStop fires when a subagent completes, so it suits aggregating results and observing parallel work."
+    },
+    {
+      "id": "e05-q52",
+      "domain": 2,
+      "skill": "Configuration Management",
+      "chapterId": "ch05",
+      "question": "A developer exports ANTHROPIC_MODEL in their shell to an Opus model, but the project's settings.json specifies a Sonnet model. Which model does a new session start with?",
+      "options": [
+        "The model from ANTHROPIC_MODEL, because that variable overrides the model key from settings files",
+        "Neither; Claude Code refuses to start",
+        "A random one of the two",
+        "Sonnet from settings, because files always win over environment variables"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Per the docs, ANTHROPIC_MODEL exported in the shell applies over the model key from any settings file (and --model overrides both). Precedence for env vs. settings is decided per pair."
+    },
+    {
+      "id": "e05-q53",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "A team's agent can write to long-term memory freely. After weeks, answers degrade because the memory contains stale, conflicting facts. Which TWO improvements are most appropriate? Select TWO.",
+      "options": [
+        "Prune periodically and define rules for what is worth saving",
+        "Record timestamps or provenance and deduplicate entries",
+        "Disable all reading of memory so it cannot conflict",
+        "Store every message verbatim, forever",
+        "Increase the temperature so the model resolves conflicts creatively"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "Unmanaged memory accumulates noise and contradictions. Provenance, deduplication, pruning and save rules keep memory useful."
+    }
+  ]
+}

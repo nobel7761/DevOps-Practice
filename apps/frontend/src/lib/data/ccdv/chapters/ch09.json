@@ -1,0 +1,897 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি MCP-র তিন primitive ও তাদের নিয়ন্ত্রক ব্যাখ্যা করে Python-এ একটা MCP server বানাতে, Inspector-এ পরীক্ষা করতে, sampling/notification/roots ও stdio বনাম StreamableHTTP বুঝতে এবং Claude Code-এ scope ও auth সহ সেটা যুক্ত করতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর inventory service: তিন জায়গায় তিনবার কপি\n\nChai-Bot এখন চলছে। কিন্তু ChaiCart-এর একটা পুরোনো REST API আছে: `inventory-service`। কোন চা-র কত প্যাকেট স্টকে আছে, সেটা এখান থেকেই জানা যায়। Rafi প্রথমে Chai-Bot-এর কোডে `check_stock` নামে একটা function লিখে tool হিসেবে দিয়েছিল। তারপর দুটো নতুন চাহিদা এল:\n\n- অপারেশন টিম চায় **Claude Code** দিয়ে ঠিক একই stock দেখতে (\"কোন কোন SKU-র stock ১০-এর নিচে?\")।\n- মার্কেটিং টিম চায় **Claude Desktop** থেকে একই ডেটা, আর একটা তৈরি করা \"restock report\" template।\n\nRafi ভাবল: \"তিন জায়গায় তিনবার `check_stock` কপি করি।\" Nusrat Apu শুনে মাথা নাড়লেন: \"কপি মানে তিন জায়গায় তিনটা bug। inventory-র অপারেশনগুলো একটা জায়গায় রাখো, আর সব Claude অ্যাপ সেখানে সংযোগ করুক। এর জন্যই **MCP**।\"\n\nExam Guide-এর Sample 3-এর গল্পটাও ঠিক এটাই: একটা অভ্যন্তরীণ inventory service, যেটা কয়েকটা Claude অ্যাপে ব্যবহার করতে হবে এবং কোনো একটা অ্যাপের থেকে আলাদাভাবে maintain করতে হবে। সঠিক উত্তর: **MCP server বানিয়ে অপারেশনগুলো tool হিসেবে expose করো।** আজকের chapter এই উত্তরের পেছনের পুরো কারিগরি ব্যাখ্যা।\n\nআজ আমরা ছয়টা বিষয় শিখব: (১) MCP-র তিন primitive, (২) Python-এ server বানানো, (৩) Inspector দিয়ে test, (৪) sampling, notification, roots, (৫) stdio বনাম StreamableHTTP, (৬) Claude Code-এ config scope ও deployment। শেষে Domain 8-এর বাকি দুই skill (Tool Implementation ও Agentic Customization) এই প্রসঙ্গে মিলিয়ে নেব।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. MCP কী, আর কে কে আছে\n\n**Model Context Protocol (MCP)** হলো একটা খোলা protocol, যা AI অ্যাপ আর বাইরের সিস্টেমের (ডেটাবেস, API, ফাইল, টুল) মধ্যে সংযোগের একটা মানসম্মত ভাষা ঠিক করে দেয়। USB-C-র উপমা চলে: একবার যেকোনো device-এর জন্য plug বানালে সব laptop-এ লাগে। একবার MCP server বানালে সব MCP-সমর্থিত অ্যাপ (Claude Code, Claude Desktop, অন্য agent) সেটা ব্যবহার করতে পারে।\n\nmodelcontextprotocol.io-র architecture পাতা অনুযায়ী তিনটা participant আছে:\n\n| Participant | কাজ | ChaiCart-এ উদাহরণ |\n|---|---|---|\n| **MCP Host** | যে AI অ্যাপ এক বা একাধিক MCP client সমন্বয় করে | Claude Code, Claude Desktop, Chai-Bot-এর agent |\n| **MCP Client** | host-এর ভেতরের উপাদান; **একটা server-এর সাথে একটা নির্দিষ্ট সংযোগ** ধরে রাখে | Claude Code প্রতিটা server-এর জন্য আলাদা client বানায় |\n| **MCP Server** | context ও capability দেয় এমন প্রোগ্রাম, local হোক বা remote | `chaicart-inventory` server |\n\nমনে রাখার সূত্র: **host প্রতিটা server-এর জন্য একটা করে client বানায়।** তাই \"server কে client বলা\" বা \"host আর client একই জিনিস\" ধরনের অপশন পরীক্ষায় ভুল।\n\n### দুটো স্তর\n\nMCP-র দুটো স্তর আছে। **Data layer** হলো JSON-RPC 2.0 ভিত্তিক বার্তা-বিনিময় (initialize, tools/list, tools/call, notification ইত্যাদি)। **Transport layer** হলো সেই বার্তা কীভাবে যাতায়াত করে (stdio বা Streamable HTTP)। এই দুটো আলাদা করে ভাবলে পরে সহজ হবে: tool কী করে সেটা data layer-এর ব্যাপার, আর সেটা কোথায় চলে ও কত মানুষ ব্যবহার করে সেটা transport-এর ব্যাপার।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Claude Code (host) প্রতিটা server-এর জন্য একটা করে MCP client বানায়। local server চলে stdio-তে, remote server চলে Streamable HTTP-তে।",
+          "nodes": [
+            {
+              "id": "host",
+              "kind": "client",
+              "label": "Claude Code (MCP host)",
+              "x": 0,
+              "y": 110
+            },
+            {
+              "id": "c1",
+              "kind": "gateway",
+              "label": "MCP client #1",
+              "x": 220,
+              "y": 0
+            },
+            {
+              "id": "c2",
+              "kind": "gateway",
+              "label": "MCP client #2",
+              "x": 220,
+              "y": 220
+            },
+            {
+              "id": "s1",
+              "kind": "server",
+              "label": "inventory server (stdio)",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "s2",
+              "kind": "external",
+              "label": "remote server (HTTP)",
+              "x": 440,
+              "y": 220
+            },
+            {
+              "id": "db",
+              "kind": "database",
+              "label": "inventory-service / DB",
+              "x": 660,
+              "y": 0
+            }
+          ],
+          "edges": [
+            {
+              "from": "host",
+              "to": "c1",
+              "label": "১:১ client"
+            },
+            {
+              "from": "host",
+              "to": "c2",
+              "label": "১:১ client"
+            },
+            {
+              "from": "c1",
+              "to": "s1",
+              "label": "stdio"
+            },
+            {
+              "from": "c2",
+              "to": "s2",
+              "label": "HTTP"
+            },
+            {
+              "from": "s1",
+              "to": "db",
+              "label": "REST / SQL"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. তিন primitive: tool, resource, prompt\n\nMCP server তিন ধরনের জিনিস দিতে পারে। পরীক্ষার সবচেয়ে প্রিয় প্রশ্ন: **কোনটা কে নিয়ন্ত্রণ করে?** Official specification-এর \"control hierarchy\" টেবিল:\n\n| Primitive | কে নিয়ন্ত্রণ করে | কী | উদাহরণ |\n|---|---|---|---|\n| **Tools** | **Model-controlled**: LLM নিজে ঠিক করে কখন ডাকবে | কাজ করা বা তথ্য আনা function | `check_stock`, ফাইল লেখা, API POST |\n| **Resources** | **Application-controlled**: client অ্যাপ ঠিক করে কী context-এ যাবে | পড়ার মতো ডেটা, URI দিয়ে চেনা | `inventory://skus`, ফাইলের বিষয়বস্তু, git history |\n| **Prompts** | **User-controlled**: ব্যবহারকারী বেছে নেয় | পুনরায় ব্যবহারযোগ্য template | `/restock_report` ধরনের slash command, মেনু অপশন |\n\n### কখন কোনটা?\n\n- Claude **নিজে ঠিক করবে** আজকের stock কত? → **tool**। কারণ প্রশ্নের ওপর নির্ভর করে কোন SKU দেখা দরকার, আর কখনও দেখাই দরকার নেই।\n- অ্যাপ **আগে থেকেই** একটা নথি (যেমন refund policy) context-এ জুড়ে দেবে, ব্যবহারকারী `@` দিয়ে বাছবে → **resource**।\n- ব্যবহারকারী একটা **ready-made নির্দেশ-ছাঁচ** চালাতে চায়, যেমন \"এই threshold-এর নিচের সব SKU নিয়ে restock report লেখো\" → **prompt**।\n\n### Tool-এর চেহারা (data layer)\n\nTool ধরনের জিনিস `tools/list` দিয়ে আবিষ্কার হয়। প্রতিটা tool-এ থাকে `name`, `description` আর একটা JSON Schema `inputSchema`:\n\n```json\n{\n  \"name\": \"check_stock\",\n  \"description\": \"একটা SKU-র বর্তমান stock সংখ্যা দেয়।\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": { \"sku\": { \"type\": \"string\", \"description\": \"যেমন assam-500g\" } },\n    \"required\": [\"sku\"]\n  }\n}\n```\n\nClaude এই description ও schema পড়েই বোঝে tool কখন ও কীভাবে ডাকতে হবে। তাই বাস্তবে **description-ই tool-এর \"প্রম্পট\"**; এটা নিয়ে একটু পরে আবার কথা হবে।\n\n### Resource: static URI আর template\n\nResource-এর পরিচয় একটা **URI**। দুই রকম:\n\n- **Static (direct) resource**: নির্দিষ্ট URI, যেমন `inventory://skus`।\n- **Resource template**: প্যারামিটারসহ URI, যেমন `inventory://stock/{sku}`। client `inventory://stock/assam-500g` চাইলে server `{sku}` অংশ function-এ পাঠায়।\n\nClient `resources/list` দিয়ে তালিকা পায় আর `resources/read` দিয়ে বিষয়বস্তু আনে। Claude Code-এ resource `@server:protocol://path` ফরম্যাটে mention করে context-এ জোড়া যায়।\n\n### Prompt: user-controlled template\n\nPrompt হলো নাম, বর্ণনা আর argument সহ একটা ছাঁচ। client `prompts/list` ও `prompts/get` ব্যবহার করে। Claude Code প্রতিটা MCP prompt `/servername:promptname (MCP)` হিসেবে slash command তালিকায় দেখায়; `/mcp__servername__promptname` টাইপ করলেও চলে।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন কাজ কোন primitive-এর?",
+          "hint": "প্রতিটা দৃশ্য পড়ে ঠিক করো এটা tool, resource না prompt। কী নিয়ন্ত্রণ করছে সেটা ভাবো: model, অ্যাপ, না ব্যবহারকারী।",
+          "buckets": [
+            {
+              "id": "tool",
+              "label": "Tool (model-controlled)"
+            },
+            {
+              "id": "resource",
+              "label": "Resource (app-controlled)"
+            },
+            {
+              "id": "prompt",
+              "label": "Prompt (user-controlled)"
+            }
+          ],
+          "items": [
+            {
+              "text": "Claude কথোপকথনের মাঝে ঠিক করল assam-500g-এর stock দেখা দরকার, তাই function ডাকল",
+              "bucket": "tool",
+              "why": "কখন ডাকা হবে সেই সিদ্ধান্ত model-এর। এটাই tool-এর বৈশিষ্ট্য।"
+            },
+            {
+              "text": "অ্যাপ refund-policy.md ফাইলটা context-এ attachment হিসেবে জুড়ে দিল, ব্যবহারকারী @ দিয়ে বেছে নিয়েছিল",
+              "bucket": "resource",
+              "why": "কোন ডেটা context-এ যাবে তা অ্যাপ (ও ব্যবহারকারীর বাছাই) ঠিক করে, model নয়। এটা resource।"
+            },
+            {
+              "text": "মেনু থেকে ব্যবহারকারী 'restock_report' বেছে threshold=10 দিল",
+              "bucket": "prompt",
+              "why": "ব্যবহারকারী সরাসরি template চালাচ্ছে। Prompt হলো user-controlled।"
+            },
+            {
+              "text": "inventory://stock/{sku} URI-তে SKU-ভিত্তিক stock তথ্য পড়ার জন্য দেওয়া",
+              "bucket": "resource",
+              "why": "URI দিয়ে চেনা পড়ার-ডেটা। প্যারামিটারসহ হলে এটা resource template।"
+            },
+            {
+              "text": "'এই SKU-র stock ২০ বাড়াও' ধরনের কাজ করা function (লেখা/পরিবর্তন)",
+              "bucket": "tool",
+              "why": "কাজ করা বা পরিবর্তন আনা function মানে tool। এর জন্য সাধারণত অনুমোদন (approval) দরকার।"
+            },
+            {
+              "text": "দলের স্ট্যান্ডার্ড 'incident summary লেখো' নির্দেশ-ছাঁচ, slash command হিসেবে দেখা যায়",
+              "bucket": "prompt",
+              "why": "পুনরায় ব্যবহারযোগ্য নির্দেশ-ছাঁচ যা ব্যবহারকারী বাছে: prompt।"
+            },
+            {
+              "text": "database schema-র বর্ণনা, অ্যাপ প্রতিবার সেশন শুরুতে context-এ দেয়",
+              "bucket": "resource",
+              "why": "এটা model-এর ডাকা কাজ নয়, অ্যাপ-নির্ধারিত context ডেটা।"
+            }
+          ],
+          "takeaway": "নিয়ন্ত্রণের হিসাব মনে রাখো: Tool = model, Resource = application, Prompt = user।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: তিন primitive-এর নিয়ন্ত্রক গুলিয়ে ফেলা",
+        "markdown": "পরীক্ষা প্রায়ই নিয়ন্ত্রক উল্টে দেয়: \"resource হলো model-controlled\" বা \"prompt হলো model যা খুশি ডাকে\" ধরনের অপশন। সঠিক ছক: **Tool = model-controlled, Resource = application-controlled, Prompt = user-controlled**। আরেকটা ফাঁদ: ডেটা পড়ার জন্য সবকিছু tool বানানো। Tool মানেই model-এর ডাকার সিদ্ধান্ত; যদি অ্যাপ বা ব্যবহারকারী সিদ্ধান্ত নেবে, তাহলে resource বা prompt বেশি মানানসই। (Spec নিজেই বলে, এটা control-এর **হিসাব**; অ্যাপ চাইলে নিজের UI-তে ভিন্নভাবে দেখাতে পারে।)"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Python-এ MCP server বানানো\n\nOfficial Python SDK-র ইনস্টল: `pip install \"mcp[cli]\"` (বা `uv add \"mcp[cli]\"`)। `[cli]` extra `mcp` কমান্ড দেয়, যার মধ্যে Inspector চালানোর `mcp dev` আছে।\n\n> একটা সৎ নোট: Python SDK-র official docs এখন **v2-কে current stable** বলে, আর README-র উদাহরণ `MCPServer` (`from mcp.server import MCPServer`) ব্যবহার করে। v2-র migration guide অনুযায়ী `FastMCP` ক্লাসের নাম বদলে `MCPServer` হয়েছে এবং পুরোনো `mcp.server.fastmcp` import আর নেই (`ModuleNotFoundError`)। v1.x লাইন এখনও critical bug fix ও security patch পায়, আর guide বলে migrate না করা পর্যন্ত `mcp` dependency-তে `<2` upper bound রাখতে। decorator-গুলো (`@mcp.tool()`, `@mcp.resource(...)`, `@mcp.prompt()`) একই। তাই নাম নিয়ে ঘাবড়াবে না: ধারণাটা এক। এই lab-এ আমরা `mcp[cli]<2` pin করে v1.x-এর `FastMCP` ধরব; v2-তে গেলে import ও নিচের `stateless_http`/`json_response` অবস্থান বদলাবে।\n\n### Rafi-র প্রথম server\n\n```python\n# server.py\nfrom mcp.server.fastmcp import FastMCP\n\nmcp = FastMCP(\"chaicart-inventory\")\n\nSTOCK = {\"darjeeling-250g\": 42, \"assam-500g\": 7, \"masala-chai-100g\": 0}\n\n@mcp.tool()\ndef check_stock(sku: str) -> dict:\n    \"\"\"একটা SKU-র বর্তমান stock বলে। sku উদাহরণ: 'assam-500g'।\n    অজানা SKU দিলে error দেয় এবং জানা SKU-র তালিকা জানায়।\"\"\"\n    if sku not in STOCK:\n        raise ValueError(f\"অজানা SKU: {sku}. জানা SKU: {sorted(STOCK)}\")\n    return {\"sku\": sku, \"quantity\": STOCK[sku], \"low\": STOCK[sku] < 10}\n\n@mcp.resource(\"inventory://skus\")                 # static URI\ndef list_skus() -> str:\n    \"\"\"সব SKU-র তালিকা (JSON টেক্সট)।\"\"\"\n    import json\n    return json.dumps(sorted(STOCK))\n\n@mcp.resource(\"inventory://stock/{sku}\")          # template\ndef stock_resource(sku: str) -> str:\n    return f\"{sku}: {STOCK.get(sku, 'unknown')}\"\n\n@mcp.prompt()\ndef restock_report(threshold: int = 10) -> str:\n    \"\"\"ব্যবহারকারীর জন্য restock report-এর ছাঁচ।\"\"\"\n    return (f\"inventory-র সব SKU দেখো। যেগুলোর stock {threshold}-এর নিচে, \"\n            \"সেগুলোর একটা restock তালিকা বানাও, জরুরি আগে।\")\n\nif __name__ == \"__main__\":\n    mcp.run()          # ডিফল্ট transport: stdio\n```\n\nএখানে কী ঘটছে:\n\n- **Type hint + docstring → schema।** SDK `sku: str` দেখে `inputSchema`-য় `\"type\": \"string\"` বসায় এবং docstring-কে `description` বানায়। আলাদা JSON Schema হাতে লিখতে হয় না। তাই **ভালো type hint ও ভালো docstring মানে ভালো tool definition।**\n- **`@mcp.tool()`** function-কে tool বানায়; **`@mcp.resource(\"uri\")`** URI-তে resource; **`{sku}` থাকলে template**। function-এর প্যারামিটার নাম URI-র placeholder-এর সাথে মিলতে হয়।\n- **`@mcp.prompt()`** user-controlled template; function-এর return করা টেক্সটই prompt-এর বিষয়বস্তু হয়।\n- **Error:** tool-এ exception ছুড়লে SDK সেটাকে tool-এর ফলাফলে error হিসেবে (`isError: true`) জানায়, server crash করে না। Claude সেই বার্তা পড়ে আবার চেষ্টা করতে পারে। তাই বার্তাটা এমন হোক যা পড়ে model বুঝতে পারে কী ঠিক করতে হবে (উপরে \"জানা SKU-র তালিকা\" ঠিক সেজন্যই)।\n\n### Tool ভালো করার তিনটা নিয়ম (Tool Implementation skill)\n\n1. **স্পষ্ট description:** tool কী করে, কখন ব্যবহার করবে, কখন করবে না, প্যারামিটারের উদাহরণ। অস্পষ্ট description (\"stock দেয়\") হলে Claude ভুল tool বা ভুল argument বাছে। সমাধান temperature বদলানো নয়, description ঠিক করা।\n2. **ছোট ও সুনির্দিষ্ট tool-set:** একটা tool-এ সব কাজ ঢুকিয়ে না দিয়ে আলাদা উদ্দেশ্যের জন্য আলাদা tool; আর কাছাকাছি অর্থের অনেক tool না দেওয়া, কারণ model বিভ্রান্ত হয় এবং tool definition context-এর জায়গা খায়।\n3. **কাজে লাগার মতো error ও কাটছাঁট করা output:** বিশাল JSON না ফেরত দিয়ে দরকারি অংশ দাও। Claude Code MCP output ১০,০০০ token ছাড়ালে সতর্ক করে এবং ডিফল্টে ২৫,০০০ token-এ সীমা টানে (`MAX_MCP_OUTPUT_TOKENS` দিয়ে বদলানো যায়)।\n\n### Client ও server tool: তফাত মনে রাখো\n\nMessages API-তে তুমি যে tool define করো (client tool), তার `tool_use` তোমার কোড (harness) চালায় এবং `tool_result` ফেরত পাঠায়। Anthropic-hosted server tool-এর (যেমন web search) কাজ Anthropic-এর infrastructure-এ চলে। MCP tool তৃতীয় একটা জিনিস: তোমার নিজের (বা কারো) MCP server-এ চলে, host অ্যাপ সেটাকে প্রচলিত tool হিসেবে Claude-কে দেখায় আর কল পাঠায়। **MCP tool Anthropic-এর server-এ চলে না।**"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "MCP সংযোগ: initialize থেকে tool call",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। লক্ষ করো: কে কাকে কী পাঠাচ্ছে, আর model কোন ধাপে আসে।",
+          "actors": [
+            {
+              "id": "user",
+              "label": "Rafi (ব্যবহারকারী)"
+            },
+            {
+              "id": "host",
+              "label": "Claude Code (host + client)"
+            },
+            {
+              "id": "server",
+              "label": "inventory MCP server"
+            },
+            {
+              "id": "model",
+              "label": "Claude model"
+            }
+          ],
+          "steps": [
+            {
+              "from": "host",
+              "to": "server",
+              "label": "initialize",
+              "note": "client প্রথমে নিজের protocolVersion, capabilities (যেমন roots, sampling) আর clientInfo পাঠায়। এটাই সবসময় প্রথম interaction।"
+            },
+            {
+              "from": "server",
+              "to": "host",
+              "label": "initialize result",
+              "note": "server সমর্থিত version আর নিজের capabilities (tools, resources, prompts) জানায়। দুই পক্ষ শুধু যা negotiate হয়েছে তা-ই ব্যবহার করতে পারবে।"
+            },
+            {
+              "from": "host",
+              "to": "server",
+              "label": "notifications/initialized",
+              "note": "client জানায় সে তৈরি। এটা notification, তাই উত্তরের প্রত্যাশা নেই। এরপর স্বাভাবিক কাজ শুরু।"
+            },
+            {
+              "from": "host",
+              "to": "server",
+              "label": "tools/list",
+              "note": "client server-এর tool তালিকা (name, description, inputSchema) চায়।"
+            },
+            {
+              "from": "server",
+              "to": "host",
+              "label": "tools: [check_stock]",
+              "note": "host এই তালিকা Claude-কে tool definition হিসেবে দেয়। Claude Code-এ নাম হয় mcp__inventory__check_stock।"
+            },
+            {
+              "from": "user",
+              "to": "model",
+              "label": "assam-500g-এর stock কত?",
+              "note": "ব্যবহারকারী প্রশ্ন করে। model ঠিক করে tool ডাকা দরকার (tool = model-controlled)।"
+            },
+            {
+              "from": "host",
+              "to": "server",
+              "label": "tools/call check_stock",
+              "note": "host model-এর tool_use-কে JSON-RPC tools/call বানিয়ে server-এ পাঠায়, arguments: {sku: 'assam-500g'}।"
+            },
+            {
+              "from": "server",
+              "to": "host",
+              "label": "result: quantity 7",
+              "note": "server ফলাফল content আকারে ফেরত দেয়। host সেটা tool_result হিসেবে model-কে দেয়, model উত্তর বানায়।"
+            }
+          ],
+          "takeaway": "handshake (initialize → result → initialized) আগে, তারপর list, তারপর call। Model শুধু tool_use ঠিক করে; আসল JSON-RPC বার্তা পাঠায় host/client।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Inspector দিয়ে test করা\n\nServer লিখে সরাসরি Claude Code-এ জুড়ে debug করা কঠিন, কারণ ভুল হলে তুমি জানবে না ভুলটা server-এর, config-এর, না model-এর। তাই আগে **MCP Inspector** দিয়ে server আলাদাভাবে পরীক্ষা করো। এটা একটা ব্রাউজার-ভিত্তিক developer tool (Node.js লাগে, তাই `npx` থাকতে হবে; Inspector-এর বর্তমান docs অনুযায়ী Node 22.19.0 বা নতুন)।\n\n```bash\n# সবচেয়ে সহজ: SDK-র কমান্ড server চালায় আর Inspector খোলে\nmcp dev server.py\n\n# বা সরাসরি Inspector package দিয়ে\nnpx @modelcontextprotocol/inspector python server.py\n```\n\nInspector-এ তুমি যা করবে:\n\n| Tab | কী পরীক্ষা করবে |\n|---|---|\n| **Tools** | তালিকা দেখো, schema ঠিক এসেছে কি না দেখো (type hint থেকে), argument দিয়ে ডাকো। অজানা SKU দিয়ে error বার্তাও দেখো। |\n| **Resources** | static URI আর template আলাদা আসছে কি না; `resources/read` সঠিক টেক্সট দিচ্ছে কি না। |\n| **Prompts** | argument দিয়ে prompt `get` করে ফলাফল পড়ো। |\n| **Notifications / history** | কোন JSON-RPC বার্তা গেল ও এল, তার log। |\n\nCourse-এর ভাষায় \"server inspector\"-এর কাজ: Claude না চালিয়েই server-এর আচরণ হাতে-কলমে দেখা। Inspector production deploy-এর কিছু না; authentication-ও বদলে দেয় না।\n\n### Client দিকটা: প্রোগ্রাম থেকে server ডাকা\n\nIntroduction course-এর \"Implementing a client\" অংশের ধারণা: তুমি নিজেও MCP client লিখতে পারো। v1.x SDK-র stdio client অনেকটা এমন:\n\n```python\nimport asyncio\nfrom mcp import ClientSession, StdioServerParameters\nfrom mcp.client.stdio import stdio_client\n\nparams = StdioServerParameters(command=\"python\", args=[\"server.py\"])\n\nasync def main():\n    async with stdio_client(params) as (read, write):\n        async with ClientSession(read, write) as session:\n            await session.initialize()                       # handshake\n            tools = await session.list_tools()\n            print([t.name for t in tools.tools])\n            res = await session.call_tool(\"check_stock\", {\"sku\": \"assam-500g\"})\n            print(res.content)\n\nasyncio.run(main())\n```\n\nলক্ষ করো `await session.initialize()`: handshake না করে কোনো request চলে না। আর client লাইব্রেরি `command`-টা **subprocess হিসেবে চালায়**: এটাই stdio transport।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "stdio server-এ print() করা নিষিদ্ধ",
+        "markdown": "stdio transport-এ server-এর **stdout শুধু MCP বার্তার জন্য**। spec বলে server stdout-এ বৈধ MCP বার্তা ছাড়া কিছু লিখতে পারবে না। তাই debug-এর জন্য `print(...)` করলে JSON-RPC প্রবাহ ভেঙে যায় আর client অদ্ভুত parse error দেখায়। লগ লিখতে হলে **stderr**-এ লেখো (বা logging লাইব্রেরি stderr-এ কনফিগার করো)। Rafi-র প্রথম server ঠিক এই কারণেই Claude Code-এ \"Failed to connect\" দেখিয়েছিল।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Sampling, notification, roots\n\n\"MCP: Advanced Topics\" course-এর প্রথম মডিউল তিনটা বৈশিষ্ট্য নিয়ে: **sampling, log ও progress notification, roots**। প্রথম দুটো প্রশ্ন মাথায় রাখো: *কে কার কাছে অনুরোধ পাঠায়?*\n\n### Sampling: server model-এর কাছে সাহায্য চায়\n\nসাধারণ প্রবাহে client server-কে ডাকে। **Sampling** উল্টো: **server client-কে বলে \"তোমার LLM দিয়ে আমার জন্য একটা উত্তর বানাও।\"** Spec-এ মেথড `sampling/createMessage`। কেন দরকার? ধরো Chai-Bot-এর inventory server একটা tool-এ সব SKU-র লম্বা রিভিউ ডেটা summary করতে চায়। সে নিজে LLM SDK ঢোকাতে চায় না, আবার API key রাখতেও চায় না। তাই client-এর model ব্যবহার করে।\n\nসুবিধা:\n- server-এ **কোনো API key লাগে না**, model-এর খরচ ও নিয়ন্ত্রণ client-এর হাতে।\n- server model-নিরপেক্ষ থাকে। সে `modelPreferences` (যেমন `costPriority`, `speedPriority`, `intelligencePriority`, আর optional `hints`) দিয়ে পছন্দ জানায়, কিন্তু **চূড়ান্ত model client বাছে**।\n- Spec জোর দেয়: নিরাপত্তার জন্য **human-in-the-loop** থাকা উচিত, মানে ব্যবহারকারী sampling request দেখে অনুমোদন বা প্রত্যাখ্যান করতে পারবে।\n\nClient-কে initialize-এর সময় `\"sampling\": {}` capability জানাতে হয়; না জানালে server sampling চাইতে পারে না।\n\n### Notification: log ও progress\n\n**Notification** হলো JSON-RPC বার্তা যার `id` নেই, তাই উত্তর আসে না। দুই ধরনের কাজের:\n\n- **Log notification:** server চলার সময় client-কে লগ বার্তা পাঠায় (debug, info, warning...)।\n- **Progress notification:** দীর্ঘ কাজের (যেমন ১০,০০০ SKU import) অগ্রগতি জানায়, যাতে UI-তে progress bar দেখানো যায় এবং client ভাবে না যে কিছু আটকে গেছে।\n\nPython SDK-তে এগুলো tool-এর `Context` প্যারামিটার দিয়ে করা হয়:\n\n```python\nfrom mcp.server.fastmcp import FastMCP, Context\n\n@mcp.tool()\nasync def import_catalog(path: str, ctx: Context) -> str:\n    \"\"\"একটা catalog ফাইল import করে।\"\"\"\n    total = 100\n    await ctx.info(f\"{path} import শুরু\")              # log notification\n    for i in range(total):\n        # ... একটা অংশের কাজ ...\n        await ctx.report_progress(i + 1, total)        # progress notification\n    return \"import শেষ\"\n```\n\n(`ctx.info` ও `ctx.report_progress` v1.x SDK-র Context API; নতুন SDK সংস্করণে সঠিক নাম docs থেকে মিলিয়ে নিয়ো।) Notification-এর আরেক ব্যবহার **list-changed**: server-এর tool/resource/prompt তালিকা বদলালে সে `notifications/tools/list_changed` পাঠায়, client তখন আবার `tools/list` করে।\n\n### Roots: client server-কে বলে কোথায় কাজ করা যাবে\n\n**Roots** হলো client-এর দেওয়া filesystem সীমা। Server `roots/list` চাইলে client `file://` URI-র তালিকা দেয়, যেমন `file:///home/rafi/chaicart`। অর্থ: \"তুমি শুধু এই ফোল্ডারগুলোতে কাজ করবে।\" Roots বদলালে client `notifications/roots/list_changed` পাঠায় (যদি `listChanged` capability থাকে)।\n\nএকটা গুরুত্বপূর্ণ সূক্ষ্মতা: spec-অনুযায়ী roots একটা **সীমার নির্দেশ ও সমন্বয়ের ব্যবস্থা**, কিন্তু server নিজে সীমা মানবে বলে ধরে নেওয়া হয় (server \"SHOULD\" সীমা মানবে)। সত্যিকারের নিরাপত্তা আসে OS permission, sandbox ও least privilege থেকে; roots একা কোনো দেওয়াল নয়।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "sequence",
+          "caption": "Sampling: এখানে তীরের দিক উল্টো। server client-এর কাছে model-এর কাজ চায়, ব্যবহারকারী অনুমোদন দেয়, তারপর client model-কে ডাকে।",
+          "participants": [
+            {
+              "id": "server",
+              "kind": "server",
+              "label": "MCP server"
+            },
+            {
+              "id": "client",
+              "kind": "client",
+              "label": "MCP client (host)"
+            },
+            {
+              "id": "user",
+              "kind": "user",
+              "label": "ব্যবহারকারী"
+            },
+            {
+              "id": "llm",
+              "kind": "external",
+              "label": "Claude model"
+            }
+          ],
+          "messages": [
+            {
+              "from": "server",
+              "to": "client",
+              "label": "sampling/createMessage"
+            },
+            {
+              "from": "client",
+              "to": "user",
+              "label": "অনুরোধ দেখাও, অনুমোদন চাও"
+            },
+            {
+              "from": "user",
+              "to": "client",
+              "label": "approve / edit",
+              "dashed": true
+            },
+            {
+              "from": "client",
+              "to": "llm",
+              "label": "অনুমোদিত prompt পাঠাও"
+            },
+            {
+              "from": "llm",
+              "to": "client",
+              "label": "generation",
+              "dashed": true
+            },
+            {
+              "from": "client",
+              "to": "server",
+              "label": "result (role, content, model)",
+              "dashed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "সময়ের ফারাক: sampling ও logging এখন deprecated হচ্ছে",
+        "markdown": "modelcontextprotocol.io-র সবচেয়ে নতুন architecture পাতা (protocol version `2026-07-28`) বলছে client-primitive হিসেবে **sampling ও logging deprecated**, আর নতুন implementation-কে বলছে সরাসরি LLM provider API ব্যবহার করতে এবং log করতে stderr বা OpenTelemetry। একই পাতায় protocol এখন আরও stateless: প্রতিটা request-এ version ও capability থাকে, আর `initialize` handshake-এর জায়গায় ঐচ্ছিক `server/discover`। অন্যদিকে Anthropic Academy-র কোর্স ও 2025-06-18 spec (যা আমরা এই chapter-এ পড়ছি) classic handshake, sampling, roots ও log/progress notification শেখায়। Exam Guide-এ কোনো spec-সংস্করণ লেখা নেই। তাই প্রস্তুতির নিয়ম: **কোর্সের ধারণাগুলো শেখো (প্রশ্ন সেখান থেকেই আসবে), কিন্তু জেনে রাখো নতুন spec কোন দিকে যাচ্ছে।** প্রশ্নে যদি স্পষ্ট বলা না থাকে, classic আচরণ ধরে উত্তর দাও।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Transport: stdio বনাম StreamableHTTP\n\n### আগে: JSON বার্তার চার ধরন\n\nMCP-র সব বার্তা JSON-RPC 2.0। চার ধরন মনে রাখো:\n\n| ধরন | চিহ্ন | উদাহরণ |\n|---|---|---|\n| **Request** | `id` + `method` (+ `params`), উত্তর আশা করে | `tools/call` |\n| **Result (response)** | একই `id` + `result` | tool-এর ফলাফল |\n| **Error** | একই `id` + `error` (`code`, `message`) | unsupported version, method not found |\n| **Notification** | `method` আছে, **`id` নেই**, উত্তর নেই | `notifications/initialized`, progress |\n\nএকটা সূক্ষ্ম পার্থক্য: **protocol error** (JSON-RPC `error`, যেমন অজানা method) আর **tool execution error** (সফল response-এর ভেতরে `isError: true`, যেমন \"অজানা SKU\") এক জিনিস নয়। প্রথমটা সাধারণত model-এর সংশোধনযোগ্য নয়; দ্বিতীয়টা model পড়ে নিজেকে শোধরাতে পারে।\n\n### stdio\n\n- **client server-কে subprocess হিসেবে চালায়**; বার্তা যায় server-এর **stdin** দিয়ে, আসে **stdout** দিয়ে; বার্তা newline দিয়ে আলাদা, বার্তার ভেতরে newline থাকা নিষেধ।\n- **stderr** লগের জন্য খোলা।\n- সাধারণত **একটা server = একটা client**; network নেই, তাই দ্রুত ও সহজ; একই মেশিনে চলে।\n- Shutdown: client stdin বন্ধ করে, না থামলে signal পাঠায়।\n\n### Streamable HTTP\n\n- server একটা **স্বাধীন process** যে একসাথে **অনেক client** সামলায়।\n- একটা **single MCP endpoint** (যেমন `https://inventory.chaicart.example/mcp`) যা POST ও GET সমর্থন করে।\n- client-এর প্রতিটা বার্তা **নতুন HTTP POST**; `Accept`-এ `application/json` ও `text/event-stream` দুটোই থাকে। server উত্তর দেয় হয় সাধারণ JSON-এ, নয়তো **SSE stream** খুলে (একাধিক বার্তা stream করার জন্য)।\n- নোটিফিকেশন বা response পাঠালে server `202 Accepted` দেয় (body ছাড়া)।\n- server ঐচ্ছিকভাবে একটা **session** দিতে পারে: initialize-এর response-এ `Mcp-Session-Id` header; এরপর client প্রতিটা request-এ সেই header পাঠায়। সেশন শেষ হলে server `404` দেয়, client তখন নতুন করে initialize করে।\n- HTTP-তে client প্রতিটা request-এ `MCP-Protocol-Version` header-ও পাঠায়।\n\n### নিরাপত্তা: Spec-এর সতর্কবার্তা\n\nStreamable HTTP বানালে spec বলে: (১) **`Origin` header যাচাই করতে হবে** (DNS rebinding ঠেকাতে), (২) local চালালে **শুধু `127.0.0.1`-এ bind** করো, `0.0.0.0`-এ নয়, (৩) সব সংযোগে **authentication** রাখো। MCP কর্তৃপক্ষ remote server-এ **OAuth** দিয়ে token নেওয়ার সুপারিশ করে।\n\n### Stateful বনাম stateless: scaling-এর আসল প্রশ্ন\n\nধরো ChaiCart-এর inventory server এখন remote, load balancer-এর পেছনে ৩টা instance। **Stateful** সেশনে `Mcp-Session-Id` একটা নির্দিষ্ট instance-এর মেমোরিতে থাকা state-এর সাথে বাঁধা। পরের request অন্য instance-এ গেলে সে সেশন চেনে না (`404`/`400`) এবং client-কে আবার initialize করতে হয়। সমাধান দুটো: sticky routing/shared session store, অথবা সরাসরি **stateless** মোড।\n\n| | **Stateful** | **Stateless** |\n|---|---|---|\n| সেশনের state | server মনে রাখে (session id) | প্রতিটা request স্বয়ংসম্পূর্ণ |\n| Scaling | sticky routing বা shared store দরকার | যেকোনো instance যেকোনো request সামলায় (সহজ horizontal scaling) |\n| Server-to-client বৈশিষ্ট্য | চলমান stream দিয়ে sampling, log/progress, subscription চলে | এসব সীমিত বা অসম্ভব (কারণ server-কে client-এর সংযোগ মনে রাখতে হয়) |\n| উপযুক্ত | জটিল, দীর্ঘ interaction | সাধারণ request-response tool-service |\n\nPython SDK-তে (v1.x) এই দুটো সুইচ আছে বলে Academy কোর্স দেখায়: `FastMCP(\"x\", stateless_http=True, json_response=True)`। `stateless_http` সেশন-নির্ভরতা বাদ দেয়, আর `json_response` SSE stream-এর বদলে সাধারণ JSON response দেয়। (এটা v1.x-এর রূপ। v2-র migration guide অনুযায়ী `json_response` ও `stateless_http` আর constructor-এ যায় না; `mcp.run(transport=\"streamable-http\", json_response=True, stateless_http=True)`-এর মতো `run()`-এ (বা mount করলে `streamable_http_app()`-এ) দিতে হয়। ব্যবহারের আগে নিজের সংস্করণের docs মিলিয়ে নাও।) Run করার ধরন: `mcp.run(transport=\"streamable-http\")`।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "stdio: ছোট, একজনের, local। StreamableHTTP: network-এর, অনেকজনের, deploy করা সার্ভিস।",
+          "beforeTitle": "stdio (local subprocess)",
+          "before": "client কমান্ড চালিয়ে server process বানায়।\nবার্তা: stdin/stdout, stderr = লগ।\nসাধারণত ১ client : ১ server।\nAuth/ network নেই; OS-ই সীমা।\nভালো: ব্যক্তিগত dev টুল, local ফাইল/ডেটাবেস, দ্রুত পরীক্ষা।",
+          "afterTitle": "Streamable HTTP (remote service)",
+          "after": "server আলাদা চলমান সার্ভিস, একটা /mcp endpoint।\nPOST (+ ঐচ্ছিক SSE), ঐচ্ছিক Mcp-Session-Id।\nঅনেক client একসাথে।\nOrigin যাচাই, TLS, OAuth/bearer লাগে।\nভালো: দলগত শেয়ার, SaaS, load-balanced scaling।"
+        }
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "stdio না StreamableHTTP?",
+          "hint": "প্রতিটা পরিস্থিতির জন্য সঠিক transport বাছো।",
+          "buckets": [
+            {
+              "id": "stdio",
+              "label": "stdio"
+            },
+            {
+              "id": "http",
+              "label": "StreamableHTTP"
+            }
+          ],
+          "items": [
+            {
+              "text": "Rafi-র ল্যাপটপে নিজের ব্যবহারের জন্য একটা local ফাইল-অনুসন্ধান server",
+              "bucket": "stdio",
+              "why": "একজন ব্যবহারকারী, একই মেশিন, network লাগে না: stdio সহজতম।"
+            },
+            {
+              "text": "ChaiCart-এর ৩০ জন কর্মী ও কয়েকটা agent একই inventory server ব্যবহার করবে, load balancer-এর পেছনে ৩ instance",
+              "bucket": "http",
+              "why": "অনেক client, scaling ও central deploy দরকার: Streamable HTTP।"
+            },
+            {
+              "text": "server-কে client subprocess হিসেবে নিজেই চালু ও বন্ধ করে",
+              "bucket": "stdio",
+              "why": "subprocess-lifecycle stdio-র বৈশিষ্ট্য।"
+            },
+            {
+              "text": "OAuth/bearer token দিয়ে অনুমোদিত ব্যবহারকারী চেনা দরকার",
+              "bucket": "http",
+              "why": "HTTP-র সাধারণ authentication এখানে খাটে। stdio-তে সাধারণত ব্যবহারকারীর মেশিনের permission-ই ভরসা।"
+            },
+            {
+              "text": "server বার্তা পাঠায় stdout-এ, লগ stderr-এ",
+              "bucket": "stdio",
+              "why": "stdout = শুধু MCP বার্তা, stderr = লগ। এটা stdio-র নিয়ম।"
+            },
+            {
+              "text": "একক endpoint-এ POST/GET, Origin header যাচাই, Mcp-Session-Id header",
+              "bucket": "http",
+              "why": "এগুলো সবই Streamable HTTP-র বৈশিষ্ট্য ও সতর্কবার্তা।"
+            },
+            {
+              "text": "হাজার হাজার ছোট stateless request, যেকোনো instance যেকোনোটা সামলাবে",
+              "bucket": "http",
+              "why": "stateless HTTP মোড এখানেই কাজে লাগে।"
+            }
+          ],
+          "takeaway": "ব্যক্তিগত ও local হলে stdio; শেয়ার করা, remote, scaled সার্ভিস হলে Streamable HTTP (দরকারে stateless)।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'remote হলে stdio-কে একটু বদলালেই চলবে' ও 'stateless = সবসময় ভালো'",
+        "markdown": "দুটো ফাঁদ। (১) stdio মানে client-এর চালানো subprocess, তাই অন্য মেশিনের অনেক ব্যবহারকারীর জন্য উপযুক্ত নয়; সেখানে Streamable HTTP। (২) stateless scaling সহজ করে, কিন্তু যে বৈশিষ্ট্যে server-কে চলমান সংযোগে client-কে বার্তা পাঠাতে হয় (sampling, চলমান progress/log stream) সেগুলোর সীমা আছে। পরিস্থিতিতে 'sampling বা live progress লাগবে' থাকলে stateless সব সময় সঠিক নয়। আর SSE-অনুসারী পুরোনো HTTP+SSE transport এখন deprecated; Claude Code-ও `--transport sse` কে deprecated বলে।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৭. Claude Code-এ server যুক্ত করা: scope ও config\n\nServer তৈরি, Inspector-এ পরীক্ষা হয়েছে। এবার Claude Code-এ জোড়া। CLI-তে `claude mcp add`:\n\n```bash\n# local stdio server (-- এর পরের সবকিছু server-এর কমান্ড)\nclaude mcp add --transport stdio inventory -- python /path/to/server.py\n\n# env var সহ\nclaude mcp add --env INVENTORY_API_KEY=xxx --transport stdio inventory -- python server.py\n\n# remote HTTP server\nclaude mcp add --transport http inventory https://inventory.chaicart.example/mcp\n\n# header দিয়ে token (সত্যিকারের secret কখনও commit করো না)\nclaude mcp add --transport http inventory https://inventory.chaicart.example/mcp \\\n  --header \"Authorization: Bearer $INVENTORY_TOKEN\"\n\nclaude mcp list          # সব server ও স্বাস্থ্য\nclaude mcp get inventory # একটার বিস্তারিত\nclaude mcp remove inventory\n```\n\nলক্ষণীয়: `--` বিভাজক Claude-এর নিজস্ব অপশন আর server-এর কমান্ড আলাদা করে। `--transport` অপশন `http`, `sse`, `stdio` নেয় (`sse` deprecated)। Claude Code-এর ভেতরে `/mcp` লিখে সংযোগের অবস্থা দেখা ও OAuth login করা যায়।\n\n### তিন scope\n\n`--scope`/`-s` দিয়ে ঠিক করো config কোথায় থাকবে:\n\n| Scope | কোথায় প্রযোজ্য | দলের সাথে শেয়ার? | কোথায় জমা থাকে |\n|---|---|---|---|\n| **local** (ডিফল্ট) | শুধু এই প্রজেক্ট, শুধু তুমি | না | `~/.claude.json`-এ (প্রজেক্ট পথের অধীনে) |\n| **project** | এই প্রজেক্ট, পুরো দল | **হ্যাঁ**, version control-এর মাধ্যমে | প্রজেক্ট root-এ **`.mcp.json`** |\n| **user** | তোমার সব প্রজেক্ট | না | `~/.claude.json` |\n\nএকই নামের server একাধিক জায়গায় থাকলে অগ্রাধিকার: **local → project → user → plugin → claude.ai connector**। ক্ষেত্রগুলো মেশানো হয় না, সর্বোচ্চ অগ্রাধিকারের পুরো সংজ্ঞাটাই নেওয়া হয়।\n\n### `.mcp.json`\n\nদলের জন্য project scope বাছলে `.mcp.json` git-এ commit হয়:\n\n```json\n{\n  \"mcpServers\": {\n    \"inventory\": {\n      \"command\": \"python\",\n      \"args\": [\"server.py\"],\n      \"env\": { \"INVENTORY_DB\": \"${INVENTORY_DB:-./stock.db}\" }\n    },\n    \"inventory-prod\": {\n      \"type\": \"http\",\n      \"url\": \"${INVENTORY_URL:-https://inventory.chaicart.example}/mcp\",\n      \"headers\": { \"Authorization\": \"Bearer ${INVENTORY_TOKEN}\" }\n    }\n  }\n}\n```\n\n- **`${VAR}`** ও **`${VAR:-default}`** environment variable expansion চলে `command`, `args`, `env`, `url`, `headers`-এ। এভাবে secret ফাইলে না লিখে প্রতিজনের নিজের environment থেকে আসে।\n- remote entry-তে `type: \"http\"` লাগে; `url` আছে কিন্তু `type` নেই এমন entry কনফিগারেশন ভুল (stdio ধরে skip হয়)।\n- **Approval:** নিরাপত্তার জন্য interactive সেশনে project-scoped `.mcp.json` server ব্যবহারের আগে Claude Code ব্যবহারকারীর অনুমতি চায়। সিদ্ধান্ত রিসেট: `claude mcp reset-project-choices`। কিন্তু `claude -p`, Agent SDK ও cloud সেশনে prompt দেখানো যায় না, তাই project server **জিজ্ঞেস না করেই** লোড হয়; আটকাতে `disabledMcpjsonServers`, `--setting-sources` বা `--strict-mcp-config`।\n\n### Remote server-এর authentication\n\n- Claude Code remote server-এ **OAuth 2.0** সমর্থন করে: `/mcp` চালিয়ে ব্রাউজারে login। server `401`/`403` দিলে \"Needs authentication\" দেখায়। interactive-এর বাইরে `claude mcp login <name>`, আর `claude mcp logout <name>` token মোছে।\n- সহজ বিকল্প: `--header \"Authorization: Bearer ...\"` দিয়ে static token (secret environment variable থেকে নাও)।\n- Credential-জাতীয় কিছু variable (যেমন `ANTHROPIC_API_KEY`) remote server-এর `url`/`headers`-এ খালি পড়ে, যাতে কোনো প্রজেক্ট তোমার key অন্য server-এ পাঠাতে না পারে। দরকার হলে নিজের নামের variable-এ কপি করে ব্যবহার করো।\n\n### কাজে লাগলে কীভাবে দেখা যায়\n\n- Tool-এর নাম Claude Code-এ `mcp__<server>__<tool>` আকারে, যেমন `mcp__inventory__check_stock`।\n- Resource: `@inventory:inventory://skus` লিখে context-এ জোড়ো।\n- Prompt: `/mcp__inventory__restock_report 10`।\n- Timeout/সীমা: startup-এর জন্য `MCP_TIMEOUT`, tool execution-এর জন্য `MCP_TOOL_TIMEOUT` (বা server-ভিত্তিক `timeout` ক্ষেত্র, ms), output সীমা `MAX_MCP_OUTPUT_TOKENS`।"
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "Remote MCP server-এর সুরক্ষা স্তর",
+          "hint": "এক এক করে স্তর চালু করো। কোনো একটা স্তরই সব আক্রমণ ঠেকায় না: ঠিক layered defence-এর শিক্ষা।",
+          "layers": [
+            {
+              "id": "auth",
+              "label": "Authentication (OAuth / bearer token)",
+              "desc": "প্রতিটা সংযোগে পরিচয় যাচাই",
+              "blocks": ["anon", "stolen-origin"]
+            },
+            {
+              "id": "origin",
+              "label": "Origin header যাচাই + localhost bind",
+              "desc": "ব্রাউজারের অন্য সাইট থেকে আসা অনুরোধ আটকানো",
+              "blocks": ["dns-rebind"]
+            },
+            {
+              "id": "least",
+              "label": "Least privilege: read-only credential, ছোট tool-set",
+              "desc": "server-এর নিজস্ব DB credential-এ শুধু দরকারি অধিকার",
+              "blocks": ["delete-all", "overreach"]
+            },
+            {
+              "id": "approve",
+              "label": "ধ্বংসাত্মক tool-এ human approval",
+              "desc": "Claude Code-এর permission prompt বা harness-এর অনুমোদন ধাপ",
+              "blocks": ["delete-all", "bad-project"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "anon",
+              "label": "অজানা কেউ ইন্টারনেট থেকে /mcp ডাকছে",
+              "desc": "authentication ছাড়া endpoint খোলা"
+            },
+            {
+              "id": "dns-rebind",
+              "label": "দূষিত ওয়েবসাইট DNS rebinding দিয়ে local server ডাকছে",
+              "desc": "Origin অযাচাই করা local HTTP server-এর ঝুঁকি"
+            },
+            {
+              "id": "delete-all",
+              "label": "Claude ভুলবশত delete_sku ডাকছে সব SKU-তে",
+              "desc": "ধ্বংসাত্মক tool-এর অপব্যবহার"
+            },
+            {
+              "id": "overreach",
+              "label": "server-এর credential দিয়ে অন্য টেবিলও পড়া/লেখা",
+              "desc": "অতিরিক্ত অধিকার"
+            },
+            {
+              "id": "stolen-origin",
+              "label": "ফাঁস হওয়া পুরোনো token দিয়ে অ্যাক্সেস",
+              "desc": "স্থির token ফাঁসের ঝুঁকি (token-এর মেয়াদ/বাতিল ব্যবস্থা লাগে)"
+            },
+            {
+              "id": "bad-project",
+              "label": "কারও repo-র .mcp.json-এ অচেনা server বসানো",
+              "desc": "project scope-এর supply-chain ঝুঁকি"
+            }
+          ],
+          "takeaway": "Auth, Origin যাচাই, least privilege, approval: প্রতিটা স্তর ভিন্ন ঝুঁকি ঠেকায়। MCP server মানে একটা ক্ষমতাবান API; একটা স্তরের ওপর ভরসা করো না।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৮. কখন MCP, কখন অন্য কিছু: Agentic Customization\n\nClaude-কে নতুন ক্ষমতা দেওয়ার চারটা পথ আছে। পরীক্ষায় \"এই পরিস্থিতিতে কোনটা?\" ধরনের প্রশ্ন আসে:\n\n| উপায় | কী | কখন বাছবে | খরচ/ঝুঁকি |\n|---|---|---|---|\n| **Built-in tool** | Claude Code-এর সাথে আসা (ফাইল পড়া/লেখা, shell, search ইত্যাদি) | ফাইল বা কোড নিয়ে সাধারণ কাজ | সবচেয়ে সস্তা; আলাদা কিছু বানাতে হয় না |\n| **Custom tool** (API-তে function calling) | তোমার অ্যাপের কোডে define করা function; harness চালায় | একটা নির্দিষ্ট অ্যাপের ভেতরের বিশেষ কাজ | শুধু ওই অ্যাপেই কাজ করে |\n| **Skill** | নির্দেশনা + ঐচ্ছিক স্ক্রিপ্ট/রিসোর্সের প্যাকেজ; দরকারে লোড হয় | পুনরাবৃত্ত পদ্ধতি/জ্ঞান (\"আমাদের release note লেখার নিয়ম\") | হালকা; live সিস্টেমে সংযোগ দেয় না |\n| **MCP server** | আলাদা সার্ভিস, প্রমিত protocol-এ tool/resource/prompt expose করে | live বাইরের সিস্টেম (inventory, DB, SaaS) এবং **অনেক অ্যাপে শেয়ার** | server চালানো, auth, নিরাপত্তা সামলাতে হয় |\n\nসিদ্ধান্তের দুই প্রশ্ন: **(১) কাজটা কি live বাইরের সিস্টেম/ডেটা ছোঁয়?** ছোঁয় না, শুধু কীভাবে কাজ করতে হবে তার নির্দেশ লাগে: Skill বা CLAUDE.md। **(২) একই ক্ষমতা কি একাধিক অ্যাপে লাগবে বা স্বাধীনভাবে maintain হবে?** হ্যাঁ: MCP। শুধু এক অ্যাপে: custom tool। কোড/ফাইল ঘাঁটা: built-in tool যথেষ্ট; তার জন্য MCP বানানো অপচয়।\n\nExam Guide-এর Sample 3 আবার দেখো: option D (\"built-in tool সব internal REST API-তে পৌঁছাতে পারে\") ভুল কারণ built-in tool তোমার internal service চেনে না; option A (system prompt-এ hard-code) ও C (প্রতিবার ডেটা paste) ভুল কারণ পুনঃব্যবহারযোগ্য নয়, live নয়।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন পথ বাছবে?",
+          "hint": "প্রতিটা চাহিদার জন্য সবচেয়ে মানানসই পথ বাছো।",
+          "buckets": [
+            {
+              "id": "builtin",
+              "label": "Built-in tool"
+            },
+            {
+              "id": "custom",
+              "label": "Custom tool (এক অ্যাপে)"
+            },
+            {
+              "id": "skill",
+              "label": "Skill / CLAUDE.md"
+            },
+            {
+              "id": "mcp",
+              "label": "MCP server"
+            }
+          ],
+          "items": [
+            {
+              "text": "repo-র ফাইল পড়া ও grep করা",
+              "bucket": "builtin",
+              "why": "Claude Code-এর built-in Read/Grep আছে। আলাদা কিছু বানানো অপচয়।"
+            },
+            {
+              "text": "'আমাদের PR description এই ৪ শিরোনামে লেখো' ধরনের পুনরাবৃত্ত পদ্ধতি",
+              "bucket": "skill",
+              "why": "এটা জ্ঞান/পদ্ধতি; কোনো live system ছোঁয় না। Skill বা CLAUDE.md।"
+            },
+            {
+              "text": "Chai-Bot-এর ভেতরে শুধু ওই অ্যাপের জন্য একটা hold_order function",
+              "bucket": "custom",
+              "why": "এক অ্যাপের নিজস্ব যুক্তি; harness-এ define করা tool যথেষ্ট।"
+            },
+            {
+              "text": "inventory service তিনটা Claude অ্যাপে শেয়ার হবে, আলাদা টিম maintain করবে",
+              "bucket": "mcp",
+              "why": "পুনঃব্যবহার + স্বাধীন maintain = MCP server (Exam Guide Sample 3)।"
+            },
+            {
+              "text": "Jira/Slack-এর মতো SaaS-এর live ডেটায় Claude Code-কে সংযোগ দেওয়া",
+              "bucket": "mcp",
+              "why": "বাইরের live সিস্টেমে প্রমিত সংযোগ: MCP।"
+            },
+            {
+              "text": "shell-এ git status চালানো",
+              "bucket": "builtin",
+              "why": "Bash built-in tool দিয়েই হয়।"
+            },
+            {
+              "text": "দলের code-review checklist সব সেশনে মানা",
+              "bucket": "skill",
+              "why": "নির্দেশনা ও নিয়ম: Skill/CLAUDE.md।"
+            }
+          ],
+          "takeaway": "ডেটা/ক্ষমতা live ও শেয়ার করা হলে MCP; পদ্ধতি হলে Skill; এক অ্যাপের বিশেষ কাজে custom tool; সাধারণ ফাইল/shell কাজে built-in।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Rafi-র সমাধান",
+        "markdown": "Nusrat Apu-র নির্দেশে Rafi একটা `chaicart-inventory` MCP server বানাল (stdio, local), Inspector-এ পরীক্ষা করল, তারপর টিমের জন্য `.mcp.json` (project scope) commit করল যাতে `${INVENTORY_DB}` environment variable থেকে আসে, কোনো secret ফাইলে নেই। পরের ধাপে সেটা remote Streamable HTTP service হবে; তখন OAuth/bearer token, Origin যাচাই ও stateless মোড বিবেচনায় আসবে।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter **Domain 8: Tools and MCPs (10.6%)**-এর তিনটা skill ঢাকে। পুরো পরীক্ষায় Domain 8-এ ৫৩টার মধ্যে প্রায় ৬টা প্রশ্ন, তাই প্রতিটা প্রশ্নই মূল্যবান।\n\n- **MCP Server Development (2.1%)**: tool/resource/prompt ও তাদের নিয়ন্ত্রক, server লেখা, Inspector, stdio বনাম StreamableHTTP, sampling/roots/notification, `claude mcp add`, scope ও `.mcp.json`, remote auth।\n- **Tool Implementation (4.4%)**: tool description ও schema, error হ্যান্ডলিং, client tool বনাম server tool, harness dispatch, approval pattern, ছোট ও পরিষ্কার tool-set।\n- **Agentic Customization (4.1%)**: built-in tool, custom tool, Skill ও MCP-র মধ্যে tradeoff।\n\n**প্রশ্নের সাধারণ আকার:**\n1. \"একটা সেবা অনেক Claude অ্যাপে শেয়ার করতে হবে: কোন পথ?\" (উত্তর: MCP server)\n2. \"ব্যবহারকারী বাছবে / অ্যাপ জুড়বে / model ডাকবে: কোন primitive?\"\n3. \"server-এর নিজের LLM key নেই, কিন্তু model-এর কাজ দরকার: কী?\" (sampling)\n4. \"লোড-ব্যালান্সারের পেছনে ভেঙে যাচ্ছে সেশন: কেন ও কী করবে?\" (stateful session, stateless বা shared store)\n5. \"দলের সাথে শেয়ার করতে কোন scope/ফাইল?\" (project scope, `.mcp.json`, secret environment variable থেকে)\n6. \"Tool-এর ভুল argument বা ভুল tool বাছা: কী ঠিক করবে?\" (description/schema, temperature নয়)\n7. দুই-উত্তর (\"Select TWO\") প্রশ্নে প্রতিটা বিবৃতি আলাদা করে সত্য/মিথ্যা যাচাই করো।"
+      }
+    ],
+    "recap": [
+      "MCP-তে host প্রতিটা server-এর জন্য একটা করে client বানায়; বার্তা JSON-RPC 2.0, আর data layer ও transport layer আলাদা।",
+      "Tool = model-controlled, Resource = application-controlled, Prompt = user-controlled; resource static URI বা template হতে পারে।",
+      "Python SDK-তে @mcp.tool/@mcp.resource/@mcp.prompt; type hint ও docstring থেকে schema ও description তৈরি হয়; Inspector-এ আগে test করো।",
+      "Sampling = server client-এর model চায় (human-in-the-loop সহ); notification = id-হীন log/progress/list_changed বার্তা; roots = client-এর দেওয়া filesystem সীমা।",
+      "stdio = client-চালিত subprocess, stdout শুধু MCP বার্তা; Streamable HTTP = একক endpoint-এর remote সার্ভিস, Origin যাচাই ও auth লাগে; stateless মোডে scaling সহজ কিন্তু server-to-client বৈশিষ্ট্য সীমিত।",
+      "claude mcp add-এর scope: local (ডিফল্ট), project (.mcp.json, শেয়ার), user; remote server-এ OAuth (/mcp) বা header token; secret ${VAR} থেকে নাও।",
+      "লাইভ ও শেয়ার করা ক্ষমতায় MCP, পদ্ধতিতে Skill, এক অ্যাপের কাজে custom tool, সাধারণ ফাইল/shell-এ built-in tool।"
+    ]
+  },
+  "lab": {
+    "goal": "ChaiCart-এর একটা ছোট inventory MCP server (১টা tool, ১টা resource, ১টা prompt) বানিয়ে Inspector-এ পরীক্ষা করা এবং .mcp.json দিয়ে Claude Code-এ যুক্ত করা।",
+    "requirements": [
+      "Python 3.10+ (SDK-র নতুন সংস্করণে 3.11+ লাগতে পারে) ও Node.js 22.19+ (Inspector-এর জন্য `npx`)",
+      "`python -m venv .venv && source .venv/bin/activate && pip install \"mcp[cli]<2\"` (এই lab v1.x SDK-র `FastMCP` ধরে লেখা; v2-তে `<2` pin না দিলে `mcp.server.fastmcp` import ভাঙবে)",
+      "Claude Code ইনস্টল করা (`claude` কমান্ড চলে)",
+      "কোনো API key কোডে লিখবে না; এই lab-এ আলাদা model key লাগে না"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: server লেখা",
+        "body": "একটা ফোল্ডার `chai-inventory/` বানিয়ে ভেতরে `server.py` লেখো:\n\n```python\nimport json\nfrom mcp.server.fastmcp import FastMCP\n\nmcp = FastMCP(\"chaicart-inventory\")\nSTOCK = {\"darjeeling-250g\": 42, \"assam-500g\": 7, \"masala-chai-100g\": 0}\n\n@mcp.tool()\ndef check_stock(sku: str) -> dict:\n    \"\"\"একটা SKU-র বর্তমান stock বলে। sku উদাহরণ: 'assam-500g'। অজানা SKU-তে error দেয় ও জানা SKU-র তালিকা জানায়।\"\"\"\n    if sku not in STOCK:\n        raise ValueError(f\"অজানা SKU: {sku}. জানা SKU: {sorted(STOCK)}\")\n    return {\"sku\": sku, \"quantity\": STOCK[sku], \"low\": STOCK[sku] < 10}\n\n@mcp.resource(\"inventory://skus\")\ndef list_skus() -> str:\n    \"\"\"সব SKU-র তালিকা (JSON)।\"\"\"\n    return json.dumps(sorted(STOCK))\n\n@mcp.prompt()\ndef restock_report(threshold: int = 10) -> str:\n    \"\"\"restock report-এর ছাঁচ।\"\"\"\n    return (f\"inventory-র সব SKU দেখো। যেগুলোর stock {threshold}-এর নিচে, \"\n            \"সেগুলোর জরুরি-আগে restock তালিকা বানাও।\")\n\nif __name__ == \"__main__\":\n    mcp.run()   # stdio\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `python server.py` চালালে কোনো আউটপুট ছাড়াই প্রোগ্রামটা অপেক্ষা করে (stdin-এ বার্তার জন্য)। `Ctrl+C` দিয়ে থামাও। কোনো `print()` রাখবে না।"
+      },
+      {
+        "title": "ধাপ ২: Inspector-এ দেখা",
+        "body": "```bash\nmcp dev server.py\n# বিকল্প: npx @modelcontextprotocol/inspector python server.py\n```\n\nব্রাউজারে Inspector খুলবে। Connect করে **Tools → List tools → check_stock** বেছে `sku` = `assam-500g` দিয়ে Run করো। তারপর `sku` = `xyz` দিয়ে চালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** প্রথমবার `quantity: 7, low: true`। দ্বিতীয়বার error বার্তা, যাতে জানা SKU-র তালিকা আছে। Tool-এর schema-তে `sku` string হিসেবে এসেছে (type hint থেকে)।"
+      },
+      {
+        "title": "ধাপ ৩: resource ও prompt পরীক্ষা",
+        "body": "Inspector-এ **Resources** tab-এ `inventory://skus` পড়ো। **Prompts** tab-এ `restock_report` বেছে `threshold` = `10` দিয়ে Get করো।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** resource JSON তালিকা ফেরত দেয়; prompt একটা user message দেয় যাতে threshold বসানো। লক্ষ করো এখানে কেউ model ডাকেনি: resource ও prompt অ্যাপ/ব্যবহারকারীর নিয়ন্ত্রণে।"
+      },
+      {
+        "title": "ধাপ ৪: .mcp.json লেখা",
+        "body": "প্রজেক্ট root-এ (যে ফোল্ডারে Claude Code চালাবে) `.mcp.json` বানাও। venv-এর python-এর পথ দাও:\n\n```json\n{\n  \"mcpServers\": {\n    \"inventory\": {\n      \"command\": \"${INVENTORY_PYTHON:-python}\",\n      \"args\": [\"chai-inventory/server.py\"]\n    }\n  }\n}\n```\n\n`INVENTORY_PYTHON` সেট না করলে `python` ব্যবহার হয়; venv সক্রিয় থাকলে ঠিক আছে। (সমতুল্য CLI: `claude mcp add --transport stdio --scope project inventory -- python chai-inventory/server.py`।)\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `claude mcp list` চালালে `inventory` তালিকায় আসে। project scope বলে প্রথমবার Claude Code অনুমতি চাইবে।"
+      },
+      {
+        "title": "ধাপ ৫: Claude Code-এ ব্যবহার",
+        "body": "```bash\nclaude\n```\n\nসেশনে `/mcp` দিয়ে `inventory` Connected কি না দেখো। তারপর চেষ্টা করো:\n\n```text\nassam-500g-এর stock কত?\n@inventory:inventory://skus\n/mcp__inventory__restock_report 10\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** প্রথম প্রশ্নে Claude `mcp__inventory__check_stock` tool ডাকার অনুমতি চায় (model-controlled); `@` লাইনটা resource context-এ জোড়ে (app/user-controlled); slash command prompt চালায় (user-controlled)।"
+      },
+      {
+        "title": "ধাপ ৬: ভাঙো ও ঠিক করো",
+        "body": "`check_stock`-এ একটা `print(\"debug\")` যোগ করে Claude Code-এ আবার `/mcp` দেখো, বা Inspector-এ চালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** stdout-এ বাড়তি টেক্সট JSON-RPC প্রবাহ নষ্ট করে (সংযোগ ব্যর্থ বা parse error)। `print`-কে `import sys; print(..., file=sys.stderr)` করলে ঠিক হয়। শেষে `claude mcp remove inventory` দিয়ে (বা `.mcp.json` মুছে) পরিষ্কার করো।"
+      }
+    ],
+    "checkpoints": [
+      "tool, resource আর prompt-এর নিয়ন্ত্রক কে? তুমি lab-এ কোথায় সেটা দেখলে?",
+      "SDK কীভাবে `check_stock`-এর inputSchema বানাল, তুমি হাতে JSON Schema লিখেছিলে কি?",
+      "stdio server-এ `print()` কেন সমস্যা? লগ কোথায় লেখা উচিত?",
+      "local, project ও user scope-এর পার্থক্য কী; দলের সাথে শেয়ার করতে কোনটা?",
+      "এই server কে remote করে ৩ instance-এ চালাতে হলে কোন transport বাছবে এবং stateful সেশন কী সমস্যা করবে?",
+      "`.mcp.json`-এ secret সরাসরি না লিখে কীভাবে দেবে?"
+    ]
+  },
+  "notes": "# Chapter 9 cheat sheet: MCP server development\n\n## Participants ও layer\n| শব্দ | অর্থ |\n|---|---|\n| Host | AI অ্যাপ (Claude Code, Desktop) |\n| Client | host-এর ভেতরে, ১ server = ১ client |\n| Server | tool/resource/prompt দেয় |\n| Data layer | JSON-RPC 2.0 বার্তা |\n| Transport layer | stdio বা Streamable HTTP |\n\n## তিন primitive\n| Primitive | নিয়ন্ত্রক | মেথড | উদাহরণ |\n|---|---|---|---|\n| Tool | **model** | tools/list, tools/call | check_stock |\n| Resource | **application** | resources/list, resources/read | inventory://skus, template inventory://stock/{sku} |\n| Prompt | **user** | prompts/list, prompts/get | restock_report |\n\n## Lifecycle\n`initialize` (version + capabilities) → result → `notifications/initialized` → operation → shutdown। JSON বার্তা: request, result, error (এগুলোতে `id`), notification (`id` নেই)।\n\n## Client-এর দেওয়া সুবিধা (server ব্যবহার করে)\n| বৈশিষ্ট্য | কী | নোট |\n|---|---|---|\n| Sampling | server client-এর model চায় (`sampling/createMessage`) | server-এ API key লাগে না; human approval; client model বাছে |\n| Roots | client `file://` সীমা দেয় (`roots/list`) | সীমার নির্দেশ, একা নিরাপত্তা-দেওয়াল নয় |\n| Notification | log, progress, list_changed | উত্তর নেই |\n\nনতুন spec (2026-07-28) sampling/logging deprecated বলছে; Academy কোর্স classic ধারণা শেখায়।\n\n## stdio বনাম Streamable HTTP\n| | stdio | Streamable HTTP |\n|---|---|---|\n| চালায় | client (subprocess) | স্বাধীন সার্ভিস |\n| Client সংখ্যা | সাধারণত ১ | অনেক |\n| বার্তা | stdin/stdout, লগ stderr | POST (+ ঐচ্ছিক SSE), এক endpoint |\n| Auth | OS permission | OAuth/bearer, Origin যাচাই, TLS |\n| Session | নেই | ঐচ্ছিক `Mcp-Session-Id` |\n| Scaling | n/a | stateless মোডে সহজ |\n\n## Python SDK (v1.x)\n- `pip install \"mcp[cli]<2\"`; `FastMCP(\"name\")`; `@mcp.tool()`, `@mcp.resource(\"uri\")`, `@mcp.prompt()`; `mcp.run()` = stdio; `mcp.run(transport=\"streamable-http\")`।\n- SDK docs এখন v2 (current stable): `FastMCP` → `MCPServer`, `mcp.server.fastmcp` আর নেই; v1.x এখনও fix পায়, তাই `<2` pin। `stateless_http`/`json_response` v2-তে `run()`-এ যায়। ধারণা একই।\n- Inspector: `mcp dev server.py` বা `npx @modelcontextprotocol/inspector ...`।\n\n## Claude Code\n| কাজ | কমান্ড |\n|---|---|\n| stdio | `claude mcp add --transport stdio NAME -- cmd args` |\n| HTTP | `claude mcp add --transport http NAME URL` |\n| Scope | `--scope local` (ডিফল্ট) / `project` (.mcp.json) / `user` |\n| দেখা | `claude mcp list`, `claude mcp get`, `/mcp` |\n| Auth | `/mcp` OAuth, `claude mcp login`, `--header` |\n| Env expansion | `${VAR}`, `${VAR:-default}` |\n\nঅগ্রাধিকার: local > project > user > plugin > claude.ai connector। project server-এ interactive approval; `claude -p`-তে prompt নেই। সীমা: `MCP_TIMEOUT`, `MCP_TOOL_TIMEOUT`, `MAX_MCP_OUTPUT_TOKENS` (ডিফল্ট ২৫,০০০ token, ১০,০০০-এ warning)। নাম: `mcp__server__tool`, resource `@server:uri`, prompt `/mcp__server__prompt`।\n\n## Customization বাছাই\n| চাহিদা | পথ |\n|---|---|\n| ফাইল/shell | built-in tool |\n| এক অ্যাপের বিশেষ কাজ | custom tool |\n| পুনরাবৃত্ত পদ্ধতি | Skill / CLAUDE.md |\n| live শেয়ার করা সিস্টেম | MCP server |\n\n## Tool implementation নিয়ম\n- স্পষ্ট description ও schema (ভুল tool বাছার প্রতিকার, temperature নয়)।\n- কাজে লাগার মতো error বার্তা; tool error (`isError`) বনাম protocol error আলাদা।\n- ছোট tool-set, কাটছাঁট output।\n- ধ্বংসাত্মক tool-এ approval ও least privilege।\n- Client tool তোমার harness চালায়; server tool (যেমন web search) Anthropic; MCP tool তোমার MCP server চালায়।\n\n## সাধারণ ফাঁদ\n- নিয়ন্ত্রক উল্টানো (resource ≠ model-controlled)।\n- stdio-তে print()।\n- remote শেয়ারের জন্য stdio।\n- SSE transport এখন deprecated।\n- secret `.mcp.json`-এ হার্ডকোড।\n- Inspector ≠ production deploy বা auth।",
+  "flashcards": [
+    {
+      "front": "MCP-তে host, client, server-এর সম্পর্ক কী?",
+      "back": "Host (AI অ্যাপ) প্রতিটা server-এর জন্য একটা করে client বানায়; client ওই server-এর সাথে একটা নির্দিষ্ট সংযোগ ধরে রাখে।"
+    },
+    {
+      "front": "Tool-এর নিয়ন্ত্রক কে?",
+      "back": "Model। LLM নিজে ঠিক করে কখন ডাকবে।"
+    },
+    {
+      "front": "Resource-এর নিয়ন্ত্রক কে?",
+      "back": "Application। অ্যাপ (ও ব্যবহারকারীর বাছাই) ঠিক করে কোন ডেটা context-এ যাবে।"
+    },
+    {
+      "front": "Prompt-এর নিয়ন্ত্রক কে?",
+      "back": "User। ব্যবহারকারী slash command বা মেনু থেকে বেছে চালায়।"
+    },
+    {
+      "front": "Resource template কী?",
+      "back": "প্যারামিটারসহ URI, যেমন inventory://stock/{sku}; static resource-এর URI নির্দিষ্ট।"
+    },
+    {
+      "front": "Python SDK-তে tool-এর inputSchema কোথা থেকে আসে?",
+      "back": "Function-এর type hint থেকে; description আসে docstring থেকে।"
+    },
+    {
+      "front": "MCP Inspector কী কাজে লাগে?",
+      "back": "Claude ছাড়াই server-এর tool, resource, prompt হাতে পরীক্ষা ও বার্তা দেখার developer tool (`mcp dev server.py`)।"
+    },
+    {
+      "front": "MCP handshake-এর ক্রম?",
+      "back": "initialize request → server result → notifications/initialized, তারপর স্বাভাবিক কাজ।"
+    },
+    {
+      "front": "Notification আর request-এর তফাত?",
+      "back": "Notification-এ id নেই, উত্তর আসে না; request-এ id থাকে ও উত্তর আসে।"
+    },
+    {
+      "front": "Sampling কী?",
+      "back": "Server client-কে বলে তার LLM দিয়ে generation করে দিতে (sampling/createMessage); server-এ API key লাগে না, human-in-the-loop থাকা উচিত।"
+    },
+    {
+      "front": "Sampling-এ কোন model ব্যবহার হবে কে ঠিক করে?",
+      "back": "Client। server শুধু modelPreferences/hints দেয়, যা পরামর্শ মাত্র।"
+    },
+    {
+      "front": "Roots কী?",
+      "back": "Client-এর দেওয়া file:// URI-র তালিকা, যা server-কে জানায় কোথায় কাজ করা যাবে (roots/list)।"
+    },
+    {
+      "front": "Progress ও log notification কী কাজে লাগে?",
+      "back": "দীর্ঘ কাজের অগ্রগতি ও লগ client-কে জানাতে; Python SDK-তে Context (ctx.info, ctx.report_progress)।"
+    },
+    {
+      "front": "stdio-তে server কীভাবে চলে?",
+      "back": "Client server-কে subprocess হিসেবে চালায়; বার্তা stdin/stdout-এ, লগ stderr-এ।"
+    },
+    {
+      "front": "stdio server-এ print() করলে কী হয়?",
+      "back": "stdout-এ বাড়তি টেক্সট MCP বার্তা ভাঙে। লগ stderr-এ লেখো।"
+    },
+    {
+      "front": "Streamable HTTP-র বৈশিষ্ট্য কী?",
+      "back": "একক MCP endpoint, প্রতিটা বার্তা নতুন POST, উত্তর JSON বা SSE; ঐচ্ছিক Mcp-Session-Id header।"
+    },
+    {
+      "front": "Streamable HTTP-তে নিরাপত্তার তিন সতর্কতা?",
+      "back": "Origin header যাচাই, local হলে 127.0.0.1-এ bind, সব সংযোগে authentication।"
+    },
+    {
+      "front": "Load balancer-এর পেছনে stateful সেশন কেন সমস্যা?",
+      "back": "Session state এক instance-এ থাকে; অন্য instance-এ গেলে সেশন চেনে না। সমাধান: sticky routing/shared store বা stateless মোড।"
+    },
+    {
+      "front": "claude mcp add-এ -- কেন?",
+      "back": "Claude-এর অপশন আর server চালানোর কমান্ড আলাদা করতে; -- এর পরের সব server-এর কমান্ড।"
+    },
+    {
+      "front": "তিন scope ও ডিফল্ট?",
+      "back": "local (ডিফল্ট, শুধু তুমি/এই প্রজেক্ট), project (.mcp.json, দলের জন্য), user (সব প্রজেক্ট)।"
+    },
+    {
+      "front": "একই নামের server একাধিক scope-এ থাকলে কোনটা জেতে?",
+      "back": "local > project > user > plugin > claude.ai connector; ক্ষেত্র মেশানো হয় না।"
+    },
+    {
+      "front": "Remote server-এ auth কীভাবে?",
+      "back": "Claude Code-এ /mcp দিয়ে OAuth 2.0 login, বা --header দিয়ে bearer token (secret env var থেকে)।"
+    },
+    {
+      "front": "কখন Skill, কখন MCP?",
+      "back": "পদ্ধতি/নির্দেশনা হলে Skill; live বাইরের সিস্টেম ও একাধিক অ্যাপে শেয়ার হলে MCP।"
+    },
+    {
+      "front": "Claude ভুল tool/argument বাছছে। প্রথম কী ঠিক করবে?",
+      "back": "Tool description ও schema স্পষ্ট করো; temperature বদলানো সমাধান নয়।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "Chai-Bot-এর অ্যাপ চায় কোম্পানির refund policy নথিটা ব্যবহারকারীর বাছাইয়ের পর context-এ attachment হিসেবে জুড়ে যাক; model আলাদা করে ডাকবে না। MCP server-এ এটা কোন primitive দিয়ে দেওয়া উচিত?",
+      "options": [
+        "Tool, কারণ নথি আনা একটা কাজ",
+        "Resource, কারণ resource application-controlled context ডেটা",
+        "Prompt, কারণ prompt সবসময় model ডাকে",
+        "Sampling, কারণ server নথি তৈরি করবে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "পড়ার-ডেটা যা অ্যাপ/ব্যবহারকারী context-এ জুড়ে দেয়, সেটা resource (application-controlled)। Tool হতো যদি model নিজে ঠিক করত কখন আনবে। Prompt user-controlled ছাঁচ, model ডাকে না। Sampling server-এর পক্ষে model চাওয়ার ব্যবস্থা, নথি দেওয়ার নয়।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "Marketing টিম একটা 'weekly restock report' ছাঁচ চায় যা সদস্যরা slash command হিসেবে বেছে চালাবে এবং threshold দেবে। কোন primitive সবচেয়ে মানানসই?",
+      "options": ["Tool", "Resource template", "Prompt", "Roots"],
+      "answerIndexes": [2],
+      "explanation": "ব্যবহারকারী যে পুনঃব্যবহারযোগ্য ছাঁচ বেছে চালায় সেটা prompt (user-controlled)। Tool model-এর সিদ্ধান্তে ডাকা হয়; resource template ডেটা URI-তে দেয়; roots filesystem সীমা জানায়।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "একটা MCP server-এর লেখক stdio transport নিয়ে কাজ করছেন। কোন দুটো বিবৃতি সত্য? Select TWO.",
+      "options": [
+        "Client server-কে subprocess হিসেবে চালায়",
+        "Server বার্তার পাশাপাশি debug-এর জন্য stdout-এ নিশ্চিন্তে print() করতে পারে",
+        "Server stdout-এ MCP বার্তা ছাড়া কিছু লিখতে পারবে না; লগ stderr-এ যায়",
+        "stdio server স্বভাবতই শত শত remote client একসাথে সামলায়"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "stdio-তে client subprocess চালায় (সত্য) এবং stdout শুধু বৈধ MCP বার্তার জন্য, লগ stderr-এ (সত্য)। print() প্রবাহ ভাঙে; stdio সাধারণত এক client-এর জন্য, অনেক remote client Streamable HTTP-র কাজ।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "ChaiCart-এর inventory MCP server-এর একটা tool বড় catalog-এর summary বানাতে LLM লাগে। server-এ কোনো model API key রাখা যাবে না এবং model বাছা ও খরচ client-এর হাতে থাকবে। কী ব্যবহার করবে?",
+      "options": [
+        "Roots",
+        "Resource template",
+        "Progress notification",
+        "Sampling"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Sampling-এ server client-কে sampling/createMessage পাঠায় এবং client নিজের model ও permission দিয়ে সেটা চালায়, server-এ key লাগে না। Roots filesystem সীমা; resource template ডেটা; progress শুধু অগ্রগতি জানায়।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "Inventory server এখন remote Streamable HTTP সার্ভিস, load balancer-এর পেছনে ৩ instance। ব্যবহারকারীরা মাঝে মাঝে session-সংক্রান্ত error পাচ্ছে, কারণ পরের request অন্য instance-এ যাচ্ছে। tool গুলো সাধারণ request-response এবং sampling লাগে না। কোন সমাধান সবচেয়ে মানানসই?",
+      "options": [
+        "transport-কে stdio-তে বদলানো",
+        "Server-কে stateless মোডে চালানো (session-নির্ভরতা বাদ) যাতে যেকোনো instance সামলাতে পারে",
+        "প্রতিটা request-এ নতুন করে Inspector চালানো",
+        "temperature কমানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Session state এক instance-এ আটকে গেলে stateless মোড (বা sticky routing/shared store) সমাধান; এখানে sampling নেই বলে stateless নিরাপদ। stdio অনেক remote ব্যবহারকারীর জন্য নয়; Inspector ডেভেলপমেন্ট টুল; temperature অপ্রাসঙ্গিক।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "টিমের সবাই একই repo-তে কাজ করে এবং সবার Claude Code-এ `inventory` MCP server আপনাআপনি পাওয়া উচিত। secret আলাদাভাবে প্রত্যেকের environment থেকে আসবে। সবচেয়ে ভালো ব্যবস্থা কোনটা?",
+      "options": [
+        "user scope-এ প্রত্যেকে আলাদা করে যোগ করবে",
+        "local scope, কারণ ডিফল্টই যথেষ্ট",
+        "project scope: repo-তে `.mcp.json` commit করে `${VAR}` দিয়ে secret নেওয়া",
+        "`.mcp.json`-এ API key সরাসরি লিখে commit করা"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Project scope `.mcp.json` version control-এর মাধ্যমে দলে শেয়ার হয়, আর `${VAR}` expansion secret ফাইলের বাইরে রাখে। user/local শেয়ার হয় না; secret commit করা নিরাপত্তা-ভুল।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "MCP Inspector সম্পর্কে কোন দুটো বিবৃতি সঠিক? Select TWO.",
+      "options": [
+        "Claude Code-এ জোড়ার আগে server-এর tool, resource, prompt ও schema হাতে পরীক্ষা করা যায়",
+        "এটা production-এ server deploy ও authentication সামলায়",
+        "Tool-কে অসঠিক argument (যেমন অজানা SKU) দিয়ে চালিয়ে error বার্তা দেখা যায়",
+        "এটা model-কে tool বাছতে শেখায়"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Inspector একটা developer tool: server আলাদা করে পরীক্ষা, schema দেখা, error আচরণ যাচাই। এটা deploy বা auth দেয় না, আর model-এর tool বাছাই বদলায় না।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "একটা MCP server-কে জানতে হবে ব্যবহারকারী কোন কোন ফোল্ডারে কাজ করার অনুমতি দিয়েছে। কোন MCP বৈশিষ্ট্য এই তথ্য দেয়?",
+      "options": [
+        "Sampling",
+        "Prompts",
+        "Roots (roots/list, client-এর দেওয়া file:// URI)",
+        "Progress notification"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Roots client-এর দেওয়া filesystem সীমা; server roots/list দিয়ে সেটা জানে। Sampling model চাওয়া; prompts ছাঁচ; progress অগ্রগতি। মনে রাখো roots একা নিরাপত্তা-দেওয়াল নয়: spec অনুযায়ী server-এর roots সীমা মানার কথা (SHOULD), জোর করে আটকানো হয় না।",
+      "domain": 8,
+      "skill": "MCP Server Development"
+    },
+    {
+      "question": "Rafi-র `get_stock` tool-এর description শুধু 'stock দেয়'। Claude প্রায়ই SKU-র জায়গায় পণ্যের নাম পাঠায় এবং মাঝে মাঝে tool-টাই ডাকে না। সবচেয়ে ভালো প্রথম পদক্ষেপ কী?",
+      "options": [
+        "Description ও প্যারামিটার-বর্ণনা উদাহরণসহ স্পষ্ট করা (কী করে, কখন, sku-র ফরম্যাট)",
+        "temperature শূন্য করা",
+        "tool-টা মুছে system prompt-এ stock হার্ডকোড করা",
+        "বড় model-এ বদলে ফেলা, description যেমন আছে তেমনই রেখে"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Model tool-এর description ও schema পড়েই সিদ্ধান্ত নেয়, তাই অস্পষ্ট description-ই মূল কারণ। temperature এটার সমাধান নয়, hard-code live ডেটা দেয় না, আর বড় model অস্পষ্টতা পুরোপুরি মেটায় না।",
+      "domain": 8,
+      "skill": "Tool Implementation"
+    },
+    {
+      "question": "`check_stock` অজানা SKU পেলে server-এর exception ছুড়লে process ক্র্যাশ করছে আর Claude কিছুই জানতে পারছে না। কোন আচরণ সবচেয়ে ভালো?",
+      "options": [
+        "খালি string ফেরত দেওয়া যাতে model ধরে নেয় stock নেই",
+        "Process বন্ধ করে client-কে আবার চালাতে দেওয়া",
+        "Tool error হিসেবে স্পষ্ট বার্তা ফেরত দেওয়া (যেমন জানা SKU-র তালিকাসহ) যাতে Claude শুধরে আবার চেষ্টা করতে পারে",
+        "সব ভুলে 0 ফেরত দেওয়া"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Tool execution error (isError) হিসেবে কাজে লাগার মতো বার্তা দিলে model নিজেকে সংশোধন করতে পারে। খালি string বা 0 মিথ্যা তথ্য দেয়, ক্র্যাশ পুরো সংযোগ নষ্ট করে।",
+      "domain": 8,
+      "skill": "Tool Implementation"
+    },
+    {
+      "question": "Claude API দিয়ে বানানো একটা অ্যাপে tool ব্যবহার নিয়ে কোন দুটো বিবৃতি সত্য? Select TWO.",
+      "options": [
+        "তুমি যে client tool define করো, তার tool_use তোমার কোড (harness) চালিয়ে tool_result ফেরত পাঠায়",
+        "MCP server-এর tool Anthropic-এর server-এ চলে",
+        "Web search-এর মতো Anthropic-hosted server tool Anthropic-এর infrastructure-এ চলে",
+        "Client tool-এ কখনও input schema লাগে না"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Client tool-এ dispatch তোমার harness-এর কাজ; server tool Anthropic চালায়। MCP tool চলে MCP server-এ (তোমার বা অন্য কারও), Anthropic-এ নয়। Client tool-এ input schema দরকার।",
+      "domain": 8,
+      "skill": "Tool Implementation"
+    },
+    {
+      "question": "Inventory MCP server-এ `delete_sku` নামে একটা ধ্বংসাত্মক tool আছে। Claude ভুলবশত এটা ডাকতে পারে। সবচেয়ে মজবুত ব্যবস্থা কোনটা?",
+      "options": [
+        "Description-এ 'সাবধান' লিখে রাখা",
+        "মানুষের অনুমোদন (approval) বাধ্যতামূলক করা এবং server-এর credential-এ least privilege রাখা",
+        "temperature কমানো",
+        "Tool-এর নাম ছোট করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "ধ্বংসাত্মক কাজে enforceable নিয়ন্ত্রণ দরকার: human approval ও least privilege। description বা temperature অনুরোধ মাত্র, গ্যারান্টি নয়।",
+      "domain": 8,
+      "skill": "Tool Implementation"
+    },
+    {
+      "question": "দলের চাহিদা: Claude Code যেন সবসময় ChaiCart-এর নির্দিষ্ট ফরম্যাটে release note লেখে। কোনো বাইরের live সিস্টেম লাগে না। সবচেয়ে মানানসই পথ কোনটা?",
+      "options": [
+        "নতুন MCP server বানানো",
+        "Skill (বা CLAUDE.md-এ নির্দেশনা) লেখা",
+        "Streamable HTTP service deploy করা",
+        "নতুন custom tool-এ ফরম্যাট হার্ডকোড করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "এটা পদ্ধতি/নির্দেশনা, live সিস্টেম নয়, তাই Skill বা CLAUDE.md হালকা ও যথেষ্ট। MCP বা HTTP service অপ্রয়োজনীয় ভারী।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "ডেভেলপার চায় Claude Code প্রজেক্টের ফাইল পড়ুক, সার্চ করুক ও `git status` চালাক। সবচেয়ে সরল সঠিক পদ্ধতি কী?",
+      "options": [
+        "প্রতিটার জন্য আলাদা MCP server বানানো",
+        "Claude Code-এর built-in tool (Read, search, Bash) ব্যবহার করা",
+        "ফাইল-সামগ্রী প্রতিবার system prompt-এ paste করা",
+        "Skill দিয়ে ফাইল পড়ার জন্য কাস্টম স্ক্রিপ্ট লেখা বাধ্যতামূলক"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Built-in tool এই কাজ ইতিমধ্যে করে; আলাদা MCP বানানো অপচয়। Paste করলে context নষ্ট ও বাসি তথ্য।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "কোন দুটো পরিস্থিতিতে Skill-এর বদলে MCP server বানানোই সঠিক সিদ্ধান্ত? Select TWO.",
+      "options": [
+        "Claude-কে একটা live অভ্যন্তরীণ inventory ডেটাবেসে প্রশ্ন করতে হবে",
+        "Claude-কে দলের কোড-স্টাইল গাইড মানতে হবে",
+        "একই ক্ষমতা একাধিক Claude অ্যাপে শেয়ার হবে এবং আলাদা টিম maintain করবে",
+        "প্রতিবার PR description-এ একই চারটা শিরোনাম লাগবে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Live সিস্টেমে সংযোগ ও একাধিক অ্যাপে পুনঃব্যবহার/স্বাধীন maintain হলো MCP-র শক্তি। স্টাইল গাইড ও শিরোনামের নিয়ম পদ্ধতি-জাতীয়, Skill/CLAUDE.md-এ চলে।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    }
+  ]
+}

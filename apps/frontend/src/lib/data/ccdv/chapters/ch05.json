@@ -1,0 +1,832 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি async ও retry নিরাপদে লিখতে, CI-তে Claude review সাজাতে, CLAUDE.md ও settings.json-এর scope-precedence ঠিকভাবে ব্যবহার করতে, prompt/model pin ও plugin dependency সামলাতে এবং deployment platform বেছে নিতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর এক সপ্তাহ: কোড তো চলে, কিন্তু \"প্রোডাক্ট\" হয়নি\n\nChai-Bot এখন production-এ। কিন্তু এক সপ্তাহে চারটা ঘটনা ঘটল:\n\n1. **রাত ২টার batch job।** Rafi প্রতি রাতে ৫,০০০ পুরোনো support ticket Claude দিয়ে শ্রেণিবদ্ধ করে। এবার সে `asyncio.gather` দিয়ে ৫,০০০টা request একসাথে ছেড়ে দিয়েছিল। উত্তর এল `429`। আর retry-র কারণে কিছু ticket দুবার প্রসেস হয়ে একই গ্রাহক দুটো refund-confirmation মেইল পেল।\n2. **\"আমার মেশিনে ঠিক চলে।\"** Rafi-র laptop-এ Claude Code একরকম আচরণ করে, নতুন জয়েন করা সহকর্মীর মেশিনে আরেকরকম। কারণ `CLAUDE.md` আর `settings.json` কে কোথায় রেখেছে, কেউ জানে না।\n3. **হঠাৎ বদলে যাওয়া উত্তর।** কেউ prompt-এ একটা লাইন বদলাল, আবার কেউ model-এর নাম বদলাল। দুটোই এক commit-এ গেল। পরদিন refund-এর উত্তরের tone বদলে গেল, কিন্তু কোন পরিবর্তনের কারণে, কেউ বলতে পারছে না।\n4. **Nusrat Apu-র প্রশ্ন:** \"আমাদের compliance বলছে ডেটা AWS-এর ভেতরেই থাকতে হবে। আমরা কি সরাসরি Anthropic API-ই ব্যবহার করব, নাকি Bedrock?\"\n\nNusrat Apu হেসে বললেন: \"Rafi, Claude-কে ডাকতে পারা মানে product বানানো নয়। product মানে **পুনরাবৃত্তিযোগ্য, রিভিউ-যোগ্য, ফেরত নেওয়া-যোগ্য** একটা ব্যবস্থা।\" আজকের chapter সেই ব্যবস্থার ইঞ্জিনিয়ারিং দিক।\n\nপরীক্ষায় এটা **Domain 2 (Applications and Integration, ৩৩.১%)**-এর বড় অংশ: *Software Engineering Foundations (৭.৪%)*, *Configuration Management (৪.১%)*, *Claude Application Design (৮.৬%)*-র কিছু অংশ, আর Domain 5-এর *Technical Fundamentals (৬.১%)*। সব মিলিয়ে এটা পরীক্ষার সবচেয়ে \"ব্যবহারিক\" অংশগুলোর একটা।\n\n| আজকের বিষয় | কোন ঘটনার উত্তর |\n|---|---|\n| REST, JSON ও async (concurrency limit, retry, timeout) | রাত ২টার ৪২৯ আর দ্বিগুণ refund মেইল |\n| Version control, SDLC, code review, refactoring | Claude দিয়ে PR review বট, বড় refactor নিরাপদে করা |\n| `CLAUDE.md` ও `settings.json` | \"আমার মেশিনে ঠিক চলে\" |\n| Prompt versioning ও model pinning | কোন পরিবর্তনে tone বদলাল |\n| Plugin dependencies ও `enabledPlugins` | পুরো টিমে একই plugin সেট |\n| Deployment platform ও release versioning | API নাকি Bedrock; কোন version কোথায় গেছে |\n| Accelerator হিসেবে প্যাকেজ করা | একবার বানিয়ে আরেকজনকে দেওয়া |"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. REST, JSON ও async: SDK আসলে কী করে\n\n### SDK হলো REST call-এর মোড়ক\n\nch01-এ দেখেছ, Claude API একটা সাধারণ HTTPS REST API। তুমি `POST /v1/messages` করো, JSON পাঠাও, JSON ফেরত পাও। `anthropic` SDK সেই কাজটাই সহজ করে: header বসায় (`x-api-key`, `anthropic-version`), JSON বানায়, response-কে typed object করে দেয়, আর কিছু ভুল নিজে সামলায়। এই বোঝাটা পরীক্ষার **Technical Fundamentals** skill-এর মূল কথা: SDK কোনো আলাদা জাদুকরী প্রোটোকল নয়; SDK ছাড়া `curl` দিয়েও একই কাজ হয়।\n\nResponse-এর গুরুত্বপূর্ণ কাঠামো মনে রাখো:\n\n```json\n{\n  \"id\": \"msg_...\",\n  \"type\": \"message\",\n  \"role\": \"assistant\",\n  \"content\": [ { \"type\": \"text\", \"text\": \"...\" } ],\n  \"stop_reason\": \"end_turn\",\n  \"usage\": { \"input_tokens\": 25, \"output_tokens\": 13 }\n}\n```\n\n`content` একটা **array**, আর প্রতিটা block-এর `type` আছে। তাই `content[0].text` ধরে নেওয়া ভঙ্গুর কোড। `type` দেখে বাছো। আর JSON পড়ার সময় অচেনা field এলে ভেঙে পড়ো না, কারণ API-র docs নিজেই বলে `type`-এর মান ভবিষ্যতে বাড়তে পারে।\n\n### Error হলে কী ফেরত আসে\n\nError-ও JSON। উপরের স্তরে `type: \"error\"`, ভেতরে `error.type` আর `error.message`, সাথে `request_id`। প্রতিটা response-এ `request-id` header থাকে। Python SDK-তে `message._request_id` দিয়ে পাওয়া যায়। সহায়তা চাইতে গেলে এটাই দিতে হয়, তাই প্রতিটা failed call-এর log-এ এটা রাখো।\n\n| Status | `error.type` | মানে | Retry করবে? |\n|---|---|---|---|\n| 400 | `invalid_request_error` | request-এর গঠন/বিষয়বস্তু ভুল | না, কোড ঠিক করো |\n| 401 | `authentication_error` | API key সমস্যা | না |\n| 403 | `permission_error` | key-র এই resource-এ অনুমতি নেই | না |\n| 404 | `not_found_error` | resource/endpoint নেই | না |\n| 413 | `request_too_large` | request খুব বড় | না, ছোট করো |\n| 429 | `rate_limit_error` | rate limit (বা spend cap) | হ্যাঁ, backoff সহ (spend cap হলে নয়) |\n| 500 | `api_error` | Anthropic-এর ভেতরের ত্রুটি | হ্যাঁ, exponential backoff |\n| 504 / কিছু 500 | `timeout_error` | processing-এ সময় শেষ | হ্যাঁ, কিন্তু লম্বা কাজে streaming/batch ভাবো |\n| 529 | `overloaded_error` | API সাময়িক ভারাক্রান্ত | হ্যাঁ, backoff সহ |\n\nএকটা সূক্ষ্ম কথা: docs বলে 429-এর একটা রূপ আছে যেখানে usage tier-এর মাসিক spend cap ছুঁয়ে ফেলা হয়েছে। সেটায় `retry-after` header থাকে না এবং access ফিরে না আসা পর্যন্ত বারবার fail করে। তাই \"429 মানেই অপেক্ষা করলে ঠিক\" ধরে অন্ধভাবে retry loop চালিও না।\n\n### SDK-র নিজস্ব retry ও timeout\n\nPython SDK docs অনুযায়ী (যেগুলো আমি ঘেঁটে দেখেছি):\n\n- নির্দিষ্ট ত্রুটি **নিজে থেকে ২ বার retry** হয়, ছোট exponential backoff সহ। retry হয় connection error, `408`, `409`, `429` আর `>=500`-এ। `max_retries` দিয়ে বদলানো বা বন্ধ করা যায় (`Anthropic(max_retries=0)` বা `client.with_options(max_retries=5)`)।\n- Default timeout **১০ মিনিট**। `timeout=20.0` বা `httpx2.Timeout(...)` দিয়ে বদলানো যায়। timeout হলে `APITimeoutError` ওঠে। আর **timeout-ও default-এ ২ বার retry হয়**।\n- দীর্ঘ কাজে বড় `max_tokens` দিয়ে non-streaming request করা বিপজ্জনক: নেটওয়ার্ক idle connection কেটে দিতে পারে। SDK ~১০ মিনিটের বেশি লাগতে পারে এমন non-streaming request-এ `ValueError` দেয়। সমাধান: streaming বা Batch API।\n\n> **কী মনে রাখবে:** SDK-র retry আছে বলে আলাদা retry লিখলে retry-র ওপর retry হয়ে যায় (২ বার × তোমার ৩ বার = ৯ বার)। হয় SDK-র `max_retries` ব্যবহার করো, নয়তো সেটা ০ করে নিজের policy দাও।\n\n### Async: একসাথে অনেক request, কিন্তু নিয়ন্ত্রণে\n\nChai-Bot-এর রাতের ৫,০০০ ticket ক্রমান্বয়ে (sequential) করলে ঘণ্টার পর ঘণ্টা লাগবে, আবার সব একসাথে ছাড়লে rate limit। মাঝের পথ: **`AsyncAnthropic` + `asyncio.Semaphore`**। Semaphore একসাথে সর্বোচ্চ N টা request চলতে দেয়, বাকিরা অপেক্ষা করে।\n\n```python\nimport asyncio, os\nimport anthropic\nfrom anthropic import AsyncAnthropic\n\nMODEL = os.environ[\"CLAUDE_MODEL\"]\nclient = AsyncAnthropic(max_retries=2, timeout=60.0)\nsem = asyncio.Semaphore(8)          # একসাথে সর্বোচ্চ ৮টা\n\nasync def classify(ticket_id: str, text: str) -> tuple[str, str]:\n    async with sem:                  # slot না পেলে এখানে অপেক্ষা\n        try:\n            r = await client.messages.create(\n                model=MODEL,\n                max_tokens=20,\n                messages=[{\"role\": \"user\", \"content\": f\"Category only: {text}\"}],\n            )\n            label = next(b.text for b in r.content if b.type == \"text\")\n            return ticket_id, label.strip()\n        except anthropic.RateLimitError:\n            return ticket_id, \"RETRY_LATER\"       # ধরে রাখো, পরে আবার\n\nasync def main(tickets: dict[str, str]):\n    results = await asyncio.gather(*(classify(i, t) for i, t in tickets.items()))\n    return dict(results)\n```\n\nলক্ষ করো তিনটা জিনিস: (১) client **একটাই**, প্রতি request-এ নতুন বানানো হয়নি; (২) `async with sem` concurrency সীমা বেঁধে দেয়; (৩) প্রতিটা কাজের ফল `ticket_id`-সহ ফেরত আসে, যাতে কোনটা ব্যর্থ হলো জানা যায়। docs-এ আরও বলা আছে, async-এ ভালো concurrency চাইলে `pip install \"anthropic[aiohttp]\"` আর `DefaultAioHttpClient()` ব্যবহার করা যায়।\n\n> **Concurrency limit কতটা?** কোনো জাদু সংখ্যা নেই। এটা তোমার rate limit (requests/minute, tokens/minute) আর latency থেকে মেপে ঠিক করতে হয়। ছোট করে শুরু করো, `429` দেখলে কমাও। আর রাতের bulk কাজে খরচ আর limit দুটোর জন্যই Batch API সম্ভবত ভালো পথ (এটা ch03-এ দেখেছ; তাৎক্ষণিক উত্তর লাগলে async, লাগলে না batch)।\n\n### Idempotent retry: \"দুবার চালালে ক্ষতি হবে না\" নকশা\n\nরাত ২টার দ্বিতীয় সমস্যাটা এখানেই। একটা কাজ **idempotent** মানে একই কাজ একবার বা দশবার চালালে ফল একই। Claude-কে প্রশ্ন করা (classification) retry করা নিরাপদ, শুধু দাম লাগে। কিন্তু \"refund দাও\" বা \"মেইল পাঠাও\" ধরনের **side-effect** retry করলে ক্ষতি। নিয়ম:\n\n1. **Model call আর side-effect আলাদা রাখো।** Claude শুধু সিদ্ধান্ত/টেক্সট দেয়; refund/মেইল তোমার কোড করে।\n2. **নিজের idempotency key রাখো।** যেমন `ticket_id + step`। কাজ শুরুর আগে database-এ দেখো এই key-র ফল আছে কিনা; থাকলে আবার চালিও না।\n3. **ফল সংরক্ষণ করো** (`INSERT ... ON CONFLICT DO NOTHING` ধাঁচে), যাতে retry-তে একই ফল ফেরত আসে।\n4. **Model-এর output নিজে নির্ধারক নয়।** একই prompt দিয়ে retry করলে ভিন্ন টেক্সট আসতে পারে। তাই \"retry করলে একই উত্তর পাব\" ধরে নিও না। ফল একবার সংরক্ষণ করে সেটাই সত্য ধরো।\n\n```python\ndef process_ticket(db, ticket_id, text):\n    key = f\"{ticket_id}:classify\"\n    if (cached := db.get(key)) is not None:      # আগেই হয়ে গেছে\n        return cached\n    label = call_claude(text)                    # retry হতে পারে, ক্ষতি নেই\n    db.put_if_absent(key, label)                 # একবারই লেখা হবে\n    return db.get(key)\n```\n\n> **একটু সততা:** আমি যে Anthropic docs পাতাগুলো ঘেঁটেছি, তাতে Messages API-র জন্য কোনো `Idempotency-Key` header-এর বর্ণনা পাইনি। তাই \"API নিজে idempotency দেয়\" ধরে নিও না। Idempotency নকশা করা **তোমার application-এর** দায়িত্ব।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: retry আর idempotency নিয়ে তিনটা ফাঁদ",
+        "markdown": "(১) **\"সব error-এ retry করো\":** ভুল। `400`, `401`, `403`, `404`, `413` কোড/কনফিগ ঠিক না করলে বারবার একই ফল দেবে। Retry শুধু transient ত্রুটিতে (`429`, `500`, `529`, connection, timeout)।\n(২) **\"SDK retry করে, তাই আমার কোডেও retry লাগবে\":** SDK ইতিমধ্যে ২ বার retry করে; ওপরে আরও retry বসালে গুণ হয়ে যায়। সঠিক উত্তর সাধারণত \"SDK-র `max_retries` কনফিগার করো\" বা \"একটা স্তরেই retry রাখো\"।\n(৩) **\"Retry নিরাপদ হতে হলে temperature 0 দাও\":** ভুল। `temperature=0` একই output-এর গ্যারান্টি নয়, আর side-effect-এর সুরক্ষা আসে **idempotency key ও সংরক্ষিত ফল** থেকে।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "এই error পেলে কী করবে?",
+          "hint": "প্রতিটা ঘটনা সঠিক বাকেটে ফেলো: backoff দিয়ে retry, নাকি retry না করে কোড/কনফিগ ঠিক করা।",
+          "buckets": [
+            {
+              "id": "retry",
+              "label": "Backoff দিয়ে retry"
+            },
+            {
+              "id": "fix",
+              "label": "Retry নয়, আগে ঠিক করো"
+            }
+          ],
+          "items": [
+            {
+              "text": "429 rate_limit_error, response-এ retry-after header আছে",
+              "bucket": "retry",
+              "why": "সাময়িক সীমা। header-এর সময় অপেক্ষা করে আবার পাঠানো যায়, SDK এটা নিজেই মানে।"
+            },
+            {
+              "text": "529 overloaded_error",
+              "bucket": "retry",
+              "why": "API সাময়িক ভারাক্রান্ত। exponential backoff দিয়ে আবার চেষ্টা করো।"
+            },
+            {
+              "text": "400 invalid_request_error: নতুন model prefilled assistant message নেয় না",
+              "bucket": "fix",
+              "why": "request-এর গঠন ভুল। যতবার পাঠাও ততবার 400। prompt/কোড বদলাতে হবে।"
+            },
+            {
+              "text": "401 authentication_error: key revoked",
+              "bucket": "fix",
+              "why": "নতুন key দরকার। retry-তে কিছুই বদলায় না।"
+            },
+            {
+              "text": "413 request_too_large",
+              "bucket": "fix",
+              "why": "request ছোট করতে হবে (ইতিহাস ছাঁটো, ফাইল ভাগ করো)।"
+            },
+            {
+              "text": "connection reset, নেটওয়ার্ক কেটে গেল",
+              "bucket": "retry",
+              "why": "transient। SDK default-এই retry করে।"
+            },
+            {
+              "text": "500 api_error",
+              "bucket": "retry",
+              "why": "Anthropic-এর ভেতরের ত্রুটি। backoff সহ retry; থাকলে request-id দিয়ে support।"
+            },
+            {
+              "text": "403 permission_error: key এই workspace-এ অনুমতিহীন",
+              "bucket": "fix",
+              "why": "অনুমতি/workspace ঠিক করতে হবে, retry অর্থহীন।"
+            }
+          ],
+          "takeaway": "Transient (429/5xx/529/connection/timeout) হলে backoff-retry; request বা auth ভুল (4xx) হলে আগে ঠিক করো। আর retry-র আগে ভাবো: কাজটা idempotent তো?"
+        }
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "sequence",
+          "caption": "Semaphore দিয়ে concurrency বাঁধা কাজ: ৮টার বেশি request একসাথে যায় না, আর 429 এলে SDK backoff করে আবার চেষ্টা করে।",
+          "participants": [
+            {
+              "id": "w",
+              "kind": "client",
+              "label": "Worker (async task)"
+            },
+            {
+              "id": "s",
+              "kind": "queue",
+              "label": "Semaphore (৮)"
+            },
+            {
+              "id": "sdk",
+              "kind": "server",
+              "label": "AsyncAnthropic"
+            },
+            {
+              "id": "api",
+              "kind": "external",
+              "label": "Claude API"
+            }
+          ],
+          "messages": [
+            {
+              "from": "w",
+              "to": "s",
+              "label": "async with sem (slot চাই)"
+            },
+            {
+              "from": "s",
+              "to": "w",
+              "label": "slot পেলে এগোও, নইলে অপেক্ষা"
+            },
+            {
+              "from": "w",
+              "to": "sdk",
+              "label": "messages.create()"
+            },
+            {
+              "from": "sdk",
+              "to": "api",
+              "label": "POST /v1/messages"
+            },
+            {
+              "from": "api",
+              "to": "sdk",
+              "label": "429 + retry-after"
+            },
+            {
+              "from": "sdk",
+              "to": "api",
+              "label": "backoff, আবার POST (max_retries)"
+            },
+            {
+              "from": "api",
+              "to": "sdk",
+              "label": "200 + request-id"
+            },
+            {
+              "from": "sdk",
+              "to": "w",
+              "label": "ফল; slot ছাড়ো; ফল সংরক্ষণ"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Version control, SDLC ও Claude দিয়ে code review\n\n### Chai-Bot-এর repo-র নিয়ম\n\nClaude-ভিত্তিক application-ও সাধারণ software। তার জন্য সাধারণ ইঞ্জিনিয়ারিং শৃঙ্খলা প্রযোজ্য, শুধু \"prompt আর model\" নামে দুটো নতুন জিনিস কোডের মতো আচরণ করে। Chai-Bot repo-তে Nusrat Apu-র ন্যূনতম নিয়ম:\n\n- **সবকিছু git-এ:** application কোড, prompt ফাইল, `CLAUDE.md`, `.claude/settings.json`, eval ডেটাসেট। যা আচরণ বদলায় তা version control-এ।\n- **ছোট branch, ছোট PR।** একটা PR-এ একটা উদ্দেশ্য। prompt বদল আর model বদল এক PR-এ নয় (পরে কারণ বোঝা যায় না, রাত ২টার ঘটনাটা মনে আছে?)।\n- **Secret কখনো commit নয়।** API key থাকে CI-র secret store-এ, `.env` থাকে `.gitignore`-এ।\n- **Merge-এর আগে automated gate:** unit test, lint/type-check, আর AI-সংক্রান্ত পরিবর্তন হলে eval suite।\n- **ফেরত নেওয়া যায়:** প্রতিটা release একটা tag; rollback মানে আগের tag-এ ফিরে যাওয়া।\n\n### Claude কোথায় SDLC-তে বসে\n\nSDLC-র প্রতিটা ধাপে Claude সাহায্য করতে পারে, কিন্তু **সিদ্ধান্তের দায় মানুষের**:\n\n| ধাপ | Claude-এর ভূমিকা | মানুষ কী যাচাই করে |\n|---|---|---|\n| Requirement | অস্পষ্ট ticket থেকে প্রশ্ন তোলা, acceptance criteria খসড়া | আসল ব্যবসায়িক উদ্দেশ্য |\n| Design | বিকল্প ও trade-off তুলনা | চূড়ান্ত architecture সিদ্ধান্ত |\n| Coding | Claude Code দিয়ে feature/test লেখা | diff পড়া, চালিয়ে দেখা |\n| Testing | test case প্রস্তাব, flaky test বিশ্লেষণ | test আসলেই আচরণ ধরছে কিনা |\n| Review | PR-এ প্রথম দফা review comment | merge approval |\n| Release/Ops | changelog খসড়া, incident log সারাংশ | release সিদ্ধান্ত |\n\n### CI-তে Claude: code review বট\n\nসবচেয়ে সহজ ও জনপ্রিয় ব্যবহার: প্রতিটা PR-এ Claude প্রথম review করে। Anthropic-এর `claude-code-action` (GitHub Action) এটা করে। docs অনুযায়ী দুটো উপায়ে সেটআপ:\n\n- **Quick setup:** Claude Code-এ `/install-github-app` চালাও। এটা Claude GitHub App ইনস্টল করে, secret বসায় আর workflow ফাইলসহ একটা PR খুলে দেয়। (শুধু github.com repo-র জন্য; repo admin access লাগে।)\n- **Manual setup:** app ইনস্টল, repository secret `ANTHROPIC_API_KEY` যোগ, আর `.github/workflows/`-এ workflow ফাইল কপি।\n\nএই action দুই মোডে চলে: `prompt` input না দিলে **interactive** (কেউ `@claude` লিখলে সাড়া দেয়), `prompt` দিলে **automation** (কোনো event-এ নিজে চলে)। একটা review workflow-র ধাঁচা (docs-এর উদাহরণ থেকে সরলীকৃত):\n\n```yaml\nname: Code Review\non:\n  pull_request:\n    types: [opened, synchronize, ready_for_review, reopened]\njobs:\n  review:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      pull-requests: read\n      issues: read\n      id-token: write\n    steps:\n      - uses: actions/checkout@v6\n        with: { fetch-depth: 1 }\n      - uses: anthropics/claude-code-action@v1\n        with:\n          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}\n          prompt: \"Review this PR for bugs, security issues and missing tests. Follow CLAUDE.md.\"\n          claude_args: \"--max-turns 5\"\n```\n\nখেয়াল করো: key সরাসরি লেখা নেই, `${{ secrets.ANTHROPIC_API_KEY }}`; permission ন্যূনতম; `--max-turns` খরচ আটকায়। আরও কিছু docs-ভিত্তিক তথ্য:\n\n- Claude `CLAUDE.md` পড়ে, তাই repo-র নিয়ম ও review-র মানদণ্ড সেখানে লিখে রাখলে বট সেগুলো মানে। `CLAUDE.md` ছোট রাখলে প্রতিটা run-এর খরচও কমে।\n- Action চালানোর আগে দুটো পরীক্ষা: trigger করা ব্যবহারকারীর repo-তে **write access** থাকতে হবে, আর **bot actor** default-এ প্রত্যাখ্যাত (loop ঠেকাতে)।\n- Public repo-তে **fork থেকে আসা PR**-এ GitHub secret দেয় না, তাই সেখানে review চলে না।\n- খরচ দুই দিক: GitHub Actions minutes আর API token। নিয়ন্ত্রণে: `--max-turns`, workflow timeout, concurrency control।\n- Cloud-এ চালাতে চাইলে Bedrock/Vertex/Foundry-র জন্য আলাদা input (`use_bedrock` ইত্যাদি) আর OIDC identity federation, ফলে repo-তে কোনো স্থায়ী cloud credential থাকে না।\n- ⚠ Claude-এর commit `GITHUB_TOKEN` দিয়ে হলে GitHub সেই commit-এ CI workflow চালায় না। কাজ না করলে এই docs-এর troubleshooting দেখো: `github_token` না দিয়ে Claude GitHub App হিসেবে authenticate করাই সমাধান।\n\n### Claude-র review কেন \"গেট\" নয়, \"সহকারী\"\n\nClaude-এর review দ্রুত ও ক্লান্তিহীন, কিন্তু অনিশ্চিত: ভুল সতর্কতা দিতে পারে, আবার বাস্তব bug ফসকাতেও পারে। তাই নকশা এমন হোক:\n\n1. **Deterministic gate আগে:** test, lint, type-check, security scan। এগুলো পাস না করলে merge বন্ধ।\n2. **Claude review দ্বিতীয় চোখ:** সে comment রাখে, merge আটকায় না (বা \"advisory\" check)।\n3. **মানুষ approve করে।** AI একমাত্র approver হলে \"confident but wrong\" patch সরাসরি production-এ যায়।\n4. **Review prompt-ও version-controlled।** কী খুঁজতে হবে তা `CLAUDE.md` বা prompt ফাইলে, যাতে সব PR-এ একই মানদণ্ড।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Chai-Bot-এর PR থেকে merge: Claude কোথায় বসে",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। দেখো কোন ধাপগুলো deterministic gate আর কোনটা Claude, আর শেষ সিদ্ধান্ত কার।",
+          "actors": [
+            {
+              "id": "dev",
+              "label": "Rafi (developer)"
+            },
+            {
+              "id": "gh",
+              "label": "GitHub PR"
+            },
+            {
+              "id": "ci",
+              "label": "CI gates"
+            },
+            {
+              "id": "bot",
+              "label": "Claude review বট"
+            }
+          ],
+          "steps": [
+            {
+              "from": "dev",
+              "to": "gh",
+              "label": "PR খোলা (ছোট, একটা উদ্দেশ্য)",
+              "note": "Rafi একটা feature branch থেকে PR খোলে। prompt বদল আর model বদল আলাদা PR-এ।"
+            },
+            {
+              "from": "gh",
+              "to": "ci",
+              "label": "workflow trigger",
+              "note": "pull_request event workflow চালু করে। Secret আসে GitHub Secrets থেকে, কোডে নয়।"
+            },
+            {
+              "from": "ci",
+              "to": "gh",
+              "label": "test + lint + type-check ✓",
+              "note": "Deterministic gate আগে চলে। এগুলো ব্যর্থ হলে Claude-কে ডেকে খরচ বাড়ানোর দরকার নেই।"
+            },
+            {
+              "from": "ci",
+              "to": "bot",
+              "label": "claude-code-action (prompt + CLAUDE.md)",
+              "note": "Action Claude Code চালায়। সে repo-র CLAUDE.md পড়ে review-র নিয়ম জানে। --max-turns খরচ আটকায়।"
+            },
+            {
+              "from": "bot",
+              "to": "gh",
+              "label": "inline comment: 'refund কোড idempotent নয়'",
+              "note": "Claude diff পড়ে comment রাখে। এটা পরামর্শ: ভুল সতর্কতা বা মিস হতে পারে।"
+            },
+            {
+              "from": "dev",
+              "to": "gh",
+              "label": "fix push + উত্তর",
+              "note": "Rafi comment যাচাই করে সত্যিকারের সমস্যাটা ঠিক করে, ভুল সতর্কতা হলে কারণ লিখে নামিয়ে দেয়।"
+            },
+            {
+              "from": "ci",
+              "to": "gh",
+              "label": "eval suite ✓ (AI-সংক্রান্ত বদল হলে)",
+              "note": "prompt/model বদলালে eval regression সূচক দেখায়: 'আগের চেয়ে খারাপ হয়নি তো?'"
+            },
+            {
+              "from": "gh",
+              "to": "dev",
+              "label": "মানুষ approve → merge",
+              "note": "চূড়ান্ত approve মানুষের। AI-র review সহায়ক, গেটকিপার নয়।"
+            }
+          ],
+          "takeaway": "Deterministic gate আগে, Claude review সহায়ক চোখ, merge-এর সিদ্ধান্ত মানুষের; secret CI-র secret store-এ; খরচ --max-turns/timeout দিয়ে সীমিত।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "### Refactoring: ছোট ও বড়, Claude Code দিয়ে\n\n**ছোট refactor** (একটা function-এর নাম বদল, duplicate সরানো, একটা ফাইল ভাঙা): Claude Code-কে সরাসরি বলা যায়। শর্ত একটাই: **আগে test থাকতে হবে**। test ছাড়া refactor মানে \"আচরণ বদলায়নি\" প্রমাণ করার কোনো উপায় নেই।\n\n```text\n> src/chaibot/refund.py-র calculate_refund() ভাঙো দুটো ছোট function-এ।\n> আচরণ বদলানো চলবে না। প্রথমে বিদ্যমান test চালাও, তারপর বদলাও, শেষে আবার চালাও।\n```\n\n**বড় refactor** (পুরো module সরানো, sync থেকে async-এ যাওয়া, একটা API সংস্করণ বদল): এক লাফে নয়, ধাপে।\n\n1. **আগে নিরাপত্তা জাল:** characterization test বানাও (বর্তমান আচরণ ধরে রাখা test)। Claude এতে ভালো সাহায্য করে।\n2. **পরিকল্পনা আগে:** Claude-কে প্রথমে একটা ধাপ-ভিত্তিক plan লিখতে বলো; plan পড়ে অনুমোদন দাও। ফাইল বদলানোর আগে।\n3. **ছোট ধাপ, প্রতি ধাপে commit:** প্রতিটা ধাপ আলাদা commit, প্রতিটা শেষে test সবুজ। কিছু ভাঙলে এক ধাপ ফেরা যায়।\n4. **Context ছোট রাখো:** বড় কাজে দীর্ঘ সেশন context ভরে ফেলে। ধাপ শেষে নতুন সেশন বা compaction (এটা আরও গভীরে ch07-এ)।\n5. **প্রতিটা PR ছোট:** একটা বিশাল \"refactor everything\" PR কেউ ঠিকমতো review করতে পারে না।\n6. **CLAUDE.md-তে নিয়ম:** \"এই directory-র কোড বদলালে অবশ্যই `pytest tests/refund` চালাবে\" ধরনের নির্দেশ।\n\n> এখানে একটা সীমারেখা মনে রাখো: `CLAUDE.md`-র নির্দেশ Claude-কে **প্রভাবিত** করে, **বাধ্য করে না**। \"কখনো `main`-এ সরাসরি push করবে না\" নিশ্চিত করতে চাইলে `settings.json`-এর permission rule বা hook লাগবে। নিচের অংশে দেখব।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "বড় refactor-এর নিরাপদ ধাপক্রম: নিরাপত্তা জাল আগে, তারপর plan, তারপর ছোট ছোট commit।",
+          "steps": [
+            {
+              "title": "১. Characterization test",
+              "body": "বর্তমান আচরণ ধরে রাখে এমন test লেখো। এগুলো সবুজ হলেই শুরু।"
+            },
+            {
+              "title": "২. Plan লেখাও ও অনুমোদন দাও",
+              "body": "Claude ধাপ-ভিত্তিক plan দেয়। তুমি পড়ো, ঝুঁকি/বাদ দেওয়ার জিনিস ঠিক করো।"
+            },
+            {
+              "title": "৩. এক ধাপ বদলাও",
+              "body": "একটা ছোট পরিবর্তন: একটা module বা একটা function-গোষ্ঠী।"
+            },
+            {
+              "title": "৪. Test চালাও ও diff পড়ো",
+              "body": "test সবুজ কিনা দেখো এবং diff নিজে পড়ো। 'দেখতে ঠিক' যথেষ্ট নয়।"
+            },
+            {
+              "title": "৫. Commit, তারপর পরের ধাপ",
+              "body": "প্রতি ধাপ আলাদা commit, ফলে rollback সহজ। শেষে ছোট ছোট PR বা একটা পরিষ্কার সিরিজ।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'Claude approve করলেই merge' এবং 'CLAUDE.md-তে লিখলেই নিশ্চিত'",
+        "markdown": "দুটো প্রিয় ফাঁদ। (১) CI review বট একমাত্র approver হবে, এমন নকশা প্রায় সবসময় ভুল উত্তর: AI review সম্ভাব্যতাভিত্তিক, তাই deterministic test/lint আগে আর মানুষের approval শেষে। (২) \"যেহেতু `CLAUDE.md`-তে লেখা আছে, Claude কখনো এই ফাইল ছোঁবে না\" ভুল ধারণা: docs নিজেই বলে `CLAUDE.md` context, enforced configuration নয়। নিশ্চিত বাধা দিতে চাইলে permission `deny` rule বা hook। আর সবসময় মনে রাখো secret workflow ফাইলে নয়, GitHub Secrets-এ।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. CLAUDE.md: কে কোথায় থাকে, কীভাবে জোড়া লাগে\n\nRafi-র সমস্যার আসল কারণ: প্রতিটা মেশিনে Claude Code ভিন্ন \"স্মৃতি\" নিয়ে শুরু করছে। Claude Code প্রতিটা সেশন **নতুন context window** দিয়ে শুরু করে। সেশনের মাঝখানের স্মৃতি নেই, কিন্তু শুরুতে কিছু ফাইল পড়ে নেয়। তার একটা হলো `CLAUDE.md`: তোমার লেখা স্থায়ী নির্দেশনা।\n\n### কোথায় রাখা যায় (docs-এর তালিকা, বিস্তৃত থেকে নির্দিষ্টের ক্রমে)\n\n| Scope | জায়গা | কার জন্য |\n|---|---|---|\n| **Managed policy** | macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`; Linux/WSL: `/etc/claude-code/CLAUDE.md`; Windows: `C:\\Program Files\\ClaudeCode\\CLAUDE.md` | প্রতিষ্ঠানের সবাই (IT/DevOps বসায়) |\n| **User** | `~/.claude/CLAUDE.md` | শুধু তুমি, সব প্রজেক্টে |\n| **Project** | `./CLAUDE.md` অথবা `./.claude/CLAUDE.md` | টিম (git-এ commit) |\n| **Local** | `./CLAUDE.local.md` | শুধু তুমি, এই প্রজেক্টে (`.gitignore`-এ রাখো) |\n\n### কীভাবে load হয়: **override নয়, জোড়া লাগা**\n\nএটা পরীক্ষার প্রিয় বিভ্রান্তি। docs অনুযায়ী:\n\n- Claude Code **তোমার current working directory আর তার ওপরের প্রতিটা directory** থেকে `CLAUDE.md` ও `CLAUDE.local.md` পড়ে। `foo/bar/`-এ চালালে `foo/bar/CLAUDE.md` আর `foo/CLAUDE.md` দুটোই আসে।\n- সব ফাইল **context-এ concatenate (জোড়া)** হয়, একটা আরেকটাকে overwrite করে না। ক্রম: filesystem root থেকে নিচের দিকে, তাই কাজের directory-র কাছের নির্দেশ **শেষে** পড়া হয়। প্রতি directory-তে `CLAUDE.local.md` `CLAUDE.md`-র পরে বসে।\n- **Subdirectory**-র `CLAUDE.md` শুরুতে load হয় না। Claude ওই subdirectory-র কোনো ফাইল পড়লে/লিখলে তখন (on demand) load হয়।\n- দুটো নির্দেশ পরস্পরবিরোধী হলে Claude \"যেকোনো একটা বেছে নিতে পারে\", তাই বিরোধ রেখো না। docs `/doctor prompt-audit` সুপারিশ করে বিরোধ ও পুরোনো নির্দেশ খুঁজতে।\n\n> তাই \"project CLAUDE.md user CLAUDE.md-কে override করে\" বাক্যটা সঠিক নয়। সঠিক: **দুটোই context-এ থাকে, project-টা পরে বসে বলে সাধারণত বেশি প্রভাব রাখে, কিন্তু কোনোটাই বাতিল হয় না।** (settings.json-এর কিন্তু আসলেই precedence আছে; নিচে দেখো।)\n\n### লেখার নিয়ম (docs-ভিত্তিক)\n\n- **আকার:** ফাইল প্রতি ২০০ লাইনের নিচে রাখার লক্ষ্য। লম্বা হলে context বেশি খায়, মানার হার কমে।\n- **নির্দিষ্ট ও যাচাইযোগ্য:** \"২-space indent ব্যবহার করো\" ভালো, \"কোড সুন্দর রাখো\" খারাপ। \"PR-এর আগে `pytest` চালাও\" ভালো।\n- **`@path` import:** `See @README and @docs/git-instructions.md` লিখলে ওই ফাইলও লোড হয়। relative path import-করা ফাইলের সাপেক্ষে; import সর্বোচ্চ **৪ ধাপ** গভীর হতে পারে। কিন্তু import context-খরচ কমায় না, ফাইলগুলো একসাথে লোড হয়।\n- **HTML comment** (`<!-- ... -->`) context-এ ঢোকার আগে বাদ যায়। মানুষের জন্য নোট রাখার জায়গা।\n- **`.claude/rules/`:** বড় প্রজেক্টে বিষয়ভিত্তিক ফাইল, path-ভিত্তিক scope সহ: নির্দিষ্ট ফাইল ধরনে কাজ করলেই load হয়।\n- **`/init`:** codebase দেখে শুরুর `CLAUDE.md` বানিয়ে দেয় (থাকলে উন্নতির পরামর্শ দেয়, overwrite করে না)।\n- **কী কী লোড হয়েছে দেখতে:** সেশনে `/context all`।\n- **কী যাবে:** build/test কমান্ড, কোডিং রীতি, প্রজেক্ট কাঠামো, \"সবসময় X করো\" ধরনের নিয়ম। যা শুধু কোডের একটা অংশে প্রযোজ্য বা বহু-ধাপের পদ্ধতি, সেটা skill বা path-scoped rule-এ।\n\nChai-Bot-এর প্রজেক্ট `CLAUDE.md`:\n\n```markdown\n# Chai-Bot\n\n## Commands\n- Install: `pip install -r requirements.txt`\n- Test: `pytest -q` (PR-এর আগে অবশ্যই চালাবে)\n- Lint: `ruff check .`\n\n## Conventions\n- সব Claude call `src/chaibot/llm.py`-র মাধ্যমে; অন্য কোথাও `anthropic` সরাসরি import নয়\n- Model id কোডে লিখবে না, `config/models.yaml` থেকে পড়বে\n- Refund-এর মতো side-effect function সবসময় idempotency key নেবে\n\n## Review rules\n- নতুন prompt বদলালে `evals/` suite-এর ফল PR-এ জুড়বে\n@docs/git-instructions.md\n```\n\n### CLAUDE.md বনাম AGENTS.md বনাম auto memory\n\n- docs বলে repo-তে `AGENTS.md` থাকলে Claude সেটা project instruction হিসেবে পড়তে পারে। ডিফল্টে শুধু তখনই, যখন working directory বা তার ওপরে কোনো `CLAUDE.md`/`CLAUDE.local.md` নেই; দুটো থাকলে ডিফল্টে শুধু `CLAUDE.md` পড়া হয়। দুটো একসাথে চাইলে `CLAUDE.md`-তে `@AGENTS.md` import করো বা Project instructions সেটিং বদলাও।\n- **Auto memory** ভিন্ন জিনিস: সেটা Claude নিজে লেখে (তোমার সংশোধন/পছন্দ থেকে), `CLAUDE.md` তুমি লেখো।\n- দুটোই context হিসেবে লোড হয়: কোনোটাই \"enforcement\" নয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. settings.json: scope, precedence ও permission\n\n`CLAUDE.md` Claude-কে **বলে**; `settings.json` Claude Code-কে **নিয়ন্ত্রণ করে**। এটা strict JSON (`//` comment বা trailing comma দিলে Settings Error)। এখানে থাকে permission, hook, env, model, plugin ইত্যাদি।\n\n### চার জায়গা (scope)\n\n| Scope | ফাইল | কে প্রভাবিত | সাধারণ ব্যবহার |\n|---|---|---|---|\n| **User** | `~/.claude/settings.json` | তুমি, সব প্রজেক্টে | ব্যক্তিগত পছন্দ, default model |\n| **Shared project** | `.claude/settings.json` | প্রজেক্টের সবাই (git-এ commit) | টিমের permission, hook, plugin |\n| **Project local** | `.claude/settings.local.json` | তুমি, শুধু এই প্রজেক্টে | ব্যক্তিগত override, পরীক্ষা |\n| **Managed** | `managed-settings.json`, MDM, বা claude.ai console-এর server-managed settings | প্রতিষ্ঠানের সবাই | নিরাপত্তা নীতি, compliance |\n\n`settings.local.json` Claude Code নিজে তৈরি করলে git থেকে বাদ রাখে (global git excludes-এ যোগ করে)। হাতে বানালে `.gitignore`-এ তুমিই বসাও। আর ব্যক্তিগত \"Yes, and don't ask again\" অনুমতি এই ফাইলেই জমে।\n\n### Precedence: কে জেতে (docs থেকে যাচাই করা, উচ্চ থেকে নিম্ন)\n\n1. **Managed settings** (সবার ওপরে: তোমার কোনো ফাইল বা `--settings` এটা বদলাতে পারে না)\n2. **Command line** (`claude --settings '<json বা ফাইল>'`, শুধু ওই সেশনের জন্য)\n3. **Project local** (`.claude/settings.local.json`)\n4. **Shared project** (`.claude/settings.json`)\n5. **User** (`~/.claude/settings.json`)\n\nএকই key একাধিক জায়গায় থাকলে সর্বোচ্চ স্তরের মান জেতে। উদাহরণ: টিমের `.claude/settings.json`-এ `\"model\": \"A\"`, তোমার `.claude/settings.local.json`-এ `\"model\": \"B\"` হলে তোমার সেশনে B; সহকর্মীদের A।\n\nচারটা গুরুত্বপূর্ণ সূক্ষ্মতা:\n\n- **List merge হয়, override হয় না:** `permissions.allow`-এর মতো array একাধিক ফাইলে থাকলে মিলিয়ে একটা তালিকা হয়। (কয়েকটা model-সংক্রান্ত key-র নিজস্ব নিয়ম আছে।)\n- **Environment variable স্তর নয়:** কিছু key-র জোড়া variable আছে, কে জেতে তা জোড়া ধরে ঠিক হয়। যেমন shell-এ `ANTHROPIC_MODEL` সেট থাকলে সেটা ফাইলের `model`-কে হারায়; `--model` flag দুটোকেই হারায়।\n- **কিছু key project ফাইল থেকে কাজই করে না:** যেমন `permissions.defaultMode`-এর `auto` ও `bypassPermissions` মান project/local ফাইলে কার্যকর হয় না (user বা managed-এ দিতে হয়)। এটা নিরাপত্তার জন্য: clone করা repo-র ফাইল দিয়ে কেউ তোমার সুরক্ষা বন্ধ করতে পারবে না।\n- **Trust:** committed `.claude/settings.json`-এর `permissions.allow` আর `extraKnownMarketplaces` কার্যকর হয় প্রতিটি সহকর্মী folder-কে trust করার পর। `deny` ও `ask` rule সঙ্গে সঙ্গে প্রযোজ্য।\n\nকী লোড হয়েছে দেখো: সেশনে `/status` (`Setting sources` লাইন)। অকার্যকর entry দেখতে `claude doctor`। docs বলে Claude Code settings ফাইল বদলালে অধিকাংশ key চলমান সেশনে আবার পড়ে, তবে কিছু key শুধু সেশন শুরুতে পড়া হয়।\n\n### Permission rule: allow, ask, deny\n\n```json\n{\n  \"$schema\": \"https://json.schemastore.org/claude-code-settings.json\",\n  \"permissions\": {\n    \"allow\": [\"Bash(npm run test *)\", \"Bash(pytest *)\", \"Bash(ruff check *)\"],\n    \"ask\":   [\"Bash(git push *)\"],\n    \"deny\":  [\"Read(./.env)\", \"Read(./.env.*)\", \"Bash(rm -rf *)\"]\n  }\n}\n```\n\nমূল নিয়ম: rule যাচাইয়ের ক্রম **deny → ask → allow**; প্রথম মিল জেতে। তাই **allow কখনো deny-র ব্যতিক্রম বানাতে পারে না**: `deny: Bash(aws s3 *)` থাকলে নির্দিষ্ট `allow: Bash(aws s3 ls)` থাকলেও বন্ধই। শুধু tool-এর নাম (যেমন `Bash`) deny করলে tool-ই Claude-এর সামনে থেকে সরে যায়; scoped rule (`Bash(rm *)`) tool রাখে, মিলে যাওয়া call আটকায়।\n\n### Chai-Bot-এর ফাইল ভাগ\n\n```text\n~/.claude/settings.json          # Rafi-র নিজস্ব: theme, ব্যক্তিগত allow\n~/.claude/CLAUDE.md              # Rafi-র নিজস্ব স্টাইল-পছন্দ\nrepo/CLAUDE.md                   # টিমের নিয়ম (commit)\nrepo/.claude/settings.json       # টিমের permission, hook, plugin (commit)\nrepo/.claude/settings.local.json # Rafi-র ব্যক্তিগত override (gitignored)\nrepo/CLAUDE.local.md             # Rafi-র ব্যক্তিগত নোট (gitignored)\n```"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন কনফিগ কোন ফাইলে?",
+          "hint": "প্রতিটা চাহিদা সঠিক ফাইল/scope-এ ফেলো। ভাবো: কে কে এটা পাবে, git-এ যাবে কিনা, বাধ্যতামূলক নাকি পরামর্শ।",
+          "buckets": [
+            {
+              "id": "claudemd",
+              "label": "প্রজেক্ট CLAUDE.md (commit)"
+            },
+            {
+              "id": "shared",
+              "label": ".claude/settings.json (commit)"
+            },
+            {
+              "id": "local",
+              "label": ".claude/settings.local.json (gitignored)"
+            },
+            {
+              "id": "user",
+              "label": "~/.claude/settings.json"
+            }
+          ],
+          "items": [
+            {
+              "text": "'PR-এর আগে pytest চালাবে' টিমের এই নির্দেশ",
+              "bucket": "claudemd",
+              "why": "এটা Claude-কে বলা নির্দেশনা (context), টিমের সবার জন্য, তাই commit-করা CLAUDE.md।"
+            },
+            {
+              "text": ".env ফাইল পড়া সবার জন্য নিষিদ্ধ (deny rule)",
+              "bucket": "shared",
+              "why": "বাধ্যতামূলক permission, টিমের সবার জন্য, তাই commit-করা settings.json-এ deny।"
+            },
+            {
+              "text": "শুধু আমার মেশিনে স্থানীয় sandbox URL-সহ একটা পরীক্ষামূলক allow rule",
+              "bucket": "local",
+              "why": "ব্যক্তিগত, এই প্রজেক্টে, git-এ যাবে না।"
+            },
+            {
+              "text": "সব প্রজেক্টে আমার পছন্দের theme ও editor mode",
+              "bucket": "user",
+              "why": "ব্যক্তিগত পছন্দ, সব প্রজেক্টে প্রযোজ্য।"
+            },
+            {
+              "text": "টিমের ব্যবহার করা plugin গুলো enabledPlugins-এ চালু",
+              "bucket": "shared",
+              "why": "টিমের সবার জন্য একই plugin সেট। commit-করা project settings (সহকর্মীকে একবার install-ও করতে হয়)।"
+            },
+            {
+              "text": "টিমের সবার জন্য build/lint কমান্ডের তালিকা (Claude যা জানবে)",
+              "bucket": "claudemd",
+              "why": "জ্ঞান/কনভেনশন, নিয়ন্ত্রণ নয়: CLAUDE.md-র কাজ।"
+            },
+            {
+              "text": "আমি এই repo-তে ব্যক্তিগতভাবে Opus ব্যবহার করব, টিমের default Sonnet থাকুক",
+              "bucket": "local",
+              "why": "local ফাইল shared project-কে হারায়, তাই শুধু আমার সেশন বদলায়।"
+            },
+            {
+              "text": "সব প্রজেক্টে আমার নিজস্ব ব্যক্তিগত সুরক্ষা deny rule",
+              "bucket": "user",
+              "why": "তোমার সব প্রজেক্টে প্রযোজ্য, কিন্তু টিমকে চাপানো নয়।"
+            }
+          ],
+          "takeaway": "CLAUDE.md = Claude-কে জ্ঞান ও নিয়ম বলা (পরামর্শ); settings.json = নিয়ন্ত্রণ (permission/hook/plugin)। Commit-করা ফাইল টিমের, local ও user ফাইল নিজের।"
+        }
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "CLAUDE.md বনাম settings.json: একটা Claude-কে পরামর্শ দেয়, আরেকটা Claude Code-কে বাধ্য করে।",
+          "beforeTitle": "CLAUDE.md (context)",
+          "before": "কী লেখা যায়: build কমান্ড, কনভেনশন, 'সবসময় X করো'।\nপ্রভাব: Claude-এর context-এ ঢোকে; সাধারণত মানে, গ্যারান্টি নেই।\nLoad: সব স্তরের ফাইল জোড়া লাগে (override নয়); ছোট (<200 লাইন) রাখো।\nবিরোধী নির্দেশ থাকলে Claude যেকোনোটা বেছে নিতে পারে।",
+          "afterTitle": "settings.json (enforced)",
+          "after": "কী লেখা যায়: permission allow/ask/deny, hook, env, model, enabledPlugins।\nপ্রভাব: Claude Code নিজে প্রয়োগ করে; Claude 'ভুলে গেলেও' বাধা থাকে।\nPrecedence: managed > command line > local > shared project > user।\nList (যেমন permissions.allow) merge হয়; deny > ask > allow।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'কে কাকে override করে' এবং 'CLAUDE.md-এ লিখলেই নিরাপদ'",
+        "markdown": "তিনটা ফাঁদ একসাথে মনে রাখো। (১) **CLAUDE.md-র hierarchy জোড়া লাগে**, override করে না; কিন্তু **settings.json-এর hierarchy-তে সত্যিই override আছে** (managed > command line > local > shared project > user)। প্রশ্নে কোনটার কথা হচ্ছে তা আগে ধরো। (২) \"user settings project settings-কে হারায়\" ভুল; উল্টোটাই: project, user-কে হারায়, আর local, project-কে হারায়। (৩) \"নিশ্চিতভাবে `.env` পড়া বন্ধ করতে CLAUDE.md-এ লেখো\" ভুল; সঠিক হলো `permissions.deny` (বা hook)। CLAUDE.md নির্দেশ, বাধ্যতা নয়। আর এটাও: `permissions.allow` মিলে যায় (merge), তাই user-ফাইলের allow অন্য জায়গার deny-কে বাতিল করতে পারে না, কারণ **deny সবার আগে**।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Prompt versioning ও model version pinning\n\n### রাত ২টার তৃতীয় সমস্যা: কিসে বদলাল?\n\nChai-Bot-এর আচরণ তিনটা জিনিসের যোগফল: **prompt + model + বাকি কোড/ডেটা**। এর মধ্যে prompt আর model-ই সবচেয়ে সূক্ষ্মভাবে আচরণ বদলায়, আর দুটোই \"কোড না ছুঁয়ে\" বদলানো যায়। তাই এদের কোডের মতো version করতে হয়।\n\n### Prompt versioning\n\n- **Prompt ফাইলে রাখো, কোডের স্ট্রিংয়ে ছড়িয়ে নয়।** যেমন `prompts/support_v3.md`। git ইতিহাস দেখায় কে কবে কী বদলেছে।\n- **একটা version পরিচয় দাও।** ফাইলের নামে বা metadata-তে (`prompt_version: 3.2.0`)।\n- **প্রতিটা request-এর log-এ version লেখো।** (`prompt_version`, `model`, `request_id`)। পরে \"এই খারাপ উত্তর কোন prompt থেকে\" বলা যায়।\n- **Prompt বদল = PR + eval।** একটা eval suite (গোল্ডেন প্রশ্ন + প্রত্যাশিত বৈশিষ্ট্য) চালিয়ে আগের চেয়ে খারাপ হয়নি দেখাও। এটাকে **regression test** বলে।\n- **একটা পরিবর্তন, একটা PR।** prompt আর model একসাথে বদলালে কারণ বোঝা অসম্ভব।\n- **Rollout:** ছোট অংশের traffic-এ (canary) আগে চালাও, মেট্রিক দেখে বাড়াও; সমস্যা হলে আগের version-এ ফেরা যেন এক কনফিগ-বদল হয়।\n\n```yaml\n# config/release.yaml  (git-এ, প্রতিটা release-এর সাথে tag)\nprompt:\n  file: prompts/support_v3.md\n  version: 3.2.0\nmodel:\n  id: ${CLAUDE_MODEL}         # সত্যিকার ID এখানে বা environment-এ, কোডে নয়\n```\n\n### Model version pinning\n\nModel ID কীভাবে কাজ করে, সেটা docs (Model IDs and versioning পাতা) থেকে পরিষ্কার:\n\n- **৪.৬ প্রজন্ম ও পরের model:** ID dateless (`claude-{name}-{major}[-{minor}]`)। docs-এর স্পষ্ট কথা: এই dateless ID **evergreen \"latest\" পয়েন্টার নয়**, বরং একটা **নির্দিষ্ট snapshot-এর পরিচয়**। Anthropic একটা বিদ্যমান ID-র weights বদলায় না; নতুন সংস্করণ এলে **নতুন ID**-তে আসে।\n- **আগের প্রজন্ম:** ID-তে তারিখ থাকে (`...-20250929`)। Claude API-তে এদের ছোট alias-ও ছিল (তারিখ ছাড়া), যেটা সর্বশেষ dated snapshot-এর দিকে নির্দেশ করে। **Alias = সুবিধার পয়েন্টার, যা সরতে পারে; dated ID = স্থির।**\n- **Platform ভেদে format আলাদা:** Bedrock-এ `anthropic.` prefix (পুরোনো model-এ তারিখ ও `-v1:0` suffix); Google Cloud-এ পুরোনো model-এ তারিখ `@` দিয়ে (`claude-haiku-4-5@20251001`)। একই model, ভিন্ন ID।\n- **প্রতিটা ID-র আলাদা deprecation/retirement সূচি।** আর partner platform (Bedrock, Google Cloud) নিজেদের তারিখ ঠিক করে, যা Claude API-র সঙ্গে না-ও মিলতে পারে।\n- **weights স্থির হলেও আচরণ সূক্ষ্মভাবে বদলাতে পারে:** docs স্বীকার করে model ID ও weights একই থাকলেও serving infrastructure (router, safety classifier, sampling logic) বদলালে সামান্য পার্থক্য দেখা যেতে পারে। তাই **pin করলেও eval চালু রাখো।**\n\n> **পরীক্ষার নিয়ম:** production-এ \"latest\"/alias-এর ওপর ভরসা নয়; স্থির ID pin করো এবং কনফিগে রাখো। কোনো প্রশ্ন \"আগের generation-এর alias বনাম dated ID\" জিজ্ঞেস করলে উত্তর: dated ID pin। আর যেখানে ID dateless (নতুন প্রজন্ম), সেটা নিজেই pinned snapshot; এর অর্থ এ নয় যে \"চিরকাল চলবে\": retirement তারিখ আছে।\n\n### আপগ্রেডের আগে regression test\n\nModel upgrade আসলে একটা **ঝুঁকিপূর্ণ release**। ধাপ:\n\n1. **Release note ও migration guide পড়ো:** breaking change খোঁজো। এই কোর্সেই দেখেছ কয়েকটা: নতুন model-এ non-default `temperature`/`top_p`/`top_k` পাঠালে `400` (ch01); Claude 4.6+ model-এ prefilled assistant message `400` দেয়; Claude 4.7+ model `thinking: {\"type\": \"enabled\"}` নেয় না (adaptive ব্যবহার করতে হয়)।\n2. **নতুন model-এ eval suite চালাও** (একই prompt, একই ডেটা), পুরোনোর সাথে তুলনা: মান, latency, খরচ, output ফরম্যাট।\n3. **Prompt পুনর্বিন্যাস দরকার কিনা দেখো:** নতুন model-এ পুরোনো prompt-এর সূক্ষ্ম কৌশল অপ্রয়োজনীয় বা ক্ষতিকর হতে পারে।\n4. **Canary rollout**, মেট্রিক নজরে রেখে; আগের ID-তে ফেরার পথ খোলা রাখো।\n5. **Retirement তারিখের আগে** সরে যাও। শেষ মুহূর্তের জন্য ফেলে রেখো না।\n\nClaude Code-এর নিজের docs-এ `/claude-api` skill দিয়ে migration সাহায্য পাওয়ার কথা আছে (যেমন \"migrate this project to the latest Claude Opus model\"), কিন্তু ফল তুমি eval দিয়ে যাচাই করবে, শুধু diff দেখে নয়।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "Alias-এ ভরসা বনাম pinned ID + eval: দ্বিতীয়টায় বদল সচেতন ও পরীক্ষিত।",
+          "beforeTitle": "Alias / floating",
+          "before": "কোড: model='<alias>'\nপ্রদানকারী alias সরালে আচরণ হঠাৎ বদলাতে পারে।\nকোনো commit ছাড়াই production বদলে যায়।\nকারণ খুঁজতে গেলে 'কখন বদলাল?' অজানা।",
+          "afterTitle": "Pinned ID + regression test",
+          "after": "কনফিগ: model.id = <স্থির ID>, release record-এ লেখা।\nআপগ্রেড = আলাদা PR: eval চালাও, তুলনা করো, canary দিয়ে ছাড়ো।\nআচরণ বদলালে git ইতিহাস ও log-এ কারণ পাওয়া যায়।\nফেরা সহজ: আগের ID কনফিগে ফেরত।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "মানচিত্র: কোন পরিবর্তন কোন ঝুঁকি",
+        "markdown": "**Prompt বদল:** আচরণ বদলায়, ফেরানো সহজ (git revert)। **Model ID বদল:** আচরণ, খরচ, latency, সমর্থিত parameter সবই বদলাতে পারে, তাই eval-সহ আলাদা PR। **SDK আপগ্রেড:** docs অনুযায়ী প্রতিটা SDK major version একটা নির্দিষ্ট API version পাঠায়, তাই major আপগ্রেড মানে API version বদলও; lock file দিয়ে SDK version pin করো। তিনটা আলাদা PR: কখনো এক commit-এ নয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Plugin dependencies ও project-scope `enabledPlugins`\n\nPlugin হলো Claude Code-এর extension-প্যাকেজ (skill, agent, hook, MCP server, command একসাথে)। টিম বড় হলে প্রশ্ন ওঠে: \"সবার কাছে একই plugin, একই version আছে কিনা?\"\n\n### Plugin install-এর তিন scope\n\n| Scope | কোন ফাইলে `enabledPlugins` লেখা হয় | কে পায় |\n|---|---|---|\n| **User** | `~/.claude/settings.json` | তুমি, সব প্রজেক্টে |\n| **Project** | `.claude/settings.json` (commit) | repo-র সবাই |\n| **Local** | `.claude/settings.local.json` | তুমি, শুধু এই repo-তে |\n\nএকই plugin একাধিক scope-এ থাকলে: **local > project > user** (docs-এর নিয়ম, settings precedence-এর সাথে মেলে)।\n\n`enabledPlugins` একটা map: key `plugin@marketplace`, value চালু/বন্ধ:\n\n```json\n{\n  \"enabledPlugins\": {\n    \"commit-commands@claude-plugins-official\": true,\n    \"formatter@your-org\": true\n  }\n}\n```\n\n**গুরুত্বপূর্ণ সূক্ষ্মতা (প্রিয় ফাঁদ):** project scope-এ commit করলে plugin সহকর্মীদের জন্য **চালু** হয়, কিন্তু **তাদের মেশিনে নেমে আসে না**। প্রত্যেক সহকর্মীকে একবার চালাতে হয়:\n\n```bash\nclaude plugin install formatter@your-org --scope project\n```\n\nআর marketplace যদি অচেনা হয়, সেটা project settings-এর `extraKnownMarketplaces`-এ ঘোষণা করা থাকলে সেটাও folder trust-এর পর কার্যকর হয়; trust না করা পর্যন্ত marketplace থেকে plugin আসে না। কোনো plugin project-এ চালু থাকলে এবং তুমি \"uninstall\" করতে চাইলে Claude Code জিজ্ঞেস করে: \"শুধু আমার জন্য বন্ধ\" (তোমার `settings.local.json`-এ `false` লেখে) নাকি \"সবার জন্য সরাও\"।\n\nদরকারি কমান্ড: `/plugin` (ইন্টারঅ্যাক্টিভ), `claude plugin list` (version, scope, status), `claude plugin enable/disable/uninstall`, `/reload-plugins`। প্রতিষ্ঠানের জন্য admin managed settings-এর `enabledPlugins`-এ plugin বাধ্যতামূলক করতে পারে (তখন তুমি তা বন্ধ করতে পারো না)।\n\n### Plugin dependency ঘোষণা\n\nএক plugin অন্য plugin-এর ওপর নির্ভর করতে পারে (যেমন তার MCP server বা skill ডাকে)। `.claude-plugin/plugin.json`-এর `dependencies` array-তে:\n\n```json\n{\n  \"name\": \"deploy-kit\",\n  \"version\": \"3.1.0\",\n  \"dependencies\": [\n    \"audit-logger\",\n    { \"name\": \"secrets-vault\", \"version\": \"~2.1.0\" }\n  ]\n}\n```\n\n- **শুধু নাম (string):** মানে \"marketplace যা সর্বশেষ দেয়\"। নির্ভরতা প্রতিটা নতুন release-এ নিজে সরে যায়, তাই কোনো release একটা MCP tool-এর নাম বদলালে তোমার plugin ভেঙে যেতে পারে।\n- **Version constraint (object):** semantic-version range, যেমন `^2.0`, `~2.1.0`, `>=1.4`, `=2.1.0`। `~2.1.0` মানে `2.1.x` patch পাবে, `2.2` নয়। Dependency নামে নির্ধারিত git tag থেকে সর্বোচ্চ মানানসই version-এ install হয়।\n- **Tag নিয়ম:** `<plugin-name>--v<version>` (যেমন `secrets-vault--v2.1.0`)। `claude plugin tag --push` কমান্ড এটা বানায়। maintainer tag না দিলে constraint resolve হবে না।\n- **ভিন্ন marketplace-এর dependency:** default-এ install হয় না (এক marketplace যেন চুপচাপ অন্য উৎস থেকে plugin না টানে)। root marketplace-এর `marketplace.json`-এ `allowCrossMarketplaceDependenciesOn` allowlist লাগে।\n- **একাধিক plugin একই dependency-তে ভিন্ন range চাইলে:** সব range-এ মানানসই সর্বোচ্চ version; মিল না থাকলে (`~2.1` বনাম `~3.0`) install ব্যর্থ (\"conflicting version requirements\")।\n- **Install/uninstall:** plugin install করলে তার dependency-ও একই scope-এ install ও enable হয়। uninstall করলে auto-installed dependency থেকে যায়: `claude plugin prune` দিয়ে পরিষ্কার করো। যে plugin অন্য enabled plugin-এর দরকার, তাকে disable করতে গেলে Claude Code বাধা দেয়।\n- **টিম bundle:** শুধু `name` আর `dependencies` ভরা একটা plugin বানালে এক কমান্ডে পুরো সেট install (যেমন `backend-standard`)।\n- **স্থানীয় পরীক্ষা:** `claude --plugin-dir ./my-dependency --plugin-dir ./my-plugin`।\n\nChai-Bot-এর টিম: `chai-standards` নামে একটা bundle plugin, যাতে `commit-commands`, `secrets-vault` আর টিমের নিজের `refund-review` skill dependency হিসেবে। repo-র `.claude/settings.json`-এ `chai-standards@chaicart-internal: true`, `extraKnownMarketplaces`-এ `chaicart-internal`, আর onboarding doc-এ এক লাইন: `claude plugin install chai-standards@chaicart-internal --scope project`।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'commit করলেই plugin সবার মেশিনে চলে আসে' আর 'version না লিখলে নিরাপদ'",
+        "markdown": "(১) `enabledPlugins`-এ project scope commit করা মানে **চালু ঘোষণা**; ফাইল সহকর্মীর মেশিনে আসে না, তাকে `claude plugin install ... --scope project` চালাতে হয় (আর অনেক বিষয়ে folder trust লাগে)। (২) dependency-তে version constraint না দিলে সেটা **marketplace-এর সর্বশেষ** অনুসরণ করে: আপডেটে হঠাৎ ভেঙে যেতে পারে। সঠিক নকশা `~`/`^` range দিয়ে পরীক্ষিত পরিসর বেঁধে দেওয়া। (৩) Scope-conflict-এ **local > project > user**: user-এ বন্ধ থাকলেও project-এর \"চালু\" জেতে (project > user); আর project-এ চালু থাকলেও তোমার local-এ `false` তা শুধু তোমার জন্য বন্ধ করে দেয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৭. Deployment platform বেছে নেওয়া\n\nNusrat Apu-র প্রশ্ন ছিল: \"compliance বলছে ডেটা AWS-এর ভেতরে থাকতে হবে। সরাসরি Anthropic API নাকি Bedrock?\" একই Claude model-কে কয়েকটা পথে পাওয়া যায়। docs যা বলে (যেগুলো আমি ঘেঁটেছি):\n\n| পথ | কী | কখন ভাবো |\n|---|---|---|\n| **First-party Claude API** (`api.anthropic.com`) | Anthropic নিজে চালায়, সরাসরি বিল | সবচেয়ে বেশি feature, নতুন beta আগে; compliance-বাধা না থাকলে ডিফল্ট পছন্দ |\n| **Amazon Bedrock** | AWS-এর অবকাঠামো, AWS IAM/billing/CloudTrail; Messages API আকারে একই | ডেটা AWS-এর সীমানার ভেতরে, IAM-ভিত্তিক প্রবেশ, AWS-এ একীভূত বিল |\n| **Google Cloud (Vertex AI / Agent Platform)** | Google চালায়; `AnthropicVertex` client | GCP-তে থাকা প্রতিষ্ঠান; Google IAM, quota, বিল |\n| **Claude Platform on AWS** | Anthropic-চালিত, AWS Marketplace বিল; docs: সাধারণত একই দিনে feature পাওয়া যায় | AWS-এ বিল চাই কিন্তু feature-এর সাথে পিছিয়ে থাকতে চাও না |\n| **Microsoft Foundry** | Azure-এ, Anthropic-পরিচালিত | Azure-কেন্দ্রিক প্রতিষ্ঠান |\n\n### সিদ্ধান্তের চারটা অক্ষ\n\n**১. Compliance ও data residency:** ডেটা কোথায় থাকবে, কার নিয়ন্ত্রণে। Bedrock-এর ডেটা-ব্যবস্থাপনা Amazon Bedrock-এর নীতিতে, Google Cloud-এ Google-এর। docs অনুযায়ী Bedrock \"zero operator access\" দেয় (Anthropic কর্মীর inference অবকাঠামোতে প্রবেশ নেই)। Region-নিয়ন্ত্রণ: Bedrock-এ **global endpoint** (গতিশীল routing, সর্বোচ্চ availability, বাড়তি দাম নেই) বনাম **regional endpoint** (একটাই region, data-residency-র জন্য, docs অনুযায়ী **১০% দাম বেশি**)। Google Cloud-এও global/multi-region/regional তিন রকম; multi-region ও regional-এ ১০% বাড়তি।\n\n**২. Feature availability:** এটাই পরীক্ষার সবচেয়ে বড় \"লুকানো\" বিষয়। docs অনুযায়ী Bedrock ও Google Cloud (Google managed) **দুটোতেই নেই**: Message Batches API, Files API ও URL-উৎস, server-side tool (code execution, web fetch, advisor; Bedrock-এ web search-ও নেই), Agent Skills, MCP connector, programmatic tool calling, Claude Managed Agents, আর server-side `fallbacks` parameter। (Messages API, prompt caching, thinking, tool use, citations, structured outputs আছে।) তাই \"batch-এ ৫০% ছাড়\" বা \"Files API\" লাগলে Bedrock/Vertex-এ সেটা পাবে না। সবসময় প্রতিটা feature-পাতার platform availability দেখো।\n\n**৩. Latency:** কোনো স্থির সংখ্যা মুখস্থ করো না। নির্ভর করে region (ব্যবহারকারী থেকে দূরত্ব), global বনাম regional routing, prompt/output দৈর্ঘ্য, model। সঠিক পদ্ধতি: **নিজের workload দিয়ে মাপো** (Chai-Bot-এর জন্য ঢাকা-সংলগ্ন region কোনটা, তা পরীক্ষা করে)।\n\n**৪. Cost ও quota:** দাম platform ভেদে ভিন্ন হতে পারে (regional প্রিমিয়াম, প্ল্যাটফর্মের নিজস্ব মূল্য তালিকা)। Quota-ও আলাদা: Bedrock-এ default ২ মিলিয়ন input TPM (docs অনুযায়ী), Google Cloud-এ Google-ই quota ঠিক করে। বিলিং: Anthropic, AWS, নাকি Google, আপনার কোম্পানির procurement/commit-এর সাথে মিলিয়ে।\n\n### Code-এ পার্থক্য কতটুকু?\n\nPython SDK একই `anthropic` প্যাকেজে অন্য client দেয়। Messages API-র আকার প্রায় একই, বদলায় client ও model ID:\n\n```python\nfrom anthropic import Anthropic, AnthropicBedrockMantle, AnthropicVertex\n\ndirect  = Anthropic()                                      # ANTHROPIC_API_KEY\nbedrock = AnthropicBedrockMantle(aws_region=\"us-east-1\")   # AWS credential chain\nvertex  = AnthropicVertex(project_id=\"MY_PROJECT\", region=\"global\")\n\n# একই call: শুধু model ID-র রূপ ভিন্ন\n# first-party: \"claude-sonnet-5-5\"   bedrock: \"anthropic.claude-sonnet-5-5\"\n```\n\n(এই নামগুলো আমি আজকের docs থেকে নিয়েছি; কোডে model ID hardcode না করে কনফিগে রাখো, আর বর্তমান ID models overview পাতা থেকে কপি করো।) Model ID-র রূপ platform-ভেদে আলাদা: Bedrock-এ `anthropic.` prefix, পুরোনো Google Cloud model-এ `@তারিখ`। তাই platform বদলালে **model ID-ও কনফিগে বদলাতে হয়**।\n\n### সিদ্ধান্ত গাছ (সংক্ষেপে)\n\n1. কোনো কঠিন compliance/residency বাধ্যবাধকতা আছে? → সেই cloud-এর পথ (Bedrock বা Google Cloud) বা Claude Platform on AWS।\n2. Batch/Files/MCP connector/Managed Agents/server tool দরকার? → first-party (বা feature আছে এমন পথ)।\n3. কোম্পানি কি এক cloud-এর বিলে commit করা? → সেই cloud।\n4. তারপর latency ও দাম নিজে মেপে চূড়ান্ত করো।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Chai-Bot একটা পাতলা LLM wrapper-এর (llm.py) পেছনে platform বদলাতে পারে: কোডের বাকি অংশ জানে না কোন পথে Claude আসছে।",
+          "nodes": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot (business কোড)",
+              "x": 0,
+              "y": 120
+            },
+            {
+              "id": "wrap",
+              "kind": "gateway",
+              "label": "llm.py wrapper + config",
+              "x": 220,
+              "y": 120
+            },
+            {
+              "id": "first",
+              "kind": "external",
+              "label": "First-party API",
+              "x": 480,
+              "y": 0
+            },
+            {
+              "id": "bedrock",
+              "kind": "external",
+              "label": "Amazon Bedrock",
+              "x": 480,
+              "y": 120
+            },
+            {
+              "id": "gcp",
+              "kind": "external",
+              "label": "Google Cloud",
+              "x": 480,
+              "y": 240
+            }
+          ],
+          "edges": [
+            {
+              "from": "app",
+              "to": "wrap",
+              "label": "prompt v3"
+            },
+            {
+              "from": "wrap",
+              "to": "first",
+              "label": "Anthropic()"
+            },
+            {
+              "from": "wrap",
+              "to": "bedrock",
+              "label": "Bedrock SDK"
+            },
+            {
+              "from": "wrap",
+              "to": "gcp",
+              "label": "Vertex SDK"
+            }
+          ]
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "একটু সততা: নাম বদলের কথা",
+        "markdown": "পরীক্ষার নির্দেশিকা ও অনেক পুরোনো লেখায় \"Google Vertex AI\" নামটাই চলে। আমি যে Anthropic docs ঘেঁটেছি, সেখানে এখন একে বলা হয় **\"Claude Models on Google Cloud (Google managed)\"**, যা Google Cloud-এর \"Agent Platform\"-এর অংশ; আরেকটা আলাদা \"Anthropic managed\" রূপও আছে। Python SDK-তে এখনও `AnthropicVertex` নাম আছে। পরীক্ষায় \"Vertex AI\" পড়লে বুঝবে এটা Google Cloud-এর পথের কথা। সংখ্যা (১০%, quota ইত্যাদি) docs বদলালে বদলাতে পারে, তাই এগুলো মুখস্থ না করে মূলনীতি মনে রাখো: **platform ভেদে feature, ID-র রূপ, দাম, quota, lifecycle ভিন্ন হতে পারে।**"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'Bedrock মানে একই API, তাই সব কিছু একই'",
+        "markdown": "প্রশ্নে বলা হবে: \"ডেটা AWS-এর ভেতরে রাখতে Bedrock নেওয়া হলো, কিন্তু রাতের ৫০%-ছাড়ের Batch job আর Files API কাজ করছে না।\" ভুল কারণ: \"rate limit\" বা \"model ভুল\"। সঠিক কারণ: **ওই feature ওই platform-এ সমর্থিত নয়**। দ্বিতীয় ফাঁদ: \"সবচেয়ে কম latency-র জন্য সবসময় first-party\" বা \"সস্তার জন্য সবসময় Bedrock\" ধরনের সর্বজনীন দাবি; সঠিক উত্তর সাধারণত \"মেপে দেখো/প্রয়োজন (compliance, feature, বিল) অনুযায়ী বাছো\"।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৮. Release versioning ও accelerator হিসেবে প্যাকেজ করা\n\n### Release versioning\n\nChai-Bot-এর \"version\" কয়েকটা স্তরে আছে। সবগুলো আলাদা, কিন্তু একটা **release record**-এ বাঁধা:\n\n| জিনিস | কীভাবে version | উদাহরণ |\n|---|---|---|\n| Application | SemVer (`MAJOR.MINOR.PATCH`) + git tag | `chaibot v1.4.2` |\n| Prompt | ফাইল/metadata version | `support_v3.md`, `3.2.0` |\n| Model | স্থির ID (কনফিগে) | `config/release.yaml`-এর `model.id` |\n| SDK | lock file / pinned version | `anthropic==<pinned>` |\n| Plugin/CLAUDE.md/settings | git + plugin version/tag | `chai-standards--v1.1.0` |\n\n**SemVer সংক্ষেপে:** PATCH = বাগ ঠিক (আচরণ-সঙ্গত), MINOR = পিছনে-সঙ্গত নতুন ক্ষমতা, MAJOR = ভাঙা বদল। LLM-অ্যাপে প্রশ্ন ওঠে: prompt-বদল কোন স্তর? একটা সৎ নিয়ম: যদি output-এর ফরম্যাট/schema ভাঙে (ডাউনস্ট্রিম কোড প্রভাবিত), সেটা MAJOR; আচরণ উন্নতি কিন্তু schema একই হলে MINOR/PATCH, আর সবসময় eval-ফল সংযুক্ত।\n\nএকটা release record (প্রতিটা deploy-এর সাথে লগ হয়):\n\n```json\n{\n  \"app\": \"1.4.2\",\n  \"prompt_version\": \"3.2.0\",\n  \"model\": \"<pinned id>\",\n  \"platform\": \"bedrock\",\n  \"sdk\": \"<pinned version>\",\n  \"eval\": {\"suite\": \"support-golden-v7\", \"pass_rate\": 0.94},\n  \"released_at\": \"2026-11-05\"\n}\n```\n\nএতে \"কোন release-এ tone বদলাল\" প্রশ্নের উত্তর ১ মিনিটে মেলে। Rollback = আগের tag + আগের কনফিগ।\n\n### Accelerator: একবার বানিয়ে বারবার ব্যবহার\n\nAnthropic-এর officially prep path-এ একটা module আছে **\"Accelerators & IP Contribution\"**। এর সারকথা: কাজ করা সমাধানকে **পুনঃব্যবহারযোগ্য উপাদানে** প্যাকেজ করা যাতে পরের টিম শুরু থেকে বানাতে না হয়। (এই অংশে আমি কোর্সের বিবরণ ছাড়া বাড়তি তথ্য দাবি করছি না।) তিন ধরনের উদাহরণ:\n\n1. **Parameterised agent template:** Chai-Bot-এর agent-কাঠামো থেকে ব্যবসা-নির্দিষ্ট জিনিস (system prompt, tool তালিকা, model ID, ডোমেইন নিয়ম) কনফিগে সরিয়ে দাও। তখন নতুন প্রতিষ্ঠান (ধরো একটা ওষুধের দোকান) শুধু কনফিগ বদলে একই agent চালাতে পারে।\n2. **Configurable MCP server:** Chai-Bot-এর \"order lookup\" MCP server-এ হার্ডকোড করা database নয়; connection, auth, tool-নাম কনফিগযোগ্য। (MCP ch09-এ।)\n3. **Portable eval suite:** গোল্ডেন ডেটা + স্কোরিং কোড, যেটা যেকোনো model/prompt-এর বিরুদ্ধে চালানো যায়। এটাই regression testing-এর হাতিয়ার, তাই সবচেয়ে মূল্যবান accelerator।\n\n**ভালো accelerator-এর বৈশিষ্ট্য:** নির্দিষ্ট ডেটা/secret/কোম্পানির নাম হার্ডকোড নেই; README আর উদাহরণ আছে; version করা (SemVer + tag); নির্ভরতা পরিষ্কার; test/eval সহ আসে; credential কনফিগ/secret store থেকে; লাইসেন্স ও ক্লায়েন্ট-ডেটার মালিকানা পরিষ্কার।\n\n**Contribute করা:** নিজের মতো করে কোথাও ছুড়ে না দিয়ে **নথিভুক্ত চ্যানেলে** (প্রতিষ্ঠান/প্রোগ্রামের নির্ধারিত প্রক্রিয়া) জমা দাও: review-এর মধ্য দিয়ে, লাইসেন্স/IP-র সম্মতি নিয়ে, গ্রাহকের গোপন তথ্য সরিয়ে। এখানে পরীক্ষার-ধরনের সূত্র: গ্রাহকের ডেটা বা secret সহ কিছু শেয়ার করা সবসময় ভুল উত্তর।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter-এর skill-গুলো (Domain 2 ও Domain 5):\n\n| Skill | কী জানতে হবে | সাধারণ প্রশ্ন-আকার |\n|---|---|---|\n| **Software Engineering Foundations** (D2) | REST/JSON, async + concurrency limit, retry/timeout, idempotency, git/SDLC, CI-তে Claude review, refactoring কৌশল | \"রাতের batch ৪২৯ দিচ্ছে/duplicate refund হচ্ছে, কী করবে?\"; \"CI-তে Claude review বট কীভাবে সাজাবে?\"; \"বড় refactor নিরাপদে করার ধাপ কোনগুলো? (দুটো বাছো)\" |\n| **Configuration Management** (D2) | CLAUDE.md hierarchy, settings.json scope ও precedence, prompt versioning, model pinning, plugin dependencies | \"কোন ফাইলে কী রাখবে?\"; \"দুই ফাইলে বিরোধী মান থাকলে কে জেতে?\"; \"alias বনাম dated ID\"; \"upgrade-এর আগে কী করবে?\" |\n| **Claude Application Design** (D2, আংশিক) | Claude Code/API/SDK-তে নির্দেশনা কীভাবে পৌঁছায়, plugin ব্যবস্থাপনা | \"টিমের সবার জন্য plugin কীভাবে চালু করবে?\" |\n| **Technical Fundamentals** (D5) | SDK = REST-এর মোড়ক, stateless, timeout/retry-র আচরণ, platform-ভেদে পার্থক্য | \"SDK বাদ দিলে কী বদলায়?\"; \"Bedrock-এ কোন feature নেই?\" |\n\n**প্রশ্নের চেহারা মনে রাখো:** (১) ছোট দৃশ্য, তারপর \"সবচেয়ে ভালো পদক্ষেপ\"; (২) multi-response (\"Select TWO\") প্রশ্নে দুটোই পুরো সঠিক হতে হয়; (৩) distractor প্রায়ই \"আরও retry\", \"CLAUDE.md-এ লিখে দাও\", \"latest alias ব্যবহার করো\", \"Claude-কে একাই approve করতে দাও\", \"temperature কমাও\" ধাঁচের। এগুলোর পাল্টা মন্ত্র: **ঠিক স্তরে retry, enforcement-এর জন্য settings/hook, pinned ID + eval, মানুষের approval, মেপে বাছো।**"
+      }
+    ],
+    "recap": [
+      "SDK হলো REST-এর মোড়ক; retry শুধু transient ত্রুটিতে (SDK default ২ বার), আর retry-র আগে কাজ idempotent কিনা দেখো।",
+      "Concurrency বাঁধো AsyncAnthropic + Semaphore দিয়ে; side-effect-এর জন্য নিজের idempotency key ও সংরক্ষিত ফল রাখো।",
+      "CI-তে Claude review হলো সহায়ক: আগে deterministic gate, শেষে মানুষের approval; secret থাকে GitHub Secrets-এ।",
+      "CLAUDE.md-র ফাইলগুলো জোড়া লাগে (নির্দেশ মাত্র); settings.json-এ সত্যিকার precedence: managed > command line > local > project > user, আর deny > ask > allow।",
+      "Production-এ model ID pin করো, prompt version করো, আপগ্রেডের আগে eval চালিয়ে canary দাও।",
+      "Project-scope enabledPlugins চালু ঘোষণা করে, install করায় না; dependency-তে version range ও git tag দাও।",
+      "Platform বাছো compliance, feature availability (Batch/Files ইত্যাদি Bedrock/Vertex-এ নেই), মাপা latency ও cost দিয়ে; release record-এ app/prompt/model/platform বেঁধে রাখো।"
+    ]
+  },
+  "lab": {
+    "goal": "একটা repo-তে CLAUDE.md ও .claude/settings.json (permission সহ) বানিয়ে settings precedence নিজে দেখা, তারপর semaphore দিয়ে নিয়ন্ত্রিত async batch চালিয়ে concurrency সীমা ও idempotent cache যাচাই করা।",
+    "requirements": [
+      "Claude Code ইনস্টল করা (`claude` কমান্ড চলে), আর একটা খালি git repo: `mkdir chai-lab && cd chai-lab && git init`",
+      "Python 3.10+ এবং `pip install anthropic`",
+      "Console থেকে নেওয়া API key: `export ANTHROPIC_API_KEY=...` (কোডে বা git-এ নয়)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>`",
+      "এই lab-এ কোনো model ID কোডে hardcode করবে না এবং temperature/top_p/top_k পাঠাবে না"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: প্রজেক্ট CLAUDE.md বানাও",
+        "body": "repo-র root-এ `CLAUDE.md` লেখো:\n\n```bash\ncat > CLAUDE.md <<'EOF'\n# Chai-Lab\n\n## Commands\n- Test: `python -m pytest -q`\n- Run batch: `python batch.py`\n\n## Conventions\n- Model id কোডে লিখবে না, `CLAUDE_MODEL` environment variable থেকে পড়বে\n- Side-effect function সবসময় idempotency key নেবে\n- কখনো `.env` ফাইলের মান উত্তরে দেখাবে না\nEOF\necho \".env\" >> .gitignore\necho \"SECRET_TOKEN=do-not-print\" > .env\n```\n\nএরপর `claude` চালাও আর সেশনে `/context all` দাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** \"Memory files\" তালিকায় প্রজেক্টের `CLAUDE.md` দেখা যায় (সাথে তোমার `~/.claude/CLAUDE.md`, থাকলে)। দুটো ফাইল একসাথে আছে: জোড়া লাগে, একটা অন্যটাকে মুছে দেয় না।"
+      },
+      {
+        "title": "ধাপ ২: .claude/settings.json (permission সহ)",
+        "body": "সেশন থেকে বেরিয়ে (`/exit`) শেল-এ:\n\n```bash\nmkdir -p .claude\ncat > .claude/settings.json <<'EOF'\n{\n  \"$schema\": \"https://json.schemastore.org/claude-code-settings.json\",\n  \"permissions\": {\n    \"allow\": [\"Bash(python -m pytest *)\"],\n    \"ask\":   [\"Bash(git push *)\"],\n    \"deny\":  [\"Read(./.env)\", \"Read(./.env.*)\"]\n  }\n}\nEOF\npython3 -c \"import json;json.load(open('.claude/settings.json'));print('valid JSON')\"\n```\n\nআবার `claude` চালাও, বলো: \"`.env` ফাইলটা পড়ে আমাকে তার ভেতরের লাইনটা বলো।\" তারপর `/status` দাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `.env` পড়ার চেষ্টা permission rule-এ আটকে যায় (Read deny)। `CLAUDE.md`-তে একই নির্দেশ ছিল, কিন্তু আটকানোর আসল কাজটা করল `settings.json`-এর deny। `/status`-এর `Setting sources`-এ project settings দেখা যায়।"
+      },
+      {
+        "title": "ধাপ ৩: Precedence নিজে দেখো",
+        "body": "এবার দুটো অতিরিক্ত স্তর যোগ করে দেখো কে জেতে। প্রথমে shared ফাইলে একটা `env` মান বসাও, তারপর local ফাইলে সেটা উল্টে দাও:\n\n```bash\npython3 - <<'EOF'\nimport json\np = \".claude/settings.json\"\nd = json.load(open(p)); d[\"env\"] = {\"CHAI_MODE\": \"shared\"}\njson.dump(d, open(p, \"w\"), indent=2)\njson.dump({\"env\": {\"CHAI_MODE\": \"local\"}}, open(\".claude/settings.local.json\", \"w\"), indent=2)\nEOF\necho \".claude/settings.local.json\" >> .gitignore\n```\n\n`claude` চালিয়ে বলো: \"Bash দিয়ে `echo $CHAI_MODE` চালাও\" (এই কমান্ডের অনুমতি চাইলে এই একবার দাও)। ফল দেখো। তারপর বেরিয়ে command-line স্তর দিয়ে আবার দেখো:\n\n```bash\nclaude --settings '{\"env\": {\"CHAI_MODE\": \"cli\"}}'\n```\n\nআবার একই প্রশ্ন করো।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** local ফাইল থাকলে `local` (project local > shared project)। `--settings` দিলে `cli` (command line > local)। দ্বিতীয় প্রশ্নে আরও দেখো: `permissions.allow`/`deny` তালিকা কিন্তু **merge** হয়েছে, মুছে যায়নি। (যদি `env` মান প্রত্যাশিতভাবে না আসে, `/status` ও `claude doctor` দিয়ে কোন ফাইল লোড হয়েছে দেখো। docs বলে কিছু key শুধু সেশন শুরুতে পড়া হয়, তাই প্রতিটা বদলের পর নতুন সেশন শুরু করো।)"
+      },
+      {
+        "title": "ধাপ ৪: Semaphore দিয়ে নিয়ন্ত্রিত async batch",
+        "body": "`batch.py` বানাও। এটা ১২টা ছোট ticket concurrent পাঠায়, কিন্তু একসাথে সর্বোচ্চ ৩টা:\n\n```python\nimport asyncio, os\nfrom anthropic import AsyncAnthropic\n\nMODEL = os.environ[\"CLAUDE_MODEL\"]\nLIMIT = 3\nclient = AsyncAnthropic(max_retries=2, timeout=60.0)\nsem = asyncio.Semaphore(LIMIT)\nrunning = 0\npeak = 0\n\nTICKETS = {f\"T{i:03d}\": t for i, t in enumerate([\n    \"আমার অর্ডার তিন দিন ধরে আসেনি\", \"দার্জিলিং চায়ের দাম কত?\",\n    \"ভুল চা এসেছে, ফেরত দিতে চাই\", \"আপনারা কি ঢাকার বাইরে ডেলিভারি দেন?\",\n    \"পেমেন্ট কেটেছে কিন্তু অর্ডার নেই\", \"গিফট প্যাক পাওয়া যায়?\",\n    \"টাকা ফেরত কবে পাব?\", \"অর্ডার বাতিল করতে চাই\",\n    \"অর্গানিক চা আছে?\", \"প্যাকেট ছেঁড়া এসেছে\",\n    \"ডেলিভারি চার্জ কত?\", \"আমার নাম ভুল ছাপা হয়েছে\"])}\n\nasync def classify(tid: str, text: str):\n    global running, peak\n    async with sem:\n        running += 1\n        peak = max(peak, running)\n        try:\n            r = await client.messages.create(\n                model=MODEL, max_tokens=20,\n                messages=[{\"role\": \"user\",\n                           \"content\": f\"Reply with one word: ORDER, REFUND, PRODUCT or OTHER.\\n{text}\"}],\n            )\n            label = next(b.text for b in r.content if b.type == \"text\").strip()\n            return tid, label, r._request_id\n        finally:\n            running -= 1\n\nasync def main():\n    results = await asyncio.gather(*(classify(k, v) for k, v in TICKETS.items()))\n    for tid, label, rid in results:\n        print(tid, label, rid)\n    print(\"peak concurrency:\", peak)\n\nasyncio.run(main())\n```\n\nচালাও: `python batch.py`\n\n**প্রত্যাশিত পর্যবেক্ষণ:** ১২টা লাইন (ticket, label, request-id) আর শেষে `peak concurrency: 3` (বা তার কম, কখনো ৩-এর বেশি নয়)। `LIMIT` বদলে ১ ও ১২ করে চালাও, মোট সময় তুলনা করো: ১ হলে ধীর, বেশি হলে দ্রুত, কিন্তু বেশি হলে 429 আসার ঝুঁকি।"
+      },
+      {
+        "title": "ধাপ ৫: Idempotent cache যোগ করো",
+        "body": "একই batch দুবার চালালে যেন দ্বিতীয়বার API call না হয় ও ফল একই থাকে। `batch.py`-র `classify`-কে একটা JSON ফাইল-ভিত্তিক cache দিয়ে মুড়ে দাও:\n\n```python\nimport json, pathlib\n\nCACHE = pathlib.Path(\"results.json\")\ncache = json.loads(CACHE.read_text()) if CACHE.exists() else {}\n\nasync def classify_once(tid: str, text: str):\n    key = f\"{tid}:classify\"\n    if key in cache:                       # আগেই হয়েছে: API call নয়\n        return tid, cache[key], \"cached\"\n    tid, label, rid = await classify(tid, text)\n    cache.setdefault(key, label)           # প্রথম ফলই সত্য\n    CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=2))\n    return tid, cache[key], rid\n```\n\n`main()`-এ `classify(k, v)`-র জায়গায় `classify_once(k, v)` ব্যবহার করো। দুবার চালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** প্রথমবার request-id দেখা যায়, দ্বিতীয়বার সব লাইনে `cached` এবং `peak concurrency: 0`। এটাই idempotency-র ধারণা: retry/পুনরায় চালানো নিরাপদ। (এটা একটা শিক্ষামূলক সরলীকরণ; সত্যিকার সিস্টেমে database ও `INSERT ... ON CONFLICT DO NOTHING` ব্যবহার করবে।)"
+      },
+      {
+        "title": "ধাপ ৬ (ঐচ্ছিক): Release record লেখো",
+        "body": "প্রতিটা চালানোর সাথে কোন version ব্যবহার হয়েছে লিখে রাখো:\n\n```python\nimport json, os, datetime\nrecord = {\n    \"app\": \"0.1.0\",\n    \"prompt_version\": \"classify-v1\",\n    \"model\": os.environ[\"CLAUDE_MODEL\"],\n    \"run_at\": datetime.datetime.now().isoformat(timespec=\"seconds\"),\n}\nopen(\"release.json\", \"w\").write(json.dumps(record, indent=2))\nprint(record)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `release.json` বলে দেয় কোন prompt ও model দিয়ে ফল এসেছে। `CLAUDE_MODEL` বদলে আবার চালালে রেকর্ড আলাদা: এটাই pinning ও regression-তুলনার ভিত্তি।"
+      }
+    ],
+    "checkpoints": [
+      "CLAUDE.md-এর `.env`-সংক্রান্ত নির্দেশ ও settings.json-এর `deny` rule: কোনটা আসলে আটকাল, আর কেন?",
+      "একই key `settings.json`, `settings.local.json` ও `--settings`-এ থাকলে কে জেতে? permissions.allow তালিকা কীভাবে আচরণ করে?",
+      "তোমার `batch.py`-তে peak concurrency কেন কখনো LIMIT-এর বেশি হলো না? Semaphore সরিয়ে দিলে কী ঝুঁকি?",
+      "SDK-র default retry আর তোমার নিজের retry মিলে কেন সমস্যা হতে পারে?",
+      "দ্বিতীয়বার চালানোয় API call হয়নি: কীভাবে নিশ্চিত হলে? এই কাঠামো refund-এর মতো side-effect-এ কেন দরকার?"
+    ]
+  },
+  "notes": "## Chapter 5 cheat sheet: Software engineering ও configuration management\n\n### REST, async, retry\n| বিষয় | মনে রাখো |\n|---|---|\n| SDK | REST/HTTPS call-এর মোড়ক; header, JSON, typed response, retry দেয় |\n| Retry (Python SDK) | default **২ বার**; connection, 408, 409, 429, >=500; `max_retries` দিয়ে বদলানো |\n| Timeout | default **১০ মিনিট**; `timeout=` দিয়ে বদলানো; timeout-ও retry হয়; লম্বা কাজে streaming/Batch |\n| Non-retriable | 400, 401, 403, 404, 413 (আগে ঠিক করো) |\n| 429 ব্যতিক্রম | spend cap-এর 429-এ `retry-after` নেই, বারবার fail |\n| Concurrency | `AsyncAnthropic` + `asyncio.Semaphore(N)`; N মেপে ঠিক করো |\n| Idempotency | নিজের key + সংরক্ষিত ফল; model call আর side-effect আলাদা; API নিজে idempotency দেয় ধরো না |\n| Debug | প্রতিটা failed call-এর `request-id` log করো |\n\n### Git / CI / review\n- সবকিছু git-এ (কোড, prompt, CLAUDE.md, settings, eval)। ছোট PR; prompt আর model আলাদা PR।\n- GitHub Action: `anthropics/claude-code-action@v1`; secret `ANTHROPIC_API_KEY`; `prompt` দিলে automation, না দিলে `@claude` interactive; `/install-github-app` দ্রুত সেটআপ; `--max-turns` খরচ আটকায়।\n- Deterministic gate (test/lint) আগে → Claude review সহায়ক → মানুষের approve।\n- বড় refactor: characterization test → plan → ছোট ধাপ + commit → প্রতি ধাপে test।\n\n### CLAUDE.md\n| Scope | জায়গা |\n|---|---|\n| Managed | `/Library/Application Support/ClaudeCode/CLAUDE.md` (macOS), `/etc/claude-code/CLAUDE.md` (Linux) |\n| User | `~/.claude/CLAUDE.md` |\n| Project | `./CLAUDE.md` বা `./.claude/CLAUDE.md` |\n| Local | `./CLAUDE.local.md` (gitignored) |\n\nজোড়া লাগে, override নয়। cwd ও ওপরের directory আগে লোড; subdirectory on demand। `<200` লাইন। `@import` সর্বোচ্চ ৪ ধাপ। `/init` শুরু বানায়, `/context all` যাচাই। **নির্দেশ, বাধ্যতা নয়।**\n\n### settings.json\n**Precedence (উচ্চ→নিম্ন):** Managed > Command line (`--settings`) > Project local > Shared project > User। List (`permissions.allow`) merge। Permission মূল্যায়ন: **deny → ask → allow**। `auto`/`bypassPermissions` project ফাইলে কার্যকর নয়। Committed `allow` ও `extraKnownMarketplaces` folder-trust-এর পর। `/status` ও `claude doctor` দিয়ে যাচাই।\n\n### Prompt/model versioning\n- Prompt ফাইলে + version + log; বদল = PR + eval।\n- ৪.৬+ প্রজন্ম: dateless ID নিজেই pinned snapshot। আগের প্রজন্ম: dated ID স্থির, alias সরতে পারে।\n- প্রতিটা ID-র আলাদা retirement; partner platform-এর তারিখ আলাদা।\n- Weights স্থির হলেও serving infrastructure বদলে সামান্য পার্থক্য সম্ভব: pin + eval।\n- Upgrade: release note → eval → canary → ফেরার পথ।\n\n### Plugin\n- `enabledPlugins`: `\"plugin@marketplace\": true` ; scope user (`~/.claude/settings.json`) / project (`.claude/settings.json`) / local (`.claude/settings.local.json`); precedence **local > project > user**।\n- Project commit চালু করে, **download করে না**: `claude plugin install name@mkt --scope project`।\n- `plugin.json` `dependencies`: string বা `{name, version, marketplace}`; range `~2.1.0`, `^2.0`; tag `<name>--v<ver>`; `claude plugin tag --push`; cross-marketplace allowlist `allowCrossMarketplaceDependenciesOn`; `claude plugin prune`।\n\n### Deployment platform\n| | First-party | Bedrock | Google Cloud |\n|---|---|---|---|\n| Client | `Anthropic` | `AnthropicBedrockMantle` | `AnthropicVertex` |\n| Model ID | `claude-...` | `anthropic.claude-...` | `claude-...` (পুরোনো: `@তারিখ`) |\n| Batch API, Files API, MCP connector, Managed Agents, server-side fallbacks | আছে | **নেই** | **নেই** |\n| Regional প্রিমিয়াম | n/a | ১০% | ১০% (multi-region/regional) |\n\nবাছাইয়ের অক্ষ: compliance/residency, feature availability, latency (মেপে), cost/quota/বিল।\n\n### Release ও accelerator\nSemVer + git tag + release record (app/prompt/model/platform/SDK/eval)। Accelerator: parameterised agent template, configurable MCP server, portable eval suite; hardcode নেই, README, version, documented channel-এ contribute।\n\n### Common traps\nalias-এ ভরসা; সব error-এ retry; SDK retry-র ওপর retry; CLAUDE.md দিয়ে enforcement; \"project override করে user CLAUDE.md\"; plugin commit করলেই সবার মেশিনে; Bedrock-এ সব feature আছে ধরা; AI একমাত্র approver।",
+  "flashcards": [
+    {
+      "front": "SDK আসলে কী?",
+      "back": "REST/HTTPS call-এর মোড়ক: header বসায়, JSON বানায়/পার্স করে, typed response ও retry দেয়। SDK ছাড়াও curl দিয়ে একই কাজ হয়।"
+    },
+    {
+      "front": "Python SDK default retry কয়বার, কোন কোন ক্ষেত্রে?",
+      "back": "২ বার, exponential backoff সহ: connection error, 408, 409, 429 ও >=500। `max_retries` দিয়ে বদলানো যায়।"
+    },
+    {
+      "front": "Python SDK-র default timeout কত?",
+      "back": "১০ মিনিট; `timeout=` দিয়ে বদলানো যায়। Timeout হলে `APITimeoutError`, আর timeout-ও default-এ retry হয়।"
+    },
+    {
+      "front": "লম্বা generation-এ কেন streaming?",
+      "back": "Non-streaming-এ idle connection কেটে যেতে পারে; SDK ~১০ মিনিটের বেশি লাগার সম্ভাবনায় ValueError দেয়। Streaming বা Batch API ব্যবহার করো।"
+    },
+    {
+      "front": "কোন error retry করবে না?",
+      "back": "400, 401, 403, 404, 413: request/auth ভুল, আগে ঠিক করতে হবে। Retry শুধু transient (429, 5xx, 529, connection, timeout)।"
+    },
+    {
+      "front": "Async-এ concurrency কীভাবে বাঁধবে?",
+      "back": "`AsyncAnthropic` + `asyncio.Semaphore(N)`। N তোমার rate limit ও latency মেপে ঠিক করো; 429 দেখলে কমাও।"
+    },
+    {
+      "front": "Idempotent retry কীভাবে নিশ্চিত করবে?",
+      "back": "নিজের idempotency key (যেমন ticket_id+step) ও সংরক্ষিত ফল দিয়ে; model call আর side-effect আলাদা। API নিজে idempotency দেয় ধরে নিও না।"
+    },
+    {
+      "front": "CI-তে Claude review বট কেমন নকশায়?",
+      "back": "Test/lint আগে, Claude advisory comment, মানুষের approve; secret GitHub Secrets-এ; `--max-turns` ও timeout দিয়ে খরচ সীমিত।"
+    },
+    {
+      "front": "claude-code-action-এ interactive আর automation মোড কীভাবে ঠিক হয়?",
+      "back": "`prompt` input না থাকলে interactive (`@claude` ট্রিগার); থাকলে automation (event-এ নিজে চলে)।"
+    },
+    {
+      "front": "বড় refactor-এর নিরাপদ ধাপ?",
+      "back": "Characterization test → plan অনুমোদন → ছোট ধাপ → প্রতি ধাপে test + commit। এক লাফে সব বদলানো নয়।"
+    },
+    {
+      "front": "CLAUDE.md hierarchy কি override করে?",
+      "back": "না, সব ফাইল context-এ জোড়া লাগে (root থেকে নিচে; কাছের directory শেষে)। বিরোধী নির্দেশ রাখলে Claude একটা বেছে নিতে পারে।"
+    },
+    {
+      "front": "CLAUDE.md-র চার জায়গা?",
+      "back": "Managed policy (OS-নির্দিষ্ট পথ), user `~/.claude/CLAUDE.md`, project `./CLAUDE.md` বা `./.claude/CLAUDE.md`, local `./CLAUDE.local.md`।"
+    },
+    {
+      "front": "CLAUDE.md দিয়ে কি কোনো কাজ নিশ্চিতভাবে আটকানো যায়?",
+      "back": "না: এটা context, enforcement নয়। নিশ্চিত বাধার জন্য settings.json-এর `permissions.deny` বা hook।"
+    },
+    {
+      "front": "settings.json precedence (উচ্চ→নিম্ন)?",
+      "back": "Managed > command line (`--settings`) > project local > shared project > user। List (`permissions.allow`) merge হয়।"
+    },
+    {
+      "front": "Permission rule-এর মূল্যায়ন ক্রম?",
+      "back": "deny → ask → allow, প্রথম মিল জেতে। Allow কখনো deny-র ব্যতিক্রম বানাতে পারে না।"
+    },
+    {
+      "front": "Production-এ alias নাকি pinned ID?",
+      "back": "Pinned (স্থির) ID কনফিগে। আগের প্রজন্মে alias সরতে পারে; ৪.৬+ প্রজন্মে dateless ID নিজেই pinned snapshot।"
+    },
+    {
+      "front": "Model upgrade-এর আগে কী করবে?",
+      "back": "Release note/breaking change পড়ো, eval suite পুরোনো-নতুন তুলনা, canary rollout, ফেরার পথ রাখো। Prompt ও model আলাদা PR।"
+    },
+    {
+      "front": "`enabledPlugins` project scope-এ commit করলে কী হয়?",
+      "back": "Plugin টিমের জন্য চালু ঘোষিত হয়, কিন্তু মেশিনে নেমে আসে না: প্রত্যেককে `claude plugin install name@mkt --scope project` চালাতে হয়।"
+    },
+    {
+      "front": "Plugin dependency-তে version constraint কেন?",
+      "back": "constraint না দিলে marketplace-এর সর্বশেষ অনুসরণ করে, আপডেটে ভাঙতে পারে। `~2.1.0` দিলে শুধু 2.1.x patch; tag হতে হয় `<name>--v<ver>`।"
+    },
+    {
+      "front": "Plugin scope conflict-এ কে জেতে?",
+      "back": "local > project > user।"
+    },
+    {
+      "front": "Bedrock/Vertex-এ কোন কোন feature সমর্থিত নয়?",
+      "back": "Message Batches API, Files API, MCP connector, Agent Skills, Managed Agents, কিছু server-side tool ও server-side `fallbacks`। Messages API, caching, thinking, tool use আছে।"
+    },
+    {
+      "front": "Regional endpoint-এর খরচ কেমন?",
+      "back": "docs অনুযায়ী Bedrock-এর regional endpoint ও Google Cloud-এর multi-region/regional-এ global-এর চেয়ে ১০% বেশি; data residency-র বিনিময়ে।"
+    },
+    {
+      "front": "Accelerator হিসেবে কী কী প্যাকেজ করা যায়?",
+      "back": "Parameterised agent template, configurable MCP server, portable eval suite। হার্ডকোড/secret ছাড়া, version করা, নথিভুক্ত channel-এ contribute।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart-এর রাতের job ৫,০০০টা ticket Claude দিয়ে শ্রেণিবদ্ধ করে। Rafi সবগুলো request একসাথে `asyncio.gather` দিয়ে ছেড়ে দেওয়ায় অনেক request `429` পাচ্ছে। সবচেয়ে ভালো সমাধান কোনটা?",
+      "options": [
+        "`max_retries` বাড়িয়ে ২০ করা, যাতে শেষ পর্যন্ত সব পাস হয়",
+        "একটাই `AsyncAnthropic` client ব্যবহার করে `asyncio.Semaphore` দিয়ে একসাথে চলা request-সংখ্যা বাঁধা এবং সীমা মেপে ঠিক করা",
+        "প্রতি request-এ নতুন client বানানো, যাতে rate limit আলাদা আলাদা গোনা হয়",
+        "`temperature` কমিয়ে দেওয়া, যাতে request হালকা হয়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Semaphore concurrency বাঁধে, ফলে limit-এর নিচে থাকা যায়; সীমাটা rate limit ও latency মেপে ঠিক করতে হয়। retry বাড়ালে একই ভিড় আরও বাড়ে ও খরচ বাড়ায়। নতুন client বানালে rate limit ভাগ হয় না (limit organization-স্তরের)। temperature-এর সাথে request-এর ভিড়ের কোনো সম্পর্ক নেই।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "Chai-Bot একটা refund-অনুমোদন কাজ চালায়: Claude সিদ্ধান্ত দেয়, তারপর কোড টাকা ফেরত পাঠায়। নেটওয়ার্ক timeout-এর পর retry হওয়ায় কিছু গ্রাহক দুবার টাকা পেয়েছে। কোন দুটো পদক্ষেপ সমস্যাটা সবচেয়ে ভালোভাবে ঠেকায়? Select TWO.",
+      "options": [
+        "`temperature=0` বসানো, যাতে retry-তে একই উত্তর আসে",
+        "রিফান্ড পাঠানোর আগে ticket_id-ভিত্তিক idempotency key দিয়ে ডাটাবেসে আগে ফল/অবস্থা যাচাই ও সংরক্ষণ করা",
+        "SDK-র সব retry বন্ধ করে কোনো ব্যর্থ call কখনো আবার না চালানো",
+        "Claude-এর সিদ্ধান্ত-গ্রহণ আর টাকা পাঠানোর side-effect আলাদা ধাপে রাখা, যাতে model call retry হলেও side-effect একবারই চলে"
+      ],
+      "answerIndexes": [1, 3],
+      "explanation": "Idempotency key ও সংরক্ষিত অবস্থা এবং model call থেকে side-effect আলাদা করা: এ দুটোই duplicate ঠেকায়। temperature 0 একই output-এর গ্যারান্টি নয় এবং side-effect-এর সুরক্ষাও নয়। সব retry বন্ধ করলে transient ত্রুটিতে কাজই হারিয়ে যায়; সমাধান retry বন্ধ নয়, retry নিরাপদ করা।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "Nusrat Apu প্রতিটা PR-এ Claude দিয়ে review চান। কোন নকশাটা সবচেয়ে ভালো?",
+      "options": [
+        "Claude-কে একমাত্র approver করা, যাতে মানুষের সময় বাঁচে",
+        "API key workflow ফাইলে সরাসরি লিখে রাখা, যাতে সেটআপ সহজ হয়",
+        "Test/lint আগে চালানো; Claude `claude-code-action`-এ (`ANTHROPIC_API_KEY` GitHub Secrets থেকে, `--max-turns` সহ) সহায়ক মন্তব্য দেওয়া; merge-এর approval মানুষের",
+        "Claude review পাস না করলে CI ব্যর্থ ধরা, আর Claude-এর রায়ই চূড়ান্ত গণ্য করা"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Deterministic gate আগে, Claude সহায়ক চোখ, মানুষের approval এবং secret-কে Secrets-এ রাখা নিরাপদ ও খরচ-নিয়ন্ত্রিত নকশা। AI একমাত্র approver হলে সম্ভাব্যতাভিত্তিক ভুল সরাসরি production-এ যায়। Key ফাইলে লেখা secret ফাঁস। Claude-এর রায় চূড়ান্ত করাও একই ঝুঁকি।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "Rafi ৪০টা ফাইল ছুঁয়ে payment module sync থেকে async-এ নিতে চায়। কোন দুটো পদ্ধতি সবচেয়ে নিরাপদ? Select TWO.",
+      "options": [
+        "প্রথমে বর্তমান আচরণ ধরে রাখা characterization test লেখা, সেগুলো সবুজ করা",
+        "একটা বিশাল prompt-এ 'সব ফাইল বদলাও' বলে এক commit-এ শেষ করা",
+        "Claude-কে আগে ধাপ-ভিত্তিক plan লিখতে বলে অনুমোদন দেওয়া, তারপর ছোট ছোট ধাপে বদলে প্রতি ধাপে test চালিয়ে commit করা",
+        "Claude নির্ভুল ধরে test বাদ দিয়ে শুধু diff দেখে merge করা"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "বড় refactor-এ আগে নিরাপত্তা জাল (test), পরে plan ও ছোট ধাপ + commit, ফলে ভুল ধরা ও rollback সহজ। এক commit-এ সব বদল reviewযোগ্য নয়। test ছাড়া 'আচরণ বদলায়নি' প্রমাণ করা যায় না; Claude-কে অভ্রান্ত ধরা ভুল।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "Model আপগ্রেডের পর Chai-Bot-এর একটা request-এ `400 invalid_request_error` আসছে: কোডে শেষ message হিসেবে একটা prefilled assistant message পাঠানো হচ্ছে। কী করবে?",
+      "options": [
+        "Backoff দিয়ে বারবার retry করা, কারণ 400-ও transient হতে পারে",
+        "`max_retries` শূন্য থেকে বাড়ানো",
+        "Timeout বাড়ানো",
+        "Retry না করে request ঠিক করা: prefill সরিয়ে system prompt বা structured output দিয়ে ফরম্যাট নিয়ন্ত্রণ করা"
+      ],
+      "answerIndexes": [3],
+      "explanation": "400 মানে request-এর গঠন/বিষয়বস্তু ভুল; একই request যতবার পাঠাবে একই ফল। Claude 4.6+ model prefill নেয় না, তাই কোড/prompt বদলাতে হবে। retry, max_retries বা timeout বাড়ানো সমস্যার মূল কারণ ছোঁয় না।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "Chai-Bot একটা লম্বা রিপোর্ট তৈরি করতে খুব বড় `max_tokens` দিয়ে non-streaming request পাঠায়, আর মাঝেমধ্যে নেটওয়ার্ক সংযোগ কেটে গিয়ে timeout হয়। সবচেয়ে ভালো সমাধান?",
+      "options": [
+        "Streaming ব্যবহার করা (বা কাজটা Message Batches API-তে দেওয়া), যাতে idle connection কাটার ঝুঁকি কমে",
+        "Timeout ০ করে দেওয়া",
+        "`temperature` কমানো",
+        "Request আরও বড় করে এক call-এ সব কাজ ঢোকানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Docs বলে দীর্ঘ non-streaming request-এ নেটওয়ার্ক idle connection কেটে দিতে পারে; streaming বা Batch API এটা সামলায়। Timeout ০ করা বা temperature বদলানো মূল সমস্যা ঠিক করে না। request বড় করলে আরও দেরি হয়।",
+      "domain": 2,
+      "skill": "Software Engineering Foundations"
+    },
+    {
+      "question": "একজন ডেভেলপার `repo/services/api/` থেকে Claude Code চালায়। `~/.claude/CLAUDE.md`, `repo/CLAUDE.md` আর `repo/services/api/CLAUDE.md` তিনটাই আছে। কী ঘটে?",
+      "options": [
+        "শুধু সবচেয়ে ভেতরের `services/api/CLAUDE.md` লোড হয়, বাকিগুলো বাতিল",
+        "User, root ও working-directory-র তিনটা ফাইলই context-এ জোড়া লাগে (override নয়); কাছের ফাইল পরে বসে",
+        "Project ফাইল user ফাইলকে সম্পূর্ণ মুছে দেয়",
+        "শুধু `~/.claude/CLAUDE.md` লোড হয়, কারণ সেটা user scope"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs: CLAUDE.md ফাইলগুলো concatenate হয়, একটা অন্যটাকে overwrite করে না; ক্রম বিস্তৃত থেকে নির্দিষ্ট, কাছের নির্দেশ শেষে। তাই 'শুধু একটা' বা 'মুছে দেয়' ভুল। (settings.json-এ precedence আছে, CLAUDE.md-তে নেই।)",
+      "domain": 2,
+      "skill": "Configuration Management"
+    },
+    {
+      "question": "টিমের commit-করা `.claude/settings.json`-এ `\"model\": \"A\"` এবং `permissions.allow`-এ `Bash(pytest *)` আছে। Rafi-র `~/.claude/settings.json`-এ `\"model\": \"C\"`, আর তার `.claude/settings.local.json`-এ `\"model\": \"B\"`। কোনো managed settings বা flag নেই। Rafi-র সেশনে কোন model ও কী ঘটে?",
+      "options": [
+        "C ব্যবহার হয়, কারণ user settings ব্যক্তিগত বলে সবার ওপরে",
+        "A ব্যবহার হয়, কারণ commit-করা ফাইল সবসময় জেতে",
+        "B ব্যবহার হয়; আর `permissions.allow` তালিকাগুলো merge হয়",
+        "`model` key একাধিক জায়গায় থাকায় Claude Code settings ফাইল প্রত্যাখ্যান করে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Precedence: managed > command line > project local > shared project > user। তাই local-এর B জেতে। `permissions.allow`-এর মতো list merge হয়। user ফাইল সবচেয়ে নিচে; একই key একাধিক স্তরে থাকা স্বাভাবিক, সেটা error নয়।",
+      "domain": 2,
+      "skill": "Configuration Management"
+    },
+    {
+      "question": "Nusrat Apu চান Chai-Bot-এর model আপগ্রেড নিরাপদ হোক। কোন দুটো ব্যবস্থা সবচেয়ে ভালো? Select TWO.",
+      "options": [
+        "Production-এ 'latest'/alias ব্যবহার করা, যাতে নতুন উন্নতি স্বয়ংক্রিয়ভাবে আসে",
+        "Model ID কনফিগে pinned রাখা এবং আপগ্রেডকে আলাদা PR করে নেওয়া",
+        "Prompt ও model একই commit-এ বদলানো, যাতে একবারেই কাজ শেষ হয়",
+        "আপগ্রেডের আগে একই eval suite পুরোনো ও নতুন model-এ চালিয়ে তুলনা করা, canary দিয়ে ছাড়া"
+      ],
+      "answerIndexes": [1, 3],
+      "explanation": "Pinned ID + আলাদা PR এবং eval-তুলনা + canary: বদলটা সচেতন ও ফেরানো-যোগ্য। Alias/latest-এ আচরণ হঠাৎ বদলাতে পারে। Prompt ও model এক commit-এ বদলালে কারণ আলাদা করা যায় না।",
+      "domain": 2,
+      "skill": "Configuration Management"
+    },
+    {
+      "question": "একটা টিম-plugin `deploy-kit` অন্য plugin `secrets-vault`-এর ওপর নির্ভর করে, dependency-তে কোনো version দেওয়া নেই। `secrets-vault`-এর নতুন release একটা MCP tool-এর নাম বদলানোর পর `deploy-kit` ভেঙে গেছে। সবচেয়ে ভালো প্রতিরোধ কোনটা?",
+      "options": [
+        "Dependency-তে `{ \"name\": \"secrets-vault\", \"version\": \"~2.1.0\" }` ধরনের পরীক্ষিত range দেওয়া এবং maintainer-কে `<name>--v<version>` tag দিয়ে release করানো",
+        "Dependency সরিয়ে `secrets-vault`-এর কোড কপি করে নিজের plugin-এ বসানো",
+        "User settings-এ plugin disable করা",
+        "Auto-update চিরতরে বন্ধ রাখা এবং কখনো আপডেট না করা"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Version constraint পরীক্ষিত পরিসরের বাইরে যাওয়া ঠেকায়; resolve হয় git tag (`<plugin-name>--v<version>`) দিয়ে, তাই tag জরুরি। কোড কপি করলে রক্ষণাবেক্ষণ-দায় বাড়ে। disable করলে ফিচারই যায়। আপডেট কখনো না করা নিরাপত্তা-সংশোধনও আটকায়।",
+      "domain": 2,
+      "skill": "Configuration Management"
+    },
+    {
+      "question": "টিম `.claude/settings.json` commit করে `enabledPlugins`-এ `formatter@your-org: true` রাখল। নতুন সহকর্মী repo clone করে দেখে plugin-এর skill আসছে না। সবচেয়ে সম্ভাব্য কারণ ও সমাধান কী?",
+      "options": [
+        "Settings ফাইল commit করা যায় না; plugin শুধু user scope-এ চলে",
+        "Commit শুধু plugin চালু ঘোষণা করে, মেশিনে নামায় না; সহকর্মীকে `claude plugin install formatter@your-org --scope project` চালাতে হবে (এবং folder trust ও marketplace ঘোষণা দরকার হতে পারে)",
+        "API key ভুল",
+        "Plugin শুধু `settings.local.json`-এ কাজ করে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs: project scope-এ commit সহকর্মীর জন্য plugin enable করে, কিন্তু download করে না; প্রত্যেককে একবার install করতে হয়। অচেনা marketplace ও committed allow-জাতীয় কিছু key folder trust-এর পর কার্যকর হয়। অন্য অপশনগুলো docs-এর বিরুদ্ধে।",
+      "domain": 2,
+      "skill": "Claude Application Design"
+    },
+    {
+      "question": "টিম নিশ্চিত করতে চায় যে Claude Code কোনোভাবেই কারও মেশিনে `.env` ফাইল পড়বে না। কোন ব্যবস্থা যথেষ্ট?",
+      "options": [
+        "প্রজেক্ট `CLAUDE.md`-তে বড় অক্ষরে লেখা 'কখনো .env পড়বে না'",
+        "`~/.claude/CLAUDE.md`-তে নির্দেশ দেওয়া",
+        "`.claude/settings.local.json`-এ deny rule রাখা",
+        "Commit-করা `.claude/settings.json`-এ `permissions.deny`-তে `Read(./.env)` ও `Read(./.env.*)` রাখা"
+      ],
+      "answerIndexes": [3],
+      "explanation": "CLAUDE.md context মাত্র, enforced নয়। Settings-এর `deny` Claude Code নিজে প্রয়োগ করে, আর deny সবার আগে মূল্যায়িত হয় (তবে Read deny শুধু Claude-এর file tool ও চেনা Bash কমান্ডে প্রযোজ্য; যেকোনো subprocess-এর ক্ষেত্রে sandbox-ও লাগে); সবার জন্য হতে হলে commit-করা project settings (local ফাইল git-এ যায় না, তাই শুধু একজনের জন্য)।",
+      "domain": 2,
+      "skill": "Claude Application Design"
+    },
+    {
+      "question": "Python SDK ও Messages API সম্পর্কে কোন দুটো উক্তি সঠিক? Select TWO.",
+      "options": [
+        "SDK আসলে HTTPS REST call-এর মোড়ক; SDK ছাড়া `curl` দিয়েও একই request পাঠানো যায়",
+        "SDK সার্ভারে conversation history জমিয়ে রাখে, তাই প্রতিবার পুরো messages পাঠাতে হয় না",
+        "API stateless: ধারাবাহিক কথোপকথনে তোমার কোড প্রতিবার প্রয়োজনীয় history পাঠায়",
+        "Streaming চালু করলে token সংখ্যা ও খরচ কমে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "SDK = REST-এর মোড়ক, আর Messages API stateless: history পাঠানো তোমার দায়িত্ব। SDK সার্ভারে history রাখে না। Streaming শুধু কখন আংশিক উত্তর পাওয়া যায় তা বদলায়, token/খরচ নয়।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    },
+    {
+      "question": "প্রতিষ্ঠানের compliance-এর কারণে Chai-Bot Amazon Bedrock-এ চলছে। ডেভেলপাররা Message Batches API ও Files API ব্যবহারের চেষ্টা করছে কিন্তু ব্যর্থ হচ্ছে। সবচেয়ে সম্ভাব্য কারণ ও পথ কী?",
+      "options": [
+        "Rate limit; request-সংখ্যা কমালেই চলবে",
+        "Model ID ভুল; `anthropic.` prefix বাদ দিলেই চলবে",
+        "ওই feature-গুলো Bedrock-এ সমর্থিত নয়; compliance বজায় রেখে async worker pool ও নিজস্ব storage ব্যবহার করা, অথবা compliance অনুমতি দিলে first-party API ধরা",
+        "SDK-র পুরোনো version; শুধু আপগ্রেড করলেই Batch API আসবে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Docs অনুযায়ী Bedrock-এ Message Batches API ও Files API নেই (Google Cloud-এও নেই)। তাই কারণটা feature availability; সমাধান platform-সীমার মধ্যে বিকল্প বা নীতি অনুমতি দিলে অন্য পথ। rate limit, model-ID prefix বা SDK আপগ্রেড এর ব্যাখ্যা নয়।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    },
+    {
+      "question": "একজন ডেভেলপার Python SDK-র default retry জানত না, তাই নিজের কোডে ৩ বার retry loop বসিয়েছে। কিছু অনুরোধ বারবার ব্যর্থ হলে মোট কতবার API-তে call যেতে পারে, আর সঠিক সংশোধন কী?",
+      "options": [
+        "প্রতিটা পরিস্থিতিতে ৪ বার (SDK: ২ ও নিজের: ২); কোনো সংশোধন দরকার নেই",
+        "SDK default-এ ২ বার retry করে, তাই ৩ চেষ্টা × (১+২) = সর্বোচ্চ ৯ call পর্যন্ত যেতে পারে; একটা স্তরেই retry রাখো (`max_retries` ঠিক করো বা SDK retry ০ করে নিজের policy দাও)",
+        "SDK কখনো retry করে না; তাই ৩ call",
+        "Retry শুধু 4xx-এ হয়, তাই কোনো সমস্যা নেই"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Python SDK default-এ connection error, 408, 409, 429 ও >=500-এ ২ বার retry করে, তাই নিজের loop-এর প্রতিটা চেষ্টা ১+২ call হতে পারে: গুণ হয়ে যায়। সঠিক নকশা এক স্তরে retry। ৪xx-এর বেশিরভাগে retry ঠিক নয়, আর SDK-র retry অস্বীকার করা ভুল।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    }
+  ]
+}

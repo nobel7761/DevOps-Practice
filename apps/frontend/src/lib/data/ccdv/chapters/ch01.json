@@ -1,0 +1,792 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি token, context window, sampling ও next-token generation-এর মূল ধারণা, Claude-এর সীমা, zero/multi-shot prompting, API-র ভিত্তি আর AI Fluency-র 4D কাঠামো ব্যাখ্যা করে Chai-Bot-এর মৌলিক সমস্যাগুলো ধরতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর প্রথম production সপ্তাহ\n\nChaiCart ঢাকার একটা অনলাইন চায়ের দোকান। দোকানের support agent **Chai-Bot** বানাচ্ছে junior developer **Rafi**, আর কোড রিভিউ করেন tech lead **Nusrat Apu**। Staging-এ Chai-Bot দারুণ চলছিল। production-এ যাওয়ার এক সপ্তাহ পর Nusrat Apu তিনটা প্রশ্ন নিয়ে Rafi-র ডেস্কে এলেন:\n\n1. \"বাংলায় লেখা customer message-এর খরচ আমাদের হিসাবের চেয়ে বেশি কেন?\"\n2. \"একটা লম্বা চ্যাটের শেষে Chai-Bot প্রথমে বলা refund policy ভুলে গেল। কেন?\"\n3. \"একই প্রশ্নে সকালে একরকম, বিকালে আরেকরকম উত্তর দিল। এটা কি bug?\"\n\nRafi নিজে `temperature=0` বসিয়ে \"সবকিছু ঠিক করে ফেলবে\" ভেবেছিল। কিন্তু নতুন model-এ request পাঠাতেই এল `400` error। তখনই সে বুঝল, Claude-এর সাথে কাজ করার আগে ভেতরের কয়েকটা মৌলিক জিনিস না জানলে প্রতিটা সমস্যা অন্ধকারে ঢিল ছোড়া।\n\nআজকের chapter সেই মৌলিক জিনিসগুলো নিয়ে। পরীক্ষার **Domain 5 (Model Selection and Optimization)**-এর **LLM Fundamentals** আর **Technical Fundamentals** skill এখান থেকেই আসে। আজ আমরা শিখব:\n\n| বিষয় | Chai-Bot-এর কোন প্রশ্নের উত্তর |\n|---|---|\n| Token ও tokenization | বাংলা message-এর খরচ কেন বেশি |\n| Context window | লম্বা চ্যাটে policy কেন \"ভুলে\" যায় |\n| Next-token generation ও sampling | একই প্রশ্নে ভিন্ন উত্তর কেন |\n| Capabilities ও limitations | Claude কোথায় ভরসাযোগ্য, কোথায় নয় |\n| Zero / single / multi-shot | output format ঠিক রাখার প্রথম হাতিয়ার |\n| API-র ভিত্তি (REST, SDK, stateless, streaming) | আসলে request-এ কী যায় |\n| AI Fluency 4D | কাজ ভাগ করা, বলা, যাচাই করা, দায় নেওয়া |"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. Token ও tokenization\n\n### Claude টেক্সট \"অক্ষর\" হিসেবে পড়ে না\n\nআমরা টেক্সট ভাবি অক্ষর বা শব্দ হিসেবে। Claude টেক্সটকে ছোট ছোট টুকরোতে ভাঙে, এই টুকরোর নাম **token**। একটা token পুরো শব্দ হতে পারে, শব্দের অংশ হতে পারে, একটা বিরামচিহ্ন হতে পারে, এমনকি একটা অক্ষরের অংশও (বিশেষ করে বাংলার মতো স্ক্রিপ্টে)। টেক্সট ভাঙার এই কাজকে বলে **tokenization**।\n\nToken কেন গুরুত্বপূর্ণ? কারণ তিনটা জিনিস token দিয়ে মাপা হয়:\n\n- **খরচ**: input token আর output token আলাদা হিসেবে billing হয়।\n- **সীমা**: context window আর `max_tokens` দুটোই token-এর হিসাবে।\n- **Rate limit**: প্রতি মিনিটে কত token পাঠাতে পারবে, সেটাও token-এ।\n\n### \"১ token = কয়টা অক্ষর\" মুখস্থ করো না, মাপো\n\nইংরেজিতে সাধারণ থাম্বরুল আছে (প্রায় কয়েকটা অক্ষরে এক token), কিন্তু এটা শুধু আন্দাজ। বাংলা, কোড, JSON, URL, ইমোজি আলাদা আলাদা হারে token খায়। সাধারণ প্রবণতা হলো, বাংলার মতো স্ক্রিপ্টে একই অর্থের বাক্য ইংরেজির চেয়ে বেশি token নেয়। কতটা বেশি, সেটা নির্ভর করে model আর কনটেন্টের ওপর। তাই Nusrat Apu-র প্রথম প্রশ্নের উত্তর: **আন্দাজ করো না, আসল message দিয়ে মাপো।**\n\nOfficial **token counting API** ঠিক এই কাজের জন্য। এটা `POST /v1/messages/count_tokens` endpoint, Messages API-র মতোই `system`, `messages`, `tools`, ছবি, PDF নেয়, আর `input_tokens` ফেরত দেয়।\n\n```python\nimport os\nimport anthropic\n\nclient = anthropic.Anthropic()          # ANTHROPIC_API_KEY env var থেকে key নেয়\nMODEL = os.environ[\"CLAUDE_MODEL\"]      # official models overview থেকে copy করা id\n\nfor text in [\"Where is my order?\", \"আমার অর্ডারটা কোথায়? তিন দিন হয়ে গেল।\"]:\n    r = client.messages.count_tokens(\n        model=MODEL,\n        messages=[{\"role\": \"user\", \"content\": text}],\n    )\n    print(r.input_tokens, \"tokens ->\", text)\n```\n\nOfficial docs অনুযায়ী token counting-এর কয়েকটা বৈশিষ্ট্য মনে রাখো:\n\n- এটা **estimate**; আসল usage সামান্য আলাদা হতে পারে। Anthropic সিস্টেম অপটিমাইজেশনের জন্য যে token যোগ করে, তার জন্য তোমাকে bill করা হয় না।\n- Token counting **বিনামূল্যে**, তবে requests-per-minute rate limit আছে (এই limit message তৈরির limit থেকে আলাদা)।\n- Prompt caching এখানে কাজ করে না; `cache_control` দিলেও caching হয় শুধু আসল message তৈরির সময়।\n- **Server tools** (web search, code execution ইত্যাদি) আর MCP connector এই endpoint-এ error দেয়। ছবি আর PDF দিতে হয় base64 হিসেবে।\n\nআসল ব্যবহারের হিসাব সব response-এর `usage` object-এ থাকে: `input_tokens`, `output_tokens` (আর caching চালু থাকলে `cache_read_input_tokens`, `cache_creation_input_tokens`)।\n\n### Model বদলালে token-ও বদলায়\n\nএটা পরীক্ষার প্রিয় জায়গা। Official docs বলছে, **Claude 4.7 ও তার পরের model** (আর Mythos Preview) একটা **নতুন tokenizer** ব্যবহার করে। একই টেক্সটে পুরোনো model-এর তুলনায় **প্রায় ৩০% বেশি token** আসে; সঠিক বাড়তি নির্ভর করে কনটেন্টের ওপর। মানে কোনো prompt না বদলিয়েও শুধু model বদলালে খরচ, `max_tokens` আর context-এ জায়গার হিসাব নড়ে যায়।\n\n> নিয়ম: model বদলানোর আগে prompt-গুলো **নতুন model-এর id দিয়ে** আবার count করো। পুরোনো model-এর count নতুন model-এ ব্যবহার করো না।"
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Chai-Bot-এর প্রথম উত্তর",
+        "markdown": "Rafi দুই ধরনের message নিয়ে (ইংরেজি আর বাংলা) `count_tokens` চালাল এবং দেখল বাংলা message-এ token বেশি লাগে। তাই cost model-এ সে বাংলা traffic-এর জন্য আলাদা বাড়তি হিসাব ধরল। শিক্ষা: **বাস্তব ডেটা দিয়ে মাপো, আন্দাজে বাজেট করো না।**"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Context window: একটা fixed বাজেট\n\n### Context window মানে কী?\n\nOfficial docs-এর ভাষায় context window হলো **সেই সব টেক্সট, যা model উত্তর বানানোর সময় দেখতে পারে, উত্তরটা সহ।** এটা model-এর **working memory**; training-এ দেখা বিশাল ডেটা থেকে এটা আলাদা জিনিস। Window-র মাপ model ভেদে আলাদা। Docs-এ লেখা আছে সাম্প্রতিক অনেক model-এ **1M token** পর্যন্ত, আর পুরোনো কিছু model-এ 200k। সঠিক সংখ্যা সবসময় official **models overview** পাতা থেকে দেখবে, মুখস্থ করবে না।\n\nWindow-র ভেতরে কী কী ঢোকে (সবটাই গোনা হয়):\n\n| অংশ | উদাহরণ (Chai-Bot) |\n|---|---|\n| `system` prompt | \"তুমি ChaiCart-এর support agent...\" |\n| `messages` এর প্রতিটা turn | পুরো চ্যাট history |\n| tool-এর **definition** | `get_order_status`-এর নাম, description, schema |\n| tool result, ছবি, document | order API-র JSON, রিসিটের ছবি |\n| model-এর **output** (thinking সহ) | Chai-Bot-এর উত্তর |\n\nদুটো সূক্ষ্ম জিনিস:\n\n- **Prompt caching** খরচ বদলায়, কিন্তু cached prefix-ও window-র জায়গা নেয়। Cached মানে \"window-র বাইরে\" নয়।\n- Thinking token output হিসেবে গোনা হয়, `max_tokens`-এর মধ্যেই পড়ে, আর window-ও খায়। আগের turn-এর thinking block রাখা হবে কি না, সেটা model-এর ওপর নির্ভর করে (নতুন model-এ docs অনুযায়ী আগের thinking block ডিফল্টে থাকে এবং input token হিসেবে গোনা হয়)।\n\n### API stateless: প্রতিবার পুরো history পাঠাতে হয়\n\nMessages API-র কোনো \"স্মৃতি\" নেই। প্রতিটা request-এ তুমি সম্পূর্ণ কথোপকথন আবার পাঠাও। Turn বাড়লে input বাড়ে, খরচও বাড়ে। এটাই Nusrat Apu-র দ্বিতীয় প্রশ্নের শিকড়: চ্যাট যত লম্বা, window তত ভরে।\n\n```python\nhistory = []\n\ndef ask(user_text):\n    history.append({\"role\": \"user\", \"content\": user_text})\n    reply = client.messages.create(model=MODEL, max_tokens=500, messages=history)\n    history.append({\"role\": \"assistant\", \"content\": reply.content})   # উত্তরটাও রাখতে হবে\n    print(reply.usage.input_tokens, reply.usage.output_tokens)\n    return reply\n\nask(\"আমার অর্ডার #1042 কোথায়?\")\nask(\"আর refund policy টা কী?\")    # input_tokens আগের চেয়ে বেশি দেখবে\n```\n\n### সীমা ছাড়ালে কী হয়? (Official docs)\n\n- শুধু **input-ই** window-র চেয়ে বড় হলে: `400 invalid_request_error` (\"prompt is too long\")।\n- Claude 4.5 ও তার পরের model-এ: input + `max_tokens` window ছাড়ালেও request **গ্রহণ হয়**; generation window-তে ঠেকলে থামে এবং `stop_reason` হয় `\"model_context_window_exceeded\"`। পুরোনো model-এ এটা validation error।\n- `max_tokens` পর্যন্ত পৌঁছালে `stop_reason` হয় `\"max_tokens\"`; উত্তর **মাঝপথে কাটা**।\n\n### বড় window মানেই ভালো নয়: context rot\n\nDocs সরাসরি সতর্ক করছে: token যত বাড়ে, **accuracy আর recall কমতে পারে**; এই ঘটনার নাম **context rot**। তাই \"সব কিছু ঢুকিয়ে দাও\" কৌশল নয়। কী ঢুকবে সেটা বাছাই করাও window-র আকারের মতোই গুরুত্বপূর্ণ। লম্বা কথোপকথনে সমাধান: পুরোনো tool result ছেঁটে ফেলা, **compaction** (server-side সারসংক্ষেপ, docs-এ beta), আর গুরুত্বপূর্ণ নিয়ম system prompt-এ রাখা। এই বিষয়ে গভীরে যাব Domain 6-এর chapter-এ।\n\nনতুন কিছু model নিজেই বাকি window বুঝতে পারে (context awareness): Sonnet 5, Sonnet 4.6 ইত্যাদি। কিন্তু Opus 4.7+ ও Sonnet 5.5-এর মতো model-এ API সেই tag injection করে না; সেখানে বাজেট বোঝাতে docs-এ **task budgets** (beta) আছে। খুঁটিনাটি পরের chapter-গুলোতে।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: context window মানে শুধু input নয়",
+        "markdown": "পরীক্ষা প্রায়ই জিজ্ঞেস করে \"window-তে কী গোনা হয়\"। ভুল ধারণা তিনটা: (১) শুধু user message গোনা হয়; (২) system prompt ও tool definition গোনা হয় না; (৩) cached token window-র বাইরে। সঠিক: **system, সব message, tool definition, tool result, ছবি/document, আর model-এর নিজের output (thinking সহ)**: সব গোনা হয়। আর API stateless বলে history তুমিই পাঠাও।"
+      },
+      {
+        "type": "simulator",
+        "id": "budget-meter",
+        "props": {
+          "title": "Chai-Bot-এর context window বাজেট",
+          "hint": "স্লাইডার টেনে দেখো window কতটা ভরে। এখানে window 200k ধরা হয়েছে শুধু বোঝার সুবিধার জন্য; আসল model-এর window আলাদা। দাম ($/million) একটা কাল্পনিক সংখ্যা, আসল দাম নয়।",
+          "capacity": 200000,
+          "capacityLabel": "Context window (উদাহরণ)",
+          "items": [
+            {
+              "id": "system",
+              "label": "System prompt (policy, tone)",
+              "tokens": 3000,
+              "min": 500,
+              "max": 20000,
+              "step": 500,
+              "costFactor": 1
+            },
+            {
+              "id": "tools",
+              "label": "Tool definition (১২টা tool)",
+              "tokens": 6000,
+              "min": 0,
+              "max": 40000,
+              "step": 1000,
+              "costFactor": 1
+            },
+            {
+              "id": "history",
+              "label": "চ্যাট history (turn বাড়ছে)",
+              "tokens": 40000,
+              "min": 0,
+              "max": 150000,
+              "step": 5000,
+              "costFactor": 1
+            },
+            {
+              "id": "docs",
+              "label": "Retrieved FAQ/document",
+              "tokens": 25000,
+              "min": 0,
+              "max": 100000,
+              "step": 5000,
+              "costFactor": 1
+            },
+            {
+              "id": "output",
+              "label": "Output (max_tokens রিজার্ভ)",
+              "tokens": 4000,
+              "min": 500,
+              "max": 32000,
+              "step": 500,
+              "costFactor": 1
+            }
+          ],
+          "ratePerMillion": 3,
+          "takeaway": "Window একটাই বাজেট; input আর output একই পাত্র থেকে খরচ হয়। history বাড়ালে বাকিদের জায়গা কমে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Next-token generation: Claude আসলে কী করে\n\n### একটা একটা করে token\n\nClaude-এর মূল কাজ খুব সরল শোনায়: **এ পর্যন্ত যা আছে তার ওপর ভিত্তি করে পরের token কী হবে, সেটা অনুমান করা।** তারপর সেই token-টা যোগ করে আবার পরের token অনুমান। এভাবে বাক্য, অনুচ্ছেদ, কোড তৈরি হয়। এই প্রক্রিয়াকে বলে **autoregressive next-token generation**।\n\nপ্রতিটা ধাপে model সব সম্ভাব্য token-এর ওপর একটা **সম্ভাবনা বণ্টন (probability distribution)** তৈরি করে। যেমন \"আপনার অর্ডার ___\" এর পর \"পৌঁছে\", \"আসছে\", \"প্রসেস\" ইত্যাদির আলাদা সম্ভাবনা। এখান থেকে একটা token **বেছে নেওয়ার** পদ্ধতির নাম **sampling**।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "একটা উত্তর তৈরির ভেতরের চক্র: প্রতিটা ধাপে একটা token যোগ হয় এবং সেটা পরের ধাপের input-এর অংশ হয়ে যায়।",
+          "steps": [
+            {
+              "title": "১. Input টেক্সট → token",
+              "body": "system prompt আর পুরো messages tokenize হয়। এটাই model-এর প্রথম context।"
+            },
+            {
+              "title": "২. সম্ভাবনা বণ্টন",
+              "body": "model প্রতিটা সম্ভাব্য পরের token-এর সম্ভাবনা হিসাব করে।"
+            },
+            {
+              "title": "৩. Sampling",
+              "body": "বণ্টন থেকে একটা token বাছা হয়। এই ধাপে সামান্য randomness থাকে।"
+            },
+            {
+              "title": "৪. Token যোগ",
+              "body": "বাছা token উত্তরে যোগ হয় এবং context-এর অংশ হয়ে যায়।"
+            },
+            {
+              "title": "৫. থামার শর্ত",
+              "body": "end_turn, max_tokens, stop_sequence বা context সীমা: কোনো একটায় ঠেকলে থামে; নইলে ধাপ ২ থেকে আবার।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "### Sampling, temperature আর non-determinism\n\nSampling-এ randomness আছে বলে **একই prompt দুইবার চালালে উত্তর আলাদা হতে পারে**; এটাই **non-determinism**। Nusrat Apu-র তৃতীয় প্রশ্নের উত্তর: \"এটা bug নয়, LLM-এর স্বভাব; তাই আমরা এমনভাবে সিস্টেম বানাই যেন সামান্য ভিন্নতাতেও ঠিক থাকে।\"\n\nSampling নিয়ন্ত্রণের ক্লাসিক তিনটা parameter:\n\n| Parameter | ধারণা | সাধারণ প্রভাব |\n|---|---|---|\n| `temperature` | বণ্টনটা কতটা \"চ্যাপ্টা\" বা \"খাড়া\" | কম হলে বেশি পূর্বানুমেয়, বেশি হলে বেশি বৈচিত্র্য |\n| `top_p` | সম্ভাবনার যোগফল p পর্যন্ত token-গুলোর মধ্য থেকেই বাছা (nucleus) | ছোট p মানে কম বিকল্প |\n| `top_k` | শুধু সবচেয়ে সম্ভাব্য k টা token থেকে বাছা | ছোট k মানে লেজের অদ্ভুত token বাদ |\n\nআরও দুটো নিয়ন্ত্রণ আছে যা sampling নয়, কিন্তু **কখন থামবে** ঠিক করে: `max_tokens` (সর্বোচ্চ কত token তৈরি হবে, বাধ্যতামূলক) আর `stop_sequences` (এই টেক্সট এলেই থামো, তখন `stop_reason` হয় `\"stop_sequence\"`)।\n\n### সবচেয়ে গুরুত্বপূর্ণ আপডেট: নতুন model-এ এগুলো নেই\n\nOfficial docs অনুযায়ী (Messages API guide ও migration guide, আমি নিজে পাতাগুলো পড়েছি):\n\n- `temperature`, `top_p`, `top_k` **Claude 4.7 ও তার পরের model-এ এবং Claude Mythos Preview-তে supported নয়।**\n- ওই model-এ non-default মান পাঠালে **`400` error**।\n- আবার নতুন **API version `2026-10-21`**-এ এই তিনটা parameter পাঠালেই `400`, **ডিফল্ট মান দিলেও**, যেকোনো model-এ। সর্বশেষ SDK ও CLI-তে parameter তিনটাই আর নেই।\n- docs-এর পরামর্শ: request থেকে এগুলো **বাদ দাও**, আর model-এর আচরণ নিয়ন্ত্রণ করো **prompting দিয়ে**।\n- parameter না দিলে ডিফল্ট sampling হয় (temperature ডিফল্ট ১.০, docs-এ উল্লেখ আছে)।\n- যে পুরোনো model-এ (যেমন Sonnet 4.6) অন্য মান নেওয়া যেত, সেখানে 2026-10-21 ব্যবহার করলে \"temperature কমিয়ে সামঞ্জস্য আনা\"র প্রভাব হারাবে, আর এর কোনো সরাসরি বিকল্প নেই।\n\nতাহলে Rafi কী করবে? `temperature=0` মুছে ফেলবে এবং নির্ভরযোগ্যতা আনবে অন্য পথে: স্পষ্ট নির্দেশ, কয়েকটা উদাহরণ, structured output, আর **response validation**।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: temperature=0 মানে গ্যারান্টি নয়, আর নতুন model-এ তো পাঠানোই যায় না",
+        "markdown": "পরীক্ষার ফাঁদ দুই রকম। (১) \"determinism-এর জন্য temperature 0 দাও\" ও \"prompt injection ঠেকাতে temperature বাড়াও\" ধরনের অপশন প্রায়ই ভুল। temperature নিরাপত্তার হাতিয়ার নয়, আর ০ দিলেও হুবহু একই output-এর নিশ্চয়তা থাকে না। (২) docs অনুযায়ী Claude 4.7+ model-এ non-default `temperature`/`top_p`/`top_k` দিলে `400`। তাই সঠিক সমাধান সাধারণত \"parameter বাদ দাও + prompt স্পষ্ট করো + output validate করো\"।"
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "একটু সততা: পরীক্ষার প্রশ্ন ও docs-এর সময়ের ফারাক",
+        "markdown": "Exam Guide-এ \"sampling, non-determinism\" ধারণাগুলো আছে, তাই তুমি temperature/top_p/top_k-এর **অর্থ** জানবে। কিন্তু বাস্তবে কোন model-এ এগুলো পাঠানো যায়, সেটা docs অনুযায়ী বদলে গেছে (উপরের তালিকা)। কোনো প্রশ্নে পুরোনো আচরণ ধরে নেওয়া হলে প্রশ্নের গল্পে model/ব্যবহারের প্রসঙ্গ দেখো। সন্দেহ হলে এই chapter-এর নীতি মনে রাখো: ধারণা জানো, আর নতুন model-এ parameter-এর বদলে prompting ও validation ব্যবহার করো।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Stateless API: তিন turn-এর চ্যাট আসলে কেমন",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। লক্ষ করো request প্রতিবার কতটা বড় হচ্ছে।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "api",
+              "label": "Messages API"
+            },
+            {
+              "id": "model",
+              "label": "Claude model"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages = [user১]",
+              "note": "প্রথম request-এ শুধু একটা user message। সাথে model, max_tokens আর দরকারে system।"
+            },
+            {
+              "from": "api",
+              "to": "model",
+              "label": "tokenize + generate",
+              "note": "API টেক্সটকে token করে model-এ দেয়; model একটা একটা করে token বানায়।"
+            },
+            {
+              "from": "model",
+              "to": "app",
+              "label": "assistant১ + usage",
+              "note": "উত্তর ফেরত আসে, সাথে usage (input_tokens, output_tokens) আর stop_reason। সার্ভারে কিছু জমা থাকে না।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages = [user১, assistant১, user২]",
+              "note": "দ্বিতীয় প্রশ্নে তোমাকেই আগের দুটো turn আবার পাঠাতে হয়। API কিছু মনে রাখে না।"
+            },
+            {
+              "from": "model",
+              "to": "app",
+              "label": "assistant২ + usage",
+              "note": "এবার input_tokens আগের চেয়ে বেশি, কারণ history বেড়েছে।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "messages = [user১ … user৩]",
+              "note": "তৃতীয় turn-এ আরও বড় request। এভাবেই চ্যাট লম্বা হলে খরচ ও window-র চাপ বাড়ে।"
+            },
+            {
+              "from": "model",
+              "to": "app",
+              "label": "stop_reason: end_turn",
+              "note": "স্বাভাবিক সমাপ্তি। যদি max_tokens-এ ঠেকত তাহলে উত্তর কাটা থাকত এবং stop_reason হত max_tokens।"
+            }
+          ],
+          "takeaway": "API stateless: history রাখা, ছাঁটা আর প্রতিবার পাঠানো তোমার দায়িত্ব; সেই history-ই context window ভরে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Claude কী পারে, কোথায় আটকায়: চারটা বৈশিষ্ট্য\n\nAnthropic Academy-র **AI Capabilities and Limitations** কোর্স generative AI-কে বোঝার জন্য চারটা বৈশিষ্ট্যের কাঠামো দেয়: **Next Token Prediction, Knowledge, Working Memory, Steerability**, আর শেষে \"যখন বৈশিষ্ট্যগুলো একসাথে ধাক্কা খায়\"। (কোর্সের পাঠ্য রেজিস্ট্রেশন ছাড়া দেখা যায় না, তাই নিচের ব্যাখ্যা কাঠামোর নাম ও উপরের official API docs থেকে আমার নিজের ভাষায় সাজানো। কোর্সটা বিনামূল্যে, পারলে নিজে করে নিও।)\n\n| বৈশিষ্ট্য | মানে | শক্তি | সীমা (Chai-Bot উদাহরণ) |\n|---|---|---|---|\n| **Next-token prediction** | পরের সম্ভাব্য token অনুমান করে উত্তর বানায় | সাবলীল, প্রসঙ্গসঙ্গত ভাষা | \"সম্ভাব্য শোনায়\" আর \"সত্য\" এক জিনিস নয়; তাই বানানো তথ্য (hallucination) আসতে পারে |\n| **Knowledge** | training থেকে পাওয়া জ্ঞান | ব্যাপক সাধারণ জ্ঞান, কোড, ভাষা | training cutoff-এর পর কিছু জানে না; ChaiCart-এর আজকের stock বা দাম জানে না |\n| **Working memory** | context window-র ভেতরের টেক্সট | এই কথোপকথনের সব তথ্য ব্যবহার করতে পারে | window সীমিত, context rot হয়; এক চ্যাটের কথা পরের চ্যাটে মনে থাকে না |\n| **Steerability** | prompt, উদাহরণ, role দিয়ে আচরণ নির্দেশ করা যায় | tone, format, ভূমিকা বদলানো যায় | নির্দেশ অস্পষ্ট হলে বা পরস্পরবিরোধী হলে ফল এলোমেলো; steering নিশ্চয়তা নয় |\n\nপ্রতিটা বৈশিষ্ট্যকে \"চালু/বন্ধ সুইচ\" নয়, বরং একটা **স্কেল** হিসেবে ভাবো: কিছু কাজে model দুর্দান্ত, কিছুতে দুর্বল, আর মাঝখানে অনেক ধূসর এলাকা।\n\n### যখন বৈশিষ্ট্যগুলো ধাক্কা খায়\n\nএকটা বাস্তব উদাহরণ: গ্রাহক জিজ্ঞেস করল \"আপনাদের রিটার্ন পলিসি কোন আইনের অধীনে?\" Chai-Bot-কে এ বিষয়ে কোনো নথি দেওয়া হয়নি।\n\n- **Knowledge-এ ফাঁক**: নির্দিষ্ট ChaiCart policy model জানে না।\n- **Next-token prediction**: তবু একটা বিশ্বাসযোগ্য শোনানো উত্তর বানানো তার জন্য সহজ।\n- ফল: আত্মবিশ্বাসী কিন্তু বানানো একটা আইনের নাম। এটাই hallucination-এর সবচেয়ে সাধারণ চেহারা।\n\nসমাধানের সূত্র: যা model জানে না তা **working memory-তে ঢুকিয়ে দাও** (আসল policy নথি দাও, বা tool দিয়ে আনাও), **steer** করো (\"নথিতে না থাকলে 'আমি জানি না' বলো, আর যে লাইন থেকে বলছ তা উদ্ধৃত করো\"), আর **যাচাই** করো (পরের অংশে 4D-র Discernment)।"
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "Hallucination ও ভুল ঠেকাতে কোন স্তর কী আটকায়",
+          "hint": "এক এক করে স্তর চালু করো। কোনো একটা স্তরই সবকিছু আটকায় না। এটাই layered defence-এর শিক্ষা।",
+          "layers": [
+            {
+              "id": "grounding",
+              "label": "Source নথি prompt-এ দাও (grounding)",
+              "desc": "আসল policy/FAQ context-এ ঢুকিয়ে দেওয়া",
+              "blocks": ["fake-policy", "stale"]
+            },
+            {
+              "id": "cite",
+              "label": "উদ্ধৃতি চাও: 'যে লাইন থেকে বলছ সেটা quote করো'",
+              "desc": "quote মেলানো যায়, না পেলে 'জানি না' বলতে বলা",
+              "blocks": ["fake-policy", "fake-quote"]
+            },
+            {
+              "id": "validate",
+              "label": "Code-এ response validation",
+              "desc": "order id, তারিখ, সংখ্যা তোমার database-এর সাথে মেলানো",
+              "blocks": ["wrong-number", "fake-quote"]
+            },
+            {
+              "id": "human",
+              "label": "ঝুঁকিপূর্ণ ক্ষেত্রে মানুষের অনুমোদন",
+              "desc": "refund-এর মতো সিদ্ধান্তে human review",
+              "blocks": ["wrong-number", "forgot-rule"]
+            },
+            {
+              "id": "pin",
+              "label": "মূল নিয়ম system prompt-এ + লম্বা চ্যাট ছাঁটা",
+              "desc": "গুরুত্বপূর্ণ নিয়ম বারবার window-র ভেতরে রাখা",
+              "blocks": ["forgot-rule"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "fake-policy",
+              "label": "বানানো আইন/policy",
+              "desc": "নথিতে নেই এমন নিয়ম আত্মবিশ্বাসে বলা"
+            },
+            {
+              "id": "stale",
+              "label": "পুরোনো তথ্য",
+              "desc": "training cutoff-এর পরের দাম/stock ভুল বলা"
+            },
+            {
+              "id": "fake-quote",
+              "label": "বানানো উদ্ধৃতি",
+              "desc": "নথিতে নেই এমন লাইন 'quote' করা"
+            },
+            {
+              "id": "wrong-number",
+              "label": "ভুল সংখ্যা/অঙ্ক",
+              "desc": "refund-এর টাকা বা তারিখ ভুল হিসাব"
+            },
+            {
+              "id": "forgot-rule",
+              "label": "লম্বা চ্যাটে নিয়ম ভুলে যাওয়া",
+              "desc": "context rot-এ শুরুর নির্দেশ দুর্বল হয়ে যাওয়া"
+            }
+          ],
+          "takeaway": "Model-এর সীমা মেনে নিয়ে তার চারপাশে স্তর বানাও: context দাও, উদ্ধৃতি চাও, code দিয়ে যাচাই করো, ঝুঁকিতে মানুষ রাখো।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Zero-shot, single-shot, multi-shot\n\n**Few-shot / multishot prompting** হলো prompt-এ কয়েকটা উদাহরণ দিয়ে model-কে দেখিয়ে দেওয়া \"আমি ঠিক এমনটাই চাই।\" Official prompting guide-এর কথা: উদাহরণ Claude-এর output-এর **format, tone ও structure নিয়ন্ত্রণের সবচেয়ে নির্ভরযোগ্য উপায়গুলোর একটা**; কয়েকটা ভালো উদাহরণ নির্ভুলতা ও সামঞ্জস্য বাড়ায়।\n\n| ধরন | prompt-এ উদাহরণ | কখন ভালো |\n|---|---|---|\n| **Zero-shot** | ০টা। শুধু নির্দেশ | কাজ সরল ও স্পষ্ট; model-এর ডিফল্ট আচরণই চলে |\n| **Single-shot (one-shot)** | ১টা | format দেখিয়ে দিলেই যথেষ্ট |\n| **Multi-shot (few-shot)** | ২টা বা বেশি | সূক্ষ্ম নিয়ম, edge case, কঠোর output format |\n\nChai-Bot-এর ticket classification দিয়ে দেখি। Zero-shot-এ কখনও \"Refund\", কখনও \"এটা একটা রিফান্ড অনুরোধ মনে হচ্ছে\" এসে যায়। Multi-shot-এ format আটকে যায়:\n\n```text\nCustomer message গুলোকে এই ক্যাটাগরির একটায় ফেলো: ORDER_STATUS, REFUND, PRODUCT_INFO, OTHER.\nশুধু ক্যাটাগরির নামটা লেখো, আর কিছু নয়।\n\n<examples>\n  <example>\n    <message>আমার অর্ডার তিন দিন ধরে আসছে না</message>\n    <category>ORDER_STATUS</category>\n  </example>\n  <example>\n    <message>চা খারাপ ছিল, টাকা ফেরত চাই</message>\n    <category>REFUND</category>\n  </example>\n  <example>\n    <message>দার্জিলিং টি-তে কি ক্যাফেইন বেশি?</message>\n    <category>PRODUCT_INFO</category>\n  </example>\n</examples>\n\n<message>অর্ডার ক্যানসেল করে টাকা কি ফেরত পাব?</message>\n```\n\nOfficial guide অনুযায়ী ভালো উদাহরণের গুণ আর কাঠামো:\n\n- উদাহরণ **<example>** tag-এ (একাধিক হলে **<examples>**-এ) মুড়ে দাও, যাতে model বোঝে এগুলো নির্দেশ নয়, নমুনা।\n- উদাহরণ **আসল কাজের প্রতিনিধি** হোক এবং **বৈচিত্র্যময়** হোক; সব উদাহরণ একরকম হলে model শুধু সেটাই নকল করে।\n- উদাহরণ নিজেদের মধ্যে **সামঞ্জস্যপূর্ণ** রাখো। পরস্পরবিরোধী উদাহরণ model-কে বিভ্রান্ত করে।\n- Docs আরও বলছে, উদাহরণ thinking-এর সাথেও কাজ করে: উদাহরণ model-এর নিজের চিন্তার ধরনও প্রভাবিত করে।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই classification কাজ: উদাহরণ ছাড়া (zero-shot) বনাম কয়েকটা উদাহরণ সহ (multi-shot)। উদাহরণ output-এর format বেঁধে দেয়।",
+          "beforeTitle": "Zero-shot",
+          "before": "নির্দেশ: 'এই message-এর category বলো।'\n\nসম্ভাব্য output: কখনও 'REFUND', কখনও 'এটা সম্ভবত রিফান্ডের অনুরোধ', কখনও পুরো একটা অনুচ্ছেদ। Format অনিশ্চিত, parse করা কঠিন।",
+          "afterTitle": "Multi-shot",
+          "after": "নির্দেশ + ৩টা <example> (ORDER_STATUS, REFUND, PRODUCT_INFO)\n\nসম্ভাব্য output: সব সময় শুধু 'REFUND'। Format স্থির, সরাসরি code-এ ব্যবহারযোগ্য।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "কখন উদাহরণ, কখন structured output",
+        "markdown": "উদাহরণ format-কে **অনেকটাই** স্থির করে, কিন্তু নিশ্চয়তা দেয় না। যেখানে JSON schema-র হুবহু মিল দরকার, সেখানে পরের chapter-গুলোতে দেখা structured output ও response validation ব্যবহার করবে। উদাহরণ দিয়ে শুরু করো, আর code-এ যাচাই রাখো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Technical Fundamentals: REST, SDK, stateless, streaming\n\nDomain 5-এর **Technical Fundamentals** skill-এ প্রশ্ন আসে \"আসলে নিচে কী ঘটছে\" নিয়ে। Official API overview অনুযায়ী Claude API একটা **RESTful API**, base URL `https://api.anthropic.com`, আর মূল endpoint `POST /v1/messages`। অন্যান্য endpoint: Message Batches (`/v1/messages/batches`), Token Counting (`/v1/messages/count_tokens`), Models (`/v1/models`), Files (`/v1/files`)।\n\n### প্রতিটা request-এ যে header লাগে\n\n| Header | কাজ |\n|---|---|\n| `x-api-key` (বা `Authorization: Bearer`) | পরিচয় প্রমাণ; API key কখনও কোডে বা ফ্রন্টএন্ডে রাখবে না |\n| `anthropic-version` | API version (docs-এর উদাহরণে `2026-10-21`) |\n| `content-type: application/json` | body JSON |\n\n### SDK কী করে?\n\nOfficial **SDK** (Python, TypeScript, Java, Go, C#, Ruby, PHP) এই REST call-গুলোকেই মুড়ে দেয়। Docs অনুযায়ী SDK স্বয়ংক্রিয়ভাবে authentication, version ও content-type header পাঠায়, type-safe request/response দেয়, **built-in retry** ও error handling আছে, streaming সাপোর্ট করে, আর timeout সামলায়। অর্থাৎ SDK ছাড়া `curl` দিয়ে একই কাজ করা যায়, কিন্তু header তোমাকে হাতে দিতে হয়।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Chai-Bot-এর কোড থেকে model পর্যন্ত পথ: SDK আসলে HTTPS REST call মোড়ানো একটা লাইব্রেরি।",
+          "nodes": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot কোড",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "sdk",
+              "kind": "server",
+              "label": "anthropic SDK",
+              "x": 220,
+              "y": 0
+            },
+            {
+              "id": "api",
+              "kind": "gateway",
+              "label": "api.anthropic.com",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "model",
+              "kind": "external",
+              "label": "Claude model",
+              "x": 660,
+              "y": 0
+            }
+          ],
+          "edges": [
+            {
+              "from": "app",
+              "to": "sdk",
+              "label": "SDK call"
+            },
+            {
+              "from": "sdk",
+              "to": "api",
+              "label": "HTTPS + JSON"
+            },
+            {
+              "from": "api",
+              "to": "model",
+              "label": "generate"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "### Request ও response-এর চেহারা\n\n```bash\ncurl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2026-10-21\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\n    \"model\": \"'\"$CLAUDE_MODEL\"'\",\n    \"max_tokens\": 1024,\n    \"messages\": [{\"role\": \"user\", \"content\": \"Hello, Claude\"}]\n  }'\n```\n\n```json\n{\n  \"id\": \"msg_...\",\n  \"type\": \"message\",\n  \"role\": \"assistant\",\n  \"content\": [{ \"type\": \"text\", \"text\": \"Hello!\" }],\n  \"stop_reason\": \"end_turn\",\n  \"usage\": { \"input_tokens\": 12, \"output_tokens\": 6 }\n}\n```\n\nলক্ষ করো: `content` একটা **array of block**। উত্তর সবসময় `content[0].text` নয়: thinking চালু থাকলে প্রথম block হতে পারে `thinking`। তাই block-কে `type` দেখে বেছে নেওয়াই নিরাপদ। `stop_reason` বলে কেন থামল (`end_turn`, `max_tokens`, `stop_sequence`, `model_context_window_exceeded`, `refusal`, ইত্যাদি; `refusal`-এ `stop_details`-ও থাকে)।\n\n### Streaming: কখন, কীভাবে\n\n`\"stream\": true` দিলে উত্তর একবারে না এসে **server-sent events (SSE)** হিসেবে টুকরো টুকরো আসে। এতে শেষ ব্যবহারকারী প্রথম শব্দ দ্রুত দেখে (অনুভূত latency কমে), আর লম্বা output-এ timeout-এর ঝুঁকি কমে। Python/TypeScript SDK-তে streaming-এর সহজ helper আছে।\n\n**WebSocket নিয়ে সৎ কথা:** Exam Guide-এর Technical Fundamentals অংশ \"SDK ও REST API, websockets\" শব্দগুলো উল্লেখ করেছে, কিন্তু আমি যে official docs পড়েছি তাতে Messages API-র streaming SSE দিয়ে; Messages API-র জন্য আলাদা WebSocket endpoint পাইনি। তাই পরীক্ষায় WebSocket-কে \"দুই দিকের স্থায়ী সংযোগের সাধারণ প্রযুক্তি\" হিসেবে চেনো, আর Claude streaming-কে SSE হিসেবে মনে রাখো।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'API আমার চ্যাট মনে রাখে' এবং 'streaming মানে সস্তা'",
+        "markdown": "দুটো বদ্ধমূল ভুল। (১) Messages API **stateless**: সার্ভার history জমিয়ে রাখে না, প্রতিটা request-এ তুমি পুরো `messages` পাঠাও (docs-এ message threads নামে একটা beta আছে, কিন্তু ডিফল্ট আচরণ stateless)। (২) Streaming শুধু **কখন আংশিক উত্তর পাওয়া যায়** বদলায়; token সংখ্যা বা খরচ কমায় না।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৭. AI Fluency: 4D কাঠামো\n\nএতক্ষণ আমরা model-এর ভেতরটা দেখলাম। এখন প্রশ্ন: মানুষ হিসেবে আমরা কীভাবে এর সাথে কাজ করব? Anthropic-এর **AI Fluency** framework (অধ্যাপক Rick Dakan ও Joseph Feller-এর সাথে তৈরি, বিনামূল্যে কোর্স \"AI Fluency: Framework & Foundations\") চারটা সক্ষমতার কথা বলে, সংক্ষেপে **4D**:\n\n| D | মানে | Chai-Bot-এর উদাহরণ |\n|---|---|---|\n| **Delegation** | কোন কাজ AI-কে দেবে, কোনটা মানুষের হাতে রাখবে, তা বুঝেশুনে ভাগ করা | FAQ-র উত্তর Chai-Bot দেবে; বড় refund অনুমোদন মানুষ দেবে |\n| **Description** | AI-কে স্পষ্টভাবে বলা: কী চাই, কেমন output, কেমন আচরণ, কী প্রক্রিয়ায় | system prompt, উদাহরণ, output format, সীমা লিখে দেওয়া |\n| **Discernment** | AI-র কাজ ভালো করে যাচাই করা: ফলাফলের মান, যুক্তির ধাপ, আর interaction-এর সময় আচরণ | উত্তরের order নম্বর database-এর সাথে মেলানো; যুক্তিতে ফাঁক খোঁজা |\n| **Diligence** | দায়িত্ব নেওয়া: AI-র ভূমিকা সম্পর্কে স্বচ্ছ থাকা, আর যা প্রকাশ বা কার্যকর করছ তার দায় নেওয়া | গ্রাহককে জানানো যে এটা bot; ভুল হলে মানুষ জবাবদিহি করবে |\n\n### Description আর Discernment: একটা চক্র\n\nFramework অনুযায়ী Description আর Discernment একটা feedback loop: তুমি বলো (Description), ফল যাচাই করো (Discernment), যা ভুল সেটা বুঝে আবার ভালোভাবে বলো। 4D-র সাথে আমাদের আজকের model-জ্ঞান জোড়া লাগে সরাসরি:\n\n- **Delegation**: model-এর limitation (knowledge cutoff, hallucination) জানলেই বুঝবে কোন কাজ দেওয়া ঠিক নয়।\n- **Description**: steerability ও multi-shot উদাহরণ এখানেই কাজে লাগে।\n- **Discernment**: next-token prediction মানে আত্মবিশ্বাসী ভাষা সত্যের প্রমাণ নয়, তাই যাচাই লাগবে।\n- **Diligence**: কোন সিদ্ধান্ত স্বয়ংক্রিয় হবে, কোনটায় মানুষ থাকবে, সে দায় তোমার।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন কাজটা কোন 'D'-র?",
+          "hint": "প্রতিটা কাজ সঠিক D-র বাকেটে ফেলো। কিছু কাজ দুই D-র মাঝামাঝি মনে হবে। প্রধান উদ্দেশ্যটা দেখো।",
+          "buckets": [
+            {
+              "id": "delegation",
+              "label": "Delegation"
+            },
+            {
+              "id": "description",
+              "label": "Description"
+            },
+            {
+              "id": "discernment",
+              "label": "Discernment"
+            },
+            {
+              "id": "diligence",
+              "label": "Diligence"
+            }
+          ],
+          "items": [
+            {
+              "text": "ঠিক করা: চা-র FAQ উত্তর Chai-Bot দেবে, কিন্তু ১০,০০০ টাকার বেশি refund মানুষ দেখবে",
+              "bucket": "delegation",
+              "why": "কোন কাজ AI-র, কোনটা মানুষের, এই ভাগের সিদ্ধান্ত।"
+            },
+            {
+              "text": "system prompt-এ tone, সীমা আর ৩টা উদাহরণ লেখা",
+              "bucket": "description",
+              "why": "AI-কে কী চাই তা স্পষ্ট করে বলা।"
+            },
+            {
+              "text": "Chai-Bot-এর দেওয়া order নম্বর আর তারিখ আমাদের database-এ মিলিয়ে দেখা",
+              "bucket": "discernment",
+              "why": "AI-র ফল যাচাই করা, তাও নির্ভরযোগ্য উৎসের বিপরীতে।"
+            },
+            {
+              "text": "গ্রাহককে জানিয়ে দেওয়া যে তিনি একটা AI সহকারীর সাথে কথা বলছেন",
+              "bucket": "diligence",
+              "why": "AI-র ভূমিকা সম্পর্কে স্বচ্ছতা, দায়িত্বের অংশ।"
+            },
+            {
+              "text": "Chai-Bot-এর যুক্তির ধাপ পড়ে দেখা কোথায় অনুমান করেছে",
+              "bucket": "discernment",
+              "why": "শুধু ফল নয়, AI-র reasoning প্রক্রিয়াও যাচাই করা।"
+            },
+            {
+              "text": "ফল ভালো না হওয়ায় prompt ঘুরিয়ে আরও স্পষ্ট করে লেখা",
+              "bucket": "description",
+              "why": "যাচাইয়ের পর আবার ভালোভাবে বলা: Description-Discernment চক্র।"
+            },
+            {
+              "text": "AI-র লেখা ইমেইল পাঠানোর আগে নিজের নামে দায় নিয়ে পড়ে নেওয়া",
+              "bucket": "diligence",
+              "why": "যা প্রকাশ করছি তার দায় আমার, এটা Diligence।"
+            },
+            {
+              "text": "নতুন ধরনের আইনি অভিযোগ AI-কে না দিয়ে মানুষ সামলাবে ঠিক করা",
+              "bucket": "delegation",
+              "why": "ঝুঁকি আর AI-র সীমা বুঝে কাজ ভাগ করা।"
+            }
+          ],
+          "takeaway": "Delegation = কী দেব; Description = কীভাবে বলব; Discernment = ফল কেমন; Diligence = দায় কার।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৮. Chai-Bot-এর তিন প্রশ্নের উত্তর (সারসংক্ষেপ)\n\nRafi নিজের নোটে Nusrat Apu-র তিন প্রশ্নের উত্তর লিখে ফেলল:\n\n1. **বাংলায় খরচ বেশি কেন?** বাংলা টেক্সট সাধারণত বেশি token নেয়, আর নতুন tokenizer-এ একই টেক্সটে প্রায় ৩০% বেশি token আসতে পারে। সমাধান: `count_tokens` দিয়ে আসল message মাপা, cost model-এ বাংলা আলাদা ধরা, মডেল বদলালে আবার মাপা।\n2. **লম্বা চ্যাটে policy ভুলে গেল কেন?** API stateless, history প্রতিবার পাঠাতে হয়, window সীমিত, আর context rot আছে। সমাধান: গুরুত্বপূর্ণ নিয়ম system prompt-এ, পুরোনো tool result ছাঁটা, compaction ও session hygiene (Domain 6-এ বিস্তারিত)।\n3. **একই প্রশ্নে ভিন্ন উত্তর কেন?** sampling-এ randomness আছে; নতুন model-এ temperature ইত্যাদি নিয়ন্ত্রণও নেই। সমাধান: স্পষ্ট prompt, উদাহরণ, structured output, ও validation। হুবহু একই text-এর ওপর কোডের শর্ত বাঁধবে না।\n\nপরের দিন Rafi `temperature=0` মুছে ফেলল, `count_tokens` চালাল, আর validation যোগ করল। Nusrat Apu শুধু বললেন, \"ঠিক আছে। এবার দেখি খরচ কীভাবে কমানো যায়।\" সেটাই আগামীকালের chapter (model নির্বাচন ও cost)।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter **Domain 5: Model Selection and Optimization (16.8%)**-এর প্রধানত দুটো skill ঢাকে (এবং Cost and Token Management-এর গোড়া):\n\n- **LLM Fundamentals (5.2%)**: token, context window, sampling, non-determinism, next-token generation, zero/single/multi-shot।\n- **Technical Fundamentals (6.1%)**: SDK কীভাবে REST API মোড়ায়, header, stateless আচরণ, streaming।\n- (ভিত্তি) **Cost and Token Management**: usage tracking, token count।\n\nসাধারণ প্রশ্নের ধরন:\n\n| প্রশ্নের ধরন | কী দেখে উত্তর বাছবে |\n|---|---|\n| \"খরচ/limit হঠাৎ বাড়ল, কারণ কী?\" | লম্বা history, tool definition, নতুন tokenizer, `max_tokens`, thinking token |\n| \"উত্তর মাঝপথে কাটা\" | `stop_reason: max_tokens`, thinking token `max_tokens` খায় |\n| \"model আগের turn ভুলে গেল\" | stateless API, history পাঠানো হয়নি, window বা context rot |\n| \"একই prompt, ভিন্ন উত্তর, কী করবে?\" | non-determinism মেনে নাও; prompt/উদাহরণ/validation; নতুন model-এ sampling parameter বাদ |\n| \"output format অস্থির\" | multi-shot উদাহরণ, `<example>` tag; কঠোর হলে structured output |\n| \"hallucination ঠেকাও\" | grounding, উদ্ধৃতি, validation, মানুষের review; temperature ফাঁদ |\n| \"SDK ছাড়া কেন error?\" | `anthropic-version`, `x-api-key`, `content-type` header |\n| \"AI-র কাজে কোন 'D' মিসিং?\" | Delegation/Description/Discernment/Diligence আলাদা করো |\n\nবেশির ভাগ প্রশ্ন \"সবচেয়ে উপযুক্ত পদ্ধতি কোনটা\" ধাঁচের; ভুল অপশনগুলো সাধারণত একটা সত্য-সত্য শোনায় কিন্তু মূল কারণ ধরে না (যেমন \"temperature বাড়াও\")।"
+      }
+    ],
+    "recap": [
+      "Token হলো টেক্সটের টুকরো; খরচ, window আর rate limit সবই token-এ মাপা হয়, তাই `count_tokens` দিয়ে আসল টেক্সট মাপো, আর model বদলালে আবার মাপো (নতুন tokenizer-এ প্রায় ৩০% বেশি হতে পারে)।",
+      "Context window হলো model-এর working memory: system, history, tool definition, tool result এবং output সবই এক বাজেটে; API stateless বলে history তুমিই পাঠাও, আর বেশি context মানেই ভালো নয় (context rot)।",
+      "Claude পরের token অনুমান করে উত্তর বানায় (sampling-সহ), তাই output non-deterministic; 'সম্ভাব্য শোনায়' আর 'সত্য' এক নয়।",
+      "Claude 4.7+ model আর API version 2026-10-21-এ temperature/top_p/top_k পাঠানো যায় না (400); আচরণ নিয়ন্ত্রণ করো prompting, উদাহরণ ও validation দিয়ে।",
+      "Zero-shot-এ উদাহরণ নেই, single-shot-এ একটা, multi-shot-এ একাধিক; `<example>` tag-এ বৈচিত্র্যময় ও সামঞ্জস্যপূর্ণ উদাহরণ format স্থির করে।",
+      "Claude-এর চার বৈশিষ্ট্য: next-token prediction, knowledge, working memory, steerability। এদের সীমা মিলে hallucination-এর মতো সমস্যা তৈরি করে, তাই context দাও, steer করো, যাচাই করো।",
+      "AI Fluency 4D: Delegation (কাজ ভাগ), Description (স্পষ্টভাবে বলা), Discernment (ফল যাচাই), Diligence (দায় ও স্বচ্ছতা)।"
+    ]
+  },
+  "lab": {
+    "goal": "নিজের হাতে token গুনে, context বড় হতে দেখে, max_tokens-এ কাটা উত্তর ধরে, non-determinism দেখে আর zero-shot বনাম multi-shot তুলনা করে Chai-Bot-এর মৌলিক আচরণ বোঝা।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install anthropic`",
+      "Console থেকে নেওয়া API key: `export ANTHROPIC_API_KEY=...` (কখনও কোডে বা git-এ রাখবে না)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>`",
+      "নতুন model-এ `temperature`/`top_p`/`top_k` পাঠাবে না; এই lab-এ কোথাও এগুলো দরকার নেই"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: প্রথম call ও usage পড়া",
+        "body": "একটা ফাইল `lab01.py` বানাও:\n\n```python\nimport os\nimport anthropic\n\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=300,\n    messages=[{\"role\": \"user\", \"content\": \"ChaiCart-এর একটা বন্ধুত্বপূর্ণ স্বাগত বার্তা লেখো (২ বাক্য)।\"}],\n)\nfor block in r.content:\n    if block.type == \"text\":          # block-কে type দিয়ে বাছো, content[0] ধরে নিয়ো না\n        print(block.text)\nprint(\"stop_reason:\", r.stop_reason)\nprint(\"usage:\", r.usage.input_tokens, \"in /\", r.usage.output_tokens, \"out\")\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** একটা স্বাগত বার্তা, `stop_reason: end_turn`, আর ছোট দুটো usage সংখ্যা। সংখ্যা দুটো লিখে রাখো।"
+      },
+      {
+        "title": "ধাপ ২: ইংরেজি বনাম বাংলা, count_tokens দিয়ে মাপা",
+        "body": "```python\nsamples = {\n    \"en\": \"Where is my order? It has been three days.\",\n    \"bn\": \"আমার অর্ডারটা কোথায়? তিন দিন হয়ে গেল।\",\n}\nfor name, text in samples.items():\n    c = client.messages.count_tokens(\n        model=MODEL,\n        messages=[{\"role\": \"user\", \"content\": text}],\n    )\n    print(name, len(text), \"অক্ষর ->\", c.input_tokens, \"tokens\")\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** অক্ষর সংখ্যা আর token সংখ্যা সমানুপাতিক নয়। সাধারণত বাংলা বাক্যে token বেশি লাগে। আরও কয়েকটা বাক্য, একটা JSON টুকরো আর একটা URL দিয়ে চালিয়ে দেখো। মনে রাখো `count_tokens` একটা estimate এবং বিনামূল্যে।"
+      },
+      {
+        "title": "ধাপ ৩: Stateless history, input_tokens বাড়তে দেখো",
+        "body": "```python\nhistory = []\n\ndef ask(text):\n    history.append({\"role\": \"user\", \"content\": text})\n    r = client.messages.create(model=MODEL, max_tokens=300, messages=history)\n    answer = \"\".join(b.text for b in r.content if b.type == \"text\")\n    history.append({\"role\": \"assistant\", \"content\": answer})\n    print(f\"in={r.usage.input_tokens} out={r.usage.output_tokens} | {answer[:60]}...\")\n\nask(\"আমার নাম রাফি। মনে রেখো।\")\nask(\"আমার নাম কী?\")\nhistory.clear()            # history ফেলে দিলে কী হয়?\nask(\"আমার নাম কী?\")\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** দ্বিতীয় call-এ `in` বেশি (history গেছে), এবং নাম ঠিক বলে। `history.clear()`-এর পর model নাম জানে না, কারণ API কিছু মনে রাখে না।"
+      },
+      {
+        "title": "ধাপ ৪: max_tokens ও কাটা উত্তর",
+        "body": "```python\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=20,\n    messages=[{\"role\": \"user\", \"content\": \"চা-এর ইতিহাস বিস্তারিত লেখো।\"}],\n)\nprint(r.stop_reason, r.usage.output_tokens)\nprint([b.type for b in r.content])\nprint(\"\".join(b.text for b in r.content if b.type == \"text\"))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `stop_reason` হবে `max_tokens` আর উত্তর মাঝপথে কাটা। যদি model thinking করে, `content`-এ আগে `thinking` block দেখতে পারো, কারণ thinking token-ও `max_tokens`-এর ভেতরে গোনা হয়; তখন text একদম খালি বা খুব ছোট থাকতে পারে। এই কারণেই `stop_reason` দেখা জরুরি।"
+      },
+      {
+        "title": "ধাপ ৫: Non-determinism ও zero-shot বনাম multi-shot",
+        "body": "Sampling parameter ছাড়াই একই prompt কয়েকবার চালাও, এবং উদাহরণ ছাড়া বনাম উদাহরণ সহ তুলনা করো:\n\n```python\nzero = \"এই message-এর category বলো (ORDER_STATUS, REFUND, PRODUCT_INFO, OTHER): 'অর্ডার ক্যানসেল করলে টাকা ফেরত পাব?'\"\n\nfew = '''Category বলো: ORDER_STATUS, REFUND, PRODUCT_INFO, OTHER। শুধু category-র নাম লেখো।\n<examples>\n<example><message>অর্ডার তিন দিন ধরে আসছে না</message><category>ORDER_STATUS</category></example>\n<example><message>চা খারাপ ছিল, টাকা ফেরত চাই</message><category>REFUND</category></example>\n<example><message>দার্জিলিং টি-তে কি ক্যাফেইন বেশি?</message><category>PRODUCT_INFO</category></example>\n</examples>\n<message>অর্ডার ক্যানসেল করলে টাকা ফেরত পাব?</message>'''\n\nfor label, prompt in [(\"zero\", zero), (\"few\", few)]:\n    outs = []\n    for _ in range(4):\n        r = client.messages.create(model=MODEL, max_tokens=100,\n                                   messages=[{\"role\": \"user\", \"content\": prompt}])\n        outs.append(\"\".join(b.text for b in r.content if b.type == \"text\").strip())\n    print(label, outs)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** zero-shot-এর উত্তরগুলোর শব্দ বা দৈর্ঘ্য কিছুটা আলাদা হতে পারে। multi-shot-এ উত্তর প্রায় সবসময় শুধু একটা category নাম। কিন্তু হুবহু একই হওয়ার নিশ্চয়তা নেই, তাই কোডে `.strip()` করে allowed list-এর সাথে যাচাই করা উচিত।"
+      },
+      {
+        "title": "ধাপ ৬ (ঐচ্ছিক): Streaming দেখা",
+        "body": "```python\nwith client.messages.stream(\n    model=MODEL,\n    max_tokens=300,\n    messages=[{\"role\": \"user\", \"content\": \"চা বানানোর ৩টা ধাপ লেখো।\"}],\n) as stream:\n    for text in stream.text_stream:\n        print(text, end=\"\", flush=True)\nprint()\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** টেক্সট টুকরো টুকরো করে আসে (SSE), শেষ উত্তর আগের মতোই। token সংখ্যা বা খরচ কমে না।"
+      }
+    ],
+    "checkpoints": [
+      "ধাপ ২-তে কেন `len(text)` দিয়ে খরচ আন্দাজ করা ঠিক নয়? আর model বদলালে count কেন আবার করতে হয়?",
+      "ধাপ ৩-এ `history.clear()`-এর পর model নাম জানল না কেন? এর সাথে context window-র সম্পর্ক কী?",
+      "`stop_reason: max_tokens` মানে কী, আর thinking চালু থাকলে text খালি আসতে পারে কেন?",
+      "একই prompt বারবার চালালে উত্তর আলাদা কেন হয়? নতুন model-এ `temperature` কেন না পাঠিয়ে অন্য কী করবে?",
+      "Zero-shot আর multi-shot-এর পার্থক্য কী? উদাহরণ দেওয়ার পরও code-এ কী যাচাই রাখবে?",
+      "SDK ছাড়া `curl` দিয়ে call করলে SDK-র করা কোন কোন কাজ তোমাকে নিজে করতে হবে?"
+    ]
+  },
+  "notes": "# Chapter 1 চিটশিট: LLM fundamentals\n\n## মূল শব্দ\n\n| শব্দ | সংক্ষেপে মানে |\n|---|---|\n| **Token** | টেক্সটের টুকরো; খরচ, window, rate limit সবই token-এ |\n| **Tokenization** | টেক্সটকে token-এ ভাঙা (model ভেদে আলাদা) |\n| **Context window** | model যা \"দেখতে পায়\": input + output, working memory |\n| **Context rot** | token বাড়লে accuracy/recall কমা |\n| **Next-token prediction** | এ পর্যন্ত টেক্সটের ভিত্তিতে পরের token অনুমান |\n| **Sampling** | সম্ভাবনা বণ্টন থেকে token বাছা |\n| **Non-determinism** | একই prompt, ভিন্ন উত্তর |\n| **`max_tokens`** | সর্বোচ্চ output token (বাধ্যতামূলক, thinking-ও এর ভেতরে) |\n| **`stop_sequences`** | এই টেক্সট এলে থামো (`stop_reason: stop_sequence`) |\n| **Stateless** | API history মনে রাখে না, তুমি পাঠাও |\n\n## Official docs-এর সংখ্যা ও তথ্য\n\n- Window: docs অনুযায়ী সাম্প্রতিক অনেক model-এ **1M token** পর্যন্ত, পুরোনো কিছুতে **200k**। সঠিক মান models overview থেকে দেখো।\n- Input একাই window ছাড়ালে: `400 invalid_request_error` (\"prompt is too long\")।\n- Claude 4.5+ model: input + `max_tokens` window ছাড়ালেও request চলে; তখন `stop_reason: model_context_window_exceeded`।\n- Token counting: `POST /v1/messages/count_tokens`, **estimate**, **বিনামূল্যে**, আলাদা RPM limit; server tool ও MCP connector এ error।\n- Claude **4.7+** tokenizer: একই টেক্সটে **প্রায় ৩০% বেশি token** (কনটেন্টভেদে ভিন্ন)।\n- Messages API একটা **REST API** (`https://api.anthropic.com`); header: `x-api-key`, `anthropic-version`, `content-type`। SDK এগুলো নিজে পাঠায়।\n- Streaming: `\"stream\": true`, **SSE**।\n- Message Batches API: **৫০% খরচ কম** (API overview-তে লেখা); বিস্তারিত পরের chapter-এ।\n\n## Sampling parameter: আজকের অবস্থা\n\n| | পুরোনো model | Claude 4.7+ / Mythos Preview | API version 2026-10-21 |\n|---|---|---|---|\n| `temperature`, `top_p`, `top_k` | কিছু model-এ অন্য মান নেওয়া যেত | non-default মানে **400** | যেকোনো মানে **400** (ডিফল্টও) |\n| কী করবে | — | param বাদ দাও, prompting ব্যবহার | param বাদ দাও; SDK-তে নেই |\n\n## কখন কোনটা\n\n| পরিস্থিতি | বেছে নাও |\n|---|---|\n| Format অস্থির | multi-shot `<example>`; কঠোর হলে structured output |\n| Model একটা তথ্য জানে না | context-এ দাও / tool দাও; অনুমান করতে দিয়ো না |\n| লম্বা চ্যাট ভারী | পুরোনো tool result ছাঁটো, compaction, নিয়ম system prompt-এ |\n| খরচ আন্দাজ | `count_tokens` + `usage` (model বদলালে আবার) |\n| Output কাটা | `max_tokens` বাড়াও/ কাজ ছোট করো; `stop_reason` দেখো |\n\n## AI Fluency 4D\n\n- **Delegation**: কী AI-কে দেব, কী নিজে রাখব\n- **Description**: কী চাই তা স্পষ্ট বলা (output, প্রক্রিয়া, আচরণ)\n- **Discernment**: ফল, যুক্তি ও আচরণ যাচাই\n- **Diligence**: স্বচ্ছতা ও দায় নেওয়া\n\n## AI Capabilities and Limitations-এর চার বৈশিষ্ট্য\n\nNext-token prediction · Knowledge · Working memory · Steerability। বৈশিষ্ট্যগুলো স্কেল, সুইচ নয়।\n\n## সাধারণ ফাঁদ\n\n- `temperature=0` = গ্যারান্টিড একই output? **না**; আর নতুন model-এ পাঠানোই যায় না।\n- \"temperature বাড়ালে prompt injection ঠেকে\" ভুল। নিরাপত্তা আসে স্তরভিত্তিক সুরক্ষায়।\n- \"Window বড় মানেই সব ঢুকিয়ে দাও\" ভুল; context rot।\n- \"Cached token window-র বাইরে\" ভুল; খরচ বদলায়, জায়গা নয়।\n- \"Streaming খরচ কমায়\" ভুল।\n- \"উত্তর সবসময় `content[0].text`\" ভুল; block-কে `type` দিয়ে বাছো।\n- \"API আমার চ্যাট মনে রাখে\" ভুল; stateless।\n- \"System prompt window-তে গোনা হয় না\" ভুল।",
+  "flashcards": [
+    {
+      "front": "Token কী?",
+      "back": "টেক্সটের একটা টুকরো (শব্দ, শব্দাংশ, চিহ্ন)। খরচ, context window ও rate limit সবই token-এ মাপা হয়।"
+    },
+    {
+      "front": "Claude-এর token সংখ্যা আগে থেকে কীভাবে জানবে?",
+      "back": "Token counting API (`POST /v1/messages/count_tokens`)। এটা estimate এবং বিনামূল্যে; আসল ব্যবহার response-এর `usage`-এ।"
+    },
+    {
+      "front": "Claude 4.7+ model-এর tokenizer নিয়ে কোন সতর্কতা?",
+      "back": "একই টেক্সটে প্রায় ৩০% বেশি token আসতে পারে। তাই model বদলালে prompt আবার count করো।"
+    },
+    {
+      "front": "Context window কী?",
+      "back": "model উত্তর বানানোর সময় যে সব টেক্সট দেখতে পায়, তার মোট ধারণক্ষমতা, উত্তরসহ। এটা working memory।"
+    },
+    {
+      "front": "Context window-তে কী কী গোনা হয়?",
+      "back": "system prompt, সব messages, tool definition, tool result, ছবি/document, আর model-এর output (thinking সহ)।"
+    },
+    {
+      "front": "Context rot কী?",
+      "back": "token বাড়ার সাথে accuracy ও recall কমে যাওয়া। তাই বড় window মানেই সব ঢোকানো নয়।"
+    },
+    {
+      "front": "Messages API stateless মানে কী?",
+      "back": "সার্ভার history জমা রাখে না; প্রতিটা request-এ পুরো `messages` তুমি পাঠাও।"
+    },
+    {
+      "front": "Input একাই window ছাড়ালে কী হয়?",
+      "back": "`400 invalid_request_error` ('prompt is too long')।"
+    },
+    {
+      "front": "`stop_reason: max_tokens` মানে কী?",
+      "back": "উত্তর `max_tokens`-এ ঠেকে মাঝপথে থেমেছে। thinking token-ও এই সীমার ভেতরে গোনা হয়।"
+    },
+    {
+      "front": "`stop_reason: model_context_window_exceeded` কখন আসে?",
+      "back": "Claude 4.5+ model-এ generation context window-র সীমায় পৌঁছালে। (পুরোনো model-এ এটা validation error ছিল।)"
+    },
+    {
+      "front": "Next-token generation কী?",
+      "back": "model এ পর্যন্ত টেক্সটের ভিত্তিতে পরের token-এর সম্ভাবনা বণ্টন বের করে একটা বাছে, যোগ করে, আবার ঘুরে।"
+    },
+    {
+      "front": "কেন একই prompt-এ ভিন্ন উত্তর আসে?",
+      "back": "Sampling-এ randomness আছে (non-determinism)। এটা bug নয়, ডিজাইন; সিস্টেম এমন বানাও যেন ছোট ভিন্নতাতেও ঠিক থাকে।"
+    },
+    {
+      "front": "Claude 4.7+ model-এ temperature/top_p/top_k পাঠালে?",
+      "back": "Non-default মানে 400 error। API version 2026-10-21-এ যেকোনো মানেই 400। বাদ দাও, prompting ব্যবহার করো।"
+    },
+    {
+      "front": "`temperature=0` কি determinism-এর গ্যারান্টি?",
+      "back": "না। কমালে পূর্বানুমেয়তা বাড়ত, কিন্তু হুবহু একই output-এর নিশ্চয়তা নেই; আর নতুন model-এ পাঠানোই যায় না।"
+    },
+    {
+      "front": "Temperature বাড়ালে কি prompt injection ঠেকে?",
+      "back": "না। এটা সাধারণ ভুল অপশন। সঠিক উপায়: untrusted input আলাদা রাখা, guardrail ও hook।"
+    },
+    {
+      "front": "Zero / single / multi-shot পার্থক্য?",
+      "back": "prompt-এ উদাহরণ ০টা / ১টা / ২টা বা বেশি। উদাহরণ format, tone ও structure স্থির করে।"
+    },
+    {
+      "front": "ভালো উদাহরণের তিন গুণ?",
+      "back": "আসল কাজের প্রতিনিধি, বৈচিত্র্যময়, সামঞ্জস্যপূর্ণ; আর `<example>`/`<examples>` tag-এ মোড়া।"
+    },
+    {
+      "front": "Anthropic-এর চার বৈশিষ্ট্য (Capabilities and Limitations)?",
+      "back": "Next token prediction, Knowledge, Working memory, Steerability।"
+    },
+    {
+      "front": "Hallucination সাধারণত কোন দুই বৈশিষ্ট্যের সংঘাত?",
+      "back": "Next-token prediction (বিশ্বাসযোগ্য শোনানো) আর Knowledge-এর ফাঁক (আসল তথ্য জানে না)।"
+    },
+    {
+      "front": "AI Fluency 4D কী কী?",
+      "back": "Delegation, Description, Discernment, Diligence।"
+    },
+    {
+      "front": "Description আর Discernment-এর সম্পর্ক?",
+      "back": "একটা feedback loop: স্পষ্ট করে বলো, ফল যাচাই করো, ভুল বুঝে আবার ভালো করে বলো।"
+    },
+    {
+      "front": "Claude API-র প্রতিটা request-এ কোন তিন header?",
+      "back": "`x-api-key` (বা Authorization Bearer), `anthropic-version`, `content-type: application/json`। SDK এগুলো নিজে পাঠায়।"
+    },
+    {
+      "front": "Streaming কীভাবে কাজ করে, আর কী কমায় না?",
+      "back": "`stream: true` দিলে server-sent events (SSE)-এ টুকরো টুকরো উত্তর আসে। অনুভূত latency কমে, কিন্তু token ও খরচ কমে না।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart-এর Chai-Bot বাংলা message-এ কাজ করে। বাজেট ধরা হয়েছিল ইংরেজি নমুনার token সংখ্যা দেখে, কিন্তু আসল বিল অনেক বেশি এল। সবচেয়ে ভালো পদক্ষেপ কোনটা?",
+      "options": [
+        "অক্ষর সংখ্যাকে ৪ দিয়ে ভাগ করে token ধরে নেওয়া, কারণ token সব ভাষায় সমান",
+        "আসল বাংলা message নমুনা এবং যে model ব্যবহার করবে তার id দিয়ে token counting API চালিয়ে cost model আবার হিসাব করা",
+        "খরচ কমাতে temperature কমিয়ে দেওয়া",
+        "বাংলা message ইংরেজিতে অনুবাদ না করে সরাসরি পাঠালে খরচ কমে, তাই কিছু না করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "বাংলার মতো স্ক্রিপ্টে token সংখ্যা ইংরেজির সাথে সমানুপাতিক নয় এবং model/tokenizer ভেদে বদলায়, তাই আসল ডেটা ও লক্ষ্য model দিয়ে `count_tokens` চালানোই সঠিক। অক্ষর÷৪ একটা কাঁচা আন্দাজ মাত্র। temperature খরচ বা token সংখ্যা বদলায় না (আর নতুন model-এ পাঠানোই যায় না)। শেষ অপশনটা সমস্যাটাকে উপেক্ষা করে।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একজন developer Messages API দিয়ে multi-turn চ্যাট বানিয়েছে, কিন্তু প্রতিটা request-এ শুধু সর্বশেষ user message পাঠায়। Claude আগের প্রশ্ন বা নিজের নাম বারবার ভুলে যাচ্ছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Model-এর training cutoff খুব পুরোনো",
+        "`max_tokens` খুব বেশি দেওয়া হয়েছে",
+        "সার্ভার ডিফল্টে শুধু ৫টা turn মনে রাখে",
+        "Messages API stateless; আগের turn গুলো আবার `messages`-এ পাঠানো হয়নি"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Messages API কোনো history জমা রাখে না; তাই কোডকেই প্রতিটা request-এ পুরো কথোপকথন (user ও assistant turn) পাঠাতে হয়। training cutoff সাম্প্রতিক তথ্যের জ্ঞান নিয়ে, কথোপকথনের স্মৃতি নিয়ে নয়। `max_tokens` শুধু output-এর সীমা। 'সার্ভার ৫টা turn মনে রাখে' বলে কোনো আচরণ docs-এ নেই।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    },
+    {
+      "question": "Claude 4.5-পরবর্তী একটি model-এ একজন dev ছোট context-এর request পাঠিয়েছে যেখানে input + `max_tokens` window-র চেয়ে বেশি হয়ে গেছে, কিন্তু input একাই window-র ভেতরে। Official docs অনুযায়ী কী ঘটবে?",
+      "options": [
+        "সাথে সাথে `400 invalid_request_error` ('prompt is too long') আসবে",
+        "API নিজে `max_tokens` কমিয়ে নিঃশব্দে `end_turn` দিয়ে শেষ করবে",
+        "Request গ্রহণ হবে; generation window-র সীমায় পৌঁছালে থামবে এবং `stop_reason` হবে `model_context_window_exceeded`",
+        "API পুরোনো turn গুলো মুছে window-তে জায়গা বানিয়ে দেবে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Docs: Claude 4.5 ও তার পরের model-এ input একা window-র ভেতরে থাকলে input + `max_tokens` বেশি হলেও request গ্রহণ হয় এবং window-তে ঠেকলে `model_context_window_exceeded` stop reason আসে। 400 'prompt is too long' আসে শুধু input একাই window ছাড়ালে। API স্বয়ংক্রিয়ভাবে history মুছে দেয় না; সেটা compaction বা context editing-এর কাজ, যা আলাদাভাবে চালু করতে হয়।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "কোন দুটো বিবৃতি context window সম্পর্কে সঠিক? Select TWO.",
+      "options": [
+        "শুধু user message গোনা হয়; system prompt window-র বাইরে",
+        "Tool definition আর tool result window-র জায়গা নেয়",
+        "Cache করা prompt prefix window-র জায়গা নেয় না",
+        "Model-এর নিজের output (thinking সহ) window-র হিসাবে গোনা হয়"
+      ],
+      "answerIndexes": [1, 3],
+      "explanation": "Docs অনুযায়ী system prompt, সব message, tool definition, tool result, ছবি/document আর model-এর output (thinking-সহ) সবই window-তে গোনা হয়। Prompt caching খরচ বদলায়, কিন্তু cached prefix-ও window-র জায়গা নেয়। তাই 'system prompt বাইরে' এবং 'cached prefix জায়গা নেয় না' দুটোই ভুল।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Rafi তার Chai-Bot request-এ `temperature=0` রেখে model Claude 4.7+ ধরনের নতুন model-এ বদলাল এবং 400 error পেল। উদ্দেশ্য ছিল আরও সামঞ্জস্যপূর্ণ output। সবচেয়ে ভালো পদক্ষেপ কী?",
+      "options": [
+        "`temperature=0.0001` দিলে চলবে, কারণ 0 শুধু সীমান্তের মান",
+        "পুরোনো model-এ ফিরে গিয়ে `temperature=0`-কে স্থায়ী সমাধান ধরা",
+        "`temperature`/`top_p`/`top_k` বাদ দিয়ে prompt স্পষ্ট করা, কয়েকটা উদাহরণ দেওয়া এবং output validate করা",
+        "`top_k=1` পাঠানো, কারণ তখন output সবসময় নির্ধারিত"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Docs: Claude 4.7+ model-এ temperature, top_p, top_k non-default পাঠালে 400, তাই এগুলো বাদ দিয়ে prompting দিয়ে আচরণ নিয়ন্ত্রণ করতে বলা হয়েছে। অর্থাৎ স্পষ্ট নির্দেশ, উদাহরণ ও validation। 0.0001 বা top_k=1 দুটোই non-default, একই 400 আনবে; পুরোনো model-এ ফেরা model নির্বাচনের সুবিধা ফেলে দেয়, আর ০ দিলেও হুবহু একই output-এর নিশ্চয়তা ছিল না।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Chai-Bot একজন গ্রাহককে একটা আইনের ধারার নাম আত্মবিশ্বাসের সাথে বলল, যা ChaiCart-এর কোনো নথিতে নেই এবং আসলে ভুল। কারণ ও প্রতিকার হিসেবে কোনটা সবচেয়ে ভালো?",
+      "options": [
+        "Model ইচ্ছাকৃতভাবে মিথ্যা বলছে; প্রতিকার: temperature বাড়ানো",
+        "Next-token prediction আর Knowledge-এর ফাঁক মিলে বানানো উত্তর; প্রতিকার: আসল policy নথি context-এ দেওয়া, উদ্ধৃতি চাওয়া এবং মানুষ/code দিয়ে যাচাই",
+        "Context window ছোট ছিল; প্রতিকার: `max_tokens` বাড়ানো",
+        "Streaming চালু ছিল; প্রতিকার: stream বন্ধ করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Model শুধু 'সম্ভাব্য শোনায়' এমন পরের token বাছে; নির্দিষ্ট ChaiCart জ্ঞান না থাকলে বিশ্বাসযোগ্য কিন্তু ভুল উত্তর তৈরি হয়। তাই grounding (আসল নথি), উদ্ধৃতি আর যাচাই কাজ করে। temperature বাড়ালে সত্য বাড়ে না। `max_tokens` output দৈর্ঘ্যের সীমা, জ্ঞানের নয়। streaming শুধু delivery পদ্ধতি।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Classification prompt-এর output format মাঝে মাঝে ভাঙছে। কোন দুটো অনুশীলন সবচেয়ে সহায়ক হবে? Select TWO.",
+      "options": [
+        "বিভিন্ন ধরনের ২-৩টা আসল উদাহরণ দেওয়া",
+        "একটা উদাহরণ বারবার কপি করে সংখ্যা বাড়ানো",
+        "উদাহরণগুলোকে `<example>` tag-এ মুড়ে নির্দেশ থেকে আলাদা রাখা",
+        "উদাহরণগুলোর format ইচ্ছাকৃতভাবে ভিন্ন রাখা যাতে model নমনীয় থাকে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Official guide: উদাহরণ format ও structure নিয়ন্ত্রণে নির্ভরযোগ্য; উদাহরণ প্রতিনিধিত্বমূলক, বৈচিত্র্যময় ও সামঞ্জস্যপূর্ণ হওয়া উচিত এবং `<example>` tag-এ থাকলে model নির্দেশ ও নমুনা আলাদা করতে পারে। একই উদাহরণ কপি করলে বৈচিত্র্য আসে না আর model সেটাই নকল করে। format ভিন্ন রাখলে ঠিক উল্টো ফল, অস্থির output।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Chai-Bot-এর ticket classification-এ prompt-এ ৩টা উদাহরণ মেসেজ ও ক্যাটাগরি দেওয়া আছে, তারপর নতুন মেসেজ। এই কৌশলের নাম কী?",
+      "options": [
+        "Zero-shot prompting",
+        "Single-shot prompting",
+        "Chain of thought",
+        "Multi-shot (few-shot) prompting"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Prompt-এ ২টা বা বেশি উদাহরণ দিলে সেটা multi-shot (few-shot)। উদাহরণ ছাড়া শুধু নির্দেশ হলে zero-shot, ঠিক একটা উদাহরণ হলে single-shot। এখানে উদাহরণ ৩টা, তাই multi-shot। 'Chain of thought' ধাপে ধাপে যুক্তি করানোর কৌশল, উদাহরণ সংখ্যার শ্রেণিবিভাগ নয়।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "ChaiCart-এর দল Chai-Bot-কে সব refund অনুরোধে নিজে সিদ্ধান্ত নিতে দিয়েছে, বড় অঙ্কের টাকা সহ, কোনো মানুষের পর্যালোচনা ছাড়া। AI Fluency-র কোন সক্ষমতায় প্রধান ঘাটতি?",
+      "options": [
+        "Description, কারণ system prompt ছোট",
+        "Delegation, কারণ ঝুঁকি ও AI-র সীমা বুঝে কাজ ভাগ করা হয়নি",
+        "Diligence, কারণ কেউ prompt-এ comment লেখেনি",
+        "Discernment, কারণ model ধীরগতির"
+      ],
+      "answerIndexes": [1],
+      "explanation": "কোন কাজ AI-কে দেবে আর কোনটা মানুষের হাতে রাখবে এই ভাগ করার সিদ্ধান্ত হলো Delegation। বড় অঙ্কের refund-এ AI-র ভুলের ঝুঁকি বেশি, তাই মানুষ রাখা Delegation-এর অংশ। Description হলো AI-কে কী চাই তা স্পষ্ট বলা। Discernment মানে ফল যাচাই, model-এর গতি নয়। Diligence-এর মূল কথা দায় ও স্বচ্ছতা, comment লেখা নয়।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "AI Fluency framework অনুযায়ী নিচের কোন দুটো Discernment-এর উদাহরণ? Select TWO.",
+      "options": [
+        "Chai-Bot-এর উত্তরের order নম্বর ও তারিখ database-এর সাথে মেলানো",
+        "কোন কাজ Chai-Bot করবে আর কোনটা মানুষ করবে তা ঠিক করা",
+        "Chai-Bot-এর যুক্তির ধাপে অনুমান বা ফাঁক আছে কি না দেখা",
+        "গ্রাহককে জানানো যে তিনি AI-র সাথে কথা বলছেন"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Discernment হলো AI-র কাজ ভালোভাবে যাচাই করা: ফলাফলের মান আর যুক্তি প্রক্রিয়া। ডাটাবেসের সাথে মেলানো ও reasoning পরীক্ষা দুটোই এর মধ্যে পড়ে। কাজ ভাগ করা Delegation। AI-র ভূমিকা সম্পর্কে স্বচ্ছতা Diligence-এর অংশ।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Chai-Bot-কে আজকের চা-এর দাম জিজ্ঞেস করা হলে model একটা পুরোনো দাম বলে ফেলল। Capabilities and Limitations-এর কাঠামোয় এটা প্রধানত কোন সীমার ফল, আর সঠিক সমাধান কী?",
+      "options": [
+        "Knowledge-এর সীমা (training cutoff ও ব্যবসা-নির্দিষ্ট তথ্য নেই); সমাধান: দাম context-এ বা tool-এর মাধ্যমে দেওয়া",
+        "Working memory-র সীমা; সমাধান: temperature বাড়ানো",
+        "Steerability-র সীমা; সমাধান: model ছোট করা",
+        "Next-token prediction-এর সীমা; সমাধান: `stop_sequences` বসানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "আজকের দাম training-এর অংশ নয়; এটা Knowledge-এর সীমা। আসল তথ্য working memory-তে (prompt বা tool result) ঢুকিয়ে দিলে model সঠিক উত্তর দিতে পারে। temperature, model ছোট করা বা `stop_sequences` কোনোটাই অনুপস্থিত তথ্য যোগ করে না।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "একজন developer `curl` দিয়ে Messages API-তে request পাঠিয়ে `x-api-key` ও `content-type` দিয়েছে, কিন্তু error পেল। SDK দিয়ে একই কোড চলে। সবচেয়ে সম্ভাব্য কী বাদ পড়েছে?",
+      "options": [
+        "`stream: true`",
+        "`anthropic-version` header",
+        "`temperature` parameter",
+        "`top_k` parameter"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Official API overview অনুযায়ী `anthropic-version` প্রতিটা request-এ বাধ্যতামূলক header; SDK এটা (আর authentication ও content-type) স্বয়ংক্রিয়ভাবে পাঠায়, তাই SDK-তে চলে। streaming, temperature বা top_k বাধ্যতামূলক নয় (আর শেষ দুটো নতুন model/API version-এ পাঠালে বরং 400 আসে)।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    },
+    {
+      "question": "Streaming সম্পর্কে কোন দুটো বিবৃতি সঠিক? Select TWO.",
+      "options": [
+        "`stream: true` দিলে উত্তর server-sent events (SSE) হিসেবে টুকরো টুকরো আসে",
+        "Messages API streaming-এর জন্য WebSocket সংযোগ বাধ্যতামূলক",
+        "Streaming চালু করলে token সংখ্যা ও খরচ কমে",
+        "Streaming চালু করলে শেষ ব্যবহারকারী প্রথম অংশ দ্রুত দেখতে পারে"
+      ],
+      "answerIndexes": [0, 3],
+      "explanation": "Official docs: streaming-এ SSE ব্যবহার হয় এবং আংশিক উত্তর আগে দেখা যায়, তাই অনুভূত latency কমে। এটা token সংখ্যা বা খরচ কমায় না, শুধু কখন পাওয়া যায় তা বদলায়। Messages API streaming-এর জন্য WebSocket বাধ্যতামূলক এমন কথা docs-এ নেই।",
+      "domain": 5,
+      "skill": "Technical Fundamentals"
+    },
+    {
+      "question": "একটি দল প্রোডাকশনে একটি পুরোনো Claude model থেকে Claude 4.7+ tokenizer ব্যবহারকারী model-এ গেল। prompt একটুও বদলায়নি, তবু `input_tokens` ও বিল বেড়েছে। সবচেয়ে ভালো ব্যাখ্যা ও পদক্ষেপ কী?",
+      "options": [
+        "Cache hit কমেছে; পদক্ষেপ: caching বন্ধ করা",
+        "Rate limit বদলেছে; পদক্ষেপ: নতুন API key নেওয়া",
+        "নতুন tokenizer একই টেক্সটে বেশি token দেয় (প্রায় ৩০% পর্যন্ত, কনটেন্টভেদে ভিন্ন); পদক্ষেপ: নতুন model-এর id দিয়ে prompt আবার count করে `max_tokens` ও cost model হালনাগাদ করা",
+        "Model-এর temperature ডিফল্ট বদলেছে; পদক্ষেপ: temperature কমানো"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Docs: Claude 4.7+ model নতুন tokenizer ব্যবহার করে, একই টেক্সটে প্রায় ৩০% বেশি token আসতে পারে; তাই সঠিক কাজ নতুন model-এ আবার count করা এবং `max_tokens`/খরচের হিসাব নতুন করা। cache hit বা API key tokenizer-এর সাথে সম্পর্কহীন। temperature নতুন model-এ পাঠানোই যায় না।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একটি অ্যাপ পুরোনো Claude model-এ চলছিল এবং request-এ `temperature=0.2` আর শেষে একটা assistant prefill turn পাঠাত। দল সর্বশেষ Claude model-এ migrate করছে। কোন পদক্ষেপ সবচেয়ে সঠিক?",
+      "options": [
+        "কিছু বদলানোর দরকার নেই, সব parameter পিছনের সাথে সামঞ্জস্যপূর্ণ",
+        "শুধু `temperature`-কে ১.০ করলেই হবে",
+        "শুধু model id বদলাবে, বাকি সব ঠিকই আছে",
+        "Migration guide মিলিয়ে `temperature` বাদ দেওয়া এবং prefill-এর বদলে user turn দিয়ে শেষ করা, আর output format-এর জন্য structured output বা system prompt ব্যবহার করা"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Docs অনুযায়ী নতুন model-এ sampling parameter (non-default) 400 দেয় এবং Claude 4.6+ model-এ assistant prefill-ও 400 দেয়। তাই migration guide অনুযায়ী parameter বাদ, prefill সরানো, আর structured output বা system prompt ব্যবহার করতে হয়। 'কিছু বদলাতে হবে না' বা 'শুধু id' breaking change উপেক্ষা করে। `temperature=1.0` পাঠানোও non-default/2026-10-21 নিয়মে সমস্যা করতে পারে।",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs"
+    }
+  ]
+}

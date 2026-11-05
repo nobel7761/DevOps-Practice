@@ -45,6 +45,9 @@ const COURSE_LAYOUTS: Record<string, Partial<CourseLayoutOptions>> = {
   "hermes-agent-mastery": {
     topicTree: true,
   },
+  "ccdv-foundations-prep": {
+    topicTree: true,
+  },
 };
 
 export function getCourseLayout(courseId: string): CourseLayoutOptions {

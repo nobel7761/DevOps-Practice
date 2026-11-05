@@ -1,0 +1,1281 @@
+[
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A support-bot team estimates cost by counting words in each ticket and multiplying by a fixed rate. Their monthly bill is consistently higher than the estimate, especially for tickets containing code snippets, URLs and non-English text. What is the most likely reason?",
+    "options": [
+      "The model re-reads the entire word list once per output sentence, doubling input charges",
+      "The API bills per request, so longer tickets are being split into several billable requests",
+      "Models process text as tokens, and the token-per-word ratio varies with content type; code, URLs and non-English text typically split into more tokens than plain English prose",
+      "Words in non-English tickets are billed at a premium multiplier set by the language"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Billing and context limits are measured in tokens, not words. Token counts depend on the tokenizer and on content: code, URLs and many non-English scripts tokenize less efficiently than English prose. Use the token counting endpoint or the usage field rather than word counts."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer sets max_tokens to 2,000 on a request whose prompt is 150,000 tokens, using a model with a 200,000-token context window. A colleague says max_tokens is the cap on the whole conversation. What is the correct understanding?",
+    "options": [
+      "max_tokens caps input plus output, so the 150,000-token prompt will be rejected",
+      "max_tokens caps only the generated output; the prompt plus the output must together fit within the context window, so this request fits easily",
+      "max_tokens reserves part of the context window and shrinks the usable input to 2,000 tokens",
+      "max_tokens is ignored when the prompt is longer than 100,000 tokens"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The context window is the total budget for input and output tokens in a request, while max_tokens is a ceiling on the output only. Here 150,000 + up to 2,000 is well under 200,000. Setting max_tokens too low risks truncated answers, not rejected prompts."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "An internal tool calls the Messages API for each chat turn but sends only the user's newest message. Users complain that Claude forgets what was said a minute ago. What is the correct fix?",
+    "options": [
+      "Lower the temperature so the model recalls previous turns more reliably",
+      "Increase max_tokens so the model has room to remember earlier turns",
+      "Wait for the server to cache the conversation, which happens automatically per API key",
+      "Send the relevant conversation history with each request, because the API is stateless and the model only sees what is in the current request"
+    ],
+    "answerIndexes": [3],
+    "explanation": "The Messages API does not keep conversation state between calls. The context window holds only what you send in that request, so the application must resend prior turns (or a summary). Temperature and max_tokens do not create memory."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team runs the same classification prompt twice with identical inputs and sampling settings and occasionally gets slightly different outputs. Their QA lead wants to know whether this indicates a bug. Which explanation is most accurate?",
+    "options": [
+      "It happens only when the prompt is shorter than the minimum cacheable length",
+      "It indicates a bug, because a correctly deployed model is fully deterministic for identical inputs",
+      "It is caused by the API randomly swapping between model versions on each request",
+      "Claude samples each next token from a probability distribution, so outputs can vary run to run; lower randomness settings reduce but do not strictly guarantee identical output"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Generation is probabilistic: the model produces a distribution over next tokens and one is sampled. Reducing randomness (for example, lower temperature on models that expose it) makes outputs more consistent but does not promise bit-for-bit identical results. Applications that need stable results should validate outputs and design for variation."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A product manager asks why Claude's answers read as fluent text rather than being looked up from a database of answers. Which description of how Claude generates a response is most accurate?",
+    "options": [
+      "It runs the prompt through a rules engine that selects pre-written sentence templates",
+      "It drafts the whole answer at once and then edits it in a second pass before returning it",
+      "It retrieves the closest matching answer from a stored table of previous responses",
+      "It generates the response one token at a time, each token predicted from the prompt plus all tokens generated so far"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Language models are autoregressive: each new token is predicted conditioned on the prompt and everything generated so far. This is why output length is measured in tokens, why generation can be streamed, and why a max_tokens cutoff can stop a response mid-sentence."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "An engineer wants Claude to label support tickets as 'billing', 'bug' or 'feature-request' in a strict house style. The task description alone gives inconsistent label formatting. Which change most directly addresses this?",
+    "options": [
+      "Switch from a system prompt to a user message so the instructions carry more weight",
+      "Increase max_tokens so the model has more room to format the label",
+      "Remove all instructions and rely on zero-shot prompting to avoid over-constraining the model",
+      "Add a few labelled example input/output pairs to the prompt (multi-shot prompting) so the model can imitate the exact format"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Few-shot (single- or multi-shot) examples show the model the desired input-to-output mapping and format, which is often the most direct fix for inconsistent formatting. Zero-shot relies on the description alone. max_tokens affects length limits, not style consistency."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer is deciding between zero-shot and multi-shot prompting for summarizing meeting notes into three bullets. Claude already produces acceptable summaries from a clear instruction. What is the best choice?",
+    "options": [
+      "Always use multi-shot with at least ten examples because zero-shot cannot work reliably on modern models",
+      "Avoid examples entirely because they permanently fine-tune the model",
+      "Use zero-shot only for classification and multi-shot only for summarization",
+      "Start with zero-shot using a clear instruction, and add examples only if evaluation shows format or quality gaps, since examples cost extra input tokens on every call"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Capable models often perform well zero-shot. Examples help when you need a specific format or behaviour but they add tokens (cost and latency) to every request, so add them based on evidence. Examples in a prompt do not change model weights."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team is shown a request with one example question/answer pair followed by the real question. Which term describes this prompting technique?",
+    "options": [
+      "Single-shot (one-shot) prompting",
+      "Chain-of-thought fine-tuning",
+      "Zero-shot prompting",
+      "Prompt caching"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Zero-shot gives no examples, single-shot gives exactly one, and multi-shot (few-shot) gives several. Providing examples in the prompt is in-context learning and does not modify the model."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer reads that Claude can 'think' before answering and wants the model to spend extra reasoning effort on a hard multi-step planning task via the API. Which statement about extended thinking is correct?",
+    "options": [
+      "Thinking tokens are generated before the final answer, count toward output token usage and billing, and on newer models the depth is steered through adaptive thinking and the effort setting",
+      "Thinking tokens are free and do not count against output limits or billing",
+      "Thinking is performed by a separate smaller model and never appears in usage",
+      "Thinking is only available when the prompt contains at least three few-shot examples"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Extended thinking lets the model reason before responding; that reasoning is generated as tokens and billed as output tokens, even if the visible thinking text is summarized or omitted. Newer models use adaptive thinking guided by effort rather than a fixed thinking budget. Thinking does not depend on few-shot examples."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team migrating to a newer Claude model finds that their request with thinking: {type: 'enabled', budget_tokens: 8000} now returns a 400 error. According to the current docs, what is the appropriate direction?",
+    "options": [
+      "Increase budget_tokens to exceed max_tokens so the request is accepted",
+      "Switch to adaptive thinking and control depth with the effort setting, because fixed thinking budgets are deprecated or rejected on newer models",
+      "Add a system prompt telling the model to ignore the thinking parameter",
+      "Retry the same request, because 400 errors on thinking are transient"
+    ],
+    "answerIndexes": [1],
+    "explanation": "On recent Claude models the fixed budget_tokens approach is deprecated or rejected, replaced by thinking type 'adaptive' where Claude decides when and how much to think, steered by output_config.effort. A 400 is a client error, so retrying unchanged will not help."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer sets output_config effort to 'low' on a high-volume chat route and 'high' on a complex code-migration route. What does the effort setting primarily control?",
+    "options": [
+      "Whether the response is served from the prompt cache",
+      "How much thinking and overall token spend the model applies, trading thoroughness against cost and latency",
+      "The maximum number of requests per minute allowed for the route",
+      "The size of the context window available to the request"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Effort steers how thoroughly the model works across all output tokens, including thinking, text and tool calls, trading thoroughness against cost and latency. Lower effort suits simple or latency-sensitive routes; higher effort suits hard problems. It does not alter rate limits, context window size or caching."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A latency-sensitive coding assistant on the Claude API wants higher output speed from a supported Opus model and is willing to pay more. Which description of fast mode is correct?",
+    "options": [
+      "Fast mode is available on every model and also works through the Batch API",
+      "Fast mode silently routes the request to a smaller Haiku model at no extra cost",
+      "Fast mode runs the same model with a faster inference configuration, giving up to about 2.5x higher output tokens per second at premium pricing, and is requested with a speed parameter on supported models",
+      "Fast mode is enabled by setting temperature to 0 and lowering max_tokens"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Per the docs, fast mode runs the same model (no change in intelligence) at premium pricing for higher output tokens per second; it is requested with speed: \"fast\" and only works on supported models. The gain is in output speed, not time to first token, and fast mode is not available with the Batch API. Availability and beta status differ by model, so check the docs."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer streams tokens to the UI and notices that a response ends abruptly mid-sentence. The final message has stop_reason 'max_tokens'. Which TWO responses are appropriate? Select TWO.",
+    "options": [
+      "Check stop_reason and treat the text as truncated rather than complete",
+      "Retry with identical settings, because stop_reason 'max_tokens' means the request was rate limited",
+      "Raise max_tokens (and stream if it is large) or ask for a shorter answer",
+      "Delete the system prompt, because it exhausted the context window",
+      "Ignore it, since mid-sentence endings are normal formatting"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "A stop_reason of max_tokens means generation stopped because the output cap was reached, not because the model finished. Applications should check stop_reason and handle truncation by raising max_tokens (streaming for large values) or requesting a more concise answer. It is unrelated to rate limits, and the system prompt is not the cause."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A legal-tech team wants Claude to extract clauses from contracts so that the same contract produces the same clause list on every run. Which TWO practices best support consistent results? Select TWO.",
+    "options": [
+      "Use a clear, specific prompt with a defined output schema and validate the response against it",
+      "Resend the contract twice in the prompt so the model memorises it",
+      "Pin a specific model version and keep the prompt and examples fixed between runs, while designing the pipeline to tolerate small variations",
+      "Raise sampling randomness so the model explores every possible clause list",
+      "Rely on the model being fully deterministic and skip validation to save latency"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Consistency comes from clear instructions, schema-constrained output with validation, and stable inputs (a pinned model version and unchanged prompt). None of these guarantee identical text, so pipelines should handle variation. Newer models may not even accept sampling parameters, and duplicating the document or increasing randomness does not improve repeatability."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer asks which items count toward the context window for a single Messages API request. Select TWO.",
+    "options": [
+      "Only the response tokens; input tokens are tracked separately and never limited",
+      "The HTTP headers and API key",
+      "The system prompt and the conversation messages sent as input",
+      "The tokens the model generates in its response",
+      "Only the latest user message; earlier messages are stored server-side and excluded"
+    ],
+    "answerIndexes": [2, 3],
+    "explanation": "The context window covers everything the model processes for the request: input (system prompt, tools, messages) and generated output including thinking. Earlier turns are not stored server-side, so they must be sent and they count."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A startup runs a quick experiment comparing three prompting strategies for sentiment classification of product reviews: instructions only, one example, and eight examples. Which observation would most justify choosing the eight-example prompt in production?",
+    "options": [
+      "It gives meaningfully higher accuracy on a held-out evaluation set, enough to justify the extra input tokens on every request",
+      "It guarantees deterministic labels, removing the need for evaluation",
+      "It makes the model permanently learn the examples so later requests can omit them",
+      "It reduces the number of input tokens because examples are compressed"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Prompt examples are paid for in tokens on each call, so the decision should be driven by measured improvement on held-out data. In-context examples do not persist across requests and do not guarantee determinism."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer notices that a long conversation with an agent costs more per turn as it continues, even though each user message is short. What is the most accurate explanation?",
+    "options": [
+      "Because the API is stateless, each request resends the accumulated history, so input tokens per turn grow with conversation length",
+      "The server adds a fixed surcharge per turn after the tenth turn",
+      "Output tokens from earlier turns are billed again as output on every later turn",
+      "The model charges a higher rate per token the longer a session lasts"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Each call includes the full history that you send, so input size and cost grow with the conversation. Prompt caching and context management (summaries, pruning) are the typical mitigations. There is no per-turn surcharge or increasing token rate."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team wants Claude to refuse to guess when information is missing in a data-extraction task. They are debating whether lowering randomness will fix hallucinated values. What is the best guidance?",
+    "options": [
+      "Lowering randomness makes output more consistent but not more truthful; instruct the model to return null for missing fields and validate the output against source text",
+      "Setting randomness to its minimum removes hallucination entirely",
+      "Adding more output tokens gives the model room to double-check itself automatically",
+      "Hallucinations occur only when streaming is enabled, so switch to non-streaming"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Reducing randomness changes how tokens are sampled, not whether the model's knowledge or the prompt supports the answer. Explicit instructions (allow null / unknown), schema validation and grounding checks address fabricated values."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A company wants Claude to solve a hard multi-step scheduling optimization problem and is considering enabling thinking. Which statement best captures when thinking is worth its cost?",
+    "options": [
+      "It should be enabled only for one-sentence classification tasks",
+      "It is most valuable on complex reasoning, planning and multi-step problems, while simple lookups or formatting tasks gain little and just add tokens and latency",
+      "It replaces the need for a clear prompt and examples",
+      "It should be enabled on every request because it is always free and always improves quality"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Thinking helps most on hard reasoning tasks; for simple tasks it adds cost and latency with little gain. Thinking tokens are billed as output, and good prompting is still required."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "An e-commerce team wants to understand why the same prompt may need different amounts of thinking for different questions, and wants the model to decide this itself. Which feature matches that intent?",
+    "options": [
+      "Setting max_tokens to the maximum so the model always thinks longer",
+      "Adaptive thinking, where Claude decides whether and how much to think for each request, steered by the effort level",
+      "A fixed thinking budget that always consumes the full budget_tokens value",
+      "Single-shot prompting with one example per question type"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Adaptive thinking lets the model calibrate reasoning depth per request, with effort guiding the tradeoff. A fixed budget forces the same allowance each time (and is deprecated or rejected on newer models), and max_tokens is only an output ceiling."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer wants to know what Claude's 'context window' means when evaluating whether a 300-page PDF plus a long chat history can fit in one request. Which statement is correct?",
+    "options": [
+      "It is the long-term memory the model keeps about each user across sessions",
+      "It is the maximum number of tokens (input plus output) the model can handle in one request; if the content exceeds it you must shorten, chunk, summarize or retrieve selectively",
+      "It is the number of requests the model can serve per minute",
+      "It is the maximum length of a single word the model can process"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The context window is the per-request token budget the model works within. Documents and histories that exceed it require chunking, summarization or retrieval. It is unrelated to rate limits or persistent memory."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "Two engineers disagree about a prompt that says 'Classify the email.' with no examples. One calls it zero-shot, the other calls it few-shot. Who is correct, and why?",
+    "options": [
+      "Multi-shot, because the instruction names more than one label",
+      "Zero-shot, because the prompt contains an instruction but no worked examples of inputs and outputs",
+      "Single-shot, because the email itself is the one example",
+      "Few-shot, because any instruction counts as a shot"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Shots refer to demonstrations of the task included in the prompt. An instruction with no demonstrations is zero-shot; one demonstration is single-shot; several are multi-shot (few-shot). The input being processed is not a demonstration."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A support team streams Claude's answers token by token to a web UI and asks why partial text is available before the full response is finished. Which fact about generation explains this?",
+    "options": [
+      "Streaming runs a second, cheaper model that predicts the final answer",
+      "The model generates the full answer instantly and the server artificially delays the text",
+      "Claude generates output sequentially, token by token, so the API can stream tokens as they are produced instead of waiting for the full response",
+      "Partial text is stored in the prompt cache and replayed to the client"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Autoregressive, token-by-token generation is what makes streaming possible; time to first token and total latency are separate considerations. Streaming does not involve a second model or the cache."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team sets a very high effort level on all routes of their app after hearing it improves quality. Latency and token costs rise sharply on routine chat requests with no quality gain. What is the best adjustment?",
+    "options": [
+      "Switch all routes to zero-shot prompting to lower latency",
+      "Keep high effort everywhere, because cost is irrelevant when quality can only improve",
+      "Tune effort per route: keep high effort for hard reasoning and agentic tasks, and use lower effort for simple, latency-sensitive chat, validating with an evaluation set",
+      "Disable the context window to reduce token use"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Effort trades thoroughness for tokens and latency; its benefit depends on the workload. Measuring on real traffic and setting effort per route balances quality and cost. Context windows cannot be disabled and zero-shot is a prompting style, not a latency control."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer wants to warn a client about which of the following behaviours of LLM output. Select TWO.",
+    "options": [
+      "Longer answers are always more accurate than shorter ones",
+      "Identical prompts always return byte-identical text on a correctly configured model",
+      "Fluent, confident output is not evidence that the content is factually correct",
+      "Output may differ between identical runs because tokens are sampled from a probability distribution"
+    ],
+    "answerIndexes": [2, 3],
+    "explanation": "Sampling makes outputs variable, and fluency does not imply truth, so applications should validate important content. Neither determinism nor length reliably indicate correctness."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer compares the same 10,000-character English prompt on two different Claude models and finds the token counts differ noticeably. A teammate suspects an API bug. What is the most likely explanation?",
+    "options": [
+      "The API randomly adds padding tokens to prompts on newer models",
+      "Token counts depend on the time of day because servers use dynamic vocabularies",
+      "Different model generations can use different tokenizers, so the same text can map to a different number of tokens",
+      "Prompt caching removes some tokens from the count on the second model"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Tokenization is model-specific; docs note that models from Claude Opus 4.7 onward use a newer tokenizer that produces roughly 30 percent more tokens for the same text. Re-measure with the token counting endpoint or response usage when changing models instead of assuming counts carry over."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer wants Claude to answer in a particular JSON shape and supplies two example input/output pairs, but one example accidentally contains a typo in a field name. Soon after, outputs sometimes reproduce the typo. What does this illustrate?",
+    "options": [
+      "The model corrects all errors in examples before using them",
+      "Typos in examples are filtered out by the tokenizer",
+      "Few-shot examples are ignored when they contain errors",
+      "Models imitate patterns in prompt examples closely, so examples must be accurate and consistent with the desired output"
+    ],
+    "answerIndexes": [3],
+    "explanation": "In-context examples strongly shape output format and content, so mistakes in examples propagate. Review examples as carefully as code and validate outputs against a schema."
+  },
+  {
+    "domain": 5,
+    "skill": "LLM Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer tests a prompt at the model's default sampling settings and sees variety in phrasing across runs of a brainstorming feature, which the product team likes. Which statement best explains the variety?",
+    "options": [
+      "The server shuffles the words of a single stored answer on each call",
+      "The model keeps a hidden counter that rotates among stored answers",
+      "The model rewrites its weights slightly after every request",
+      "Each next token is sampled from a probability distribution over candidates, so several plausible continuations can be chosen on different runs"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Sampling from the next-token distribution produces natural variation, which is desirable for brainstorming and undesirable for strict extraction. Model weights are fixed at inference time and no stored answers are shuffled."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A Python team is calling Claude from a backend service. A junior developer proposes hand-writing HTTP requests with the requests library to avoid 'extra dependencies'. What is the main advantage of using the official Anthropic SDK instead?",
+    "options": [
+      "The SDK uses a different, faster network protocol than the REST API",
+      "The SDK bypasses rate limits because it authenticates differently",
+      "The SDK stores conversation history on Anthropic's servers automatically",
+      "The SDK wraps the REST API with typed request/response objects, automatic retries with backoff, timeout handling, streaming helpers and header management"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Official SDKs are thin wrappers over the same REST API, adding typing, retries, streaming helpers and consistent error classes. They do not use a different protocol, circumvent rate limits or keep server-side conversation state."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "An engineer writes a raw HTTP request to the Messages API in curl and gets an authentication error. Which set of headers is required for a basic request?",
+    "options": [
+      "Only content-type application/json, because the key is passed in the JSON body",
+      "x-api-key with the API key, anthropic-version with an API version string, and content-type application/json",
+      "x-api-key and a websocket upgrade header",
+      "Authorization: Basic with the account email and password, plus a model header"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The Messages API expects the API key in x-api-key, an anthropic-version header, and a JSON content type. Keys are not placed in the body and the API does not use basic auth with account credentials. SDKs set these headers for you."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A web app's browser JavaScript calls the Claude API directly using an API key embedded in the front-end bundle to save building a backend. What is the best assessment?",
+    "options": [
+      "It is safe as long as the bundle is minified",
+      "It is fine because API keys are tied to the user's browser session",
+      "This exposes the key to every user; route requests through a backend you control that holds the key and applies authorization, quotas and logging",
+      "It is acceptable if the key is base64-encoded in the source"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Anything shipped to the browser is visible to users, so embedded keys can be extracted and abused. Keep keys server-side (or use a proxy/gateway) and add per-user controls. Minifying or encoding is obfuscation, not protection."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A report-generation service requests very long outputs (tens of thousands of tokens) from Claude and intermittently fails with network timeouts on non-streaming calls. Which TWO approaches best address the problem? Select TWO.",
+    "options": [
+      "Switch to a websocket connection because the Messages API requires it for long output",
+      "Use streaming so data arrives incrementally, and collect the final message at the end",
+      "Lower max_tokens to 10 so responses always finish quickly",
+      "Keep non-streaming and double the client timeout indefinitely",
+      "If the reports are not needed interactively, submit them through the Message Batches API and poll for results"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "The docs recommend streaming or the Message Batches API for long-running requests because networks may drop idle connections; streaming keeps data flowing and SDK helpers can assemble the final message, while batches let you poll rather than hold a connection. The Messages API streams over HTTP server-sent events, not websockets, and shrinking max_tokens defeats the use case."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A team is designing real-time token display in a chat app. A developer asks how Claude's streaming responses are delivered by the Messages API. Which statement is correct?",
+    "options": [
+      "The server streams events over a normal HTTP response using server-sent events (SSE), which the SDK parses into typed events",
+      "The API requires opening a persistent bidirectional websocket for every request",
+      "The API returns tokens only after the whole response is complete, then replays them quickly",
+      "The API pushes tokens by calling a webhook URL you register"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Setting stream: true makes the API respond with an SSE stream over HTTP. Websockets are bidirectional and are something an application might use between its own browser client and backend, but they are not how the Messages API delivers streams."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "An application has a browser client that needs to send user input and receive Claude tokens in real time, and also receive server-pushed notifications. The backend calls the Claude API. Which design is most reasonable?",
+    "options": [
+      "Replace the backend with a static page and call the API from each user's browser",
+      "Poll the Claude API from the browser every 100 ms with a hidden key",
+      "Use a websocket (or SSE) between browser and backend as the app's own transport, while the backend calls the Claude API with streaming and forwards tokens",
+      "Have the browser open a websocket directly to the Claude API with the API key"
+    ],
+    "answerIndexes": [2],
+    "explanation": "The websocket between the browser and your backend is an application design choice, while the backend-to-Claude link uses HTTP streaming (SSE). Browsers should not hold the API key or connect directly."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A developer is choosing between a websocket and SSE for one-way token streaming from their server to a browser. No client-to-server messages are needed during the stream. Which statement is most accurate?",
+    "options": [
+      "SSE fits one-way server-to-client streaming over plain HTTP and is simpler to operate, while websockets add value when you need full-duplex messaging",
+      "Websockets are always cheaper in tokens than SSE",
+      "SSE cannot work through standard HTTP infrastructure such as proxies and load balancers",
+      "Websockets are required for any streaming because SSE cannot carry text"
+    ],
+    "answerIndexes": [0],
+    "explanation": "SSE is a lightweight, HTTP-based one-way channel with automatic reconnection support in browsers; websockets provide full-duplex communication at higher operational complexity. The transport choice has no effect on token cost."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A batch job sends 500 independent Claude requests sequentially with a blocking client, taking hours. The service is latency tolerant per item but wants higher throughput. Which change best increases throughput while respecting limits?",
+    "options": [
+      "Rewrite the loop to retry every failure instantly in a tight loop",
+      "Fire all 500 requests at once without limits and ignore errors",
+      "Remove timeouts so each request waits as long as needed",
+      "Use an async client (or worker pool) with bounded concurrency and handle 429 responses with backoff, staying under the account's rate limits"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Concurrency improves throughput for I/O-bound API calls, but it must be bounded and paired with backoff to respect rate limits. Unbounded bursts trigger 429s, and instant retry loops make that worse."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "The Claude API returns HTTP 429 with a retry-after header during a traffic spike. Which TWO handling practices are best? Select TWO.",
+    "options": [
+      "Switch to a new API key for each retry to bypass the limit",
+      "Wait at least the indicated retry-after time, then use exponential backoff with jitter on repeated failures",
+      "Treat it as a permanent failure and surface an error without retry",
+      "Immediately resend the same request in a loop until it succeeds",
+      "Smooth outgoing traffic, for example by pacing requests using the rate-limit response headers, so spikes stay under the limits"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "A 429 rate_limit_error is retryable after waiting; honoring retry-after and adding jittered backoff avoids a thundering herd, and pacing traffic using the anthropic-ratelimit-* headers prevents repeated hits. Rotating keys to evade limits is inappropriate and limits are enforced at the organization level, and tight retry loops make things worse."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer retries every failed Claude request three times with no delay, including requests that failed with HTTP 400 'invalid_request_error'. What is the main flaw?",
+    "options": [
+      "Retrying is harmful for all error types and should be avoided",
+      "400 errors are caused by network problems, so they need more retries with shorter delays",
+      "400-class client errors are not transient; the request itself is invalid and must be fixed, so blind retries only waste time, while 429/5xx and connection errors are the retryable class",
+      "Retries should only be attempted on successful responses"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Transient errors (rate limits, overload, 5xx, connection problems) benefit from retries with backoff; invalid-request, authentication and permission errors do not change on retry. The SDKs apply this distinction by default."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team's Claude calls using the official TypeScript SDK sometimes hang for a long time when the network is unreliable. They ask what configuration controls this. Which is correct?",
+    "options": [
+      "The SDK has no timeout, so wrap each call in a separate process",
+      "Set the client timeout (and the retry count) explicitly to match your latency budget, remembering that retries can multiply the total wall-clock time",
+      "Timeouts can only be configured on the server side by Anthropic",
+      "Set max_tokens to zero to prevent hangs"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The SDKs expose timeout and max retry options per client or per request; because timed-out requests may be retried, total wait can reach roughly the timeout times the number of attempts. Units differ by SDK, so check the documentation."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A service lists all of its stored Message Batches by calling a list endpoint, but only the first page of results ever appears. Which approach is correct?",
+    "options": [
+      "Increase the HTTP timeout until the entire list returns in one response",
+      "Call the endpoint repeatedly with identical parameters until new items appear",
+      "Follow the pagination cursors (for example using has_more and the after_id/before_id parameters) or use the SDK's auto-pagination helper to iterate through all pages",
+      "List endpoints never paginate, so the missing items were deleted"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Anthropic list endpoints are paginated with limits and cursors; to read everything you must request subsequent pages or use the SDK's auto-pagination iterators."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team's production service gets HTTP 529 'overloaded_error' responses from time to time. Which handling best fits?",
+    "options": [
+      "Treat it as an authentication problem and rotate the API key",
+      "Treat it as transient: retry with exponential backoff and jitter, and consider graceful degradation or a fallback path for sustained overload",
+      "Treat it as a permanent bug in the request body and stop retrying",
+      "Disable the SDK and send the request through a different header version"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Overload errors reflect temporary capacity conditions on the service side and are retryable with backoff. They are not authentication or request-shape problems."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A streaming Claude call returns HTTP 200 and begins sending events, then an 'overloaded_error' event arrives in the middle of the stream. What does this imply for client design?",
+    "options": [
+      "Mid-stream errors are impossible and indicate a corrupted SDK installation",
+      "The client should ignore the event and treat partial text as complete",
+      "Errors can occur after a 200 status once streaming has started, so the client must handle error events within the stream and decide whether to retry the request",
+      "A 200 status guarantees the stream will complete without errors"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Because the HTTP status is sent before generation finishes, failures can still occur mid-stream and are delivered as error events. Robust clients handle them, discard or reconcile partial output, and retry when appropriate."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer is logging failed Claude API calls and wants to help Anthropic support diagnose an incident. Which piece of data is most useful to capture from each response?",
+    "options": [
+      "The full API key used for the call",
+      "The request ID returned in the response headers (request-id), along with the status code and error type",
+      "The user's browser cookies",
+      "The local machine's clock drift"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The request-id uniquely identifies a call for support and tracing. Never log secrets such as API keys. Browser cookies and clock drift are not relevant."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A mobile app team wants to let end users trigger Claude calls but avoid shipping long-lived credentials. Which pattern is best?",
+    "options": [
+      "Hardcode one API key in the mobile app and rotate it monthly",
+      "Authenticate the user to your own backend, which holds the Claude API key server-side, enforces per-user limits, and forwards requests",
+      "Send the key in the URL query string over HTTPS so it is encrypted",
+      "Ask each user to paste their own organization's admin key into the app"
+    ],
+    "answerIndexes": [1],
+    "explanation": "A backend gateway keeps secrets off devices and provides a place for authorization, quotas, logging and abuse prevention. Embedded keys can be extracted regardless of rotation cadence, and keys in URLs leak into logs."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "An engineer needs to make a one-off prototype call to Claude from a shell script on a CI box with only curl available. Which statement about calling the REST API directly is accurate?",
+    "options": [
+      "It is valid: send a POST to the Messages endpoint with the required headers and a JSON body, then parse the JSON response yourself",
+      "It works only if the API key is placed in the JSON body",
+      "It requires installing a websocket library",
+      "It is impossible because Claude is only reachable through the SDKs"
+    ],
+    "answerIndexes": [0],
+    "explanation": "The SDKs are convenience layers over a public REST API, so direct HTTP is fully supported; you take on retries, parsing and error handling yourself. Auth is via headers, not the body."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team's retry wrapper around the Claude API is being reviewed. Which TWO practices make it safer for production? Select TWO.",
+    "options": [
+      "Retry only transient failures (rate limits, overload, 5xx, connection errors) with exponential backoff and jitter",
+      "Retry indefinitely until the call succeeds so no request is ever lost",
+      "Retry every error status immediately, including authentication failures",
+      "Remove all timeouts so retries never interrupt a slow request",
+      "Cap the total number of attempts and overall time so a retry storm cannot build up"
+    ],
+    "answerIndexes": [0, 4],
+    "explanation": "Good retry design targets only retryable errors, spaces attempts with jittered backoff, and bounds attempts and total time. Retrying permanent errors or retrying forever amplifies outages and hides bugs."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A document pipeline must process 10,000 PDFs overnight with no user waiting on results. Which TWO integration choices fit best? Select TWO.",
+    "options": [
+      "Use a websocket from the browser to the Claude API for every document",
+      "Track each item by a custom identifier so results can be matched regardless of completion order",
+      "Hold one open streaming connection per document and wait on each interactively",
+      "Use an asynchronous pattern such as the Message Batches API or a queue with worker processes",
+      "Process documents strictly one at a time in the web request handler"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Offline, latency-tolerant bulk work suits asynchronous processing (batches or queues) and requires identifiers to correlate out-of-order results. Interactive streaming and per-request handlers do not scale and add cost."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer uses the SDK's synchronous client inside an async web framework (event loop) and notices that other requests stall while a Claude call is in flight. What is the best fix?",
+    "options": [
+      "Increase max_tokens so the call finishes in fewer round trips",
+      "Switch the transport to websockets, which are non-blocking by definition",
+      "Use the SDK's async client with await (or move the blocking call to a worker thread/process) so the event loop is not blocked",
+      "Disable retries so the call returns faster"
+    ],
+    "answerIndexes": [2],
+    "explanation": "A blocking call on the event loop stalls every other coroutine. Async clients (for example AsyncAnthropic) or offloading to threads keep the loop responsive. Neither max_tokens nor websockets change blocking behaviour."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team builds a chat feature and must choose between non-streaming and streaming responses. Time to first visible text matters more than total completion time for users. Which choice is best?",
+    "options": [
+      "Use streaming so users see tokens as they are generated, improving perceived latency",
+      "Cache the answer before the user asks the question",
+      "Use batch processing so the response is prepared in advance",
+      "Use non-streaming so the UI only updates once, which is always faster to the first token"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Streaming shortens time to first token as seen by the user, even though total generation time is similar. Batch processing is for offline work and cannot serve interactive chat."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A backend engineer sees that the SDK is configured with its default retry behavior and asks what it does. Which statement is accurate?",
+    "options": [
+      "The SDK never retries; every failure must be retried by the application",
+      "The SDK retries only when streaming is enabled",
+      "The SDK retries every error including 401 and 400 until success",
+      "The SDK automatically retries a small number of times on connection errors and retryable statuses such as 408, 409, 429 and 5xx, with backoff, and you can configure or disable this"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Official SDKs include default retry logic for transient failures with exponential backoff and expose options to change the count. Client errors like 400 and 401 are not retried because retrying cannot fix them."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team calls the Messages API and receives HTTP 413 request_too_large. What is the most appropriate response?",
+    "options": [
+      "Switch to websockets to bypass the size limit",
+      "Add more headers so the server recognizes the request as important",
+      "Retry with exponential backoff because 413 is a transient capacity error",
+      "Reduce the request size by shrinking, chunking or summarizing the payload, or upload large files through the Files API and reference them"
+    ],
+    "answerIndexes": [3],
+    "explanation": "413 means the request payload exceeds the allowed size; resending it unchanged will fail again. The fix is to reduce or restructure the payload. It is not a capacity issue."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "An integration returns HTTP 401 authentication_error after a key rotation. The deployment pipeline shows the new key was deployed to only half of the servers. What is the most likely cause?",
+    "options": [
+      "Some instances are still sending the revoked or old key, so those requests fail authentication",
+      "The request exceeded the context window",
+      "The model requested no longer exists",
+      "The API is rate limiting the new key"
+    ],
+    "answerIndexes": [0],
+    "explanation": "401 errors indicate missing or invalid credentials; partially rolled-out rotation is a common cause. Rate limiting produces 429 and context overflow produces a 400-class invalid request error."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer wants their service to survive a brief Claude API outage without failing user requests outright. Which TWO measures help most? Select TWO.",
+    "options": [
+      "Provide graceful degradation such as a queued retry, cached response or clear fallback message",
+      "Retry transient failures with bounded backoff and jitter",
+      "Remove the client timeout so requests wait indefinitely for recovery",
+      "Resend each failed request from every worker simultaneously with no delay",
+      "Hardcode a single retry with no delay and treat the second failure as success"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Bounded, jittered retries cover short blips, while graceful degradation handles longer outages. Infinite waits and synchronized immediate retries worsen failures."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "An engineer must decide between hand-rolled HTTP calls and the SDK for a new TypeScript service that will use streaming, tool use and typed responses. Which is the stronger recommendation?",
+    "options": [
+      "Use raw fetch and parse server-sent events manually for maintainability",
+      "Use an unofficial, OpenAI-compatible shim so the code is portable",
+      "Use raw fetch calls because the SDK is only for Python",
+      "Use the official SDK to get typed objects, stream helpers, retries and consistent error classes, reserving raw HTTP for languages or environments without an SDK"
+    ],
+    "answerIndexes": [3],
+    "explanation": "SDKs encapsulate the REST details so you can focus on the application, and they track API changes. Parsing SSE by hand is error-prone and unofficial shims may not support all Claude features."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer reads rate-limit headers returned by the Claude API in each response. How should the application use them?",
+    "options": [
+      "Use them to adapt request pacing, for example slowing down as remaining capacity approaches zero, rather than only reacting to 429 errors",
+      "Use them to encrypt the next request",
+      "Ignore them because they are only for Anthropic's internal metrics",
+      "Use them to decide which model to bill the customer for"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Responses expose information about remaining request/token capacity and reset times, enabling proactive throttling and smoother traffic. They are not billing or encryption inputs."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A service hits rate limits mostly because several tenants send large prompts at once. Their usage is within request-per-minute limits but input-token-per-minute limits are exceeded. Which TWO actions are most appropriate? Select TWO.",
+    "options": [
+      "Throttle only by requests per minute, since token limits do not exist",
+      "Reduce uncached input per request (shorter prompts, smaller context, prompt caching, since cache reads generally do not count toward ITPM)",
+      "Increase max_tokens to use the unused request budget",
+      "Queue or throttle by estimated tokens, not only by request count",
+      "Send requests with random delays regardless of size"
+    ],
+    "answerIndexes": [1, 3],
+    "explanation": "Rate limits are measured in requests, input tokens and output tokens per minute, so request-count throttling alone is insufficient. Reducing token volume (for most models, only uncached input counts toward ITPM) and token-aware queuing keep the service under the limit. max_tokens does not factor into OTPM limits and does nothing for input tokens."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A team debates whether to use Message Batches or synchronous calls for a nightly job that generates product descriptions for 50,000 SKUs, with results needed by morning. Which is the best fit?",
+    "options": [
+      "Fast mode, since every request must be as fast as possible",
+      "Synchronous calls with streaming for each SKU, because batches cannot return text",
+      "Message Batches, which process requests asynchronously at a lower cost and are intended for non-latency-sensitive bulk work",
+      "A websocket held open all night to the API"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Batch processing suits large, offline workloads and is discounted relative to standard calls. Streaming and fast mode target interactive latency, and websockets are not how the API is accessed."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A developer passes a model-generated tool input directly into a REST call to an internal service without parsing the JSON or validating the schema. What principle does this violate?",
+    "options": [
+      "Treat model output as untrusted data: parse it defensively, validate against a schema, and handle malformed or unexpected values before using it",
+      "Schemas are only needed for streaming responses",
+      "Validation should happen only on the model's thinking blocks",
+      "Model output is always valid JSON, so validation is wasted effort"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Even well-behaved models can produce malformed or unexpected output, so integrations should parse and validate before acting on it. This is basic engineering hygiene for any untrusted input."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "Which TWO statements about the relationship between the Claude SDKs and the REST API are correct? Select TWO.",
+    "options": [
+      "The SDKs use a proprietary binary protocol that the REST API cannot imitate",
+      "SDK usage changes the model's pricing",
+      "New API features are sometimes available via raw HTTP or beta SDK namespaces before they reach a stable SDK surface",
+      "The SDKs are wrappers that send the same HTTP requests you could send yourself",
+      "The REST API can only be called through an SDK"
+    ],
+    "answerIndexes": [2, 3],
+    "explanation": "SDKs are convenience layers over the public REST API; beta features may require beta headers or beta namespaces. They do not change protocol, access or price."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch01",
+    "question": "A team's Claude request occasionally fails with a connection reset on a corporate network that closes idle TCP connections. Which design choice most reduces such failures for long generations?",
+    "options": [
+      "Disable all retries so failed requests are not repeated",
+      "Increase the temperature so responses arrive sooner",
+      "Reduce the request to a single token regardless of the task",
+      "Use streaming so data flows continuously and the connection is not idle, plus bounded retries for connection errors"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Idle-connection timeouts on proxies and load balancers often kill long non-streaming requests; streaming keeps bytes flowing. Retries handle residual connection errors."
+  },
+  {
+    "domain": 5,
+    "skill": "Technical Fundamentals",
+    "chapterId": "ch05",
+    "question": "A team has a shared internal gateway that all services use to call Claude. Which THREE controls belong at that gateway? Select THREE.",
+    "options": [
+      "Centralized storage and injection of the API key so client services never hold it",
+      "Caching API keys in each client service for faster startup",
+      "Per-team rate limiting and usage logging that records token counts from responses",
+      "Timeouts and bounded retry policy applied consistently to upstream calls",
+      "Rewriting every response so the model's temperature is increased"
+    ],
+    "answerIndexes": [0, 2, 3],
+    "explanation": "A gateway is the right place for secret custody, quotas and observability, and consistent resilience policies. Distributing keys to clients defeats the purpose, and altering responses' sampling after the fact is meaningless."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A fintech company processes millions of short customer messages per day to route them into ten categories. Cost and latency dominate, and an evaluation shows the smallest model class meets the accuracy target. Which model choice fits best?",
+    "options": [
+      "An Opus-class model, because the most capable model is always the right default",
+      "A Sonnet-class model with maximum effort on every request regardless of the evaluation",
+      "Whichever model has the largest context window, since routing requires long context",
+      "A Haiku-class model, since it is the fastest and lowest-cost tier and the evaluation shows it meets the accuracy requirement"
+    ],
+    "answerIndexes": [3],
+    "explanation": "Model selection should be driven by evaluation against requirements. High-volume, simple classification is a classic fit for the small, fast, cheap tier; paying for a larger model buys nothing if accuracy is already met."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A coding agent must autonomously resolve complex, multi-file issues over long horizons, and failures are costly to recover from. Which starting point best matches Anthropic's model-selection guidance?",
+    "options": [
+      "The cheapest model available, since agentic coding quality is independent of the model",
+      "A Haiku-class model, because agentic coding needs minimal reasoning",
+      "The top-tier Fable-class model for every task in the system, including trivial ones, without evaluating alternatives",
+      "An Opus-class model (built for long-running agentic coding) at a tuned effort level, validated with evals, moving up to the Fable tier only if evals at high effort still fall short"
+    ],
+    "answerIndexes": [3],
+    "explanation": "The docs position the Opus tier for long-running agentic coding and suggest a capability-first start, then lowering effort or model size once evals pass; the Fable tier is the escalation when Opus at high effort still falls short. Using the smallest or cheapest tier ignores the cost of failures, and using the top tier everywhere ignores cost."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A team is choosing where to begin model testing for two products: a real-time, high-volume ticket-tagging service and a multi-hour autonomous refactoring agent. Which TWO starting strategies are consistent with Anthropic's guidance? Select TWO.",
+    "options": [
+      "Start the tagging service on the fastest, lowest-cost tier (Haiku class) and move up only if evals show a capability gap",
+      "Start both products on the largest model and never re-evaluate",
+      "Start the refactoring agent on a top-capability tier (Opus class), then try lower effort or smaller models once evals pass",
+      "Start the tagging service on the most capable tier because errors are costly, without testing smaller tiers",
+      "Choose each model by release date and skip building evaluations"
+    ],
+    "answerIndexes": [0, 2],
+    "explanation": "Anthropic describes two starting approaches: efficiency-first (begin with the small, fast tier for high-volume, latency- or cost-sensitive work and upgrade only for proven gaps) and capability-first (begin with a strong model for complex agentic work, then optimise via effort or smaller models). In both cases evals decide; skipping evals or never re-evaluating is not guidance."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A product team wants to cut cost without hurting quality. They propose routing easy requests to a small model and escalating hard ones to a larger model. What must they verify for this design to pay off?",
+    "options": [
+      "That a reliable routing signal exists and that measured quality and total cost per completed task (including re-tries and escalations) are better than a single-model baseline",
+      "That the small model has exactly the same tokenizer as the large model",
+      "That temperature is identical on both models",
+      "That both models return identical output for every prompt"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Routing adds complexity (a router that can be wrong, extra tokens on escalation), so it must be evaluated on total cost per completed task and routing accuracy against a single-model baseline. Models need not share tokenizers, sampling settings or outputs for routing to work."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "An application calls a model using a floating alias that the provider later repoints to a newer release. The next week, output formatting changes and downstream parsers fail. What practice would have prevented this?",
+    "options": [
+      "Pin an explicit model version in production and run a regression evaluation on the new model before upgrading",
+      "Leave the alias floating but add a retry on parse errors",
+      "Switch to a different SDK language",
+      "Reduce max_tokens so formatting cannot change"
+    ],
+    "answerIndexes": [0],
+    "explanation": "New models can behave differently, so production should reference a pinned model ID (docs note current dateless IDs are pinned snapshots, while older aliases are convenience pointers to newer snapshots) and upgrade deliberately after regression testing prompts, parsers and cost on representative data."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A team is moving from an older Claude model to a newer one. Which TWO checks are most important before cutting over production traffic? Select TWO.",
+    "options": [
+      "Read the model's migration notes for breaking API changes such as removed or rejected parameters",
+      "Increase temperature to compensate for any differences",
+      "Skip checks and rely on the provider's average benchmark scores",
+      "Assume prompts behave identically because model names look similar",
+      "Re-run the evaluation suite to detect behaviour, formatting and quality differences"
+    ],
+    "answerIndexes": [0, 4],
+    "explanation": "Models differ in behaviour and sometimes in supported API parameters, so regression evals and the migration guide are the key gates. Benchmark averages do not capture your tasks."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A team plans to move from one Claude generation to the next and finds that the same 20,000-word document now uses noticeably more tokens, raising monthly cost although per-token price is unchanged. What is the most plausible cause and the right response?",
+    "options": [
+      "The newer model may use a different tokenizer that produces more tokens for the same text; re-baseline token counts and cost with the token counting endpoint before migrating",
+      "Prompt caching was disabled automatically on the new model",
+      "The new model bills for the system prompt twice",
+      "Token counts never change between models, so the bill must contain an error"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Tokenizers can change between model generations, altering token counts for identical text and therefore cost and context headroom. Measure with count_tokens or response usage as part of migration planning."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A developer reads that adaptive thinking is supported on newer Claude models but not on an older one they use. They want to know how to confirm what a given model supports without guessing. What is the best approach?",
+    "options": [
+      "Check the official model documentation or query the Models API for model capabilities before relying on a feature",
+      "Ask the model in a prompt which parameters it supports and trust the answer",
+      "Assume every feature works on every model and handle errors in production",
+      "Infer support from the model's price"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Capabilities differ by model and release, and the authoritative sources are the docs and the Models API's capability fields. A model's self-report or price are unreliable indicators."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A legal-research assistant needs to analyse very long contracts in one pass and also keep cost reasonable. Which consideration is most relevant when selecting the model?",
+    "options": [
+      "Only the model's name, because larger names always mean larger windows",
+      "The number of letters in the model identifier",
+      "The model's context window and long-context quality, balanced against per-token price and whether prompt caching can reduce repeated input cost",
+      "Only output speed, since context length never affects cost"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Long documents require sufficient context capacity, and cost scales with tokens, so teams weigh window size, accuracy on long inputs and caching opportunities. The model name alone says nothing reliable."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A team's evaluation shows that Opus-class output at low effort matches their quality bar and costs less overall per completed task than a Sonnet-class model needing many retries. Which conclusion is best supported?",
+    "options": [
+      "Judge cost per completed task, not per request or per token; a more capable model at lower effort can be cheaper overall than a smaller model that needs more turns",
+      "Retries are free so only per-token price matters",
+      "The cheapest per-token model is always the cheapest overall",
+      "Effort levels are meaningless and should not be tuned"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Total cost depends on tokens consumed across all attempts and turns, so a stronger model that finishes in fewer steps can win. Measure end-to-end on real tasks."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A startup wants highest possible quality for a rare, high-stakes analysis report generated once per day, with no tight latency requirement. Which approach is most defensible?",
+    "options": [
+      "Avoid evaluation because quality cannot be measured",
+      "Use fast mode on the largest model because latency is the main constraint",
+      "Use the smallest, cheapest model to save money, ignoring quality",
+      "Use the most capable model with higher effort and thinking where evaluation shows quality gains, accepting higher per-request cost and latency because volume is tiny"
+    ],
+    "answerIndexes": [3],
+    "explanation": "When volume is low and quality matters most, spending more per request is rational. Fast mode would add cost for a latency benefit the job does not need."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A model provider announces that an older model version will be retired in 90 days. What is the best response from an application team?",
+    "options": [
+      "Plan migration early: evaluate candidate replacements against your test suite, update pinned versions, and roll out gradually before the retirement date",
+      "Ignore the notice, since retired models keep working indefinitely",
+      "Wait until requests fail, then fix problems under pressure",
+      "Switch to a floating alias and skip testing"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Deprecation notices give a window to evaluate and migrate. Waiting for failures causes outages, and untested aliases risk silent behaviour changes."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "Two teams compare a smaller and a larger Claude model on the same task. The smaller model is faster and cheaper but misses subtle edge cases that matter for compliance review. Which decision process is most appropriate?",
+    "options": [
+      "Choose by average public benchmark rank without testing on your own data",
+      "Always pick the smaller model because speed is the only important factor",
+      "Define acceptance criteria from the task's risk, measure both models on representative cases including edge cases, and choose the cheapest model that meets the criteria",
+      "Always pick the larger model because bigger always means better regardless of requirements"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Selection is a tradeoff among quality, latency and cost; the right answer comes from measuring against task-specific acceptance criteria. Public benchmarks and blanket rules ignore your workload."
+  },
+  {
+    "domain": 5,
+    "skill": "Model Selection and Tradeoffs",
+    "chapterId": "ch02",
+    "question": "A team enables a newer model that, unlike their previous one, rejects a request containing a temperature parameter and a fixed thinking token budget with HTTP 400. What is the right way to treat this?",
+    "options": [
+      "As a transient error to retry with exponential backoff",
+      "As proof the new model is broken and should never be used",
+      "As an authentication problem to fix by rotating keys",
+      "As an expected breaking change across releases: consult the model's migration notes, update the request to supported parameters, and re-run regression tests"
+    ],
+    "answerIndexes": [3],
+    "explanation": "A 400 invalid_request_error from removed or changed parameters is a deterministic API change, not a transient fault. Adapt the request per the docs and validate behaviour with evals."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A finance team wants accurate per-feature cost reporting for a Claude-powered app. Where should the application read the actual token consumption for each call?",
+    "options": [
+      "From the model's own statement of how many tokens it used",
+      "From a word count of the prompt multiplied by 1.3",
+      "From the HTTP response's content-length header",
+      "From the usage object in each API response (input_tokens, output_tokens and cache-related fields), logged with a feature identifier"
+    ],
+    "answerIndexes": [3],
+    "explanation": "The response usage object reports authoritative token counts, including cache creation and read tokens, and is what billing is based on. Word counts and content length are approximations, and model self-reports are unreliable."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A team wants to estimate input cost before sending a large request, without generating a response. Which approach is correct?",
+    "options": [
+      "Use a third-party tokenizer for another vendor's model and assume it matches",
+      "Call the token counting endpoint with the same model, system prompt, tools and messages to get the input token count",
+      "Send the request with max_tokens 1 and divide the bill by the word count",
+      "Estimate by dividing the character count by ten"
+    ],
+    "answerIndexes": [1],
+    "explanation": "The token counting endpoint uses the target model's tokenization and includes tools and system content. Other vendors' tokenizers and rough character ratios can be off, and tokenizers differ across Claude generations."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "An application sends the same 30,000-token policy document at the start of every request while only the final user question changes. Which TWO changes together give the largest cost and latency reduction? Select TWO.",
+    "options": [
+      "Mark the stable document with a cache_control breakpoint to use prompt caching",
+      "Send the document only on every tenth request and rely on the model remembering it",
+      "Move the document to the end of the prompt, after the user's question",
+      "Keep the document at the start of the prompt and place the changing user question after the cached breakpoint",
+      "Rewrite the document in French to shorten it"
+    ],
+    "answerIndexes": [0, 3],
+    "explanation": "Prompt caching reuses a processed prefix, and cached reads are billed at a fraction of normal input price. Because caching is exact-prefix based, the stable content must come first and the volatile question after the breakpoint. The model has no memory across API calls."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A developer adds cache_control but cache_read_input_tokens stays at zero on every call. The system prompt starts with 'Current time: <timestamp>'. Which TWO things should they investigate or fix? Select TWO.",
+    "options": [
+      "Set the model temperature to zero, which caching requires",
+      "Move volatile content such as the timestamp after the cached breakpoint, because the prefix changes every request",
+      "Confirm the cached prefix meets the model's minimum cacheable length, since shorter prefixes are silently not cached",
+      "Wait for the weekend, when cache hits are reported",
+      "Remove cache_control, because it can be used only once per account"
+    ],
+    "answerIndexes": [1, 2],
+    "explanation": "Caching matches an exact prefix, so a timestamp near the top invalidates everything after it. Prompts below the model-specific minimum are processed without caching and without an error; check usage.cache_creation_input_tokens and cache_read_input_tokens. Temperature is irrelevant, and cache_control can be used many times (up to four breakpoints per request)."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A team has a large system prompt, a set of tool definitions and a growing conversation. In what order is the prompt assembled for caching, and what follows from that?",
+    "options": [
+      "System, then messages, then tools; tools can be changed freely",
+      "Tools, then system, then messages; a change to the tool definitions invalidates the cached system and message content that follow it",
+      "There is no ordering; each block is cached independently of the others",
+      "Messages, then tools, then system; changing the system prompt never affects caching"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Caching follows a prefix hierarchy of tools, system and messages. Editing something earlier in that order invalidates the cache for everything after it, so keep tool lists and system prompts stable."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A chat app places a cache breakpoint on the last block of the conversation each turn. Which statements about this multi-turn caching approach are correct? Select TWO.",
+    "options": [
+      "Breakpoints work even if earlier content in the prefix is changed each turn",
+      "Cache breakpoints let the model remember earlier turns without resending them",
+      "There is a limit on the number of cache breakpoints per request, so use them deliberately",
+      "Each cache_control block permanently stores its content in your account for later use",
+      "Earlier turns can be read from the cache on later requests, reducing input cost"
+    ],
+    "answerIndexes": [2, 4],
+    "explanation": "Placing breakpoints near the end lets the growing prefix be reused on subsequent turns, with a maximum of four breakpoints per request. Caching is not memory (you still send the history) and it is not permanent storage; changed prefixes miss."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "Which TWO changes to a request will invalidate (cause a miss on) a previously cached prefix? Select TWO.",
+    "options": [
+      "Editing a tool definition that appears earlier in the prompt order",
+      "Changing the text of the final user question that comes after the breakpoint",
+      "Appending a new user message after the cached breakpoint",
+      "Changing any text in the cached system prompt",
+      "Reading the cache from a different HTTP client library"
+    ],
+    "answerIndexes": [0, 3],
+    "explanation": "Caching is an exact-prefix match, so any change at or before the cached content (tools, system text) causes a miss. Content after the breakpoint is not part of the cached prefix and can vary freely."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A developer has a prefix that is shorter than the model's minimum cacheable length and adds cache_control. What happens, and how can they confirm it?",
+    "options": [
+      "The API returns an error and refuses the request",
+      "The request still succeeds but the prefix is not cached; usage shows zero cache creation and read tokens, and the minimum length varies by model so check the docs",
+      "The cache is created and extended automatically to the minimum with padding tokens",
+      "The prefix is cached anyway but billed at twice the normal rate"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Prompts below the model-specific minimum cacheable length are processed normally without caching and without an error. Check usage.cache_creation_input_tokens and cache_read_input_tokens, and consult the docs for the model's minimum."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A team notes that caches written by the default setting seem to disappear when traffic is sparse overnight. Which feature of caching explains this, and what is a reasonable mitigation?",
+    "options": [
+      "Caches are deleted whenever a new deployment happens",
+      "Cache entries expire after a time-to-live (five minutes by default, refreshed on each hit); for infrequent traffic consider the longer one-hour TTL option or accept misses",
+      "Caches never expire but are evicted randomly when the account is idle",
+      "Caches expire only at midnight UTC"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Default cache entries last about five minutes and are refreshed on use, so sparse traffic misses. A longer TTL option exists at a higher write cost, which should be weighed against hit rates."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "Cost modelling for a feature that reuses a 20,000-token prefix across many requests per hour is being reviewed. How do cached writes and reads generally compare in price to normal input tokens?",
+    "options": [
+      "Cache writes cost somewhat more than regular input tokens, while cache reads cost a small fraction of the regular input price, so savings depend on reuse frequency",
+      "Cache reads are free and writes are free",
+      "Cache writes and reads both cost more than regular input tokens",
+      "Cache writes are cheaper than reads"
+    ],
+    "answerIndexes": [0],
+    "explanation": "Writing a cache entry carries a premium over normal input pricing, and reading it is heavily discounted. Caching pays off when a prefix is read enough times before it expires, so model hit rates when estimating cost."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A nightly job creates 100,000 summarization requests with no latency requirement. The team wants the biggest price reduction without changing the model or quality. Which option fits best?",
+    "options": [
+      "Use fast mode, which discounts offline workloads",
+      "Send each request synchronously with streaming",
+      "Submit them through the Message Batches API, which is asynchronous and priced at a discount relative to standard requests",
+      "Increase effort to max to reduce cost per request"
+    ],
+    "answerIndexes": [2],
+    "explanation": "Batches trade immediacy for a lower price and are designed for large, non-urgent workloads. Fast mode costs more, and higher effort generally increases token spend."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A team's monthly bill is dominated by output tokens from an agent that writes long explanations nobody reads. Which TWO actions most directly reduce output cost? Select TWO.",
+    "options": [
+      "Lower the effort level (and thinking depth) on routes where quality is unaffected",
+      "Instruct the model to be concise and request only the fields the downstream system needs",
+      "Send the same prompt twice and keep the shorter answer",
+      "Cache the output tokens so they are free on later requests",
+      "Raise max_tokens so the model can finish thoughts earlier"
+    ],
+    "answerIndexes": [0, 1],
+    "explanation": "Output (including thinking) tokens are billed at a higher rate than input, so concise output and appropriate effort cut spend. Prompt caching applies to input prefixes, not generated output, and max_tokens is only a ceiling."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "An engineering lead wants safeguards against a runaway agent loop burning budget. Which TWO controls are most appropriate at the application level? Select TWO.",
+    "options": [
+      "Disable usage logging to reduce overhead",
+      "Track cumulative usage per task or session from response usage fields and enforce a token or dollar budget that stops or escalates the loop",
+      "Remove max_tokens so the model can finish within a single turn",
+      "Rely on the model to stop on its own when it senses the bill is large",
+      "Cap the number of loop iterations (turns) and stop or escalate to a human when the cap is reached"
+    ],
+    "answerIndexes": [1, 4],
+    "explanation": "Budgets and iteration caps must be enforced by the application using measured usage; the model is not aware of your bill. Disabling logging removes visibility and removing max_tokens removes a ceiling."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A team calls Opus-class models for everything and sees large bills. They need a plan to lower cost safely. Which ordering of levers is generally best?",
+    "options": [
+      "First switch every route to the smallest model, then measure quality afterwards",
+      "First apply free wins such as prompt caching, trimming unnecessary input and batching offline work, then tune effort and consider smaller models only where evaluations show quality holds",
+      "First disable usage logging, then cap max_tokens at 50 on every route",
+      "First remove all system prompts, then add few-shot examples"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Caching, input hygiene and batching reduce cost without changing quality, while effort and model downgrades trade quality and need evaluation. Truncating outputs or deleting prompts without testing risks regressions."
+  },
+  {
+    "domain": 5,
+    "skill": "Cost and Token Management",
+    "chapterId": "ch02",
+    "question": "A prompt has a 50,000-token reference manual, a 500-token user question and a 2,000-token output. Compared with no caching, which accounting of a cache hit on the manual is correct?",
+    "options": [
+      "All tokens, including output, are billed at the cache-read rate",
+      "The manual tokens are billed as cache-read input at a discounted rate, while the question tokens and output tokens are billed at normal input and output rates",
+      "Cache hits remove the manual from the context window, so it does not count toward limits",
+      "The manual tokens are free and the question is billed at the output rate"
+    ],
+    "answerIndexes": [1],
+    "explanation": "Cache reads are discounted input tokens; uncached input and generated output are billed at standard rates. Cached tokens still occupy the context window."
+  }
+]

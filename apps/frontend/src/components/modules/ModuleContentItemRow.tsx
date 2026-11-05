@@ -23,6 +23,8 @@ const TYPE_LABELS: Record<CourseContentType, string> = {
   udemy_lecture: "Lecture",
   sd_lesson: "Lesson",
   doc_lesson: "Doc",
+  ccdv_lesson: "Study",
+  ccdv_exam: "Exam",
 };
 
 export default function ModuleContentItemRow({

@@ -1,0 +1,733 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি context window-কে বাজেট হিসেবে সামলাতে, drift ও bloat চিনতে, tool result ছাঁটতে, compaction ও subagent দিয়ে context ছোট রাখতে এবং memory-র scope ও persistence ঠিক করে Chai-Bot-এর লম্বা সেশনের সমস্যা সমাধান করতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর লম্বা সেশনের সমস্যা\n\nChai-Bot এখন শুধু FAQ-র উত্তর দেয় না। ChaiCart-এর support টিম তাকে একটা \"লম্বা কাজ\"-ও দিয়েছে: সপ্তাহের সব refund ticket পড়ে, প্রতিটার order log ও payment log মিলিয়ে একটা সারসংক্ষেপ রিপোর্ট বানানো। Rafi agent-টা চালাল। প্রথম ১০টা ticket পর্যন্ত সব ঠিক। তারপর তিনটা অদ্ভুত জিনিস ঘটল:\n\n1. Agent শুরুতে বলা নিয়ম \"১০,০০০ টাকার বেশি refund হলে মানুষের অনুমোদন লাগবে\" ভুলে একটা বড় refund নিজে অনুমোদন করে ফেলল।\n2. মাসের শেষে bill এল আশ্চর্য রকম বেশি। Nusrat Apu লগ খুলে দেখলেন, প্রতিটা নতুন request-এ আগের ৩০টা tool output (প্রতিটা কয়েক হাজার token) আবার পাঠানো হচ্ছে।\n3. পরের দিন সকালে agent আবার শূন্য থেকে শুরু করল। গতকাল যে ৫টা ticket \"বিশেষ গ্রাহক\" হিসেবে চিহ্নিত হয়েছিল, সেটা সে জানেই না।\n\nNusrat Apu বললেন, \"Rafi, window-র আকার বড় হলেই সমস্যা মেটে না। **কী ঢুকবে, কী বেরোবে, কী সারসংক্ষেপ হবে, আর কী window-র বাইরে থেকে যাবে** — এই চারটা সিদ্ধান্ত তোমাকেই নিতে হবে। এটার নাম context engineering।\"\n\nআজকের chapter এই চারটা সিদ্ধান্ত নিয়ে। পরীক্ষার **Domain 6 (Prompt and Context Engineering)**-এর **Context Engineering** skill এবং **Domain 1 (Agents and Workflows)**-এর **Agent Patterns and Frameworks** skill-এর memory/context অংশ এখান থেকে আসে।\n\n| বিষয় | Chai-Bot-এর কোন সমস্যার উত্তর |\n|---|---|\n| Context window management (বাজেট হিসেবে) | bill কেন এত বাড়ল |\n| Context drift ও bloat | agent নিয়ম ভুলে গেল কেন |\n| Tool output pruning (পুরোনো tool result ছাঁটা) | ৩০টা পুরোনো log প্রতিবার বয়ে বেড়ানো |\n| Compaction ও summarization | window ভরে এলে কাজ না থামিয়ে চালিয়ে যাওয়া |\n| Subagent দিয়ে context isolation | ঝামেলার কাজ আলাদা window-তে করানো |\n| Memory scope ও persistence | পরের দিন \"বিশেষ গ্রাহক\" মনে রাখা |\n\n> **আগের chapter থেকে মনে করো:** API stateless, তাই history তুমিই পাঠাও (ch01)। আজকের সব কৌশলের মূল কথা একটাই: **তুমি যা পাঠাবে, model শুধু সেটুকুই দেখবে, আর যা পাঠাবে তার প্রতিটা token-এর দাম আছে।**"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. Context window management: window একটা বাজেট\n\n### Window-তে কী কী ঢোকে\n\nch01-এ দেখেছ context window হলো model-এর working memory। এখানে যা যা থাকে:\n\n- system prompt (নিয়ম, tone, policy)\n- tool definition (প্রতিটা tool-এর নাম, description, schema)\n- পুরো `messages` history: user message, assistant উত্তর\n- **tool result** (সবচেয়ে বড় অপরাধী)\n- ছবি/document\n- model-এর নিজের output (thinking সহ)\n\nলম্বা agent session-এ এদের মধ্যে ইতিহাস আর tool result-ই window খেয়ে ফেলে। কারণ প্রতিবার নতুন একটা tool call হলে তার result history-র শেষে যোগ হয় এবং **পরের প্রতিটা request-এ আবার পাঠাতে হয়**।\n\n### বাজেটের হিসাব: খরচ বাড়ে \"বর্গাকারে\"\n\nধরো প্রতিটা tool result ২,০০০ token। agent ৩০ বার tool ডাকল।\n\n| Turn | Request-এ পাঠানো tool result জমা | মন্তব্য |\n|---|---|---|\n| ১ | ০ | শুরু |\n| ১০ | ~১৮,০০০ | ৯টা পুরোনো result |\n| ২০ | ~৩৮,০০০ | ১৯টা পুরোনো result |\n| ৩০ | ~৫৮,০০০ | ২৯টা পুরোনো result |\n\n৩০ turn-এ প্রতিটা request-এ আগের সব result আবার যায়: মোট ২,০০০ × (০+১+…+২৯) = ২,০০০ × ৪৩৫ = প্রায় **৮,৭০,০০০ input token**, অথচ নতুন তথ্য এসেছে মাত্র ৬০,০০০ token। অর্থাৎ **মোট খরচ turn সংখ্যার প্রায় বর্গের অনুপাতে বাড়ে**, রৈখিকভাবে নয়। (Prompt caching পুরোনো অংশের দাম কমায় — ch02-এ বিস্তারিত — কিন্তু window-র জায়গা বা model-এর মনোযোগের সমস্যা মেটায় না।)\n\n### Window ভরার আগেই সমস্যা শুরু\n\nঠিক সীমা না ছুঁলেও লম্বা context সমস্যা করে। Anthropic-এর engineering লেখা \"Effective context engineering for AI agents\" একে বলে **context rot**: context-এ token যত বাড়ে, সেখান থেকে তথ্য ঠিকঠাক মনে রাখার/ব্যবহার করার ক্ষমতা তত কমে। এটা হঠাৎ খাদে পড়া নয়, ধীরে ধীরে নামা (gradual), আর সব model-এই কমবেশি দেখা যায়। লেখাটা context-কে একটা সীমিত \"attention budget\" হিসেবে দেখতে বলে: প্রতিটা নতুন token সেই বাজেট থেকে কিছু খরচ করে।\n\n> **ছোট নিয়ম:** লক্ষ্য হলো \"সবচেয়ে কম token-এ কাজটার জন্য সবচেয়ে দরকারি তথ্যটুকু\" রাখা। বড় window একটা বাড়তি safety margin, লক্ষ্য নয়।\n\n### বাজেট ধরার চার ধাপ\n\n1. **মাপো:** `usage.input_tokens`/`output_tokens` লগ করো, আর request পাঠানোর আগে দরকার হলে `count_tokens` দিয়ে আন্দাজ নাও।\n2. **ভাগ করো:** কতটা স্থির (system + tools), কতটা বাড়ন্ত (history + tool result), কতটা output-এর জন্য রিজার্ভ।\n3. **সীমা বসাও:** একটা \"সতর্ক রেখা\" ঠিক করো (যেমন window-র ৫০–৬০%), যেখানে পৌঁছালে পরের কৌশলগুলো চালু হবে।\n4. **সবচেয়ে বড় অংশ আগে ছাঁটো:** বেশিরভাগ সময় সেটা tool result।"
+      },
+      {
+        "type": "simulator",
+        "id": "budget-meter",
+        "props": {
+          "title": "লম্বা সেশনে Chai-Bot-এর context কতটা ভরে",
+          "hint": "স্লাইডার টেনে দেখো। window ২,০০,০০০ ধরা হয়েছে শুধু বোঝার সুবিধায় (আসল model-এর window আলাদা)। 'পুরোনো tool result' স্লাইডার কমালে কী মুক্ত হয় দেখো। দাম ($/million) একটা কাল্পনিক সংখ্যা।",
+          "capacity": 200000,
+          "capacityLabel": "Context window (উদাহরণ)",
+          "items": [
+            {
+              "id": "system",
+              "label": "System prompt + নিয়ম",
+              "tokens": 3000,
+              "min": 500,
+              "max": 20000,
+              "step": 500,
+              "costFactor": 1
+            },
+            {
+              "id": "tools",
+              "label": "Tool definition",
+              "tokens": 6000,
+              "min": 0,
+              "max": 40000,
+              "step": 1000,
+              "costFactor": 1
+            },
+            {
+              "id": "memory",
+              "label": "CLAUDE.md / memory ফাইল",
+              "tokens": 4000,
+              "min": 0,
+              "max": 30000,
+              "step": 1000,
+              "costFactor": 1
+            },
+            {
+              "id": "oldtools",
+              "label": "পুরোনো tool result (৩০টা log)",
+              "tokens": 90000,
+              "min": 0,
+              "max": 150000,
+              "step": 5000,
+              "costFactor": 1
+            },
+            {
+              "id": "chat",
+              "label": "কথোপকথন (user + assistant)",
+              "tokens": 25000,
+              "min": 0,
+              "max": 100000,
+              "step": 5000,
+              "costFactor": 1
+            },
+            {
+              "id": "output",
+              "label": "Output রিজার্ভ (max_tokens)",
+              "tokens": 8000,
+              "min": 500,
+              "max": 32000,
+              "step": 500,
+              "costFactor": 1
+            }
+          ],
+          "ratePerMillion": 3,
+          "takeaway": "বেশিরভাগ লম্বা সেশনে সবচেয়ে বড় অংশ পুরোনো tool result। 'পুরোনো tool result'-কে ছোট করলেই বাজেট সবচেয়ে বেশি মুক্ত হয়। ঠিক এই কাজটাই tool output pruning।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Context drift ও bloat\n\nদুটো আলাদা সমস্যা, তবে প্রায়ই একসাথে আসে।\n\n### Bloat (ফুলে ওঠা)\n\nContext-এ এমন জিনিস জমে যায় যা কাজের জন্য আর দরকার নেই:\n\n- ১০ turn আগের ৫,০০০ token-এর log, যার দরকারি লাইনটা ইতিমধ্যে ব্যবহার হয়ে গেছে\n- একই তথ্য একাধিকবার (প্রতিটা turn-এ পুরো ফাইল আবার পড়া)\n- প্রয়োজনের বেশি tool definition (৫০টা tool, কাজে লাগে ৪টা)\n- ব্যর্থ চেষ্টার লম্বা stack trace\n\n**লক্ষণ:** খরচ ও latency বাড়ে, window দ্রুত ভরে।\n\n### Drift (সরে যাওয়া)\n\nContext যত লম্বা হয়, model-এর মনোযোগ প্রথম দিকের গুরুত্বপূর্ণ নির্দেশ থেকে সরে যেতে পারে। Chai-Bot \"১০,০০০ টাকার বেশি refund হলে মানুষের অনুমোদন\" ভুলে যাওয়াটা এই drift-এর উদাহরণ।\n\n**লক্ষণ:** আগের নিয়ম/লক্ষ্য মানছে না, আগের সিদ্ধান্ত উল্টে দিচ্ছে, কাজের মূল উদ্দেশ্য থেকে সরে যাচ্ছে।\n\n| | Bloat | Drift |\n|---|---|---|\n| কী ঘটে | অপ্রয়োজনীয় token জমে | গুরুত্বপূর্ণ নির্দেশ দুর্বল হয় |\n| প্রধান লক্ষণ | খরচ/latency বাড়ে | আচরণ ভুল হয় |\n| প্রধান ওষুধ | ছাঁটা (pruning), কম tool, ছোট output | ক্ষুদ্র ও পরিষ্কার context, নিয়ম আবার জানানো, summary-তে নিয়ম রাখা |\n| একসাথে আসে? | হ্যাঁ, bloat বাড়লে drift-এর ঝুঁকি বাড়ে | |\n\n### Drift ঠেকানোর কৌশল\n\n1. **স্থির নিয়ম system prompt-এ রাখো**, চ্যাটের মাঝখানে নয়। system prompt প্রতিটা request-এর শুরুতে থাকে এবং compaction/pruning-এ হারায় না (নিচে দেখবে)।\n2. **Context ছোট রাখো:** pruning, compaction, subagent।\n3. **লক্ষ্য ও নিয়ম summary-তে রাখো:** compaction-এর সময় \"সক্রিয় লক্ষ্য, সিদ্ধান্ত, নিয়ম\" সংরক্ষণের নির্দেশ দাও।\n4. **লম্বা কাজকে ভাগ করো:** আলাদা আলাদা পরিষ্কার context-এ (পরে subagent/workflow অংশে)।\n5. **ঝুঁকিপূর্ণ নিয়ম code-এ বাঁধো:** মানুষের অনুমোদনের মতো নিয়ম prompt-এর ভরসায় রেখো না; code বা hook দিয়ে জোর করো (ch12-এ বিস্তারিত)।\n\n> **Rafi-র সমাধান (প্রথম ধাপ):** refund-এর নিয়মটা system prompt-এ গেল, আর \"১০,০০০ টাকার বেশি\" check-টা code-এ। কিন্তু bloat তখনও বাকি, সেটা পরের অংশ।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'বড় window হলেই drift/bloat নেই' এবং 'prompt-এ আবার লিখলেই যথেষ্ট'",
+        "markdown": "পরীক্ষা প্রায়ই জিজ্ঞেস করে \"লম্বা agent session-এ model আগের নির্দেশ ভুলে যাচ্ছে, কী করবে?\" ভুল উত্তরগুলো সাধারণত: (১) \"আরও বড় window-র model নাও\" (সীমা না ছুঁলেও rot হয়), (২) \"temperature বদলাও\" (এটা context সমস্যা নয়), (৩) \"প্রতিটা message-এ নিয়ম ১০ বার লেখো\" (bloat বাড়ে)। সঠিক দিক: **context ছোট ও পরিষ্কার রাখো** (pruning/compaction/isolation) এবং **স্থির নিয়ম system prompt বা CLAUDE.md-তে রাখো**।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "লম্বা agent session-এ context সামলানোর ধাপে ধাপে স্তর: হালকা কৌশল আগে, ভারী কৌশল পরে।",
+          "steps": [
+            {
+              "title": "১. মাপো",
+              "body": "প্রতিটা response-এর usage লগ করো। কতটা স্থির, কতটা বাড়ন্ত তা দেখো।"
+            },
+            {
+              "title": "২. পুরোনো tool result ছাঁটো",
+              "body": "সবচেয়ে হালকা ও নিরাপদ কৌশল: ব্যবহার হয়ে যাওয়া raw output সরিয়ে একটা placeholder রাখো। দরকার হলে model আবার tool ডাকতে পারে।"
+            },
+            {
+              "title": "৩. Compaction / summary",
+              "body": "তবু window ভরলে পুরো পুরোনো ইতিহাসকে ছোট একটা সারসংক্ষেপ দিয়ে বদলাও। সিদ্ধান্ত ও খোলা কাজ রাখো, বাকিটা ফেলো।"
+            },
+            {
+              "title": "৪. বিচ্ছিন্ন করো (subagent)",
+              "body": "গোলমেলে/ভারী উপ-কাজ আলাদা window-তে করাও; মূল context-এ শুধু সারসংক্ষেপ ফিরুক।"
+            },
+            {
+              "title": "৫. Memory-তে রাখো",
+              "body": "যা সেশন পেরিয়ে কাজে লাগবে (পছন্দ, প্রজেক্টের নিয়ম, অগ্রগতি) তা window-র বাইরে ফাইলে রাখো এবং দরকারমতো পড়ো।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Tool output pruning: পুরোনো tool result ছাঁটা\n\n### কেন এটা প্রথম অস্ত্র\n\nTool result সাধারণত বড় আর এক-দুই ধাপের পর অপ্রয়োজনীয়। agent একটা log পড়ে উপসংহারে পৌঁছেছে (\"৪ নম্বর order-এ payment double charge হয়েছে\")। সেই ৫,০০০ token-এর raw log আর দরকার নেই। Anthropic-এর context engineering লেখা tool result clearing-কে বলেছে compaction-এর অন্যতম **হালকা ও নিরাপদ** রূপ, কারণ history-র গভীরে থাকা raw result-এর আর দরকার পড়ে না।\n\n### নিজে করা (client-side pruning)\n\nতোমার loop-এ পুরোনো `tool_result` ব্লকের `content` একটা ছোট placeholder দিয়ে বদলাও, কিন্তু `tool_use_id` ঠিক রাখো, নইলে `tool_use`/`tool_result` জোড়া ভেঙে API error দেবে:\n\n```python\nPLACEHOLDER = \"[পুরোনো tool result সরানো হয়েছে; দরকার হলে tool আবার চালাও]\"\n\ndef prune_old_tool_results(messages, keep_last=2):\n    idx = [i for i, m in enumerate(messages)\n           if m[\"role\"] == \"user\" and isinstance(m[\"content\"], list)\n           and any(isinstance(b, dict) and b.get(\"type\") == \"tool_result\" for b in m[\"content\"])]\n    for i in idx[:-keep_last]:                      # শেষ keep_last-টা বাদে সব\n        for b in messages[i][\"content\"]:\n            if isinstance(b, dict) and b.get(\"type\") == \"tool_result\":\n                b[\"content\"] = PLACEHOLDER           # tool_use_id অক্ষত\n    return messages\n```\n\n### API-র নিজস্ব context editing (server-side)\n\nDocs-এ **context editing** নামে একটা feature আছে (এই লেখার সময় beta): beta header `context-management-2025-06-27`। তুমি request-এ `context_management.edits` দাও, আর API **prompt-টা model-এর কাছে পৌঁছানোর আগে** server-side পুরোনো content সরিয়ে দেয়। তোমার কাছে পুরো, অপরিবর্তিত history-ই থাকে; sync করার দরকার নেই।\n\n| Strategy `type` | কী করে |\n|---|---|\n| `clear_tool_uses_20250919` | context trigger ছাড়ালে সবচেয়ে **পুরোনো** tool result আগে সরায়; জায়গায় placeholder বসে |\n| `clear_thinking_20251015` | আগের turn-এর `thinking` ব্লক সরায়/রাখে। একসাথে দিলে এটা `edits` array-তে **আগে** থাকতে হবে |\n\n`clear_tool_uses_20250919`-এর প্যারামিটার (docs অনুযায়ী):\n\n| প্যারামিটার | ডিফল্ট | অর্থ |\n|---|---|---|\n| `trigger` | ১,০০,০০০ input token | কখন সাফ শুরু হবে (`input_tokens` বা `tool_uses` দিয়ে) |\n| `keep` | ৩টা tool use | সাম্প্রতিক কয়টা tool use/result জোড়া রাখবে |\n| `clear_at_least` | নেই | প্রতিবার অন্তত কত token সাফ করতে হবে; না পারলে ওই edit বাদ যায় |\n| `exclude_tools` | নেই | যেসব tool-এর result কখনও সাফ হবে না |\n| `clear_tool_inputs` | `false` | `true` দিলে tool call-এর প্যারামিটারও সাফ হয় |\n\n```json\n{\n  \"context_management\": {\n    \"edits\": [\n      {\n        \"type\": \"clear_tool_uses_20250919\",\n        \"trigger\": {\"type\": \"input_tokens\", \"value\": 50000},\n        \"keep\": {\"type\": \"tool_uses\", \"value\": 5},\n        \"clear_at_least\": {\"type\": \"input_tokens\", \"value\": 5000},\n        \"exclude_tools\": [\"lookup_customer\"]\n      }\n    ]\n  }\n}\n```\n\nResponse-এ `context_management.applied_edits` দেখায় কী সাফ হলো (যেমন `cleared_tool_uses`, `cleared_input_tokens`)। `count_tokens` endpoint-ও `context_management` নেয় এবং `original_input_tokens` (সম্পাদনার আগে) ফেরত দেয়, তাই আগে-পরে তুলনা করা যায়।\n\n### Prompt caching-এর সাথে টান\n\nTool result সাফ করলে cache-করা prefix **অকার্যকর (invalidate)** হয়, কারণ prefix বদলে গেছে। তাই কম সাফ করে বারবার cache ভাঙা লাভজনক নয়। `clear_at_least` দিয়ে নিশ্চিত করো প্রতিবার যথেষ্ট token মুক্ত হচ্ছে, যাতে cache আবার লেখার খরচ উসুল হয়। (Docs জানায়, পরের request নতুন prefix cache করে ব্যবহার করতে পারে।)\n\n### কী ছাঁটবে না\n\n- যে tool result-এর তথ্য বারবার লাগে (গ্রাহকের প্রোফাইল): `exclude_tools` দাও, কিংবা সেটা আগে memory/summary-তে নাও।\n- সাম্প্রতিক result: `keep` দিয়ে রাখো।\n- ছাঁটার আগে দরকারি সিদ্ধান্ত assistant-এর উত্তরে বা memory-তে যাক। কারণ placeholder-এর পর raw তথ্য আর নেই।\n\n> **ChaiCart-এ প্রয়োগ:** Rafi `trigger` ৫০,০০০, `keep` ৫, `clear_at_least` ৫,০০০ ধরল। ৩০ turn-এর কাজে window-তে আর ৩০টা log নয়, সাম্প্রতিক ৫টা। খরচ ও drift দুটোই কমল।"
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "একটু সততা: feature-এর নাম ও beta অবস্থা",
+        "markdown": "Docs অনুযায়ী context editing ও compaction দুটোই **beta**, আর beta header, `type` নাম ও সমর্থিত model সময়ের সাথে বদলায়। পরীক্ষার জন্য নামের চেয়ে **ধারণা ও পার্থক্য** বেশি জরুরি: context editing = নিয়ম মেনে নির্দিষ্ট content সাফ (tool result/thinking); compaction = ইতিহাসকে সারসংক্ষেপে বদলানো। বাস্তবে কোড লেখার আগে সবসময় docs-এর বর্তমান পাতা দেখে নাও।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই ৩০-turn সেশন: tool result সাফ করার আগে ও পরে। সাম্প্রতিক result থাকে, পুরোনোগুলো placeholder হয়।",
+          "beforeTitle": "সাফ করার আগে",
+          "before": "Request-এ: system + tools + ২৯টা পুরো tool result (~৫৮,০০০ token) + chat।\n\nসমস্যা: প্রতিটা নতুন call-এ সব আবার পাঠানো হয়; window ভরে; মনোযোগ ছড়ায়।",
+          "afterTitle": "সাফ করার পরে (keep = 5)",
+          "after": "Request-এ: system + tools + ২৪টা placeholder (প্রতিটা ছোট) + সাম্প্রতিক ৫টা পুরো result (~১০,০০০ token) + chat।\n\nফল: input অনেক কম; model তবু জানে 'আগে tool চালানো হয়েছিল' এবং দরকারে আবার ডাকতে পারে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Compaction ও summarization\n\n### Pruning যথেষ্ট না হলে\n\nPruning শুধু tool result সরায়। কিন্তু কথোপকথনের নিজস্ব অংশ (সিদ্ধান্ত, পর্যালোচনা, user-এর অনুরোধ) বাড়তেই থাকে। এখন **compaction**: পুরোনো ইতিহাসকে একটা ছোট সারসংক্ষেপ দিয়ে বদলে ফেলা, যাতে কাজ না থেমে নতুন, ছোট context-এ চলতে থাকে।\n\n### Compaction কী রাখে, কী ফেলে\n\nAnthropic-এর engineering লেখা অনুযায়ী ভালো summary রাখে: স্থাপত্যগত সিদ্ধান্ত, অমীমাংসিত bug, কাজের সক্রিয় লক্ষ্য ও গুরুত্বপূর্ণ বিবরণ; ফেলে: পুনরাবৃত্ত বা অপ্রয়োজনীয় tool output। (Claude Code-এ সাম্প্রতিক ক'টা ফাইলও রাখা হয় বলে লেখাটা উল্লেখ করেছে।)\n\n### তিনটা উপায়: কে সিদ্ধান্ত নেয়, কখন\n\n| উপায় | কে/কখন সিদ্ধান্ত নেয় | কোথায় |\n|---|---|---|\n| **Claude Code `/compact [নির্দেশ]`** | তুমি হাতে চালাও; ভরে এলে auto-compaction-ও আছে | CLI |\n| **API: threshold compaction** | API নিজে, input token তোমার `trigger` ছাড়ালে | Messages API (beta) |\n| **API: on-demand compaction** | তুমি, আলাদা request পাঠিয়ে সারসংক্ষেপ চেয়ে | Messages API (beta) |\n| নিজের summarizer | তুমি, নিজের কোডে | যেকোনো জায়গা |\n\nDocs-এর compaction overview বলে: যেখানে পাওয়া যায় সেখানে on-demand ব্যবহার করতে। কারণ তাতে কখন compact হবে তা তোমার হাতে।\n\n### API threshold compaction (`compact_20260112`)\n\nBeta header `compact-2026-01-12`, আর `context_management.edits`-এ `{\"type\": \"compact_20260112\"}`। docs-এর প্যারামিটার:\n\n| প্যারামিটার | ডিফল্ট | নোট |\n|---|---|---|\n| `trigger` | `{\"type\":\"input_tokens\",\"value\":150000}` | সর্বনিম্ন মান ৫০,০০০ |\n| `pause_after_compaction` | `false` | `true` হলে সারসংক্ষেপের পর থামে (stop reason `compaction`), যাতে তুমি বার্তা পাল্টাতে পারো |\n| `instructions` | `null` | ডিফল্ট summarization prompt **পুরোপুরি বদলে** দেয় (যোগ করে না) |\n\nTrigger ছুঁলে response শুরু হয় একটা `compaction` ব্লক দিয়ে। তুমি পুরো `response.content` messages-এ যোগ করে চালিয়ে যাও। পরের request-এ API শেষ `compaction` ব্লকের আগের সবকিছু বাদ দেয়:\n\n```python\nresponse = client.beta.messages.create(\n    betas=[\"compact-2026-01-12\"],\n    model=MODEL, max_tokens=4096, messages=messages,\n    context_management={\"edits\": [{\"type\": \"compact_20260112\"}]},\n)\nmessages.append({\"role\": \"assistant\", \"content\": response.content})  # compaction ব্লকসহ\n```\n\n**খরচের হিসাব:** compaction নিজেও একটা model call। `usage.iterations`-এ `compaction` ও `message` আলাদা entry থাকে, আর top-level `input_tokens`/`output_tokens` compaction বাদ দিয়ে দেখায়। তাই আসল billed token জানতে **`usage.iterations` যোগ করো**।\n\n### API on-demand compaction\n\nBeta header `compact-2026-09-04`। কথোপকথন যেমন আছে তেমন পাঠিয়ে সাথে `\"compaction\": {\"type\": \"summarize\"}` দাও। API পুরো ইতিহাসের সারসংক্ষেপ করে এবং **কোনো উত্তর ছাড়া** শুধু একটা `compaction` ব্লক ফেরত দেয় (`stop_reason: \"compaction\"`)। পরের request-এ ওই ব্লকটা `messages`-এর **একদম শুরুতে** রাখো, সারসংক্ষেপ-হওয়া বার্তাগুলোর জায়গায়। ব্লকটা যেমন এসেছে হুবহু পাঠাতে হয় (signature সহ)। একই request-এ `compaction` আর `context_management` একসাথে দেওয়া যায় না। সারসংক্ষেপে ছবি, document ও fetch-করা URL-এর বিষয়বস্তু বাদ যায়, তাই পরে লাগলে আবার দাও।\n\n### Claude Code-এ\n\n- `/compact` বা `/compact Focus on code samples and API usage`: কী ধরে রাখতে হবে তা বলে দেওয়া যায়।\n- `CLAUDE.md`-তে `# Compact instructions` শিরোনামে স্থায়ী নির্দেশ লিখে রাখা যায় (docs-এর উদাহরণ: \"focus on test output and code changes\")।\n- Context দেখো `/context`-এ; নতুন অসম্পর্কিত কাজের আগে `/clear`।\n- মনে রাখো: `/compact` নিজেও বড় context পড়ে, তাই বিশাল context compact করা নিজেই একটা বড় request। আর পুরোপুরি নতুন শুরু চাইলে `/clear` কিছু খরচ করে না।\n\n### Summarization-এর ভালো প্রম্পট\n\nনিজে summarizer লিখলে (বা `instructions` দিলে) এগুলো চাও: (১) চলমান লক্ষ্য, (২) নেওয়া সিদ্ধান্ত ও কারণ, (৩) অমীমাংসিত কাজ, (৪) ব্যবহারকারীর স্পষ্ট নিয়ম/পছন্দ (যেমন \"১০,০০০+ refund মানুষের অনুমোদনে\"), (৫) গুরুত্বপূর্ণ ID/মান। আর বলো: \"raw log আর পুনরাবৃত্তি বাদ দাও।\"\n\n> **ঝুঁকি:** Summary হলো lossy (কিছু তথ্য হারায়)। যে তথ্য হারালে ক্ষতি, সেটা summary-র ভরসায় রেখো না; memory ফাইলে বা system prompt-এ রাখো।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: pruning বনাম compaction, আর কখনও 'সব কিছু রেখে দাও'",
+        "markdown": "দুটো আলাদা: **pruning/context editing** নিয়ম অনুযায়ী নির্দিষ্ট ধরনের content (পুরোনো tool result, thinking) *সরিয়ে* placeholder বসায়; কথোপকথনের বাকি অংশ হুবহু থাকে। **Compaction** ইতিহাসকে model-লেখা *সারসংক্ষেপ* দিয়ে *বদলায়* (lossy)। প্রশ্নে \"পুরোনো tool output সবচেয়ে বেশি জায়গা খাচ্ছে, কিন্তু কথোপকথন ছোট\" থাকলে উত্তর সাধারণত tool-result clearing; \"পুরো কথোপকথন লম্বা, window ভরছে\" থাকলে compaction। আরও ফাঁদ: \"compaction তথ্য হারায় না\" (ভুল, lossy) এবং \"compaction-এ খরচ নেই\" (ভুল, এটা আলাদা model call, `usage.iterations`-এ গোনা হয়)।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "Chai-Bot-এর context-এ কী রাখবে, ছাঁটবে, সারবে, না স্থায়ী করবে?",
+          "hint": "প্রতিটা উপাদানকে সবচেয়ে মানানসই বাকেটে ফেলো। Keep = হুবহু window-তে। Prune = সরিয়ে placeholder। Summarise = ছোট সারসংক্ষেপে। Persist = window-র বাইরে ফাইলে/memory-তে।",
+          "buckets": [
+            {
+              "id": "keep",
+              "label": "Keep (হুবহু রাখো)"
+            },
+            {
+              "id": "prune",
+              "label": "Prune (ছাঁটো)"
+            },
+            {
+              "id": "summarise",
+              "label": "Summarise (সারো)"
+            },
+            {
+              "id": "persist",
+              "label": "Persist (memory/CLAUDE.md)"
+            }
+          ],
+          "items": [
+            {
+              "text": "এই মুহূর্তে চলা ticket-এর সর্বশেষ tool result",
+              "bucket": "keep",
+              "why": "এখনই কাজে লাগছে; ছাঁটলে model-কে আবার tool ডাকতে হবে।"
+            },
+            {
+              "text": "১৫ turn আগে পড়া ৫,০০০ token-এর order log, সিদ্ধান্ত ইতিমধ্যে নেওয়া",
+              "bucket": "prune",
+              "why": "raw output আর দরকার নেই; ফলটা assistant-এর উত্তরে আছে। সরিয়ে placeholder বসাও।"
+            },
+            {
+              "text": "প্রথম ২০ ticket নিয়ে ঘণ্টাখানেকের আলোচনা ও সিদ্ধান্ত",
+              "bucket": "summarise",
+              "why": "কথোপকথনের ধারাবাহিকতা দরকার, কিন্তু হুবহু নয়; ছোট সারসংক্ষেপ যথেষ্ট।"
+            },
+            {
+              "text": "'আমি সবসময় বাংলায় উত্তর চাই' (প্রতিটা সেশনে প্রযোজ্য ব্যবহারকারী-পছন্দ)",
+              "bucket": "persist",
+              "why": "সেশন পেরিয়ে লাগবে; memory/CLAUDE.md-তে রাখলে প্রতিবার ফিরে আসে।"
+            },
+            {
+              "text": "'১০,০০০ টাকার বেশি refund-এ মানুষের অনুমোদন' নিয়ম",
+              "bucket": "persist",
+              "why": "স্থির নিয়ম: system prompt/CLAUDE.md-তে (এবং code-এ জোর করে)। চ্যাটের মাঝে ছেড়ে দিলে drift-এ হারাবে।"
+            },
+            {
+              "text": "ব্যর্থ একটা চেষ্টার ২,০০০ লাইনের stack trace, যা ঠিক হয়ে গেছে",
+              "bucket": "prune",
+              "why": "সমাধান হয়ে গেছে, raw trace শুধু bloat।"
+            },
+            {
+              "text": "এখনও খোলা সিদ্ধান্ত: 'ticket #42 বিশেষ গ্রাহক, পরে ফলো-আপ'",
+              "bucket": "summarise",
+              "why": "এই সেশনে গুরুত্বপূর্ণ; সারসংক্ষেপে খোলা কাজ হিসেবে যাবে। আগামীকালও লাগলে memory-তেও রাখো।"
+            },
+            {
+              "text": "প্রতি সেশনে লাগবে এমন প্রজেক্টের build/test কমান্ড",
+              "bucket": "persist",
+              "why": "CLAUDE.md-এর কাজ: প্রতি সেশনের শুরুতে স্বয়ংক্রিয়ভাবে লোড হয়।"
+            },
+            {
+              "text": "চলমান বার্তার আগের user প্রশ্নটা, যার উত্তর এখনও দেওয়া হয়নি",
+              "bucket": "keep",
+              "why": "সক্রিয় অনুরোধ হারালে কাজই ভুল হবে।"
+            }
+          ],
+          "takeaway": "নিয়ম: এখন লাগছে → keep; কাজ শেষ, raw তথ্য অপ্রয়োজনীয় → prune; ধারাবাহিকতা লাগবে কিন্তু হুবহু নয় → summarise; সেশন পেরিয়ে লাগবে → persist।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Subagent দিয়ে context isolation\n\n### ধারণা: আলাদা window, শুধু সারসংক্ষেপ ফেরত\n\nকিছু কাজ স্বভাবেই বিশাল tool output তৈরি করে: ১০০টা ফাইলে খোঁজা, লম্বা test log পড়া, বড় document ঘাঁটা। এ কাজ মূল agent-এর window-তে করলে window ফুলে যায়। বদলে মূল agent (orchestrator) একটা **subagent** চালায়, যার আছে নিজস্ব **পরিষ্কার context window**। Subagent সব ঘাঁটাঘাঁটি তার নিজের window-তে করে, তারপর মূল agent-কে শুধু একটা **সংক্ষিপ্ত সারসংক্ষেপ** ফেরত দেয়। Anthropic-এর লেখা অনুযায়ী subagent নিজে দশ হাজার বা বেশি token ব্যবহার করতে পারে, কিন্তু ফেরত দেয় ঘনীভূত সারসংক্ষেপ, \"প্রায়ই ১,০০০–২,০০০ token\" (এটা সাধারণ পরিসীমা, কড়া নিয়ম নয়)।\n\nClaude Code docs-ও এই কৌশল নির্দিষ্টভাবে বলে: test চালানো, documentation আনা বা log ঘাঁটার মতো verbose কাজ subagent-এ দাও, \"verbose output subagent-এর context-এ থাকে, মূল কথোপকথনে শুধু summary ফেরে।\"\n\n### কেন এটা কাজ করে\n\n- মূল context ছোট থাকে, তাই drift কম।\n- ভারী কাজ আলাদা: ব্যর্থ হলেও মূল সেশন নোংরা হয় না।\n- সহজ কাজের subagent-এ ছোট/সস্তা model ব্যবহার করা যায় (Claude Code docs `model: haiku`-র মতো উদাহরণ দেয়)।\n- একাধিক subagent সমান্তরালে চলতে পারে।\n\n### মূল্য ও সীমা\n\n| সুবিধা | মূল্য |\n|---|---|\n| মূল window পরিষ্কার | Subagent-এর নিজের request-ও token খরচ করে (docs: subagent-এর নিজস্ব request তোমার usage-এ যোগ হয়) |\n| ফোকাসড কাজ | সারসংক্ষেপ lossy: সূক্ষ্ম তথ্য হারাতে পারে |\n| সমান্তরাল কাজ | Subagent মূল কথোপকথনের পুরো প্রসঙ্গ জানে না, তাই কাজের বিবরণ স্পষ্ট দিতে হয় |\n\n### Multi-step workflow দিয়েও isolation\n\nSubagent ছাড়াও একই ধারণা: লম্বা কাজকে একাধিক **আলাদা API call/ধাপে** ভাগ করো, যার প্রতিটার context পরিষ্কার এবং ধাপের মাঝে শুধু **ছোট কাঠামোবদ্ধ ফল** (JSON/সারসংক্ষেপ) যায়। যেমন: (১) প্রতিটা ticket আলাদা call-এ শ্রেণিবদ্ধ → (২) শুধু ফলগুলো (ছোট JSON) একত্র করে রিপোর্ট। এখানে কোনো ধাপই আগের ধাপের পুরো ইতিহাস বহন করে না। এটা workflow (ch11-এর prompt chaining/orchestrator-workers) আর context engineering-এর সংযোগ।\n\n> **ChaiCart-এ প্রয়োগ:** সাপ্তাহিক রিপোর্টের জন্য Rafi প্রতিটা ticket একটা subagent-এ পাঠাল। প্রতিটা ফেরত দেয় ৩ লাইনের সারসংক্ষেপ (\"ticket, সমস্যা, সুপারিশ\")। মূল agent-এর context-এ ২০০ ticket-এর raw log নেই, আছে ২০০ × ছোট সারসংক্ষেপ।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Subagent: ভারী কাজ আলাদা window-তে, ফেরে শুধু সারসংক্ষেপ",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। লক্ষ করো মূল agent-এর context কতটা ছোট থাকে।",
+          "actors": [
+            {
+              "id": "main",
+              "label": "মূল Chai-Bot"
+            },
+            {
+              "id": "sub",
+              "label": "Subagent (নতুন window)"
+            },
+            {
+              "id": "tools",
+              "label": "Tool / log"
+            }
+          ],
+          "steps": [
+            {
+              "from": "main",
+              "to": "sub",
+              "label": "কাজ: 'ticket #42-এর refund কেন আটকেছে খুঁজে বের করো'",
+              "note": "মূল agent শুধু কাজের বিবরণ পাঠায়। Subagent-এর context শূন্য থেকে শুরু; মূল কথোপকথন সে দেখে না, তাই বিবরণ স্পষ্ট হতে হবে।"
+            },
+            {
+              "from": "sub",
+              "to": "tools",
+              "label": "read_order_log(42)",
+              "note": "Subagent নিজের window-তে tool ডাকে।"
+            },
+            {
+              "from": "tools",
+              "to": "sub",
+              "label": "৬,০০০ token-এর log",
+              "note": "বিশাল output subagent-এর window-তে ঢোকে, মূল agent-এর window-তে নয়।"
+            },
+            {
+              "from": "sub",
+              "to": "tools",
+              "label": "read_payment_log(42)",
+              "note": "আরও তথ্য সংগ্রহ। এসবই বিচ্ছিন্ন context-এ ঘটছে।"
+            },
+            {
+              "from": "tools",
+              "to": "sub",
+              "label": "৪,০০০ token-এর log",
+              "note": "Subagent-এর context বাড়ছে, মূল agent-এর বাড়ছে না।"
+            },
+            {
+              "from": "sub",
+              "to": "main",
+              "label": "সারসংক্ষেপ (~১৫০ token)",
+              "note": "শুধু উপসংহার ফেরে: 'payment gateway timeout, আবার refund চেষ্টা করা যাবে, ১২,০০০ টাকা তাই মানুষের অনুমোদন লাগবে'। raw log ফেরে না।"
+            },
+            {
+              "from": "main",
+              "to": "main",
+              "label": "নিয়ম প্রয়োগ + পরের ticket",
+              "note": "মূল context-এ জমল মাত্র ছোট সারসংক্ষেপ। subagent-এর window কাজ শেষে ফেলে দেওয়া হয়।"
+            }
+          ],
+          "takeaway": "Subagent দিয়ে মূল context-এর ভার কমে: ভারী tool output আলাদা window-তে থাকে, মূল agent শুধু সারসংক্ষেপ পায়। বিনিময়ে বাড়তি call-এর খরচ ও তথ্য হারানোর ঝুঁকি।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "কখন subagent, কখন সরল tool call",
+        "markdown": "যদি কাজটা ছোট output দেয় (একটা order status), সরাসরি tool call-ই ভালো: subagent বাড়তি call ও জটিলতা আনে। Subagent তখনই, যখন (ক) output বিশাল ও মূল কাজে অপ্রয়োজনীয়, (খ) কাজটা স্বয়ংসম্পূর্ণ ও স্পষ্টভাবে বর্ণনা করা যায়, (গ) ফল সারসংক্ষেপ-যোগ্য। \"সবকিছুতে subagent\" একটা anti-pattern: খরচ বাড়ে, সমন্বয় কঠিন হয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Memory scope ও persistence\n\n### Window-র বাইরের স্মৃতি: কেন দরকার\n\nContext window সেশনের মধ্যেই কাজ করে। সেশন শেষ, বা compaction হলে, window-র তথ্য হারায় (বা সারসংক্ষেপে নামে)। কিন্তু কিছু তথ্য সেশন পেরিয়ে বাঁচতে হবে: গ্রাহকের পছন্দ, প্রজেক্টের নিয়ম, কাজের অগ্রগতি। এর নাম **persistent memory**। মূল নকশা হলো **just-in-time**: সব আগেই window-তে ঢুকিয়ে না দিয়ে agent ফাইলে লেখে এবং দরকারমতো পড়ে।\n\n### ক) API-র memory tool: client-side\n\n- Tool type `memory_20250818`, name `memory`। Request-এ `{\"type\": \"memory_20250818\", \"name\": \"memory\"}`-ই পুরো কনফিগারেশন (কোনো input schema দিতে হয় না)। docs অনুযায়ী এর জন্য আলাদা beta header লাগে না।\n- এটা **client-side tool**: Claude শুধু \"এই ফাইল পড়ো/লেখো\" অনুরোধ করে (`tool_use`), আর **তোমার কোড** সেটা চালিয়ে `tool_result` ফেরত দেয়। **স্টোরেজ পুরোপুরি তোমার** (ফাইল, database, encrypted storage)। Anthropic-এর সার্ভারে memory জমে না।\n- কমান্ড: `view`, `create`, `str_replace`, `insert`, `delete`, `rename`।\n- `/memories` একটা **prefix**, যাকে তোমার handler আসল স্টোরেজে ম্যাপ করে (যেমন ব্যবহারকারী-ওয়ারি ডিরেক্টরি বা DB key)।\n- Memory tool থাকলে API স্বয়ংক্রিয়ভাবে system prompt-এ একটা নির্দেশ যোগ করে: কাজের আগে memory ডিরেক্টরি `view` করো, আর \"context window যেকোনো সময় রিসেট হতে পারে\" ধরে অগ্রগতি লিখে রাখো।\n\n```python\ntools = [{\"type\": \"memory_20250818\", \"name\": \"memory\"}]\n# Claude-এর tool_use:  {\"command\": \"view\", \"path\": \"/memories\"}\n# তোমার handler:       তালিকা বানিয়ে tool_result হিসেবে ফেরত দেয়\n```\n\nSDK helper আছে: Python-এ `BetaAbstractMemoryTool` সাবক্লাস করে নিজের স্টোরেজ, বা ready-made `BetaLocalFilesystemMemoryTool` (tool runner সহ)।\n\n### নিরাপত্তা ও খরচ: তোমার দায়িত্ব\n\nDocs-এর মূল সতর্কতা (সব তোমার handler-এর কাজ):\n\n| ঝুঁকি | করণীয় |\n|---|---|\n| **Path traversal** (`/memories/../../secrets.env`) | প্রতিটা path যাচাই: `/memories` দিয়ে শুরু, canonical path বের করে ভেতরে আছে কিনা দেখো, `../` ও URL-encoded রূপ ঠেকাও |\n| **সংবেদনশীল তথ্য** | Claude সাধারণত লিখতে চায় না, তবু লেখার আগে তুমি filter করো |\n| **ফাইল ফুলে ওঠা** | ফাইলের আকার সীমিত করো; `view`-এ ফেরত অক্ষর সীমা রাখো, বাকিটা `view_range`-এ |\n| **পুরোনো তথ্য** | অনেক দিন ব্যবহার না হওয়া ফাইল মেয়াদোত্তীর্ণ করে মুছো |\n\n### খ) Claude Code-এ: CLAUDE.md ও auto memory\n\nClaude Code-এ প্রতিটা সেশন নতুন context window দিয়ে শুরু হয়। দুটো উপায়ে জ্ঞান সেশন পেরোয় (docs অনুযায়ী):\n\n| | CLAUDE.md | Auto memory |\n|---|---|---|\n| কে লেখে | তুমি | Claude নিজে (তোমার সংশোধন/পছন্দ থেকে) |\n| কী থাকে | নির্দেশ ও নিয়ম | শেখা তথ্য ও pattern |\n| লোড | প্রতি সেশনে | প্রতি সেশনে (প্রথম ২০০ লাইন বা ২৫KB) |\n\n**CLAUDE.md-এর scope (কোথায় থাকে, কাদের জন্য):**\n\n| Scope | অবস্থান | কার জন্য |\n|---|---|---|\n| Managed policy | macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`; Linux: `/etc/claude-code/CLAUDE.md` | পুরো প্রতিষ্ঠান |\n| Project | `./CLAUDE.md` (বা `.claude/CLAUDE.md`) | টিম (version control-এ) |\n| User | `~/.claude/CLAUDE.md` | শুধু তুমি, সব প্রজেক্টে |\n| Local | `./CLAUDE.local.md` (`.gitignore`-এ রাখো) | শুধু তুমি, এই প্রজেক্টে |\n\nবাকি নিয়ম: সব ফাইল জুড়ে concatenate হয় (একটা অন্যটাকে override করে না)। কাজের ডিরেক্টরি ও তার ওপরের ডিরেক্টরির ফাইল launch-এ লোড হয়, subdirectory-র ফাইল লোড হয় চাহিদামতো (সেখানকার ফাইল পড়লে/লিখলে)। Docs বলে প্রতিটা CLAUDE.md **২০০ লাইনের নিচে** রাখতে: লম্বা হলে বেশি context খায় ও নিয়ম মানা কমে। আংশিক কোডবেসের নিয়ম path-scoped rules-এ (`.claude/rules/`), আর নির্দিষ্ট workflow-র নির্দেশ Skill-এ সরাও যা চাহিদামতো লোড হয়। Auto memory থাকে `~/.claude/projects/<project>/memory/`-এ (প্রতি repo-র জন্য আলাদা, একই repo-র সব worktree শেয়ার করে); `/memory` দিয়ে দেখা/সম্পাদনা করা যায়।\n\n> **গুরুত্বপূর্ণ:** docs স্পষ্ট বলে CLAUDE.md নির্দেশ হিসেবে \"context\", কোনো কঠোর enforcement নয়। কোনো কাজ **আটকাতেই হলে** hook (PreToolUse) ব্যবহার করো (ch12)।\n\n### গ) Memory scope ঠিক করা: কার জন্য, কত দূর\n\nনকশার প্রশ্ন: এই তথ্য **কার** আর **কতদিন**?\n\n| তথ্যের ধরন | Scope | কোথায় রাখবে |\n|---|---|---|\n| এক গ্রাহকের পছন্দ (\"বাংলায় লেখো\") | **প্রতি-user** | ওই user-এর আলাদা memory (`/memories` → user-নির্দিষ্ট ডিরেক্টরি/DB key) |\n| প্রজেক্টের নিয়ম, কমান্ড | **প্রতি-project** | repo-র CLAUDE.md |\n| কোম্পানি-ব্যাপী নীতি | **প্রতিষ্ঠান** | managed policy CLAUDE.md / system prompt |\n| একটা কাজের অগ্রগতি | **প্রতি-task/সেশন-চেইন** | task-নির্দিষ্ট progress ফাইল |\n\n**ভুল scope-এর পরিণতি:**\n- সবার memory এক জায়গায়: **এক গ্রাহকের তথ্য আরেকজনের উত্তরে ঢুকে যেতে পারে** (data leakage, ch14)। ঠিক সমাধান: প্রতি-user আলাদা স্টোর ও access control।\n- সবকিছু প্রতি সেশনে লোড: **খরচ বাড়ে** (নিচে দেখো)।\n\n### ঘ) Memory ও খরচ: কীভাবে ফুলে ওঠে\n\nMemory যা `view`/লোড হয় তা input token। তাই:\n\n1. **CLAUDE.md বা memory ফাইল যত বড়, প্রতিটা সেশনের/request-এর শুরুতেই তত token** (এবং তা প্রতি turn-এ বয়ে চলে, caching দাম কমালেও জায়গা কমায় না)।\n2. **সবকিছু লিখে রাখলে** memory নিজেই bloat হয়: ভুল/পুরোনো তথ্যও জমে।\n3. **নিয়মিত ছাঁটাই করো:** অনেক দিন অব্যবহৃত বা পুরোনো ফাইল মুছো; ফাইল ছোট ও সংগঠিত রাখো; CLAUDE.md ২০০ লাইনের নিচে।\n4. **Just-in-time পড়ো:** একটা index ফাইল ছোট রাখো, বিস্তারিত আলাদা topic ফাইলে; দরকারেই পড়ো (Claude Code-এর auto memory এভাবেই: MEMORY.md ছোট, বিস্তারিত topic ফাইলে)।\n\n### ঙ) Memory, context editing ও compaction একসাথে\n\n- Context editing + memory: memory tool চালু থাকলে docs অনুযায়ী tool result সাফ হওয়ার সীমা ঘনিয়ে এলে Claude একটা স্বয়ংক্রিয় সতর্কতা পায়, যাতে সাফ হওয়ার আগে গুরুত্বপূর্ণ তথ্য memory ফাইলে লিখে রাখতে পারে।\n- Compaction + memory: docs দুটো একসাথে ব্যবহারের পরামর্শ দেয়। compaction window ছোট রাখে, memory সেই তথ্য বাঁচায় যা সারসংক্ষেপে হারালে চলবে না।\n\n### চ) Multi-session কাজের pattern\n\nলম্বা প্রজেক্ট কয়েক সেশনে হলে docs এই pattern বলে: প্রথম \"initializer\" সেশনে একটা progress log ও feature checklist বানাও; পরের প্রতিটা সেশন শুরুতে সেগুলো পড়ে; শেষে হালনাগাদ করে। একসময় একটা feature, আর end-to-end যাচাইয়ের পরেই \"সম্পূর্ণ\" চিহ্নিত করো।\n\n> **Rafi-র চূড়ান্ত নকশা:** গ্রাহক-নির্দিষ্ট পছন্দ প্রতি-user memory-তে (path যাচাই সহ), প্রজেক্টের নিয়ম CLAUDE.md-তে (১৫০ লাইন), ভারী ঘাঁটাঘাঁটি subagent-এ, আর মূল loop-এ tool result pruning + threshold compaction। পরের দিন Chai-Bot \"বিশেষ গ্রাহক\" তালিকা memory থেকে পড়ে কাজ চালায়।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: memory tool কোথায় চলে, আর কে স্টোর করে",
+        "markdown": "সবচেয়ে সাধারণ ভুল: \"memory tool Anthropic-এর সার্ভারে তথ্য জমা রাখে\" বা \"memory চালু করলে আর কিছু করতে হয় না\"। সঠিক: memory tool **client-side**: Claude অনুরোধ করে, **তোমার application** ফাইল অপারেশন চালায় ও স্টোরেজ নিয়ন্ত্রণ করে। তাই path traversal রোধ, আকার সীমা, মেয়াদ, ব্যবহারকারী-ওয়ারি আলাদা স্টোর সবই তোমার দায়িত্ব। আরেকটা ফাঁদ: \"CLAUDE.md নিয়ম বাধ্যতামূলকভাবে কার্যকর করে\" (ভুল; এটা context, বাধ্যতার জন্য hook), এবং \"user-এর পছন্দ সবার জন্য এক shared memory-তে রাখো\" (ভুল scope, তথ্য ফাঁসের ঝুঁকি)।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Chai-Bot-এর চূড়ান্ত context নকশা: মূল agent ছোট থাকে, ভারী কাজ subagent-এ, স্থায়ী তথ্য client-side memory স্টোরে (প্রতি-user আলাদা)।",
+          "nodes": [
+            {
+              "id": "user",
+              "kind": "user",
+              "label": "গ্রাহক / Rafi",
+              "x": 0,
+              "y": 120
+            },
+            {
+              "id": "main",
+              "kind": "server",
+              "label": "মূল Chai-Bot (ছোট context)",
+              "x": 220,
+              "y": 120
+            },
+            {
+              "id": "sub",
+              "kind": "server",
+              "label": "Subagent (আলাদা window)",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "handler",
+              "kind": "gateway",
+              "label": "Memory handler (path যাচাই)",
+              "x": 440,
+              "y": 240
+            },
+            {
+              "id": "store",
+              "kind": "database",
+              "label": "Memory স্টোর (প্রতি-user)",
+              "x": 660,
+              "y": 240
+            }
+          ],
+          "edges": [
+            {
+              "from": "user",
+              "to": "main",
+              "label": "প্রশ্ন"
+            },
+            {
+              "from": "main",
+              "to": "sub",
+              "label": "ভারী কাজ"
+            },
+            {
+              "from": "sub",
+              "to": "main",
+              "label": "সারসংক্ষেপ"
+            },
+            {
+              "from": "main",
+              "to": "handler",
+              "label": "memory tool"
+            },
+            {
+              "from": "handler",
+              "to": "store",
+              "label": "পড়া/লেখা"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৭. সব মিলিয়ে: কোন সমস্যায় কোন কৌশল\n\n| লক্ষণ | সম্ভাব্য কারণ | প্রথম পছন্দের কৌশল |\n|---|---|---|\n| খরচ/latency বাড়ছে, tool output বিশাল | পুরোনো tool result জমছে | tool result clearing (`clear_tool_uses_20250919`) বা নিজস্ব pruning |\n| window ভরে আসছে, কথোপকথন লম্বা | ইতিহাস বড় | compaction (threshold বা on-demand), Claude Code-এ `/compact` |\n| agent আগের নিয়ম ভুলছে | drift | স্থির নিয়ম system prompt/CLAUDE.md-তে, context ছোট রাখা |\n| একটা ধাপ বিশাল ঘাঁটাঘাঁটি করে, মূল কাজ নোংরা হচ্ছে | মূল window-তে ভারী কাজ | subagent / আলাদা workflow ধাপ |\n| পরের সেশনে আগের জ্ঞান নেই | window ক্ষণস্থায়ী | memory tool / CLAUDE.md / progress ফাইল |\n| এক user-এর তথ্য অন্যের উত্তরে | memory scope ভুল | প্রতি-user আলাদা স্টোর |\n| Compact-এর পর গুরুত্বপূর্ণ তথ্য হারাল | summary lossy | memory-তে স্থায়ী করা, compaction `instructions` উন্নত করা |\n\n### একটা সম্পূর্ণ স্তরবিন্যাস (একটা বাস্তব agent-এর জন্য)\n\n```text\nপ্রতি request:   system prompt (স্থির নিয়ম) + tool definition (প্রয়োজনীয়টুকুই)\nসেশন শুরুতে:     memory/CLAUDE.md থেকে স্থায়ী তথ্য (ছোট, ছাঁটা)\nচলার সময়:       প্রতি tool call → ফল ব্যবহার → পুরোনো result ছাঁটা (keep = ৩–৫)\nসীমা ছুঁলে:      compaction (instructions: লক্ষ্য, সিদ্ধান্ত, নিয়ম, খোলা কাজ)\nভারী উপ-কাজ:     subagent → শুধু সারসংক্ষেপ ফেরত\nসেশন শেষে:       progress/পছন্দ memory-তে লিখে রাখা\n```\n\nএই স্তরগুলো একটা অন্যটার বিকল্প নয়, পরিপূরক। এবং হালকা থেকে ভারীর দিকে যাওয়াই ভালো অভ্যাস: আগে ছাঁটো, দরকারে সারো, ভারী কাজ আলাদা করো, আর স্থায়ী তথ্য বাইরে রাখো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter-এর দুটো blueprint skill:\n\n- **Domain 6 → Context Engineering (৩.৮%)**: context window management, drift ও bloat প্রতিরোধ (tool output pruning, compaction), এবং subagent বা multi-step workflow দিয়ে context isolation।\n- **Domain 1 → Agent Patterns and Frameworks (৪.৯%)**-এর memory ও context management অংশ: tool-use loop-এ history সামলানো, subagent, memory (client-side memory tool, CLAUDE.md)।\n\n**সাধারণ প্রশ্নের ধরন:**\n\n1. \"লম্বা agent session-এ খরচ বাড়ছে/model নির্দেশ ভুলছে; সবচেয়ে ভালো পদক্ষেপ?\" → pruning/compaction/isolation বনাম ভুল উত্তর (বড় window, temperature বদল, নিয়ম বারবার লেখা)।\n2. \"Tool result সবচেয়ে বেশি জায়গা খাচ্ছে, কিন্তু কিছু tool-এর result রাখতেই হবে\" → `exclude_tools` / `keep` / `clear_at_least`।\n3. \"Pruning বনাম compaction কোনটা কখন\" (সরানো বনাম সারসংক্ষেপে বদলানো)।\n4. \"ভারী খোঁজার কাজে মূল context নোংরা হচ্ছে\" → subagent, আর ফেরত যায় শুধু summary।\n5. \"Memory tool সম্পর্কে কোনটা সঠিক?\" → client-side, তোমার স্টোরেজ, path traversal রোধ।\n6. \"গ্রাহকের তথ্য আরেক গ্রাহকের উত্তরে এল\" → memory scope (প্রতি-user আলাদা)।\n7. Select TWO ধরন: \"কোন দুটো কৌশল context ছোট রাখে?\", \"memory tool নিয়ে কোন দুটো সঠিক?\"।\n\n**পরীক্ষার আগে নিজেকে জিজ্ঞেস করো:** কী \"সরছে\" আর কী \"বদলে যাচ্ছে\"? কে সিদ্ধান্ত নিচ্ছে (API না তুমি)? তথ্য সেশনের ভেতরে না বাইরে? কার scope?"
+      }
+    ],
+    "recap": [
+      "Context window একটা সীমিত বাজেট: tool result ও ইতিহাস প্রতিবার আবার পাঠানো হয়, তাই খরচ দ্রুত বাড়ে, আর window ভরার আগেই context rot শুরু হতে পারে।",
+      "Bloat হলো অপ্রয়োজনীয় token জমা (খরচ/latency), drift হলো গুরুত্বপূর্ণ নির্দেশ থেকে মনোযোগ সরা (ভুল আচরণ); স্থির নিয়ম system prompt/CLAUDE.md-তে রেখে context ছোট রাখো।",
+      "Tool output pruning (context editing: `clear_tool_uses_20250919`, `trigger`/`keep`/`clear_at_least`/`exclude_tools`) পুরোনো tool result সরায়; cache invalidate হয় বলে `clear_at_least` দিয়ে সাফ করা অর্থবহ রাখো।",
+      "Compaction ইতিহাসকে lossy সারসংক্ষেপে বদলায় (Claude Code `/compact`, API threshold `compact_20260112`, API on-demand `compaction`); compaction নিজেও একটা call, তাই `usage.iterations` যোগ করে খরচ দেখো।",
+      "Subagent ভারী কাজ নিজের পরিষ্কার window-তে করে মূল agent-কে শুধু সারসংক্ষেপ ফেরত দেয়; multi-step workflow-তেও ধাপের মাঝে শুধু ছোট ফল যায়।",
+      "Memory tool client-side: Claude অনুরোধ করে, তোমার code ফাইল অপারেশন চালায় এবং স্টোরেজ, path traversal রোধ, আকার সীমা ও মেয়াদ তোমার দায়িত্ব।",
+      "CLAUDE.md হলো স্থায়ী প্রজেক্ট context (scope: managed, project, user, local; ২০০ লাইনের নিচে রাখো) কিন্তু enforcement নয়; memory প্রতি-user/প্রতি-project আলাদা রাখলে তথ্য ফাঁস ও খরচ ফোলা দুটোই ঠেকে।"
+    ]
+  },
+  "lab": {
+    "goal": "একটা agent loop বানাও যা পুরোনো tool result ছাঁটে এবং তবুও সীমা ছাড়ালে ইতিহাসকে সারসংক্ষেপে বদলায়; প্রতি ধাপের input token লগ করে usage কমতে দেখো। শেষে server-side context editing ও একটা সরল memory ফাইল চেষ্টা করো।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install anthropic`",
+      "API key: `export ANTHROPIC_API_KEY=...` (কোডে বা git-এ রাখবে না)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>`",
+      "এই lab-এ `temperature`/`top_p`/`top_k` কোথাও লাগবে না",
+      "`count_tokens` call-ও API ব্যবহার করে; ছোট পরিমাণ, তবু rate limit খেয়াল রেখো"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: loop ও helper লেখা",
+        "body": "`lab07.py` নামে নিচের ফাইলটা বানাও। এখানে `read_log` একটা কৃত্রিম বড় output দেয়; `prune` পুরোনো `tool_result` ছাঁটে (শেষ `KEEP_LAST`টা বাদে); `summarise` ইতিহাসকে একটা সারসংক্ষেপ-message দিয়ে বদলায়।\n\n```python\nimport os\nimport anthropic\n\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\nTHRESHOLD = int(os.environ.get(\"THRESHOLD\", \"5000\"))   # input token সীমা\nKEEP_LAST = 2                                            # কয়টা সাম্প্রতিক tool result রাখব\nPLACEHOLDER = \"[পুরোনো tool result সরানো হয়েছে]\"\n\nTOOLS = [{\n    \"name\": \"read_log\",\n    \"description\": \"একটা দিনের order log ফেরত দেয়। দিন সংখ্যা (day) দাও।\",\n    \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\"day\": {\"type\": \"integer\"}},\n        \"required\": [\"day\"],\n    },\n}]\n\nTASK = (\"read_log tool দিয়ে day 1 থেকে day 8 পর্যন্ত প্রতিটা দিনের log একটা একটা করে পড়ো। \"\n        \"শেষে প্রতিটা দিনের জন্য এক লাইনে সংক্ষেপ লেখো।\")\n\n\ndef read_log(day: int) -> str:\n    # কৃত্রিম বড় output (~১,০০০+ token)\n    return f\"[day {day}] \" + \" \".join(f\"ORDER-{day}-{i}: paid, packed, shipped.\" for i in range(150))\n\n\ndef size(messages) -> int:\n    r = client.messages.count_tokens(model=MODEL, messages=messages, tools=TOOLS)\n    return r.input_tokens\n\n\ndef prune(messages):\n    idx = [i for i, m in enumerate(messages)\n           if m[\"role\"] == \"user\" and isinstance(m[\"content\"], list)\n           and any(isinstance(b, dict) and b.get(\"type\") == \"tool_result\" for b in m[\"content\"])]\n    for i in idx[:-KEEP_LAST]:\n        for b in messages[i][\"content\"]:\n            if isinstance(b, dict) and b.get(\"type\") == \"tool_result\":\n                b[\"content\"] = PLACEHOLDER          # tool_use_id অক্ষত থাকে\n    return messages\n\n\ndef as_text(messages) -> str:\n    lines = []\n    for m in messages:\n        c = m[\"content\"]\n        if isinstance(c, str):\n            lines.append(f'{m[\"role\"]}: {c}')\n            continue\n        for b in c:\n            t = b[\"type\"] if isinstance(b, dict) else b.type\n            if t == \"text\":\n                lines.append(f'{m[\"role\"]}: ' + (b[\"text\"] if isinstance(b, dict) else b.text))\n            elif t == \"tool_use\":\n                lines.append(\"assistant ডাকল: \" + (b[\"name\"] if isinstance(b, dict) else b.name))\n    return \"\\n\".join(lines)\n\n\ndef summarise(messages):\n    r = client.messages.create(\n        model=MODEL, max_tokens=500,\n        messages=[{\"role\": \"user\", \"content\":\n                   \"নিচের কাজের ইতিহাস ১৫০ শব্দের মধ্যে সংক্ষেপ করো। রাখো: লক্ষ্য, এ পর্যন্ত পাওয়া ফল, \"\n                   \"বাকি কাজ। raw log বাদ দাও।\\n\\n\" + as_text(messages)}],\n    )\n    summary = \"\".join(b.text for b in r.content if b.type == \"text\")\n    return [{\"role\": \"user\", \"content\": \"[আগের কাজের সারসংক্ষেপ]\\n\" + summary +\n             \"\\n\\nএই সারসংক্ষেপ ধরে মূল কাজটা চালিয়ে যাও।\\nমূল কাজ: \" + TASK}]\n\n\nmessages = [{\"role\": \"user\", \"content\": TASK}]\nfor step in range(1, 21):\n    n = size(messages)\n    print(f\"step {step:2d}: input_tokens = {n}\")\n    if n > THRESHOLD:\n        messages = prune(messages)\n        n2 = size(messages)\n        print(f\"         prune  -> {n2}\")\n        if n2 > THRESHOLD:\n            messages = summarise(messages)\n            print(f\"         summary -> {size(messages)}\")\n    resp = client.messages.create(model=MODEL, max_tokens=1024, tools=TOOLS, messages=messages)\n    messages.append({\"role\": \"assistant\", \"content\": resp.content})\n    if resp.stop_reason != \"tool_use\":\n        print(\"\\n--- চূড়ান্ত উত্তর ---\")\n        print(\"\".join(b.text for b in resp.content if b.type == \"text\"))\n        break\n    results = [{\"type\": \"tool_result\", \"tool_use_id\": b.id, \"content\": read_log(b.input[\"day\"])}\n               for b in resp.content if b.type == \"tool_use\"]\n    messages.append({\"role\": \"user\", \"content\": results})\n```\n\n**লক্ষ করো:** compaction শুধু loop-এর শুরুতে হয়, যখন শেষ message একটা `tool_result` (কোনো `tool_use` অসম্পূর্ণ নেই)। নইলে `tool_use`/`tool_result` জোড়া ভেঙে 400 error আসত।"
+      },
+      {
+        "title": "ধাপ ২: বেসলাইন, কোনো ছাঁটা ছাড়া",
+        "body": "`THRESHOLD` অসম্ভব বড় করে চালাও:\n\n```bash\nTHRESHOLD=100000000 python3 lab07.py\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `input_tokens` প্রতি ধাপে বাড়ে (প্রতিটা log কয়েক হাজার token যোগ করে)। সংখ্যাগুলো লিখে রাখো। শেষ ধাপের মান আর প্রথম ধাপের মান পাশাপাশি রাখো।"
+      },
+      {
+        "title": "ধাপ ৩: pruning ও summary চালু করে চালানো",
+        "body": "এবার ডিফল্ট `THRESHOLD=5000` দিয়ে:\n\n```bash\nTHRESHOLD=5000 python3 lab07.py\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** কয়েক ধাপ বাড়ার পর `prune -> ...` লাইনে সংখ্যা নেমে যায়। যদি সাম্প্রতিক ২টা result-ই সীমার উপরে থাকে, `summary -> ...` লাইনে আরও নামে (এজন্য দরকারে `THRESHOLD=2500` চেষ্টা করো)। তবু শেষ উত্তরে ৮ দিনের সংক্ষেপ থাকা উচিত। সম্ভাব্য সমস্যা: সারসংক্ষেপের পর model কিছু দিন আবার পড়তে পারে; এটাই lossy summary-র নমুনা।\n\nধাপ ২ আর ৩-এর শেষ ধাপের `input_tokens` তুলনা করো।"
+      },
+      {
+        "title": "ধাপ ৪: Server-side context editing (beta) দিয়ে একই কাজ",
+        "body": "নিজে ছাঁটার বদলে API-কে দিয়ে করাও। এখানে `trigger` ছোট রাখা হয়েছে যাতে ছোট lab-এও কাজ করে (docs-এ ডিফল্ট ১,০০,০০০)।\n\n```python\nimport os, anthropic\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\nr = client.beta.messages.create(\n    model=MODEL, max_tokens=1024,\n    betas=[\"context-management-2025-06-27\"],\n    messages=[{\"role\": \"user\", \"content\": \"নমস্কার, ChaiCart-এর একটা স্বাগত বার্তা দাও।\"}],\n    context_management={\"edits\": [{\n        \"type\": \"clear_tool_uses_20250919\",\n        \"trigger\": {\"type\": \"input_tokens\", \"value\": 5000},\n        \"keep\": {\"type\": \"tool_uses\", \"value\": 2},\n    }]},\n)\nprint(r.usage.input_tokens)\nprint(getattr(r, \"context_management\", None))   # applied_edits এখানে থাকে\n```\n\nতোমার ধাপ ১-এর loop-এর `client.messages.create(...)`-কে `client.beta.messages.create(..., betas=[...], context_management=...)` দিয়ে বদলে (এবং নিজের `prune` বন্ধ করে) চালালে response-এর `context_management.applied_edits`-এ `cleared_tool_uses` ও `cleared_input_tokens` দেখা উচিত। **সতর্কতা:** feature beta, SDK ও param নাম সংস্করণভেদে আলাদা হতে পারে; error এলে docs-এর বর্তমান পাতা ও `pip install -U anthropic` দেখো। ছোট কথোপকথনে trigger না ছুঁলে `applied_edits` খালি থাকে, সেটা স্বাভাবিক।"
+      },
+      {
+        "title": "ধাপ ৫: সরল memory ফাইল দিয়ে 'পরের দিনের' সেশন",
+        "body": "যা সেশন পেরিয়ে লাগবে তা ফাইলে রাখো এবং পরের সেশনের system prompt-এ পড়ে দাও (memory tool-এর ধারণার একটা ছোট client-side রূপ):\n\n```python\nimport pathlib, os, anthropic\nclient = anthropic.Anthropic(); MODEL = os.environ[\"CLAUDE_MODEL\"]\nNOTES = pathlib.Path(\"notes_user_rafi.md\")      # প্রতি-user আলাদা ফাইল = scope\n\nNOTES.write_text(\"- ticket #42 বিশেষ গ্রাহক\\n- উত্তর সবসময় বাংলায়\\n\", encoding=\"utf-8\")\n\nmemory = NOTES.read_text(encoding=\"utf-8\") if NOTES.exists() else \"\"\nr = client.messages.create(\n    model=MODEL, max_tokens=300,\n    system=\"তুমি Chai-Bot। এই user-এর স্মৃতি:\\n\" + memory,\n    messages=[{\"role\": \"user\", \"content\": \"কাল কোন ticket নিয়ে কথা হয়েছিল?\"}],\n)\nprint(r.content[0].text)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** model ticket #42 ও বাংলা পছন্দ জানে, কারণ তুমি তা দিয়েছ। ফাইল মুছে আবার চালালে জানে না। এখন ভাবো: আসল memory tool-এ কে এই পড়া/লেখা চালায় (তোমার code), আর `../` দেওয়া path কীভাবে ঠেকাবে।"
+      }
+    ],
+    "checkpoints": [
+      "ধাপ ২-এ `input_tokens` প্রতি ধাপে কেন বাড়ে, আর ৩০ turn হলে মোট খরচ কেন প্রায় বর্গের অনুপাতে বাড়ে?",
+      "`prune` কেন `tool_use_id` অক্ষত রাখে এবং পুরো `tool_result` ব্লক মুছে ফেলে না?",
+      "Pruning ও summarisation-এর পার্থক্য কী, এবং কোনটা lossy? কেন দুটোই দরকার হতে পারে?",
+      "ধাপ ৪-এ `clear_at_least` কেন গুরুত্বপূর্ণ (prompt cache-এর সাথে সম্পর্ক)?",
+      "Memory tool client-side হলে path traversal ও সংবেদনশীল তথ্যের দায় কার, এবং প্রতি-user memory আলাদা রাখা কেন জরুরি?"
+    ]
+  },
+  "notes": "## Chapter 7 cheat sheet: Context engineering ও memory\n\n### মূল শব্দ\n\n| শব্দ | অর্থ |\n|---|---|\n| Context window | model-এর working memory; system, tools, history, tool result, output সব গোনা হয় |\n| Context rot | token বাড়লে তথ্য মনে রাখা/ব্যবহার ক্রমশ দুর্বল (ধীরে ধীরে, সব model-এ কমবেশি) |\n| Bloat | অপ্রয়োজনীয় token জমা: খরচ/latency বাড়ে |\n| Drift | গুরুত্বপূর্ণ নির্দেশ থেকে মনোযোগ সরা: আচরণ ভুল |\n| Tool result clearing | পুরোনো tool result সরিয়ে placeholder (হালকা, নিরাপদ) |\n| Compaction | ইতিহাসকে model-লেখা lossy সারসংক্ষেপে বদলানো |\n| Subagent isolation | ভারী কাজ আলাদা window-তে; ফেরে শুধু সারসংক্ষেপ |\n| Memory | window-র বাইরে স্থায়ী তথ্য (memory tool, CLAUDE.md, auto memory) |\n\n### API feature-গুলো (docs থেকে; সবই beta, বদলাতে পারে)\n\n| Feature | চিহ্ন | মনে রাখার বিষয় |\n|---|---|---|\n| Context editing | header `context-management-2025-06-27`; `context_management.edits` | server-side, তোমার কাছে পুরো history থাকে |\n| Tool result clearing | `clear_tool_uses_20250919` | `trigger` (ডিফল্ট ১,০০,০০০ input token), `keep` (ডিফল্ট ৩), `clear_at_least`, `exclude_tools`, `clear_tool_inputs` (ডিফল্ট false) |\n| Thinking clearing | `clear_thinking_20251015` | `edits`-এ আগে থাকতে হবে |\n| Response | `context_management.applied_edits` | `cleared_tool_uses`, `cleared_input_tokens` |\n| Threshold compaction | header `compact-2026-01-12`; `compact_20260112` | `trigger` ডিফল্ট ১,৫০,০০০, ন্যূনতম ৫০,০০০; `pause_after_compaction`; `instructions` ডিফল্ট prompt বদলে দেয় |\n| On-demand compaction | header `compact-2026-09-04`; `compaction: {\"type\":\"summarize\"}` | শুধু `compaction` ব্লক ফেরে (`stop_reason: compaction`); পরের request-এ শুরুতে রাখো; `context_management`-এর সাথে একসাথে নয় |\n| Compaction খরচ | `usage.iterations` | billed token = সব iteration-এর যোগফল |\n| Memory tool | `memory_20250818`, name `memory` | client-side; কমান্ড view/create/str_replace/insert/delete/rename; path `/memories` |\n\n### কখন কী\n\n| পরিস্থিতি | কৌশল |\n|---|---|\n| পুরোনো tool output বিশাল, কথোপকথন ছোট | tool result clearing |\n| পুরো কথোপকথন লম্বা | compaction (`/compact` বা API) |\n| ভারী ঘাঁটাঘাঁটি মূল কাজ নোংরা করছে | subagent / আলাদা workflow ধাপ |\n| সেশন পেরিয়ে তথ্য লাগবে | memory tool / CLAUDE.md / progress ফাইল |\n| ঠেকাতেই হবে এমন নিয়ম | hook বা code check (CLAUDE.md বাধ্য করে না) |\n\n### Claude Code\n\n- `/compact [নির্দেশ]`, `/clear` (নতুন শুরু, খরচ নেই), `/context` (কী জায়গা খাচ্ছে)।\n- `CLAUDE.md`-তে `# Compact instructions` দিয়ে compaction-এর ফোকাস ঠিক করা যায়।\n- CLAUDE.md scope: managed policy, project (`./CLAUDE.md`), user (`~/.claude/CLAUDE.md`), local (`./CLAUDE.local.md`)। সব জুড়ে concatenate হয়। ২০০ লাইনের নিচে রাখো।\n- Auto memory: `~/.claude/projects/<project>/memory/`; MEMORY.md-র প্রথম ২০০ লাইন বা ২৫KB লোড।\n\n### Memory tool-এর দায়িত্ব (তোমার handler)\n\npath traversal রোধ (`/memories` ভেতরে থাকা, canonical path, `../`, encoded রূপ), সংবেদনশীল তথ্য filter, ফাইলের আকার সীমা, মেয়াদ, প্রতি-user আলাদা স্টোর।\n\n### সাধারণ ফাঁদ\n\n- \"বড় window থাকলে context rot নেই\" ভুল।\n- \"Compaction তথ্য হারায় না / বিনামূল্যে\" ভুল: lossy এবং আলাদা model call।\n- \"Memory tool Anthropic সার্ভারে জমা রাখে\" ভুল: client-side।\n- \"CLAUDE.md বাধ্যতামূলক\" ভুল: এটা context, বাধ্য করতে hook।\n- Subagent-এ ফেরে সারসংক্ষেপ, কিন্তু subagent-এর নিজের token-ও খরচ হয়।\n- Tool result সাফ করলে prompt cache বাতিল হয়; `clear_at_least` দাও।\n- সারসংক্ষেপে ছবি/document/fetch-করা URL-এর বিষয়বস্তু বাদ যেতে পারে (on-demand compaction docs)।",
+  "flashcards": [
+    {
+      "front": "Context rot কী?",
+      "back": "Context-এ token বাড়লে সেখান থেকে তথ্য মনে রাখা/ব্যবহারের ক্ষমতা ধীরে ধীরে কমে; window-র সীমা না ছুঁলেও হয়।"
+    },
+    {
+      "front": "Context bloat আর drift-এর পার্থক্য?",
+      "back": "Bloat = অপ্রয়োজনীয় token জমা (খরচ/latency); drift = গুরুত্বপূর্ণ নির্দেশ থেকে মনোযোগ সরা (ভুল আচরণ)।"
+    },
+    {
+      "front": "লম্বা agent session-এ সাধারণত কোন অংশ window সবচেয়ে বেশি খায়?",
+      "back": "জমে থাকা পুরোনো tool result ও ইতিহাস, কারণ প্রতিটা নতুন request-এ সব আবার পাঠাতে হয়।"
+    },
+    {
+      "front": "Tool result clearing-এর strategy type কী?",
+      "back": "`clear_tool_uses_20250919` (context editing, beta header `context-management-2025-06-27`)।"
+    },
+    {
+      "front": "`clear_tool_uses_20250919`-এ `keep`-এর ডিফল্ট ও অর্থ?",
+      "back": "ডিফল্ট ৩টা; সাম্প্রতিক এতগুলো tool use/result জোড়া সাফ হয় না।"
+    },
+    {
+      "front": "`clear_at_least` কেন দরকার?",
+      "back": "Tool result সাফ করলে prompt cache বাতিল হয়; প্রতিবার ন্যূনতম এত token মুক্ত না হলে সাফ বাদ যায়, ফলে cache ভাঙা সার্থক থাকে।"
+    },
+    {
+      "front": "`exclude_tools` কী করে?",
+      "back": "নির্দিষ্ট tool-এর use ও result কখনও সাফ হতে দেয় না।"
+    },
+    {
+      "front": "Context editing কোথায় চলে?",
+      "back": "Server-side, prompt model-এর কাছে পৌঁছানোর আগে; client-এর কাছে পুরো অপরিবর্তিত history থাকে।"
+    },
+    {
+      "front": "Pruning বনাম compaction?",
+      "back": "Pruning নির্দিষ্ট content সরায় (বাকি হুবহু); compaction ইতিহাসকে lossy সারসংক্ষেপে বদলায়।"
+    },
+    {
+      "front": "Threshold compaction-এর edit type ও ডিফল্ট trigger?",
+      "back": "`compact_20260112`; ডিফল্ট `input_tokens` ১,৫০,০০০, ন্যূনতম ৫০,০০০।"
+    },
+    {
+      "front": "On-demand compaction কীভাবে চাওয়া হয়?",
+      "back": "Request-এ `compaction: {\"type\": \"summarize\"}` (beta `compact-2026-09-04`); উত্তরে শুধু `compaction` ব্লক আসে, যা পরের request-এর শুরুতে রাখো।"
+    },
+    {
+      "front": "Compaction-এর আসল token খরচ কোথায় দেখবে?",
+      "back": "`usage.iterations`-এর সব entry যোগ করে; top-level সংখ্যা compaction বাদ দেয়।"
+    },
+    {
+      "front": "Claude Code-এ compaction নিয়ন্ত্রণ?",
+      "back": "`/compact [নির্দেশ]` এবং CLAUDE.md-তে `# Compact instructions`; নতুন শুরু চাইলে `/clear`।"
+    },
+    {
+      "front": "কখন subagent?",
+      "back": "ভারী/বিশাল-output কাজ, যা স্বয়ংসম্পূর্ণ ও সারসংক্ষেপযোগ্য; মূল context-এ শুধু সারসংক্ষেপ ফেরে।"
+    },
+    {
+      "front": "Subagent-এর দুই মূল্য?",
+      "back": "নিজস্ব request-এ বাড়তি token খরচ, আর সারসংক্ষেপ lossy বলে তথ্য হারাতে পারে।"
+    },
+    {
+      "front": "Memory tool কোথায় চলে?",
+      "back": "Client-side: Claude অনুরোধ করে, তোমার application ফাইল অপারেশন চালায় ও স্টোরেজ নিয়ন্ত্রণ করে।"
+    },
+    {
+      "front": "Memory tool-এর type ও কমান্ড?",
+      "back": "`memory_20250818` (name `memory`); view, create, str_replace, insert, delete, rename।"
+    },
+    {
+      "front": "Memory handler-এ প্রধান নিরাপত্তা ঝুঁকি?",
+      "back": "Path traversal (`/memories/../..`); প্রতিটা path canonical করে `/memories`-এর ভেতরে আছে কিনা যাচাই করতে হবে।"
+    },
+    {
+      "front": "CLAUDE.md কত বড় রাখা উচিত?",
+      "back": "docs অনুযায়ী ২০০ লাইনের নিচে; বড় হলে বেশি context খায় ও নিয়ম মানা কমে।"
+    },
+    {
+      "front": "CLAUDE.md-র চার scope?",
+      "back": "Managed policy, project (`./CLAUDE.md`), user (`~/.claude/CLAUDE.md`), local (`./CLAUDE.local.md`)।"
+    },
+    {
+      "front": "CLAUDE.md কি নিয়ম বাধ্য করে?",
+      "back": "না; এটা context। কিছু আটকাতে হলে PreToolUse hook ব্যবহার করো।"
+    },
+    {
+      "front": "এক গ্রাহকের তথ্য অন্যের উত্তরে ঢুকলে কোন নকশা ভুল?",
+      "back": "Memory scope ভুল: সবার জন্য এক shared memory। সমাধান প্রতি-user আলাদা স্টোর ও access control।"
+    },
+    {
+      "front": "Memory কীভাবে খরচ ফোলায়?",
+      "back": "লোড/view করা memory input token; বড় বা পুরোনো ফাইল প্রতি সেশনে বাড়তি খরচ ও bloat। ছাঁটো, মেয়াদ দাও, just-in-time পড়ো।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart-এর Chai-Bot ৩০ ধাপের tool-use কাজ চালায়। প্রতিটা tool result প্রায় ৫,০০০ token। শেষ দিকে খরচ ও latency অনেক বেড়েছে, কিন্তু কথোপকথনের নিজস্ব অংশ ছোট। প্রথম পদক্ষেপ কোনটা?",
+      "options": [
+        "আরও বড় context window-র model ব্যবহার করা",
+        "পুরোনো tool result সাফ করা (context editing/pruning), সাম্প্রতিক কয়েকটা রেখে",
+        "সব message ইংরেজিতে অনুবাদ করা",
+        "temperature কমানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "সমস্যার উৎস জমে থাকা পুরোনো tool result; সেগুলো সরানোই সবচেয়ে হালকা ও লক্ষ্যভেদী কৌশল (`clear_tool_uses_20250919`)। বড় window সীমা সরায় কিন্তু খরচ ও context rot মেটায় না। অনুবাদ আর temperature-এর সাথে context আকারের সম্পর্ক নেই।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "একটা agent দীর্ঘ সেশনের শেষে শুরুতে বলা নিয়ম ('১০,০০০ টাকার বেশি refund-এ মানুষের অনুমোদন') ভুলে যাচ্ছে। কোন দুটো পদক্ষেপ সবচেয়ে উপযুক্ত? Select TWO.",
+      "options": [
+        "স্থির নিয়ম system prompt-এ রাখা",
+        "প্রতিটা user message-এ নিয়মটা ২০ বার কপি করা",
+        "Context ছোট রাখা (পুরোনো tool result ছাঁটা, দরকারে compaction)",
+        "`top_p` বাড়ানো"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "এটা drift: স্থির নিয়ম system prompt-এ রাখলে প্রতিটা request-এর শুরুতে থাকে, আর context ছোট রাখলে নিয়মের ওপর মনোযোগ টিকে। বারবার কপি করলে bloat বাড়ে, আর `top_p`-র সাথে drift-এর সম্পর্ক নেই।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "একটা team context editing-এ `clear_tool_uses_20250919` ব্যবহার করে। কিছু tool-এর (যেমন `lookup_customer`) result যেন কখনও সাফ না হয়। কোন প্যারামিটার?",
+      "options": [
+        "`keep`-এ খুব বড় মান",
+        "`exclude_tools`-এ ওই tool-এর নাম",
+        "`clear_tool_inputs: true`",
+        "`trigger`-এ `tool_uses` ০"
+      ],
+      "answerIndexes": [1],
+      "explanation": "`exclude_tools` নির্দিষ্ট tool-এর use ও result কখনও সাফ হতে দেয় না। `keep` শুধু সাম্প্রতিক কয়টা রাখবে তা ঠিক করে (সবই রাখলে feature অর্থহীন), `clear_tool_inputs` উল্টো আরও সাফ করে।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "কেন context editing-এর tool result clearing-এ `clear_at_least` সেট করা বুদ্ধিমানের কাজ?",
+      "options": [
+        "এটা model-এর temperature স্থির করে",
+        "Tool result সাফ হলে cache-করা prefix বাতিল হয়; প্রতিবার ন্যূনতম এত token মুক্ত না হলে সাফ বাদ যায়, ফলে cache ভাঙার খরচ উসুল হয়",
+        "এটা সাম্প্রতিক tool result স্থায়ীভাবে রাখে",
+        "এটা server-side compaction চালু করে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "সাফ করলে prefix বদলে cache invalidate হয়। `clear_at_least` নিশ্চিত করে এই ক্ষতির বিনিময়ে যথেষ্ট token বাঁচছে। সাম্প্রতিক result রাখে `keep`; compaction আলাদা feature।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "একটা সাপোর্ট agent-এর কথোপকথন ১০০ turn চলেছে, tool result কম কিন্তু আলোচনা ও সিদ্ধান্তের ইতিহাস বিশাল; window ভরে আসছে। কাজ থামানো যাবে না। সবচেয়ে মানানসই কৌশল?",
+      "options": [
+        "শুধু tool result clearing, কারণ ইতিহাসের আকারই সমস্যা",
+        "Compaction: পুরোনো ইতিহাসকে লক্ষ্য, সিদ্ধান্ত ও খোলা কাজসহ সারসংক্ষেপে বদলানো",
+        "প্রতি turn-এ নতুন সেশন শুরু করা ও সবকিছু ফেলে দেওয়া",
+        "`max_tokens` কমানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Tool result কম, তাই clearing কিছু মুক্ত করবে না; সমস্যা কথোপকথনের আকার, যার সমাধান compaction। নতুন সেশনে সব হারায়, আর `max_tokens` শুধু output সীমা।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "Compaction সম্পর্কে কোন দুটো বিবৃতি সঠিক? Select TWO.",
+      "options": [
+        "সারসংক্ষেপ lossy: কিছু তথ্য হারাতে পারে",
+        "Compaction কোনো খরচ ছাড়াই হয়",
+        "Compaction নিজেও একটা model call, তাই খরচ দেখতে `usage.iterations` যোগ করতে হয়",
+        "Compaction-এর পর সব ছবি ও document সারসংক্ষেপে হুবহু থাকে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Compaction model-লেখা সারসংক্ষেপ, তাই lossy; আর এটা আলাদা call বলে `usage.iterations`-এর `compaction` entry-তে গোনা হয়। 'খরচ নেই' ভুল। docs অনুযায়ী ছবি, document ও fetch-করা URL-এর বিষয়বস্তু সারসংক্ষেপে বাদ যায়।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "Rafi threshold compaction চালু করেছে এবং চায় সারসংক্ষেপে সবসময় 'সক্রিয় লক্ষ্য, গৃহীত সিদ্ধান্ত ও গ্রাহকের স্পষ্ট নিয়ম' থাকুক। কীভাবে?",
+      "options": [
+        "`instructions` প্যারামিটারে নিজের summarization নির্দেশ দেওয়া (এটা ডিফল্ট prompt-টা পুরোপুরি বদলে দেয়)",
+        "`trigger`-এ মান ৫,০০০ দেওয়া",
+        "`pause_after_compaction` false করা",
+        "Compaction ব্লক বাদ দিয়ে শুধু পুরোনো message রাখা"
+      ],
+      "answerIndexes": [0],
+      "explanation": "`instructions` ডিফল্ট summarization prompt-কে সম্পূর্ণ বদলায় (যোগ করে না), তাই তোমার নির্দেশে সব দরকারি জিনিস চাইতে হবে। `trigger` কখন চলবে ঠিক করে (ন্যূনতম ৫০,০০০, তাই ৫,০০০ বৈধও নয়)। `pause_after_compaction` সারসংক্ষেপের বিষয়বস্তু বদলায় না।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "একটা code-review agent ১০০টা ফাইল ঘেঁটে মূল কাজের context ফুলিয়ে ফেলছে। মূল agent-এর শুধু উপসংহার দরকার। সবচেয়ে ভালো নকশা?",
+      "options": [
+        "সব ফাইল মূল agent-এর window-তে ঢোকানো",
+        "ঘাঁটাঘাঁটি একটা subagent-এ (আলাদা window), মূল agent-কে শুধু সারসংক্ষেপ ফেরত",
+        "ফাইলগুলো system prompt-এ বসানো",
+        "প্রতিটা ফাইল পড়ার পর পুরো history মুছে ফেলা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Subagent ভারী tool output নিজের পরিষ্কার window-তে রাখে, মূল agent শুধু সংক্ষিপ্ত ফল পায়। সব ঢোকালে window ফোলে। system prompt-এ বসালে প্রতিটা request-এ বহন করতে হয়। history মুছলে লক্ষ্যই হারায়।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "Subagent দিয়ে context isolation নিয়ে কোন দুটো বিবৃতি সঠিক? Select TWO.",
+      "options": [
+        "Subagent-এর কাজ সম্পূর্ণ বিনামূল্যে, কারণ মূল context ছোট থাকে",
+        "Subagent নিজের window-তে অনেক token খরচ করতে পারে কিন্তু মূল agent-কে ঘনীভূত সারসংক্ষেপ ফেরত দেয়",
+        "Subagent মূল কথোপকথনের ইতিহাস দেখে না, তাই কাজের বিবরণ স্পষ্ট দিতে হয়",
+        "Subagent-এর সারসংক্ষেপে কখনও তথ্য হারায় না"
+      ],
+      "answerIndexes": [1, 2],
+      "explanation": "মূল সুবিধা: ভারী output বিচ্ছিন্ন থাকে, ফেরে সারসংক্ষেপ। কিন্তু subagent-এর নিজস্ব request-ও token খরচ করে, সে মূল ইতিহাস জানে না (তাই কাজ স্পষ্ট বলতে হয়), আর সারসংক্ষেপ lossy।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "একটা pipeline ২০০টা document শ্রেণিবদ্ধ করে রিপোর্ট বানায়। একটা বিশাল চ্যাটে সব document রাখায় context ফুলছে। context-engineering দৃষ্টিতে সেরা নকশা?",
+      "options": [
+        "প্রতিটা document আলাদা call-এ শ্রেণিবদ্ধ করে শুধু ছোট JSON ফল জমা করা, শেষে সেগুলো থেকে রিপোর্ট বানানো",
+        "সব document-এর পূর্ণ text system prompt-এ দেওয়া",
+        "আরও বেশি `max_tokens` দেওয়া",
+        "একই চ্যাটে ২০০ document যোগ করে বারবার compaction চালানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Multi-step workflow-তে প্রতিটা ধাপের context পরিষ্কার, ধাপের মাঝে শুধু ছোট কাঠামোবদ্ধ ফল যায়। এটাই isolation-এর সরল রূপ। বাকি অপশনগুলো context ফোলায় বা অপ্রাসঙ্গিক।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "Rafi এক ঘণ্টা কাজের পর `/compact` চালাতে চায় এবং চায় test output ও কোড পরিবর্তন সারসংক্ষেপে থাকুক। Claude Code-এ কীভাবে?",
+      "options": [
+        "`/compact Focus on test output and code changes` (বা CLAUDE.md-তে `# Compact instructions`)",
+        "`/clear` চালানো, কারণ সেটা সারসংক্ষেপ বানায়",
+        "`/context` চালানো, কারণ সেটা ইতিহাস ছাঁটে",
+        "settings.json-এ temperature বদলানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "`/compact` কী রাখতে হবে সেই নির্দেশ নেয়, আর CLAUDE.md-র `# Compact instructions` স্থায়ী নির্দেশ দেয়। `/clear` সারসংক্ষেপ ছাড়াই নতুন শুরু; `/context` শুধু দেখায় কী জায়গা খাচ্ছে।",
+      "domain": 6,
+      "skill": "Context Engineering"
+    },
+    {
+      "question": "Rafi একটা agent বানায় যা সেশন পেরিয়ে গ্রাহকের পছন্দ মনে রাখবে, API-র memory tool দিয়ে। কোন দুটো বিবৃতি সঠিক? Select TWO.",
+      "options": [
+        "Memory tool client-side: Claude অনুরোধ করে, তার application ফাইল অপারেশন চালায়",
+        "Anthropic-এর সার্ভার স্বয়ংক্রিয়ভাবে সব গ্রাহকের memory সংরক্ষণ ও আলাদা করে",
+        "Handler-এ path যাচাই করতে হবে যাতে `/memories`-এর বাইরের ফাইলে পৌঁছানো না যায়",
+        "Memory tool চালু করলে path traversal নিয়ে ভাবতে হয় না, API ঠেকায়"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "docs অনুযায়ী memory tool client-side; স্টোরেজ ও নিরাপত্তা (path traversal রোধ, আকার সীমা, মেয়াদ) অ্যাপের দায়িত্ব। Anthropic সার্ভারে জমা বা স্বয়ংক্রিয় রক্ষার ধারণা ভুল।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "একটা multi-tenant সাপোর্ট agent memory tool ব্যবহার করে। এক গ্রাহকের ঠিকানা আরেকজনের উত্তরে এসে পড়ল। সবচেয়ে সম্ভাব্য কারণ ও সমাধান?",
+      "options": [
+        "Model-এর temperature বেশি; কমালে ঠিক হবে",
+        "সবার জন্য একই `/memories` স্টোর; প্রতি-user আলাদা স্টোর/ডিরেক্টরি ও access control দরকার",
+        "Context window ছোট; বড় model নিলে ঠিক হবে",
+        "CLAUDE.md ২০০ লাইনের বেশি; ছোট করলেই হবে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "`/memories` একটা prefix যাকে handler আসল স্টোরেজে ম্যাপ করে; ম্যাপিং user-ওয়ারি না হলে তথ্য মিশে যায়। এটা scope/নকশার ভুল, temperature বা window নয়। CLAUDE.md-র আকার এই সমস্যার সাথে সম্পর্কহীন।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "একটা লম্বা, বহু-সেশনের কোডিং প্রজেক্টে প্রতিটা সেশন আগের অগ্রগতি না জেনে শুরু হচ্ছে। docs-এ বর্ণিত pattern অনুযায়ী কী করবে?",
+      "options": [
+        "প্রতিটা সেশনে পুরো কোডবেস আবার পড়ে বোঝা",
+        "প্রথমে progress log ও feature checklist বানিয়ে memory ফাইলে রাখা; প্রতি সেশন শুরুতে পড়া ও শেষে হালনাগাদ করা",
+        "শুধু আরও বড় context window-র model নেওয়া",
+        "সব কথোপকথন সবসময় একটাই সেশনে চালানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Multisession pattern: initializer সেশনে progress log ও checklist, পরের সেশন সেগুলো পড়ে শুরু করে এবং শেষে হালনাগাদ করে। এতে অবস্থা পুনরুদ্ধার হয় আবার-আবার অনুসন্ধান ছাড়াই। বড় window বা একটাই অনন্ত সেশন rot ও খরচ বাড়ায়।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "প্রতিটা সেশনে লাগবে এমন প্রজেক্টের build/test কমান্ড ও কোডিং নিয়ম টিম-ব্যাপী শেয়ার করতে চাও। Claude Code-এ সবচেয়ে মানানসই জায়গা?",
+      "options": [
+        "`~/.claude/CLAUDE.md` (শুধু একজনের, সব প্রজেক্টে)",
+        "প্রজেক্ট রুটের `./CLAUDE.md`, version control-এ (ছোট রাখো)",
+        "`./CLAUDE.local.md`, যা `.gitignore`-এ",
+        "প্রতিটা সেশনের প্রথম message-এ হাতে লিখে পেস্ট করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "টিম-শেয়ার্ড প্রজেক্ট নিয়মের জন্য প্রজেক্ট CLAUDE.md, যা প্রতি সেশনে লোড হয় ও repo-র সাথে যায়; docs ২০০ লাইনের নিচে রাখতে বলে। User ও local ফাইল শুধু একজনের জন্য। হাতে পেস্ট করা পুনরাবৃত্ত ও ভুলপ্রবণ।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    }
+  ]
+}

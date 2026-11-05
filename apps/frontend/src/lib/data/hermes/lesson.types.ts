@@ -42,7 +42,7 @@ export type LessonBlock =
   | { type: "markdown"; markdown: string }
   | { type: "callout"; tone: CalloutTone; title: string; markdown: string }
   | { type: "diagram"; diagram: DiagramSpec }
-  | { type: "simulator"; id: string };
+  | { type: "simulator"; id: string; props?: Record<string, unknown> };
 
 export interface HermesQuizQuestion {
   question: string;

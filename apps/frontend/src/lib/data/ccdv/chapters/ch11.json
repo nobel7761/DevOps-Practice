@@ -1,0 +1,807 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি workflow বনাম agent-এর সিদ্ধান্ত নিতে, পাঁচ workflow pattern, supervisor/subagent, tool-use loop, memory ও context management চিনতে, Strands/LangGraph/PydanticAI বনাম plain SDK বাছতে এবং Chai-Bot-এর জন্য সঠিক ও সরল agent architecture দাঁড় করাতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## গল্প: Chai-Bot \"নিজে নিজে সব করতে\" গিয়ে যা হলো\n\nChaiCart-এর Chai-Bot এখন FAQ-র উত্তর দেয়, order status বলে, refund-এর অনুরোধ নেয়। Rafi-র মাথায় একটা বড় আইডিয়া এল: \"চলো পুরো support-কে একটা **autonomous agent** বানিয়ে দিই। সে নিজেই ঠিক করবে কী করবে, কোন tool ডাকবে, কখন থামবে।\" দুই সপ্তাহ পরে মাসের শেষে billing dashboard দেখে Nusrat Apu ভুরু কুঁচকালেন।\n\n> **Nusrat Apu:** \"Rafi, গত সপ্তাহের ৮০% ticket তো একই তিন ধরনের: order status, refund policy, delivery area। এগুলোর ধাপ আগে থেকেই জানা। এর জন্য প্রতিটা ticket-এ agent loop চালাচ্ছ কেন? আর যে দু'একটা ticket সত্যিই জটিল, সেগুলোতে তোমার agent একই tool বারবার ডেকে ১৪ বার ঘুরেছে।\"\n\nRafi বুঝল, \"agent বানানো\" আর \"ভালো সমাধান বানানো\" এক জিনিস নয়। আজকের chapter-এর মূল প্রশ্নটা সেটাই: **কখন একটা সাধারণ call যথেষ্ট, কখন workflow, কখন সত্যিকারের agent, আর কখন একাধিক agent?** আর সেটা বানাতে কখন নিজে কোড লিখবে, কখন framework নেবে?\n\nএই chapter Anthropic-এর engineering লেখা **\"Building effective agents\"** আর Claude platform docs-এর (tool use, context editing) ওপর দাঁড়িয়ে আছে। পরীক্ষায় Domain 1 (Agents and Workflows) মোট প্রশ্নের প্রায় ১৪.৭%: ৫৩টার মধ্যে প্রায় ৮টা। তিনটা skill: **Agent Architecture**, **Agent Patterns and Frameworks**, **Agent Construction with Claude**। আজ আমরা প্রথম দুটো পুরোপুরি আর তৃতীয়টার \"plain loop\" অংশ ধরব। Agent SDK, managed agent আর hook আসবে পরের chapter-এ।\n\n## Agentic system: workflow আর agent আলাদা\n\nAnthropic-এর লেখায় \"agentic system\" একটা ছাতা-শব্দ। তার নিচে দুটো স্পষ্ট ভাগ:\n\n| | **Workflow** | **Agent** |\n|---|---|---|\n| সংজ্ঞা | LLM আর tool সাজানো থাকে **আগে থেকে লেখা code path** দিয়ে | LLM **নিজেই** তার process ও tool ব্যবহার ঠিক করে, কাজ কীভাবে হবে তার নিয়ন্ত্রণ তার হাতে |\n| নিয়ন্ত্রণ কার হাতে | তোমার code (if/else, loop, ধাপের ক্রম) | model (প্রতি ধাপে সে ঠিক করে পরে কী) |\n| ধাপ কয়টা | সাধারণত আগে থেকে জানা | আগে থেকে বলা যায় না |\n| predictable? | বেশি | কম |\n| খরচ/latency | কম, হিসাব করা যায় | বেশি, বদলায় |\n| ভুলের ধরন | নির্দিষ্ট ধাপে ধরা সহজ | ভুল জমতে জমতে বড় হয় (compounding errors) |\n\nএকটা সহজ উপমা: **workflow হলো রেলগাড়ি**: লাইন পাতা, স্টেশন ঠিক করা। **agent হলো রিকশাওয়ালা**: গন্তব্য বললে সে নিজে রাস্তা বাছে, জ্যাম দেখে ঘুরে যায়। লাইন পাতা থাকলে রেলগাড়ি সস্তা ও নির্ভরযোগ্য। কিন্তু গলির ভেতরে যেতে হলে রিকশাই লাগে।\n\n### সিদ্ধান্তের নিয়ম: সবচেয়ে সরল জিনিস দিয়ে শুরু করো\n\nAnthropic-এর মূল পরামর্শ (এটাই পরীক্ষার কেন্দ্র): **সবচেয়ে সরল সমাধান দিয়ে শুরু করো, আর জটিলতা তখনই বাড়াও যখন সেটা মাপা ফলাফলে প্রমাণ করে।** প্রায়ই \"agentic system\"-ই লাগে না। লেখাটা বলে, অনেক application-এ retrieval আর in-context উদাহরণসহ **একটা optimized LLM call-ই যথেষ্ট।** কারণ agentic system কাজের মান বাড়ানোর বিনিময়ে **latency ও cost** দেয়, আর সেই লেনদেন যুক্তিসংগত হতে হবে।\n\nসিদ্ধান্তের সিঁড়ি (নিচ থেকে ওপরে ওঠো, ওপরে ওঠার আগে নিচেরটা মাপো):\n\n1. **একটা LLM call** + ভালো prompt + উদাহরণ + (দরকারে) retrieved context\n2. **Workflow**: ধাপ বা category আগে থেকে জানা, predictability দরকার\n3. **Agent**: ধাপ আগে বলা যায় না, model-কে নিজে পথ বাছতে হবে\n4. **Multi-agent**: কাজ এত বড় বা সমান্তরাল যে একটা agent-এর context-এ ধরে না, আর খরচ ন্যায্য\n\n| প্রশ্ন | উত্তর \"হ্যাঁ\" হলে ঝোঁক |\n|---|---|\n| ধাপগুলো আগে থেকে লিখে ফেলা যায়? | **Workflow** |\n| ধাপের সংখ্যা/ক্রম input-এর ওপর নির্ভর করে, আগে বলা যায় না? | **Agent** |\n| প্রতি ধাপে environment থেকে সত্যিকারের ফিডব্যাক (tool result, test) পাওয়া যায়? | agent সম্ভব |\n| ভুলের মূল্য বেশি, audit দরকার, নির্ধারিত আচরণ চাই? | **Workflow** (বা agent + কড়া guardrail/human approval) |\n| বাড়তি খরচ ও latency সইবে? | না হলে workflow বা single call |\n\nAnthropic লেখায় customer support-কে agent-এর ভালো ক্ষেত্র বলেছে: কথোপকথনধর্মী, কিন্তু বাইরের তথ্য ও action (refund, ticket update) লাগে, আর সাফল্য মাপা যায়। তবে এর মানে এই নয় যে Chai-Bot-এর প্রতিটা ticket-এ agent চালাতে হবে। Nusrat Apu-র ৮০% ticket workflow বা single call-এই চলে; বাকি জটিল ২০%-এ agent।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: \"agent মানেই বেশি ভালো\" এবং \"agent মানে framework লাগবেই\"",
+        "markdown": "পরীক্ষার ফাঁদ প্রায়ই এভাবে সাজানো থাকে: একটা সুনির্দিষ্ট, ধাপ-জানা কাজ (যেমন প্রতিবার extract → validate → summarize), আর অপশনে \\\"autonomous agent বানাও কারণ সেটা বেশি নমনীয়\\\"। এটা ভুল। ধাপ আগে থেকে জানা থাকলে **workflow** সঠিক, আর **সরল দিয়ে শুরু** নীতি এখানে জেতে। উল্টো দিকের ফাঁদ: ধাপ সত্যিই অনির্দিষ্ট (যেমন অজানা codebase-এ bug খোঁজা) হলে hard-coded chain ভুল। আরেকটা বদ্ধমূল ভুল: \\\"agent বানাতে framework বাধ্যতামূলক\\\"। Anthropic-এর পরামর্শ উল্টো: আগে LLM API দিয়ে সরাসরি শুরু করো; অনেক pattern কয়েক লাইন code-এ হয়।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন কাজে কী লাগে: single call, workflow নাকি agent?",
+          "hint": "প্রতিটা Chai-Bot পরিস্থিতি সঠিক বাকেটে ফেলো। মনে রাখো: ধাপ আগে জানা থাকলে workflow, অনির্দিষ্ট হলে agent, আর সরল হলে single call।",
+          "buckets": [
+            {
+              "id": "single",
+              "label": "Single call (+ retrieval/উদাহরণ)"
+            },
+            {
+              "id": "workflow",
+              "label": "Workflow (code path ঠিক করা)"
+            },
+            {
+              "id": "agent",
+              "label": "Agent (model পথ বাছে)"
+            }
+          ],
+          "items": [
+            {
+              "text": "\"আপনাদের ডেলিভারি কোন কোন এলাকায়?\" FAQ থেকে উত্তর দেওয়া",
+              "bucket": "single",
+              "why": "এক ধাপের প্রশ্ন; FAQ context দিয়ে একটা call-ই যথেষ্ট। এখানে agent বা chain বাড়তি খরচ।"
+            },
+            {
+              "text": "প্রতিটা review: sentiment বের করো → ঠিক ফরম্যাটে summary লেখো → ইংরেজিতে অনুবাদ করো (সব সময় এই তিন ধাপ)",
+              "bucket": "workflow",
+              "why": "ধাপ নির্দিষ্ট ও ক্রমিক: prompt chaining workflow।"
+            },
+            {
+              "text": "ইনকামিং message আগে classify হয় (order status / refund / অভিযোগ), তারপর প্রতি category-র আলাদা prompt-এ যায়",
+              "bucket": "workflow",
+              "why": "Routing: আগে থেকে জানা category, আলাদা specialized path। পথ ঠিক করে তোমার code।"
+            },
+            {
+              "text": "গ্রাহক বলছে \"আমার তিনটা order-এর দুটো আসেনি, একটা ভুল জিনিস এসেছে, কী করা যায়?\" কোন tool কয়টা ডাকতে হবে আগে বলা যায় না",
+              "bucket": "agent",
+              "why": "ধাপ অনির্দিষ্ট, প্রতি tool result দেখে পরের পদক্ষেপ ঠিক হবে: agent-এর ক্ষেত্র (ধরে নিচ্ছি trusted tool ও guardrail আছে)।"
+            },
+            {
+              "text": "একই code-diff-কে ৩টা আলাদা prompt দিয়ে security-র দিক থেকে পরীক্ষা করে ভোট নেওয়া",
+              "bucket": "workflow",
+              "why": "Parallelization (voting): নির্দিষ্ট কাঠামো, একাধিক সমান্তরাল call; model-কে পথ বাছতে হয় না।"
+            },
+            {
+              "text": "অজানা একটা repo-তে failing test সারানো: ফাইল পড়ো, বদলাও, test চালাও, আবার দেখো",
+              "bucket": "agent",
+              "why": "ধাপ আগে জানা নেই; test result থেকে ground truth ফিডব্যাক মেলে। Anthropic-এর coding agent উদাহরণ।"
+            },
+            {
+              "text": "Rafi-র আইডিয়া: ৮০% ticket যেগুলো \"order status\" ধরনের, তাদের জন্যও পুরো agent loop চালানো",
+              "bucket": "workflow",
+              "why": "ধাপ জানা ও পুনরাবৃত্ত কাজ। সরলতম উপযুক্ত সমাধান (route + একটা call) নাও; agent বাড়তি খরচ ও ঝুঁকি।"
+            },
+            {
+              "text": "ইংরেজি থেকে বাংলায় একটা বাক্য অনুবাদ করা, কোনো tool লাগে না",
+              "bucket": "single",
+              "why": "model training থেকেই পারে; tool round trip বা workflow অপ্রয়োজনীয়।"
+            }
+          ],
+          "takeaway": "নিয়ম: single call → workflow → agent, ওপরে ওঠো শুধু যখন নিচেরটা মাপা ফলাফলে যথেষ্ট নয়। Agent লাগে অনির্দিষ্ট ধাপ + environment থেকে ফিডব্যাক থাকলে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Building block: augmented LLM\n\nসব pattern-এর ভিত্তি একটাই জিনিস: **augmented LLM**। এটা এমন LLM যাকে তিনটা ক্ষমতা দেওয়া হয়েছে: **retrieval** (নিজে search query বানিয়ে তথ্য আনা), **tools** (action নেওয়া), আর **memory** (কী মনে রাখবে ঠিক করা)। আজকের সব workflow ও agent এই block-এর ওপর সাজানো। Anthropic বলে, এই ক্ষমতাগুলো তোমার use case-এর মাপে বানাও আর model-কে একটা পরিষ্কার, ভালো-documented interface দাও। Model Context Protocol (MCP) তৃতীয় পক্ষের tool জোড়ার একটা উপায়; সেটা Domain 8-এ আসবে।\n\nএখন পাঁচটা workflow pattern একে একে দেখি। প্রতিটার জন্য তিনটা প্রশ্ন মনে রেখো: **কখন লাগে? কীসের বিনিময়ে? Chai-Bot-এ কী উদাহরণ?**\n\n## Pattern ১: Prompt chaining\n\nকাজকে ক্রমিক ধাপে ভাঙো; প্রতিটা LLM call আগের ধাপের output নেয়। মাঝখানে code দিয়ে একটা **gate** (যাচাই) বসানো যায়: ধাপ পার না হলে থামো বা আবার চেষ্টা করো।\n\n- **কখন:** কাজ পরিষ্কারভাবে নির্দিষ্ট subtask-এ ভাগ করা যায়।\n- **বিনিময়:** latency দিয়ে accuracy কেনা: প্রতিটা call সহজ, তাই ভুল কম, কিন্তু মোট সময় বেশি।\n- **Chai-Bot উদাহরণ:** ১) গ্রাহকের লম্বা অভিযোগ থেকে order id, সমস্যা, দাবি **বের করো** → ২) gate: order id-র ফরম্যাট ঠিক আছে কি? (code) → ৩) database থেকে order এনে policy-র সাথে মিলিয়ে **খসড়া উত্তর** লেখো → ৪) tone ও ভাষা যাচাই করে **বাংলায় চূড়ান্ত** করো।\n\n```python\ndef handle_complaint(text: str) -> str:\n    facts = ask(\"Extract order_id, issue, demand as JSON only.\", text)          # ধাপ ১\n    data = parse_json(facts)\n    if not valid_order_id(data.get(\"order_id\")):                                # gate (code)\n        return \"অনুগ্রহ করে আপনার order নম্বরটা জানাবেন?\"\n    order = db_lookup(data[\"order_id\"])\n    draft = ask(\"Write a reply using ONLY this order data and policy.\",         # ধাপ ২\n                f\"order={order}\\nissue={data['issue']}\")\n    return ask(\"Rewrite in friendly Bangla, max 5 lines. Keep all facts.\", draft)  # ধাপ ৩\n```\n\nলক্ষ করো: control flow পুরোটা তোমার Python-এ। Model শুধু প্রতিটা ধাপের ভেতরের কাজ করে। এটাই workflow।\n\n## Pattern ২: Routing\n\nআগে input **classify** করো, তারপর তাকে সেই category-র জন্য বানানো **specialized path**-এ পাঠাও। এতে \"separation of concerns\" হয়: refund-এর prompt আর delivery-র prompt আলাদা, একটা বদলালে অন্যটা ভাঙে না।\n\n- **কখন:** স্পষ্ট আলাদা category আছে, আর classification নির্ভুলভাবে করা যায় (LLM দিয়ে অথবা সাধারণ classifier দিয়ে)।\n- **দুই বিখ্যাত ব্যবহার (Anthropic-এর লেখায়):** (১) customer service query-কে general / refund / technical support path-এ পাঠানো; (২) **সহজ প্রশ্ন ছোট ও সস্তা model-এ (যেমন Haiku-class), কঠিন প্রশ্ন বড় model-এ** পাঠানো। এটা cost optimization-এর সরাসরি উপায়।\n- **ফাঁদ:** router ভুল করলে পুরো উত্তর ভুল path-এ যায়। তাই একটা \"OTHER/অনিশ্চিত\" fallback আর router-এর নিজস্ব eval রাখো।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Routing workflow: ইনকামিং message আগে router-এ classify হয়, তারপর category অনুযায়ী আলাদা handler-এ যায়। Control flow তোমার code-এর হাতে।",
+          "nodes": [
+            {
+              "id": "user",
+              "kind": "user",
+              "label": "গ্রাহকের message",
+              "x": 0,
+              "y": 110
+            },
+            {
+              "id": "router",
+              "kind": "gateway",
+              "label": "Router (classify)",
+              "x": 220,
+              "y": 110
+            },
+            {
+              "id": "status",
+              "kind": "server",
+              "label": "Status handler (ছোট model)",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "refund",
+              "kind": "server",
+              "label": "Refund handler (policy)",
+              "x": 440,
+              "y": 110
+            },
+            {
+              "id": "other",
+              "kind": "external",
+              "label": "OTHER: মানুষ/fallback",
+              "x": 440,
+              "y": 220
+            }
+          ],
+          "edges": [
+            {
+              "from": "user",
+              "to": "router",
+              "label": "message"
+            },
+            {
+              "from": "router",
+              "to": "status",
+              "label": "ORDER_STATUS"
+            },
+            {
+              "from": "router",
+              "to": "refund",
+              "label": "REFUND"
+            },
+            {
+              "from": "router",
+              "to": "other",
+              "label": "অনিশ্চিত"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "```python\nHANDLERS = {\n    \"ORDER_STATUS\": (SMALL_MODEL, \"You answer order-status questions. Use the order data given.\"),\n    \"REFUND\":       (BIG_MODEL,   \"You apply the refund policy strictly. Cite the clause.\"),\n}\n\ndef route(message: str) -> str:\n    label = ask(\"Classify into exactly one of: ORDER_STATUS, REFUND, OTHER. Reply with the label only.\", message).strip().upper()\n    return label if label in HANDLERS else \"OTHER\"        # অজানা label এলে নিরাপদ fallback\n```\n\n## Pattern ৩: Parallelization\n\nএকই সময়ে একাধিক LLM call চালিয়ে ফলাফল code দিয়ে জোড়ো। দুটো রূপ:\n\n| রূপ | কী করে | Chai-Bot উদাহরণ |\n|---|---|---|\n| **Sectioning** | কাজকে **স্বাধীন** subtask-এ ভাগ করে একসাথে চালায় | একটা call উত্তর লেখে, আরেকটা call আলাদাভাবে যাচাই করে উত্তরে গালিগালাজ বা সংবেদনশীল তথ্য আছে কি (guardrail) |\n| **Voting** | **একই** কাজ কয়েকবার চালিয়ে আলাদা ফল নেয়, ভোটে সিদ্ধান্ত | বড় refund-এর ক্ষেত্রে \"জালিয়াতির লক্ষণ আছে?\" প্রশ্ন ৩ বার করে; ২টায় হ্যাঁ হলে মানুষের কাছে পাঠাও |\n\n- **কখন:** গতি বাড়াতে subtask সমান্তরালে চলতে পারে, অথবা একাধিক দৃষ্টিকোণে আস্থা বাড়ে। Anthropic বলে, একাধিক বিবেচনার জন্য প্রতিটাকে আলাদা call দিলে প্রায়ই একটা call-এ সব সামলানোর চেয়ে ভালো ফল আসে।\n- **বিনিময়:** call সংখ্যা বাড়ে, মানে token খরচ বাড়ে (latency অবশ্য কমতে পারে)।\n- **চেনার সহজ নিয়ম:** subtask-গুলো **তুমি আগে থেকে ঠিক করে রেখেছ** (পাঁচটা fixed prompt)। এটাই পরের pattern থেকে পার্থক্য।"
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Sectioning বনাম voting মনে রাখার কৌশল",
+        "markdown": "**Sectioning = ভাগ করো (আলাদা কাজ, একসাথে)।** **Voting = একই কাজ বারবার (ঐকমত্যের জন্য)।** পরীক্ষায় \\\"একাধিক prompt দিয়ে code-এ vulnerability আছে কি না দেখা এবং ভোটের থ্রেশহোল্ড ঠিক করে false positive/negative-এর ভারসাম্য\\\" দেখলে সেটা **voting**। \\\"একটা model user query সামলায়, আরেকটা আলাদাভাবে content screen করে\\\" দেখলে সেটা **sectioning**।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Pattern ৪: Orchestrator-workers\n\nএখানে একটা কেন্দ্রীয় LLM (**orchestrator**) input দেখে **নিজেই** ঠিক করে কাজকে কী কী subtask-এ ভাগ করবে, সেগুলো **worker** LLM-দের দেয়, তারপর ফলাফল **synthesize** করে। Parallelization-এর সাথে মূল পার্থক্য: subtask-গুলো **আগে থেকে ঠিক করা নেই**; orchestrator নির্দিষ্ট input দেখে সেগুলো ঠিক করে।\n\n- **কখন:** জটিল কাজ যেখানে কতগুলো subtask লাগবে আর কী কী, আগে বলা যায় না। যেমন বহু-ফাইল বদলানো coding কাজ, বা একাধিক উৎস থেকে তথ্য জোগাড়ের search।\n- **Chai-Bot উদাহরণ:** একজন গ্রাহক লিখেছে \"গত তিন মাসের সব অর্ডারের মধ্যে কোনগুলোতে দেরি হয়েছে আর প্রতিটার কারণ বলো।\" Orchestrator order সংখ্যা দেখে ঠিক করে ৫টা নাকি ১২টা worker লাগবে, প্রতিটা order-এর জন্য একজন worker দেয়, শেষে এক রিপোর্টে জোড়ে।\n- **বিনিময়:** orchestrator-এর পরিকল্পনা ভুল হলে সব ভুল; call বেশি, খরচ বেশি; কিন্তু নমনীয়তা পাও।\n\n```python\ndef orchestrate(task: str) -> str:\n    plan = parse_json(ask(\"Split the task into independent subtasks. JSON list of strings only.\", task))\n    results = [ask(\"Do this one subtask. Be concise.\", sub) for sub in plan]       # চাইলে সমান্তরালে\n    return ask(\"Combine these partial results into one final answer.\", \"\\n---\\n\".join(results))\n```\n\nলক্ষ করো `plan`-এর দৈর্ঘ্য model-এর সিদ্ধান্ত। এটাই orchestrator-workers-কে parallelization থেকে আলাদা করে।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "sequence",
+          "caption": "Orchestrator-workers: orchestrator আগে পরিকল্পনা বানায়, worker-রা আলাদা আলাদা subtask করে, শেষে orchestrator সব জোড়ে।",
+          "participants": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "orch",
+              "kind": "server",
+              "label": "Orchestrator LLM"
+            },
+            {
+              "id": "w1",
+              "kind": "external",
+              "label": "Worker ১"
+            },
+            {
+              "id": "w2",
+              "kind": "external",
+              "label": "Worker ২"
+            }
+          ],
+          "messages": [
+            {
+              "from": "app",
+              "to": "orch",
+              "label": "কাজ: ৩ মাসের দেরির রিপোর্ট"
+            },
+            {
+              "from": "orch",
+              "to": "app",
+              "label": "পরিকল্পনা: [order A, order B]",
+              "dashed": true
+            },
+            {
+              "from": "app",
+              "to": "w1",
+              "label": "subtask: order A"
+            },
+            {
+              "from": "app",
+              "to": "w2",
+              "label": "subtask: order B"
+            },
+            {
+              "from": "w1",
+              "to": "app",
+              "label": "ফল A",
+              "dashed": true
+            },
+            {
+              "from": "w2",
+              "to": "app",
+              "label": "ফল B",
+              "dashed": true
+            },
+            {
+              "from": "app",
+              "to": "orch",
+              "label": "সব ফল জোড়ো"
+            },
+            {
+              "from": "orch",
+              "to": "app",
+              "label": "চূড়ান্ত রিপোর্ট",
+              "dashed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Pattern ৫: Evaluator-optimizer\n\nএকটা LLM উত্তর **generate** করে, আরেকটা (বা একই model আলাদা prompt-এ) তাকে **evaluate** করে ফিডব্যাক দেয়; generator ফিডব্যাক নিয়ে আবার লেখে। এভাবে loop চলে যতক্ষণ না evaluator \"পাস\" বলে বা সীমা (max round) ছোঁয়া হয়।\n\n- **কখন:** (ক) **স্পষ্ট মূল্যায়নের মানদণ্ড** আছে, আর (খ) পুনরাবৃত্ত উন্নতি মাপা যায় এমন মূল্য দেয়। ভালো লক্ষণ: মানুষ ফিডব্যাক দিলে উত্তর সত্যিই ভালো হয়, আর LLM নিজেই সেই ধরনের ফিডব্যাক দিতে পারে। Anthropic-এর উদাহরণ: সাহিত্যিক অনুবাদ (evaluator সূক্ষ্ম অর্থের ভুল ধরে), আর বহু-ধাপ search যেখানে evaluator ঠিক করে আরও খোঁজা দরকার কি না।\n- **Chai-Bot উদাহরণ:** refund-অস্বীকারের চিঠি। Generator চিঠি লেখে; evaluator যাচাই করে: policy ধারা উদ্ধৃত আছে? tone ভদ্র? কোনো মিথ্যা প্রতিশ্রুতি নেই? না হলে ফিডব্যাকসহ ফেরত।\n- **বিনিময়:** প্রতি round-এ ২টা call; মানদণ্ড অস্পষ্ট হলে loop শুধু খরচ বাড়ায় আর \"উন্নতি\" হয় না। তাই **max round** বাধ্যতামূলক।\n\n```python\ndef write_with_review(task: str, max_rounds: int = 3) -> str:\n    draft = ask(\"Write the reply.\", task)\n    for _ in range(max_rounds):\n        verdict = parse_json(ask(RUBRIC_PROMPT, draft))        # {\"pass\": bool, \"feedback\": str}\n        if verdict.get(\"pass\") is True:\n            return draft\n        draft = ask(\"Revise using this feedback.\", f\"draft={draft}\\nfeedback={verdict['feedback']}\")\n    return draft        # সীমা ছুঁলে সেরা খসড়া (বা মানুষের কাছে পাঠাও)\n```"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Evaluator-optimizer-এর একটা run: refund-অস্বীকারের চিঠি",
+          "hint": "ধাপ ধরে এগোও। দেখো evaluator কীভাবে ফিডব্যাক দেয় আর loop কখন থামে।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড (loop)"
+            },
+            {
+              "id": "gen",
+              "label": "Generator (Claude)"
+            },
+            {
+              "id": "eval",
+              "label": "Evaluator (Claude)"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "gen",
+              "label": "কাজ: refund অস্বীকারের চিঠি",
+              "note": "তোমার code প্রথমে generator-কে কাজ ও policy দেয়। round = ১।"
+            },
+            {
+              "from": "gen",
+              "to": "app",
+              "label": "খসড়া ১",
+              "note": "Generator একটা প্রথম খসড়া দেয়। এতে policy ধারা উদ্ধৃত নেই।"
+            },
+            {
+              "from": "app",
+              "to": "eval",
+              "label": "খসড়া + rubric",
+              "note": "Code খসড়াটা evaluator-কে দেয়, সাথে স্পষ্ট মানদণ্ড: ধারা উদ্ধৃত? tone ভদ্র? মিথ্যা প্রতিশ্রুতি নেই?"
+            },
+            {
+              "from": "eval",
+              "to": "app",
+              "label": "{pass:false, feedback:\"ধারা ৪.২ উদ্ধৃত করুন\"}",
+              "note": "Evaluator ফেল দেয় আর নির্দিষ্ট ফিডব্যাক দেয়। অস্পষ্ট \"আরও ভালো করো\" নয়, কাজে লাগার মতো নির্দেশ।"
+            },
+            {
+              "from": "app",
+              "to": "gen",
+              "label": "খসড়া ১ + ফিডব্যাক",
+              "note": "Code খসড়া ও ফিডব্যাক একসাথে generator-কে দেয়। round = ২।"
+            },
+            {
+              "from": "gen",
+              "to": "app",
+              "label": "খসড়া ২",
+              "note": "এবার ধারা ৪.২ উদ্ধৃত আছে।"
+            },
+            {
+              "from": "app",
+              "to": "eval",
+              "label": "খসড়া ২ + rubric",
+              "note": "আবার একই rubric-এ যাচাই। মানদণ্ড স্থির থাকে বলেই তুলনা অর্থপূর্ণ।"
+            },
+            {
+              "from": "eval",
+              "to": "app",
+              "label": "{pass:true}",
+              "note": "সব মানদণ্ড মিলেছে। Loop থামে।"
+            },
+            {
+              "from": "app",
+              "to": "app",
+              "label": "খসড়া ২ পাঠাও",
+              "note": "যদি max_rounds-এ পৌঁছেও পাস না হতো, code-ই ঠিক করত কী করবে: সেরা খসড়া পাঠানো বা মানুষের কাছে escalate। Loop-এর থামার শর্ত সবসময় তোমার হাতে।"
+            }
+          ],
+          "takeaway": "Evaluator-optimizer-এর শক্তি স্পষ্ট rubric আর ফিডব্যাকে; ঝুঁকি হলো অসীম বা নিষ্ফল loop, তাই max round রাখো।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "পাঁচ pattern এক নজরে: কে ধাপ ঠিক করে?",
+        "markdown": "**Chaining:** তুমি, ক্রমিক। **Routing:** তুমি category বানাও, model বাছে কোনটা। **Parallelization:** তুমি subtask ঠিক করো, একসাথে চালাও। **Orchestrator-workers:** **model** subtask ঠিক করে (তবু workflow-এর মধ্যে, কারণ কাঠামো তোমার)। **Evaluator-optimizer:** তুমি loop বানাও, model generate ও যাচাই করে। এগুলো সবই **building block**: Anthropic বলে এগুলোকে জোড়া লাগিয়ে নিজের মতো সাজাও, আর জটিলতা তখনই বাড়াও যখন মাপা ফলাফল ভালো হয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Autonomous agent: loop-এর ভেতরে model\n\nWorkflow-এর পাঁচ pattern পেরিয়ে এবার আসল agent। Anthropic-এর বর্ণনা: agent শুরু হয় মানুষের নির্দেশ বা আলোচনা থেকে; কাজ স্পষ্ট হলে সে **নিজে পরিকল্পনা করে স্বাধীনভাবে চলে**, দরকারে মানুষের কাছে তথ্য বা সিদ্ধান্তের জন্য ফিরে আসে। প্রতিটা ধাপে তাকে **environment থেকে \"ground truth\"** নিতে হয় (tool result, code চালানোর ফল) যাতে সে বুঝতে পারে কতদূর এগোল। সে checkpoint বা বাধায় থামতে পারে। বাস্তবে এর বাস্তবায়ন প্রায়ই সরল: **LLM environment-এর ফিডব্যাক দেখে tool ব্যবহার করছে, একটা loop-এর মধ্যে।**\n\n**কখন agent:** খোলা-প্রান্তের সমস্যা, যেখানে ধাপ সংখ্যা আগে থেকে বলা বা hard-code করা যায় না, আর পরিবেশ বিশ্বস্ত। **বিনিময়:** খরচ বেশি, ভুল জমে জমে বড় হতে পারে (compounding errors)। তাই Anthropic **sandbox-এ বিস্তৃত test আর যথাযথ guardrail** সুপারিশ করে, আর **থামার শর্ত** (যেমন সর্বোচ্চ iteration সংখ্যা) রাখতে বলে।\n\nAnthropic তিনটা মূলনীতি দেয়: **সরলতা** (design সরল রাখো), **স্বচ্ছতা** (agent-এর পরিকল্পনার ধাপ স্পষ্ট দেখাও), আর **agent-computer interface (ACI)** যত্ন করে বানানো (tool-এর ভালো documentation ও পরীক্ষা)।\n\n## Tool-use loop: agent-এর হৃৎপিণ্ড\n\nClaude docs-এর \"How tool use works\" পাতা অনুযায়ী, client tool (তোমার নিজের লেখা tool, আর `bash`, `text_editor`-এর মতো Anthropic-schema tool) চালাতে **তোমার application-কে loop চালাতে হয়**, কারণ model নিজে কিছু চালাতে পারে না; সে শুধু একটা structured request বের করে। ধাপগুলো:\n\n1. `tools` array আর user message দিয়ে request পাঠাও।\n2. Claude `stop_reason: \"tool_use\"` আর এক বা একাধিক `tool_use` block দিয়ে উত্তর দেয়।\n3. প্রতিটা tool চালাও, ফল `tool_result` block-এ সাজাও।\n4. নতুন request পাঠাও: আগের messages + assistant-এর পুরো উত্তর + একটা user message যাতে `tool_result` block আছে।\n5. `stop_reason` আবার `\"tool_use\"` হলে ২ থেকে পুনরাবৃত্তি।\n\nLoop বের হয় অন্য যেকোনো stop reason-এ: `end_turn`, `max_tokens`, `stop_sequence` বা `refusal`। এর মানে Claude হয় চূড়ান্ত উত্তর দিয়েছে, নয়তো অন্য কারণে থেমেছে, যা তোমার code-কে সামলাতে হবে। ক্লাসিক ভুল: শুধু `end_turn` ধরে নেওয়া আর `max_tokens`-এ কাটা উত্তরকে চূড়ান্ত ভেবে নেওয়া।\n\n```python\ndef run_agent(user_text: str, max_iters: int = 8) -> str:\n    messages = [{\"role\": \"user\", \"content\": user_text}]\n    for _ in range(max_iters):                                   # থামার শর্ত #১: iteration সীমা\n        r = client.messages.create(model=MODEL, max_tokens=1024, tools=TOOLS, messages=messages)\n        if r.stop_reason != \"tool_use\":                          # end_turn / max_tokens / refusal...\n            return \"\".join(b.text for b in r.content if b.type == \"text\")\n        messages.append({\"role\": \"assistant\", \"content\": r.content})   # পুরো উত্তর ইতিহাসে রাখো\n        results = []\n        for b in r.content:\n            if b.type == \"tool_use\":\n                out = dispatch(b.name, b.input)                  # তোমার harness tool চালায়\n                results.append({\"type\": \"tool_result\", \"tool_use_id\": b.id, \"content\": out})\n        messages.append({\"role\": \"user\", \"content\": results})\n    return \"দুঃখিত, কাজটা শেষ করা গেল না; মানুষের সাহায্য নেওয়া হচ্ছে।\"   # সীমা ছুঁলে নিরাপদ পথ\n```\n\nএই ১৫ লাইনই \"custom agent loop\"। **`tool_use_id` অবশ্যই মিলতে হবে**; assistant-এর পুরো `content` ইতিহাসে ফেরত দিতে হয়, শুধু text অংশ নয়।\n\n### Server tool আর `pause_turn`\n\n`web_search`, `web_fetch`, `code_execution`, `tool_search`-এর মতো **server tool** Anthropic-এর infrastructure-এ চলে; তুমি এগুলোর `tool_result` বানাও না। এদের ভেতরের loop-এ iteration সীমা আছে; সীমা ছুঁলে `stop_reason: \"pause_turn\"` আসে, তখন কাজ শেষ হয়নি: **পুরো conversation (থামা উত্তরসহ) আবার পাঠাও**, model যেখানে থেমেছিল সেখান থেকে চালিয়ে যাবে। আরেকটা ব্যতিক্রম: একই parallel group-এ server tool আর client tool দুটোই ডাকা হলে `tool_use` stop reason ফেরত আসে; তোমার client tool result পাঠালে তবেই বাকিটা চলে।\n\n### Tool runner বনাম নিজের loop\n\nDocs বলে SDK-এর **tool runner** (docs-এ beta চিহ্নিত) agentic loop, error wrapping আর conversation state নিজে সামলায়। কিন্তু **human-in-the-loop অনুমোদন, নিজের logging বা শর্তসাপেক্ষ চালানো** দরকার হলে **manual loop** ব্যবহার করতে বলা হয়েছে। তাই Chai-Bot-এ refund tool চালানোর আগে মানুষের \"হ্যাঁ\" নিতে হলে manual loop-ই সঠিক বাছাই।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: \"tool_use\" মানে model tool চালিয়েছে?",
+        "markdown": "না। `stop_reason: \\\"tool_use\\\"` মানে model একটা **অনুরোধ** পাঠিয়েছে: কোন tool, কোন argument। **চালায় তোমার code** (client tool) অথবা Anthropic-এর server (server tool)। Model কখনও নিজে কিছু চালায় না। আরেকটা ফাঁদ: \\\"agent-এর loop কীভাবে থামবে?\\\" প্রশ্নে \\\"model যতক্ষণ ইচ্ছা চলুক\\\" ভুল; নিরাপদ উত্তর হলো স্বাভাবিক সমাপ্তি (`end_turn`) **এবং** তোমার নিজের সীমা (max iterations, বাজেট, timeout)।"
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "Agent-কে নিরাপদ রাখার স্তর: কোন স্তর কী আটকায়",
+          "hint": "এক এক করে স্তর চালু করে দেখো কোন ঝুঁকি ঠেকে। একটা স্তরে সব ঠেকে না; তাই স্তর মিলিয়ে ব্যবহার করো।",
+          "layers": [
+            {
+              "id": "maxiter",
+              "label": "সর্বোচ্চ iteration + token/সময় বাজেট",
+              "desc": "loop-এ কড়া সীমা: N বারের বেশি ঘুরবে না",
+              "blocks": ["runaway-loop", "cost-spike"]
+            },
+            {
+              "id": "toolqa",
+              "label": "ভালো tool description + poka-yoke (যেমন absolute path বাধ্যতামূলক)",
+              "desc": "tool-কে ভুল ব্যবহার করা কঠিন বানানো",
+              "blocks": ["wrong-tool-args", "wrong-tool"]
+            },
+            {
+              "id": "approval",
+              "label": "ঝুঁকিপূর্ণ action-এর আগে মানুষের অনুমোদন",
+              "desc": "refund, মুছে ফেলা, টাকা: manual loop-এ থামো, অনুমতি নাও",
+              "blocks": ["bad-refund", "irreversible-delete"]
+            },
+            {
+              "id": "sandbox",
+              "label": "Sandbox + least privilege (শুধু দরকারি tool ও অধিকার)",
+              "desc": "agent কিছু ভাঙলেও ক্ষতি সীমিত",
+              "blocks": ["irreversible-delete", "wrong-tool"]
+            },
+            {
+              "id": "checkpoint",
+              "label": "Checkpoint ও ground-truth যাচাই (test/DB মিলানো)",
+              "desc": "প্রতি ধাপে বাস্তব ফল দেখে ভুল জমা ঠেকানো",
+              "blocks": ["compounding-error", "bad-refund"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "runaway-loop",
+              "label": "একই tool বারবার ডাকে, loop থামে না",
+              "desc": "Rafi-র agent ১৪ বার ঘুরল"
+            },
+            {
+              "id": "cost-spike",
+              "label": "একটা ticket-এ হঠাৎ কয়েক গুণ token খরচ",
+              "desc": "billing-এ আকস্মিক লাফ"
+            },
+            {
+              "id": "wrong-tool-args",
+              "label": "ভুল argument (relative path, ভুল id ফরম্যাট)",
+              "desc": "tool ঠিকই ডাকা হলো, কিন্তু ইনপুট অশুদ্ধ"
+            },
+            {
+              "id": "wrong-tool",
+              "label": "কাছাকাছি নামের ভুল tool বাছা",
+              "desc": "refund_order-এর বদলে cancel_order"
+            },
+            {
+              "id": "bad-refund",
+              "label": "ভুলভাবে বড় refund অনুমোদন",
+              "desc": "policy না মেনে টাকা ফেরত"
+            },
+            {
+              "id": "irreversible-delete",
+              "label": "অপরিবর্তনীয় action (ডেটা মোছা)",
+              "desc": "ফেরানো যায় না"
+            }
+          ],
+          "takeaway": "Agent মানে স্বাধীনতা, আর স্বাধীনতার সাথে গার্ড লাগে: সীমা, ভালো tool design, মানুষের অনুমোদন, least privilege, ground-truth যাচাই। কোনো একটা যথেষ্ট নয়।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Tool design: agent-এর সাফল্য প্রায়ই tool-এ\n\nAnthropic-এর appendix-এর একটা বিখ্যাত শিক্ষা: **tool definition-কেও মূল prompt-এর মতো প্রম্পট ইঞ্জিনিয়ারিং-এর যত্ন দাও।** তাদের SWE-bench agent-এ তারা overall prompt-এর চেয়ে tool optimize করতেই বেশি সময় দিয়েছে। একটা উদাহরণ: model root directory ছেড়ে গেলে relative filepath-এ ভুল করত; tool-কে **absolute path** বাধ্যতামূলক করার পর সে নির্ভুল চলল। এটাকে বলে **poka-yoke**: tool এমনভাবে বানানো যাতে ভুল করা কঠিন।\n\nকিছু নির্দেশনা:\n- tool description লেখো এমনভাবে যেন একজন junior developer-এর জন্য docstring: ব্যবহারের উদাহরণ, edge case, input-এর শর্ত, আর **সদৃশ tool-গুলোর মধ্যে সীমারেখা** (কখন `refund_order`, কখন `cancel_order`)।\n- model-কে **চিন্তা করার জায়গা** দাও (output format এমন নয় যে শুরুতেই সঠিক সংখ্যা গুনে লিখতে হবে)।\n- অনেক রকম input দিয়ে নিজে পরীক্ষা করো, ভুল দেখে tool বদলাও।\n\nChai-Bot-এ Rafi-র ১৪ বারের loop-এর মূল কারণ ছিল দুটো tool-এর অস্পষ্ট description: `lookup_order` আর `search_orders`। Model প্রতিবার ভুল tool-এ ঘুরছিল। Description ঠিক করা আর max iteration বসানো: দুটোই দরকার ছিল।\n\n## Manager/supervisor ও subagent\n\nযখন একটা agent-এর context window বা মনোযোগে কাজটা ধরছে না, তখন **multi-agent** কাঠামো আসে। সবচেয়ে প্রচলিত গড়ন **manager/supervisor (lead) + subagent (worker)**:\n\n- **Supervisor (lead agent)** মূল কাজ বোঝে, পরিকল্পনা বানায়, subagent-দের কাজ ভাগ করে দেয়, ফলাফল জোড়ে।\n- **Subagent** একটা সংকীর্ণ কাজ করে নিজের আলাদা context window-এ, নিজস্ব prompt ও tool নিয়ে।\n\nAnthropic-এর engineering লেখা **\"How we built our multi-agent research system\"** (Research feature) এর সবচেয়ে ভালো উদাহরণ। লেখাটা অনুযায়ী: lead agent পরিকল্পনা করে ও parallel-এ subagent চালায়, subagent-রা search করে; পরে lead ফল জোড়ে, আর আলাদা একটা CitationAgent দাবি-গুলোর উৎস বসায়। তাদের internal research eval-এ Opus 4 lead + Sonnet 4 subagent ব্যবস্থা single-agent Opus 4-কে **৯০.২%** ছাড়িয়ে গেছে।\n\n### Subagent কেন কাজে লাগে\n\n| সুবিধা | মানে |\n|---|---|\n| **Context isolation** | প্রতিটা subagent-এর নিজস্ব window; একটা দিক খুঁজতে গিয়ে lead-এর window ভরে না |\n| **Compression** | subagent শুধু সবচেয়ে দরকারি অংশ lead-কে ফেরত দেয় (পুরো কাঁচা output নয়) |\n| **Separation of concerns** | আলাদা tool, prompt, search পথ: এক পথের ভুল অন্যটায় ছড়ায় না |\n| **Parallelism** | স্বাধীন দিক একসাথে খোঁজা; লেখাটা জটিল query-তে সময় কমার কথা বলে (৯০% পর্যন্ত) |\n\n### কিন্তু দাম আছে: cost ও latency\n\nলেখাটার সংখ্যা (Anthropic-এর নিজস্ব পরিমাপ): **agent সাধারণ chat-এর প্রায় ৪ গুণ token** খায়, আর **multi-agent system প্রায় ১৫ গুণ**। তারা আরও দেখেছে, BrowseComp eval-এ ফলের পার্থক্যের প্রায় ৮০% ব্যাখ্যা করে শুধু token ব্যবহার। অর্থাৎ বাড়তি কাজ আসলে বাড়তি token দিয়েই কেনা। তাই সিদ্ধান্ত: **কাজের মূল্য এই খরচ ন্যায্য করলে তবেই multi-agent।**\n\nলেখাটা এটাও বলে multi-agent কোথায় **ভালো নয়**: যেসব কাজে সবাইকে একই context ভাগ করতে হয় বা agent-দের মধ্যে অনেক নির্ভরতা আছে। বেশিরভাগ coding কাজ এ ধরনের (পরস্পর-জড়ানো বদল), আর তাদের মতে বর্তমানের LLM agent-রা real-time সমন্বয়ে দুর্বল। যা ভালো: **breadth-first**, বহু স্বাধীন দিকে সমান্তরালে খোঁজা যায়, বা তথ্য একটা window-র চেয়ে বড়।\n\nতাদের কিছু ব্যবহারিক শিক্ষা (সংক্ষেপে): শুরুর agent-রা অতিরিক্ত subagent বানাত, কাজ দ্বিগুণ করত; সমাধান ছিল subagent-কে **বিস্তারিত নির্দেশ** (লক্ষ্য, output ফরম্যাট, কোন tool, সীমা), আর কাজের জটিলতা অনুযায়ী **effort scale**: সরল query-তে ১টা agent, তুলনায় ২–৪টা, জটিল গবেষণায় ১০টার বেশি। এছাড়া agent stateful বলে ভুল জমে, তাই **checkpoint, resume ও retry** দরকার।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: \"আরও agent মানেই আরও ভালো\"",
+        "markdown": "পরীক্ষা এমন পরিস্থিতি দেবে: একটা আন্তঃনির্ভর কাজ (একটা codebase-এ পরস্পর-জড়ানো বদল) বা সহজ কাজ, আর অপশনে \\\"কাজটা ১০টা subagent-এ ভাগ করো\\\"। সঠিক চিন্তা: multi-agent প্রায় ১৫ গুণ token খরচ আর সমন্বয়ের ঝামেলা আনে; লাভ হয় **সমান্তরাল, স্বাধীন, বিস্তৃত (breadth-first)** কাজে। আরেকটা ফাঁদ: \\\"subagent ব্যবহার করলে মোট token কমে\\\"। না; **supervisor-এর context** হালকা থাকে (isolation), কিন্তু **মোট token** বাড়ে।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "### Chai-Bot-এ কীভাবে সাজালে\n\nNusrat Apu-র নির্দেশে Rafi ঠিক করল: সাধারণ ticket **route** হবে (সস্তা path), আর শুধু \"জটিল অভিযোগ\" category একটা agent পাবে। Agent-এর জন্য সর্বোচ্চ ৮ iteration আর refund-এর আগে মানুষের অনুমোদন। মাসিক রিপোর্ট বানানোর কাজে (যেখানে বহু স্বাধীন order দেখতে হয়) একটা **supervisor + subagent** ব্যবস্থা, কিন্তু সেটা শুধু ব্যবস্থাপকদের জন্য, গ্রাহকের প্রতিটা message-এ নয়, কারণ সেখানে মূল্য খরচ ন্যায্য করে।\n\n## Memory ও context-window management: agent-এর দুটো pattern\n\nAgent যত ঘোরে, history তত বড় হয়: প্রতিটা `tool_use` আর `tool_result` window-তে জমে (Chapter ১-এর budget মনে আছে?)। দীর্ঘ চলা agent-এর জন্য দুটো সম্পর্কিত pattern:\n\n**১) Memory: window-র বাইরে মনে রাখা।** Docs-এ **memory tool** আছে: Anthropic-schema client tool (তার schema Anthropic বানায়, কিন্তু **execution তোমার application-এর**), যা দিয়ে Claude তোমার নিয়ন্ত্রিত **ফাইলে** তথ্য রাখে ও আনে, এক conversation থেকে আরেক conversation-এ। অর্থাৎ storage তোমার, window-র মধ্যে সব রাখতে হয় না। সাধারণ pattern: agent জরুরি সিদ্ধান্ত/অগ্রগতি notes-এ লেখে, পরে দরকারে পড়ে।\n\n**২) Context management: window-কে হালকা রাখা।** Docs অনুযায়ী দুটো পথ:\n- **Context editing (beta):** server-side এ history থেকে বেছে বেছে পুরোনো অংশ মুছে দেয় (তোমার client-এ পুরো history থেকে যায়)। একটা কৌশল: **tool result clearing**: সবচেয়ে পুরোনো tool result প্রথমে সরে, জায়গায় placeholder বসে। Docs-এর default: ১,০০,০০০ input token পার হলে trigger, সবচেয়ে সাম্প্রতিক ৩টা tool use রাখা হয়। Memory tool চালু থাকলে clearing-এর আগে Claude একটা সতর্কবার্তা পায়, যাতে জরুরি তথ্য আগেই memory ফাইলে লিখে রাখতে পারে। একটা সূক্ষ্মতা: clearing **prompt cache-এর prefix অকেজো করে**, তাই এটা খরচের হিসাবে ভেবে ব্যবহার করতে হয়।\n- **Compaction:** দীর্ঘ কথোপকথনের জন্য docs **server-side compaction**-কে বেশিরভাগ ক্ষেত্রে প্রধান কৌশল হিসেবে সুপারিশ করে (পুরোনো অংশের সারাংশ রেখে window খালি করা)।\n\n**৩) Subagent isolation:** আগের অংশে দেখলে; কাঁচা ও ভারী কাজ আলাদা window-তে, lead শুধু সারাংশ পায়। এটাও একটা context-management কৌশল।\n\n| সমস্যা | pattern |\n|---|---|\n| পুরোনো tool output window ভরছে | tool result clearing / ছোট করে ফেরত দেওয়া |\n| conversation অনেক লম্বা | compaction |\n| পরের session-এও তথ্য লাগবে | memory (ফাইল/store) |\n| একটা উপ-কাজের কাঁচা ডেটা বিশাল | subagent-এ আলাদা window, শুধু সারাংশ ফেরত |"
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "একটু সততা: beta আর সময়ের ফারাক",
+        "markdown": "Context editing আর tool runner দুটোই docs-এ **beta** চিহ্নিত (আমরা পাতা দেখেছি), তাই header/শব্দ ভবিষ্যতে বদলাতে পারে; কোড লেখার আগে সর্বশেষ docs দেখো। Docs-এ compaction-এর কিছু SDK-ভিত্তিক বিকল্প (client-side `compaction_control`) deprecated বা Python SDK থেকে সরানো বলা আছে, আর server-side compaction সুপারিশকৃত। পরীক্ষায় **ধারণা** আসে: কেন tool result জমে, কেন পুরোনো অংশ সরানো/সারাংশ করা হয়, memory কী। নির্দিষ্ট beta-header মুখস্থ করা এই chapter-এর লক্ষ্য নয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## Agentic framework: Strands, LangGraph, PydanticAI\n\nExam Guide-এ নাম ধরে বলা আছে তিনটা framework: **Strands**, **LangGraph**, **PydanticAI**। প্রতিটার সরকারি docs পড়ে নিচে শুধু যা confirm করেছি তা লিখছি।\n\n| Framework | নিজেদের docs অনুযায়ী মূল কথা | কখন ভাবো |\n|---|---|---|\n| **Strands Agents** | Agent বানানো, পরিচালনা, মূল্যায়ন ও deploy করার SDK; \"library, not a platform\": তোমার নিজের process-এ চলে, hosted control plane বা database লাগে না। Python ও TypeScript। Tools: নিজের function, MCP, vended tool। Multi-agent: swarm, graph, workflow, agents-as-tools, A2A। Model provider: Amazon Bedrock default; Anthropic, OpenAI, Google, Ollama-ও তালিকায়। OpenTelemetry observability | AWS-ঘেঁষা বা multi-agent গড়ন (swarm/graph/agents-as-tools) তৈরি জিনিস হিসেবে চাইলে |\n| **LangGraph** | \"Low-level orchestration framework and runtime for long-running, stateful agents\"। Workflow হলো **graph**: shared **state**, **node**, **edge**। Durable execution (checkpoint করে ব্যর্থতার পর resume), human-in-the-loop (থামিয়ে state দেখা/বদলানো), memory, streaming। Deterministic ও LLM-চালিত node এক graph-এ মেশানো যায়। এটা prompt বা agent architecture চাপিয়ে দেয় না; উঁচু-স্তরের agent loop নয়। LangChain ছাড়াও চলে | বহু ধাপ, **স্পষ্ট state ও control flow**, দীর্ঘ চলা, মাঝপথে মানুষের অনুমোদন বা resume দরকার হলে |\n| **PydanticAI** | Python SDK; \"typed, extensible agent loop\"। Output type **validate** হয়; typed dependency injection (`RunContext`) ও typed tool (function signature+docstring থেকে schema, argument চালানোর আগে validate)। Model-agnostic (Anthropic সহ)। জটিল control flow-এর জন্য আলাদা package **Pydantic Graph**; evals আলাদা package। Temporal/DBOS/Prefect-এ durable execution; OpenTelemetry-native observability | Python-এ **type-safe, validated structured output** আর tool চাইলে |\n\n### Framework বনাম plain SDK loop: কখন কোনটা\n\nAnthropic-এর লেখার পরামর্শ (এই অংশ পরীক্ষায় সরাসরি আসে): framework **সহজ করে** LLM call, tool সংজ্ঞা, chaining; কিন্তু **বাড়তি abstraction layer** আনে যা আসল prompt ও response ঢেকে দেয়, তাই debug কঠিন হয়, আর সহজ কাজে জটিলতা বাড়ানোর লোভ জাগায়। পরামর্শ: **প্রথমে LLM API সরাসরি ব্যবহার করো**, কারণ অনেক pattern কয়েক লাইনে হয়। Framework নিলে **ভেতরে কী হচ্ছে বুঝে নাও**; ভুল ধারণাই ভুলের সাধারণ উৎস। প্রোডাকশনে যেতে abstraction কমাতেও বলা হয়েছে।\n\n| পরিস্থিতি | ঝোঁক |\n|---|---|\n| ১–২টা pattern (routing, evaluator loop), স্পষ্ট নিয়ন্ত্রণ, ছোট দল | **Plain SDK loop** (এই chapter-এর lab) |\n| দীর্ঘ চলা, checkpoint/resume, মানুষের অনুমোদনে বিরতি, জটিল state | **LangGraph**-জাতীয় graph runtime |\n| validated structured output ও typed tool, Python | **PydanticAI** |\n| swarm/graph/agents-as-tools তৈরি চাই, AWS deploy পথ | **Strands** |\n| কোনো framework দিয়ে ভালো ফল পেয়েছ, কিন্তু আসল prompt দেখা যায় না | observability দিয়ে raw request দেখো, নইলে সরাসরি SDK-তে নামো |"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই refund-অনুমোদন সহায়ক: plain SDK loop বনাম framework। কোনোটা 'সঠিক' নয়; প্রশ্ন হলো কোন সমস্যায় কোনটা বেশি দেয়।",
+          "beforeTitle": "Plain SDK loop",
+          "before": "তুমি নিজে: messages সাজাও, while-loop, max_iters, tool dispatch, approval।\n\n+ প্রতিটা prompt ও response চোখের সামনে\n+ debug সহজ, নির্ভরতা কম\n− checkpoint/resume, state persist নিজেকে বানাতে হয়\n− বড় workflow-এ boilerplate বাড়ে",
+          "afterTitle": "Framework (Strands / LangGraph / PydanticAI)",
+          "after": "Framework-এর কাঠামো: agent object, graph, typed output।\n\n+ state/checkpoint, multi-agent, validation তৈরি পাওয়া যায়\n+ দীর্ঘ ও জটিল flow-এ গতি\n− abstraction আসল prompt ঢাকে; debug কঠিন\n− framework-এর ধারণা শিখতে হয়, সংস্করণ বদলায়"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: framework বাছাই",
+        "markdown": "প্রশ্ন সাধারণত \\\"কোন framework কী জন্য\\\" আর \\\"framework কি আদৌ লাগবে?\\\" দুই ধরনের। (১) স্পষ্ট state, checkpoint, মাঝপথে মানুষের বিরতি আর resume মানেই **graph-ভিত্তিক orchestration (LangGraph)**-এর চিহ্ন; validated, typed structured output মানেই **PydanticAI**-এর চিহ্ন; Strands হলো তোমার process-এ চলা agent SDK (multi-agent গড়ন তৈরি আছে)। (২) সরল পরিস্থিতিতে \\\"framework নাও কারণ framework ছাড়া agent হয় না\\\" ভুল: Anthropic বলে সরাসরি API দিয়ে শুরু করো। আর framework Claude-এর সাথেই কাজ করতে হবে এমন নয়: তিনটাই একাধিক provider সমর্থন করে (docs অনুযায়ী Anthropic-ও তালিকায়)।"
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "সততা: framework-এর বিস্তারিত API এই পরীক্ষায় আসে না",
+        "markdown": "এই chapter-এর framework তথ্য সরকারি docs-এর ওভারভিউ পাতা থেকে। আমরা নির্দিষ্ট class/function নাম বা সংস্করণ-নির্ভর আচরণ ইচ্ছে করে বাদ রেখেছি, কারণ framework দ্রুত বদলায় আর পরীক্ষা (Exam Guide অনুযায়ী) \\\"কোনটা কী জন্য ও কখন\\\" ধারণা চায়। বাস্তবে ব্যবহারের আগে সংশ্লিষ্ট framework-এর সর্বশেষ docs পড়ো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## সব মিলিয়ে: Chai-Bot-এর নতুন architecture\n\nকয়েক দিন পর Nusrat Apu আর Rafi ছবিটা আবার আঁকল:\n\n1. **Router** (ছোট model বা সাধারণ classifier) message-কে ৪ ভাগে ফেলে: ORDER_STATUS, FAQ, REFUND, COMPLEX।\n2. ORDER_STATUS ও FAQ: **single call + retrieval**, কোনো agent নেই।\n3. REFUND: **prompt chaining** (তথ্য বের করো → gate → policy মেলাও → **evaluator-optimizer** দিয়ে চিঠি) + বড় অঙ্কে **মানুষের অনুমোদন**।\n4. COMPLEX: **agent** (manual loop, ৮ iteration, sandbox-এ সীমিত tool, approval gate)।\n5. মাসিক রিপোর্ট: **supervisor + subagent**, শুধু অভ্যন্তরীণ ব্যবহারে।\n6. বাস্তবায়ন: প্রথমে **plain SDK**। যদি ভবিষ্যতে দীর্ঘ চলা approval flow আসে, তখন graph runtime ভাবা হবে।\n\n> **Nusrat Apu:** \"এবার বিল আর আচরণ দুটোই হিসাব করে বলা যায়। আমরা agent-কে বাদ দিইনি; তাকে ঠিক জায়গায় বসিয়েছি।\"\n\n## পরীক্ষায় এটা কীভাবে আসে\n\n**Skill: Agent Architecture** (Domain 1)\n- Workflow বনাম agent সিদ্ধান্ত: ধাপ নির্দিষ্ট → workflow; খোলা-প্রান্ত + ground-truth ফিডব্যাক → agent; আগে সরলতম।\n- Manager/supervisor + subagent: context isolation, compression, parallelism বনাম প্রায় ১৫ গুণ token/সমন্বয়ের খরচ; আন্তঃনির্ভর কাজে multi-agent দুর্বল।\n- সাধারণ প্রশ্ন: \"কোন architecture সবচেয়ে উপযুক্ত?\", \"subagent-এর দুটো সুবিধা (Select TWO)\", \"multi-agent কেন ভালো নয় এই কাজে?\"।\n\n**Skill: Agent Patterns and Frameworks**\n- পাঁচ workflow pattern চেনা (chaining, routing, parallelization = sectioning/voting, orchestrator-workers, evaluator-optimizer) আর **orchestrator-workers বনাম parallelization** পার্থক্য (subtask কে ঠিক করে)।\n- Tool-use loop, memory, context-window management (clearing, compaction, memory, subagent isolation)।\n- Strands/LangGraph/PydanticAI: কোনটা কী জন্য; framework বনাম plain SDK।\n- সাধারণ প্রশ্ন: \"পরিস্থিতি দেখে pattern বাছো\", \"framework নেওয়া উচিত কি?\", \"Select TWO: framework-এর সঠিক পরামর্শ\"।\n\n**Skill: Agent Construction with Claude** (এই chapter-এ plain loop অংশ; Agent SDK, managed agent, hook আসবে ch12-এ)\n- `tool_use` loop: `stop_reason`-ভিত্তিক while, `tool_result`-এর `tool_use_id` মেলানো, assistant `content` ইতিহাসে রাখা।\n- থামার শর্ত: max iteration/বাজেট; `max_tokens`, `refusal`, `pause_turn` সামলানো।\n- Tool runner বনাম manual loop (approval/logging হলে manual); client বনাম server tool।\n- সাধারণ প্রশ্ন: \"loop-এ কী বাগ?\", \"approval গেট কোথায় বসবে?\", \"tool ভুল ব্যবহার হচ্ছে, কী করবে?\"।"
+      }
+    ],
+    "recap": [
+      "Workflow-এ ধাপ ঠিক করে তোমার code, agent-এ ঠিক করে model; ধাপ আগে জানা থাকলে workflow, খোলা-প্রান্ত ও ground-truth ফিডব্যাক থাকলে agent, আর সবসময় সরলতম সমাধান দিয়ে শুরু।",
+      "পাঁচ workflow pattern: chaining (ক্রমিক), routing (classify করে পাঠানো), parallelization (sectioning/voting), orchestrator-workers (model নিজে subtask ঠিক করে), evaluator-optimizer (generate + যাচাই loop, max round সহ)।",
+      "Manager/supervisor + subagent context isolation, compression ও parallelism দেয়, কিন্তু Anthropic-এর পরিমাপে multi-agent প্রায় ১৫ গুণ token খায় (agent ~৪ গুণ), আর আন্তঃনির্ভর কাজে দুর্বল।",
+      "Tool-use loop: `stop_reason == tool_use` থাকলে tool চালাও, assistant content + মিলানো `tool_use_id`-সহ `tool_result` ফেরত দাও; max iteration ও অন্য stop reason সামলাও; approval/logging লাগলে manual loop।",
+      "লম্বা-চলা agent-এ window সামলাতে tool result clearing, compaction, memory (window-র বাইরে ফাইল) ও subagent isolation ব্যবহার হয়।",
+      "Strands (তোমার process-এ চলা agent SDK), LangGraph (state/node/edge graph, durable execution, human-in-the-loop), PydanticAI (typed, validated output ও tool): প্রতিটা আলাদা সমস্যায় ভালো।",
+      "Anthropic-এর পরামর্শ: আগে LLM API সরাসরি ব্যবহার করো, framework নিলে ভেতরের কাজ বুঝে নাও; tool design-এ (poka-yoke, ভালো description) agent-এর সাফল্য অনেকটা নির্ভর করে।"
+    ]
+  },
+  "lab": {
+    "goal": "Plain Python ও Anthropic SDK দিয়ে (framework ছাড়া) একটা routing workflow আর একটা evaluator-optimizer loop বানানো, তারপর call সংখ্যা ও token গুনে দুই pattern-এর খরচ তুলনা করা।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install anthropic`",
+      "API key: `export ANTHROPIC_API_KEY=...` (কোডে বা git-এ কখনও নয়)",
+      "Official models overview পাতা থেকে current model id কপি করে `export CLAUDE_MODEL=<id>` (ছোট/সস্তা model হলেও চলবে)",
+      "এই lab-এ `temperature` বা অন্য sampling parameter পাঠানো হবে না"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: শেয়ার করা helper (ask) আর usage গোনা",
+        "body": "`lab11.py` ফাইলে শুরু করো:\n\n```python\nimport json, os\nimport anthropic\n\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\nstats = {\"calls\": 0, \"in\": 0, \"out\": 0}\n\ndef ask(system: str, user: str, max_tokens: int = 600) -> str:\n    r = client.messages.create(\n        model=MODEL, max_tokens=max_tokens, system=system,\n        messages=[{\"role\": \"user\", \"content\": user}],\n    )\n    stats[\"calls\"] += 1\n    stats[\"in\"] += r.usage.input_tokens\n    stats[\"out\"] += r.usage.output_tokens\n    return \"\".join(b.text for b in r.content if b.type == \"text\").strip()\n\ndef parse_json(text: str) -> dict:\n    # defensive: model কখনও ```json fence বা বাড়তি লেখা দেয়\n    start, end = text.find(\"{\"), text.rfind(\"}\")\n    try:\n        return json.loads(text[start:end + 1])\n    except (ValueError, json.JSONDecodeError):\n        return {}\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** এখনও কিছু চলে না; শুধু নিশ্চিত করো `python3 -c \"import lab11\"` error ছাড়া চলে। লক্ষ করো, প্রতিটা call-এর `usage` আমরা জমা করছি: এটাই পরে খরচ তুলনার ভিত্তি।"
+      },
+      {
+        "title": "ধাপ ২: Routing workflow",
+        "body": "একই ফাইলে যোগ করো:\n\n```python\nLABELS = [\"ORDER_STATUS\", \"REFUND\", \"FAQ\", \"OTHER\"]\n\nROUTER_SYSTEM = (\n    \"Classify the customer message into exactly one label: \"\n    \"ORDER_STATUS, REFUND, FAQ, OTHER. Reply with the label only.\"\n)\n\nHANDLERS = {\n    \"ORDER_STATUS\": \"You are Chai-Bot. Answer order-status questions politely in Bangla, max 3 lines. If you lack order data, ask for the order number.\",\n    \"REFUND\": \"You are Chai-Bot. Explain the refund process in Bangla, max 4 lines. Never promise a refund; say a human agent will confirm.\",\n    \"FAQ\": \"You are Chai-Bot. Answer the question about ChaiCart (a Dhaka online tea shop) briefly in Bangla.\",\n}\n\ndef route(message: str) -> str:\n    label = ask(ROUTER_SYSTEM, message, max_tokens=10).upper()\n    return label if label in LABELS else \"OTHER\"      # অজানা output হলে নিরাপদ fallback\n\ndef handle(message: str) -> tuple[str, str]:\n    label = route(message)\n    if label == \"OTHER\":\n        return label, \"আপনার বিষয়টা আমাদের একজন সহকর্মীর কাছে পাঠানো হচ্ছে।\"\n    return label, ask(HANDLERS[label], message)\n\nif __name__ == \"__main__\":\n    tests = [\n        \"আমার অর্ডার #1042 কোথায়?\",\n        \"চা খারাপ ছিল, টাকা ফেরত চাই\",\n        \"আপনারা কি সিলেটে ডেলিভারি দেন?\",\n        \"আজ আবহাওয়া কেমন?\",\n    ]\n    for t in tests:\n        label, reply = handle(t)\n        print(f\"[{label}] {t}\\n   -> {reply}\\n\")\n    print(\"stats:\", stats)\n```\n\nচালাও: `python3 lab11.py`।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** চারটা message চারটা (বা কাছাকাছি) label পায়; \"আবহাওয়া\" প্রশ্ন সম্ভবত `OTHER`-এ যায় আর কোনো handler call হয় না। `stats` দেখাবে প্রতি message-এ ১টা (OTHER হলে) বা ২টা call। (Model-এর আচরণ non-deterministic, তাই ফল সামান্য আলাদা হতে পারে।)"
+      },
+      {
+        "title": "ধাপ ৩: Router ভাঙার চেষ্টা (fallback পরীক্ষা)",
+        "body": "Router-এর output যে নিয়ন্ত্রিত নয়, সেটা নিজের চোখে দেখো। `lab11.py`-র নিচে একটা ছোট পরীক্ষা যোগ করো (অথবা Python shell-এ চালাও):\n\n```python\nfrom lab11 import route, ask, ROUTER_SYSTEM, LABELS\n\nodd = [\"hello???\", \"১০০ টাকা ফেরত এবং আমার অর্ডারও কোথায়?\", \"\"]\nfor m in odd:\n    print(repr(m), \"->\", route(m))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** দুই-উদ্দেশ্যের message (refund *এবং* order status) একটামাত্র label পায়: routing-এর সীমা এটাই। কোনো অবৈধ output এলে `OTHER`-এ পড়ে, কখনও crash করে না। ভাবো: মিশ্র message-এর জন্য কী করবে? (উত্তর: parallelization বা orchestrator-workers, নয়তো আগে ভেঙে নেওয়া।)"
+      },
+      {
+        "title": "ধাপ ৪: Evaluator-optimizer loop",
+        "body": "এবার refund-সংক্রান্ত উত্তর লেখার একটা loop। `lab11.py`-তে যোগ করো:\n\n```python\nPOLICY = (\n    \"ChaiCart refund policy: refund only within 7 days of delivery; \"\n    \"damaged items need a photo; no refund for opened tea packets unless damaged.\"\n)\n\nGEN_SYSTEM = (\n    \"You are Chai-Bot. Write a short, polite Bangla reply (max 5 lines) to the customer. \"\n    \"Use ONLY this policy; do not invent rules:\\n\" + POLICY\n)\n\nEVAL_SYSTEM = (\n    \"You are a strict reviewer. Check the reply against ALL of: \"\n    \"(1) mentions the correct policy rule that applies, \"\n    \"(2) polite tone, (3) makes no promise of a refund, (4) is in Bangla. \"\n    \"Reply with JSON only: {\\\"pass\\\": true|false, \\\"feedback\\\": \\\"specific fix or empty\\\"}\"\n)\n\ndef write_with_review(customer_msg: str, max_rounds: int = 3):\n    draft = ask(GEN_SYSTEM, customer_msg)\n    for round_no in range(1, max_rounds + 1):\n        verdict = parse_json(ask(EVAL_SYSTEM, f\"Customer: {customer_msg}\\n\\nReply:\\n{draft}\"))\n        print(f\"  round {round_no}: pass={verdict.get('pass')} feedback={verdict.get('feedback')!r}\")\n        if verdict.get(\"pass\") is True:\n            return draft, round_no\n        draft = ask(GEN_SYSTEM,\n                    f\"Customer: {customer_msg}\\n\\nPrevious reply:\\n{draft}\\n\\nReviewer feedback:\\n{verdict.get('feedback', '')}\\n\\nWrite an improved reply.\")\n    return draft, max_rounds        # সীমা ছুঁলে: সেরা খসড়া (প্রোডাকশনে মানুষের কাছে পাঠাতে পারো)\n\nif __name__ == \"__main__\":\n    stats.update(calls=0, **{\"in\": 0, \"out\": 0})\n    reply, rounds = write_with_review(\"১০ দিন আগে চা কিনেছি, প্যাকেট খুলে ফেলেছি, ভালো লাগেনি। টাকা ফেরত দিন।\")\n    print(\"\\nFINAL (rounds=%d):\\n%s\" % (rounds, reply))\n    print(\"stats:\", stats)\n```\n\nচালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** কোনো round-এ evaluator `pass=False` আর নির্দিষ্ট feedback দিতে পারে (যেমন \"৭ দিনের নিয়ম উল্লেখ করুন\"); পরের round-এ উন্নতি দেখা যায়। প্রতি round-এ ২টা call। যদি প্রথম round-এই পাস করে, তাহলে মোট ২টা call; ফল model-এর ওপর নির্ভর করে। `max_rounds` আছে বলেই loop কখনও অসীম হয় না।"
+      },
+      {
+        "title": "ধাপ ৫: Rubric ঝাপসা করে দেখো (evaluator-এর গুরুত্ব)",
+        "body": "`EVAL_SYSTEM`-এর পাঁচ লাইনের rubric মুছে শুধু লেখো: `\"Is this reply good? JSON only: {\\\"pass\\\": true|false, \\\"feedback\\\": \\\"...\\\"}\"` এবং একই মেসেজ আবার চালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** অস্পষ্ট মানদণ্ডে evaluator প্রায়ই সহজেই `pass=true` দেয় বা অস্পষ্ট ফিডব্যাক দেয় (\"আরও ভদ্র হোন\"), ফলে loop কোনো মূল্য যোগ করে না। শিক্ষা: evaluator-optimizer শুধু তখনই কাজ করে যখন **মূল্যায়নের মানদণ্ড স্পষ্ট**, আর ফিডব্যাক হয় নির্দিষ্ট। এটাই Anthropic-এর বর্ণিত পূর্বশর্ত।"
+      },
+      {
+        "title": "ধাপ ৬: খরচ তুলনা ও সিদ্ধান্ত",
+        "body": "একই refund message তিনভাবে চালাও আর `stats` টুকে রাখো: (ক) সরাসরি `ask(GEN_SYSTEM, msg)` (single call); (খ) `handle(msg)` (routing); (গ) `write_with_review(msg)` (evaluator loop)। একটা ছোট টেবিল বানাও:\n\n| উপায় | calls | in tokens | out tokens |\n|---|---|---|---|\n| single | ? | ? | ? |\n| routing | ? | ? | ? |\n| evaluator loop | ? | ? | ? |\n\n**প্রত্যাশিত পর্যবেক্ষণ:** single call সবচেয়ে সস্তা; routing-এ আরও ১টা (ছোট) call; evaluator loop-এ round অনুযায়ী ২ বা তার বেশি call আর in-token সবচেয়ে বেশি (draft বারবার ঢোকে)। এবার নিজেকে জিজ্ঞেস করো: এই refund message-এর জন্য কোনটা যথেষ্ট? কখন বাড়তি খরচ ন্যায্য? এটাই \"সরল দিয়ে শুরু করো, মেপে জটিলতা বাড়াও\" নীতির হাতে-কলমে রূপ।"
+      }
+    ],
+    "checkpoints": [
+      "Routing আর parallelization-এর মূল পার্থক্য কী? আর orchestrator-workers-এর সাথে? (subtask কে, কখন ঠিক করে)",
+      "Router যদি অচেনা label বানায়, তোমার code কী করে? কেন এই fallback জরুরি?",
+      "Evaluator-optimizer loop-এ `max_rounds` কেন বাধ্যতামূলক, আর rubric অস্পষ্ট হলে কী ঘটে?",
+      "তিন উপায়ে call সংখ্যা ও token কেমন ছিল? কোন পরিস্থিতিতে বাড়তি খরচ ন্যায্য?",
+      "এই lab কেন framework ছাড়া plain SDK-তে করা সঠিক ছিল, আর কোন চাহিদা এলে তুমি graph runtime ভাববে?"
+    ]
+  },
+  "notes": "# Chapter 11 চিটশিট: Agent architecture, pattern ও framework\n\n## Workflow বনাম agent\n\n| | Workflow | Agent |\n|---|---|---|\n| ধাপ ঠিক করে | তোমার code | model |\n| ধাপ আগে জানা? | হ্যাঁ | না |\n| খরচ/latency | কম, অনুমানযোগ্য | বেশি, বদলায় |\n| ঝুঁকি | নির্দিষ্ট ধাপে ধরা সহজ | ভুল জমে (compounding) |\n\n**নিয়ম:** single call (+retrieval+উদাহরণ) → workflow → agent → multi-agent। জটিলতা তখনই বাড়াও যখন **মাপা** ফল ভালো হয়।\n\n## পাঁচ workflow pattern\n\n| Pattern | এক লাইনে | কখন | মূল খরচ |\n|---|---|---|---|\n| Prompt chaining | ক্রমিক ধাপ + gate | নির্দিষ্ট subtask | latency |\n| Routing | classify → specialized path | আলাদা category; সস্তা/দামি model ভাগ | router-ভুল |\n| Parallelization: sectioning | স্বাধীন subtask একসাথে | গতি, guardrail আলাদা | বেশি call |\n| Parallelization: voting | একই কাজ বহুবার | আস্থা, threshold | বেশি call |\n| Orchestrator-workers | model subtask ঠিক করে | subtask আগে অজানা | পরিকল্পনা-ভুল, call |\n| Evaluator-optimizer | generate ↔ evaluate loop | স্পষ্ট rubric | round × 2 call |\n\n## Agent ও multi-agent\n\n- Agent = loop-এ model + tool + environment-এর ground-truth ফিডব্যাক; থামার শর্ত (max iteration) রাখো।\n- Supervisor + subagent: **context isolation, compression, parallelism**; কিন্তু Anthropic পরিমাপ: agent ≈ **৪×**, multi-agent ≈ **১৫×** chat-এর token।\n- ভালো: breadth-first, স্বাধীন, window-র চেয়ে বড় তথ্য। দুর্বল: আন্তঃনির্ভর/shared-context কাজ (যেমন বেশিরভাগ coding)।\n\n## Tool-use loop (client tool)\n\n1. request (tools + messages) 2. `stop_reason: tool_use` 3. tool চালাও 4. assistant content + `tool_result` (`tool_use_id` মিলিয়ে) পাঠাও 5. `tool_use` থাকলে পুনরাবৃত্তি।\nবের হও: `end_turn`, `max_tokens`, `stop_sequence`, `refusal`। Server tool-এ `pause_turn` এলে conversation আবার পাঠাও।\n**Tool runner** loop সামলায় (docs-এ beta); approval/logging/শর্তসাপেক্ষ চালানোতে **manual loop**।\n\n## Memory ও context\n\n| সমস্যা | কৌশল |\n|---|---|\n| পুরোনো tool output ভরছে | tool result clearing (context editing, beta) |\n| conversation লম্বা | server-side compaction (docs-এর সুপারিশ) |\n| পরের session-এও লাগবে | memory tool (তোমার ফাইল, client-executed) |\n| ভারী উপ-কাজ | subagent-এর আলাদা window |\n\nClearing prompt cache prefix অকেজো করে। Context editing-এর docs-default trigger ১,০০,০০০ input token, ৩টা সাম্প্রতিক tool use রাখা।\n\n## Framework\n\n| | কী | কখন |\n|---|---|---|\n| Strands Agents | তোমার process-এ চলা agent SDK (Python/TS); swarm, graph, agents-as-tools | AWS-ঘেঁষা, multi-agent তৈরি |\n| LangGraph | state/node/edge graph runtime; durable execution, human-in-the-loop | দীর্ঘ, stateful, resume/approval |\n| PydanticAI | typed, validated output ও tool; DI; model-agnostic | Python-এ type-safe structured output |\n\n**Framework বনাম plain SDK:** Anthropic: আগে API সরাসরি; framework নিলে ভেতরটা বোঝো; abstraction prompt ঢাকে।\n\n## সাধারণ ফাঁদ\n\n- \"agent বেশি নমনীয়, তাই সবসময় ভালো\": ভুল।\n- \"multi-agent মোট token কমায়\": ভুল (supervisor-এর context হালকা, মোট বেশি)।\n- \"tool_use মানে model tool চালিয়েছে\": ভুল; তোমার code/Anthropic server চালায়।\n- \"framework ছাড়া agent হয় না\": ভুল।\n- orchestrator-workers ≠ parallelization: subtask **runtime-এ model** ঠিক করে।\n- loop-এ max iteration না রাখা; `max_tokens`/`refusal` না সামলানো।\n- ঝাপসা rubric-এ evaluator-optimizer নিষ্ফল।",
+  "flashcards": [
+    {
+      "front": "Workflow আর agent-এর মূল পার্থক্য?",
+      "back": "Workflow-এ LLM/tool সাজানো থাকে আগে থেকে লেখা code path-এ; agent-এ LLM নিজেই process ও tool ব্যবহার ঠিক করে।"
+    },
+    {
+      "front": "Anthropic-এর প্রধান পরামর্শ agent বানানোর আগে?",
+      "back": "সবচেয়ে সরল সমাধান দিয়ে শুরু করো; মাপা ফলাফলে প্রমাণ হলে তবেই জটিলতা বাড়াও। প্রায়ই optimized single call-ই যথেষ্ট।"
+    },
+    {
+      "front": "কখন workflow, কখন agent?",
+      "back": "ধাপ আগে জানা ও predictability দরকার হলে workflow; খোলা-প্রান্ত, ধাপ অনির্দিষ্ট ও ground-truth ফিডব্যাক থাকলে agent।"
+    },
+    {
+      "front": "Agentic system-এর দাম কী?",
+      "back": "বেশি latency ও cost, আর agent-এ ভুল জমে বড় হওয়ার ঝুঁকি (compounding errors)।"
+    },
+    {
+      "front": "Prompt chaining কী?",
+      "back": "কাজ ক্রমিক ধাপে ভাঙা, প্রতিটা call আগেরটার output নেয়; মাঝে code-gate বসানো যায়। latency দিয়ে accuracy কেনা।"
+    },
+    {
+      "front": "Routing কী আর কোথায় কাজে লাগে?",
+      "back": "Input classify করে specialized path-এ পাঠানো; যেমন refund বনাম technical, বা সহজ প্রশ্ন ছোট model-এ আর কঠিন প্রশ্ন বড় model-এ।"
+    },
+    {
+      "front": "Parallelization-এর দুই রূপ?",
+      "back": "Sectioning (স্বাধীন subtask একসাথে) আর voting (একই কাজ বহুবার, ভোটে সিদ্ধান্ত)।"
+    },
+    {
+      "front": "Orchestrator-workers কীভাবে parallelization থেকে আলাদা?",
+      "back": "Subtask আগে থেকে ঠিক করা থাকে না; orchestrator LLM নির্দিষ্ট input দেখে সেগুলো ঠিক করে, worker-দের দেয়, ফল জোড়ে।"
+    },
+    {
+      "front": "Evaluator-optimizer কখন ভালো?",
+      "back": "স্পষ্ট মূল্যায়ন-মানদণ্ড থাকলে এবং পুনরাবৃত্ত উন্নতি মাপা যায় এমন মূল্য দিলে। সাথে max round রাখো।"
+    },
+    {
+      "front": "Autonomous agent প্রতি ধাপে কী থেকে অগ্রগতি বোঝে?",
+      "back": "Environment-এর ground truth থেকে: tool result, code চালানোর ফল।"
+    },
+    {
+      "front": "Tool-use loop কখন চলে, কখন থামে?",
+      "back": "`stop_reason == tool_use` থাকলে tool চালিয়ে `tool_result` ফেরত দিয়ে চলে; `end_turn`, `max_tokens`, `stop_sequence`, `refusal`-এ বের হয়।"
+    },
+    {
+      "front": "`tool_result` পাঠানোর সময় কী মেলাতে হয়?",
+      "back": "`tool_use_id` (ঠিক সেই `tool_use` block-এর id), আর আগের assistant response-এর পুরো content ইতিহাসে রাখতে হয়।"
+    },
+    {
+      "front": "`pause_turn` এলে কী করবে?",
+      "back": "Server tool-এর ভেতরের loop সীমা ছুঁয়েছে; কাজ বাকি। থামা উত্তরসহ পুরো conversation আবার পাঠাও।"
+    },
+    {
+      "front": "Tool runner বনাম manual loop কখন?",
+      "back": "Tool runner loop ও error wrapping নিজে সামলায় (docs-এ beta); human approval, custom logging বা শর্তসাপেক্ষ চালানো দরকার হলে manual loop।"
+    },
+    {
+      "front": "Subagent-এর প্রধান সুবিধা কী কী?",
+      "back": "Context isolation, compression (শুধু সারাংশ ফেরত), parallelism ও separation of concerns।"
+    },
+    {
+      "front": "Multi-agent-এর খরচ কেমন (Anthropic পরিমাপ)?",
+      "back": "Agent প্রায় ৪× আর multi-agent প্রায় ১৫× chat-এর token; তাই কাজের মূল্য ন্যায্য করলে তবেই।"
+    },
+    {
+      "front": "Multi-agent কোন কাজে দুর্বল?",
+      "back": "যেখানে সবাইকে একই context ভাগ করতে হয় বা অনেক আন্তঃনির্ভরতা আছে, যেমন বেশিরভাগ coding কাজ।"
+    },
+    {
+      "front": "Memory tool কী?",
+      "back": "Anthropic-schema client tool: Claude তোমার নিয়ন্ত্রিত ফাইলে তথ্য রাখে/আনে, conversation-এর বাইরেও; execution তোমার application-এর।"
+    },
+    {
+      "front": "Tool result clearing কী, আর কী সতর্কতা?",
+      "back": "Context editing-এর কৌশল: পুরোনো tool result সরিয়ে placeholder বসানো। এটা prompt cache prefix অকেজো করে; docs-এ beta।"
+    },
+    {
+      "front": "LangGraph কী জন্য?",
+      "back": "Stateful, দীর্ঘ-চলা agent-এর low-level orchestration: state/node/edge graph, durable execution, human-in-the-loop, memory, streaming।"
+    },
+    {
+      "front": "PydanticAI-র মূল শক্তি?",
+      "back": "Typed agent loop: validated structured output, typed tool ও dependency injection; model-agnostic, Python।"
+    },
+    {
+      "front": "Strands Agents কী?",
+      "back": "তোমার নিজের process-এ চলা agent SDK (Python/TS): tools, multi-agent (swarm/graph/agents-as-tools), একাধিক model provider, OpenTelemetry।"
+    },
+    {
+      "front": "Framework নেওয়ার ব্যাপারে Anthropic-এর পরামর্শ?",
+      "back": "প্রথমে LLM API সরাসরি ব্যবহার করো; framework নিলে ভেতরে কী হচ্ছে বুঝে নাও, কারণ abstraction prompt ঢেকে debug কঠিন করে।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart প্রতিদিন হাজার হাজার invoice-জাতীয় বার্তা প্রসেস করে। প্রতিটার ধাপ সবসময় একই: তথ্য বের করা, ফরম্যাট যাচাই, তারপর সারাংশ লেখা। দল ঠিক করছে autonomous agent বানাবে কারণ সেটা বেশি নমনীয়। সবচেয়ে ভালো পরামর্শ কোনটা?",
+      "options": [
+        "Autonomous agent বানাও, কারণ model নিজে পথ বাছলে ভুল কমে",
+        "Multi-agent system বানাও যাতে প্রতিটা ধাপের আলাদা agent থাকে",
+        "Prompt chaining workflow বানাও: ধাপগুলো code-এ ক্রমিক, মাঝে যাচাইয়ের gate সহ",
+        "কোনো LLM call না করে সব regex দিয়ে করো, কারণ LLM workflow-এ অচল"
+      ],
+      "answerIndexes": [2],
+      "explanation": "ধাপ আগে থেকে জানা ও স্থির, তাই prompt chaining workflow সবচেয়ে সরল ও predictable, আর Anthropic-এর নীতি সরল দিয়ে শুরু। Autonomous agent অনির্দিষ্ট ধাপের জন্য, এখানে বাড়তি খরচ ও ঝুঁকি। Multi-agent আরও বেশি token খায় অকারণে। Regex-এর অপশন অতিসরলীকরণ: summary লেখার ধাপে LLM দরকার।",
+      "domain": 1,
+      "skill": "Agent Architecture"
+    },
+    {
+      "question": "একটা support সিস্টেমে গ্রাহকের সমস্যার ধরন আগে বলা যায় না: কখনও ৩টা order দেখতে হয়, কখনও একটাও না; প্রতিটা tool result দেখে পরের পদক্ষেপ ঠিক হয়; আর সফল সমাধান মাপা যায়। Select TWO: কোন দুটো বৈশিষ্ট্য এখানে agent-ভিত্তিক সমাধানের পক্ষে যুক্তি দেয়?",
+      "options": [
+        "ধাপের সংখ্যা ও ক্রম input-এর ওপর নির্ভর করে, আগে hard-code করা যায় না",
+        "প্রতিটা ধাপে environment (tool result) থেকে ground-truth ফিডব্যাক পাওয়া যায় এবং সাফল্য মাপা যায়",
+        "Agent সবসময় workflow-এর চেয়ে সস্তা ও দ্রুত",
+        "Agent-এ compounding error হয় না, তাই guardrail লাগে না"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "অনির্দিষ্ট ধাপ আর environment থেকে ফিডব্যাক: এ দুটোই Anthropic-এর agent-যোগ্য ক্ষেত্রের লক্ষণ। Agent সস্তা বা দ্রুত নয়: সে latency ও cost-এর বিনিময়ে মান কেনে। আর agent-এ ভুল জমে বলেই sandbox, সীমা ও guardrail দরকার।",
+      "domain": 1,
+      "skill": "Agent Architecture"
+    },
+    {
+      "question": "একটা research agent-এর lead agent-এর context window সার্চ রেজাল্টে ভরে যাচ্ছে। দল lead + subagent কাঠামো ভাবছে। Select TWO: subagent-এর কোন দুটো ভূমিকা এই সমস্যায় সরাসরি সাহায্য করে?",
+      "options": [
+        "প্রতিটা subagent নিজের আলাদা context window-তে একটা দিক খোঁজে, তাই lead-এর window ভরে না",
+        "Subagent শুধু সবচেয়ে দরকারি অংশ সংক্ষেপে lead-কে ফেরত দেয় (compression)",
+        "Subagent ব্যবহার করলে মোট token খরচ কমে যায়",
+        "Subagent-রা lead-এর পুরো context স্বয়ংক্রিয়ভাবে ভাগ করে নেয়, তাই সমন্বয় লাগে না"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "Context isolation আর compression: এই দুটোই window-সমস্যার উত্তর। Anthropic-এর পরিমাপে multi-agent প্রায় ১৫× token খায়, কমে না। আর ভাগ-করা context ঠিক উল্টো: subagent-দের আলাদা window-ই তাদের সুবিধা, আর সমন্বয় একটা সত্যিকারের চ্যালেঞ্জ।",
+      "domain": 1,
+      "skill": "Agent Architecture"
+    },
+    {
+      "question": "একটা দল একটা বড় codebase-এ পরস্পর-জড়ানো একটা refactor-এর জন্য ১০টা subagent চালানোর পরিকল্পনা করছে, যাদের সবাইকে একই ফাইল ও সিদ্ধান্ত নিয়ে কাজ করতে হবে। কোন মূল্যায়ন সবচেয়ে সঠিক?",
+      "options": [
+        "চমৎকার: যত বেশি agent তত দ্রুত ও নির্ভুল",
+        "উপযুক্ত নয়: কাজটা shared-context ও আন্তঃনির্ভর, multi-agent-এর সমন্বয়-ঝামেলা ও প্রায় ১৫× token খরচ লাভকে ছাপিয়ে যেতে পারে; একটা agent বা ছোট কাঠামো ভালো",
+        "চমৎকার, কারণ subagent-রা real-time-এ নিখুঁত সমন্বয় করে",
+        "উপযুক্ত নয় কারণ subagent-এর আলাদা tool থাকতে পারে না"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Anthropic-এর লেখা অনুযায়ী multi-agent breadth-first, স্বাধীন, সমান্তরাল কাজে ভালো; shared-context ও বহু-নির্ভরতার কাজে (বেশিরভাগ coding) দুর্বল। অপশন ক ও গ অতি-আশাবাদী (বর্তমান agent real-time সমন্বয়ে দুর্বল)। অপশন ঘ তথ্যগতভাবে ভুল।",
+      "domain": 1,
+      "skill": "Agent Architecture"
+    },
+    {
+      "question": "Rafi প্রস্তাব দিল FAQ-র প্রশ্নের উত্তর (ডেলিভারি এলাকা, খোলার সময়) দিতে একটা পূর্ণ agent loop বানাবে। প্রশ্নগুলো এক ধাপের আর উত্তর FAQ নথিতে আছে। সবচেয়ে ভালো প্রথম পদক্ষেপ কী?",
+      "options": [
+        "FAQ নথি prompt-এ দিয়ে (retrieval) একটা optimized LLM call চালিয়ে মান মাপা; কম পড়লে তবেই জটিলতা বাড়ানো",
+        "সরাসরি supervisor + পাঁচ subagent",
+        "একটা LangGraph graph দিয়ে শুরু করা কারণ framework-ছাড়া চলে না",
+        "Evaluator-optimizer loop বসানো যেন কখনও ভুল না হয়"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Anthropic: সরলতম সমাধানে শুরু করো; প্রায়ই retrieval+উদাহরণসহ একটা call-ই যথেষ্ট, আর জটিলতা মাপা ফলাফলে প্রমাণ হলে যোগ হবে। অন্য অপশনগুলো এক-ধাপের কাজে অপ্রয়োজনীয় খরচ ও জটিলতা।",
+      "domain": 1,
+      "skill": "Agent Architecture"
+    },
+    {
+      "question": "Chai-Bot-এর refund-অস্বীকারের চিঠি লেখা হয়। চিঠিতে policy ধারার উদ্ধৃতি, ভদ্র tone আর মিথ্যা প্রতিশ্রুতি না থাকা: এই তিন মানদণ্ড স্পষ্ট। প্রথম খসড়া প্রায়ই একটা মানদণ্ডে ফেল করে, আর নির্দিষ্ট ফিডব্যাক পেলে ঠিক হয়ে যায়। কোন pattern সবচেয়ে মানানসই?",
+      "options": [
+        "Routing",
+        "Sectioning-ধরনের parallelization",
+        "Evaluator-optimizer: একটা call লেখে, আরেকটা rubric-এ যাচাই করে ফিডব্যাক দেয়, সীমিত round-এ",
+        "Autonomous agent যার কোনো থামার শর্ত নেই"
+      ],
+      "answerIndexes": [2],
+      "explanation": "স্পষ্ট মানদণ্ড আর ফিডব্যাকে উন্নতি: এটাই evaluator-optimizer-এর আদর্শ ক্ষেত্র (সাথে max round)। Routing ও sectioning ফিডব্যাক-loop দেয় না। থামার শর্তহীন agent অনর্থক ঝুঁকিপূর্ণ।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "একজন developer parallelization আর orchestrator-workers গুলিয়ে ফেলছে। Chai-Bot-এ \"গত তিন মাসের দেরি-হওয়া সব অর্ডারের কারণ বিশ্লেষণ করো\" কাজে কতগুলো worker লাগবে তা অর্ডার সংখ্যা দেখে LLM ঠিক করবে। এটা কোনটা, কেন?",
+      "options": [
+        "Parallelization (sectioning), কারণ worker একসাথে চলে",
+        "Orchestrator-workers, কারণ subtask-এর সংখ্যা ও বিষয় runtime-এ orchestrator LLM ঠিক করে, আগে থেকে নয়",
+        "Prompt chaining, কারণ ফল জোড়া হয়",
+        "Evaluator-optimizer, কারণ ফল যাচাই হয়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "মূল পার্থক্য: parallelization-এ subtask তুমি আগে থেকে ঠিক করে রাখো; orchestrator-workers-এ model নির্দিষ্ট input দেখে সেগুলো ঠিক করে। একসাথে চলা বা ফল জোড়া একা নির্ধারক নয়।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "একটা দল এমন agent workflow বানাচ্ছে যা অনেক ধাপের, দীর্ঘক্ষণ চলে, মাঝে একজন মানুষের অনুমোদনের জন্য থামবে এবং ব্যর্থতার পর আগের অবস্থা থেকে resume করতে হবে। তারা স্পষ্ট state ও control flow চায়। কোনটা এই চাহিদার সবচেয়ে কাছের?",
+      "options": [
+        "LangGraph-জাতীয় graph runtime: shared state, node, edge, durable execution ও human-in-the-loop",
+        "শুধু একটা একক `messages.create` call",
+        "PydanticAI-র output validation একাই (resume ও human pause-এর জন্য নয়)",
+        "কোনো checkpoint ছাড়া একটা while loop, কারণ framework ক্ষতিকর"
+      ],
+      "answerIndexes": [0],
+      "explanation": "LangGraph-এর docs অনুযায়ী এটি stateful, দীর্ঘ-চলা agent-এর low-level orchestration, durable execution ও human-in-the-loop সহ। PydanticAI-র মূল শক্তি typed/validated output (জটিল flow-এর জন্য আলাদা graph package আছে)। একক call বা সরল loop checkpoint/resume দেয় না। 'framework ক্ষতিকর' বলাটা চরম: সুবিধা আছে, কেবল ভেতরটা বুঝে নিতে হয়।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "একজন tech lead agent-এ framework বাছাই নিয়ে নির্দেশনা দিচ্ছেন। Select TWO: Anthropic-এর 'Building effective agents' পরামর্শের সাথে কোন দুটো মেলে?",
+      "options": [
+        "প্রথমে LLM API সরাসরি ব্যবহার করে শুরু করো, কারণ অনেক pattern কয়েক লাইনে হয়",
+        "Framework নিলে তার ভেতরের কাজ বুঝে নাও, কারণ ভুল ধারণা ভুলের সাধারণ উৎস",
+        "Framework সবসময় abstraction বাড়িয়ে debug সহজ করে, তাই সর্বদা নাও",
+        "Agent বানাতে framework বাধ্যতামূলক, নইলে tool use কাজ করে না"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "লেখাটা সরাসরি API দিয়ে শুরু করতে ও framework-এর ভেতরটা বুঝতে বলে। গ ভুল: বাড়তি abstraction prompt/response ঢেকে debug কঠিন করতে পারে। ঘ ভুল: tool use সরাসরি Messages API-তেই চলে (আমরা এই chapter-এ plain loop বানিয়েছি)।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "দীর্ঘ চলা একটা agent-এর window ক্রমে পুরোনো tool result-এ ভরে যাচ্ছে, কিন্তু কিছু সিদ্ধান্ত পরের session-এও লাগবে। কোন সংমিশ্রণ সবচেয়ে মানানসই?",
+      "options": [
+        "সব tool result চিরকাল রাখা, কারণ মুছলে তথ্য হারায়",
+        "পুরোনো tool result সরানো/সারাংশ করা (clearing বা compaction) আর স্থায়ী তথ্য memory ফাইলে লেখা",
+        "Temperature বাড়ানো যেন model কম মনে রাখে",
+        "প্রতি tool call-এ নতুন Claude account খোলা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Context management (পুরোনো অংশ সরানো/সংক্ষিপ্ত করা) window হালকা রাখে, আর memory tool (তোমার নিয়ন্ত্রিত ফাইল) window-র বাইরে স্থায়ী তথ্য রাখে। সবকিছু রেখে দিলে window ভরে (আর context rot হয়)। Temperature-এর সাথে স্মৃতির সম্পর্ক নেই, আর শেষ অপশনটি অর্থহীন।",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks"
+    },
+    {
+      "question": "Rafi-র agent loop কখনও কখনও একই tool বারবার ডেকে ১৪ বার ঘোরে এবং বিল বাড়ায়। loop-টা `while True` দিয়ে লেখা, শুধু `stop_reason == \"end_turn\"`-এ বের হয়। কোন সংশোধন সবচেয়ে উপযুক্ত?",
+      "options": [
+        "`while True` রেখে temperature কমানো",
+        "সর্বোচ্চ iteration (এবং বাজেট/সময়) সীমা বসানো, `tool_use` ছাড়া যেকোনো stop reason-এ (`max_tokens`, `refusal` সহ) বের হয়ে সামলানো, আর সদৃশ tool-এর description পরিষ্কার করা",
+        "Tool result পাঠানো বন্ধ করা যাতে model ঘুরতে না পারে",
+        "সব tool সরিয়ে দিয়ে model-কে অনুমান করতে দেওয়া"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Anthropic থামার শর্ত (যেমন max iteration) সুপারিশ করে; docs অনুযায়ী loop `tool_use` ছাড়া যেকোনো stop reason-এ বের হয়, যা কোডকে সামলাতে হয়। অস্পষ্ট tool description-ও ঘোরার কারণ। Temperature এই সমস্যার সমাধান নয় (আর নতুন Opus model-এ (Opus 4.7 থেকে) non-default মান 400 error দেয়)। `tool_result` না পাঠালে conversation বৈধই থাকে না।",
+      "domain": 1,
+      "skill": "Agent Construction with Claude"
+    },
+    {
+      "question": "Chai-Bot-এর refund tool চালানোর আগে প্রতিবার একজন মানুষের অনুমোদন লাগবে এবং প্রতিটা call log হবে। কোন নির্মাণ-পদ্ধতি সবচেয়ে মানানসই?",
+      "options": [
+        "SDK-র tool runner, কারণ সে সব স্বয়ংক্রিয় করে অনুমোদনসহ",
+        "Manual agent loop: `tool_use` পেলে refund tool চালানোর আগে থেমে অনুমোদন নাও, log করো, তারপর `tool_result` পাঠাও",
+        "Server tool `web_search` চালু করা",
+        "System prompt-এ \"অনুমোদন ছাড়া refund করবে না\" লিখে দেওয়া, loop বদল ছাড়াই"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs বলে human-in-the-loop অনুমোদন, custom logging বা শর্তসাপেক্ষ চালানোর জন্য manual loop ব্যবহার করো; tool runner এগুলো ছাড়া স্বয়ংক্রিয় loop-এর জন্য। শুধু prompt-এর নির্দেশ কোড-স্তরের গ্যারান্টি নয়। `web_search` অপ্রাসঙ্গিক।",
+      "domain": 1,
+      "skill": "Agent Construction with Claude"
+    },
+    {
+      "question": "Manual tool-use loop-এ Claude `stop_reason: \"tool_use\"` দিয়ে একটা `tool_use` block ফেরত দিয়েছে। Select TWO: পরের request-এ তোমাকে কোন দুটো জিনিস পাঠাতে হবে?",
+      "options": [
+        "আগের assistant response-এর content (tool_use block সহ) conversation ইতিহাসে",
+        "একটা user message যাতে মিলানো `tool_use_id` সহ `tool_result` block আছে",
+        "শুধু tool-এর নাম ও ফলাফল, আগের ইতিহাস ছাড়া (API নিজেই মনে রাখে)",
+        "`stop_reason`-কে `end_turn` লিখে বদলে দেওয়া"
+      ],
+      "answerIndexes": [0, 1],
+      "explanation": "Docs-এর ধাপ: আগের messages + assistant-এর উত্তর + user message-এ `tool_result` (id মিলিয়ে)। Messages API stateless, তাই ইতিহাস ছাড়া পাঠানো ভুল (গ)। `stop_reason` response-এর ক্ষেত্র, তুমি লিখে বদলাও না (ঘ)।",
+      "domain": 1,
+      "skill": "Agent Construction with Claude"
+    },
+    {
+      "question": "একটা agent-এ server tool `web_search` চালু আছে। একটা response `stop_reason: \"pause_turn\"` নিয়ে এল। কী করা উচিত?",
+      "options": [
+        "এটাকে চূড়ান্ত উত্তর ধরে গ্রাহককে দেখানো",
+        "একটা ভুল ধরে loop থামিয়ে error দেখানো",
+        "থেমে-যাওয়া response সহ পুরো conversation আবার পাঠানো, যাতে model যেখানে থেমেছিল সেখান থেকে চালিয়ে যায়",
+        "`web_search`-এর জন্য নিজে `tool_result` বানিয়ে পাঠানো"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Server tool-এর ভেতরের loop-এর iteration সীমা আছে; সীমায় `pause_turn` আসে, মানে কাজ অসম্পূর্ণ, তাই conversation আবার পাঠাতে হয়। Server tool-এর `tool_result` তুমি বানাও না (Anthropic চালায়)। চূড়ান্ত ধরে নিলে অসম্পূর্ণ উত্তর যায়।",
+      "domain": 1,
+      "skill": "Agent Construction with Claude"
+    },
+    {
+      "question": "Agent বারবার ফাইল-সম্পর্কিত tool ভুল path দিয়ে ডাকছে (সে প্রায়ই relative path ব্যবহার করে ভুল ডিরেক্টরিতে চলে যায়)। Anthropic-এর উপদেশের আলোকে কোন সমাধান সবচেয়ে কার্যকর?",
+      "options": [
+        "আরও বড় model-এ সরে যাওয়া ও tool অপরিবর্তিত রাখা",
+        "Tool-কে এমনভাবে বদলানো যাতে absolute path বাধ্যতামূলক হয় (poka-yoke) এবং description-এ স্পষ্ট ব্যবহার ও edge case লেখা",
+        "Loop-এর max iteration বাড়ানো যাতে ভুল শোধরানোর সুযোগ পায়",
+        "Tool-এর description মুছে দেওয়া যাতে model বিভ্রান্ত না হয়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Anthropic-এর SWE-bench উদাহরণ ঠিক এটাই: tool-কে absolute path বাধ্যতামূলক করার পর model নির্ভুল চলেছে। Tool design (ACI) অনেক সময় model বদলানোর চেয়ে বেশি কাজ দেয়। iteration বাড়ালে শুধু খরচ বাড়ে; description মুছলে অবস্থা খারাপ হয়।",
+      "domain": 1,
+      "skill": "Agent Construction with Claude"
+    }
+  ]
+}

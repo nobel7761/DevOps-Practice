@@ -13,6 +13,6 @@ export default function LessonBlockView({ block }: { block: LessonBlock }) {
     case "diagram":
       return <LessonDiagram diagram={block.diagram} />;
     case "simulator":
-      return <LessonSimulator id={block.id} />;
+      return <LessonSimulator id={block.id} props={block.props} />;
   }
 }

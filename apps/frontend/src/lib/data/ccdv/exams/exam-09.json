@@ -1,0 +1,811 @@
+{
+  "id": "ccdv-exam-09",
+  "number": 9,
+  "questions": [
+    {
+      "id": "e09-q01",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "A pull-request bot sends the diff to Claude and posts findings. A PR contains a 4,000-line generated lockfile change. What is the best handling?",
+      "options": [
+        "Split the lockfile into the system prompt",
+        "Reject all large PRs automatically",
+        "Send everything and hope",
+        "Exclude generated and lock files from the diff sent for review and review only meaningful source changes"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Filtering noise (lockfiles, generated code, binaries) reduces cost and improves review quality. Auto-rejecting is heavy-handed."
+    },
+    {
+      "id": "e09-q02",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "A batch request in a submitted batch fails validation for one item. What happens to the others?",
+      "options": [
+        "Remaining requests are processed twice",
+        "All requests are silently dropped",
+        "Each request is processed independently; one failing does not fail the rest, and the failure appears as an errored result",
+        "The entire batch is rejected"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Batch requests are independent, and per-request outcomes are reported individually. Check each result type and resubmit only the failures."
+    },
+    {
+      "id": "e09-q03",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs",
+      "chapterId": "ch02",
+      "question": "A legal-research assistant needs to analyse very long contracts in one pass and also keep cost reasonable. Which consideration is most relevant when selecting the model?",
+      "options": [
+        "The model's context window and long-context quality, balanced against per-token price and whether prompt caching can reduce repeated input cost",
+        "Only the model's name, because larger names always mean larger windows",
+        "Only output speed, since context length never affects cost",
+        "The number of letters in the model identifier"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Long documents require sufficient context capacity, and cost scales with tokens, so teams weigh window size, accuracy on long inputs and caching opportunities. The model name alone says nothing reliable."
+    },
+    {
+      "id": "e09-q04",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "A team moves from the first-party Anthropic API to Google Vertex AI and finds that a newly released beta feature is unavailable there. What is the sound engineering response?",
+      "options": [
+        "Rename the beta header to bypass the restriction",
+        "Wrap the call in a retry loop until it works",
+        "Check the platform's feature-availability documentation and design with a fallback, since third-party platforms can lag on beta features",
+        "Assume feature parity and ship"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Third-party platforms may differ in model IDs, auth, and available beta features. Verify support in the docs rather than assuming parity or retrying."
+    },
+    {
+      "id": "e09-q05",
+      "domain": 5,
+      "skill": "LLM Fundamentals",
+      "chapterId": "ch01",
+      "question": "A team wants Claude to refuse to guess when information is missing in a data-extraction task. They are debating whether lowering randomness will fix hallucinated values. What is the best guidance?",
+      "options": [
+        "Hallucinations occur only when streaming is enabled, so switch to non-streaming",
+        "Lowering randomness makes output more consistent but not more truthful; instruct the model to return null for missing fields and validate the output against source text",
+        "Setting randomness to its minimum removes hallucination entirely",
+        "Adding more output tokens gives the model room to double-check itself automatically"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Reducing randomness changes how tokens are sampled, not whether the model's knowledge or the prompt supports the answer. Explicit instructions (allow null / unknown), schema validation and grounding checks address fabricated values."
+    },
+    {
+      "id": "e09-q06",
+      "domain": 4,
+      "skill": "Debugging and Error Handling",
+      "chapterId": "ch13",
+      "question": "A client receives HTTP 529 overloaded_error from the Claude API during a traffic spike. What is the most appropriate response?",
+      "options": [
+        "Fix the request body, since 529 means malformed input.",
+        "Retry immediately in a tight loop until it works.",
+        "Treat it as transient: retry with exponential backoff and jitter, and consider a fallback or queueing for non-urgent work.",
+        "Treat it as a permanent failure and rotate the API key."
+      ],
+      "answerIndexes": [2],
+      "explanation": "529 indicates temporary API overload, a retriable condition best handled with backoff and jitter. Key rotation is for 401, request edits are for 400 errors, and tight retry loops worsen load."
+    },
+    {
+      "id": "e09-q07",
+      "domain": 1,
+      "skill": "Agent Architecture",
+      "chapterId": "ch11",
+      "question": "A content team generates marketing copy. A first model drafts it, and a second model scores it against a rubric and gives concrete feedback. The draft is regenerated until it meets the rubric or a retry limit is reached. Which pattern is this?",
+      "options": [
+        "Evaluator-optimizer",
+        "Parallelization with sectioning",
+        "Orchestrator-workers",
+        "Routing"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Evaluator-optimizer pairs a generator with an evaluator in a feedback loop. It works best when there are clear evaluation criteria and iteration measurably improves the output."
+    },
+    {
+      "id": "e09-q08",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "A Claude-driven service writes tool-call arguments to a database. Which practice protects against malformed or malicious values?",
+      "options": [
+        "Interpolate values directly into SQL",
+        "Validate arguments against a schema and use parameterized queries",
+        "Trust the model because it is aligned",
+        "Disable logging"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Model-produced values are untrusted input; validate and parameterize to avoid injection."
+    },
+    {
+      "id": "e09-q09",
+      "domain": 8,
+      "skill": "Agentic Customization",
+      "chapterId": "ch10",
+      "question": "Select TWO. A team wants to give Claude Code a recurring, multi-step data-cleanup procedure that includes a validation script. Which are sound reasons to implement it as a Skill rather than a long CLAUDE.md section?",
+      "options": [
+        "CLAUDE.md content is never loaded into context",
+        "Skills are the only way to run scripts in Claude Code",
+        "Instructions, reference files and scripts can be packaged together as one reusable unit",
+        "The body and bundled script load only when the task is relevant, saving context in other sessions",
+        "Skills execute on every tool call automatically without any model decision"
+      ],
+      "answerIndexes": [2, 3],
+      "explanation": "Skills offer progressive disclosure and bundle instructions with scripts and resources. They are model-selected, not automatic on every tool call (that is hooks), and CLAUDE.md is loaded at session start."
+    },
+    {
+      "id": "e09-q10",
+      "domain": 6,
+      "skill": "Prompt Engineering",
+      "chapterId": "ch06",
+      "question": "A prompt for code review says 'Find all bugs.' The model returns many style nitpicks and misses a race condition. Which refinement is best?",
+      "options": [
+        "Remove the 'Find all bugs' line.",
+        "Define what counts as a bug for this review (correctness, concurrency, security), ask for severity and evidence, and explicitly exclude style issues.",
+        "Tell the model it will be penalised for missing anything.",
+        "Ask for as many comments as possible."
+      ],
+      "answerIndexes": [1],
+      "explanation": "Scoping the task and defining output expectations focuses attention on the target issues. Maximising comments adds noise, removing the line removes the task, and threats are unreliable."
+    },
+    {
+      "id": "e09-q11",
+      "domain": 7,
+      "skill": "Identity, Secrets, and Key Management",
+      "chapterId": "ch14",
+      "question": "A mobile app team wants to call Claude directly from the app with an embedded API key to reduce latency. What is the best recommendation?",
+      "options": [
+        "Route requests through a backend that holds the key, authenticates users and applies rate limits",
+        "Ship a separate key per app version and never rotate",
+        "Put the key in an app-readable config file",
+        "Obfuscate the key inside the app binary"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Any key shipped to a client can be extracted. A backend proxy keeps the key secret and lets you enforce authn, authz and quotas."
+    },
+    {
+      "id": "e09-q12",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch05",
+      "question": "A Python team is calling Claude from a backend service. A junior developer proposes hand-writing HTTP requests with the requests library to avoid 'extra dependencies'. What is the main advantage of using the official Anthropic SDK instead?",
+      "options": [
+        "The SDK stores conversation history on Anthropic's servers automatically",
+        "The SDK bypasses rate limits because it authenticates differently",
+        "The SDK wraps the REST API with typed request/response objects, automatic retries with backoff, timeout handling, streaming helpers and header management",
+        "The SDK uses a different, faster network protocol than the REST API"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Official SDKs are thin wrappers over the same REST API, adding typing, retries, streaming helpers and consistent error classes. They do not use a different protocol, circumvent rate limits or keep server-side conversation state."
+    },
+    {
+      "id": "e09-q13",
+      "domain": 7,
+      "skill": "Claude Hooks",
+      "chapterId": "ch14",
+      "question": "Where is the best place to configure a hook that blocks writes to `.env` files for everyone working in a repository?",
+      "options": [
+        "The system prompt of one session",
+        "A developer's personal `~/.claude/settings.json` only",
+        "The project's `.claude/settings.json`, committed to version control",
+        "A comment inside CLAUDE.md"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Project-scoped `.claude/settings.json` is shared through the repo so the whole team gets the same hook. User-level settings affect only one person, and CLAUDE.md is guidance, not enforcement."
+    },
+    {
+      "id": "e09-q14",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "Which TWO changes make a CI-integrated Claude code review more trustworthy? Select TWO.",
+      "options": [
+        "Hide its token usage",
+        "Provide the diff plus relevant surrounding context and project conventions",
+        "Allow it to push fixes to main",
+        "Run it with no repository context",
+        "Require findings to cite file and line that a script verifies exist in the diff"
+      ],
+      "answerIndexes": [1, 4],
+      "explanation": "Context improves relevance, and programmatic verification of citations catches hallucinated findings."
+    },
+    {
+      "id": "e09-q15",
+      "domain": 6,
+      "skill": "Context Engineering",
+      "chapterId": "ch07",
+      "question": "A travel-planning assistant is started fresh each day, but users expect it to remember stated dietary restrictions. Which design best fits?",
+      "options": [
+        "Persist a small, user-scoped memory of stable preferences and inject it at session start, letting the user view and correct it.",
+        "Store preferences in the system prompt of all users.",
+        "Rely on the model's weights to remember each user.",
+        "Replay the complete history of all past sessions at every start."
+      ],
+      "answerIndexes": [0],
+      "explanation": "Small, curated, user-scoped memory delivers continuity without bloat or leakage and allows correction. Replaying everything bloats, models do not retain per-user data between calls, and a global prompt leaks and mismatches users."
+    },
+    {
+      "id": "e09-q16",
+      "domain": 7,
+      "skill": "Guardrails and Safe Deployment",
+      "chapterId": "ch14",
+      "question": "Which TWO are examples of least privilege for an LLM agent that triages support tickets? Select TWO.",
+      "options": [
+        "Access to the entire company file share in case it is useful",
+        "Giving the model the database root password so it can fix issues itself",
+        "A single API key with account-wide admin scope",
+        "Credentials scoped to the support queue and expiring after the task",
+        "Tools limited to reading tickets and drafting replies, with sending requiring human approval"
+      ],
+      "answerIndexes": [3, 4],
+      "explanation": "Least privilege means only the capabilities and scopes the task requires, ideally short-lived. Broad or admin credentials give an injected agent excess power."
+    },
+    {
+      "id": "e09-q17",
+      "domain": 5,
+      "skill": "LLM Fundamentals",
+      "chapterId": "ch01",
+      "question": "A team is shown a request with one example question/answer pair followed by the real question. Which term describes this prompting technique?",
+      "options": [
+        "Single-shot (one-shot) prompting",
+        "Zero-shot prompting",
+        "Chain-of-thought fine-tuning",
+        "Prompt caching"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Zero-shot gives no examples, single-shot gives exactly one, and multi-shot (few-shot) gives several. Providing examples in the prompt is in-context learning and does not modify the model."
+    },
+    {
+      "id": "e09-q18",
+      "domain": 8,
+      "skill": "Tool Implementation",
+      "chapterId": "ch08",
+      "question": "You enable manual extended thinking (`thinking: {type: \"enabled\"}`) and also set tool_choice to force a specific tool. What should you expect?",
+      "options": [
+        "Forcing a tool (any or tool) is not supported with extended thinking; only auto or none are allowed",
+        "Everything works and thinking improves accuracy",
+        "Thinking is silently disabled",
+        "The tool is called twice"
+      ],
+      "answerIndexes": [0],
+      "explanation": "With manual extended thinking only tool_choice `auto` or `none` is supported; `any` or `tool` returns an error. If you need a forced tool call, turn thinking off for that request, or use `auto` with a prompt instruction."
+    },
+    {
+      "id": "e09-q19",
+      "domain": 2,
+      "skill": "Understanding Requirements",
+      "chapterId": "ch04",
+      "question": "Stakeholders say the assistant 'should never be wrong about refund policy.' What requirement refinement is most realistic?",
+      "options": [
+        "Guarantee 100% accuracy through prompting",
+        "Ground answers in the authoritative policy document, define escalation to a human when uncertain, and set measurable accuracy targets",
+        "Remove the human agents",
+        "Disable the policy lookup"
+      ],
+      "answerIndexes": [1],
+      "explanation": "LLM systems cannot promise zero error; requirements should specify grounding, escalation, and tested accuracy."
+    },
+    {
+      "id": "e09-q20",
+      "domain": 8,
+      "skill": "Agentic Customization",
+      "chapterId": "ch10",
+      "question": "A team needs Claude to follow a 12-step code-review checklist with company-specific conventions, but the workflow involves no external system access beyond reading files. What is the lightest-weight reusable option?",
+      "options": [
+        "A Skill containing the checklist and conventions (optionally with reference files)",
+        "A new MCP server with a `review` tool",
+        "Fine-tuning a model",
+        "A custom tool that hits a remote API"
+      ],
+      "answerIndexes": [0],
+      "explanation": "When no external system is needed, a Skill packages instructions and resources with low context overhead. An MCP server adds infrastructure that is not warranted."
+    },
+    {
+      "id": "e09-q21",
+      "domain": 2,
+      "skill": "Software Engineering Foundations",
+      "chapterId": "ch05",
+      "question": "A POST /summaries endpoint calls Claude and charges tokens. A mobile client retries on flaky networks and sometimes produces two charges. Which fix is best?",
+      "options": [
+        "Switch the endpoint to GET",
+        "Disable retries on the client",
+        "Cache all responses for 24 hours regardless of input",
+        "Accept an Idempotency-Key header and return the stored result for repeated keys"
+      ],
+      "answerIndexes": [3],
+      "explanation": "An idempotency key lets the server dedupe retried POSTs without disabling retries. GET is semantically wrong for side effects, and blind caching returns wrong results."
+    },
+    {
+      "id": "e09-q22",
+      "domain": 1,
+      "skill": "Agent Architecture",
+      "chapterId": "ch11",
+      "question": "A multi-agent research system spends far more tokens than a single-agent chat for the same question. A stakeholder asks when that cost is justified. Which answer is most accurate?",
+      "options": [
+        "Always, because more agents always improve answer quality",
+        "When the task is high-value and breadth-heavy or parallelizable enough that the extra tokens buy meaningfully better results",
+        "Never, because multi-agent systems cannot beat a single agent",
+        "Only when each agent uses the same prompt, to keep behavior consistent"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Multi-agent setups multiply token use, so they pay off for valuable, wide or parallelizable tasks. Tasks that need tightly shared context or few independent threads often fit a single agent better."
+    },
+    {
+      "id": "e09-q23",
+      "domain": 6,
+      "skill": "Context Engineering",
+      "chapterId": "ch07",
+      "question": "A research agent calls a web-search tool that returns full page text (about 8,000 tokens per hit). It needs only a few facts from each page, and long sessions exhaust the context. Which design best manages this?",
+      "options": [
+        "Reduce the number of searches to one per session regardless of the question.",
+        "Always append the full page text so no information is lost.",
+        "Store all pages in the system prompt so they are cached.",
+        "Delegate each page read to a subagent or extraction step that returns only the relevant facts to the main agent."
+      ],
+      "answerIndexes": [3],
+      "explanation": "Isolating noisy reads in a separate context and returning distilled results keeps the orchestrator's context lean. Appending everything causes bloat, limiting searches harms quality, and stuffing pages in the system prompt does not reduce tokens or relevance problems."
+    },
+    {
+      "id": "e09-q24",
+      "domain": 6,
+      "skill": "Prompt Engineering",
+      "chapterId": "ch06",
+      "question": "A product team wants Claude to answer in a fixed support-reply template. They need the model to fill in only the variable parts. Which approach is most dependable?",
+      "options": [
+        "Provide the template in a language other than the user's.",
+        "Request a creative answer inspired by the template.",
+        "Give no template and post-process in code.",
+        "Describe the template with named placeholders in tags, show a filled example, and instruct the model to output only the filled template."
+      ],
+      "answerIndexes": [3],
+      "explanation": "A clear template with placeholders and an example constrains the response structure. The other options either confuse the format or push all work onto brittle post-processing."
+    },
+    {
+      "id": "e09-q25",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A team's Claude Code usage shows rising cost: each session loads a very large CLAUDE.md plus many rarely-used skills. Which design change is best aligned with context hygiene?",
+      "options": [
+        "Trim CLAUDE.md to essentials and move situational guidance into path-scoped rules or on-demand skills",
+        "Disable the context window limit",
+        "Add more content to CLAUDE.md so Claude needs fewer questions",
+        "Rename CLAUDE.md to lowercase"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Always-loaded instructions consume context every session; situational content is better loaded on demand via path-scoped rules or skills. Neither adding content nor renaming helps."
+    },
+    {
+      "id": "e09-q26",
+      "domain": 2,
+      "skill": "Configuration Management",
+      "chapterId": "ch05",
+      "question": "A repo already has a maintained AGENTS.md for other coding agents. The team now adds a CLAUDE.md with Claude-specific notes and finds Claude Code no longer reads AGENTS.md on its own. What is the best way to reuse its content?",
+      "options": [
+        "Rename AGENTS.md to settings.json",
+        "Import it from CLAUDE.md with an @AGENTS.md line so both are loaded",
+        "Copy AGENTS.md content into every prompt",
+        "Delete CLAUDE.md"
+      ],
+      "answerIndexes": [1],
+      "explanation": "When a CLAUDE.md exists, Claude Code reads CLAUDE.md files and not AGENTS.md by default; an @ import pulls the shared content in, keeping one source of truth."
+    },
+    {
+      "id": "e09-q27",
+      "domain": 1,
+      "skill": "Agent Construction with Claude",
+      "chapterId": "ch12",
+      "question": "An engineer's PreToolUse safety hook throws an unhandled exception for certain inputs. In the Agent SDK's default behavior, the tool call may proceed to the normal permission flow. Which configuration makes the guard fail closed?",
+      "options": [
+        "Increase the callback's temperature setting",
+        "Register the hook under the Notification event instead",
+        "Set the matcher's failure behavior to block (for example onFailure: \"block\") so a failing callback blocks the action",
+        "Return an empty object from the callback after catching all errors"
+      ],
+      "answerIndexes": [2],
+      "explanation": "By default, a failing callback does not necessarily block the action. Setting onFailure to block makes a crashing guard stop the tool call. Catching errors and returning an empty object would silently allow it."
+    },
+    {
+      "id": "e09-q28",
+      "domain": 2,
+      "skill": "Claude API Mechanics",
+      "chapterId": "ch03",
+      "question": "A 429 appears even though the app sends few requests, but each request has a very large prompt. Which TWO statements are accurate and useful? Select TWO.",
+      "options": [
+        "Disabling streaming raises the token limit",
+        "Raising max_tokens increases the available output-token quota",
+        "Limits are measured in input and output tokens per minute as well as requests per minute, so the token limit is likely being hit",
+        "Rate limits only count requests, so this cannot be a rate limit",
+        "Caching the repeated prefix helps, because on most models cache_read_input_tokens do not count toward ITPM"
+      ],
+      "answerIndexes": [2, 4],
+      "explanation": "Rate limits cover RPM, ITPM and OTPM, so large prompts can exhaust the token limit first. For most models only uncached input (input_tokens plus cache_creation_input_tokens) counts toward ITPM, so prompt caching increases effective throughput. max_tokens does not factor into OTPM limits."
+    },
+    {
+      "id": "e09-q29",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch05",
+      "question": "Which TWO statements about the relationship between the Claude SDKs and the REST API are correct? Select TWO.",
+      "options": [
+        "SDK usage changes the model's pricing",
+        "The REST API can only be called through an SDK",
+        "The SDKs are wrappers that send the same HTTP requests you could send yourself",
+        "New API features are sometimes available via raw HTTP or beta SDK namespaces before they reach a stable SDK surface",
+        "The SDKs use a proprietary binary protocol that the REST API cannot imitate"
+      ],
+      "answerIndexes": [2, 3],
+      "explanation": "SDKs are convenience layers over the public REST API; beta features may require beta headers or beta namespaces. They do not change protocol, access or price."
+    },
+    {
+      "id": "e09-q30",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "An agent loop runs a research task that can proceed down many paths. The team wants the model, not the code, to decide the order and number of tool calls, with a clear stop when the question is answered. Which is the best loop termination design?",
+      "options": [
+        "Stop after exactly one tool call",
+        "Continue while the model requests tools; stop when it returns a final response or when a safety limit such as max iterations or budget is hit",
+        "Stop when the output exceeds 10 characters",
+        "Stop only when the user closes the browser"
+      ],
+      "answerIndexes": [1],
+      "explanation": "A model-driven loop ends on a natural final response, with limits as a backstop. Fixed counts fit workflows rather than agents."
+    },
+    {
+      "id": "e09-q31",
+      "domain": 6,
+      "skill": "Output Handling",
+      "chapterId": "ch06",
+      "question": "A team wants Claude to return both a short explanation for humans and structured data for code. Which design is most robust?",
+      "options": [
+        "Ask for the explanation and data interleaved in a single paragraph.",
+        "Return prose and regex out the numbers.",
+        "Use a schema with separate fields (for example 'summary' and 'data') so the code reads only the structured fields.",
+        "Use two different models and compare the outputs."
+      ],
+      "answerIndexes": [2],
+      "explanation": "Separating human-readable and machine-readable parts in distinct schema fields keeps parsing deterministic. Regex over prose and interleaving are brittle."
+    },
+    {
+      "id": "e09-q32",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "Which TWO describe good practice for the final report returned by a subagent to its lead agent? Select TWO.",
+      "options": [
+        "Return only 'done' to minimize tokens",
+        "Return unstructured stream-of-consciousness reasoning",
+        "Return the full raw transcript of every tool call for completeness",
+        "Return a concise distilled result with the key findings and sources the lead needs",
+        "Follow an output format that the lead agent specified in the delegation prompt"
+      ],
+      "answerIndexes": [3, 4],
+      "explanation": "Subagents exist to protect the lead's context, so reports should be dense and structured. Raw transcripts defeat isolation, and 'done' loses the findings."
+    },
+    {
+      "id": "e09-q33",
+      "domain": 8,
+      "skill": "Tool Implementation",
+      "chapterId": "ch08",
+      "question": "An application sends a tool_result for a tool_use_id Claude never produced. What is the likely outcome?",
+      "options": [
+        "The API rewrites the id automatically",
+        "The API returns a validation error because every tool_result must correspond to a tool_use block from the previous assistant turn",
+        "The result is queued for a later turn",
+        "Claude silently treats it as extra context"
+      ],
+      "answerIndexes": [1],
+      "explanation": "tool_result blocks must reference a tool_use from the preceding assistant message; mismatched ids produce a 400-style error. This is a common bug in harnesses that reuse or fabricate ids."
+    },
+    {
+      "id": "e09-q34",
+      "domain": 8,
+      "skill": "Agentic Customization",
+      "chapterId": "ch10",
+      "question": "Which requirement most strongly points toward a custom tool or MCP server rather than a Skill?",
+      "options": [
+        "Claude must call a live external API with authentication and get current data",
+        "Claude needs written guidance on tone and formatting",
+        "Claude should know team naming conventions",
+        "Claude should follow a documented review process"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Skills carry instructions (and optional scripts/resources), but live external system access with credentials is what tools and MCP servers provide. The other items are knowledge and procedure."
+    },
+    {
+      "id": "e09-q35",
+      "domain": 2,
+      "skill": "Systems Life Cycle",
+      "chapterId": "ch04",
+      "question": "Which TWO are benefits of infrastructure as code for deploying a Claude-backed service? Select TWO.",
+      "options": [
+        "Elimination of all outages",
+        "Automatic prompt improvement",
+        "Reproducible environments",
+        "Free API usage",
+        "Reviewable, versioned infrastructure changes"
+      ],
+      "answerIndexes": [2, 4],
+      "explanation": "IaC provides repeatability and code review for infra, but not guaranteed uptime or cost savings on API use."
+    },
+    {
+      "id": "e09-q36",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A product team wants the model's JSON answers rendered into a form. Occasionally the response stops mid-object. Which application behavior is most appropriate?",
+      "options": [
+        "Check stop_reason; if it is max_tokens the output is truncated, so raise the limit or retry and never render the partial object as complete",
+        "Switch to a smaller model to avoid truncation",
+        "Render whatever arrived since JSON is forgiving",
+        "Always append a closing brace to fix it"
+      ],
+      "answerIndexes": [0],
+      "explanation": "A stop_reason of max_tokens signals truncated output, which must be handled explicitly rather than patched or displayed as complete. A smaller model does not address the token limit."
+    },
+    {
+      "id": "e09-q37",
+      "domain": 5,
+      "skill": "Cost and Token Management",
+      "chapterId": "ch02",
+      "question": "A developer adds cache_control but cache_read_input_tokens stays at zero on every call. The system prompt starts with 'Current time: <timestamp>'. Which TWO things should they investigate or fix? Select TWO.",
+      "options": [
+        "Confirm the cached prefix meets the model's minimum cacheable length, since shorter prefixes are silently not cached",
+        "Set the model temperature to zero, which caching requires",
+        "Remove cache_control, because it can be used only once per account",
+        "Wait for the weekend, when cache hits are reported",
+        "Move volatile content such as the timestamp after the cached breakpoint, because the prefix changes every request"
+      ],
+      "answerIndexes": [0, 4],
+      "explanation": "Caching matches an exact prefix, so a timestamp near the top invalidates everything after it. Prompts below the model-specific minimum are processed without caching and without an error; check usage.cache_creation_input_tokens and cache_read_input_tokens. Temperature is irrelevant, and cache_control can be used many times (up to four breakpoints per request)."
+    },
+    {
+      "id": "e09-q38",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A developer has spent a Claude Code session debugging a payments bug and now wants to start work on an unrelated CSS refactor in the same repository. Which action best supports session hygiene?",
+      "options": [
+        "Keep the same session so Claude remembers everything, since more context always improves results",
+        "Ask Claude to forget the payments bug in a normal message",
+        "Run /compact after every message regardless of the task",
+        "Run /clear (or start a fresh session) before the unrelated task so stale debugging context does not occupy the window or bias the work"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Unrelated tasks should start with a clean context; /clear resets it cheaply. Leftover context consumes the window and can distract. Compacting after every message is wasteful, and asking Claude to 'forget' does not remove tokens from the context."
+    },
+    {
+      "id": "e09-q39",
+      "domain": 1,
+      "skill": "Agent Patterns and Frameworks",
+      "chapterId": "ch11",
+      "question": "A support platform wants specialist agents (billing, tech, shipping) that hand a conversation to one another as the topic changes, with no central controller deciding each step. Which pattern does this resemble?",
+      "options": [
+        "A prompt chain with fixed steps",
+        "An evaluator-optimizer loop",
+        "A swarm of peer agents that hand off to each other",
+        "A parallelization pattern using voting"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Peer-to-peer handoffs without a central controller describe a swarm; a supervisor hierarchy would instead centralize routing."
+    },
+    {
+      "id": "e09-q40",
+      "domain": 3,
+      "skill": "Claude Code Operation",
+      "chapterId": "ch10",
+      "question": "A team wants shared permission rules and hooks to be committed to the repo, while an individual developer keeps experimental, uncommitted overrides. Which pair of files fits?",
+      "options": [
+        "`~/.claude/settings.json` for shared and `CLAUDE.md` for personal",
+        "`.claude/settings.json` for shared and `.claude/settings.local.json` for personal",
+        "Managed settings for shared and user settings for personal",
+        "`.claude/settings.local.json` for shared and `.claude/settings.json` for personal"
+      ],
+      "answerIndexes": [1],
+      "explanation": "The project settings file is meant to be checked in, while settings.local.json is gitignored for personal overrides."
+    },
+    {
+      "id": "e09-q41",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "A product manager asks whether Claude Code and the raw API should be expected to follow a repo's coding standards in the same way. Which statement is most accurate?",
+      "options": [
+        "Neither can follow coding standards",
+        "Claude Code loads CLAUDE.md files as context automatically, whereas an API app has no such mechanism unless it supplies the standards in its own prompt",
+        "The API reads CLAUDE.md but Claude Code does not",
+        "Both automatically read the repository's CLAUDE.md"
+      ],
+      "answerIndexes": [1],
+      "explanation": "CLAUDE.md loading is a Claude Code feature; a raw API integration only sees what the application sends. Teams must carry standards into API prompts explicitly."
+    },
+    {
+      "id": "e09-q42",
+      "domain": 2,
+      "skill": "Systems Life Cycle",
+      "chapterId": "ch04",
+      "question": "An incident occurs when a prompt update causes malformed outputs. What is the best response process?",
+      "options": [
+        "Blame the model",
+        "Delete logs",
+        "Roll back to the previous version, then conduct a blameless post-mortem and add a regression test",
+        "Hot-edit the prompt repeatedly in production"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Fast rollback restores service; post-mortems and tests prevent recurrence."
+    },
+    {
+      "id": "e09-q43",
+      "domain": 8,
+      "skill": "MCP Server Development",
+      "chapterId": "ch09",
+      "question": "A new MCP server written with FastMCP needs to expose a customer profile at URIs like `customers://{customer_id}/profile`. Which construct fits?",
+      "options": [
+        "A resource template registered with @mcp.resource using a URI containing a parameter",
+        "A prompt decorated with @mcp.prompt",
+        "A hard-coded list of one resource per customer",
+        "A tool that must always be called first"
+      ],
+      "answerIndexes": [0],
+      "explanation": "FastMCP supports parameterised URI templates on @mcp.resource so a single handler serves many entities. Prompts are templates for user messages and static per-customer registration does not scale."
+    },
+    {
+      "id": "e09-q44",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch01",
+      "question": "A developer passes a model-generated tool input directly into a REST call to an internal service without parsing the JSON or validating the schema. What principle does this violate?",
+      "options": [
+        "Validation should happen only on the model's thinking blocks",
+        "Schemas are only needed for streaming responses",
+        "Model output is always valid JSON, so validation is wasted effort",
+        "Treat model output as untrusted data: parse it defensively, validate against a schema, and handle malformed or unexpected values before using it"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Even well-behaved models can produce malformed or unexpected output, so integrations should parse and validate before acting on it. This is basic engineering hygiene for any untrusted input."
+    },
+    {
+      "id": "e09-q45",
+      "domain": 7,
+      "skill": "AI Application Security",
+      "chapterId": "ch14",
+      "question": "A tool-using agent reads a GitHub issue from a public repo and, following text in the issue, calls a tool that reads a private repo and posts its contents as a public comment. Which principle was most clearly violated?",
+      "options": [
+        "Using too low a token limit",
+        "Separation of untrusted content from the agent's privileged tools and data (the 'lethal trifecta' of private data, untrusted content, and external communication)",
+        "Using a non-streaming API",
+        "Missing prompt caching"
+      ],
+      "answerIndexes": [1],
+      "explanation": "The combination of access to private data, exposure to untrusted content and an exfiltration channel is the dangerous pattern. Break at least one leg, e.g., scope tokens per repo or disable external posting."
+    },
+    {
+      "id": "e09-q46",
+      "domain": 1,
+      "skill": "Agent Construction with Claude",
+      "chapterId": "ch12",
+      "question": "A team needs a hard guarantee that an agent can never delete production data, regardless of what the model decides. Which TWO implementations are most reliable? Select TWO.",
+      "options": [
+        "Lowering temperature to 0 so the model is consistent",
+        "Running the agent with credentials and sandbox access that simply lack delete rights on production data",
+        "A PreToolUse hook that inspects the tool call and returns a deny decision for destructive commands, in code outside the model",
+        "Asking the model to double check each command before running it",
+        "Adding 'never delete production data' in capital letters to the system prompt"
+      ],
+      "answerIndexes": [1, 2],
+      "explanation": "Deterministic code at tool-call time and least-privilege credentials are enforced outside the model. Prompt instructions and low temperature reduce the likelihood of a bad call but give no guarantee."
+    },
+    {
+      "id": "e09-q47",
+      "domain": 2,
+      "skill": "Claude Application Design",
+      "chapterId": "ch04",
+      "question": "An app shows streamed answers in a browser and also calls tools. Which TWO behaviors make for a robust streaming UX? Select TWO.",
+      "options": [
+        "Handle stream errors or interruptions by letting the user retry without losing prior content",
+        "Wait for the whole response before showing anything to simulate reliability",
+        "Execute tool calls as soon as the first partial JSON fragment appears",
+        "Display text deltas as they arrive and show a status when a tool call is in progress",
+        "Hide stop_reason from the client logic"
+      ],
+      "answerIndexes": [0, 3],
+      "explanation": "Good streaming UX renders incremental text, indicates tool activity and recovers from interruptions. Tool inputs must be complete before execution, and waiting for the full response defeats streaming."
+    },
+    {
+      "id": "e09-q48",
+      "domain": 2,
+      "skill": "Configuration Management",
+      "chapterId": "ch05",
+      "question": "The team's committed .claude/settings.json sets \"model\" to a Sonnet model. One developer wants to use Opus in this project without changing teammates' behavior or committing anything. What is the best approach?",
+      "options": [
+        "Set the model in .claude/settings.local.json, which has higher precedence than the shared project file and stays personal",
+        "Rename the project folder",
+        "Edit the committed .claude/settings.json and push",
+        "Change the ~/.claude/settings.json file, which outranks project settings"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Project local settings sit above shared project settings in precedence and are for personal overrides. User settings rank below the project file, so they would not win."
+    },
+    {
+      "id": "e09-q49",
+      "domain": 5,
+      "skill": "Technical Fundamentals",
+      "chapterId": "ch05",
+      "question": "A backend engineer sees that the SDK is configured with its default retry behavior and asks what it does. Which statement is accurate?",
+      "options": [
+        "The SDK retries every error including 401 and 400 until success",
+        "The SDK never retries; every failure must be retried by the application",
+        "The SDK retries only when streaming is enabled",
+        "The SDK automatically retries a small number of times on connection errors and retryable statuses such as 408, 409, 429 and 5xx, with backoff, and you can configure or disable this"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Official SDKs include default retry logic for transient failures with exponential backoff and expose options to change the count. Client errors like 400 and 401 are not retried because retrying cannot fix them."
+    },
+    {
+      "id": "e09-q50",
+      "domain": 5,
+      "skill": "Cost and Token Management",
+      "chapterId": "ch02",
+      "question": "A team notes that caches written by the default setting seem to disappear when traffic is sparse overnight. Which feature of caching explains this, and what is a reasonable mitigation?",
+      "options": [
+        "Cache entries expire after a time-to-live (five minutes by default, refreshed on each hit); for infrequent traffic consider the longer one-hour TTL option or accept misses",
+        "Caches never expire but are evicted randomly when the account is idle",
+        "Caches expire only at midnight UTC",
+        "Caches are deleted whenever a new deployment happens"
+      ],
+      "answerIndexes": [0],
+      "explanation": "Default cache entries last about five minutes and are refreshed on use, so sparse traffic misses. A longer TTL option exists at a higher write cost, which should be weighed against hit rates."
+    },
+    {
+      "id": "e09-q51",
+      "domain": 6,
+      "skill": "Output Handling",
+      "chapterId": "ch06",
+      "question": "An API returns a structured response whose 'confidence' field is generated by the model itself and equals 0.97. The team plans to auto-approve loans above 0.9. What is the key concern?",
+      "options": [
+        "The threshold should be exactly 0.99.",
+        "Model-reported confidence is not a calibrated probability; decisions need independent validation, thresholds tested against labelled data, and human review for high-stakes cases.",
+        "The value should have been 97 rather than 0.97.",
+        "Confidence fields are not allowed in JSON."
+      ],
+      "answerIndexes": [1],
+      "explanation": "Self-reported scores are not reliable calibration; they must be validated against ground truth, and high-stakes decisions need oversight. The format of the number is irrelevant."
+    },
+    {
+      "id": "e09-q52",
+      "domain": 1,
+      "skill": "Agent Construction with Claude",
+      "chapterId": "ch12",
+      "question": "With a self-hosted sandbox in Managed Agents, what runs on the customer's infrastructure?",
+      "options": [
+        "The model weights and inference",
+        "The entire agent loop, including model sampling",
+        "An environment worker that claims work items and executes the agent's tool calls locally, posting results back",
+        "Only the web interface for viewing session transcripts"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Anthropic keeps running the agent loop and model; the worker you operate runs tools such as bash and file operations in your environment."
+    },
+    {
+      "id": "e09-q53",
+      "domain": 4,
+      "skill": "Debugging and Error Handling",
+      "chapterId": "ch13",
+      "question": "Your service gets HTTP 400 invalid_request_error: a field name is misspelled in the request. What should the retry policy do?",
+      "options": [
+        "Retry with a larger max_tokens.",
+        "Do not retry unchanged; log the error and fix the request, since 4xx client errors will keep failing.",
+        "Retry five times with backoff.",
+        "Switch to another region and retry."
+      ],
+      "answerIndexes": [1],
+      "explanation": "A 400 is a terminal client error: identical retries fail identically. Backoff is for transient errors; region and max_tokens are unrelated."
+    }
+  ]
+}

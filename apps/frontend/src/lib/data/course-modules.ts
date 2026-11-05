@@ -6,6 +6,10 @@ import {
   HERMES_COURSE_ID,
   hermesAgentMasteryCourse,
 } from "./courses/hermes-agent-mastery";
+import {
+  CCDV_COURSE_ID,
+  ccdvFoundationsCourse,
+} from "./courses/ccdv-foundations";
 
 export type CourseContentType =
   | "lab"
@@ -16,7 +20,9 @@ export type CourseContentType =
   | "project_submission"
   | "udemy_lecture"
   | "sd_lesson"
-  | "doc_lesson";
+  | "doc_lesson"
+  | "ccdv_lesson"
+  | "ccdv_exam";
 
 export interface CourseContentItem {
   type: CourseContentType;
@@ -91,6 +97,7 @@ function getSearchableCourses(): { courseId: string; course: CourseSummary }[] {
       course: forwardDeployedEngineeringCourse,
     },
     { courseId: HERMES_COURSE_ID, course: hermesAgentMasteryCourse },
+    { courseId: CCDV_COURSE_ID, course: ccdvFoundationsCourse },
   ];
 }
 

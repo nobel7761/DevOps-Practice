@@ -1,0 +1,668 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে আপনি built-in tool, custom tool, Skill ও MCP থেকে সঠিকটা বাছতে পারবেন এবং CLAUDE.md, settings.json, permission mode, session ও headless `claude -p` দিয়ে Claude Code ঠিকভাবে চালাতে পারবেন।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## ChaiCart-এর repo-তে তিনটা অস্থির দিন\n\nChai-Bot এখন production-এ। ChaiCart-এর repo-তে এখন Rafi একা নয়; আরও দুজন developer কাজ করছে, আর সবাই Claude Code ব্যবহার করে। কিন্তু এক সপ্তাহে তিনটা ঘটনা ঘটল:\n\n1. Rafi-র Claude Code সেশন `pnpm test`-এর বদলে `yarn test` চালিয়ে ভুল error দেখাল। এটা এই মাসে তৃতীয়বার। প্রতিবার Rafi নতুন সেশনে একই কথা আবার বলছে: \"আমরা `pnpm` ব্যবহার করি।\"\n2. নতুন join করা এক জুনিয়র Claude Code-কে প্রায় ছেড়ে দিয়েছিল। Claude `git push --force` চালাতে গিয়েছিল। শেষ পর্যন্ত সেটা আটকে গেছে, কিন্তু কেন আটকাল কেউ নিশ্চিত নয়।\n3. Refund policy যাচাইয়ের ১২ ধাপের একটা checklist Slack-এ ঘুরছে। প্রতিবার কেউ সেটা কপি-পেস্ট করে Claude-কে দিচ্ছে, আর প্রতিবার ধাপ একটু করে বদলে যাচ্ছে।\n\nNusrat Apu সব শুনে বললেন: \"তোমরা Claude Code-কে প্রতিদিন নতুন কর্মচারীর মতো ট্রেনিং দিচ্ছ। অথচ ট্রেনিংটা একবার লিখে রাখলেই হয়। আর যেগুলো **কখনোই** ঘটা চলবে না, সেগুলো অনুরোধ নয়, নিয়ম হিসেবে বসাও।\"\n\nআজকের chapter-এ দুটো domain একসাথে:\n\n| Domain | Skill | প্রশ্ন |\n|---|---|---|\n| Domain 8: Tools and MCPs | **Agentic Customization** (৪.১%) | built-in tool, custom tool, Skill, MCP: কখন কোনটা? |\n| Domain 3: Claude Code | **Claude Code Operation** (৩.১%) | CLAUDE.md, settings.json, permission mode, session, headless, slash command, subagent ঠিকভাবে চালানো |\n\nসংখ্যা ছোট, কিন্তু প্রশ্নগুলো \"কোনটা কখন\" ধরনের, তাই decision rule মুখস্থ থাকলে সহজ নম্বর।\n\n> **একটা সতর্কতা:** Claude Code দ্রুত বদলায়। এই chapter-এর নাম, flag ও পথ official Claude Code docs (code.claude.com/docs) থেকে নেওয়া এবং লেখার সময় যাচাই করা। যেখানে সংস্করণ-নির্ভর কিছু আছে, আলাদা করে বলা আছে। পরীক্ষার আগে আপনার installed সংস্করণে `claude --help` আর `/help` একবার দেখে নিন।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. চারটা হাতিয়ার: built-in tool, custom tool, Skill, MCP\n\nNusrat Apu-র প্রথম প্রশ্ন: \"Claude-কে নতুন কিছু করাতে চাইলে সবসময় নতুন code লিখতে হয়?\" না। চারটা আলাদা স্তর আছে, আর ভুল স্তর বাছলে হয় খরচ বাড়ে, নয়তো reuse হয় না।\n\n### চারটার সংজ্ঞা\n\n| হাতিয়ার | আসলে কী | কে চালায় | কোথায় থাকে |\n|---|---|---|---|\n| **Built-in tool** | Claude Code বা API-র সাথে আসা তৈরি ক্ষমতা। Claude Code-এ: file পড়া/লেখা (`Read`, `Edit`, `Write`), খোঁজা (`Grep`, `Glob`), shell (`Bash`) ইত্যাদি। API-তে: Anthropic-hosted server tool | Claude Code বা Anthropic-এর infrastructure | কিছু বানাতে হয় না |\n| **Custom tool** | আপনার নিজের function, যার নাম, বর্ণনা আর JSON input schema আপনি Claude-কে জানান | **আপনার application** (client-side): Claude `tool_use` চায়, আপনার harness চালিয়ে `tool_result` ফেরত দেয় | আপনার app-এর code |\n| **Skill** | একটা folder: `SKILL.md` (নির্দেশ ও workflow) + ঐচ্ছিক reference file + script | Claude নিজে নির্দেশ পড়ে অনুসরণ করে; script থাকলে চালায় | `.claude/skills/<name>/SKILL.md` |\n| **MCP server** | Model Context Protocol-এ কথা বলা আলাদা process বা remote service, যা tools, resources, prompts দেয় | MCP server নিজে (stdio বা HTTP-র মাধ্যমে) | আলাদা server; `.mcp.json` বা user config-এ সংযোগ |\n\n### সিদ্ধান্ত নেওয়ার চারটা প্রশ্ন\n\nএই চারটা প্রশ্ন ক্রমানুসারে করুন। Exam-এর scenario প্রায় সবসময় এর কোনো একটাতেই আটকে যায়।\n\n**প্রশ্ন ১: Built-in দিয়ে কি হয়ে যায়?** Repo-র file পড়া, grep, test চালানো, `git` কমান্ড: সব built-in। এর জন্য নতুন কিছু বানানো অপচয়। উল্টো ফাঁদ: built-in tool \"যেকোনো internal REST API-তে পৌঁছাতে পারে\" ভাবা ভুল। Official exam guide-এর sample প্রশ্নে ঠিক এই ফাঁদটা আছে।\n\n**প্রশ্ন ২: দরকারটা কি \"কীভাবে করতে হয়\" জ্ঞান, নাকি \"কিছু একটা করার ক্ষমতা\"?**\n- জ্ঞান/ধাপ/কনভেনশন (refund policy checklist, PR review পদ্ধতি, release process) → **Skill**\n- বাইরের সিস্টেমে কাজ (inventory service, database, Slack, ticket system) → **tool** (custom বা MCP)\n\n**প্রশ্ন ৩: এই ক্ষমতা কি একাধিক application/client-এ লাগবে?**\n- একটা app-এর ভেতরেই, app-এর ডেটার সাথে ঘনিষ্ঠ → **custom tool** (সবচেয়ে সহজ)\n- অনেক Claude application-এ (Claude Code, Claude Desktop, আপনার Agent SDK app, অন্য team-এর app) এবং স্বাধীনভাবে maintain হবে → **MCP server**\n\n**প্রশ্ন ৪: নিয়মটা কি অবশ্যই প্রতিবার ঘটতে হবে (determinism)?**\n- হ্যাঁ, কোনো ব্যতিক্রম ছাড়া → **hook** বা permission `deny` rule। CLAUDE.md, Skill, prompt: সবই Claude-র কাছে \"অনুরোধ\"।\n- না, Claude বুঝে প্রয়োগ করুক → Skill/CLAUDE.md\n\n### Context cost: কে কখন window খায়\n\n| হাতিয়ার | কখন context-এ ঢোকে | খরচের ধরন |\n|---|---|---|\n| CLAUDE.md | সেশনের শুরুতে, পুরো ফাইল | **প্রতিটি request-এ** |\n| Skill | শুরুতে শুধু name + description; পুরো body ব্যবহারের সময় | কম (শুধু description), ব্যবহার হলে body |\n| MCP server | শুরুতে tool-এর নাম ও server instruction; পুরো JSON schema দরকারে (tool search ডিফল্টে চালু) | কম, যতক্ষণ tool ব্যবহার না হয় |\n| Subagent | ডাকা হলে আলাদা, নতুন window | main window থেকে আলাদা; শুধু summary ফেরত |\n| Hook | ঘটনায় বাইরে চলে | শূন্য, যদি না output ফেরত দেয় |\n\n(সূত্র: Claude Code docs, \"Extend Claude Code\" পাতা। Custom tool-এর definition-ও API call-এর input token হিসেবে প্রতিবার যায়, তাই tool সংখ্যা ছোট রাখা ভালো।)\n\n### Portability: কোনটা কোথায় চলে\n\n- **Custom tool:** শুধু সেই application-এ, যেখানে আপনি harness লিখেছেন।\n- **MCP server:** MCP বোঝে এমন যেকোনো client-এ: Claude Code, Claude Desktop, আপনার Agent SDK app। এটাই reuse-এর প্রধান কারণ।\n- **Skill:** একটা খোলা format (folder + `SKILL.md`)। Claude Code-এ `.claude/skills/`-এ রাখলে চলে। Claude-এর অন্য surface-এও Skills সমর্থিত, তবে কীভাবে upload/enable করতে হয় প্রতিটার নিজস্ব নিয়ম। *যাচাই করুন:* এই chapter-এ শুধু Claude Code-এর নিয়ম যাচাই করা হয়েছে; অন্য surface-এর জন্য Skills overview পাতা দেখুন।\n- **Subagent/hook/CLAUDE.md:** Claude Code-এর বৈশিষ্ট্য (Agent SDK-ও settings source লোড করলে পায়), Messages API-তে সরাসরি নেই।\n\n### ChaiCart-এ প্রয়োগ\n\n| ঘটনা | ভুল সমাধান | সঠিক হাতিয়ার |\n|---|---|---|\n| \"আমরা `pnpm` ব্যবহার করি\" বারবার বলা | প্রতি সেশনে মুখে বলা | **CLAUDE.md** (সবসময় জানা দরকার এমন তথ্য) |\n| ১২ ধাপের refund checklist | Slack থেকে কপি-পেস্ট | **Skill** (দরকারে লোড হওয়া workflow) |\n| `git push --force` আটকানো | CLAUDE.md-তে \"দয়া করে করবে না\" | **permission deny rule বা PreToolUse hook** (নিশ্চিত আটকানো) |\n| Order database থেকে live ডেটা, একাধিক app-এ | প্রতিটা app-এ আলাদা function | **MCP server** (একবার বানাও, সবাই ব্যবহার করুক) |"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন হাতিয়ার? (built-in / custom tool / Skill / MCP / hook)",
+          "hint": "প্রতিটা দৃশ্যের জন্য সবচেয়ে মানানসই হাতিয়ারটা বেছে নিন। মনে রাখুন: জ্ঞান বনাম ক্ষমতা, একটা app বনাম অনেক app, অনুরোধ বনাম নিশ্চিত নিয়ম।",
+          "buckets": [
+            {
+              "id": "builtin",
+              "label": "Built-in tool"
+            },
+            {
+              "id": "custom",
+              "label": "Custom tool"
+            },
+            {
+              "id": "skill",
+              "label": "Skill"
+            },
+            {
+              "id": "mcp",
+              "label": "MCP server"
+            },
+            {
+              "id": "hook",
+              "label": "Hook / deny rule"
+            }
+          ],
+          "items": [
+            {
+              "text": "repo-র সব `.ts` ফাইলে একটা function-এর ব্যবহার খোঁজা",
+              "bucket": "builtin",
+              "why": "Grep/Glob/Read Claude Code-এ আগে থেকেই আছে। নতুন কিছু বানানোর দরকার নেই।"
+            },
+            {
+              "text": "শুধু Chai-Bot app-এর ভেতরে `get_order_status(order_id)` চালানো, যা app-এর নিজের database ছোঁয়",
+              "bucket": "custom",
+              "why": "একটা app-এর নিজস্ব ক্ষমতা। app-এর harness function চালাবে। MCP বানানো এখানে অতিরিক্ত।"
+            },
+            {
+              "text": "১২ ধাপের refund policy যাচাই checklist, যা Claude দরকার হলে অনুসরণ করবে",
+              "bucket": "skill",
+              "why": "এটা 'কীভাবে করতে হয়' জ্ঞান ও workflow। Skill শুধু দরকারে পুরো লোড হয়, তাই context সাশ্রয়ী।"
+            },
+            {
+              "text": "inventory service অনেক team-এর Claude app (Claude Code, Desktop, Agent SDK) থেকে ব্যবহার করা এবং আলাদাভাবে maintain করা",
+              "bucket": "mcp",
+              "why": "reuse + স্বাধীন maintenance + একাধিক client = MCP server। এটাই exam guide-এর sample 3-এর উত্তর।"
+            },
+            {
+              "text": "`.env` ফাইলে Claude যেন কোনোভাবেই না পড়ে",
+              "bucket": "hook",
+              "why": "'কোনো ব্যতিক্রম ছাড়া' মানে enforcement। PreToolUse hook বা deny rule, CLAUDE.md-র অনুরোধ নয়।"
+            },
+            {
+              "text": "প্রতি file edit-এর পর formatter চালানো, Claude ভুলে গেলেও",
+              "bucket": "hook",
+              "why": "Claude-র সিদ্ধান্তের ওপর নির্ভর না করে নির্দিষ্ট ঘটনায় (PostToolUse) নিশ্চিতভাবে চলে। Context খরচ শূন্য।"
+            },
+            {
+              "text": "`git status`, `git diff` চালানো",
+              "bucket": "builtin",
+              "why": "Bash tool দিয়েই হয়। আলাদা integration অপ্রয়োজনীয়।"
+            },
+            {
+              "text": "ticket system থেকে ticket পড়া ও comment লেখা, authentication সহ, যা অন্য team-ও চায়",
+              "bucket": "mcp",
+              "why": "বাইরের সিস্টেম + auth + পুনর্ব্যবহার। MCP server সংযোগ ও authentication সামলায়।"
+            }
+          ],
+          "takeaway": "সূত্র: জ্ঞান → Skill; ক্ষমতা একটা app-এ → custom tool; ক্ষমতা অনেক client-এ → MCP; ঘরের কাজ → built-in; কখনো ব্যতিক্রম নয় → hook/deny।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: সব কিছু prompt-এ ঢালা, অথবা সব কিছুতে MCP",
+        "markdown": "তিনটা ফাঁদ আছে।\n\n- **ফাঁদ ১:** \"ধাপগুলো system prompt বা CLAUDE.md-তে ঢেলে দাও\" ভাবা। বড় workflow সবসময় context-এ রাখলে প্রতিটা request-এ খরচ বাড়ে। দরকারে লোড হয় এমন জিনিসের জন্য Skill।\n- **ফাঁদ ২:** \"সবকিছুর জন্য MCP server বানাও।\" একটা app-এর ভেতরের ছোট function-এর জন্য MCP অতিরিক্ত ভার (আলাদা process, deployment, auth)। উত্তর হলো **সবচেয়ে সহজ যেটা প্রয়োজন মেটায়**; reuse ও স্বাধীন maintenance সত্যিই দরকার হলে MCP।\n- **ফাঁদ ৩:** Skill-এর `allowed-tools` ক্ষমতা **সীমিত** করে না; docs অনুযায়ী এটা শুধু ওই turn-এ কিছু tool আগে থেকে অনুমোদিত করে। আটকাতে চাইলে `disallowed-tools` বা permission `deny`।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Claude Code-এর উপাদান: Skills, commands, rules, agents, agent memory\n\nExam guide-এর Claude Code Operation skill-এ ঠিক এই পাঁচটা নাম আছে: **Rules, Skills, Commands, Agents, Agent Memory**। একে একে দেখি, প্রতিটার ফাইল কোথায় থাকে এবং কী করে।\n\n### Skill: `.claude/skills/<name>/SKILL.md`\n\n```markdown\n---\nname: refund-policy\ndescription: ChaiCart-এর refund policy যাচাই করে। ব্যবহারকারী refund, ফেরত বা order বাতিলের কথা বললে ব্যবহার করুন।\n---\n\n# Refund policy যাচাই\n\n1. order-এর delivery তারিখ দেখো\n2. ডেলিভারির ৭ দিনের মধ্যে কি না মেলাও\n3. ...\n```\n\n| স্থান | পথ | কোথায় চলে |\n|---|---|---|\n| Personal | `~/.claude/skills/<name>/SKILL.md` | আপনার সব project |\n| Project | `.claude/skills/<name>/SKILL.md` | এই repo (commit করলে পুরো team) |\n| Plugin | `<plugin>/skills/<name>/SKILL.md` | plugin চালু থাকলে, নাম `/plugin-name:skill-name` |\n\n- `description` **সবসময়** context-এ থাকে; Claude এটা দেখেই ঠিক করে skill লোড করবে কি না। তাই কী করে এবং কখন ব্যবহার্য, দুটোই লিখুন।\n- Body শুধু ব্যবহারের সময় লোড হয়, আর লোড হলে conversation-এ থেকে যায়। তাই `SKILL.md` ছোট রাখুন (docs-এর পরামর্শ: ৫০০ লাইনের নিচে) আর বিস্তারিত অংশ আলাদা ফাইলে (`reference.md`) রাখুন।\n- `disable-model-invocation: true` দিলে Claude নিজে থেকে skill ডাকতে পারে না, শুধু আপনি `/name` দিয়ে চালাতে পারেন; তখন description-ও context-এ ঢোকে না। **Side-effect আছে** এমন workflow (deploy, release) এভাবে রাখুন।\n- `user-invocable: false` উল্টোটা: `/` মেনুতে দেখায় না, কিন্তু Claude লোড করতে পারে (পটভূমি জ্ঞান)।\n- `context: fork` দিলে skill আলাদা subagent-এ চলে; `agent:` দিয়ে কোন ধরন (যেমন `Explore`, `Plan`, নিজের custom agent) বলা যায়।\n- Argument: `$ARGUMENTS` (সব), `$0`/`$1` বা `$ARGUMENTS[N]` (০-ভিত্তিক), অথবা `arguments:` দিয়ে নামযুক্ত `$name`।\n\n### Slash command: এখন skill-এর সাথে মিলিত\n\nCustom command আর skill এখন একই জিনিসের দুই রূপ। `.claude/commands/deploy.md` আর `.claude/skills/deploy/SKILL.md` দুটোই `/deploy` বানায়, একই আচরণ। পুরনো `.claude/commands/` ফাইল কাজ করতেই থাকে। একই নাম থাকলে skill জেতে। Skill-এর বাড়তি সুবিধা: সহায়ক ফাইল, invocation নিয়ন্ত্রণ, আর Claude-র স্বয়ংক্রিয় লোড।\n\nBuilt-in slash command, যেগুলো exam-এর জন্য জানা দরকার:\n\n| Command | কাজ |\n|---|---|\n| `/init` | codebase বিশ্লেষণ করে শুরুর `CLAUDE.md` বানায় (থাকলে উন্নতির পরামর্শ দেয়, ওভাররাইট করে না) |\n| `/memory` | memory ফাইল ও auto memory দেখা/সম্পাদনা |\n| `/context` | কোন জিনিস context-এর কত জায়গা নিচ্ছে (`/context all`-এ Memory files-ও) |\n| `/compact [focus]` | কথোপকথন সারসংক্ষেপ করে context ছোট করা; ফোকাস লিখে দেওয়া যায় |\n| `/clear` | নতুন context দিয়ে শুরু (অসম্পর্কিত কাজের মাঝখানে) |\n| `/rewind` | কোড, কথোপকথন বা দুটোই আগের প্রম্পট পর্যন্ত ফিরিয়ে নেওয়া (`Esc` দুবার) |\n| `/config`, `/status` | settings মেনু; কোন settings source লোড হলো |\n| `/mcp` | MCP server-এর অবস্থা |\n\n### Rules: `.claude/rules/*.md`\n\nCLAUDE.md বড় হলে topic ধরে ভাগ করুন। `paths` frontmatter দিলে rule শুধু মিলে যাওয়া ফাইলে কাজ করার সময় লোড হয়:\n\n```markdown\n---\npaths:\n  - \"src/api/**/*.ts\"\n---\n\n# API নিয়ম\n- সব endpoint-এ input validation থাকবে\n```\n\n`paths` ছাড়া rule সেশনের শুরুতেই লোড হয়, `.claude/CLAUDE.md`-এর সমান গুরুত্বে।\n\n### Subagent: `.claude/agents/<name>.md`\n\nSubagent হলো আলাদা context window-এ চলা সহকারী। Frontmatter কনফিগার করে, body হয় তার system prompt:\n\n```markdown\n---\nname: test-runner\ndescription: test চালিয়ে শুধু ব্যর্থ test ও কারণ জানায়। কোড বদলের পর ব্যবহার করুন।\ntools: Read, Grep, Glob, Bash\nmodel: haiku\nmemory: project\n---\n\nতুমি একটা test runner। test চালাও। শুধু ব্যর্থ test-এর নাম, ফাইল ও মূল কারণ সংক্ষেপে ফেরত দাও।\n```\n\n| বিষয় | তথ্য (docs অনুযায়ী) |\n|---|---|\n| বাধ্যতামূলক ক্ষেত্র | শুধু `name` ও `description` |\n| `tools` | অনুমোদিত tool-এর তালিকা; না দিলে সব উপলব্ধ tool পায়। `disallowedTools` দিয়ে বাদ দেওয়াও যায় |\n| `model` | `sonnet`, `opus`, `haiku`, `fable`, পুরো model id, বা `inherit` |\n| স্থান (অগ্রাধিকার উঁচু → নিচু) | managed settings → `--agents` flag → `.claude/agents/` → `~/.claude/agents/` → plugin |\n| Built-in | `Explore` (read-only, দ্রুত খোঁজা), `Plan` (plan mode-এ গবেষণা), `general-purpose` |\n| Isolation | নিজস্ব context window; main কথোপকথন দেখে না। শুধু **শেষ summary** main-এ ফেরে |\n\nSubagent-এর মূল সুবিধা **context isolation**: একটা কাজে ৫০টা ফাইল পড়তে হলেও main window ভরে না, শুধু সারাংশ ফেরে। (`Explore` ও `Plan` ডিফল্টে CLAUDE.md ও git status ছাড়া শুরু হয়।)\n\n### Agent memory\n\nSubagent-কে `memory:` দিলে সেশনের পরেও টিকে থাকা একটা directory পায়:\n\n| `memory` মান | Directory | কখন |\n|---|---|---|\n| `user` | `~/.claude/agent-memory/<agent-name>/` | সব project-এ কাজে লাগে এমন শিক্ষা |\n| `project` | `.claude/agent-memory/<agent-name>/` | project-নির্দিষ্ট, version control-এ শেয়ারযোগ্য (সুপারিশকৃত ডিফল্ট) |\n| `local` | `.claude/agent-memory-local/<agent-name>/` | project-নির্দিষ্ট, commit হবে না |\n\nচালু থাকলে `MEMORY.md`-এর প্রথম ২০০ লাইন বা ২৫KB (যেটা আগে আসে) subagent-এর context-এ ঢোকে, আর Read/Write/Edit আপনাআপনি চালু হয়।\n\nMain সেশনেরও **auto memory** আছে: Claude নিজে নোট লেখে (`user`, `feedback`, `project`, `reference` ধরনের)। পার্থক্য: **CLAUDE.md আপনি লেখেন, auto memory Claude লেখে।**"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "একই লক্ষ্য, দুই রকম ব্যবস্থা: 'কখনো .env ছুঁয়ো না' শুধু CLAUDE.md-তে লিখলে সেটা অনুরোধ; hook বা deny rule হলে সেটা নিয়ম।",
+          "beforeTitle": "CLAUDE.md-তে লেখা (advisory)",
+          "before": "লাইন: 'কখনো .env পড়বে না।'\n\nClaude এটাকে context হিসেবে পড়ে ও সাধারণত মানে। কিন্তু docs নিজেই বলে: CLAUDE.md context, enforced configuration নয়। দীর্ঘ সেশনে বা বিভ্রান্তিতে লঙ্ঘন সম্ভব।",
+          "afterTitle": "Deny rule / PreToolUse hook (enforced)",
+          "after": "settings.json: permissions.deny = [\"Read(./.env)\", \"Read(./.env.*)\"]\nঅথবা PreToolUse hook যা exit code 2 দিয়ে বন্ধ করে।\n\nHarness নিজে tool call আটকায়; Claude-র 'ইচ্ছা'র ওপর নির্ভর নেই।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. CLAUDE.md hierarchy ও settings.json\n\n### CLAUDE.md: কোথায় কোথায় থাকে\n\nCLAUDE.md হলো Claude Code-এর \"প্রতি সেশনের শুরুতে পড়া নোট\"। Docs অনুযায়ী লোডের ক্রম **সবচেয়ে বিস্তৃত থেকে সবচেয়ে নির্দিষ্ট**:\n\n| স্তর | স্থান | কার জন্য |\n|---|---|---|\n| Managed policy | macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`; Linux/WSL: `/etc/claude-code/CLAUDE.md`; Windows: `C:\\Program Files\\ClaudeCode\\CLAUDE.md` | পুরো সংগঠন (IT/DevOps বসায়) |\n| User | `~/.claude/CLAUDE.md` | আপনার ব্যক্তিগত পছন্দ, সব project |\n| Project | `./CLAUDE.md` অথবা `./.claude/CLAUDE.md` | team (git-এ commit) |\n| Local | `./CLAUDE.local.md` | আপনার ব্যক্তিগত, শুধু এই project (`.gitignore`-এ রাখুন) |\n\nলোডের নিয়ম, যা exam-এ সূক্ষ্মভাবে আসে:\n\n1. Claude Code **বর্তমান directory এবং তার প্রতিটি উপরের directory** থেকে `CLAUDE.md` ও `CLAUDE.local.md` লোড করে। `foo/bar/`-এ চালালে `foo/CLAUDE.md` ও `foo/bar/CLAUDE.md` দুটোই আসে।\n2. ফাইলগুলো **যুক্ত (concatenate)** হয়, একটা আরেকটাকে override করে না। ক্রম: root থেকে নিচের দিকে, তাই কাজের directory-র কাছের নির্দেশ **শেষে** পড়া হয়। প্রতিটা directory-তে `CLAUDE.local.md` `CLAUDE.md`-এর পরে যোগ হয়।\n3. **Subdirectory**-র CLAUDE.md শুরুতে লোড হয় না; Claude সেই subdirectory-র কোনো ফাইল পড়লে/লিখলে তখন লোড হয় (on demand)।\n4. দুটো নির্দেশ পরস্পরবিরোধী হলে Claude নিজের বিচারে একটা বেছে নিতে পারে। তাই পুরনো ও বিরোধী নির্দেশ মুছুন।\n5. `--add-dir` দিয়ে বাড়তি directory যোগ করলে সেখানকার CLAUDE.md ডিফল্টে **লোড হয় না**; লোড করতে `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1` লাগে।\n6. `@path/to/file` দিয়ে অন্য ফাইল import করা যায় (সর্বোচ্চ ৪ ধাপ গভীর)। **কিন্তু import context-খরচ কমায় না**, কারণ import করা ফাইল সাথেই লোড হয়।\n7. Block-level HTML comment (`<!-- ... -->`) context-এ ঢোকার আগে বাদ যায়; maintainer-এর নোট রাখার জায়গা।\n\n### ভালো CLAUDE.md-র নিয়ম\n\n- **আকার:** প্রতিটা ফাইল ২০০ লাইনের নিচে রাখার লক্ষ্য। বড় হলে adherence কমে।\n- **যাচাইযোগ্য হোক:** \"ভালো করে format করো\" নয়; \"২-space indentation ব্যবহার করো\"। \"test চালাও\" নয়; \"commit-এর আগে `pnpm test` চালাও\"।\n- **কী রাখবেন:** build/test কমান্ড, কনভেনশন, project layout, \"সবসময় X করো\" নিয়ম।\n- **কী রাখবেন না:** বহু-ধাপের পদ্ধতি (→ Skill), শুধু কোডের একটা অংশের নিয়ম (→ path-scoped rule)।\n- **কখন যোগ করবেন:** Claude একই ভুল দ্বিতীয়বার করলে, code review-তে একই মন্তব্য আসলে, বা আপনি গত সেশনের একই সংশোধন আবার টাইপ করলে।\n- `/init` শুরুর ফাইল বানায়; `/context all` চালিয়ে \"Memory files\" তালিকায় দেখুন ফাইল লোড হয়েছে কি না।\n\nChaiCart-এর জন্য একটা ছোট, কাজের CLAUDE.md:\n\n```markdown\n# ChaiCart (Chai-Bot)\n\n## Commands\n- install: `pnpm install`\n- test: `pnpm test` (commit-এর আগে অবশ্যই চালাবে)\n- lint: `pnpm lint --fix`\n\n## Conventions\n- Python code: type hints আবশ্যক, formatter `ruff format`\n- API handler থাকে `src/api/handlers/`\n- model id কখনো hardcode করবে না; env var `CLAUDE_MODEL` থেকে পড়বে\n\n## Workflow\n- নতুন feature-এর আগে plan দেখাবে, অনুমতির পর কোড লিখবে\n- বহু-ধাপের কাজের নিয়ম আছে `.claude/skills/`-এ\n```\n\n### settings.json: কনফিগারেশন (CLAUDE.md নয়!)\n\nপার্থক্যটা মনে গেঁথে রাখুন: **CLAUDE.md = Claude-কে কী বলা**, **settings.json = Claude Code (harness) কী করতে পারবে**। এখানে permission, hook, env, model ইত্যাদি।\n\n| Scope | ফাইল | কার ওপর প্রযোজ্য |\n|---|---|---|\n| User | `~/.claude/settings.json` | আপনি, সব project |\n| Shared project | `.claude/settings.json` | repo-র সবাই (commit করুন) |\n| Project local | `.claude/settings.local.json` | আপনি, শুধু এই project (git-এ যাবে না) |\n| Managed | `managed-settings.json` ও অন্য managed উৎস | সংগঠনের সবাই |\n\n**অগ্রাধিকার (উঁচু থেকে নিচু):** Managed → command line (`--settings`) → project local → shared project → user। একই key উঁচু স্তরেরটা জেতে।\n\n**List merge হয়, override হয় না:** `permissions.allow` ইত্যাদি list key একাধিক ফাইলে থাকলে **সব জোড়া লাগে**।\n\nএকটা সাধারণ settings.json:\n\n```json\n{\n  \"permissions\": {\n    \"allow\": [\"Bash(pnpm test *)\", \"Bash(pnpm lint *)\"],\n    \"deny\": [\"Read(./.env)\", \"Read(./.env.*)\", \"Bash(git push --force *)\"]\n  },\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"matcher\": \"Bash\",\n        \"hooks\": [{ \"type\": \"command\", \"command\": \".claude/hooks/check-bash.sh\" }]\n      }\n    ]\n  }\n}\n```\n\n(Hook-এর input stdin-এ JSON হিসেবে আসে; script exit code `2` দিলে tool call আটকায় এবং stderr-এর কারণ Claude-র কাছে যায়। `.claude/hooks/check-bash.sh` আপনার নিজের লেখা script, নামটা উদাহরণ মাত্র। Exit `0` দিলেও tool call স্বাভাবিক permission প্রক্রিয়ায় যায়, অর্থাৎ exit 0 মানে \"অনুমোদন\" নয়।)\n\nআরও কয়েকটা তথ্য:\n\n- Settings ফাইল **strict JSON**: `//` comment বা trailing comma দিলে Settings Error।\n- Claude Code ফাইল পরিবর্তন লক্ষ্য করে, `permissions` ও `hooks`-এর পরিবর্তন সাধারণত চলমান সেশনেই প্রযোজ্য হয়।\n- `/status` দেখায় কোন settings source লোড হয়েছে; `claude doctor` প্রত্যাখ্যাত entry দেখায়।\n- `permissions.defaultMode`-এ `auto` বা `bypassPermissions` **project settings (`.claude/settings.json`, `.claude/settings.local.json`)-এ দিলে কাজ করে না**; user বা managed settings-এ দিতে হয়। Repo-তে ঢুকে পড়া ফাইল যেন নিজে সব permission খুলে না দেয়, এটা সেই সুরক্ষা।\n- `deny` rule সব mode-এ কাজ করে, `bypassPermissions`-এও। `allow` rule `bypassPermissions`-এ অর্থহীন।\n- Project-এর `permissions.allow` rule প্রতিটা teammate-এর folder **trust** করার পর প্রযোজ্য; `deny` ও `ask` সাথে সাথে।"
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "CLAUDE.md নাকি rule নাকি Skill?",
+        "markdown": "Nusrat Apu-র ছোট নিয়ম: **\"সবসময় জানা দরকার\" → CLAUDE.md; \"শুধু এই ফাইলগুলোতে কাজ করার সময়\" → `.claude/rules/` (paths সহ); \"মাঝেমধ্যে লাগে, বা `/name` দিয়ে ডাকব\" → Skill; \"ঘটতেই হবে\" → hook/deny।** CLAUDE.md ২০০ লাইন ছাড়ালেই ভাগ করার সময় হয়েছে।"
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "কোন স্তর কোন ঝুঁকিপূর্ণ কমান্ড আটকায়?",
+          "hint": "স্তরগুলো চালু/বন্ধ করুন আর দেখুন কোন কমান্ড আটকায়। লক্ষ্য করুন: CLAUDE.md-র নির্দেশ একা কিছুই নিশ্চিতভাবে আটকায় না।",
+          "layers": [
+            {
+              "id": "claudemd",
+              "label": "CLAUDE.md নির্দেশ",
+              "desc": "'কখনো force push করবে না, .env পড়বে না' লেখা আছে। এটা context, enforcement নয়, তাই নিশ্চিত কিছুই আটকায় না।",
+              "blocks": []
+            },
+            {
+              "id": "deny",
+              "label": "settings.json deny rule",
+              "desc": "permissions.deny: Read(./.env), Bash(git push --force *)। Harness নিজে আটকায়।",
+              "blocks": ["env-read", "force-push"]
+            },
+            {
+              "id": "hook",
+              "label": "PreToolUse hook (exit 2)",
+              "desc": "কমান্ডের ধরন দেখে যুক্তি চালায়, যেমন rm -rf বা curl | sh শনাক্ত করে exit code 2 দিয়ে বন্ধ করে।",
+              "blocks": ["rm-rf", "curl-sh"]
+            },
+            {
+              "id": "mode",
+              "label": "Permission mode: default (প্রতিটার আগে জিজ্ঞাসা)",
+              "desc": "পড়া ছাড়া বাকি কাজের আগে মানুষ অনুমতি দেয়। মানুষ খেয়াল করলে অনেক কিছু ঠেকে।",
+              "blocks": ["db-drop", "curl-sh", "force-push"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "env-read",
+              "label": "cat .env (secret পড়া)",
+              "desc": "API key context-এ ঢুকে যায়।"
+            },
+            {
+              "id": "force-push",
+              "label": "git push --force origin main",
+              "desc": "সহকর্মীর commit মুছে যেতে পারে।"
+            },
+            {
+              "id": "rm-rf",
+              "label": "rm -rf ./data",
+              "desc": "ডেটা ডিরেক্টরি মুছে যায়।"
+            },
+            {
+              "id": "curl-sh",
+              "label": "curl http://... | sh",
+              "desc": "অজানা script চালানো।"
+            },
+            {
+              "id": "db-drop",
+              "label": "DROP TABLE orders (script-এর ভেতরে)",
+              "desc": "production-সদৃশ ডেটাবেসে ধ্বংসাত্মক কমান্ড।"
+            }
+          ],
+          "takeaway": "একটা স্তর যথেষ্ট নয়। Deny rule/hook নিশ্চিত আটকায়, permission mode মানুষকে সুযোগ দেয়, CLAUDE.md শুধু দিক ঠিক করে। স্তর মিলিয়ে নিরাপত্তা (defence in depth)।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Permission mode ও session management\n\n### ছয়টা permission mode\n\nClaude Code প্রতিটা ঝুঁকিপূর্ণ কাজের আগে জিজ্ঞাসা করবে কি না, সেটা **permission mode** ঠিক করে। Docs অনুযায়ী ছয়টা:\n\n| Config মান | UI নাম | অনুমতি ছাড়াই যা চলে |\n|---|---|---|\n| `default` | Manual | শুধু পড়া (reads) |\n| `acceptEdits` | Edit automatically | পড়া + working directory-র ভেতরে file edit + সাধারণ file-system কমান্ড (`mkdir`, `touch`, `mv`, `cp`, `rm`, `rmdir`, `sed`) |\n| `plan` | Plan | পড়া। plan অনুমোদনের আগে edit আটকানো |\n| `auto` | Auto | প্রায় সবকিছু, তবে একটা আলাদা **classifier** model নিরাপত্তা পরীক্ষা করে |\n| `dontAsk` | Don't ask | working directory-র পড়া ও আগে থেকে অনুমোদিত tool। যা জিজ্ঞাসা করত, সেটা **প্রত্যাখ্যাত** |\n| `bypassPermissions` | Bypass permissions | সবকিছু। শুধু আলাদা (isolated) container বা VM-এর জন্য |\n\nCLI-তে `manual` হলো `default`-এর alias।\n\n**Mode বদলানো:**\n- সেশনের মধ্যে `Shift+Tab`: চক্র `default` → `acceptEdits` → `plan` (auto উপলব্ধ হলে সেটাও যোগ হয়)। `bypassPermissions` চক্রে আসে শুধু যদি আপনি সেভাবে শুরু করে থাকেন (`--permission-mode bypassPermissions`, `--dangerously-skip-permissions`)। `dontAsk` চক্রে কখনোই আসে না।\n- শুরুতে flag: `claude --permission-mode plan` (বা `acceptEdits`, `auto`, `dontAsk`, `bypassPermissions`)।\n- ডিফল্ট হিসেবে: settings-এ `\"permissions\": {\"defaultMode\": \"...\"}`। অগ্রাধিকার: flag, তারপর settings ফাইল, তারপর built-in ডিফল্ট।\n\n### Auto mode: কী এবং কী নয়\n\nAuto mode-এ আলাদা একটা classifier model প্রতিটা action চালানোর আগে দেখে। যেসব action আপনার অনুরোধের বাইরে চলে যায়, অচেনা অবকাঠামো ছোঁয়, বা বিদ্বেষপূর্ণ (hostile) content দ্বারা চালিত মনে হয়, সেগুলো আটকায়।\n\n- Docs অনুযায়ী (v2.1.283+) interactive terminal ও VS Code সেশন ডিফল্টে auto mode-এ শুরু হয়। **কিন্তু `claude -p` ও Agent SDK-র run ডিফল্টে auto-তে শুরু হয় না**; সেখানে `--permission-mode auto` দিতে হয়।\n- Auto-তে ঢুকলে **ব্যাপক allow rule বাদ যায়** যা যেকোনো কোড চালানোর অনুমতি দেয় (যেমন `Bash(*)`, `Bash(python*)`)। সংকীর্ণ rule (`Bash(npm test)`) থাকে।\n- Classifier পরপর ৩ বার বা মোট ২০ বার আটকালে auto mode থেমে আবার প্রশ্ন করা শুরু করে।\n- Auto mode প্রম্পট কমায়, **নিরাপত্তার নিশ্চয়তা দেয় না**।\n- `.claude/settings.json`-এ `defaultMode: \"auto\"` কাজ করে না (user বা managed settings-এ দিন)।\n\n### কখন কোন mode\n\n| পরিস্থিতি | সুপারিশ |\n|---|---|\n| অচেনা কোডবেসে প্রথমবার | `plan`: পড়ে পরিকল্পনা বানাবে, কিছু বদলাবে না |\n| ছোট, স্পষ্ট বদল (typo, rename) | `acceptEdits` বা auto |\n| CI-তে নিয়ন্ত্রিত চালানো | `dontAsk` + `--allowedTools` তালিকা |\n| বিচ্ছিন্ন sandbox VM | `bypassPermissions` (তবুও deny rule কাজ করে) |\n\n**সূক্ষ্ম নিয়ম:** `deny` rule **সব mode-এ** আটকায়, `bypassPermissions`-এও। `.git`, `.claude`, `.bashrc`, `.mcp.json`-এর মতো protected path-এ লেখা `bypassPermissions` ছাড়া কোনো mode স্বয়ংক্রিয়ভাবে অনুমোদন করে না (ব্যতিক্রম: bypass উপলব্ধ থাকলে interactive terminal-এর plan mode)।\n\n### Session management: context আপনার সবচেয়ে মূল্যবান সম্পদ\n\nপ্রতিটা Claude Code সেশন নতুন context window দিয়ে শুরু হয়। কথোপকথন যত লম্বা, ততই খরচ বাড়ে ও আগের জিনিস ঝাপসা হয়। হাতিয়ার:\n\n| কাজ | কমান্ড | কখন |\n|---|---|---|\n| নতুন শুরু | `/clear` (নাম দিয়েও: `/clear oauth-migration`) | একটা কাজ শেষ, আরেকটা শুরু |\n| বড় সেশন ছোট করা | `/compact <কী রাখবে তার ফোকাস>` | লম্বা সেশন চালিয়ে যেতেই হবে |\n| কী কত জায়গা নিচ্ছে দেখা | `/context` (`/context all`) | context ভরে যাচ্ছে সন্দেহ হলে |\n| ভুল পথ থেকে ফেরা | `/rewind` বা `Esc` দুবার | কোড/কথোপকথন আগের জায়গায় |\n| আগের কথোপকথন চালু রাখা | `claude --continue` (সর্বশেষটা), `claude --resume <id>` | পরের দিন একই কাজে ফেরা |\n\nDocs-এর পরামর্শ: দুবার সংশোধন করার পরও ভুল থাকলে তৃতীয় সংশোধন না করে `/clear` দিয়ে শেখা জিনিস মিলিয়ে একটা ভালো নতুন প্রম্পট লিখুন; কারণ ব্যর্থ চেষ্টাগুলো context-এ থেকেই যায়। কথোপকথন অনেক বড় হলে স্বয়ংক্রিয় compaction হয়; compaction-এর পর প্রতিটা skill-এর সাম্প্রতিক ব্যবহার আবার জুড়ে দেওয়া হয় (প্রতিটার প্রথম ৫,০০০ token, মোট ২৫,০০০ token বাজেটের মধ্যে)।\n\n**CLAUDE.md compaction-এ কীভাবে টিকে থাকে?** এর খুঁটিনাটি এই chapter-এ যাচাই করা হয়নি। *যাচাই করুন:* docs-এর context-window পাতা। যে নিয়ম অবশ্যই টিকতে হবে, সেটা hook বা deny rule-এও রাখুন।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "একটা কাজের সেশন: explore, plan, code, verify, commit। প্রতিটা ধাপে mode, হাতিয়ার ও যাচাই আলাদা।",
+          "steps": [
+            {
+              "title": "১. Explore (plan mode)",
+              "body": "`claude --permission-mode plan` বা Shift+Tab। Claude ফাইল পড়ে, grep করে; কিছু বদলায় না। বড় খোঁজা `Explore` subagent-কে দিন যাতে main context পরিষ্কার থাকে।"
+            },
+            {
+              "title": "২. Plan",
+              "body": "Claude পরিকল্পনা লেখে। আপনি পড়েন, ভুল ধরেন, দরকারে সম্পাদনা করান। অনুমোদন না দেওয়া পর্যন্ত edit আটকানো থাকে।"
+            },
+            {
+              "title": "৩. Code (acceptEdits বা default)",
+              "body": "অনুমোদনের পর implement। test চালানোর মতো **যাচাইয়ের উপায়** আগেই দিন (CLAUDE.md-তে `pnpm test`), যাতে Claude নিজে ঠিক-ভুল দেখতে পারে।"
+            },
+            {
+              "title": "৪. Verify",
+              "body": "test/lint চলে; ব্যর্থ হলে Claude ঠিক করে। দরকারে `/rewind`, আর দুইবারের বেশি সংশোধন লাগলে `/clear` + নতুন প্রম্পট।"
+            },
+            {
+              "title": "৫. Commit",
+              "body": "`git diff` দেখে মানুষ নিশ্চিত করে; Claude commit message লেখে ও commit করে। শেষে `/clear` বা নতুন সেশন পরের কাজের জন্য।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Rafi-র সেশন: rate-limit retry-র bug ঠিক করা (explore → plan → code → commit)",
+          "hint": "ধাপে ধাপে দেখুন কে কী করছে। লক্ষ্য করুন কোন ধাপে mode বদলায় এবং কোথায় মানুষের সিদ্ধান্ত লাগে।",
+          "actors": [
+            {
+              "id": "rafi",
+              "label": "Rafi"
+            },
+            {
+              "id": "claude",
+              "label": "Claude Code (main)"
+            },
+            {
+              "id": "explore",
+              "label": "Explore subagent"
+            },
+            {
+              "id": "git",
+              "label": "git / test"
+            }
+          ],
+          "steps": [
+            {
+              "from": "rafi",
+              "to": "claude",
+              "label": "plan mode চালু, প্রম্পট দেওয়া",
+              "note": "Rafi `--permission-mode plan`-এ শুরু করে বলে: 'retry logic-এ কেন rate-limit error ফেরত যাচ্ছে বুঝতে চাই।' এখনো কিছু বদলাবে না।"
+            },
+            {
+              "from": "claude",
+              "to": "explore",
+              "label": "'retry কোথায় আছে খুঁজে দাও'",
+              "note": "অনেক ফাইল পড়তে হবে, তাই কাজটা Explore subagent-কে দেওয়া হয়। এর নিজস্ব context window; main window ভরে না।"
+            },
+            {
+              "from": "explore",
+              "to": "claude",
+              "label": "শুধু সারসংক্ষেপ ফেরত",
+              "note": "Subagent ৩০টা ফাইল পড়ে, কিন্তু main-এ আসে শুধু ছোট একটা summary।"
+            },
+            {
+              "from": "claude",
+              "to": "rafi",
+              "label": "পরিকল্পনা পেশ",
+              "note": "Plan mode-এ edit আটকানো। Claude দেখায়: কোন ফাইল, কোন test, কী ঝুঁকি।"
+            },
+            {
+              "from": "rafi",
+              "to": "claude",
+              "label": "অনুমোদন + acceptEdits",
+              "note": "Rafi পরিকল্পনা ঠিক করে নেয় এবং অনুমোদন দেয়। এখন file edit অনুমতি ছাড়াই চলবে।"
+            },
+            {
+              "from": "claude",
+              "to": "git",
+              "label": "`pnpm test` চালানো",
+              "note": "CLAUDE.md-তে test কমান্ড লেখা ছিল। Claude নিজেই যাচাই করে: একটা test ব্যর্থ।"
+            },
+            {
+              "from": "git",
+              "to": "claude",
+              "label": "ব্যর্থ test-এর output",
+              "note": "Claude output দেখে নিজের কোড ঠিক করে আবার চালায়। এবার সব পাস।"
+            },
+            {
+              "from": "rafi",
+              "to": "claude",
+              "label": "'diff দেখে commit করো'",
+              "note": "Rafi `git diff` পড়ে নিশ্চিত হয়। যাচাইয়ের দায় শেষ পর্যন্ত মানুষের।"
+            },
+            {
+              "from": "claude",
+              "to": "git",
+              "label": "git commit",
+              "note": "Claude বার্তা লিখে commit করে। কাজ শেষ, তাই Rafi `/clear` দেয় যাতে পরের কাজ পুরনো ইতিহাসের খরচ না টানে।"
+            }
+          ],
+          "takeaway": "প্রথমে বোঝো, তারপর পরিকল্পনা, তারপর কোড, তারপর যাচাই, শেষে commit। যাচাইয়ের উপায় (test) আগে থেকে দিয়ে রাখা সবচেয়ে বড় সুবিধা।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Headless, streaming ও auto-mode\n\n### `claude -p`: কীবোর্ড ছাড়া Claude Code\n\n`-p` (বা `--print`) flag দিলে Claude Code **non-interactive** চলে: প্রম্পট নেয়, কাজ করে, উত্তর প্রিন্ট করে বেরিয়ে যায়। Script, CI/CD, cron-এর জন্য। Docs-এ এটাকেই \"Agent SDK via the CLI\" বলা হয়েছে।\n\n```bash\nclaude -p \"এই module কী করে?\"\nclaude -p \"auth.py-র bug ঠিক করো\" --allowedTools \"Read,Edit,Bash\"\ncat build-error.txt | claude -p 'root cause সংক্ষেপে বলো' > output.txt\n```\n\n- সফল হলে exit code `0`, ব্যর্থ হলে non-zero।\n- Pipe করা stdin-এর সীমা ১০MB।\n- User-invoked Skill ও custom command `-p`-তেও চলে (প্রম্পটে `/skill-name` লিখুন); কিন্তু `/login`-এর মতো শুধু terminal UI-র built-in কমান্ড নেই।\n\n### আউটপুটের ধরন: `--output-format`\n\n| মান | কী পাবেন |\n|---|---|\n| `text` (ডিফল্ট) | সাধারণ লেখা |\n| `json` | result, session ID, usage, মেটাডেটা। `result` ক্ষেত্রে লেখা; খরচের তথ্যও থাকে (client-side অনুমান; আসল বিল থেকে আলাদা হতে পারে) |\n| `stream-json` | প্রতি লাইনে একটা JSON event (newline-delimited), real-time |\n\n**Structured output:** `--json-schema '<schema>'` দিলে (`--output-format json`-এর সাথে) উত্তর `structured_output` ক্ষেত্রে schema মেনে আসে। Run বৈধ structured output ছাড়া শেষ হলে এই ক্ষেত্র **থাকে না**, তাই ব্যবহারের আগে আছে কি না দেখুন।\n\n```bash\nclaude -p \"auth.py-র main function-গুলোর নাম বের করো\" \\\n  --output-format json \\\n  --json-schema '{\"type\":\"object\",\"properties\":{\"functions\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"functions\"]}' \\\n  | jq '.structured_output'\n```\n\n### Streaming\n\ntoken আসতে আসতে দেখতে:\n\n```bash\nclaude -p \"recursion বোঝাও\" --output-format stream-json --verbose --include-partial-messages\n```\n\n- `stream-json`-এর সাথে docs `--verbose` ও `--include-partial-messages` ব্যবহার করে। শেষ লাইন `result` বার্তা (চূড়ান্ত উত্তর, খরচ, session metadata)।\n- Subagent-এর বার্তাও stream-এ আসে; `parent_tool_use_id` ক্ষেত্র বলে কোনটা কোন subagent-এর (main কথোপকথনের জন্য `null`)।\n- API retry-র সময় `system/api_retry` event আসে (`attempt`, `max_retries`, `retry_delay_ms`, `error` ইত্যাদি)।\n- `system/init` event-এ model, tool, MCP server ও plugin-এর তথ্য থাকে; CI-তে `mcp_servers`/`plugin_errors` দেখে বোঝা যায় কিছু লোড হয়নি কি না।\n\n### Permission headless-এ\n\nকেউ নেই \"অনুমতি দাও\" চাপার। তাই:\n\n| উপায় | কাজ |\n|---|---|\n| `--allowedTools \"Bash(git diff *),Read\"` | নির্দিষ্ট tool/কমান্ড আগে থেকে অনুমোদিত। `Bash(git diff *)`-এর ` *` মানে prefix match; `*`-এর আগে space গুরুত্বপূর্ণ |\n| `--permission-mode acceptEdits` / `dontAsk` / `auto` | পুরো run-এর ভিত্তি mode |\n| `--permission-prompts none` | যা প্রম্পট করত সব প্রত্যাখ্যাত, Claude-কে বলা হয় আবার চেষ্টা না করতে (v2.1.259+) |\n\n- Docs অনুযায়ী Claude Code v2.1.302+ থেকে `claude -p` কোনো mode না দিলে Manual (`default`)-এ শুরু হয়: অনুমোদন লাগে এমন call প্রত্যাখ্যাত হয়, যদি না কিছু (`--allowedTools`, `PermissionRequest` hook) অনুমোদন দেয়।\n- `dontAsk` CI-র জন্য ভালো: যা অনুমোদিত নয় তা প্রত্যাখ্যাত, আটকে থাকে না।\n- **Auto mode `-p`-তে ডিফল্ট নয়**; `--permission-mode auto` দিতে হয়।\n\n### `--bare`: বারবার একই ফল পেতে\n\n`--bare` দিলে auto-discovery বন্ধ: hooks, skills, custom commands, subagents, plugins, MCP server, auto memory এবং **CLAUDE.md কিছুই লোড হয় না**। তাতে শুরু দ্রুত হয়, আর সহকর্মীর `~/.claude`-এর hook বা repo-র `.mcp.json` আপনার CI-এর আচরণ বদলাতে পারে না। দরকারি জিনিস flag দিয়ে দিন (`--append-system-prompt`, `--settings`, `--mcp-config`, `--agents`, `--plugin-dir`)। Bare mode OAuth/keychain পড়ে না, তাই `ANTHROPIC_API_KEY` দরকার। Docs বলে এটা scripted/SDK call-এর জন্য সুপারিশকৃত এবং ভবিষ্যতে `-p`-এর ডিফল্ট হবে।\n\nউল্টো দিকের সতর্কতা: `--bare` ছাড়া `claude -p` repo-র `.claude/settings.json`-এর hook ও `.mcp.json`-এর server **trust dialog ছাড়াই** চালায় (`-p`-তে ওই dialog আসে না)। অচেনা repo-তে headless চালানোর আগে এটা মাথায় রাখুন।\n\n### সেশন চালিয়ে যাওয়া\n\n```bash\nclaude -p \"এই codebase-এ performance সমস্যা খোঁজো\"\nclaude -p \"এবার database query-তে ফোকাস করো\" --continue\n\nsession_id=$(claude -p \"review শুরু\" --output-format json | jq -r '.session_id')\nclaude -p \"চালিয়ে যাও\" --resume \"$session_id\"\n```\n\n### Prompt সাজানো\n\n`--append-system-prompt \"...\"` Claude Code-এর ডিফল্ট আচরণ রেখে নির্দেশ যোগ করে; `--system-prompt` পুরো ডিফল্ট প্রতিস্থাপন করে।\n\n### CI ও unsupervised run যাচাই\n\nGitHub Actions ও GitLab CI/CD-তেও এই Agent SDK CLI ব্যবহার হয় (আলাদা docs পাতা আছে; workflow YAML-এর খুঁটিনাটি এই chapter-এ যাচাই করা হয়নি)। মূল ধারণা: কেউ দেখছে না বলেই আগে থেকে সীমা বাঁধুন। সংকীর্ণ `--allowedTools`, `--max-budget-usd` (docs-এর CLI flag তালিকায় আছে) দিয়ে খরচের সীমা, `--output-format json`-এ খরচ/ফলাফল লগ, এবং শেষে মানুষ বা অন্য একটা check (test, schema validation) দিয়ে ফল যাচাই।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'auto' মানে নিরাপদ নয়, 'headless' মানে অনুমতি-মুক্ত নয়",
+        "markdown": "- **Auto mode একটা classifier-নির্ভর সুবিধা**, নিশ্চয়তা নয়; docs নিজেই বলে এটা প্রম্পট কমায় কিন্তু নিরাপত্তার গ্যারান্টি দেয় না। নির্ভরযোগ্য আটকানোর জন্য deny rule/hook।\n- `claude -p` ডিফল্টে সবকিছু চালায় না। অনুমোদন-লাগা call প্রত্যাখ্যাত হয়, যদি `--allowedTools` বা `--permission-mode` না দেওয়া থাকে (v2.1.302+)। `--dangerously-skip-permissions` বা `bypassPermissions` শুধু isolated পরিবেশে।\n- `structured_output` সবসময় থাকে না: নেই কি না যাচাই না করে ব্যবহার করলে script ভাঙে।\n- কেউ বলতে পারে \"CLAUDE.md-তে লিখলেই `.env` সুরক্ষিত\" বা \"`--bare` দিলেও CLAUDE.md লোড হবে\"। দুটোই ভুল।"
+      },
+      {
+        "type": "callout",
+        "tone": "info",
+        "title": "যেসব বিষয়ে সতর্ক থাকুন (flag করা হলো)",
+        "markdown": "- **Claude Code দ্রুত বদলায়:** auto mode-এর উপলব্ধতা, ডিফল্ট mode, `--bare`-এর ডিফল্ট হওয়া ইত্যাদি docs-এ সংস্করণসহ লেখা (যেমন v2.1.283, v2.1.302)। আপনার installed সংস্করণ আলাদা হলে আচরণ আলাদা হতে পারে।\n- **`/agents`:** পুরনো সংস্করণে (v2.1.197 ও আগে) interactive wizard ছিল; বর্তমান docs অনুযায়ী এটা শুধু বলে Claude-কে subagent বানাতে বলুন বা `.claude/agents/` ফাইল নিজে সম্পাদনা করুন। তাই lab-এ ফাইল হাতে বানানো হয়েছে।\n- **Subagent-এর nesting:** বর্তমান docs অনুযায়ী ডিফল্টে subagent আরও subagent ডাকতে পারে (তিন স্তর পর্যন্ত; `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`-এ বদলানো যায়)। অনেক পুরনো লেখায় 'subagent নতুন subagent বানাতে পারে না' আছে; এটা বর্তমান docs-এর সাথে মেলে না।\n- **Anthropic Academy কোর্স (Claude Code 101 / in Action):** কোর্সের পাঠ্য সরাসরি আনা সম্ভব হয়নি; এই chapter-এর তথ্য official Claude Code docs থেকে, কোর্সের বিষয়-সূচি অনুসরণ করে সাজানো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Explore → plan → code → commit: কাজের ধারা (এবং code review)\n\nClaude Code পাঠক্রমের মূল ছক: **আগে বোঝো, তারপর পরিকল্পনা, তারপর কোড, তারপর যাচাই ও commit।** সরাসরি \"কোড লেখো\" বললে Claude কখনো কখনো ভুল সমস্যার সমাধান বানায়।\n\n| ধাপ | আপনি কী করবেন | কেন |\n|---|---|---|\n| **Explore** | plan mode-এ প্রশ্ন করুন, ফাইল পড়ান। বড় খোঁজা `Explore` subagent-কে | ভুল ধারণা আগেই ধরা; main context পরিষ্কার |\n| **Plan** | পরিকল্পনা চান ও সম্পাদনা করুন | ভুল দিকের কাজ বাঁচে |\n| **Code** | অনুমোদনের পর implement; যাচাইয়ের উপায় (test/lint) দিন | Claude নিজেই ঠিক-ভুল জানতে পারে |\n| **Commit** | `git diff` দেখে Claude-কে commit করতে বলুন | শেষ নিয়ন্ত্রণ মানুষের |\n\n**ছোট কাজে plan লাগে না।** Diff এক বাক্যে বর্ণনা করা গেলে (typo, rename) সরাসরি করান; plan মূল্যবান যখন কাজ অনিশ্চিত, বহু ফাইলে ছড়ানো, বা আপনি কোডের সাথে অপরিচিত।\n\n### Code review ও যাচাই\n\n- যাচাইয়ের উপায় দেওয়াই সবচেয়ে কার্যকর অভ্যাস: test চালানোর কমান্ড, expected output, বা `claude -p` দিয়ে diff review (`git diff main | claude -p \"typo খোঁজো\"`)।\n- Claude Code-এর সাথে আসা bundled skill (যেমন `/code-review`) আছে; কোনটা কতটা কড়া, তা installed সংস্করণের `/help` ও commands পাতায় দেখুন।\n- **নিজের লেখা কোড নিজেই review:** যে সেশন কোড লিখেছে সেই একই context-এ review করালে পক্ষপাত থাকতে পারে। নতুন সেশন বা আলাদা subagent দিয়ে review তুলনায় ভালো, কারণ ওটার context-এ লেখার যুক্তিগুলো নেই।\n\n### সেটআপ গড়ে তোলা: ট্রিগার দেখে একটা একটা\n\nDocs-এর পরামর্শ: প্রথমেই সবকিছু সাজাবেন না।\n\n| ট্রিগার | যোগ করুন |\n|---|---|\n| Claude দুইবার একই কনভেনশন ভুল করেছে | CLAUDE.md |\n| একই প্রম্পট বারবার টাইপ করছি | user-invocable skill / slash command |\n| একই playbook তৃতীয়বার paste করছি | Skill |\n| বাইরের সিস্টেমের ডেটা কপি করে আনছি | MCP server |\n| পাশের কাজ আমার window ভরে দিচ্ছে | subagent |\n| কিছু প্রতিবার ঘটতেই হবে | hook |\n| দ্বিতীয় repo-তেও একই সেটআপ | plugin |\n\n**Plugin** হলো skill, hook, subagent ও MCP server একসাথে বাঁধা installable একক। Plugin skill-এর নাম namespace সহ (`/my-plugin:review`), যাতে সংঘর্ষ না হয়; marketplace-এর মাধ্যমে বিতরণ করা যায়।\n\n### কোন স্তর কীভাবে জোড়া লাগে (override বনাম merge)\n\n| বিষয় | একাধিক স্তরে থাকলে |\n|---|---|\n| CLAUDE.md | **যুক্ত হয়** (additive); সব স্তর একসাথে context-এ |\n| Skill ও subagent | **নাম ধরে override**: একটাই জেতে (skill: managed > user > project; subagent: managed > `--agents` > project > user > plugin) |\n| MCP server | নাম ধরে override: local > project > user |\n| Hook | **merge**: সব স্তরের hook চলে |\n| settings list (`permissions.allow`) | **merge** |\n| settings scalar key | উঁচু স্তর জেতে (managed > CLI > local > project > user) |\n\nএই টেবিলটা exam-এর \"কোনটা override, কোনটা merge\" প্রশ্নের সরাসরি উত্তর।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter থেকে দুটো blueprint skill আসে:\n\n| Domain | Skill | ওজন | এই chapter-এর অংশ |\n|---|---|---|---|\n| 8 Tools and MCPs | **Agentic Customization** | ৪.১% | §১ (built-in vs custom tool vs Skill vs MCP), Skill/hook/MCP-র context cost ও determinism |\n| 3 Claude Code | **Claude Code Operation** | ৩.১% | §২ (Rules, Skills, Commands, Agents, Agent Memory), §৩ (CLAUDE.md hierarchy, settings.json), §৪ (session, mode), §৫ (headless, streaming, auto-mode), §৬ (workflow) |\n\n**সাধারণ প্রশ্নের ধরন:**\n\n1. **\"কোন হাতিয়ার?\"** একটা scenario (অনেক team-এর app, একটা app-এর ফাংশন, ধাপ-ধাপ checklist, ব্যতিক্রমহীন নিয়ম) → Skill / custom tool / MCP / hook। মনে রাখুন: জ্ঞান→Skill, একটা app→custom tool, অনেক client→MCP, ব্যতিক্রমহীন→hook/deny।\n2. **\"কেন এই নির্দেশ মানা হচ্ছে না?\"** → CLAUDE.md ঠিক জায়গায় আছে কি, ২০০ লাইনের বেশি কি, বিরোধী নির্দেশ আছে কি, নাকি এটা enforcement-এর বিষয় (hook)।\n3. **\"কোন ফাইলে কী যাবে?\"** → CLAUDE.md বনাম settings.json (Claude-কে বলা বনাম harness-এর অনুমতি), user বনাম project বনাম local।\n4. **\"Merge নাকি override?\"** → CLAUDE.md যুক্ত হয়, skill/subagent নাম ধরে override, hook ও allow list merge।\n5. **\"CI-তে কীভাবে?\"** → `claude -p`, `--output-format json/stream-json`, `--allowedTools`, `--permission-mode`, `--bare`, `--resume`।\n6. **\"কোন mode?\"** → plan বনাম acceptEdits বনাম auto বনাম dontAsk বনাম bypassPermissions; deny rule সব mode-এ কাজ করে।\n7. **\"Subagent কেন?\"** → context isolation; শুধু summary ফেরে।\n\n**ফাঁদের তালিকা:** CLAUDE.md-কে enforcement ভাবা; built-in tool \"যেকোনো internal API-তে পৌঁছায়\" ভাবা; সব কিছুর জন্য MCP; `.claude/settings.json`-এ `defaultMode: auto/bypassPermissions` কাজ করা; `--bare` দিয়েও CLAUDE.md লোড হওয়া; `/agents` এখনো wizard ভাবা; `@import` দিয়ে context খরচ কমে ভাবা।"
+      }
+    ],
+    "recap": [
+      "জ্ঞান ও ধাপ (workflow) → Skill; একটা app-এর ভেতরের ক্ষমতা → custom tool; অনেক client-এ পুনর্ব্যবহারযোগ্য বাইরের সিস্টেম → MCP server; ঘরের কাজ → built-in tool।",
+      "CLAUDE.md ও Skill Claude-র কাছে অনুরোধ মাত্র; ব্যতিক্রমহীন নিয়মের জন্য permission deny rule বা PreToolUse hook (exit code 2) লাগে।",
+      "CLAUDE.md স্তরগুলো যুক্ত (additive) হয়, root থেকে কাজের directory পর্যন্ত; ২০০ লাইনের নিচে রাখুন; settings.json harness-এর অনুমতি ঠিক করে, অগ্রাধিকার managed > command line > local > project > user।",
+      "Permission mode ছয়টা (default, acceptEdits, plan, auto, dontAsk, bypassPermissions); deny rule সব mode-এ কাজ করে; auto/bypassPermissions project settings-এ দিলে কাজ করে না।",
+      "Subagent নিজস্ব context window-এ চলে ও শুধু summary ফেরত দেয়; agent memory-র scope user/project/local।",
+      "`claude -p` headless: --output-format (text/json/stream-json), --allowedTools, --permission-mode, --bare, --resume; auto mode `-p`-তে ডিফল্ট নয়।",
+      "কাজের ধারা: explore (plan mode) → plan → code (verify সহ) → commit; /clear, /compact, /context, /rewind দিয়ে session সুস্থ রাখুন।"
+    ]
+  },
+  "lab": {
+    "goal": "একটা sample repo-তে CLAUDE.md, একটা custom slash command, একটা Skill ও একটা subagent বানিয়ে প্রতিটার আচরণ দেখা এবং শেষে একটা headless `claude -p` কমান্ড চালানো।",
+    "requirements": [
+      "Claude Code ইনস্টল ও লগইন করা (`claude --version` কাজ করে)। এই lab-এ API model id লাগে না; Claude Code নিজের model ব্যবহার করে",
+      "Terminal, git ও Python (pytest সহ: `pip install pytest`); `jq` ঐচ্ছিক (JSON output পড়তে)",
+      "একটা খালি ফোল্ডার, যেমন `chai-demo`",
+      "কোনো আসল secret বা production ডেটা ব্যবহার করবেন না"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: sample repo বানানো",
+        "body": "```bash\nmkdir chai-demo && cd chai-demo && git init\nmkdir -p .claude/skills/refund-policy .claude/commands .claude/agents\ncat > refund.py <<'EOF'\ndef refund_amount(price, days_since_delivery):\n    # ভুল: ৭ দিনের বেশি হলেও পুরো টাকা ফেরত দিচ্ছে\n    return price\nEOF\ncat > test_refund.py <<'EOF'\nfrom refund import refund_amount\n\ndef test_within_7_days():\n    assert refund_amount(100, 3) == 100\n\ndef test_after_7_days():\n    assert refund_amount(100, 10) == 0\nEOF\ngit add . && git commit -m 'init'\n```\n\n**পর্যবেক্ষণ:** `python -m pytest` চালালে `test_after_7_days` ব্যর্থ হওয়ার কথা। এটাই আমাদের bug।"
+      },
+      {
+        "title": "ধাপ ২: CLAUDE.md",
+        "body": "`claude` চালিয়ে `/init` দিন (থাকলে উন্নতির পরামর্শ দেবে), অথবা হাতে লিখুন:\n\n```markdown\n# ChaiCart demo\n\n## Commands\n- test: `python -m pytest`  (commit-এর আগে অবশ্যই চালাবে)\n\n## Conventions\n- সব function-এ type hint দেবে\n- refund-এর নিয়ম `.claude/skills/refund-policy`-তে আছে\n```\n\nসেশনে `/context all` চালিয়ে **Memory files** তালিকায় আপনার CLAUDE.md আছে কি না দেখুন। তারপর জিজ্ঞাসা করুন: 'test কীভাবে চালাতে হয়?'\n\n**প্রত্যাশিত:** Claude `python -m pytest` বলবে, যদিও প্রম্পটে কিছু বলেননি। এটাই CLAUDE.md-র কাজ।"
+      },
+      {
+        "title": "ধাপ ৩: custom slash command",
+        "body": "```bash\ncat > .claude/commands/status.md <<'EOF'\n---\ndescription: git অবস্থা ও test ফল এক বাক্যে বলো\n---\n`git status --short` ও `python -m pytest -q` চালিয়ে এক বাক্যে অবস্থা জানাও। কিছু বদলাবে না।\nEOF\n```\n\nনতুন সেশনে `/status` লিখুন।\n\n**প্রত্যাশিত:** কমান্ডটা `/` মেনুতে আসে এবং চালালে সারাংশ দেয়। docs অনুযায়ী `.claude/commands/status.md` ও `.claude/skills/status/SKILL.md` একই `/status` বানায়; কমান্ড এখন skill-এরই এক রূপ।"
+      },
+      {
+        "title": "ধাপ ৪: Skill",
+        "body": "```bash\ncat > .claude/skills/refund-policy/SKILL.md <<'EOF'\n---\nname: refund-policy\ndescription: ChaiCart-এর refund নিয়ম প্রয়োগ করে। refund, ফেরত বা টাকা ফেরতের হিসাব সংক্রান্ত কোড লিখতে বা বদলাতে হলে ব্যবহার করুন।\n---\n\n# Refund নিয়ম\n- ডেলিভারির ৭ দিনের মধ্যে: পুরো টাকা ফেরত\n- ৭ দিনের পরে: কিছুই ফেরত নয়\n- নতুন নিয়ম যোগ করলে অবশ্যই test যোগ করবে\nEOF\n```\n\nনতুন সেশনে বলুন: 'refund.py-র bug ঠিক করো।'\n\n**প্রত্যাশিত:** Claude description মিলিয়ে skill লোড করে (আপনি `/refund-policy` লিখেও সরাসরি ডাকতে পারেন) এবং ৭-দিনের নিয়ম অনুযায়ী ঠিক করে। কথোপকথনে skill ব্যবহারের চিহ্ন দেখুন।"
+      },
+      {
+        "title": "ধাপ ৫: subagent",
+        "body": "```bash\ncat > .claude/agents/test-runner.md <<'EOF'\n---\nname: test-runner\ndescription: test চালিয়ে শুধু ব্যর্থ test ও মূল কারণ জানায়। কোড বদলের পর ব্যবহার করুন।\ntools: Read, Grep, Glob, Bash\nmodel: haiku\n---\n\n`python -m pytest -q` চালাও। শুধু ব্যর্থ test-এর নাম, ফাইল ও এক লাইনে কারণ ফেরত দাও।\nকোনো ফাইল বদলাবে না।\nEOF\n```\n\nসেশনে বলুন: 'test-runner subagent দিয়ে test চালিয়ে ফল জানাও।'\n\n**প্রত্যাশিত:** Claude subagent-কে ডাকে; main কথোপকথনে শুধু সংক্ষিপ্ত ফল ফেরে। (docs অনুযায়ী বর্তমান সংস্করণে `/agents` wizard নাও থাকতে পারে, তাই ফাইল হাতে বানানোই নিরাপদ।)"
+      },
+      {
+        "title": "ধাপ ৬: একটা headless কমান্ড",
+        "body": "সেশন বন্ধ করে (`/exit`) shell থেকে:\n\n```bash\nclaude -p 'refund.py-তে কী bug আছে? এক বাক্যে বলো। কিছু বদলাবে না।' \\\n  --allowedTools 'Read,Grep' \\\n  --output-format json | jq -r '.result'\n\necho $?\n```\n\nতারপর:\n\n```bash\nclaude -p 'repo-তে কয়টা test আছে?' --allowedTools 'Read,Grep' --output-format json | jq '{result, session_id}'\n```\n\n**প্রত্যাশিত:** প্রথমটা bug-এর বর্ণনা ছাপে ও বেরিয়ে যায়। JSON-এ `result` ও `session_id` আছে। `--allowedTools` না দিলে পড়ার বাইরের কাজ `-p`-তে প্রত্যাখ্যাত হতে পারে।\n\n*ঐচ্ছিক:* `--bare` যোগ করে আবার চালান। তখন CLAUDE.md, skill, subagent কিছু লোড হয় না, আর `ANTHROPIC_API_KEY` দরকার হবে। তফাতটা নিজের চোখে দেখুন।"
+      }
+    ],
+    "checkpoints": [
+      "CLAUDE.md ও Skill-এর মধ্যে কোনটা প্রতিবার লোড হয় আর কোনটা দরকারে, এবং কেন test কমান্ড CLAUDE.md-তে আর refund checklist Skill-এ রাখা হলো?",
+      "`.claude/commands/status.md` আর `.claude/skills/status/SKILL.md` একসাথে থাকলে কোনটা জেতে? (উত্তর: skill)",
+      "Subagent চালানোর পর main context-এ পুরো test output এল না কেন?",
+      "`claude -p` কেন `--allowedTools` ছাড়া কিছু কাজ করতে পারে না, আর `--bare` দিলে আপনার CLAUDE.md-র কী হয়?",
+      "'কখনো `.env` পড়বে না' নিয়মটাকে নিশ্চিত করতে আপনি কী যোগ করতেন: CLAUDE.md-তে লাইন, নাকি settings.json-এর কিছু?"
+    ]
+  },
+  "notes": "# Chapter 10 cheat sheet: Agentic customization ও Claude Code\n\n## কোন হাতিয়ার কখন\n\n| দরকার | হাতিয়ার | কারণ |\n|---|---|---|\n| ফাইল পড়া/খোঁজা/shell/git | **Built-in tool** | আগে থেকেই আছে |\n| একটা app-এর নিজস্ব ক্ষমতা | **Custom tool** (client-side) | app-এর harness চালায়; সবচেয়ে সরল |\n| অনেক client/team-এ বাইরের সিস্টেম | **MCP server** | reuse + স্বাধীন maintain + auth |\n| \"কীভাবে করতে হয়\" জ্ঞান/workflow | **Skill** | দরকারে লোড; description শুধু সবসময় |\n| ব্যতিক্রমহীন নিয়ম | **Hook / deny rule** | enforcement; CLAUDE.md অনুরোধ মাত্র |\n| বড় খোঁজায় window বাঁচানো | **Subagent** | আলাদা context; শুধু summary ফেরে |\n| একাধিক repo-তে একই সেটআপ | **Plugin** | সব প্যাকেজ করে |\n\n## Context খরচ\n\n| Feature | লোড | খরচ |\n|---|---|---|\n| CLAUDE.md | সেশন শুরু, পুরো | প্রতি request |\n| Skill | শুরুতে description, ব্যবহারে body | কম |\n| MCP | শুরুতে নাম; schema দরকারে (tool search) | কম |\n| Subagent | আলাদা window | main থেকে আলাদা |\n| Hook | বাইরে চলে | শূন্য (output না ফেরালে) |\n\n## CLAUDE.md স্তর (বিস্তৃত → নির্দিষ্ট; সব যুক্ত হয়)\n\n1. Managed policy (macOS `/Library/Application Support/ClaudeCode/CLAUDE.md`, Linux `/etc/claude-code/CLAUDE.md`)\n2. User `~/.claude/CLAUDE.md`\n3. Project `./CLAUDE.md` বা `./.claude/CLAUDE.md`\n4. Local `./CLAUDE.local.md` (gitignore)\n\n- cwd ও উপরের সব directory লোড; subdirectory on demand; `--add-dir`-এর CLAUDE.md ডিফল্টে নয়\n- ২০০ লাইনের নিচে; `@import` খরচ কমায় না; `.claude/rules/` + `paths` frontmatter দিয়ে ভাগ\n- `/init` শুরুর ফাইল; `/context all` লোড যাচাই\n\n## settings.json\n\n| Scope | ফাইল |\n|---|---|\n| User | `~/.claude/settings.json` |\n| Project (shared) | `.claude/settings.json` |\n| Local | `.claude/settings.local.json` |\n| Managed | managed-settings.json / MDM / server-managed |\n\nঅগ্রাধিকার: Managed > `--settings` > local > project > user। list key (`permissions.allow`) **merge**। `auto`/`bypassPermissions` default mode project settings-এ কাজ করে না। Strict JSON।\n\n## Merge বনাম override\n\nCLAUDE.md: যুক্ত। Skill/subagent/MCP: নাম ধরে override। Hook: merge।\n\n## Permission mode\n\n`default` (শুধু পড়া) · `acceptEdits` · `plan` · `auto` (classifier) · `dontAsk` (জিজ্ঞাসার জায়গায় প্রত্যাখ্যান) · `bypassPermissions` (শুধু isolated পরিবেশ)। `Shift+Tab` চক্র; `--permission-mode`। Deny rule সব mode-এ।\n\n## Session\n\n`/clear` (অসম্পর্কিত কাজ) · `/compact <focus>` · `/context` · `/rewind` (`Esc` দুবার) · `--continue` · `--resume <id>`।\n\n## Headless\n\n| কাজ | flag |\n|---|---|\n| non-interactive | `-p` / `--print` |\n| ফরম্যাট | `--output-format text\\|json\\|stream-json` (+ `--verbose --include-partial-messages` streaming) |\n| schema | `--json-schema` → `structured_output` (সবসময় থাকে না) |\n| অনুমোদন | `--allowedTools`, `--permission-mode`, `--permission-prompts none` |\n| পুনরাবৃত্তিযোগ্য CI | `--bare` (CLAUDE.md/hook/skill/MCP পড়ে না; API key লাগে) |\n| চালিয়ে যাওয়া | `--continue`, `--resume <id>` |\n\n## সাধারণ ফাঁদ\n\n- CLAUDE.md-কে enforcement ভাবা\n- Built-in tool সব internal API-তে পৌঁছায় ভাবা\n- সবকিছুর জন্য MCP\n- Auto mode নিরাপত্তার নিশ্চয়তা ভাবা; `-p`-তে auto ডিফল্ট ভাবা\n- Skill-এর `allowed-tools` = সীমাবদ্ধতা ভাবা (আসলে pre-approval)\n- `/agents` এখনো wizard ভাবা",
+  "flashcards": [
+    {
+      "front": "Built-in tool, custom tool, Skill, MCP: প্রতিটা কিসের জন্য?",
+      "back": "Built-in = আগে থেকে থাকা ক্ষমতা; custom tool = একটা app-এর নিজস্ব function; Skill = দরকারে লোড হওয়া জ্ঞান/workflow; MCP = অনেক client-এ পুনর্ব্যবহারযোগ্য বাইরের সিস্টেম।"
+    },
+    {
+      "front": "অনেক Claude app-এ ব্যবহার্য, স্বাধীনভাবে maintain হবে এমন inventory service: কী বানাবেন?",
+      "back": "একটা MCP server যা inventory অপারেশনগুলো tool হিসেবে দেয়।"
+    },
+    {
+      "front": "CLAUDE.md কি enforcement?",
+      "back": "না, এটা context মাত্র। ব্যতিক্রমহীন নিয়মের জন্য permission deny rule বা PreToolUse hook।"
+    },
+    {
+      "front": "Hook বনাম Skill: determinism ও context খরচ?",
+      "back": "Hook নির্দিষ্ট ঘটনায় নিশ্চিতভাবে চলে, context খরচ শূন্য (output না ফেরালে); Skill-এ Claude ব্যাখ্যা করে, ফল বদলাতে পারে।"
+    },
+    {
+      "front": "CLAUDE.md-র চারটা স্তর?",
+      "back": "Managed policy, user (`~/.claude/CLAUDE.md`), project (`./CLAUDE.md` বা `./.claude/CLAUDE.md`), local (`./CLAUDE.local.md`)।"
+    },
+    {
+      "front": "একাধিক CLAUDE.md থাকলে কী হয়?",
+      "back": "সবগুলো যুক্ত (concatenate) হয়, override নয়; কাজের directory-র কাছেরটা শেষে পড়া হয়।"
+    },
+    {
+      "front": "Subdirectory-র CLAUDE.md কখন লোড হয়?",
+      "back": "শুরুতে নয়; Claude ওই subdirectory-র ফাইল পড়লে/লিখলে তখন (on demand)।"
+    },
+    {
+      "front": "CLAUDE.md-র আকারের পরামর্শ কী?",
+      "back": "প্রতিটা ফাইল ২০০ লাইনের নিচে; বড় হলে `.claude/rules/` বা Skill-এ ভাগ করুন। `@import` context খরচ কমায় না।"
+    },
+    {
+      "front": "`.claude/rules/*.md`-এ `paths` frontmatter কী করে?",
+      "back": "Rule শুধু মিলে যাওয়া ফাইলে কাজ করার সময় লোড হয়; `paths` ছাড়া শুরুতেই লোড হয়।"
+    },
+    {
+      "front": "settings.json-এর অগ্রাধিকার (উঁচু → নিচু)?",
+      "back": "Managed → command line (`--settings`) → project local → shared project → user।"
+    },
+    {
+      "front": "`permissions.allow` একাধিক ফাইলে থাকলে?",
+      "back": "List merge হয়, একটা অন্যটাকে মোছে না।"
+    },
+    {
+      "front": "কোন দুটো `defaultMode` project settings-এ কাজ করে না?",
+      "back": "`auto` ও `bypassPermissions`। user বা managed settings-এ দিতে হয়।"
+    },
+    {
+      "front": "ছয়টা permission mode?",
+      "back": "default (Manual), acceptEdits, plan, auto, dontAsk, bypassPermissions।"
+    },
+    {
+      "front": "Deny rule কোন mode-এ কাজ করে?",
+      "back": "সব mode-এ, `bypassPermissions`-এও।"
+    },
+    {
+      "front": "`dontAsk` mode কী করে?",
+      "back": "যা প্রম্পট করত সব প্রত্যাখ্যান করে (আগে অনুমোদিত tool ও পড়া চলে); CI-র জন্য উপযোগী।"
+    },
+    {
+      "front": "Skill ও custom slash command-এর সম্পর্ক?",
+      "back": "মিলিত: `.claude/commands/x.md` ও `.claude/skills/x/SKILL.md` দুটোই `/x` বানায়; একই নামে skill জেতে।"
+    },
+    {
+      "front": "Skill-এ `disable-model-invocation: true` কেন?",
+      "back": "Side-effect-যুক্ত workflow (deploy) যেন শুধু আপনি `/name` দিয়ে চালাতে পারেন; তখন description-ও context-এ ঢোকে না।"
+    },
+    {
+      "front": "Subagent-এর মূল সুবিধা?",
+      "back": "আলাদা context window; অনেক ফাইল পড়লেও main-এ শুধু শেষ summary ফেরে।"
+    },
+    {
+      "front": "Agent memory-র তিন scope?",
+      "back": "`user` (`~/.claude/agent-memory/<name>/`), `project` (`.claude/agent-memory/<name>/`, সুপারিশকৃত), `local` (`.claude/agent-memory-local/<name>/`)।"
+    },
+    {
+      "front": "`claude -p` কী করে?",
+      "back": "Non-interactive: প্রম্পট চালিয়ে উত্তর প্রিন্ট করে বেরোয়; script/CI-র জন্য। সফলে exit code 0।"
+    },
+    {
+      "front": "Streaming output কীভাবে?",
+      "back": "`--output-format stream-json --verbose --include-partial-messages`; শেষ লাইন `result` বার্তা।"
+    },
+    {
+      "front": "`--bare` কী বন্ধ করে, কেন কাজে লাগে?",
+      "back": "hooks, skills, commands, subagents, plugins, MCP, auto memory ও CLAUDE.md-র auto-discovery; CI-তে সব মেশিনে একই ফল পেতে। `ANTHROPIC_API_KEY` লাগে।"
+    },
+    {
+      "front": "Auto mode `claude -p`-তে ডিফল্ট?",
+      "back": "না; `--permission-mode auto` দিতে হয়। Auto classifier-নির্ভর, নিরাপত্তার নিশ্চয়তা নয়।"
+    },
+    {
+      "front": "Explore → plan → code → commit-এ প্রথম দুই ধাপে কোন mode?",
+      "back": "`plan` mode: পড়া চলে, plan অনুমোদনের আগে edit আটকানো।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart-এর inventory service-এর REST API-কে Chai-Bot, Claude Code এবং অন্য দুটো team-এর Claude app, সবাই ব্যবহার করবে। service-টা আলাদাভাবে maintain হবে। কোন পদ্ধতি সবচেয়ে মানানসই?",
+      "options": [
+        "প্রতিটা app-এ নিজস্ব custom tool function লিখে একই লজিক কপি করা",
+        "inventory অপারেশনগুলো tool হিসেবে দেয় এমন একটা MCP server বানানো",
+        "inventory-র নিয়ম একটা CLAUDE.md-তে লিখে সব repo-তে কপি করা",
+        "Claude Code-এর built-in Bash tool দিয়ে সবাই সরাসরি curl চালাবে, কারণ built-in tool যেকোনো internal API-তে পৌঁছায়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "একাধিক client-এ পুনর্ব্যবহার ও স্বাধীন maintenance মানে MCP server। (A) কপি করা লজিক আলাদা হয়ে যায়, maintain কঠিন। (C) CLAUDE.md জ্ঞান দেয়, live ক্ষমতা নয়। (D) built-in tool স্বয়ংক্রিয়ভাবে সব internal API-তে পৌঁছানো বা সুরক্ষিত auth দেয় না, এটা exam guide-এর ঠিক সেই ফাঁদ।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "Nusrat Apu চান ১২ ধাপের refund-যাচাই checklist শুধু তখনই Claude Code-এর context-এ ঢুকুক যখন refund-সংক্রান্ত কাজ হয়। কোন পদ্ধতি সবচেয়ে ভালো?",
+      "options": [
+        "পুরো checklist project-এর CLAUDE.md-তে রাখা",
+        "`description` সহ একটা Skill বানানো, যাতে body শুধু প্রয়োজনে লোড হয়",
+        "প্রতিটা সেশনে Slack থেকে কপি করে প্রম্পটে দেওয়া",
+        "একটা PostToolUse hook বানিয়ে checklist প্রতিবার context-এ ঢোকানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Skill-এ শুধু name/description সবসময় context-এ থাকে; body ব্যবহারের সময় লোড হয়। CLAUDE.md প্রতিটা request-এ পুরো ফাইল লোড করে (খরচ বেশি)। কপি-পেস্ট পুনর্ব্যবহারযোগ্য নয়। hook-এর কাজ ঘটনায় কিছু চালানো, জ্ঞান বিতরণ নয়।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "একটা team চায় Claude কখনোই `.env` ফাইল পড়বে না, কোনো ব্যতিক্রম ছাড়া। কোন ব্যবস্থা দুটো সবচেয়ে নির্ভরযোগ্য? Select TWO.",
+      "options": [
+        "CLAUDE.md-তে 'কখনো .env পড়বে না' লেখা",
+        "settings.json-এ `permissions.deny`-তে `Read(./.env)` ও `Read(./.env.*)` রাখা",
+        "Skill বানিয়ে নিয়মটা লেখা",
+        "`Read` tool-এ মিলে যাওয়া path দেখলে exit code 2 দেওয়া একটা PreToolUse hook"
+      ],
+      "answerIndexes": [1, 3],
+      "explanation": "Deny rule ও PreToolUse hook (exit 2) harness-স্তরে আটকায়, Claude-র সদিচ্ছার ওপর নির্ভর করে না। CLAUDE.md ও Skill দুটোই Claude-র কাছে অনুরোধ/context; docs নিজেই বলে CLAUDE.md enforced configuration নয়।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "Rafi একটা app-এর ভেতরে `get_order_status(order_id)` function Claude-কে দিতে চায়, যা শুধু ওই app-এর নিজের database ছোঁয়। অন্য কোনো client এটা ব্যবহার করবে না। সবচেয়ে সরল ও যথাযথ পছন্দ কোনটা?",
+      "options": [
+        "একটা আলাদা MCP server deploy করা",
+        "Skill বানানো, যা Claude-কে SQL লিখতে শেখায়",
+        "app-এর harness-এ custom tool হিসেবে function-টা (নাম, বর্ণনা, input schema সহ) যোগ করা",
+        "plugin বানিয়ে marketplace-এ প্রকাশ করা"
+      ],
+      "answerIndexes": [2],
+      "explanation": "একটা app-এর ভেতরের, app-এর ডেটার সাথে ঘনিষ্ঠ ক্ষমতার জন্য client-side custom tool সবচেয়ে সরল। MCP অতিরিক্ত (আলাদা process, deploy, auth) যেখানে reuse দরকার নেই। Skill জ্ঞান দেয়, function চালায় না। plugin বিতরণের স্তর, এখানে অপ্রাসঙ্গিক।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "একটা Claude Code সেশনে MCP server-এর সংখ্যা বাড়ায় একজন ভয় পাচ্ছে context ভরে যাবে। docs অনুযায়ী ডিফল্টে idle MCP tool-এর context খরচ সম্পর্কে কোনটা সঠিক?",
+      "options": [
+        "সব tool-এর পূর্ণ JSON schema শুরুতেই context-এ ঢোকে",
+        "tool-এর নাম ও server instruction ঢোকে; পূর্ণ schema দরকারে লোড হয় (tool search ডিফল্টে চালু), তাই idle খরচ কম",
+        "MCP tool context-এ কখনোই ঢোকে না",
+        "MCP server-এর খরচ CLAUDE.md-র সমান, প্রতি request-এ পুরোটা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs: MCP-তে শুরুতে নাম ও instruction লোড হয়, পূর্ণ schema deferred; tool search ডিফল্ট। তাই idle খরচ কম। (A) ও (D) ভুল। (C) ভুল, নাম অন্তত থাকে। `/context all` দিয়ে প্রতিটা tool-এর খরচ দেখা যায়।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "কোন দুটি পরিস্থিতিতে Skill-এর চেয়ে hook বেশি উপযুক্ত? Select TWO.",
+      "options": [
+        "প্রতিটা file edit-এর পর formatter অবশ্যই চালানো, Claude ভুলে গেলেও",
+        "refund নিয়ম কীভাবে প্রয়োগ করতে হয় তার ধাপ-ধাপ ব্যাখ্যা",
+        "`rm -rf /`-এর মতো কমান্ড কোনো ব্যতিক্রম ছাড়া আটকানো",
+        "API style guide-এর রেফারেন্স জ্ঞান যা মাঝেমধ্যে লাগে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Hook নির্দিষ্ট ঘটনায় Claude-র সিদ্ধান্ত ছাড়াই নিশ্চিতভাবে চলে (determinism)। ধাপ-ধাপ ব্যাখ্যা ও রেফারেন্স জ্ঞান Skill-এর কাজ: Claude ব্যাখ্যা করে প্রয়োগ করে, ফল কিছুটা বদলায়।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "Skill-এর frontmatter-এ `allowed-tools: Bash(git status *)` দেখে একজন ভাবছে Claude এই skill চলার সময় শুধু ওই কমান্ডই চালাতে পারবে। docs অনুযায়ী ঠিক কী?",
+      "options": [
+        "সঠিক; এটা অন্য সব tool আটকে দেয়",
+        "ভুল; এটা শুধু ওই turn-এ এই tool-গুলো আগে থেকে অনুমোদিত করে, অন্য tool সীমিত করে না। সীমিত করতে `disallowed-tools`",
+        "ভুল; এটা শুধু MCP tool-এর জন্য প্রযোজ্য",
+        "সঠিক, তবে শুধু যদি `context: fork` থাকে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs: `allowed-tools` ওই turn-এ নির্দিষ্ট tool pre-approve করে, অন্য tool restrict করে না। অপসারণের জন্য `disallowed-tools`। এটা Skill-কে sandbox ভাবার ফাঁদ।",
+      "domain": 8,
+      "skill": "Agentic Customization"
+    },
+    {
+      "question": "একটা team-এর `.claude/settings.json`-এ লেখা আছে `\"permissions\": {\"defaultMode\": \"bypassPermissions\"}`। এই repo clone করা এক developer ভাবছে সব permission এখন খোলা। বাস্তবে কী হয়?",
+      "options": [
+        "সব অনুমতি খোলা, কারণ project settings user settings-এর ওপরে",
+        "docs অনুযায়ী `auto` ও `bypassPermissions` project settings থেকে কার্যকর হয় না; user বা managed settings-এ দিতে হয়",
+        "সেশন ক্র্যাশ করে",
+        "শুধু `deny` rule বাতিল হয়, বাকি সব ডিফল্ট থাকে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Repo-তে ঢুকে পড়া ফাইল যেন নিজে সব permission খুলে না দিতে পারে, তাই এই দুই মান project/local settings-এ কাজ করে না। (A) ভুল। (D) ভুল: deny rule সব mode-এ, bypass-এও কাজ করে।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "`foo/bar/` ডিরেক্টরিতে `claude` চালানো হলো। `foo/CLAUDE.md`, `foo/bar/CLAUDE.md` ও `foo/bar/baz/CLAUDE.md` আছে। কোনটা সঠিক বর্ণনা?",
+      "options": [
+        "শুধু `foo/bar/CLAUDE.md` লোড হয়; উপরের ফাইল উপেক্ষিত",
+        "`foo/CLAUDE.md` ও `foo/bar/CLAUDE.md` শুরুতে যুক্ত হয়ে লোড হয় (root থেকে নিচের ক্রমে); `baz/CLAUDE.md` Claude ওই directory-র ফাইল ধরলে তখন লোড হয়",
+        "তিনটাই শুরুতে লোড হয়, ও নিচেরটা উপরেরগুলো override করে",
+        "শুধু সবচেয়ে গভীরটা (`baz`) লোড হয়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "CLAUDE.md cwd ও উপরের সব directory থেকে লোড হয় ও যুক্ত হয় (override নয়), কাজের directory-র কাছেরটা শেষে। Subdirectory-র ফাইল on demand। (C) override ভুল; (A) ও (D) ভুল।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "Rafi-র CLAUDE.md এখন ৪৫০ লাইন, আর Claude প্রায়ই কিছু নিয়ম মানছে না। docs-এর পরামর্শ অনুযায়ী সবচেয়ে ভালো দুটো পদক্ষেপ কোনগুলো? Select TWO.",
+      "options": [
+        "আরও জোর দিয়ে বড় হাতের অক্ষরে নিয়মগুলো আবার লেখা",
+        "শুধু নির্দিষ্ট ফাইলে প্রযোজ্য নিয়মগুলো `paths` frontmatter সহ `.claude/rules/`-এ সরানো",
+        "বহু-ধাপের পদ্ধতিগুলো Skill-এ সরানো",
+        "পুরো ফাইলকে `@import` দিয়ে কয়েকটা ফাইলে ভাগ করা, যাতে context খরচ কমে"
+      ],
+      "answerIndexes": [1, 2],
+      "explanation": "লক্ষ্য ২০০ লাইনের নিচে; বড় ফাইল adherence কমায়। Path-scoped rule ও Skill দরকারে লোড হয়। (D) `@import` সংগঠনে সাহায্য করে, কিন্তু import করা ফাইল সাথেই লোড হয় বলে context খরচ কমায় না। (A) সমাধান নয়।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "Rafi একটা অচেনা কোডবেসে বড় বদল করবে এবং পরিকল্পনা অনুমোদনের আগে কিছু যেন না বদলায়। কোন mode ও ধারা সবচেয়ে মানানসই?",
+      "options": [
+        "`bypassPermissions`, যাতে দ্রুত হয়",
+        "`plan` mode-এ explore ও পরিকল্পনা, অনুমোদনের পর কোড লেখা ও test চালানো",
+        "`dontAsk`, কারণ এটা সব edit প্রত্যাখ্যান করে",
+        "`default` mode, সরাসরি 'কোড লেখো' বলা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Plan mode-এ Claude পড়তে পারে কিন্তু plan অনুমোদনের আগে edit আটকানো। এটাই explore→plan→code→commit-এর শুরু। (A) বিপজ্জনক ও অপ্রাসঙ্গিক। (C) `dontAsk` প্রম্পট-লাগা কাজ প্রত্যাখ্যান করে, plan-এর বিকল্প নয়। (D) অনিশ্চিত কাজে সরাসরি কোড ভুল দিকে যেতে পারে।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "এক সেশনে Rafi দুইবার সংশোধন করার পরও Claude একই ভুল করছে, কথোপকথন দীর্ঘ ও অগোছালো। docs-এর পরামর্শ অনুযায়ী কী করা উচিত?",
+      "options": [
+        "তৃতীয়বার একই সংশোধন আরও জোরে বলা",
+        "`/clear` দিয়ে শেখা জিনিস মিলিয়ে একটা ভালো নতুন প্রম্পট লেখা",
+        "`bypassPermissions`-এ বদলানো",
+        "`/compact` দিয়ে ব্যর্থ চেষ্টাগুলো সংরক্ষণ করা"
+      ],
+      "answerIndexes": [1],
+      "explanation": "ব্যর্থ চেষ্টাগুলো context-এ থেকে যায় ও Claude সেগুলো বারবার পড়ে; তাই `/clear` + একটা উন্নত প্রম্পট প্রায় সবসময় ভালো। (A) আরও অগোছালো করে। (C) permission-এর সাথে সম্পর্কহীন। (D) compact ব্যর্থ চেষ্টাকে সারাংশে রেখে দিতে পারে।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "CI pipeline-এ প্রতিটা PR-এর diff থেকে বিশ্লেষণ চালাতে হবে; সব মেশিনে একই আচরণ চাই, কোনো developer-এর `~/.claude` hook বা repo-র `.mcp.json` যেন প্রভাব না ফেলে, আর ফলাফল JSON-এ চাই। কোন কমান্ডের আকার সবচেয়ে উপযুক্ত?",
+      "options": [
+        "`claude \"diff বিশ্লেষণ করো\"` (interactive)",
+        "`claude --bare -p \"...\" --allowedTools \"Read\" --output-format json` (API key env var সহ)",
+        "`claude -p \"...\" --dangerously-skip-permissions` যেকোনো মেশিনে",
+        "`claude --continue` একটা পুরনো সেশনে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "`--bare` auto-discovery (hooks, skills, MCP, CLAUDE.md ইত্যাদি) বন্ধ করে ও পুনরাবৃত্তিযোগ্য ফল দেয় (এতে `ANTHROPIC_API_KEY` লাগে); `-p` non-interactive; `--allowedTools` সংকীর্ণ; `--output-format json` মেশিন-পাঠযোগ্য। (A) interactive, CI-তে অচল। (C) অপ্রয়োজনীয় ঝুঁকি, প্রভাবমুক্তি নয়। (D) পুরনো সেশন পুনরাবৃত্তিযোগ্য নয়।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "একটা script `claude -p ... --output-format json --json-schema '...'` চালিয়ে `jq '.structured_output.functions[]'` দিয়ে ফল পড়ে, কখনো কখনো ভেঙে যায়। সবচেয়ে সম্ভাব্য কারণ ও সমাধান কী?",
+      "options": [
+        "`jq` ভুল সংস্করণ; ইনস্টল আবার",
+        "Claude schema মতো উত্তর না দিলে `structured_output` ক্ষেত্র থাকে না; ব্যবহারের আগে ক্ষেত্রটা আছে কি না যাচাই করা",
+        "`--json-schema` শুধু `stream-json`-এর সাথে চলে",
+        "`--output-format json` সবসময় `result` বাদ দেয়"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs: কোনো run বৈধ structured output ছাড়া শেষ হলে (যেমন অনুরোধ প্রত্যাখ্যান) response-এ `structured_output` থাকে না, তাই script-এ উপস্থিতি যাচাই দরকার। (C) ভুল: schema `json`-এর সাথে ব্যবহৃত। (D) ভুল।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    },
+    {
+      "question": "একটা অচেনা প্রজেক্টে Rafi `claude -p \"tests চালাও ও ঠিক করো\"` চালাল, কোনো `--allowedTools` বা `--permission-mode` না দিয়ে। docs অনুযায়ী (v2.1.302+) সম্ভাব্য ফল কী?",
+      "options": [
+        "Auto mode-এ সব চলে যায়",
+        "Manual (default) mode-এ শুরু হয়; অনুমোদন-লাগা call (যেমন shell কমান্ড) প্রত্যাখ্যাত হয়, যদি না অন্য কিছু অনুমোদন দেয়",
+        "`bypassPermissions` চালু হয়",
+        "প্রতিটা call-এর আগে terminal-এ প্রশ্ন আসে ও অপেক্ষা করে"
+      ],
+      "answerIndexes": [1],
+      "explanation": "`-p` কোনো mode নির্ধারিত না থাকলে Manual-এ শুরু হয়, কেউ উত্তর দেওয়ার নেই বলে অনুমোদন-লাগা call প্রত্যাখ্যাত। Auto mode `-p`-তে ডিফল্ট নয়। সতর্কতা: এই আচরণ সংস্করণ-নির্ভর, docs-এ v2.1.302+ লেখা।",
+      "domain": 3,
+      "skill": "Claude Code Operation"
+    }
+  ]
+}

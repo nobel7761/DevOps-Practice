@@ -36,6 +36,8 @@ import {
   hermesAgentMasteryCourse,
 } from "./hermes-agent-mastery";
 
+import { CCDV_COURSE_ID, ccdvFoundationsCourse } from "./ccdv-foundations";
+
 export type CoursePlatform = "poridhi" | "udemy" | "own";
 
 export interface CourseRegistryEntry {
@@ -75,6 +77,11 @@ export const courseRegistry: CourseRegistryEntry[] = [
     id: HERMES_COURSE_ID,
     platform: "own",
     course: hermesAgentMasteryCourse,
+  },
+  {
+    id: CCDV_COURSE_ID,
+    platform: "own",
+    course: ccdvFoundationsCourse,
   },
   {
     id: "ai-builder-n8n",

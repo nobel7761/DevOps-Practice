@@ -1,0 +1,774 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি Claude API error-কে retriable/terminal-এ ভাগ করে retry-backoff-jitter-fallback-circuit breaker দিয়ে সামলাতে, trace দেখে integration layer আর model output আলাদা করতে, eval ও regression suite দিয়ে 'done' মাপতে এবং production-এ খরচ-latency-quality-reliability নজরে রাখতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## সকাল ১০টা: Chai-Bot চুপ করে গেল\n\nঈদের আগের সপ্তাহ। ChaiCart-এর অর্ডার হঠাৎ তিনগুণ। সকাল দশটায় Nusrat Apu Slack-এ লিখলেন: \"Rafi, Chai-Bot-এ ১২% গ্রাহক 'কিছু একটা ভুল হয়েছে' দেখছে। আর গতকালের রাতের deploy-এর পর refund-এর উত্তরগুলোও কেমন যেন অদ্ভুত। কোনটা আমাদের কোডের দোষ, কোনটা API-র, কোনটা model-এর, বলো তো?\"\n\nRafi লগ খুলল। সেখানে শুধু একটা লাইন: `Error: something went wrong`। কোন status code, কোন request, কত token, কোনো কিছুই নেই। Rafi বুঝল, সমস্যাটা শুধু \"ভুল হয়েছে\" নয়; সমস্যা হলো **ভুল হলে আমরা কিছুই দেখতে পাই না**, আর **ভুল ঠিক হয়েছে কিনা মাপার কোনো উপায়ও নেই**।\n\nএই chapter-এ আমরা সেই চারটা প্রশ্নের উত্তর শিখব, যেগুলো পরীক্ষায় Domain 4 (Eval, Testing, and Debugging) হিসেবে আসে:\n\n1. **কী ধরনের error?** retry করলে লাভ আছে, নাকি request-টাই ঠিক করতে হবে?\n2. **কীভাবে সামলাব?** retry, backoff, jitter, fallback model, circuit breaker, graceful degradation।\n3. **কোথায় ভাঙল?** আমাদের integration layer-এ, নাকি model-এর output-এ? (trace analysis)\n4. **ঠিক হয়েছে কিনা কীভাবে জানব?** eval, regression suite, LLM-as-judge, production monitoring।\n\n> পরীক্ষায় Domain 4-এর ওজন মাত্র 2.6%, মানে ৫৩টা প্রশ্নের মধ্যে ১-২টা। তাই কম পড়ে বেশি নম্বর তোলার জায়গা এটা: নিয়মগুলো সীমিত এবং পরিষ্কার। কিন্তু প্রশ্নগুলো প্রায়ই **ফাঁদ-ভরা**, তাই প্রতিটা \"Exam trap\" মন দিয়ে পড়ো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. API error-এর ধরন: কোনটা retriable, কোনটা terminal\n\n### Error-এর চেহারা\n\nClaude API সব error JSON আকারে ফেরত দেয়। সবসময় একটা `error` object থাকে যাতে `type` আর `message` আছে, আর সাথে একটা `request_id` field:\n\n```json\n{\n  \"type\": \"error\",\n  \"error\": {\n    \"type\": \"not_found_error\",\n    \"message\": \"The requested resource could not be found.\"\n  },\n  \"request_id\": \"req_011CSHoEeqs5C35K2UUqR7Fy\"\n}\n```\n\nএকই `request_id` প্রতিটা response-এর `request-id` header-এও থাকে (সফল response-এও)। Python/TypeScript SDK-তে এটা response object-এর `_request_id` property। Anthropic support-কে কিছু জানাতে হলে এই ID-টাই লাগে। তাই **প্রতিটা call-এর request-id লগে রাখা** একটা নিয়ম, ঐচ্ছিক নয়।\n\n### Docs অনুযায়ী status code-গুলো\n\n| Status | `error.type` | মানে | Retry করবে? |\n|---|---|---|---|\n| 400 | `invalid_request_error` | request-এর format/content ভুল। অন্য 4XX-এও এটা ব্যবহার হতে পারে। তুমি নিজে spend limit সেট করলে সেটা ছোঁয়ার পরও 400 আসে | **না** (request/config ঠিক করো) |\n| 401 | `authentication_error` | API key-তে সমস্যা (ভুল, revoke, expired) | **না** |\n| 402 | `billing_error` | billing/payment তথ্যে সমস্যা | **না** |\n| 403 | `permission_error` | এই key-র ওই resource-এ অনুমতি নেই | **না** |\n| 404 | `not_found_error` | resource পাওয়া যায়নি (endpoint path বা ID ভুল) | **না** |\n| 409 | `conflict_error` | resource-এর বর্তমান অবস্থার সাথে সংঘাত; সমাধান করে তারপর retry | শর্তসাপেক্ষ |\n| 413 | `request_too_large` | request সীমার বেশি বড় (Messages API: 128 MB; Batch: 256 MB; Files: 500 MB) | **না** (ছোট করো) |\n| 429 | `rate_limit_error` | rate limit ছুঁয়েছ (বা tier-এর monthly spend cap) | **হ্যাঁ**, তবে `retry-after` মেনে। spend-cap 429 ছাড়া |\n| 500 | `api_error` | Anthropic-এর ভেতরের অপ্রত্যাশিত সমস্যা | **হ্যাঁ** (exponential backoff) |\n| 504 | `timeout_error` | প্রক্রিয়াকরণে timeout (অন্য status-এও `timeout_error` আসতে পারে) | **হ্যাঁ**; লম্বা কাজে streaming ব্যবহার করো |\n| 529 | `overloaded_error` | API সাময়িকভাবে overloaded | **হ্যাঁ** (backoff; দরকারে fallback) |\n\nমূল যুক্তিটা মনে রাখার সহজ নিয়ম: **৪xx মানে \"তোমার request-এ সমস্যা, একই জিনিস আবার পাঠালে একই ফল\", ৫xx/529 মানে \"আমাদের (সার্ভারের) দিকে সাময়িক সমস্যা, একটু পরে আবার চেষ্টা করো\"**। ব্যতিক্রম আছে: 429 একটা ৪xx হলেও retriable, কারণ অপেক্ষা করলে ক্ষমতা ফিরে আসে।\n\n### 429-এর দুই রূপ\n\nRate limit token bucket algorithm-এ কাজ করে, অর্থাৎ ক্ষমতা ধীরে ধীরে ভরে ওঠে, নির্দিষ্ট সময়ে হঠাৎ reset হয় না। 429 এলে `retry-after` header (সেকেন্ডে) থাকলে ততক্ষণ **অপেক্ষা করো**; তার আগে retry করলে আবারও fail করবে। কিন্তু সব 429 এক নয়:\n\n- **সাধারণ rate limit** (RPM/ITPM/OTPM ছুঁয়েছ): `retry-after` থাকে, অপেক্ষা করলে ঠিক হয়। Retriable।\n- **Tier-এর monthly spend cap 429**: `retry-after` **থাকে না**, `error.details.error_code` হয় `enforced_spend_limit_reached`, আর পরের মাসের শুরু পর্যন্ত (বা tier বাড়ানো পর্যন্ত) সব request fail করবে। এখানে SDK-র automatic retry-ও কাজ করবে না। এটা কার্যত **terminal**।\n- **Acceleration limit**: হঠাৎ traffic দ্বিগুণ-তিনগুণ করলে 429 আসতে পারে। সমাধান: traffic **ধীরে ধীরে** বাড়াও।\n\n### 529 বনাম 429\n\nদুটো প্রায়ই গুলিয়ে ফেলা হয়। **429 = তোমার সংগঠন নিজের সীমা ছুঁয়েছে** (তুমি নিয়ন্ত্রণ করতে পারো: ধীরে পাঠাও, cache করো, limit বাড়াও)। **529 = পুরো সিস্টেমে চাপ**, সব ব্যবহারকারীর ওপর, তোমার হাতে কিছু নেই: backoff আর fallback।\n\n### Streaming-এ error: 200 পাওয়ার পরও ভুল হতে পারে\n\nSSE streaming-এ HTTP response শুরুতেই `200` দিয়ে খুলে যায়। এর পরে ভেতরে সমস্যা হলে সেটা **stream-এর ভেতরে একটা `error` event** হিসেবে আসে, যেমন:\n\n```text\nevent: error\ndata: {\"type\": \"error\", \"error\": {\"type\": \"overloaded_error\", \"message\": \"Overloaded\"}}\n```\n\nমানে শুধু HTTP status দেখে \"সফল\" ধরে নিলে ভুল। Stream শেষে `message_stop` পেয়েছ কিনা, আর `stop_reason` কী, তা দেখতে হয়। Docs অনুযায়ী stream মাঝপথে ভাঙলে আংশিক text জমিয়ে রেখে আবার continue করার কৌশল আছে (Claude 4.6+ model-এ partial response একটা user message-এ দিয়ে \"এখান থেকে চালিয়ে যাও\" বলতে হয়, assistant prefill চলে না)। কিন্তু **tool use ও thinking block আংশিক উদ্ধার করা যায় না**; সর্বশেষ সম্পূর্ণ text block থেকে ধরতে হয়। সবচেয়ে সোজা পথ: SDK-র stream helper (`stream.get_final_message()`) ব্যবহার করো।\n\n### Rafi-র আবিষ্কার\n\nRafi লগ ঘেঁটে পেল: ৮% error আসছে **429** (রাতের campaign-এ হঠাৎ traffic বেড়েছিল, acceleration limit), ৩% **529**, আর ১% **400** (একটা পুরোনো কোড এখনও assistant prefill পাঠাচ্ছিল, নতুন model সেটা নেয় না)। তিন রকম সমস্যা, তিন রকম সমাধান। \"সবকিছুতে retry লাগাও\" এখানে ৪০০-গুলোকে শুধু ঘণ্টায় হাজারবার ব্যর্থ করাত।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "Retriable নাকি Terminal? Error ছাঁটাই",
+          "hint": "প্রতিটা error-কে বাকেটে ফেলো। প্রশ্ন একটাই: একই request কিছুক্ষণ পরে আবার পাঠালে কি সফল হতে পারে?",
+          "buckets": [
+            {
+              "id": "retriable",
+              "label": "Retriable (অপেক্ষা করে আবার চেষ্টা)"
+            },
+            {
+              "id": "terminal",
+              "label": "Terminal (request/config ঠিক করতে হবে)"
+            }
+          ],
+          "items": [
+            {
+              "text": "400 invalid_request_error: নতুন model-এ assistant prefill পাঠানো হয়েছে",
+              "bucket": "terminal",
+              "why": "request-এর গঠনই ভুল। একই request হাজারবার পাঠালেও 400 আসবে। কোড বদলাতে হবে।"
+            },
+            {
+              "text": "429 rate_limit_error, সাথে retry-after: 12 header",
+              "bucket": "retriable",
+              "why": "token bucket ধীরে ভরে। ১২ সেকেন্ড অপেক্ষা করে আবার পাঠালে সফল হবে। retry-after-কে সম্মান করো।"
+            },
+            {
+              "text": "429 যার body-তে error_code = enforced_spend_limit_reached, retry-after নেই",
+              "bucket": "terminal",
+              "why": "monthly spend cap ছোঁয়া: পরের মাসের শুরু বা tier বাড়ানো পর্যন্ত সব fail করবে। retry অর্থহীন; অ্যালার্ট দিয়ে মানুষকে জানাও।"
+            },
+            {
+              "text": "529 overloaded_error",
+              "bucket": "retriable",
+              "why": "পুরো সিস্টেমে সাময়িক চাপ। exponential backoff + jitter, দরকারে fallback model।"
+            },
+            {
+              "text": "401 authentication_error: key revoke হয়ে গেছে",
+              "bucket": "terminal",
+              "why": "key ঠিক না করলে কিছুই বদলাবে না। retry শুধু ক্ষতি (ও noise) বাড়ায়।"
+            },
+            {
+              "text": "500 api_error",
+              "bucket": "retriable",
+              "why": "Anthropic-এর ভেতরের অপ্রত্যাশিত সমস্যা। backoff-সহ retry; টিকে গেলে request-id দিয়ে support।"
+            },
+            {
+              "text": "413 request_too_large: ১৫০ MB-এর request",
+              "bucket": "terminal",
+              "why": "সীমা ছাড়িয়েছে। request ছোট করা (বা Files API/chunking) ছাড়া উপায় নেই।"
+            },
+            {
+              "text": "Stream চলাকালীন event: error (overloaded_error), অথচ HTTP status 200 ছিল",
+              "bucket": "retriable",
+              "why": "সাময়িক overload। আংশিক text জমিয়ে continue করা বা পুরো request retry করা যায়। শুধু HTTP status দেখে 'সফল' ধরা ভুল।"
+            },
+            {
+              "text": "403 permission_error: এই key-র ওই workspace-এ অনুমতি নেই",
+              "bucket": "terminal",
+              "why": "অনুমতি/workspace সেটিং ঠিক করতে হবে; অপেক্ষায় কিছু বদলাবে না।"
+            }
+          ],
+          "takeaway": "নিয়ম: অপেক্ষায় যে সমস্যা মেটে (429 with retry-after, 5xx, 529, timeout, মাঝপথে overload) তা retriable; যে সমস্যা request, key, অনুমতি বা limit-এর, তা terminal।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'সব error-এ retry' এবং '429 মানেই retry'",
+        "markdown": "পরীক্ষা প্রায়ই এমন একটা scenario দেয় যেখানে একটা 400/401/403/413 আসছে আর অপশনে আছে \"exponential backoff সহ retry যোগ করো\"। এটা **ভুল**: terminal error-এ retry শুধু সময় ও quota নষ্ট করে। উল্টো ফাঁদও আছে: \"429 এলে সরাসরি fail করো\" (ভুল, `retry-after` মেনে retry করা উচিত) অথবা spend-cap-এর 429-এ অন্তহীন retry (ভুল, ওটা `retry-after`-বিহীন, `enforced_spend_limit_reached`)। সঠিক চিন্তা: **আগে error-এর ধরন চেনো, তারপর কৌশল বাছো।**"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Recovery strategy: retry, backoff, jitter, fallback, circuit breaker\n\nError চেনার পর পরের প্রশ্ন: retriable error এলে ঠিক কী করব? এখানে পাঁচটা কৌশল আছে, আর এদের প্রত্যেকের নির্দিষ্ট কাজ।\n\n### ক) SDK নিজেই কী করে\n\nOfficial SDK **connection error, rate limit আর 5xx**-কে স্বয়ংক্রিয়ভাবে exponential backoff-সহ retry করে, ডিফল্টে **দুইবার**, আর `retry-after` header থাকলে সেটা মানে। `max_retries` দিয়ে সংখ্যা বদলানো বা বন্ধ করা যায়:\n\n```python\nimport anthropic\n\n# ডিফল্ট: SDK নিজে ২ বার retry করে\nclient = anthropic.Anthropic()\n\n# নিজের retry লজিক লিখতে চাইলে SDK-র retry বন্ধ করো, নইলে retry-র ওপর retry হবে\nclient = anthropic.Anthropic(max_retries=0)\n```\n\nঅনেক ক্ষেত্রে SDK-র ডিফল্টই যথেষ্ট। নিজে retry লিখতে হয় যখন: backoff-এর ওপর আলাদা নিয়ন্ত্রণ চাও, প্রতিটা চেষ্টা লগ করতে চাও, fallback model-এ যেতে চাও, বা circuit breaker লাগাতে চাও।\n\n### খ) Exponential backoff + jitter\n\n**Backoff**: প্রতি ব্যর্থ চেষ্টার পর অপেক্ষা দ্বিগুণ করো (১s, ২s, ৪s, ৮s ...), একটা সর্বোচ্চ সীমা (cap) সহ। কারণ সার্ভার ব্যস্ত থাকলে বারবার দ্রুত খোঁচালে সে আরও ব্যস্ত হয়।\n\n**Jitter**: অপেক্ষার সময়ের সাথে একটু এলোমেলো সংখ্যা যোগ করো। কারণ ১০০টা client একসাথে fail করলে সবাই ঠিক ২ সেকেন্ড পরে একসাথে ফিরে এসে আবার সার্ভার ভরিয়ে দেবে (thundering herd)। Jitter তাদের ছড়িয়ে দেয়।\n\n```python\nimport random, time\n\ndef backoff_delay(attempt: int, base: float = 1.0, cap: float = 30.0) -> float:\n    exp = min(cap, base * (2 ** attempt))        # 1, 2, 4, 8 ... cap পর্যন্ত\n    return random.uniform(0, exp)                # \"full jitter\": 0..exp এর মধ্যে এলোমেলো\n```\n\n`retry-after` থাকলে সেটাই সর্বোচ্চ অগ্রাধিকার পায়: `delay = max(retry_after, backoff_delay(attempt))`।\n\n### গ) Retry-র সীমা আর নিরাপত্তা\n\n- **চেষ্টার সংখ্যা সীমিত রাখো** (যেমন ৩-৫)। অন্তহীন retry মানে একটা বিপর্যয় আরও বড় বিপর্যয়ে রূপ নেওয়া।\n- **Total deadline রাখো**: গ্রাহক ৩০ সেকেন্ডের বেশি অপেক্ষা করবে না; retry-র মোট সময় তার ভেতরে থাকতে হবে।\n- **Idempotency ভাবো**: Messages API-র call নিজে কিছু বদলায় না, কিন্তু tool call (যেমন `issue_refund`) বদলায়। Model-কে retry করলে tool দ্বিতীয়বার চলে গিয়ে **দুইবার refund** হতে পারে। তাই side-effect-ওয়ালা tool-এ idempotency key রাখো।\n- **শুধু retriable error-এ retry** (আগের অধ্যায়ের নিয়ম)।\n\n### ঘ) Fallback model\n\nRetry-র পরও 529/overload চলতে থাকলে **অন্য একটা model-এ যাও** (যেমন প্রধান model-এর বদলে ছোট, দ্রুত model)। ট্রেডঅফ: উত্তরের মান/আচরণ আলাদা হতে পারে, তাই fallback model-কে **একই eval suite দিয়ে আগে যাচাই** করা থাকতে হবে। আর `stop_reason: \"refusal\"` এলে Docs অনুযায়ী অন্য Claude model-এ fallback একটা পরামর্শিত পথ। মনে রাখো: model id কোড-এ hardcode না করে config/env থেকে পড়ো।\n\n### ঙ) Circuit breaker\n\nযদি একটা dependency টানা fail করতে থাকে, প্রতিটা request আলাদা করে retry-র পুরো সময় অপেক্ষা করলে সবাই ঝুলে যাবে। **Circuit breaker** তিন অবস্থায় চলে:\n\n- **Closed**: স্বাভাবিক, request যাচ্ছে। ব্যর্থতা গুনছে।\n- **Open**: ব্যর্থতা সীমা (যেমন ৫০% বা টানা ৫টা) ছুঁলে **API call বন্ধ**: সাথে সাথেই fallback বা degraded উত্তর দাও।\n- **Half-open**: কিছুক্ষণ পর একটা-দুটো \"পরীক্ষামূলক\" request ছাড়ো; সফল হলে closed-এ ফেরো, নইলে আবার open।\n\n### চ) Graceful degradation\n\nসব চেষ্টার পরও না হলে **পুরো সিস্টেম ভেঙে না দিয়ে** কম মানের কিন্তু কাজের উত্তর দাও: cached FAQ উত্তর, \"আমরা এখন ব্যস্ত, ১০ মিনিট পরে আবার চেষ্টা করুন\" বার্তা, বা মানব এজেন্টে হস্তান্তর (human handoff)। গ্রাহক যেন কখনও `Error: something went wrong` না দেখেন।\n\n### Chai-Bot-এ বসানো সিদ্ধান্ত\n\nRafi এই ছক বানাল:\n\n| Error | কাজ |\n|---|---|\n| 400/401/403/404/413 | retry নয়; লগ + alert, গ্রাহককে ভদ্র বার্তা |\n| 429 + retry-after | অপেক্ষা `retry-after` পর্যন্ত, তারপর retry (সর্বোচ্চ ৪ বার) |\n| 429 spend cap | retry নয়; সাথে সাথে page করো, human handoff |\n| 500/504/529 | backoff + jitter (cap ৩০s, মোট deadline ৪৫s), ব্যর্থ হলে fallback model |\n| টানা অনেক 529 | circuit breaker open: fallback model/cached FAQ |\n| সবকিছু ব্যর্থ | graceful degradation: মানব এজেন্ট বা বার্তা |"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Retry with exponential backoff + jitter: একটা 529-এর যাত্রা",
+          "hint": "প্রতিটা ধাপ ধরে এগোও। লক্ষ করো অপেক্ষার সময় কীভাবে বাড়ছে, আর কখন retry বন্ধ করে fallback-এ যাওয়া হচ্ছে।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "retry",
+              "label": "Retry wrapper"
+            },
+            {
+              "id": "api",
+              "label": "Claude API"
+            },
+            {
+              "id": "fb",
+              "label": "Fallback model"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "retry",
+              "label": "ask(question)",
+              "note": "অ্যাপ সরাসরি API নয়, নিজের wrapper-কে ডাকে। wrapper-এ retry, লগ আর deadline এক জায়গায়।"
+            },
+            {
+              "from": "retry",
+              "to": "api",
+              "label": "attempt 0",
+              "note": "প্রথম চেষ্টা। wrapper শুরুতেই একটা request-id রাখার জায়গা আর timer চালু করে।"
+            },
+            {
+              "from": "api",
+              "to": "retry",
+              "label": "529 overloaded_error",
+              "note": "সাময়িক overload। এটা retriable, তাই wrapper এরর টাইপ দেখে সিদ্ধান্ত নেয়: পুনরায় চেষ্টা করা হবে। request-id লগে লেখা হয়।"
+            },
+            {
+              "from": "retry",
+              "to": "retry",
+              "label": "sleep ~0–2s (jitter)",
+              "note": "attempt 1-এর জন্য exp = 2s, তাই 0 থেকে 2 সেকেন্ডের মধ্যে এলোমেলো অপেক্ষা। jitter থাকায় সব client একসাথে ফেরে না।"
+            },
+            {
+              "from": "retry",
+              "to": "api",
+              "label": "attempt 1",
+              "note": "দ্বিতীয় চেষ্টা।"
+            },
+            {
+              "from": "api",
+              "to": "retry",
+              "label": "529 আবার",
+              "note": "এখনও overload। অপেক্ষার ঊর্ধ্বসীমা দ্বিগুণ হয়: 4s, তারপর 8s ... cap (যেমন 30s) পর্যন্ত।"
+            },
+            {
+              "from": "retry",
+              "to": "api",
+              "label": "attempt 2 (sleep ~0–4s পর)",
+              "note": "তৃতীয় চেষ্টা। প্রতিবার deadline-এর বাকি সময় দেখা হয়: ৪৫ সেকেন্ডের সীমা পেরোলে আর retry নয়।"
+            },
+            {
+              "from": "api",
+              "to": "retry",
+              "label": "529 তৃতীয়বার",
+              "note": "retry-র বাজেট ফুরোচ্ছে। একই model-কে আর খোঁচানো লাভজনক নয়।"
+            },
+            {
+              "from": "retry",
+              "to": "fb",
+              "label": "fallback: ছোট model",
+              "note": "ঠিক করা fallback model-এ একই prompt পাঠানো হয়। এই model আগে থেকেই একই eval suite-এ পরীক্ষিত থাকতে হবে।"
+            },
+            {
+              "from": "fb",
+              "to": "app",
+              "label": "উত্তর + usage + request-id",
+              "note": "উত্তর ফেরে। লগে লেখা থাকে: কোন model, কতবার retry, মোট latency। Dashboard-এ 'fallback rate' মেট্রিক বাড়ে।"
+            }
+          ],
+          "takeaway": "Retry হবে সীমিত, ব্যবধান বাড়বে (exponential), ছড়াবে (jitter), deadline মানবে; তারপর fallback, আর শেষে graceful degradation। প্রতিটা ধাপ লগে থাকবে।"
+        }
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "নির্বোধ retry বনাম ভাবনা-চিন্তা করা retry: একই 529 ঝড়ে দুই রকম ফল।",
+          "beforeTitle": "নির্বোধ retry",
+          "before": "while True: try → fail → সাথে সাথে আবার try\n\n• ১০০ জন গ্রাহক = সেকেন্ডে শত শত অতিরিক্ত call, সার্ভার আরও ব্যস্ত\n• 400/401-এও অন্তহীন লুপ, quota আর টাকা নষ্ট\n• গ্রাহক মিনিটের পর মিনিট ঝুলে থাকে\n• লগে কিছু নেই, কেন ব্যর্থ বোঝার উপায় নেই",
+          "afterTitle": "ভাবনা-চিন্তা করা retry",
+          "after": "error টাইপ দেখো → retriable হলে backoff + jitter → সীমিত চেষ্টা + deadline → fallback → degrade\n\n• চাপ ছড়িয়ে যায়, সার্ভার সেরে ওঠার সময় পায়\n• terminal error সাথে সাথে ধরা পড়ে\n• গ্রাহক সীমিত সময়েই উত্তর বা সুন্দর বার্তা পান\n• প্রতিটা চেষ্টা request-id সহ লগে"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Retry লিখলে SDK-র retry বন্ধ করো",
+        "markdown": "নিজের wrapper লিখলে `anthropic.Anthropic(max_retries=0)` দাও। নইলে SDK ২ বার retry করে, তোমার wrapper ৪ বার করে, মোট ৩ × ৫ = ১৫টা call-এ পরিণত হতে পারে, যা rate limit আরও খারাপ করে। এটাও মনে রাখো: SDK-র ডিফল্ট retry spend-cap 429-এ কাজ করে না, কারণ সেটা `retry-after`-বিহীন এবং অপেক্ষায় মেটে না।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Trace analysis: ভাঙনটা integration layer-এ, নাকি model output-এ?\n\nআবার সেই প্রশ্ন: Nusrat Apu জিজ্ঞেস করলেন \"refund-এর উত্তরগুলো অদ্ভুত, কার দোষ?\" এটা এমন এক ধরনের bug যেখানে HTTP error নেই, `200 OK`, তবু ফল ভুল। এখানে **trace analysis** লাগে।\n\n### দুই স্তরের কাঠামো\n\nClaude-ভিত্তিক অ্যাপে সমস্যা দুই জায়গার যেকোনো একটায় হতে পারে:\n\n- **Integration layer** = তোমার কোড + API-র সাথে লেনদেন: ভুল prompt সংযোজন, ভুল JSON পার্স, `tool_result` ফেরত না পাঠানো, `max_tokens` ছোট, history ছাঁটতে গিয়ে কিছু হারানো, timeout, ভুল model id, ভুল header।\n- **Model output** = model-এর নিজের আচরণ: ভুল তথ্য (hallucination), নির্দেশ না মানা, ভুল tool বাছা, ভুল argument, ভুল ফরম্যাট।\n\nগুরুত্বপূর্ণ নীতি: **model-কে দোষ দেওয়ার আগে নিশ্চিত হও যে model ঠিক সেই input পেয়েছে যা তুমি ভেবেছিলে।** বেশিরভাগ \"model খারাপ\" অভিযোগ আসলে ভুল input (integration bug)।\n\n### কী লগ করবে (এটাই trace)\n\nপ্রতিটা API call-এর জন্য, যাতে সমস্যা হওয়ার পর আবার ঘটনাটা \"পুনর্নির্মাণ\" করা যায়:\n\n| লগ করবে | কেন |\n|---|---|\n| `request-id` (header/`_request_id`) | support-এর সাথে একই ঘটনা ধরার একমাত্র চাবি |\n| model id + পুরো request parameters (`max_tokens`, `tools`, ...) | কনফিগ-বদল ধরতে |\n| পাঠানো `system` ও `messages` (PII মুছে) | model আসলে কী দেখেছিল |\n| পুরো response `content` blocks | model কী বলেছে, কোন tool call করেছে |\n| `stop_reason` | কেন থামল (`end_turn`, `max_tokens`, `tool_use`, `refusal`...) |\n| `usage` (input/output/cache tokens) | খরচ ও প্রসঙ্গ-আকার |\n| latency, retry সংখ্যা, error type | রিলায়েবিলিটি |\n| `tool_use` input আর `tool_result` | integration আর model-এর সীমানা |\n\nPII নিয়ে সতর্ক: লগে গ্রাহকের ফোন নম্বর, ঠিকানা মাস্ক করো (পরের chapter-এ security বিস্তারিত)।\n\n### `stop_reason` আসলে একটা সংকেত\n\nDocs অনুযায়ী প্রতিটা সফল response-এ `stop_reason` দেখা উচিত, কারণ HTTP 4xx/5xx আলাদা বিষয়:\n\n| `stop_reason` | মানে | সম্ভাব্য সমস্যার জায়গা |\n|---|---|---|\n| `end_turn` | স্বাভাবিক শেষ | ঠিক থাকলে model-এর উত্তরের মান বিচার করো |\n| `max_tokens` | `max_tokens` সীমায় কাটা পড়েছে | **integration**: সীমা ছোট; অর্ধেক JSON/tool_use কাটা পড়তে পারে |\n| `tool_use` | model tool call চাইছে | তুমি `tool_result` পাঠাচ্ছ তো? সব `tool_use` block-এর জন্য? |\n| `stop_sequence` | তোমার দেওয়া stop sequence ঘটেছে | integration কনফিগ |\n| `refusal` | model প্রত্যাখ্যান করেছে (HTTP 200) | prompt/বিষয়বস্তু; fallback ভাবো |\n| `pause_turn` | server-tool লুপের সীমায় থেমেছে | response যেমন আছে তেমন আবার পাঠাও |\n| `model_context_window_exceeded` | context window ভরেছে | context আকার/ছাঁটাই |\n\n### আলাদা করার সিদ্ধান্ত-পথ"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "একটা ভুল উত্তরের ট্রেস ধরে ধরে সমস্যার জায়গা বাছাই: আগে integration, তারপর model।",
+          "steps": [
+            {
+              "title": "১. ঘটনাটা ধরো",
+              "body": "ব্যর্থ conversation-এর request-id দিয়ে লগ থেকে সম্পূর্ণ request/response তুলে আনো। না থাকলে আগে লগিং ঠিক করো।"
+            },
+            {
+              "title": "২. HTTP/SDK স্তর দেখো",
+              "body": "status code, error type, retry হয়েছে কিনা, timeout, ভুল model id। এখানে সমস্যা মানে integration (বা API অবস্থা)।"
+            },
+            {
+              "title": "৩. stop_reason দেখো",
+              "body": "max_tokens বা কাটা tool_use হলে সীমা বাড়াও। tool_use-তে tool_result ঠিকমতো গেছে কিনা দেখো।"
+            },
+            {
+              "title": "৪. Model যা পেয়েছে তা পুনর্গঠন করো",
+              "body": "পাঠানো system + messages + tools হুবহু পড়ো। history ছাঁটা, ভুল ভেরিয়েবল, খালি retrieval, পুরোনো prompt version কি ঢুকেছে?"
+            },
+            {
+              "title": "৫. ঠিক সেই input আবার চালাও",
+              "body": "একই request আলাদাভাবে কয়েকবার চালিয়ে দেখো। ভুল সবসময় হলে prompt/instruction সমস্যা; মাঝে মাঝে হলে model-এর বৈচিত্র্য, তখন eval দিয়ে হার মাপো।"
+            },
+            {
+              "title": "৬. Tool input পরীক্ষা",
+              "body": "model কোন tool বাছল, argument কী দিল। ভুল tool/argument হলে tool description ও schema দেখো; tool ঠিক কিন্তু চালানো ভুল হলে তা integration।"
+            },
+            {
+              "title": "৭. রায় + regression case",
+              "body": "সমস্যা কোন স্তরের বলো, ঠিক করো, আর এই ঘটনাকে eval dataset-এ নতুন case হিসেবে যোগ করো, যাতে আবার না ঘটে।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "### Rafi-র ট্রেস: refund-এর \"অদ্ভুত\" উত্তর\n\nRafi একটা ব্যর্থ conversation-এর request-id ধরে লগ খুলল:\n\n```json\n{\n  \"request_id\": \"req_011C...\",\n  \"model\": \"<env CLAUDE_MODEL>\",\n  \"stop_reason\": \"end_turn\",\n  \"usage\": {\"input_tokens\": 1840, \"output_tokens\": 96},\n  \"system_prompt_version\": \"v14\",\n  \"messages_sent\": [\n    {\"role\": \"user\", \"content\": \"অর্ডার #4521 refund চাই\"}\n  ],\n  \"tool_calls\": [],\n  \"retrieved_policy_chars\": 0\n}\n```\n\nলক্ষ করো: `retrieved_policy_chars: 0`। refund policy নথি **একটাও অক্ষর** prompt-এ যায়নি। Model শুধু আন্দাজে একটা সুন্দর উত্তর বানিয়েছে। **এটা model-এর সমস্যা না, integration-এর:** গতকালের deploy-এ retrieval ফাংশনের একটা path বদলে গিয়ে খালি ফল দিচ্ছিল, আর কোড চুপচাপ খালি স্ট্রিং পাঠাচ্ছিল। Rafi retrieval ঠিক করল, আর এখন কোনও retrieval খালি এলে request-ই পাঠানো হয় না (guard)।\n\nদ্বিতীয় নমুনা: আরেকটা ট্রেসে `stop_reason: \"max_tokens\"` আর শেষ block একটা অসম্পূর্ণ `tool_use` JSON। এটাও integration: `max_tokens=256` খুব ছোট ছিল, Docs-এর নির্দেশ অনুযায়ী সীমা বাড়িয়ে আবার চালাতে হয়।\n\nতৃতীয় নমুনায় সব ঠিক: policy ঢুকেছে, `end_turn`, কিন্তু model ভুল তারিখ বলেছে। এটা model output সমস্যা; সমাধান prompt-এ নিয়ম স্পষ্ট করা, response validation, আর eval।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'model ভুল করছে, তাই model বদলাও / temperature কমাও'",
+        "markdown": "দুর্বল অপশনগুলো সাধারণত প্রথমেই model বদলাতে বা prompt ঢেলে সাজাতে বলে। সঠিক পদ্ধতি: **আগে ট্রেস: request-id, পাঠানো input, stop_reason, usage, tool input লগ দেখে স্তর বিচ্ছিন্ন করো।** `max_tokens`-এ কাটা, খালি retrieval, ভুল message ক্রম, tool_result না পাঠানো, এগুলো integration bug; model বদলালে সারবে না। আবার ট্রেসে input ঠিক, তবু ভুল হলে তখনই prompt/model/eval নিয়ে ভাবো। আর মনে রেখো: কোনো কোনো নতুন model-এ (এবং API version `2026-10-21`-এ) `temperature` পাঠালে 400 আসে, তাই এটা সমাধান নয়।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Eval: \"ঠিক আছে\" কথাটার সংজ্ঞা আগে লেখো\n\nএতক্ষণ আমরা ভাঙা জিনিস খুঁজতে শিখলাম। এবার প্রশ্ন: **ঠিক হয়েছে কিনা কীভাবে জানব?** Rafi prompt বদলাল, \"দেখে তো ভালোই লাগছে\"। কিন্তু Nusrat Apu বললেন: \"দেখে ভালো লাগা প্রমাণ না। ২০০টা বাস্তব প্রশ্নে আগে কত % ঠিক ছিল, এখন কত?\"\n\n### ধাপ ১: Deploy-এর আগে 'done'-এর সংজ্ঞা\n\nDocs-এর নির্দেশ: **success criteria আগে ঠিক করো**, আর সেগুলো হতে হবে:\n\n- **Specific** (নির্দিষ্ট): \"ভালো পারফরম্যান্স\" নয়, \"refund প্রশ্নের ৯৫% সঠিক category\"।\n- **Measurable** (মাপার যোগ্য): সংখ্যা বা পরিষ্কার স্কেল (যেমন ১-৫)।\n- **Achievable** (সাধ্য): বাস্তব benchmark/পরীক্ষার ভিত্তিতে।\n- **Relevant** (প্রাসঙ্গিক): ব্যবসার উদ্দেশ্যের সাথে মেলে।\n\nবেশিরভাগ ক্ষেত্রে criteria **বহুমুখী**: task নির্ভুলতা, consistency, tone, privacy, latency, খরচ। ChaiCart-এর জন্য Rafi লিখল: \"ticket category সঠিক ≥ ৯২%; refund-এর টাকার অঙ্ক ১০০% সঠিক; PII লিক ০; p95 latency ≤ ৬ সেকেন্ড; কথোপকথনপ্রতি খরচ ≤ নির্ধারিত বাজেট।\" এই 'done' সংজ্ঞা **কোড লেখার আগেই** লেখা হলো।\n\n### ধাপ ২: Eval design-এর তিন নীতি (Docs)\n\n1. **Task-specific**: বাস্তব ট্রাফিকের মতো, edge case সহ: অপ্রাসঙ্গিক ইনপুট, খুব লম্বা মেসেজ, অস্পষ্ট প্রশ্ন, ক্ষতিকর অনুরোধ।\n2. **যথাসম্ভব স্বয়ংক্রিয়**: অটো-গ্রেডযোগ্য ফরম্যাট বাছো (multiple choice, string match, code-graded, LLM-graded)।\n3. **পরিমাণ > নিখুঁততা**: অনেক স্বয়ংক্রিয়ভাবে গ্রেড করা প্রশ্ন (একটু কম সংকেত) কয়েকটা হাতে গ্রেড করা নিখুঁত প্রশ্নের চেয়ে ভালো।\n\n### ধাপ ৩: তিন ধরনের grading\n\n| পদ্ধতি | সুবিধা | অসুবিধা | কখন |\n|---|---|---|---|\n| **Code-based** (exact match, regex, JSON schema, সংখ্যা মেলানো, string contains) | সবচেয়ে দ্রুত ও নির্ভরযোগ্য, প্রায় বিনামূল্যে, scale করা সহজ | সূক্ষ্মতা নেই: ভাব/tone বোঝে না | classification, নির্ধারিত ফরম্যাট, টাকার অঙ্ক, tool call ঠিক কিনা |\n| **LLM-based** (অন্য model rubric দিয়ে নম্বর দেয়) | দ্রুত, নমনীয়, জটিল বিচারে সক্ষম | নির্ভরযোগ্যতা আগে যাচাই করতে হয়; পক্ষপাত থাকতে পারে | tone, সারাংশের মান, খোলা উত্তর |\n| **Human** | সবচেয়ে নমনীয় ও উচ্চমানের | ধীর ও দামি, \"যতটা সম্ভব এড়াও\" | LLM judge ক্যালিব্রেট করা, কঠিন edge case, উচ্চ ঝুঁকি |\n\nDocs-এর অগ্রাধিকার: **যেখানে সম্ভব code-based; না হলে LLM-based (আগে যাচাই করে); human grading docs-এ \"avoid if possible\"**। (ক্যালিব্রেশন ও কঠিন edge case-এ human ব্যবহার সাধারণ অনুশীলন, docs-এর আলাদা বিধান নয়।)\n\n### ধাপ ৪: Test dataset\n\nপ্রতিটা eval case-এ থাকে **input + প্রত্যাশিত ফল (বা rubric)**। ডেটা আসে:\n\n- আসল (PII মুছে) গ্রাহক মেসেজ থেকে, বাস্তব বিতরণ বজায় রেখে।\n- edge case হাতে বানানো (ভুল বানান, বাংলা-ইংরেজি মেশানো, ফাঁকা মেসেজ)।\n- **production-এ ধরা প্রতিটা ব্যর্থতা**: প্রতিটা বাগ একটা নতুন test case হয়ে dataset-এ ঢোকে। Rafi-র খালি-retrieval বাগও এখন একটা case।\n\n### ধাপ ৫: Regression suite: কোন স্তরে কী পরীক্ষা\n\nসফটওয়্যার-পরীক্ষার পুরোনো ধারণাই LLM অ্যাপে খাটে, শুধু \"model-সহ\" অংশটা অনির্দিষ্ট (non-deterministic):\n\n| স্তর | কী পরীক্ষা | Chai-Bot-এ উদাহরণ | কীভাবে |\n|---|---|---|---|\n| **Unit** | আমাদের কোডের ছোট ফাংশন, model ছাড়া | retry delay হিসাব, JSON পার্সার, ডেটা validator | mock/fake, নির্ধারিত (deterministic) |\n| **Functional** | prompt + model একটা নির্দিষ্ট কাজ ঠিক করে কিনা | ১০০ মেসেজে category ঠিক কিনা | eval dataset + grader, পাসের হার |\n| **Integration** | কোড ⇄ API ⇄ tool সংযোগ | tool_use → tool_result চক্র, error mock করে (429/529 ইনজেক্ট) | mock server বা সংরক্ষিত response |\n| **End-to-end** | পুরো ব্যবহারকারী যাত্রা | গ্রাহক refund চাইল → tool → ঠিক উত্তর | প্রকৃত stack, কয়েকটা প্রতিনিধিত্বমূলক পথ |\n\n**Regression** মানে: আগে যা ঠিক ছিল তা বদলের পর ভেঙেছে কিনা। প্রতিটা prompt বদল, model আপগ্রেড, tool বদল, system prompt পরিবর্তনের আগে এই suite চালাও। Model আপগ্রেডের কথা মনে রাখো: নতুন model ভিন্ন আচরণ করে (যেমন tokenizer বদল, parameter সীমা), তাই আপগ্রেডের আগে-পরে একই eval চালিয়ে তুলনা করো।"
+      },
+      {
+        "type": "simulator",
+        "id": "layer-toggle",
+        "props": {
+          "title": "কোন test স্তর কোন সমস্যা ধরে?",
+          "hint": "এক এক করে স্তর চালু করো আর দেখো কোন সমস্যা ধরা পড়ে। কোনো একটা স্তর একা সব ধরে না, তাই স্তর-ভিত্তিক regression suite দরকার।",
+          "layers": [
+            {
+              "id": "unit",
+              "label": "Unit test (কোডের ফাংশন, model ছাড়া)",
+              "desc": "retry হিসাব, parser, validator, deterministic",
+              "blocks": ["parser-bug", "backoff-bug"]
+            },
+            {
+              "id": "functional",
+              "label": "Functional eval (prompt + model, dataset + grader)",
+              "desc": "~১০০টা মেসেজে পাসের হার মাপা",
+              "blocks": ["prompt-regress", "model-upgrade"]
+            },
+            {
+              "id": "integration",
+              "label": "Integration test (কোড ⇄ API ⇄ tool, error ইনজেক্ট)",
+              "desc": "tool_use → tool_result চক্র, 429/529 mock",
+              "blocks": ["tool-loop", "error-path"]
+            },
+            {
+              "id": "e2e",
+              "label": "End-to-end test (পুরো গ্রাহক যাত্রা)",
+              "desc": "প্রকৃত stack-এ প্রতিনিধিত্বমূলক পথ",
+              "blocks": ["tool-loop", "prompt-regress", "empty-retrieval"]
+            },
+            {
+              "id": "monitor",
+              "label": "Production monitoring (live মেট্রিক ও সতর্কতা)",
+              "desc": "error rate, latency, খরচ, quality sample",
+              "blocks": ["model-upgrade", "cost-spike", "empty-retrieval"]
+            }
+          ],
+          "attacks": [
+            {
+              "id": "parser-bug",
+              "label": "JSON পার্সারে বাগ",
+              "desc": "অসম্পূর্ণ JSON-এ কোড ক্র্যাশ"
+            },
+            {
+              "id": "backoff-bug",
+              "label": "Backoff হিসাব ভুল",
+              "desc": "delay ঋণাত্মক বা অসীম"
+            },
+            {
+              "id": "prompt-regress",
+              "label": "Prompt বদলে মান কমল",
+              "desc": "নতুন system prompt-এ category ভুল বাড়ল"
+            },
+            {
+              "id": "model-upgrade",
+              "label": "Model আপগ্রেডে আচরণ বদল",
+              "desc": "নতুন model ভিন্ন ফরম্যাটে উত্তর দেয়"
+            },
+            {
+              "id": "tool-loop",
+              "label": "tool_result ফেরত পাঠানো হচ্ছে না",
+              "desc": "tool_use-র পর request ভেঙে যায়"
+            },
+            {
+              "id": "error-path",
+              "label": "529-এ কোড ক্র্যাশ",
+              "desc": "error হ্যান্ডলিং পথ কখনও পরীক্ষা হয়নি"
+            },
+            {
+              "id": "empty-retrieval",
+              "label": "Retrieval খালি, উত্তর আন্দাজ",
+              "desc": "policy ঢোকেনি, তবু সুন্দর উত্তর"
+            },
+            {
+              "id": "cost-spike",
+              "label": "হঠাৎ খরচ বৃদ্ধি",
+              "desc": "history ফুলে input token ৩ গুণ"
+            }
+          ],
+          "takeaway": "Unit দ্রুত ও সস্তা কিন্তু সীমিত; functional eval model-সহ মান মাপে; integration সংযোগ ধরে; e2e পুরো যাত্রা; monitoring বাস্তব ট্রাফিকে যা test-এ আসেনি তা ধরে। সব স্তর মিলেই ঢাল।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. LLM-as-judge: ক্যালিব্রেট করা ছাড়া বিশ্বাস নয়\n\n\"ভদ্র tone আছে কিনা\", \"সারাংশ বিশ্বস্ত কিনা\": এসব code দিয়ে মাপা যায় না, আবার ১০,০০০ উত্তর মানুষ পড়তে পারবে না। তাই আরেকটা Claude-কে **বিচারক (judge)** বানানো হয়: সে rubric অনুযায়ী নম্বর বা \"correct/incorrect\" দেয়।\n\n### Docs-এর পরামর্শ (LLM-based grading-এ)\n\n- **স্পষ্ট ও বিস্তারিত rubric** লেখো: \"উত্তরের প্রথম বাক্যে 'ChaiCart' থাকতে হবে; না থাকলে স্বয়ংক্রিয়ভাবে incorrect।\"\n- **অভিজ্ঞতালব্ধ/নির্দিষ্ট output** চাও: যেমন শুধু 'correct' বা 'incorrect' (বা ১-৫), যাতে পার্স করা যায়।\n- **আগে যুক্তি, পরে রায়**: docs বলে grader model-এ thinking চালু রাখো, যাতে স্কোরের আগে সে যুক্তি করে। জটিল বিচারে এতে মান বাড়ে।\n- যে model উত্তর বানিয়েছে, **তার থেকে আলাদা model** দিয়ে বিচার করানো সাধারণত ভালো অভ্যাস (নিজের উত্তরের প্রতি পক্ষপাত এড়াতে)।\n- একটা use case বা criterion-এ সম্পূর্ণ মূল্যায়নের জন্য একাধিক rubric লাগতে পারে (docs); তাই প্রতিটা rubric সংকীর্ণ ও স্পষ্ট রাখো, একসাথে অনেক কিছু বিচার করালে বিশৃঙ্খল হয়।\n\n### Calibration: judge ঠিক কিনা কীভাবে জানবে?\n\nDocs-এর কথা: **\"আগে নির্ভরযোগ্যতা পরীক্ষা করো, তারপর scale করো।\"** এর পদ্ধতি:\n\n1. ৫০-১০০টা উত্তর বেছে নাও (ভালো, খারাপ আর মাঝামাঝি, সবরকম)।\n2. মানুষ (Rafi + Nusrat Apu) নিজেরা আলাদাভাবে লেবেল দাও: pass/fail।\n3. একই উত্তরে LLM judge চালাও।\n4. **মিল মাপো**: কতটা % ক্ষেত্রে judge = মানুষ? কোথায় অমিল? (শুধু শতকরা নয়; false pass আর false fail আলাদা দেখো।)\n5. অমিলগুলো পড়ো, rubric শুধরাও, আবার চালাও। মিল লক্ষ্যের (যেমন ≥ ৯০%) ওপরে উঠলে তবেই judge-কে বড় dataset-এ ছাড়ো।\n6. সময়ের সাথে **পুনরায় ক্যালিব্রেট**: নতুন ধরনের ব্যর্থতা এলে বা judge model বদলালে।\n\n### Judge-এর পরিচিত দুর্বলতা\n\n- **দৈর্ঘ্যের পক্ষপাত**: লম্বা উত্তরকে ভালো ভাবে।\n- **নিজের model-এর প্রতি পক্ষপাত**: একই model-পরিবারের উত্তর পছন্দ করে।\n- **অস্থিরতা**: একই ইনপুটে ভিন্ন স্কোর (non-deterministic)।\n- **ভুল আত্মবিশ্বাস**: ভুল তথ্যও বিশ্বাসযোগ্য শোনালে পাস করিয়ে দেয়। তাই তথ্যগত বিষয় (টাকার অঙ্ক, তারিখ) **code-based grader**-এ মেলাও, judge-কে শুধু tone/মানের জন্য রাখো।\n\n### একটা ছোট judge prompt\n\n```python\nJUDGE = \"\"\"তুমি একজন কঠোর মূল্যায়নকারী। নিচের rubric অনুযায়ী উত্তরটি বিচার করো।\n\n<rubric>\n১) গ্রাহকের নাম বা ভদ্র সম্বোধন আছে\n২) refund policy-র বাইরের কোনো প্রতিশ্রুতি নেই\n৩) সর্বোচ্চ ৩ বাক্য\nসবকটি সত্য হলে \"pass\", নইলে \"fail\"।\n</rubric>\n\n<answer>{answer}</answer>\n\nআগে <reasoning> ট্যাগে সংক্ষেপে যুক্তি লেখো, তারপর <verdict>pass</verdict> বা <verdict>fail</verdict>।\"\"\"\n```\n\n### Rafi-র calibration ফল\n\nRafi ৬০টা উত্তরে judge চালিয়ে দেখল মানুষের সাথে মিল ৮৩%। অমিলগুলোর বেশিরভাগ ছিল \"judge লম্বা উত্তরকে পাস করাচ্ছে\"। সে rubric-এ \"সর্বোচ্চ ৩ বাক্য\" শর্ত যোগ করল আর দ্বিতীয় রাউন্ডে মিল ৯২% হলো। তবেই judge production eval-এ ঢুকল। এবং টাকার অঙ্ক মেলানোর কাজটা judge নয়, একটা সাধারণ code grader-এ রইল।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'LLM judge যেহেতু বুদ্ধিমান, human label লাগবে না'",
+        "markdown": "সবচেয়ে জনপ্রিয় ভুল অপশন: \"judge-কে সরাসরি production-এ বসাও\" বা \"judge-এর স্কোরই সত্য\"। সঠিক উত্তর সাধারণত **judge-কে human লেবেলের বিপরীতে ক্যালিব্রেট করা** (মিল মাপা, rubric শোধরানো), এবং যেখানে সম্ভব **code-based grader** পছন্দ করা (দ্রুত, নির্ভরযোগ্য)। আরেকটা ফাঁদ: উত্তর যে model বানিয়েছে, ঠিক সেই model-কে একমাত্র বিচারক বানানো। আলাদা model ভালো।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Production monitoring: খরচ, latency, quality, reliability\n\nTest পাস করে deploy হলো। কিন্তু production-এ বাস্তব মানুষ, বাস্তব ট্রাফিক, আর আমাদের কল্পনা-না-করা ইনপুট। তাই **deploy শেষ নয়, শুরু।** Nusrat Apu-র শেষ প্রশ্ন: \"আগামী ঈদে এমন হলে আমরা কীভাবে জানব, গ্রাহক জানানোর আগে?\"\n\n### চার ধরনের budget ও মেট্রিক\n\n| ক্ষেত্র | কী মাপবে | উদাহরণ সীমা (Chai-Bot) | সূত্র |\n|---|---|---|---|\n| **Quality** | eval পাসের হার (নমুনা traffic-এ), thumbs-down হার, human handoff হার, validation ব্যর্থতা | নমুনা traffic-এর ৯০%+ পাস | নিয়মিত নমুনা তুলে grader চালানো |\n| **Cost** | প্রতি কথোপকথনের `input_tokens`/`output_tokens`/cache tokens, প্রতিদিনের মোট ব্যয় | কথোপকথনপ্রতি বাজেট; দৈনিক বাজেট | প্রতিটা response-এর `usage`, Console Usage পাতা |\n| **Latency** | p50/p95/p99 total সময়, প্রথম token পর্যন্ত সময় (streaming) | p95 ≤ ৬ সেকেন্ড | নিজের timer |\n| **Reliability** | error rate (status অনুযায়ী ভাঙা), retry হার, fallback হার, circuit breaker open-সময় | error ≤ ১% (retry-র পর) | লগ থেকে |\n\n### Budget কেন \"budget\"\n\nBudget মানে একটা **আগে থেকে ঠিক করা সীমা**, যা পেরোলে সতর্কতা বাজে। শুধু \"মাপা\" যথেষ্ট না; **সীমা + alert + দায়িত্বপ্রাপ্ত ব্যক্তি।** উদাহরণ: \"দৈনিক ব্যয় বাজেটের ৮০% ছুঁলে Slack alert; ১০০% ছুঁলে প্রয়োজন-ছাড়া ফিচার (যেমন লম্বা সারাংশ) বন্ধ।\"\n\n### ঠিক কোন জিনিসগুলো দেখবে\n\n- **Usage থেকে খরচের উৎস**: `usage` object থেকে cache কাজ করছে কিনা দেখো। cache পড়া token-এর দাম স্বাভাবিক input-এর ভগ্নাংশ, তাই cache hit হার পড়ে গেলে খরচ হঠাৎ বাড়ে (prompt-এ সময় ঢোকানো, cache ভাঙা)। মোট input = `cache_read_input_tokens + cache_creation_input_tokens + input_tokens`।\n- **Rate limit headroom**: `anthropic-ratelimit-*-remaining` header আর Console-এর Usage পাতার rate limit চার্ট। limit ছোঁয়ার আগেই scale/queue ভাবো।\n- **Drift**: model আপগ্রেড বা prompt বদলের পর quality-র নমুনা-মেট্রিক নামল কিনা।\n- **Error-এর ভাঙন**: মোট \"error rate\" না দেখে status/type অনুযায়ী ভাঙো। ৪xx বাড়লে কোডের বাগ/কনফিগ; 529 বাড়লে বাইরের চাপ।\n- **Spend limit**: Console-এ নিজের সীমা সেট করো, নইলে ভুলে loop চলে থাকলে মাসের শেষে চমক। মনে রাখো, নিজের সেট করা সীমা ছুঁলে 400, tier-এর cap ছুঁলে 429।\n\n### Production ফিডব্যাক চক্র\n\nMonitoring শুধু alert নয়; এটা eval-এর কাঁচামাল। থাম্বস-ডাউন, human handoff, validation ব্যর্থতা: প্রতিটা ঘটনা PII মুছে **নতুন eval case** হয়, সারাই হয়, আর regression suite-এ স্থায়ীভাবে বসে। এভাবে suite প্রতিদিন বাস্তবের কাছাকাছি হয়।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Chai-Bot-এর observability পাইপলাইন: প্রতিটা call লগ হয়, মেট্রিক জমে, alert বাজে, আর ব্যর্থতা eval dataset-এ ফিরে যায়।",
+          "nodes": [
+            {
+              "id": "app",
+              "kind": "client",
+              "label": "Chai-Bot (retry wrapper)",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "api",
+              "kind": "external",
+              "label": "Claude API",
+              "x": 220,
+              "y": 0
+            },
+            {
+              "id": "logs",
+              "kind": "database",
+              "label": "Trace লগ (request-id)",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "metrics",
+              "kind": "server",
+              "label": "Dashboard + Alert",
+              "x": 220,
+              "y": 110
+            },
+            {
+              "id": "evals",
+              "kind": "queue",
+              "label": "Eval dataset / suite",
+              "x": 440,
+              "y": 110
+            }
+          ],
+          "edges": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "call + retry"
+            },
+            {
+              "from": "app",
+              "to": "logs",
+              "label": "call লগ"
+            },
+            {
+              "from": "logs",
+              "to": "metrics",
+              "label": "metrics"
+            },
+            {
+              "from": "metrics",
+              "to": "app",
+              "label": "alert"
+            },
+            {
+              "from": "logs",
+              "to": "evals",
+              "label": "নতুন case"
+            }
+          ]
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Chai-Bot-এর নতুন ঈদ-প্রস্তুতি",
+        "markdown": "Rafi এখন প্রতিটা call-এ `request_id`, `model`, `stop_reason`, `usage`, `latency_ms`, `attempts` লগ করে। Dashboard-এ আছে: error rate (status-ভিত্তিক), p95 latency, কথোপকথনপ্রতি খরচ, cache hit হার, fallback হার, আর নমুনা traffic-এ eval পাসের হার। প্রতিটা সীমার alert আছে। গ্রাহকরা জানানোর আগেই টিম জানে। আর 'Error: something went wrong' লাইনটা আর কোথাও নেই।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## পরীক্ষায় এটা কীভাবে আসে\n\n**Blueprint skill:** Domain 4, **Debugging and Error Handling** (পুরো exam-এ ২.৬%, ৫৩টা প্রশ্নে সাধারণত ১-২টা)। Exam Guide-এর বাক্যে চারটা ধাপ: **error type চেনা, recovery strategy বাছা, trace analysis করে failure mode ধরা, integration layer বনাম model output-এ সমস্যার উৎস আলাদা করা।** Eval, regression আর monitoring প্রশ্নও এই skill-এর ভেতরেই debugging/recovery দৃশ্যের অংশ হিসেবে আসতে পারে।\n\n**প্রশ্নের চেনা ছাঁচ:**\n\n1. **\"কোন error-এ retry করবে?\"**: scenario-তে 400/401/403/413 থাকলে retry ভুল; 429 (`retry-after` সহ), 500, 529, timeout হলে backoff সহ retry ঠিক। spend-cap 429 (`retry-after` নেই) ব্যতিক্রম।\n2. **\"সবচেয়ে ভালো recovery কোনটা?\"**: সীমিত retry + exponential backoff + jitter, তারপর fallback model, circuit breaker, graceful degradation। \"সাথে সাথে অসীম retry\" সবসময় ভুল।\n3. **\"সমস্যা কোথায়, integration না model?\"**: ট্রেসে `max_tokens`-এ কাটা, খালি context, tool_result না পাঠানো = integration; input ঠিক, তবু ভুল তথ্য = model output। উত্তর হয় সাধারণত \"আগে request-id/লগ/stop_reason দেখো\"।\n4. **\"কীভাবে মানব যে prompt বদল ভালো হয়েছে?\"**: আগে success criteria সংজ্ঞায়িত, তারপর dataset + grader (code-based পছন্দ), regression suite চালানো। \"দুই-তিনটা উদাহরণ দেখে ভালো লাগল\" ভুল।\n5. **\"LLM judge বিশ্বাসযোগ্য করতে?\"**: human লেবেলের বিপরীতে ক্যালিব্রেশন, স্পষ্ট rubric, আলাদা model, তথ্যগত অংশ code দিয়ে।\n6. **\"production-এ কী মনিটর করবে?\"**: quality নমুনা, খরচ (usage), latency percentile, error/fallback হার, সীমা + alert।\n7. **Multi-select (\"দুটো বাছো\")**: প্রায়ই \"retry + backoff\" সাথে \"request-id লগ\", বা \"code-based grader\" সাথে \"human-calibrated judge\" জুটি।\n\n**মনে রেখো:** সঠিক উত্তরে সাধারণত **মাপা ও যাচাই করা** আছে, আন্দাজ বা \"model বদলাও / temperature কমাও / শুধু retry\"-র মতো ঝুলন্ত সমাধান নয়।"
+      }
+    ],
+    "recap": [
+      "৪xx (400/401/402/403/404/413) সাধারণত terminal: request, key বা অনুমতি ঠিক করো; 429 (`retry-after` মেনে), 500, 504, 529 আর মাঝপথের stream `error` event retriable; তবে `retry-after`-বিহীন spend-cap 429 (`enforced_spend_limit_reached`) অপেক্ষায় মেটে না।",
+      "Recovery মানে সীমিত retry + exponential backoff + jitter + total deadline, তারপর পরীক্ষিত fallback model, circuit breaker আর graceful degradation; নিজের retry লিখলে SDK-র `max_retries=0` দাও, আর side-effect-ওয়ালা tool-এ idempotency রাখো।",
+      "প্রতিটা call-এর `request-id`, model, পাঠানো input, `stop_reason`, `usage`, tool input লগ করো; `max_tokens`-এ কাটা বা খালি context-এর মতো সমস্যা integration layer-এর, input ঠিক থাকলে তবেই model output নিয়ে ভাবো।",
+      "Deploy-এর আগে measurable success criteria লিখে 'done' সংজ্ঞায়িত করো; যেখানে সম্ভব code-based grading (দ্রুত, নির্ভরযোগ্য), না হলে যাচাই-করা LLM grading, আর human শুধু ক্যালিব্রেশন ও কঠিন ক্ষেত্রে।",
+      "LLM-as-judge ক্যালিব্রেট করতে human লেবেলের সাথে মিল মাপো, rubric স্পষ্ট করো, আলাদা model ব্যবহার করো আর তথ্যগত অংশ code দিয়ে মেলাও।",
+      "Regression suite হয় unit, functional, integration ও end-to-end স্তরে; প্রতিটা production ব্যর্থতা নতুন eval case হয়ে suite-এ ঢোকে।",
+      "Production-এ quality, cost (`usage`), latency (p95), reliability (error/fallback হার)-এর budget আর alert রাখো, কারণ deploy-ই শেষ নয়।"
+    ]
+  },
+  "lab": {
+    "goal": "একটা Claude call-কে retry + exponential backoff + jitter দিয়ে মুড়ে, প্রতিটা call-এর request-id ও usage লগ করে, আর ১০টা case-এর একটা ছোট eval বানিয়ে code-based grader দিয়ে পাসের হার মাপা।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install anthropic`",
+      "`export ANTHROPIC_API_KEY=...` (কখনও কোডে বা git-এ রাখবে না)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>`; কোডে hardcode করবে না",
+      "এই lab-এ `temperature`/`top_p`/`top_k` পাঠাবে না"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: Retry wrapper (error ছাঁটাই + backoff + jitter)",
+        "body": "`lab13.py` ফাইলে:\n\n```python\nimport os, time, random, json\nimport anthropic\n\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n# SDK-র নিজস্ব retry বন্ধ, কারণ আমরা নিজে করব\nclient = anthropic.Anthropic(max_retries=0)\n\nRETRIABLE_STATUS = {429, 500, 504, 529}\n\ndef delay_for(attempt, retry_after=None, base=1.0, cap=30.0):\n    jittered = random.uniform(0, min(cap, base * 2 ** attempt))\n    return max(float(retry_after), jittered) if retry_after else jittered\n\ndef call_with_retry(messages, max_tokens=300, max_attempts=4, deadline_s=45):\n    start = time.monotonic()\n    for attempt in range(max_attempts):\n        try:\n            t0 = time.monotonic()\n            r = client.messages.create(model=MODEL, max_tokens=max_tokens, messages=messages)\n            print(json.dumps({\n                \"request_id\": r._request_id, \"attempt\": attempt,\n                \"stop_reason\": r.stop_reason,\n                \"input_tokens\": r.usage.input_tokens,\n                \"output_tokens\": r.usage.output_tokens,\n                \"latency_ms\": int((time.monotonic() - t0) * 1000),\n            }))\n            return r\n        except anthropic.APIStatusError as e:\n            retry_after = e.response.headers.get(\"retry-after\")\n            print(json.dumps({\"error_status\": e.status_code, \"request_id\": e.request_id,\n                              \"retry_after\": retry_after, \"attempt\": attempt}))\n            if e.status_code not in RETRIABLE_STATUS:\n                raise                      # terminal: 400/401/403/404/413 ...\n            wait = delay_for(attempt, retry_after)\n        except (anthropic.APIConnectionError, anthropic.APITimeoutError) as e:\n            print(json.dumps({\"connection_error\": type(e).__name__, \"attempt\": attempt}))\n            wait = delay_for(attempt)\n        if time.monotonic() - start + wait > deadline_s or attempt == max_attempts - 1:\n            raise RuntimeError(\"retry বাজেট শেষ: এখন fallback/degrade করো\")\n        time.sleep(wait)\n```\n\nছোট পরীক্ষা: শেষে `r = call_with_retry([{\"role\":\"user\",\"content\":\"এক লাইনে ChaiCart-কে স্বাগত জানাও\"}])` চালাও।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** একটা JSON লগ লাইন যাতে `request_id` (`req_...`), `stop_reason: end_turn`, token সংখ্যা আর latency আছে।\n\n(একটা `APIStatusError`-এর `status_code`, `response.headers` আর `request_id` SDK-র typed exception থেকে আসে। সন্দেহ হলে Python SDK-র 'Handling errors' পাতা মিলিয়ে নাও।)"
+      },
+      {
+        "title": "ধাপ ২: Terminal error যে retry হয় না তা দেখা",
+        "body": "ইচ্ছে করে ভুল model id দিয়ে চালাও:\n\n```python\nimport os\nos.environ[\"CLAUDE_MODEL\"] = \"no-such-model\"\n```\n\n(অথবা শেল-এ `CLAUDE_MODEL=no-such-model python lab13.py`।)\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `attempt: 0`-তেই `error_status` (সাধারণত 404 বা 400) লগ হয়ে exception বেরিয়ে আসে, কোনো sleep/retry ছাড়া। কেন? কারণ এটা terminal। আসল model id ফিরিয়ে দাও।"
+      },
+      {
+        "title": "ধাপ ৩: Retry লজিক নিজে পরীক্ষা (unit test, API ছাড়া)",
+        "body": "`delay_for` ঠিক কিনা API call ছাড়াই যাচাই করো:\n\n```python\nfor a in range(6):\n    d = delay_for(a)\n    assert 0 <= d <= min(30, 2 ** a), (a, d)\nassert delay_for(0, retry_after=\"7\") >= 7      # retry-after মানা হচ্ছে\nprint(\"backoff ঠিক আছে\")\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `backoff ঠিক আছে`। এটাই 'unit' স্তরের test: deterministic, model ছাড়া।"
+      },
+      {
+        "title": "ধাপ ৪: ১০ case-এর eval dataset",
+        "body": "Chai-Bot-এর message classification: প্রতিটা message-কে `ORDER_STATUS`, `REFUND` বা `PRODUCT_INFO`-তে ফেলা।\n\n```python\nCASES = [\n  (\"আমার অর্ডার কোথায়? তিন দিন হয়ে গেল\", \"ORDER_STATUS\"),\n  (\"অর্ডার #4521 refund চাই\", \"REFUND\"),\n  (\"দার্জিলিং চায়ে কি ক্যাফেইন আছে?\", \"PRODUCT_INFO\"),\n  (\"ডেলিভারি কখন আসবে?\", \"ORDER_STATUS\"),\n  (\"পণ্যটা ভাঙা এসেছে, টাকা ফেরত দিন\", \"REFUND\"),\n  (\"গ্রিন টি-র ওজন কত?\", \"PRODUCT_INFO\"),\n  (\"track my parcel please\", \"ORDER_STATUS\"),\n  (\"I want my money back\", \"REFUND\"),\n  (\"does this tea contain milk?\", \"PRODUCT_INFO\"),\n  (\"asdf ???\", \"PRODUCT_INFO\"),   # edge case: অর্থহীন ইনপুট, আমরা সিদ্ধান্ত নিলাম এটাই প্রত্যাশিত\n]\nassert len(CASES) == 10\n```\n\n**লক্ষ করো:** বাংলা, ইংরেজি আর একটা edge case মেশানো আছে। শেষ case-এর 'প্রত্যাশিত' উত্তর তুমি ঠিক করছ; এটাই 'done'-এর সংজ্ঞার অংশ।"
+      },
+      {
+        "title": "ধাপ ৫: Code-based grader + পাসের হার",
+        "body": "```python\nSYSTEM = (\"তুমি ChaiCart-এর classifier। গ্রাহকের message পড়ে শুধু একটা শব্দ লেখো: \"\n          \"ORDER_STATUS, REFUND বা PRODUCT_INFO। আর কিছু লিখবে না।\")\n\ndef classify(text):\n    r = client.messages.create(\n        model=MODEL, max_tokens=1024, system=SYSTEM,   # ছোট রাখলে adaptive thinking-এ উত্তর কেটে যেতে পারে\n        \n        messages=[{\"role\": \"user\", \"content\": text}])\n    out = \"\".join(b.text for b in r.content if b.type == \"text\")\n    return out, r\n\ndef grade(output, expected):          # code-based: normalize করে exact match\n    return output.strip().upper() == expected\n\npassed, in_tok, out_tok = 0, 0, 0\nfor text, expected in CASES:\n    out, r = classify(text)\n    ok = grade(out, expected)\n    passed += ok\n    in_tok += r.usage.input_tokens\n    out_tok += r.usage.output_tokens\n    print((\"PASS\" if ok else \"FAIL\"), repr(text), \"->\", repr(out.strip()), r._request_id)\n\nrate = passed / len(CASES)\nprint(f\"pass rate = {rate:.0%}, tokens in/out = {in_tok}/{out_tok}\")\nTHRESHOLD = 0.9\nprint(\"GATE:\", \"deploy ঠিক আছে\" if rate >= THRESHOLD else \"deploy নয়, ব্যর্থ case দেখো\")\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** প্রতি case-এ PASS/FAIL লাইন (request-id সহ), মোট পাসের হার, token যোগফল আর একটা GATE ফল। হার মডেল ও রানভেদে একটু বদলাতে পারে: এটাই non-determinism।"
+      },
+      {
+        "title": "ধাপ ৬: ব্যর্থ case → regression, আর prompt বদলের তুলনা",
+        "body": "কোনো case FAIL হলে (বা `SYSTEM`-এ ইচ্ছে করে 'শুধু একটা শব্দ' নির্দেশ মুছে) আবার চালিয়ে হার তুলনা করো।\n\n```python\n# ব্যর্থ case সংরক্ষণ: এটাই আপনার regression suite-এর নতুন সদস্য\nfailed = [(t, e) for t, e in CASES if not grade(classify(t)[0], e)]\nprint(json.dumps(failed, ensure_ascii=False, indent=2))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** নির্দেশ দুর্বল করলে model লম্বা বাক্যে উত্তর দিতে পারে, তখন exact-match grader FAIL দেয় এবং হার নামে। এভাবেই eval prompt-regression ধরে।"
+      }
+    ],
+    "checkpoints": [
+      "ধাপ ২-তে ভুল model id কেন retry হয়নি? কোন কোন status retriable ধরেছ আর কেন?",
+      "`max_retries=0` কেন দিয়েছ? না দিলে কী সমস্যা হতো?",
+      "Backoff-এ jitter কেন লাগে, আর `retry-after` থাকলে delay কীভাবে ঠিক হয়?",
+      "লগে `request_id`, `stop_reason`, `usage` কেন রাখছ? এগুলো না থাকলে কোন ধরনের debugging অসম্ভব?",
+      "এই eval-এ code-based grader কেন যথেষ্ট? কোন ধরনের কাজে (tone, সারাংশ) তোমার LLM judge দরকার হতো, আর সেটা কীভাবে ক্যালিব্রেট করতে?",
+      "ধাপ ৬-এর ব্যর্থ case নিয়ে কী করবে, আর deploy gate-এর THRESHOLD কেন আগে থেকে ঠিক করা উচিত?"
+    ]
+  },
+  "notes": "# Chapter 13 চিটশিট: Eval, testing, debugging ও error handling\n\n## Error কোড (Docs অনুযায়ী) ও retry সিদ্ধান্ত\n\n| Status | `error.type` | Retry? |\n|---|---|---|\n| 400 | `invalid_request_error` (নিজের সেট করা spend limit ছুঁলেও 400) | না |\n| 401 | `authentication_error` | না |\n| 402 | `billing_error` | না |\n| 403 | `permission_error` | না |\n| 404 | `not_found_error` | না |\n| 409 | `conflict_error` | সংঘাত মিটিয়ে |\n| 413 | `request_too_large` (Messages 128 MB, Batch 256 MB, Files 500 MB) | না, ছোট করো |\n| 429 | `rate_limit_error` | হ্যাঁ, `retry-after` মেনে; spend-cap 429 (`retry-after` নেই) না |\n| 500 | `api_error` | হ্যাঁ, backoff |\n| 504 | `timeout_error` | হ্যাঁ; লম্বা কাজে streaming |\n| 529 | `overloaded_error` | হ্যাঁ, backoff/fallback |\n\n- Error body-তে `request_id`; response header-এ `request-id`; Python/TS SDK-তে `_request_id`।\n- SDK ডিফল্টে connection error, rate limit আর 5xx **২ বার** retry করে (exponential backoff, `retry-after` মানে); `max_retries` দিয়ে বদলানো যায়।\n- Streaming-এ HTTP 200-এর পরও stream-এর ভেতরে `error` event আসতে পারে (যেমন `overloaded_error`)।\n- 429 = তোমার সীমা; 529 = পুরো সিস্টেমে চাপ। হঠাৎ traffic বাড়ালে acceleration limit-এ 429: ধীরে বাড়াও।\n\n## Recovery কৌশল: কখন কোনটা\n\n| কৌশল | কাজ |\n|---|---|\n| Retry + exponential backoff | সাময়িক সমস্যা (429/5xx/529/timeout)। সংখ্যা ও মোট deadline সীমিত |\n| Jitter | একসাথে ফেরা (thundering herd) ঠেকায় |\n| Fallback model | retry-র পরও ব্যর্থ; আগে eval-এ পরীক্ষিত; `refusal`-এও বিকল্প |\n| Circuit breaker | closed → open (call বন্ধ) → half-open (পরীক্ষা) |\n| Graceful degradation | cached উত্তর, বার্তা, human handoff |\n| Idempotency key | tool-এর পার্শ্বপ্রভাব দুইবার না চলতে |\n\nনিজের retry লিখলে `max_retries=0`।\n\n## Trace: কী লগ করবে\n\n`request-id`, model + params, পাঠানো system/messages/tools (PII মুছে), response blocks, `stop_reason`, `usage`, latency, retry সংখ্যা, tool input/result।\n\n| `stop_reason` | মানে |\n|---|---|\n| `end_turn` | স্বাভাবিক |\n| `max_tokens` | কাটা পড়েছে (সীমা বাড়াও; অসম্পূর্ণ `tool_use` সম্ভব) |\n| `tool_use` | `tool_result` পাঠাও |\n| `refusal` | HTTP 200; fallback ভাবো |\n| `pause_turn` | server-tool সীমা; আবার পাঠাও |\n| `model_context_window_exceeded` | context ভরেছে |\n\n**Integration বনাম model:** আগে model কী input পেয়েছে তা প্রমাণ করো। কাটা output, খালি retrieval, tool_result না পাঠানো = integration; input ঠিক + ভুল তথ্য = model output।\n\n## Eval\n\n- 'Done' আগে লেখো: specific, measurable, achievable, relevant; বহুমুখী (নির্ভুলতা, tone, latency, খরচ)।\n- নীতি: task-specific + edge case; যথাসম্ভব স্বয়ংক্রিয়; পরিমাণ > নিখুঁততা।\n- Grading: **code-based** (দ্রুত, নির্ভরযোগ্য, সূক্ষ্মতা কম) > **LLM-based** (নমনীয়, আগে যাচাই) > **human** (সেরা মান, ধীর/দামি; ক্যালিব্রেশনে)।\n- LLM judge: স্পষ্ট rubric, নির্দিষ্ট output, আগে যুক্তি পরে রায়, আলাদা model; human লেবেলের সাথে মিল মাপো।\n- Regression স্তর: unit (কোড) / functional (prompt+model+dataset) / integration (কোড-API-tool) / end-to-end (পুরো যাত্রা)।\n- প্রতিটা production ব্যর্থতা → নতুন eval case।\n\n## Production monitoring\n\n| ক্ষেত্র | মেট্রিক |\n|---|---|\n| Quality | নমুনা eval পাস, handoff হার, validation ব্যর্থতা |\n| Cost | `usage` (input/output/cache), দৈনিক ব্যয় |\n| Latency | p50/p95/p99, প্রথম token সময় |\n| Reliability | status-ভিত্তিক error, retry/fallback হার |\n\nমোট input = `cache_read_input_tokens + cache_creation_input_tokens + input_tokens`। সীমা + alert + মালিক। Cache hit পড়লে খরচ বাড়ে।\n\n## সাধারণ ফাঁদ\n\n- সব error-এ retry; 429-এ retry না করা; spend-cap 429-এ অন্তহীন retry।\n- SDK retry চালু রেখে নিজের retry যোগ (retry-র ওপর retry)।\n- HTTP 200 মানেই সফল (stream-এর ভেতরে error, `refusal`, `max_tokens`)।\n- ভুল উত্তরে প্রথমেই model বদলানো/temperature কমানো।\n- LLM judge-কে ক্যালিব্রেট না করে বিশ্বাস।\n- Retry-র পর fallback model-কে eval ছাড়াই বসানো।",
+  "flashcards": [
+    {
+      "front": "কোন HTTP error-এ retry করা উচিত?",
+      "back": "429 (`retry-after` মেনে), 500, 504, 529 আর connection/timeout ব্যর্থতা। এগুলো সাময়িক।"
+    },
+    {
+      "front": "400/401/403/404/413-এ retry করলে কী হয়?",
+      "back": "একই ফল, কারণ request, key, অনুমতি বা আকার ঠিক করতে হয়। retry শুধু quota ও সময় নষ্ট করে।"
+    },
+    {
+      "front": "Spend-cap 429 চেনার উপায় কী?",
+      "back": "`retry-after` header নেই, আর `error.details.error_code` = `enforced_spend_limit_reached`। পরের মাস/tier বাড়া পর্যন্ত fail করে, তাই retry অর্থহীন।"
+    },
+    {
+      "front": "429 আর 529-এর পার্থক্য?",
+      "back": "429 = তোমার সংগঠনের limit ছোঁয়া; 529 = পুরো API সাময়িকভাবে overloaded। দুটোতেই backoff, 529-এ fallback বেশি প্রাসঙ্গিক।"
+    },
+    {
+      "front": "`retry-after` header কী বলে?",
+      "back": "কত সেকেন্ড পরে retry করা যাবে। তার আগে retry করলে ব্যর্থ হবে, তাই এটা মানতে হয়।"
+    },
+    {
+      "front": "Error response-এ request-id কোথায় থাকে?",
+      "back": "body-র `request_id` field-এ আর response-এর `request-id` header-এ; Python/TS SDK-তে `_request_id`। support-এ এটাই দিতে হয়।"
+    },
+    {
+      "front": "SDK-র ডিফল্ট retry আচরণ?",
+      "back": "connection error, rate limit আর 5xx-এ exponential backoff-সহ ২ বার, `retry-after` মেনে। `max_retries` দিয়ে বদলানো/বন্ধ করা যায়।"
+    },
+    {
+      "front": "নিজের retry লিখলে কেন `max_retries=0`?",
+      "back": "নইলে SDK-র retry আর নিজের retry গুণ হয়ে অনেক বেশি call যায় (retry-র ওপর retry)।"
+    },
+    {
+      "front": "Jitter কেন লাগে?",
+      "back": "অনেক client একসাথে fail করলে সবাই একই মুহূর্তে ফিরে আসে (thundering herd)। এলোমেলো অপেক্ষা তাদের ছড়িয়ে দেয়।"
+    },
+    {
+      "front": "Stream চলাকালীন error কীভাবে আসে?",
+      "back": "HTTP 200 পেরোনোর পর stream-এর ভেতর `event: error` হিসেবে (যেমন `overloaded_error`)। শুধু status দেখে সফল ধরা ভুল।"
+    },
+    {
+      "front": "Circuit breaker-এর তিন অবস্থা?",
+      "back": "Closed (স্বাভাবিক), Open (call বন্ধ, সাথে সাথে fallback), Half-open (পরীক্ষামূলক request, সফল হলে closed)।"
+    },
+    {
+      "front": "Fallback model বসানোর আগে কী করবে?",
+      "back": "একই eval suite চালিয়ে মান যাচাই করবে, কারণ আচরণ আলাদা হতে পারে। model id কনফিগ থেকে পড়ো।"
+    },
+    {
+      "front": "Tool-সহ retry-তে কী ঝুঁকি?",
+      "back": "`issue_refund`-এর মতো side-effect tool দুইবার চলতে পারে। idempotency key রাখো।"
+    },
+    {
+      "front": "ভুল উত্তরের trace-এ প্রথমে কী দেখবে?",
+      "back": "model আসলে কী input পেয়েছে: request-id দিয়ে লগ, পাঠানো messages, `stop_reason`, `usage`, tool input। আগে integration, পরে model।"
+    },
+    {
+      "front": "`stop_reason: max_tokens` সাধারণত কীসের লক্ষণ?",
+      "back": "integration সমস্যা: `max_tokens` ছোট, output (এমনকি tool_use JSON) কাটা। সীমা বাড়াও বা continue করো।"
+    },
+    {
+      "front": "Eval-এ 'done' কখন সংজ্ঞায়িত হবে?",
+      "back": "deploy-এর আগে, কোড লেখার আগেই: specific, measurable, achievable, relevant criteria।"
+    },
+    {
+      "front": "Grading পদ্ধতি তিনটি ও অগ্রাধিকার?",
+      "back": "Code-based (দ্রুত/নির্ভরযোগ্য) আগে; না হলে যাচাই-করা LLM-based; human ক্যালিব্রেশন ও কঠিন ক্ষেত্রে।"
+    },
+    {
+      "front": "LLM judge ক্যালিব্রেট করা মানে?",
+      "back": "human লেবেলের সাথে judge-এর মিল মাপা, অমিল দেখে rubric শোধরানো, লক্ষ্য মিল হলে তবেই scale করা।"
+    },
+    {
+      "front": "LLM judge-এর পরিচিত পক্ষপাত?",
+      "back": "দৈর্ঘ্যের পক্ষপাত, নিজের model-এর উত্তরের প্রতি পক্ষপাত, অস্থিরতা। আলাদা model আর স্পষ্ট rubric সাহায্য করে।"
+    },
+    {
+      "front": "Regression suite-এর চার স্তর?",
+      "back": "Unit (কোড), functional (prompt+model+dataset), integration (কোড-API-tool), end-to-end (পুরো যাত্রা)।"
+    },
+    {
+      "front": "Production ব্যর্থতা নিয়ে কী করবে?",
+      "back": "PII মুছে নতুন eval case বানিয়ে regression suite-এ যোগ করবে, যাতে আবার না ঘটে।"
+    },
+    {
+      "front": "Production-এ কোন চার মেট্রিক নজরে রাখবে?",
+      "back": "Quality (নমুনা eval), cost (`usage`), latency (p95), reliability (error/retry/fallback হার), প্রতিটার সীমা + alert সহ।"
+    },
+    {
+      "front": "Cache hit হার পড়লে কী হয়?",
+      "back": "বেশি input token স্বাভাবিক দামে গোনা হয়, তাই খরচ ও rate-limit চাপ বাড়ে। usage থেকে `cache_read_input_tokens` দেখো।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart-এর Chai-Bot প্রতিদিন কয়েকশো `400 invalid_request_error` পাচ্ছে। লগে দেখা গেল একটা পুরোনো কোড-পথ নতুন model-এ assistant prefill পাঠাচ্ছে। টিম প্রস্তাব দিল error handler-এ exponential backoff সহ ৫ বার retry। সবচেয়ে ভালো পদক্ষেপ কোনটা?",
+      "options": [
+        "কোডের ওই পথ ঠিক করা (prefill সরানো/অন্য কৌশল) এবং ৪০০-কে terminal ধরে retry না করা",
+        "Backoff-এর সর্বোচ্চ অপেক্ষা বাড়িয়ে retry চালিয়ে যাওয়া, যাতে সার্ভার সেরে ওঠার সময় পায়",
+        "Fallback হিসেবে অন্য model-এ একই request পাঠানো",
+        "Request-এ `temperature` কমিয়ে দেওয়া"
+      ],
+      "answerIndexes": [0],
+      "explanation": "400 মানে request-এর গঠন ভুল; একই request পরে পাঠালেও একই 400 আসবে, তাই retry শুধু কল বাড়ায়। সমাধান কোডে। backoff বাড়ানো (খ) আর fallback model (গ) সমস্যার মূল ছোঁয় না (নতুন Claude model-এ prefill-ই নেওয়া হয় না), আর temperature (ঘ) এখানে অপ্রাসঙ্গিক এবং কিছু নতুন model-এ পাঠানোই যায় না।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "সকালে Chai-Bot-এ হঠাৎ অনেক `429` আসছে। কিছু response-এ `retry-after: 20` আছে। অন্যগুলোর body-তে `error_code: enforced_spend_limit_reached` আর `retry-after` নেই। কোন বিবৃতিটি সঠিক?",
+      "options": [
+        "দুই ধরনের 429-ই সমান: SDK retry দিয়ে সেরে যাবে",
+        "দ্বিতীয় ধরন 529-এর মতো, backoff দিলেই ঠিক হবে",
+        "প্রথম ধরন অপেক্ষা করে retry করা যায়; দ্বিতীয় ধরন tier-এর spend cap, retry দিয়ে মিটবে না, মানুষকে জানাতে হবে",
+        "প্রথম ধরনে retry-after উপেক্ষা করে সাথে সাথে retry করাই দ্রুততম সমাধান"
+      ],
+      "answerIndexes": [2],
+      "explanation": "`retry-after` সহ 429 সাধারণ rate limit: token bucket ভরার অপেক্ষা করে retry চলে। `enforced_spend_limit_reached` মানে monthly spend cap ছোঁয়া, `retry-after` থাকে না, SDK-র retry-ও কাজ করে না; alert ও handoff দরকার। (ক) ও (খ) এই পার্থক্য মুছে দেয়; (ঘ) `retry-after`-এর আগে retry করলে আবার fail করবে।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Chai-Bot একটা streaming উত্তর পাঠাচ্ছিল। HTTP status ছিল 200, কিন্তু উত্তর মাঝপথে থেমে গেল, আর stream-এ `event: error` ও `overloaded_error` ছিল। কোনটি সঠিক ব্যাখ্যা ও পদক্ষেপ?",
+      "options": [
+        "200 মানে সফল, তাই এটা ফ্রন্টএন্ডের বাগ",
+        "Streaming-এ error মুক্ত বলে overloaded_error আসতেই পারে না",
+        "এটা terminal error; request আর পাঠানো যাবে না",
+        "stream শুরুর পরও সমস্যা stream-এর ভেতরে error event হিসেবে আসতে পারে; এটাকে সাময়িক ধরে retry/continue করতে হবে, আর message_stop/stop_reason পেয়েছ কিনা দেখতে হবে"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Docs অনুযায়ী HTTP 200 পাঠানোর পর stream-এ error আসতে পারে, যেমন overloaded_error (যা 529-এর সমতুল্য, সাময়িক)। তাই শুধু initial status যথেষ্ট নয়। (ক) ও (খ) এই বাস্তবতা অস্বীকার করে; (গ) overload সাময়িক, retriable।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Chai-Bot-এ ৫২৯ ঝড়ের সময় হাজারো client একই মুহূর্তে retry করে সার্ভারকে আরও চাপে ফেলছে। কোন দুটি পরিবর্তন সবচেয়ে সরাসরি এই সমস্যা কমায়? Select TWO.",
+      "options": [
+        "Backoff-এর delay-তে এলোমেলো jitter যোগ করা",
+        "সব retry-র বিরতি স্থির ১ সেকেন্ড করা",
+        "প্রতিটা client-এ retry-র সংখ্যা সীমিত ও exponential backoff ব্যবহার করা",
+        "retry-র আগে `max_tokens` বাড়ানো"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Exponential backoff (সীমিত সংখ্যা সহ) চাপ কমায়, আর jitter সবাইকে একসাথে ফেরা থেকে আটকায় (thundering herd)। স্থির ১ সেকেন্ড বিরতি সবাইকে সিঙ্ক্রোনাইজড রাখে (খ); `max_tokens` বাড়ানো overload-এর সাথে সম্পর্কহীন (ঘ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Chai-Bot-এর একটা refund উত্তর ভুল। লগে HTTP 200, `stop_reason: end_turn`, আর পাঠানো prompt-এ refund policy অংশটা পুরো খালি (retrieval ফাংশন নীরবে খালি স্ট্রিং ফিরিয়েছে)। সমস্যার সবচেয়ে সম্ভাব্য উৎস ও পদক্ষেপ কোনটি?",
+      "options": [
+        "Model output সমস্যা; আরও বড় model-এ যাওয়া",
+        "Integration layer-এর সমস্যা; retrieval ঠিক করা, খালি context-এ request আটকানোর guard রাখা, আর এই ঘটনাকে regression case বানানো",
+        "API outage; ২৪ ঘণ্টা অপেক্ষা",
+        "Temperature বেশি; কমানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Model যে input পেয়েছে তাতেই policy নেই; তাই সে আন্দাজ করেছে। এটা integration bug। model বদলানো (ক) বা temperature (ঘ) মূল কারণ ছোঁয় না; আর কোনো error/status নেই বলে outage-এর প্রমাণ নেই (গ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "একটা tool-use workflow-তে `stop_reason: max_tokens` এবং শেষ content block একটা অসম্পূর্ণ `tool_use` JSON। কোন ব্যাখ্যা ও সমাধান ঠিক?",
+      "options": [
+        "Integration কনফিগ সমস্যা: `max_tokens` খুব ছোট; সীমা বাড়িয়ে আবার চালানো",
+        "Model-এর hallucination; prompt-এ 'সঠিক JSON দাও' যোগ করা",
+        "Rate limit; `retry-after` পর্যন্ত অপেক্ষা",
+        "API key সমস্যা; key বদলানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "`max_tokens` stop_reason মানে output সীমায় কাটা পড়েছে; অসম্পূর্ণ `tool_use` থাকলে সীমা বাড়িয়ে retry করতে Docs বলে। এটা request প্যারামিটার (integration)। hallucination, rate limit বা key সমস্যা ভিন্ন লক্ষণ দেয় (যথাক্রমে ভুল তথ্য, 429, 401)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "একটা production incident-এ Chai-Bot ভুল উত্তর দিয়েছে। Support টিম Anthropic-এর কাছে ঘটনাটা তদন্তের জন্য পাঠাতে চায় এবং নিজেরাও ঘটনাটা পুনর্নির্মাণ করতে চায়। অ্যাপের প্রতিটা API call থেকে কোন দুটি জিনিস লগ করা সবচেয়ে জরুরি? Select TWO.",
+      "options": [
+        "Response-এর `request-id` (header/`_request_id`)",
+        "শুধু গ্রাহকের নাম",
+        "পাঠানো input (system/messages/tools, PII মুছে) ও `stop_reason`/`usage`",
+        "শুধু 'success/fail' বুলিয়ান"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "`request-id` Anthropic support-এর সাথে ঘটনা মেলানোর চাবি; পাঠানো input আর `stop_reason`/`usage` দিয়ে model কী দেখেছিল ও কেন থেমেছিল তা পুনর্গঠন করা যায়। শুধু নাম (খ) বা বুলিয়ান (ঘ) থেকে কিছুই বোঝা যায় না।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Rafi system prompt বদলে ৫টা হাতে-বাছা প্রশ্ন চালিয়ে দেখল উত্তর 'ভালো' লাগছে এবং deploy করতে চায়। Nusrat Apu কী করতে বলবেন?",
+      "options": [
+        "অনুমোদন দেবেন, কারণ ৫টা প্রশ্নই পরীক্ষার জন্য যথেষ্ট",
+        "Prompt-এর দৈর্ঘ্য কমাতে বলবেন",
+        "আগে success criteria ঠিক করে প্রতিনিধিত্বমূলক ও edge case-সহ dataset-এ স্বয়ংক্রিয় grader চালিয়ে আগের সংস্করণের সাথে পাসের হার তুলনা করতে বলবেন",
+        "Production-এ ছেড়ে গ্রাহকের অভিযোগের জন্য অপেক্ষা করতে বলবেন"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Docs: criteria আগে ঠিক করো, task-specific eval বানাও (edge case সহ), স্বয়ংক্রিয় গ্রেডিং ও পরিমাণকে প্রাধান্য দাও, আর regression তুলনা করো। ৫টা উদাহরণ সংকেত খুব কম (ক); দৈর্ঘ্য অপ্রাসঙ্গিক (খ); production-এ পরীক্ষা ঝুঁকিপূর্ণ (ঘ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Chai-Bot প্রতিটা গ্রাহক মেসেজকে `ORDER_STATUS`, `REFUND`, `PRODUCT_INFO`-এর একটিতে ফেলে। হাজার হাজার লেবেলযুক্ত মেসেজে প্রতিটা prompt বদলের মান মাপতে হবে। সবচেয়ে উপযুক্ত grading পদ্ধতি?",
+      "options": [
+        "প্রতিটা উত্তর মানুষ পড়ে নম্বর দেবে",
+        "LLM judge যে-কোনো ব্যাখ্যা পড়ে 'ভালো লাগল কিনা' বলবে",
+        "শুধু উত্তরের দৈর্ঘ্য মাপা",
+        "Code-based grader: output normalize করে প্রত্যাশিত লেবেলের সাথে exact match"
+      ],
+      "answerIndexes": [3],
+      "explanation": "নির্দিষ্ট লেবেলের ক্ষেত্রে code-based grading সবচেয়ে দ্রুত, নির্ভরযোগ্য ও scalable। হাজারো কেসে human grading ধীর ও দামি (ক), আর LLM judge এখানে অপ্রয়োজনীয় জটিলতা ও অনিশ্চয়তা আনে (খ)। দৈর্ঘ্য মান নয় (গ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "ChaiCart একটা LLM judge বানাচ্ছে যা Chai-Bot-এর উত্তরের tone বিচার করবে। judge-কে বড় নমুনায় বিশ্বাস করার আগে সঠিক পদক্ষেপ কোনটি?",
+      "options": [
+        "Judge-কে সরাসরি production-এ বসানো, কারণ সে একটা শক্তিশালী model",
+        "একটা human-লেবেলকৃত নমুনা বানিয়ে judge-এর রায়ের সাথে মিল মাপা, অমিল দেখে rubric শোধরানো, তারপর scale করা",
+        "Judge হিসেবে ঠিক সেই model-কেই ব্যবহার করা যে উত্তর লিখেছে, যাতে সামঞ্জস্য থাকে",
+        "Judge-এর temperature বাড়ানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "Docs বলে LLM-based grading আগে নির্ভরযোগ্যতা যাচাই করে তবেই scale করতে হয়; human লেবেলের বিপরীতে ক্যালিব্রেশন তার প্রমাণ। সরাসরি production (ক) অযাচাই; একই model বিচারক হলে নিজের উত্তরের প্রতি পক্ষপাত আসে, আলাদা model ভালো (গ); temperature বাড়ালে অস্থিরতা বাড়ে (ঘ) আর কিছু নতুন model-এ পাঠানোই যায় না।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "ChaiCart-এর Chai-Bot refund-এর টাকার অঙ্ক বলে, আর tone-ও গুরুত্বপূর্ণ। eval ডিজাইন করার সময় কোন দুটি পদ্ধতি একসাথে সবচেয়ে ভালো? Select TWO.",
+      "options": [
+        "টাকার অঙ্ক database-এর সাথে মিলিয়ে code-based grader",
+        "টাকার অঙ্কও LLM judge-এর 'মনে হলো ঠিক' রায়ে ছেড়ে দেওয়া",
+        "Tone বিচারে human-ক্যালিব্রেটেড LLM judge",
+        "Tone-এর জন্য কোনো মূল্যায়ন না রাখা, কারণ তা মাপা যায় না"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "তথ্যগত, নির্ধারিত অংশ (অঙ্ক) code দিয়ে মেলানোই নির্ভরযোগ্য; সূক্ষ্ম অংশ (tone) rubric-ভিত্তিক, ক্যালিব্রেট-করা LLM judge দিয়ে স্কেলে মাপা যায়। অঙ্কে judge-এর আত্মবিশ্বাসী ভুলের ঝুঁকি (খ); tone-কে rubric ও Likert জাতীয় স্কেলে মাপা সম্ভব (ঘ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "নতুন Claude model-এ আপগ্রেডের পরিকল্পনা চলছে। কীভাবে ঝুঁকি কমাবে, এবং কোন test স্তর কী ধরবে সেটা সবচেয়ে ভালো মেলে কোনটি?",
+      "options": [
+        "Unit test কোডের ফাংশন ধরে, functional eval (dataset + grader) আগে-পরে তুলনা করে মান-আচরণের বদল ধরে, integration test tool/error পথ ধরে, e2e প্রতিনিধিত্বমূলক যাত্রা ধরে, আর production monitoring বাস্তব ট্রাফিকে drift ধরে",
+        "শুধু end-to-end একটা চ্যাট চালানো",
+        "শুধু unit test চালানো, কারণ আপগ্রেড কোডের বিষয়",
+        "Eval বাদ দিয়ে সরাসরি ১০০% traffic সরানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "প্রতিটা স্তরের আলাদা কাজ: model আপগ্রেডে আচরণ বদল সবচেয়ে ভালো ধরা পড়ে functional eval-এ (একই dataset, আগে-পরে), আর বাকি স্তর অন্য ধরনের বাগ ধরে। unit test model-এর আচরণ মাপে না (গ); একক e2e যথেষ্ট নমুনা নয় (খ); eval ছাড়া সরানো অন্ধ ঝুঁকি (ঘ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "গত সপ্তাহের তুলনায় এই সপ্তাহে Chai-Bot-এর দৈনিক খরচ হঠাৎ প্রায় তিনগুণ। কোড/prompt-এ স্পষ্ট বদল নেই, error rate স্বাভাবিক। কোন তদন্ত সবচেয়ে ফলপ্রসূ?",
+      "options": [
+        "Temperature কমানো",
+        "সব 429 retry বন্ধ করা",
+        "লগ করা `usage` বিশ্লেষণ: `input_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` আর history দৈর্ঘ্যের প্রবণতা দেখে cache hit পড়েছে বা input ফুলেছে কিনা খোঁজা",
+        "আরও বেশি retry যোগ করা"
+      ],
+      "answerIndexes": [2],
+      "explanation": "খরচ token দিয়ে মাপা হয়; `usage` ভেঙে দেখলে বোঝা যায় cache কাজ করছে কিনা (cache read সস্তা), history ফুলছে কিনা, বা একটা loop চলছে কিনা। temperature খরচ বদলায় না (ক); retry বন্ধ বা বাড়ানো (খ, ঘ) মূল কারণ ছোঁয় না এবং বাড়ানো আরও খরচ ঘটাতে পারে।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Retry wrapper নিজে লেখা হয়েছে, কিন্তু Anthropic client এখনও ডিফল্ট `max_retries` নিয়ে চলছে। wrapper সর্বোচ্চ ৪ বার চেষ্টা করে। 529 ঝড়ে কী ঘটতে পারে ও সঠিক সমাধান কী?",
+      "options": [
+        "কিছু না, SDK-র retry আর wrapper-এর retry একে অপরকে বাতিল করে",
+        "wrapper-এর retry সীমা অসীম করা",
+        "SDK retry-র কারণে `request-id` হারিয়ে যায়; সমাধান `request-id` বন্ধ করা",
+        "প্রতিটা wrapper চেষ্টায় SDK ভেতরে আরও retry করে, ফলে মোট call অনেক বেড়ে ঝড় আরও খারাপ হয়; সমাধান `max_retries=0` দিয়ে একটাই জায়গায় retry রাখা"
+      ],
+      "answerIndexes": [3],
+      "explanation": "SDK ডিফল্টে ২ বার retry করে; এর ওপর wrapper-এর ৪ চেষ্টা গুণ হয়ে প্রায় ১২টা call পর্যন্ত যেতে পারে (retry-র ওপর retry), যা overload বাড়ায়। নিজের নিয়ন্ত্রণ চাইলে `max_retries=0`। অন্যগুলো ঘটনা ও যুক্তি দুটোই ভুল।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    },
+    {
+      "question": "Chai-Bot-এর প্রধান model টানা overloaded। টিম চায় গ্রাহক যেন ঝুলে না থাকে, আর টানা fail-এ প্রতিটা request-এর retry অপেক্ষা এড়াতে। কোন দুটি ব্যবস্থা একসাথে সবচেয়ে ভালো? Select TWO.",
+      "options": [
+        "Circuit breaker বসানো, যাতে টানা ব্যর্থতায় সাথে সাথে fallback বা degraded পথে যায়",
+        "প্রতিটা request অসীম সময় প্রধান model-এ retry করবে",
+        "আগে eval-এ পরীক্ষিত fallback model আর cached FAQ/human handoff-এর মতো graceful degradation রাখা",
+        "ব্যবহারকারীকে কোনো বার্তা না দিয়ে request বাতিল করা"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "Circuit breaker ব্যর্থ dependency-তে বারবার অপেক্ষা এড়ায়; পরীক্ষিত fallback model ও graceful degradation গ্রাহককে একটা কার্যকর উত্তর দেয়। অসীম retry সংকট বাড়ায় (খ); নীরব বাতিল খারাপ অভিজ্ঞতা (ঘ)।",
+      "domain": 4,
+      "skill": "Debugging and Error Handling"
+    }
+  ]
+}

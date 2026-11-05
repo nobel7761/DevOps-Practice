@@ -1,0 +1,803 @@
+{
+  "lesson": {
+    "oneLiner": "এই chapter শেষে তুমি কাজ অনুযায়ী Opus/Sonnet/Haiku বাছতে, thinking (adaptive), effort ও fast mode বুঝতে, model আপগ্রেডের breaking change সামলাতে, `usage` পড়ে cost model বানাতে এবং prompt caching ও Batch API দিয়ে Chai-Bot-এর খরচ কমাতে পারবে।",
+    "blocks": [
+      {
+        "type": "markdown",
+        "markdown": "## সকালের ফোন: বিল তিন গুণ!\n\nChaiCart-এর Chai-Bot প্রথম সপ্তাহে ভালোই চলছিল। দ্বিতীয় সপ্তাহের সোমবার সকালে Nusrat Apu Rafi-কে ডাকলেন।\n\n**Nusrat Apu:** \"Rafi, এই মাসের Anthropic বিলটা দেখেছ? গত সপ্তাহের চেয়ে প্রায় তিন গুণ। traffic তো তিন গুণ হয়নি।\"\n\nRafi লগ খুলে দেখল তিনটা জিনিস ঘটেছে:\n\n1. সবচেয়ে বড় আর দামি model-টা **সব** কাজে ব্যবহার হচ্ছে, এমনকি \"আপনাদের অফিস কখন খোলা?\" ধরনের প্রশ্নেও।\n2. প্রতিটা request-এ প্রায় ৮,০০০ token-এর policy আর tool definition নতুন করে পাঠানো হচ্ছে, কোনো caching নেই।\n3. রাতে যে ৫,০০০ পুরোনো অর্ডারের review summary বানানো হয় সেটাও realtime API দিয়ে, যদিও সকালের আগে কেউ ফলাফল দেখে না।\n\n**Nusrat Apu:** \"তিনটাই ঠিক করা যায়। আজ তুমি শিখবে কোন কাজে কোন model, কখন thinking দরকার, token কীভাবে মাপতে হয়, cache কীভাবে কাজ করে আর কোন কাজ batch-এ পাঠানো যায়। আর শেষে একটা ছোট lab করে নিজের চোখে cache hit দেখবে।\"\n\nএই chapter-এর সব তথ্য আমরা Anthropic-এর official docs থেকে মিলিয়ে নিয়েছি। Claude platform দ্রুত বদলায়, তাই কোথাও সংখ্যা বা model-এর নাম সময়ের সাথে বদলে যেতে পারে। পরীক্ষার প্রস্তুতির সময় মনে রাখবে: **নীতি (principle) স্থির, নির্দিষ্ট সংখ্যা বদলায়।**\n\n### আজকের ছয়টা বিষয়\n\n| # | বিষয় | Chai-Bot-এর কোন সমস্যা সমাধান করে |\n|---|---|---|\n| ১ | Opus vs Sonnet vs Haiku | সব কাজে সবচেয়ে দামি model |\n| ২ | Fast mode, extended/adaptive thinking, effort | কখন কত চিন্তা, কত দ্রুত উত্তর |\n| ৩ | Model version pinning ও breaking changes | model বদলালে হঠাৎ 400 error |\n| ৪ | Token usage tracking ও cost modeling | বিলের হিসাব নেই |\n| ৫ | Prompt caching ও check-pointing | প্রতি request-এ একই ৮,০০০ token |\n| ৬ | Realtime vs Batch | রাতের কাজ realtime-এ |"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ১. Opus, Sonnet ও Haiku: এক কাজে এক tier\n\nClaude-এর model-গুলো কয়েকটা **tier**-এ সাজানো। সাধারণ ধারণা (docs-এর বর্তমান overview অনুযায়ী) এরকম:\n\n| Tier | docs-এর ভাষায় পরিচয় | Latency (তুলনামূলক) | কখন বাছবে |\n|---|---|---|---|\n| **Haiku** | বেশি পরিমাণ, latency-সংবেদনশীল কাজ: classification, extraction, routing | সবচেয়ে দ্রুত | লাখ লাখ ছোট কাজ, intent চেনা, ট্যাগ বসানো |\n| **Sonnet** | speed আর intelligence-এর সেরা মিশেল | দ্রুত | বেশির ভাগ production কাজের default |\n| **Opus** | দীর্ঘ-চলা agentic coding আর knowledge work | মাঝারি | কঠিন, বহু-ধাপের কাজ যেখানে ভুলের দাম বেশি |\n\nএর ওপরেও আরও শক্তিশালী tier থাকতে পারে (docs-এর overview-তে আমরা যখন দেখেছি, তখন \"Fable\" নামে একটা tier ছিল, যা সবচেয়ে কঠিন reasoning আর long-horizon agentic কাজের জন্য, এবং সবচেয়ে ধীর ও দামি)। পরীক্ষায় মূল ধারণা একটাই: **tier যত ওপরে, সাধারণত ততটা বুদ্ধিমান, ততটা ধীর, ততটা দামি।**\n\n### ঠিক সিদ্ধান্ত নেওয়ার তিন অক্ষ\n\nপ্রতিটা model বাছাই আসলে তিন অক্ষের টানাপোড়েন: **quality**, **latency**, **cost**। তিনটাই একসাথে সর্বোচ্চ হয় না।\n\n- **কাজ সহজ, পরিমাণ বেশি** (যেমন \"এই message-টা REFUND না ORDER_STATUS?\") → Haiku।\n- **কাজ মাঝারি, গ্রাহক সরাসরি অপেক্ষা করছে** (Chai-Bot-এর সাধারণ উত্তর) → Sonnet।\n- **কাজ কঠিন, বহু tool জড়িত, ভুল হলে ক্ষতি** (জটিল refund বিরোধ বিশ্লেষণ) → Opus।\n\nনিজের প্রশ্ন নিজেকে করো: \"একটা ছোট tier কি এই কাজে যথেষ্ট ভালো?\" উত্তর **তোমার নিজের eval দিয়ে** ঠিক করবে, নামের খ্যাতি দেখে নয়। docs নিজেই বলে: নতুন model-এ গেলে নিজের eval-এ fresh sweep চালাও, আগের সেটিং অন্ধভাবে নিও না।\n\n### Router pattern: Chai-Bot-এর সমাধান\n\nRafi একটা ছোট router বানাল: প্রথমে সস্তা Haiku-কে দিয়ে message-টা classify করানো হয়; সহজ হলে Haiku বা Sonnet নিজেই উত্তর দেয়, কঠিন হলে (refund বিরোধ, একাধিক order) Opus-এ পাঠানো হয়।\n\n```python\nimport os\nMODELS = {\n    \"cheap\":  os.environ[\"CLAUDE_MODEL_SMALL\"],   # Haiku tier-এর id\n    \"normal\": os.environ[\"CLAUDE_MODEL_MID\"],     # Sonnet tier-এর id\n    \"hard\":   os.environ[\"CLAUDE_MODEL_BIG\"],     # Opus tier-এর id\n}\n\ndef pick_model(category: str, needs_tools: bool) -> str:\n    if category in {\"faq\", \"order_status\"} and not needs_tools:\n        return MODELS[\"cheap\"]\n    if category in {\"refund_dispute\", \"multi_order\"}:\n        return MODELS[\"hard\"]\n    return MODELS[\"normal\"]\n```\n\nলক্ষ করো: model id কোডে হার্ডকোড নেই, env var থেকে আসছে। কারণ পরের অংশে বলছি।\n\n### Context window ও output limit\n\ndocs-এর বর্তমান overview অনুযায়ী এই tier-গুলোর context window **1M token** আর synchronous max output **128K token**। কিন্তু পুরোনো model-এ এই সংখ্যা ছোট ছিল। সংখ্যা মুখস্থ করার চেয়ে অভ্যাস রাখো: **প্রোগ্রামেই Models API থেকে `max_input_tokens`, `max_tokens` আর `capabilities` পড়া যায়**, তাই কোনো model-এর সীমা নিয়ে সন্দেহ হলে hard-code না করে সেখান থেকে জেনে নাও।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'সবচেয়ে বড় model মানেই সবচেয়ে ভালো সিদ্ধান্ত'",
+        "markdown": "পরীক্ষা প্রায়ই এমন দৃশ্য দেয়: ছোট, উচ্চ-পরিমাণ, সরল কাজ (classification, extraction, routing) আর অপশনে \"সবচেয়ে শক্তিশালী model ব্যবহার করো\"। এটা সাধারণত **ভুল**: খরচ আর latency বাড়ে, গুণমানের লাভ নগণ্য। উল্টোটাও ফাঁদ: জটিল, বহু-ধাপের agentic কাজে সবচেয়ে ছোট model বাছা। সঠিক উত্তর সাধারণত \"কাজের কঠিনতা অনুযায়ী tier, আর নিজের eval দিয়ে যাচাই\"।"
+      },
+      {
+        "type": "simulator",
+        "id": "sort-game",
+        "props": {
+          "title": "কোন কাজে কোন tier?",
+          "hint": "প্রতিটা কাজ সবচেয়ে মানানসই বাকেটে ফেলো। যুক্তিটা পড়ো: কঠিনতা, পরিমাণ আর ভুলের দাম দেখো।",
+          "buckets": [
+            {
+              "id": "haiku",
+              "label": "Haiku-ধরনের (ছোট/দ্রুত)"
+            },
+            {
+              "id": "sonnet",
+              "label": "Sonnet-ধরনের (মাঝারি)"
+            },
+            {
+              "id": "opus",
+              "label": "Opus-ধরনের (বড়)"
+            }
+          ],
+          "items": [
+            {
+              "text": "দিনে ২ লাখ incoming message-কে ৫টা category-তে ভাগ করা",
+              "bucket": "haiku",
+              "why": "সরল, বিপুল পরিমাণ, latency ও খরচ সংবেদনশীল: classification-এর আদর্শ ক্ষেত্র।"
+            },
+            {
+              "text": "order নম্বর, তারিখ ও পরিমাণ message থেকে JSON-এ বের করা (extraction)",
+              "bucket": "haiku",
+              "why": "সংকীর্ণ ও যাচাইযোগ্য কাজ; ছোট tier সাধারণত যথেষ্ট।"
+            },
+            {
+              "text": "গ্রাহকের সাধারণ প্রশ্নের বন্ধুত্বপূর্ণ বাংলা উত্তর, ২–৩টা tool সহ",
+              "bucket": "sonnet",
+              "why": "speed ও intelligence-এর ভারসাম্য দরকার; বেশির ভাগ production চ্যাটের default।"
+            },
+            {
+              "text": "রাতের ব্যাচে হাজারটা review-এর সংক্ষিপ্তসার",
+              "bucket": "sonnet",
+              "why": "মাঝারি জটিলতা, পরিমাণ বেশি; সাথে batch-এও পাঠানো যায়।"
+            },
+            {
+              "text": "তিনটা order, দুইটা refund policy আর পরস্পরবিরোধী গ্রাহক-দাবির জটিল বিরোধ নিষ্পত্তি পরিকল্পনা",
+              "bucket": "opus",
+              "why": "বহু-ধাপ ও বহু tool; ভুলের দাম বেশি, তাই শক্তিশালী tier ও উচ্চ effort।"
+            },
+            {
+              "text": "অনেক ফাইলজুড়ে দীর্ঘ-চলা agentic কোড রিফ্যাক্টর",
+              "bucket": "opus",
+              "why": "docs অনুযায়ী Opus tier দীর্ঘ-চলা agentic coding ও knowledge work-এর জন্য।"
+            },
+            {
+              "text": "চ্যাটে 'আপনার অফিস কখন খোলা?' ধরনের FAQ রাউটিং",
+              "bucket": "haiku",
+              "why": "সবচেয়ে সরল ও সবচেয়ে বেশি আসা কাজ; সবচেয়ে সস্তা ও দ্রুত tier-এ মানায়।"
+            }
+          ],
+          "takeaway": "Tier বাছো কাজের কঠিনতা, পরিমাণ আর ভুলের দামের ওপর ভিত্তি করে, নামের জৌলুসে নয়। আর সিদ্ধান্ত যাচাই করো নিজের eval দিয়ে।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ২. Thinking: fast mode, extended thinking, adaptive thinking ও effort\n\nএই অংশে চারটা আলাদা জিনিস গুলিয়ে ফেলা সবচেয়ে সহজ। আগে সবগুলোর সংজ্ঞা স্পষ্ট করি।\n\n| ধারণা | কী | কীভাবে নিয়ন্ত্রণ |\n|---|---|---|\n| **Extended thinking** (manual) | পুরোনো পদ্ধতি: তুমি নিজে `thinking: {\"type\":\"enabled\",\"budget_tokens\": N}` দিয়ে thinking-এর token সীমা ঠিক করতে | নতুন model-এ **400 error** |\n| **Adaptive thinking** | model নিজে ঠিক করে এই request-এ ভাবার দরকার আছে কি না, আর কতটা | `thinking: {\"type\":\"adaptive\"}` বা `thinking` field বাদ দেওয়া |\n| **Effort** | model কতটা ভাববে/কতটা token খরচ করবে তার নরম নির্দেশনা | `output_config: {\"effort\": \"...\"}` |\n| **Fast mode** | **একই model**, দ্রুততর inference, premium দামে | `speed: \"fast\"` |\n\n### Adaptive thinking: model নিজে বিচার করে\n\ndocs-এর ভাষায় thinking এখন adaptive: প্রতিটা request-এ model দেখে ইনপুট কতটা জটিল, তারপর ঠিক করে ভাববে কি না। সরল প্রশ্নে thinking block নাও থাকতে পারে, কঠিন গণিত বা ডিবাগিং-এ গভীর ভাবনা হয়। একই চ্যাটের কিছু turn-এ thinking থাকতে পারে, কিছু turn-এ না। তাই **ধরে নিয়ো না প্রতিটা assistant turn thinking block দিয়ে শুরু হবে।**\n\nAdaptive thinking tool use-এর সাথেও মেশে: tool result পড়ার পর model আবার ভাবতে পারে (interleaved thinking), এজন্য আলাদা beta header লাগে না।\n\n### Effort: খরচ আর গভীরতার নিয়ন্ত্রণ-বোতাম\n\nEffort হলো `output_config.effort`, **`thinking` object-এর ভেতরে নয়**। docs-এর পাঁচটা স্তর:\n\n| Level | আচরণ |\n|---|---|\n| `max` | সবচেয়ে বেশি ও গভীর ভাবনা, কোনো সীমা নেই |\n| `xhigh` | `high`-এর চেয়ে বেশি; দীর্ঘ অনুসন্ধানের কাজে |\n| `high` | বেশির ভাগ model-এ ডিফল্ট; জটিল কাজে গভীর reasoning |\n| `medium` | মাঝারি; সরল প্রশ্নে thinking এড়াতে পারে (docs-এ Opus 5.5 ও Haiku 5.5-এর ডিফল্ট) |\n| `low` | thinking ন্যূনতম; speed সবচেয়ে গুরুত্বপূর্ণ হলে |\n\nগুরুত্বপূর্ণ কথা: effort একটা **আচরণগত সংকেত, কঠোর token বাজেট নয়**। low-তেও খুব কঠিন সমস্যায় model ভাববে, শুধু কম। আর \"কম ভাবুক\" চাইলে docs বলে: **আগে effort কমাও, তারপর prompt-এ বলো।** কারণ effort একটা calibrated control, আর prompt-এর শব্দচয়ন-নির্ভর নির্দেশ ভঙ্গুর। কিছু model-এ (docs অনুযায়ী Sonnet 5.5, Haiku 5.5) prompt-এ \"কম ভাবো\" বললে নির্ভরযোগ্যভাবে কাজ হয় না।\n\n```python\nimport os, anthropic\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=4096,                       # thinking + উত্তর দুটোই এর মধ্যে\n    output_config={\"effort\": \"medium\"},    # thinking-এর ভেতরে নয়, output_config-এ\n    messages=[{\"role\": \"user\", \"content\": \"৩টা order আর ২টা refund নিয়ম মিলিয়ে সিদ্ধান্ত দাও: ...\"}],\n)\nfor block in r.content:\n    if block.type == \"text\":\n        print(block.text)\n```\n\n> SDK-র পুরোনো সংস্করণে `output_config` টাইপ না থাকলে `extra_body={\"output_config\": {\"effort\": \"medium\"}}` দিয়েও পাঠানো যায়। SDK আপডেট রাখাই ভালো।\n\n### Thinking-এর খরচ কীভাবে গোনা হয়\n\n- Thinking token **output token হিসেবে বিল হয়**।\n- তুমি thinking-এর আলাদা budget দাও না। দুটো নিয়ন্ত্রণ আছে: `max_tokens` (thinking + উত্তর মিলিয়ে কঠিন সীমা) আর `effort` (নরম নির্দেশনা)।\n- দেখানো thinking text হলো **সারাংশ**; বিল হয় পুরো আসল thinking-এর, যা দেখা সারাংশের চেয়ে বেশি হতে পারে। `display` সেটিং যা-ই হোক, বিল একই।\n- কতটা token reasoning-এ গেল দেখতে `usage.output_tokens_details.thinking_tokens` পড়ো; `output_tokens` সব মিলিয়ে চূড়ান্ত বিলের সংখ্যা।\n- `max_tokens` thinking-এর জন্যও জায়গা রেখে ঠিক করো। না হলে `stop_reason: \"max_tokens\"` এসে উত্তর কেটে যায়। প্রতিকার দুটো: `max_tokens` বাড়াও (যদি ভাবনা দরকার হয়), অথবা effort কমাও (যদি অতিরিক্ত ভাবছিল)।\n\n### Model-ভেদে thinking সমর্থন (docs-এর \"Configuring thinking\" সারণি)\n\nএই সারণি দ্রুত বদলায়, তাই নিচেরটা fetch-এর সময়কার চিত্র:\n\n| Model | `thinking` field বাদ | `\"enabled\"` + `budget_tokens` | `\"disabled\"` |\n|---|---|---|---|\n| Opus 5.5 | adaptive (সবসময় চালু) | 400 error | 400 error |\n| Sonnet 5.5 | adaptive | 400 error | 400 error; বদলে `\"between_tools\"` (up-front thinking বন্ধ, `high` effort বা কম হলে) |\n| Haiku 5.5 | adaptive | 400 error | চলে, `high` effort বা কম হলে; `xhigh`/`max`-এ 400 |\n\nধারণা হিসেবে মনে রাখো: নতুন model-এ **manual `budget_tokens` আর কাজ করে না**; docs বলে Opus 4.7 থেকে এটা 400 error। পুরোনো Opus 4.6/Sonnet 4.6-এ এটা deprecated ছিল। আর কোন model-এ thinking পুরোপুরি বন্ধ করা যায় সেটা model ধরে ধরে বদলায়: নিশ্চিত হতে Models API-র `capabilities.thinking.types` দেখো।\n\n### Fast mode: একই model, দ্রুত উত্তর, বেশি দাম\n\nFast mode সম্পর্কে docs-এর কথাগুলো পরীক্ষার জন্য মুখস্থ রাখার মতো:\n\n- **একই model**, বুদ্ধি বা সক্ষমতায় কোনো পরিবর্তন নেই। শুধু inference কনফিগারেশন দ্রুততর।\n- docs অনুযায়ী **সর্বোচ্চ ২.৫ গুণ বেশি output token প্রতি সেকেন্ডে** (OTPS)। গতির লাভ output-এর ওপর; **time-to-first-token নয়**।\n- `speed: \"fast\"` দিয়ে opt-in করতে হয়; premium দাম (docs-এর সারণিতে Opus 5.5-এর জন্য standard-এর প্রায় দ্বিগুণ)।\n- সব model-এ নেই: fetch-এর সময় Opus 5.5-এ available, আর Opus 5 ও 4.8-এ research preview। সমর্থন-বিহীন model-এ `speed: \"fast\"` পাঠালে error আসে।\n- Batch API-তে fast mode **চলে না**।\n- Fast mode-এর আলাদা rate limit আছে; সীমা পেরোলে `429` আর `retry-after` header। চাইলে standard speed-এ fallback করা যায়, কিন্তু **speed বদলালে prompt cache miss হয়**, কারণ আলাদা speed-এর request cache শেয়ার করে না।\n- `usage.speed` দেখে জানা যায় আসলে কোন speed-এ চলল (`\"fast\"` বা `\"standard\"`)।\n\nChai-Bot-এ fast mode কখন? যদি গ্রাহক লাইভ চ্যাটে লম্বা উত্তরের জন্য অপেক্ষা করে আর বাজেট সামলায়, তখন। রাতের batch-এ কখনোই নয়।"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'thinking বন্ধ করলে বা fast mode দিলে model ছোট হয়ে যায়'",
+        "markdown": "ভুল। **Fast mode একই model**; intelligence বদলায় না, শুধু output-এর গতি বাড়ে (আর দাম)। আবার **effort কমানো মানে model বদলানো নয়**, শুধু কম ভাবা। আরেকটা ফাঁদ: ধরে নেওয়া `budget_tokens` সব model-এ কাজ করে। নতুন model-এ এটা 400 error; সঠিক পথ adaptive thinking + effort।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "compare",
+          "caption": "পুরোনো manual extended thinking বনাম নতুন adaptive thinking + effort: নিয়ন্ত্রণ কার হাতে।",
+          "beforeTitle": "Manual extended thinking (পুরোনো model)",
+          "before": "তুমি ঠিক করো: thinking: {\"type\":\"enabled\",\"budget_tokens\": 8000}\n\nসমস্যা: সরল প্রশ্নেও ভাবনার খরচ; কঠিন প্রশ্নে budget কম পড়তে পারে। তোমাকে অনুমান করে সংখ্যা বসাতে হয়।\n\nনতুন model-এ: 400 error।",
+          "afterTitle": "Adaptive thinking + effort (নতুন model)",
+          "after": "thinking: {\"type\":\"adaptive\"} (বা field বাদ) + output_config: {\"effort\": \"medium\"}\n\nmodel নিজে বিচার করে ভাববে কি না ও কতটা। তুমি শুধু effort-এ গড় ঝোঁক ঠিক করো, আর max_tokens দিয়ে কঠিন সীমা বাঁধো।"
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৩. Model version pinning ও breaking changes\n\nChai-Bot একদিন নতুন model-এ আপগ্রেড হলো, আর প্রোডাকশনে হঠাৎ 400 error: \"temperature is not supported\"। Rafi-র কোডে `temperature=0.2` ছিল। এটাই আজকের তৃতীয় বিষয়: **model বদলালে শুধু নাম বদলায় না, নিয়মও বদলাতে পারে।**\n\n### Pinning মানে কী\n\ndocs-এর \"Model IDs and versioning\" পাতার মূল কথা:\n\n- প্রতিটা Claude model ID একটা **pinned snapshot**: ID একই থাকলে ভেতরের weights বদলায় না। নতুন সংস্করণ এলে নতুন ID-তে আসে।\n- 4.6 generation থেকে ID **dateless** (যেমন `claude-sonnet-4-6`): এটা evergreen \"latest\" পয়েন্টার **নয়**, এটাই সেই নির্দিষ্ট snapshot।\n- 4.6-এর আগের model-এ তারিখসহ ID আছে (যেমন `claude-sonnet-4-5-20250929`), আর `claude-sonnet-4-5` ধরনের ছোট **alias** একটা সুবিধাজনক পয়েন্টার, যা সবচেয়ে সাম্প্রতিক dated snapshot-এ যায়।\n- প্রতিটা ID-র নিজস্ব deprecation ও retirement সময়সূচি আছে। docs-এর overview-তে প্রতিটা model-এর \"Retirement: not sooner than ...\" তারিখ দেওয়া থাকে।\n- সতর্কতা: weights স্থির হলেও serving infrastructure (router, safety classifier, sampling logic) বদলাতে পারে। তাই একই ID-তে সামান্য আচরণ-পার্থক্য দেখলে সেটা infrastructure আপডেট হতে পারে। এজন্য eval চালু রাখো।\n\nপ্রোডাকশনে তাই: **পরিষ্কার, নির্দিষ্ট ID ব্যবহার করো, config-এ রাখো (env var বা settings), আর আপগ্রেডকে একটা পরিকল্পিত পরিবর্তন হিসেবে eval চালিয়ে করো।** \"যা latest তাই চালাও\" ধারণা এখানে ভুল।\n\n### Breaking changes: docs যা নিশ্চিত করে\n\nOpus 5.5 migration guide থেকে আমরা যা নিশ্চিত দেখেছি (সংস্করণসহ):\n\n| পরিবর্তন | কোথা থেকে শুরু (docs অনুযায়ী) | ফল |\n|---|---|---|\n| Manual `thinking: {\"type\":\"enabled\",\"budget_tokens\":N}` সরানো | Opus 4.7 ও পরবর্তী | 400 error; adaptive thinking + effort ব্যবহার করো |\n| `temperature`, `top_p`, `top_k` সরানো | Opus 4.7 থেকে (Opus 5.5 guide-এ: omit করো) | non-default মান দিলে error; prompt দিয়ে আচরণ নিয়ন্ত্রণ করো |\n| Assistant **prefill** সরানো (messages শেষ assistant-এ) | Opus 4.6 ও পরবর্তী Opus | 400 error; structured outputs বা system prompt ব্যবহার করো |\n| নতুন **tokenizer** | Opus 4.7 | একই টেক্সটে প্রায় ১x–১.৩৫x token (বিষয়বস্তুভেদে); `count_tokens`-এর সংখ্যা বদলে যায় |\n| `thinking: {\"type\":\"disabled\"}` সরানো | Opus 5.5 (Opus 5 চলত) | 400 error; effort কমাও |\n| Forced `tool_choice` (`any`/`tool`) | Opus 5.5-এ প্রত্যাখ্যাত | 400 error; `auto` বা `none` |\n| thinking text ডিফল্টে খালি (`display: \"omitted\"`) | Opus 4.7 থেকে | thinking block আসে কিন্তু `thinking` field খালি; দেখতে `summarized` চাও |\n\nএখান থেকে সাধারণ শিক্ষা, যা পরীক্ষার ধরন ধরে:\n\n1. **Sampling parameter**: আগে `temperature` ইত্যাদি দিয়ে \"creativity\"/\"determinism\" ঠিক করা যেত; নতুন model-এ সেগুলো পাঠানোই যায় না। আর docs বলে `temperature=0` আগেও কখনো হুবহু একই output-এর নিশ্চয়তা দেয়নি।\n2. **Tokenizer** বদলালে একই বাংলা বা ইংরেজি টেক্সটে token সংখ্যা ও খরচ বদলায়। তাই migrate করে `max_tokens`-এ বাড়তি জায়গা রাখো, আর client-side token আন্দাজ করা কোড আবার পরীক্ষা করো; যাচাইয়ে token counting endpoint ব্যবহার করো।\n3. **Response আকার** বদলাতে পারে: যেমন নতুন model-এ response thinking block দিয়ে শুরু হয়, তাই `r.content[0].text` ধরে নেওয়া কোড ভাঙে। content block-কে `type` দিয়ে বাছো।\n4. Effort-এর **ক্যালিব্রেশন model-ভেদে আলাদা**: ডিফল্ট কোথাও `high`, কোথাও `medium`। পুরোনো মান কপি না করে নতুন করে sweep চালাও।\n\n### Migration চেকলিস্ট (Chai-Bot-এর জন্য)\n\n```text\n1. config-এ model id বদলাও (কোডে নয়)\n2. temperature/top_p/top_k সরাও\n3. thinking: enabled/budget_tokens সরাও -> adaptive + effort\n4. assistant prefill সরাও -> structured outputs / system prompt\n5. content block-কে type দিয়ে বাছো (thinking block আগে আসতে পারে)\n6. count_tokens দিয়ে নতুন token সংখ্যা মাপো, max_tokens বাড়াও\n7. eval সেট চালাও: quality, latency, cost তুলনা\n8. staging -> ধাপে ধাপে rollout, পুরোনো ID-র retirement তারিখ খেয়াল রাখো\n```"
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Rafi-র শিক্ষা: আপগ্রেড মানে নতুন eval",
+        "markdown": "Rafi এখন model id env var-এ রাখে, আর প্রতিটা আপগ্রেডে ৫০টা বাস্তব Chai-Bot কথোপকথনের eval সেট পুরোনো ও নতুন model-এ চালায়: সঠিকতা, latency আর token খরচ পাশাপাশি দেখে। পরীক্ষার ভাষায়: **Configuration Management**-এর অংশ \"model version pinning\"।"
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "model আপগ্রেড: Chai-Bot-এ কী কী ভাঙে",
+          "hint": "ধাপে ধাপে দেখো পুরোনো কোড নতুন model-এ কোথায় আটকায় আর কীভাবে ঠিক হয়।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "api",
+              "label": "Messages API"
+            },
+            {
+              "id": "eval",
+              "label": "Eval সেট"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "নতুন model id + temperature=0.2",
+              "note": "Rafi শুধু model id বদলে আগের পুরো request পাঠাল।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "400: sampling param সমর্থিত নয়",
+              "note": "নতুন model non-default temperature/top_p/top_k প্রত্যাখ্যান করে। এটা সরাতে হবে।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "thinking enabled + budget_tokens",
+              "note": "manual thinking budget নতুন model-এ আবার 400 দেয়। adaptive + effort-এ যেতে হবে।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "ঠিক করা request (effort সহ)",
+              "note": "পরামিতি সরানো, effort বসানো, max_tokens-এ জায়গা বাড়ানো হলো।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "200 + thinking block আগে",
+              "note": "কোড r.content[0].text ধরলে ভাঙে। type দিয়ে text block বাছতে হয়।"
+            },
+            {
+              "from": "app",
+              "to": "eval",
+              "label": "পুরোনো বনাম নতুন চালাও",
+              "note": "quality, latency, token খরচ তুলনা করো। tokenizer বদলালে সংখ্যা বদলায়।"
+            },
+            {
+              "from": "eval",
+              "to": "app",
+              "label": "পাশ হলে rollout",
+              "note": "পাশ করলে ধাপে ধাপে চালু করো; না হলে effort ও prompt টিউন করো।"
+            }
+          ],
+          "takeaway": "আপগ্রেড = request নিয়ম মিলিয়ে নেওয়া + response আকার মিলিয়ে নেওয়া + eval। শুধু model id বদলানো যথেষ্ট নয়।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: 'dateless ID মানে সবসময় সর্বশেষ model' আর 'temperature=0 হলে নিরাপদ'",
+        "markdown": "দুটোই ভুল। (১) 4.6 generation থেকে dateless ID একটা **নির্দিষ্ট pinned snapshot**, evergreen পয়েন্টার নয়; নতুন সংস্করণ নতুন ID-তে আসে। (২) নতুন model-এ `temperature` পাঠানোই যায় না (400), আর আগেও `0` হুবহু একই উত্তরের গ্যারান্টি দিত না। প্রশ্নের গল্পে model-এর সংস্করণ দেখো: সঠিক সমাধান সাধারণত \"parameter সরাও + prompt স্পষ্ট করো + output validate করো\"।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৪. Token usage tracking ও cost modeling\n\nNusrat Apu: \"বিল বেড়েছে বললে হবে না। কোন feature, কোন model কত খরচ করছে, সেটা বলতে হবে।\" এজন্য আগে মাপতে শিখতে হবে।\n\n### প্রতিটা response-এ `usage`\n\n| Field | অর্থ |\n|---|---|\n| `input_tokens` | **শেষ cache breakpoint-এর পরের** input token (caching চালু থাকলে এটা পুরো input নয়!) |\n| `cache_creation_input_tokens` | এই request-এ cache-এ **লেখা** token |\n| `cache_read_input_tokens` | cache থেকে **পড়া** token |\n| `output_tokens` | মোট output (thinking সহ); এটাই বিলের সংখ্যা |\n| `output_tokens_details.thinking_tokens` | output-এর যে অংশ reasoning-এ গেছে (observability) |\n| `speed` | fast mode ব্যবহার হলে `\"fast\"`, নইলে `\"standard\"` |\n\ndocs-এর সূত্র: **মোট input = `cache_read_input_tokens` + `cache_creation_input_tokens` + `input_tokens`**। cache-এর দুটো field-ই `0` হলে prompt cache হয়নি (প্রায়ই prompt ন্যূনতম দৈর্ঘ্যের চেয়ে ছোট বলে)।\n\n```python\ndef log_usage(tag, r):\n    u = r.usage\n    cr = getattr(u, \"cache_read_input_tokens\", 0) or 0\n    cw = getattr(u, \"cache_creation_input_tokens\", 0) or 0\n    total_in = u.input_tokens + cr + cw\n    print(f\"{tag}: in={total_in} (fresh={u.input_tokens}, cache_write={cw}, cache_read={cr}) out={u.output_tokens}\")\n```\n\n### পাঠানোর আগেই মাপা: token counting\n\n`/v1/messages/count_tokens` endpoint (SDK-তে `client.messages.count_tokens`) দিয়ে request পাঠানোর আগেই input কত token হবে জানা যায়। বাংলা টেক্সটে সাধারণত ইংরেজির চেয়ে বেশি token লাগে, তাই **আসল ডেটা আর আসল model দিয়ে মাপো**, কারণ tokenizer model-ভেদে বদলায় (তৃতীয় অংশে দেখেছ)।\n\n### Cost model বানানো: সূত্র\n\n`P` = base input rate, `Q` = output rate:\n\n```text\nখরচ = (fresh_input          × P × 1.0)\n    + (cache_write_5m       × P × 1.25)    # ১ ঘণ্টার TTL হলে × 2.0\n    + (cache_read           × P × 0.1)     # docs: কিছু model-এ 0.05 বা 0.025\n    + (output (thinking সহ) × Q)\n```\n\nগুণক docs-এর prompt caching পাতা থেকে: ৫ মিনিটের write = ১.২৫ গুণ, ১ ঘণ্টার write = ২ গুণ, read = ০.১ গুণ (ব্যতিক্রম: Opus 5.5 ও Sonnet 5.5-এ ০.০৫, Fable 5.1-এ ০.০২৫)। Batch API: সব ব্যবহারে ৫০% ছাড়। **আসল $ দাম বদলায়, তাই কোডে হার্ডকোড না করে pricing পাতা দেখে config-এ রাখো।**\n\n### Chai-Bot-এর হিসাব (কাল্পনিক rate)\n\nধরো `P = ১` একক, `Q = ৫` একক। প্রতিটা request-এ ৮,০০০ token স্থির prefix, ২০০ token নতুন প্রশ্ন, ৩০০ token উত্তর।\n\n- **Caching ছাড়া:** (৮,০০০ + ২০০) × ১ + ৩০০ × ৫ = **৯,৭০০ একক**\n- **Cache hit হলে:** ৮,০০০ × ০.১ + ২০০ + ১,৫০০ = **২,৫০০ একক** (প্রায় ৭৪% কম)\n- **প্রথম request (write):** ৮,০০০ × ১.২৫ + ২০০ + ১,৫০০ = **১১,৭০০ একক**: একবার একটু বেশি, তারপর অনেক কম।\n\nনিচের slider-এ নিজে খেলে দেখো।"
+      },
+      {
+        "type": "simulator",
+        "id": "budget-meter",
+        "props": {
+          "title": "Chai-Bot-এর একটা request: caching ও batch-এর প্রভাব",
+          "hint": "costFactor বসানো হয়েছে docs-এর সাধারণ অনুপাত অনুযায়ী (cache read ০.১, write ১.২৫, batch ০.৫)। দামের ($/million) সংখ্যাটা কাল্পনিক, আসল দাম নয়। cached prefix বড় করলে মোট খরচ কীভাবে বদলায় দেখো।",
+          "capacity": 200000,
+          "capacityLabel": "Context window (উদাহরণ)",
+          "items": [
+            {
+              "id": "cached",
+              "label": "Cache read: policy+tool prefix (০.১x)",
+              "tokens": 8000,
+              "min": 0,
+              "max": 60000,
+              "step": 1000,
+              "costFactor": 0.1
+            },
+            {
+              "id": "fresh",
+              "label": "নতুন input (প্রশ্ন + সাম্প্রতিক চ্যাট) (১x)",
+              "tokens": 2000,
+              "min": 500,
+              "max": 50000,
+              "step": 500,
+              "costFactor": 1
+            },
+            {
+              "id": "write",
+              "label": "Cache write, ৫ মিনিট TTL (১.২৫x)",
+              "tokens": 0,
+              "min": 0,
+              "max": 60000,
+              "step": 1000,
+              "costFactor": 1.25
+            },
+            {
+              "id": "out",
+              "label": "Output, thinking সহ (এখানে ১x ধরা)",
+              "tokens": 1500,
+              "min": 200,
+              "max": 20000,
+              "step": 100,
+              "costFactor": 1
+            },
+            {
+              "id": "batch",
+              "label": "রাতের batch অংশ (০.৫x)",
+              "tokens": 10000,
+              "min": 0,
+              "max": 100000,
+              "step": 5000,
+              "costFactor": 0.5
+            }
+          ],
+          "ratePerMillion": 4,
+          "takeaway": "বড় স্থির prefix cache-এ পড়লে সবচেয়ে বড় সাশ্রয়; batch-এ অর্ধেক। কিন্তু cache write একবার বেশি দামি, তাই prefix একবারই ব্যবহার হলে caching লাভজনক নয়।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "title": "Chai-Bot-এর cost dashboard",
+        "markdown": "Rafi প্রতিটা response-এর `usage` একটা লগে ফেলে (feature, model ট্যাগ সহ)। সপ্তাহ শেষে দেখা গেল খরচের ৬০% আসছে একটা tool-heavy feature থেকে, যার system prompt আর tool definition প্রতিবার নতুন করে যায়। এটাই caching-এর প্রথম প্রার্থী। Organization-wide হিসাবের জন্য Anthropic-এর Usage and Cost Analytics API আছে, কিন্তু request-স্তরের ডিবাগিংয়ে নিজের লগের `usage`-ই সবচেয়ে কাজের।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৫. Prompt caching ও cache check-pointing\n\nPrompt caching: **একই লম্বা prefix বারবার পাঠালে প্রতিবার নতুন করে প্রক্রিয়া না করে আগের প্রক্রিয়াকৃত অংশ ব্যবহার করা।** এতে খরচ আর time-to-first-token দুটোই কমে।\n\n### Prefix-এর ক্রম: tools → system → messages\n\nCache কাজ করে prefix ধরে, এই ক্রমে: **`tools` → `system` → `messages`**, `cache_control` দেওয়া block পর্যন্ত। তাই **স্থির জিনিস আগে, পরিবর্তনশীল জিনিস পরে**।\n\n```text\n[tools: ১২টা definition]            <- স্থির\n[system: policy, tone, উদাহরণ]      <- স্থির      <-- cache breakpoint এখানে\n[messages: পুরোনো চ্যাট]            <- ধীরে বাড়ে\n[messages: এখনকার প্রশ্ন, সময়]    <- প্রতিবার বদলায়\n```\n\n### Cache breakpoint ও check-pointing\n\nBreakpoint মানে `cache_control` বসানো block: সেখান পর্যন্ত prefix cache-এ **চেকপয়েন্ট** হিসেবে লেখা হয়। পরীক্ষার \"cache check-pointing\" এই ধারণাই: লম্বা বহু-turn আলাপে নির্দিষ্ট জায়গায় breakpoint বসিয়ে পরের request-এ সেই পর্যন্ত অংশ আবার ব্যবহার করা।\n\n1. **Automatic caching:** request-এর সর্বোচ্চ স্তরে একটা `cache_control` দিলে breakpoint আলাপ বাড়ার সাথে সাথে শেষ cacheable block-এ সরে যায়। বহু-turn চ্যাটে সুবিধাজনক।\n2. **Explicit breakpoints:** আলাদা আলাদা block-এ `cache_control`; **এক request-এ সর্বোচ্চ ৪টা**, আর automatic caching একটা slot নেয়।\n\n```python\nr = client.messages.create(\n    model=MODEL,\n    max_tokens=1024,\n    system=[\n        {\"type\": \"text\", \"text\": \"তুমি ChaiCart-এর সাপোর্ট সহকারী Chai-Bot। ...\"},\n        {\n            \"type\": \"text\",\n            \"text\": LONG_POLICY_TEXT,                       # স্থির, বড়\n            \"cache_control\": {\"type\": \"ephemeral\"},         # এই পর্যন্ত cache\n        },\n    ],\n    messages=[{\"role\": \"user\", \"content\": \"আমার অর্ডার কোথায়?\"}],   # প্রতিবার বদলায়, cache-এর বাইরে\n)\n```\n\n**সবচেয়ে বড় সাধারণ ভুল** (docs): breakpoint এমন block-এ বসানো যা প্রতি request-এ বদলায় (timestamp বা user message)। বসাও **শেষ স্থির block-এ**।\n\n### Lookback: ২০ block\n\nপ্রতিটা request-এ সিস্টেম breakpoint থেকে পেছনে হেঁটে সর্বোচ্চ **২০টা block** পর্যন্ত খোঁজে আগের কোনো request-এর লেখা entry আছে কি না। Cache লেখা হয় **কেবল breakpoint-এ**। তাই আলাপ ২০ block-এর বেশি বাড়লে পুরোনো breakpoint আর ধরা পড়ে না; নতুন breakpoint লাগে (automatic caching এটা সামলে দেয়)।\n\n### TTL: ৫ মিনিট বনাম ১ ঘণ্টা\n\n| | ডিফল্ট | বাড়ানো |\n|---|---|---|\n| TTL | ৫ মিনিট (প্রতিবার ব্যবহারে বিনা খরচে নবায়ন) | `\"cache_control\": {\"type\":\"ephemeral\",\"ttl\":\"1h\"}` |\n| Write | base input-এর ১.২৫x | ২x |\n| Read | ০.১x (কিছু model-এ ০.০৫x বা ০.০২৫x) | একই |\n\nTTL মাপা হয় যে request cache লেখে বা পড়ে তার **শুরু** থেকে, তাই stream করতে যে সময় যায় সেটাও গোনা হয়। দুই TTL মেশালে **১ ঘণ্টার entry ৫ মিনিটের entry-র আগে** থাকতে হবে। মিনিটে একাধিক request আসা চ্যাটে ৫ মিনিটই যথেষ্ট; কম traffic বা batch-এর মতো ফাঁকা সময়ে ১ ঘণ্টা ভাবো।\n\n### ন্যূনতম দৈর্ঘ্য\n\nPrompt ন্যূনতম দৈর্ঘ্যের চেয়ে ছোট হলে caching **নীরবে বাদ যায়, কোনো error আসে না**। docs-এর সারণিতে model-ভেদে এটা আলাদা: যেমন নতুন Opus/Sonnet/Haiku 5.5-এ ৫১২ token, কিছু model-এ ১,০২৪, ২,০৪৮ বা ৪,০৯৬। \"cache কাজ করছে না\" মনে হলে আগে `usage`-এর দুটো cache field `0` কি না আর prompt-এর দৈর্ঘ্য দেখো।\n\n### কী cache ভাঙে (invalidation)\n\n- **Exact match** লাগে: breakpoint পর্যন্ত সব টেক্সট ও ছবি হুবহু এক (এমনকি `tool_use`-এর key-এর ক্রমও)।\n- একটা স্তরের পরিবর্তন সেই স্তর **এবং তার পরের সব স্তর** অবৈধ করে: tool definition বদলালে **সব**; system বদলালে system + messages; `tool_choice`, ছবি বা thinking কনফিগারেশন বদলালে messages cache।\n- **Effort বদলালেও** cache ভাঙতে পারে। docs-এর উদাহরণ: একই আলাপে ডিফল্ট `medium` থেকে `low`-তে গেলে তৃতীয় request-এ `cache_read_input_tokens=0` আর আবার পুরো `cache_creation`। (মিড-কনভারসেশনে effort বদলাতে docs-এ \"per-message effort\" নামে একটা beta আছে, যা cache রাখে।)\n- **Speed** (fast ↔ standard) বদলালে system ও message cache মিস।\n- Caching **output বদলায় না**, শুধু খরচ ও গতি।\n- Cache তোমার **organization-এর** (কিছু প্ল্যাটফর্মে workspace-এরও) মধ্যে আলাদা।\n\n### Concurrency: প্রথমটা শুরু না হলে cache নেই\n\nCache entry পাওয়া যায় **প্রথম response শুরু হওয়ার পর**। একসাথে ১০০টা parallel request ছুড়লে সবাই write করে, কেউ read করে না। প্রথমটা পাঠাও, response শুরু হওয়া পর্যন্ত অপেক্ষা করো, তারপর বাকিগুলো। docs-এ `max_tokens: 0` দিয়ে \"pre-warming\"-ও আছে (cache লেখা হয়, response-এর `content` খালি থাকে); এটা streaming, manual extended thinking, structured outputs, forced tool_choice বা Batch-এর ভেতরে চলে না।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "steps",
+          "caption": "একটা cache-এর জীবনচক্র: লেখা, হিট, আর prompt বদলালে মিস।",
+          "steps": [
+            {
+              "title": "১. প্রথম request: cache write",
+              "body": "স্থির prefix (tools + system) cache-এ লেখা হয়। usage-এ cache_creation_input_tokens > 0, cache_read = 0। এই request একটু বেশি দামি (১.২৫x)।"
+            },
+            {
+              "title": "২. দ্বিতীয় request: cache hit",
+              "body": "prefix হুবহু এক, TTL-এর মধ্যে। cache_read_input_tokens > 0, cache_creation = 0। এই অংশের দাম base input-এর ভগ্নাংশ।"
+            },
+            {
+              "title": "৩. প্রতিটা hit-এ TTL নবায়ন",
+              "body": "৫ মিনিটের TTL প্রতিবার ব্যবহারে বিনা খরচে নতুন করে শুরু হয়। ব্যবহার না হলে মেয়াদ শেষে entry হারিয়ে যায়।"
+            },
+            {
+              "title": "৪. prompt বদলালে মিস",
+              "body": "tool definition বা system-এর একটা অক্ষর, এমনকি effort বা speed বদলালে সংশ্লিষ্ট স্তর ও তার পরের সব স্তরের cache মিস। আবার write লাগে।"
+            }
+          ]
+        }
+      },
+      {
+        "type": "simulator",
+        "id": "flow-stepper",
+        "props": {
+          "title": "Cache write, hit আর মিস: তিনটা request",
+          "hint": "প্রতিটা ধাপে usage-এর cache field কেমন হয় খেয়াল করো।",
+          "actors": [
+            {
+              "id": "app",
+              "label": "Chai-Bot কোড"
+            },
+            {
+              "id": "api",
+              "label": "Messages API"
+            },
+            {
+              "id": "cache",
+              "label": "Prompt cache"
+            }
+          ],
+          "steps": [
+            {
+              "from": "app",
+              "to": "api",
+              "label": "request ১ (system + policy ৮k, breakpoint সহ)",
+              "note": "policy block-এ cache_control বসানো; এর পরের user message বদলায় বলে বাইরে।"
+            },
+            {
+              "from": "api",
+              "to": "cache",
+              "label": "prefix লেখা (write)",
+              "note": "breakpoint পর্যন্ত prefix cache-এ লেখা হয়। বাড়তি দাম (৫ মিনিটের TTL হলে ১.২৫x)।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "usage: cache_creation=8000, cache_read=0",
+              "note": "প্রথমবার, তাই write। input_tokens-এ থাকে শুধু breakpoint-এর পরের অংশ।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "request ২ (একই prefix, নতুন প্রশ্ন)",
+              "note": "৩০ সেকেন্ড পর। prefix হুবহু এক, TTL-এর মধ্যে।"
+            },
+            {
+              "from": "api",
+              "to": "cache",
+              "label": "prefix মিলল (hit)",
+              "note": "সিস্টেম breakpoint থেকে পেছনে খুঁজে entry পায়।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "usage: cache_creation=0, cache_read=8000",
+              "note": "৮k token এখন সস্তা হারে। TTL নবায়ন হলো।"
+            },
+            {
+              "from": "app",
+              "to": "api",
+              "label": "request ৩ (system-এ একটা শব্দ বদলানো)",
+              "note": "কেউ policy-তে একটা শব্দ বদলেছে। prefix আর হুবহু এক নয়।"
+            },
+            {
+              "from": "api",
+              "to": "app",
+              "label": "usage: cache_creation=8000, cache_read=0",
+              "note": "মিস: আবার পুরো write। পরিবর্তন যত আগে, ক্ষতি তত বেশি।"
+            }
+          ],
+          "takeaway": "Hit-এর শর্ত: হুবহু একই prefix, TTL-এর মধ্যে, ন্যূনতম দৈর্ঘ্যের ওপরে, আর একই thinking/effort/speed কনফিগারেশন।"
+        }
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: caching-এর পাঁচটা ভুল ধারণা",
+        "markdown": "(১) \"`input_tokens` মানে মোট input\": না, caching চালু থাকলে এটা শুধু শেষ breakpoint-এর পরের অংশ; মোট = read + creation + input_tokens। (২) \"breakpoint user message-এ বসাও\": না, স্থির শেষ block-এ। (৩) \"prompt খুব ছোট হলে error আসবে\": না, নীরবে caching বাদ যায়। (৪) \"caching output-এর মান বদলায়\": না, শুধু খরচ ও গতি। (৫) \"cache write বিনামূল্যে\": না, write base-এর চেয়ে বেশি দামি; লাভ hit-এ। একবারই ব্যবহার হবে এমন prefix cache করা লোকসান।"
+      },
+      {
+        "type": "markdown",
+        "markdown": "## ৬. Realtime বনাম Batch API\n\nরাতের কাজ: ৫,০০০ পুরোনো অর্ডারের review-এর সংক্ষিপ্তসার। কেউ রাতে উত্তর দেখার জন্য অপেক্ষা করছে না। এটা realtime API-তে পাঠানো মানে অকারণে পুরো দাম দেওয়া।\n\n### Message Batches API\n\nবহু Messages request একসাথে জমা দিয়ে **অ্যাসিনক্রোনাসভাবে** প্রক্রিয়া করানো। docs-এর মূল তথ্য:\n\n| বিষয় | docs অনুযায়ী |\n|---|---|\n| খরচ | সব ব্যবহারে **৫০% ছাড়** |\n| গতি | বেশির ভাগ batch ১ ঘণ্টার মধ্যে শেষ; ২৪ ঘণ্টায় শেষ না হলে মেয়াদোত্তীর্ণ (expire) |\n| সীমা | এক batch-এ সর্বোচ্চ **১,০০,০০০ request বা ২৫৬ MB**, যেটা আগে ছোঁয় |\n| ফলাফল | তৈরির পর **২৯ দিন** ডাউনলোডযোগ্য |\n| পরিচয় | প্রতিটা request-এ অনন্য `custom_id` (১–৬৪ অক্ষর, `[a-zA-Z0-9_-]`) |\n| ফল-ক্রম | ইনপুটের ক্রমে ফল আসার নিশ্চয়তা নেই: `custom_id` দিয়ে মেলাও |\n| চলে না | `stream: true`, `speed` (fast mode), `max_tokens: 0` |\n| বিল | `errored` ও `canceled` request-এর জন্য বিল হয় না |\n\nBatch-এ প্রায় সব Messages ফিচার চলে: vision, tool use, system message, multi-turn, thinking। প্রতিটা request স্বাধীনভাবে প্রক্রিয়া হয়, তাই আলাদা ধরনের request এক batch-এ মেশানো যায়।\n\n```python\nimport os, anthropic\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\nbatch = client.messages.batches.create(\n    requests=[\n        {\n            \"custom_id\": f\"review-{rid}\",\n            \"params\": {\n                \"model\": MODEL,\n                \"max_tokens\": 300,\n                \"messages\": [{\"role\": \"user\", \"content\": f\"এই review-এর ২ বাক্যের সারাংশ দাও: {text}\"}],\n            },\n        }\n        for rid, text in reviews    # reviews = [(id, text), ...]\n    ]\n)\nprint(batch.id, batch.processing_status)       # \"in_progress\"\n```\n\n```python\nimport time\nwhile True:\n    b = client.messages.batches.retrieve(batch.id)\n    if b.processing_status == \"ended\":\n        break\n    time.sleep(60)\n\nfor entry in client.messages.batches.results(batch.id):\n    if entry.result.type == \"succeeded\":\n        msg = entry.result.message\n        text = next(b.text for b in msg.content if b.type == \"text\")\n        print(entry.custom_id, text)\n    else:\n        print(entry.custom_id, entry.result.type)   # errored / canceled / expired\n```\n\n### Batch + caching একসাথে\n\nদুটো ছাড় **একসাথে কাজ করতে পারে** (docs: stack করে)। কিন্তু batch-এর request সমান্তরালে ও যেকোনো ক্রমে চলে, তাই cache hit **best-effort**, নিশ্চিত নয়। docs-এর পরামর্শ: batch ৫ মিনিটের বেশি সময় নিতে পারে, তাই shared context থাকলে **১ ঘণ্টার TTL** ভাবো।\n\n### সিদ্ধান্তের ছক\n\n| প্রশ্ন | Realtime | Batch |\n|---|---|---|\n| ব্যবহারকারী অপেক্ষা করছে? | হ্যাঁ | না |\n| ফল কত দ্রুত লাগবে? | সেকেন্ড | ঘণ্টা (২৪ ঘণ্টা পর্যন্ত) |\n| পরিমাণ | কম-বেশি | বিপুল |\n| দাম | পুরো | ৫০% ছাড় |\n| Streaming/fast mode | চলে | চলে না |\n| উদাহরণ | লাইভ চ্যাট, tool-use agent | রাতের সারাংশ, eval, ডেটা লেবেলিং, মডারেশন |"
+      },
+      {
+        "type": "callout",
+        "tone": "warning",
+        "title": "Exam trap: batch-এ 'দ্রুততর' বা 'streaming' আশা করা",
+        "markdown": "Batch **সস্তা কিন্তু ধীর**: কাজ সময়-নির্ভর বা ব্যবহারকারী-মুখী হলে Batch ভুল। আবার বিপুল, অ-জরুরি কাজ realtime-এ পাঠানো মানে অকারণ খরচ। আরেকটা ফাঁদ: ধরে নেওয়া ফলাফল ইনপুটের ক্রমে আসবে; আসলে `custom_id` দিয়ে মেলাতে হয়। আর batch-এর ৫০% ছাড় নিজে নিজে cache hit-এর নিশ্চয়তা দেয় না।"
+      },
+      {
+        "type": "diagram",
+        "diagram": {
+          "kind": "architecture",
+          "caption": "Chai-Bot-এর ট্রাফিক ভাগ: লাইভ প্রশ্ন realtime পথে (cache সহ), রাতের কাজ batch পথে।",
+          "nodes": [
+            {
+              "id": "user",
+              "kind": "user",
+              "label": "গ্রাহক (লাইভ চ্যাট)",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "cron",
+              "kind": "client",
+              "label": "রাতের Job",
+              "x": 0,
+              "y": 120
+            },
+            {
+              "id": "router",
+              "kind": "gateway",
+              "label": "Chai-Bot Router",
+              "x": 220,
+              "y": 60
+            },
+            {
+              "id": "rt",
+              "kind": "server",
+              "label": "Messages API (realtime)",
+              "x": 440,
+              "y": 0
+            },
+            {
+              "id": "bt",
+              "kind": "queue",
+              "label": "Batches API (৫০% ছাড়)",
+              "x": 440,
+              "y": 120
+            },
+            {
+              "id": "log",
+              "kind": "database",
+              "label": "usage লগ / dashboard",
+              "x": 660,
+              "y": 60
+            }
+          ],
+          "edges": [
+            {
+              "from": "user",
+              "to": "router",
+              "label": "প্রশ্ন"
+            },
+            {
+              "from": "cron",
+              "to": "router",
+              "label": "৫০০০ review"
+            },
+            {
+              "from": "router",
+              "to": "rt",
+              "label": "জরুরি, ছোট"
+            },
+            {
+              "from": "router",
+              "to": "bt",
+              "label": "অ-জরুরি, বিপুল"
+            },
+            {
+              "from": "rt",
+              "to": "log",
+              "label": "usage"
+            },
+            {
+              "from": "bt",
+              "to": "log",
+              "label": "usage"
+            }
+          ]
+        }
+      },
+      {
+        "type": "markdown",
+        "markdown": "## সব জোড়া লাগানো: Chai-Bot-এর নতুন নকশা\n\nRafi তিন সপ্তাহ পর Nusrat Apu-কে নতুন নকশা দেখাল:\n\n| কাজ | Model tier | Thinking/effort | Caching | API পথ |\n|---|---|---|---|---|\n| Intent/category চেনা | Haiku-ধরনের | কম effort | system prompt cache | realtime |\n| সাধারণ চ্যাট উত্তর | Sonnet-ধরনের | ডিফল্ট বা medium | policy + tool prefix, ৫ মিনিট TTL | realtime |\n| জটিল refund বিরোধ | Opus-ধরনের | high | একই prefix | realtime |\n| রাতের review সারাংশ | Sonnet/Haiku-ধরনের | কম | ১ ঘণ্টা TTL ভাবা যায় | **Batch** |\n| Model আপগ্রেড | id config-এ, pinned | নতুন effort sweep | cache আবার গরম | eval পাশ হলে |\n\nফলাফল: বিল আগের স্তরে ফিরল, গ্রাহকের কাছে উত্তরের গতি ও মান ঠিক রইল। শিক্ষা: **খরচ কমানোর কোনো একটা জাদু নেই; এটা এই ছয়টা সিদ্ধান্তের যোগফল।**\n\n## পরীক্ষায় এটা কীভাবে আসে\n\nএই chapter Domain 5 (Model Selection and Optimization, ১৬.৮%)-এর তিনটা skill ধরে:\n\n| Skill | কী পরীক্ষা করে | সাধারণ প্রশ্নের ধরন |\n|---|---|---|\n| **Model Selection and Tradeoffs** | Opus/Sonnet/Haiku ব্যবহারক্ষেত্র; quality/latency/cost-এর টানাপোড়েন; সংস্করণ বদলের breaking change; pinning | \"উচ্চ-পরিমাণ classification-এ কোন tier?\"; \"আপগ্রেডের পর 400, কারণ কী?\"; \"কোন দুটো পরিবর্তন দরকার? (Select TWO)\" |\n| **Cost and Token Management** | `usage` পড়া; cost model; prompt caching, breakpoint, TTL, invalidation; batch বনাম realtime | \"cache hit হচ্ছে না কেন?\"; \"কোন ফিল্ডে cache read দেখা যায়?\"; \"রাতের কাজে কী বাছবে?\" |\n| **LLM Fundamentals** | fast mode, extended বনাম adaptive thinking, effort; thinking token-এর বিল | \"latency কমাতে কোনটা ও তার সীমা কী?\"; \"উত্তর কেটে গেল কেন (`max_tokens`)?\"; \"কম ভাবানোর প্রথম উপায়?\" |\n\nপ্রশ্ন সাধারণত একটা ছোট গল্প দেয় (খরচ বেড়েছে, উত্তর ধীর, আপগ্রেডের পর error) আর জিজ্ঞেস করে \"সবচেয়ে ভালো পদক্ষেপ কোনটা\"। নিয়ম: (১) কাজের প্রকৃতি দেখো (জরুরি না বিপুল?), (২) উল্লেখিত ফিল্ড বা সেটিং-এর আসল অর্থ মনে করো, (৩) \"সবচেয়ে বড় model\", \"temperature কমাও\", \"সবকিছু cache করো\" ধরনের এক-সূত্রের সমাধান সন্দেহ করো।"
+      }
+    ],
+    "recap": [
+      "Tier বাছো কাজের কঠিনতা, পরিমাণ ও ভুলের দামে: Haiku সহজ ও বিপুল কাজে, Sonnet বেশির ভাগ কাজে, Opus কঠিন বহু-ধাপের কাজে, আর নিজের eval দিয়ে যাচাই করো।",
+      "নতুন model-এ thinking adaptive: effort (output_config.effort) দিয়ে ঝোঁক ঠিক করো, max_tokens দিয়ে কঠিন সীমা বাঁধো; manual budget_tokens নতুন model-এ 400 দেয়।",
+      "Fast mode একই model-কে দ্রুততর (output গতি, TTFT নয়) ও বেশি দামে চালায়; সব model-এ নেই, Batch-এ চলে না, আর speed বদলালে cache মিস হয়।",
+      "Model ID একটা pinned snapshot; আপগ্রেডে sampling parameter, budget_tokens, prefill, tokenizer ও response আকারের পরিবর্তন মিলিয়ে নাও এবং eval চালাও।",
+      "usage-এর মোট input = cache_read + cache_creation + input_tokens; thinking token output হিসেবে বিল হয়; আসল ডেটা ও model দিয়ে count_tokens চালাও।",
+      "Caching: স্থির prefix আগে (tools→system→messages), breakpoint শেষ স্থির block-এ (সর্বোচ্চ ৪টা), TTL ৫ মিনিট বা ১ ঘণ্টা, read সস্তা ও write বেশি দামি, আর যেকোনো পরিবর্তন সেই স্তর ও পরের স্তরের cache ভাঙে।",
+      "জরুরি নয় ও বিপুল কাজ Message Batches API-তে ৫০% কম খরচে পাঠাও (দেরি ঘণ্টা-স্কেলে, custom_id দিয়ে ফল মেলাও); লাইভ কাজ realtime-এ।"
+    ]
+  },
+  "lab": {
+    "goal": "দুটো call দিয়ে নিজের চোখে usage পড়া, cache write বনাম cache hit দেখা, system বদলে cache miss ধরা, count_tokens দিয়ে আগেই মাপা আর একটা ছোট cost হিসাব বানানো।",
+    "requirements": [
+      "Python 3.10+ এবং `pip install --upgrade anthropic` (SDK নতুন রাখো, নইলে `output_config`/cache field না-ও থাকতে পারে)",
+      "API key: `export ANTHROPIC_API_KEY=...` (কখনও কোডে বা git-এ রাখবে না)",
+      "Official models overview পাতা থেকে একটা current model id কপি করে: `export CLAUDE_MODEL=<id>` (কোডে model id হার্ডকোড করবে না)",
+      "নতুন model-এ `temperature`/`top_p`/`top_k` আর manual `budget_tokens` পাঠাবে না; এই lab-এ কোথাও দরকার নেই",
+      "লম্বা prefix লাগবে, কারণ prompt ন্যূনতম দৈর্ঘ্যের চেয়ে ছোট হলে caching নীরবে বাদ যায় (docs-এ model-ভেদে ৫১২ থেকে ৪,০৯৬ token)"
+    ],
+    "steps": [
+      {
+        "title": "ধাপ ১: লম্বা স্থির prefix বানানো ও আগে মাপা",
+        "body": "একটা ফাইল `lab02.py` বানাও। এখানে ইংরেজি পুনরাবৃত্তি ব্যবহার করছি যাতে token সংখ্যা আন্দাজযোগ্য হয়।\n\n```python\nimport os, time\nimport anthropic\n\nclient = anthropic.Anthropic()\nMODEL = os.environ[\"CLAUDE_MODEL\"]\n\nPOLICY = \"\\n\".join(\n    f\"Rule {i}: Chai-Bot must answer politely, never promise a refund without checking the order id, and always mention the ChaiCart helpline for urgent delivery problems.\"\n    for i in range(1, 301)\n)\n\ndef build_system(extra: str = \"\"):\n    return [\n        {\"type\": \"text\", \"text\": \"You are Chai-Bot, the ChaiCart support assistant.\" + extra},\n        {\"type\": \"text\", \"text\": POLICY, \"cache_control\": {\"type\": \"ephemeral\"}},\n    ]\n\ndef ask(question: str, system):\n    return client.messages.create(\n        model=MODEL,\n        max_tokens=1500,          # thinking + উত্তর দুটোর জন্য জায়গা\n        system=system,\n        messages=[{\"role\": \"user\", \"content\": question}],\n    )\n\ndef show(tag, r):\n    u = r.usage\n    cr = getattr(u, \"cache_read_input_tokens\", 0) or 0\n    cw = getattr(u, \"cache_creation_input_tokens\", 0) or 0\n    print(f\"{tag}: fresh_in={u.input_tokens} cache_write={cw} cache_read={cr} out={u.output_tokens} total_in={u.input_tokens+cr+cw}\")\n    for b in r.content:\n        if b.type == \"text\":      # type দিয়ে বাছো; thinking block আগে আসতে পারে\n            print(\"  ->\", b.text[:80].replace(\"\\n\", \" \"))\n            break\n\ncount = client.messages.count_tokens(\n    model=MODEL,\n    system=build_system(),\n    messages=[{\"role\": \"user\", \"content\": \"আমার অর্ডার কোথায়?\"}],\n)\nprint(\"count_tokens input:\", count.input_tokens)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `count_tokens input` হাজার দশেক (আন্দাজ ১০–১৫ হাজার; model ও tokenizer ভেদে বদলায়)। লক্ষ করো, request পাঠানোর **আগেই** সংখ্যাটা জানা গেল।"
+      },
+      {
+        "title": "ধাপ ২: প্রথম call (cache write)",
+        "body": "ফাইলের নিচে যোগ করো:\n\n```python\nr1 = ask(\"আমার অর্ডার কোথায়?\", build_system())\nshow(\"call1\", r1)\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `cache_write` প্রায় prefix-এর সমান (হাজার কয়েক), `cache_read=0`, `fresh_in` খুব ছোট (শুধু breakpoint-এর পরের অংশ: user message)। যদি `cache_write` আর `cache_read` দুটোই `0` হয়, তোমার model-এর ন্যূনতম দৈর্ঘ্য prefix-এর চেয়ে বেশি; `range(1, 301)`-কে `range(1, 900)` করো।"
+      },
+      {
+        "title": "ধাপ ৩: দ্বিতীয় call (cache hit)",
+        "body": "```python\nr2 = ask(\"রিফান্ড পেতে কত দিন লাগে?\", build_system())\nshow(\"call2\", r2)\n```\n\n(প্রথম call-এর response শুরু হয়ে গেছে, কারণ আমরা শেষ হওয়া পর্যন্ত অপেক্ষা করেছি; আর ৫ মিনিটের TTL-এর মধ্যেই আছি।)\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `cache_write=0`, `cache_read` ≈ call1-এর `cache_write`। `total_in` প্রায় সমান থাকলেও এখন বড় অংশটা সস্তা হারে। প্রশ্ন বদলেছে, তবু hit: কারণ cached prefix হুবহু এক ছিল আর প্রশ্নটা breakpoint-এর **বাইরে**।"
+      },
+      {
+        "title": "ধাপ ৪: prefix-এ একটা শব্দ বদলে মিস ধরা",
+        "body": "```python\nr3 = ask(\"রিফান্ড পেতে কত দিন লাগে?\", build_system(extra=\" Always be brief.\"))\nshow(\"call3\", r3)\n```\n\nএখানে **breakpoint-এর আগের block** (প্রথম system block) বদলে গেছে, তাই তার পরের সবকিছু (policy block সহ) নতুন prefix।\n\n**প্রত্যাশিত পর্যবেক্ষণ:** `cache_read` ছোট বা `0`, আর `cache_write` আবার বড়। মিলিয়ে দেখো, এটা chapter-এর flow-stepper-এর তৃতীয় request-এর মতো। (ছোট ব্যতিক্রম সম্ভব, কারণ docs অনুযায়ী প্ল্যাটফর্ম-ভেদে আচরণ সামান্য আলাদা হতে পারে; মূল শিক্ষা হলো পরিবর্তন প্রথম দিকে হলে ক্ষতি বেশি।)"
+      },
+      {
+        "title": "ধাপ ৫: effort বদলালে cache-এর কী হয় (ঐচ্ছিক পরীক্ষা)",
+        "body": "নতুন model-এ docs বলে effort বদলালে cache ভাঙতে পারে। সরাসরি দেখো (SDK-তে `output_config` না থাকলে `extra_body` ব্যবহার করো):\n\n```python\ndef ask_effort(question, effort):\n    return client.messages.create(\n        model=MODEL,\n        max_tokens=1500,\n        system=build_system(),\n        messages=[{\"role\": \"user\", \"content\": question}],\n        extra_body={\"output_config\": {\"effort\": effort}},\n    )\n\nshow(\"effort-low\", ask_effort(\"ধন্যবাদ!\", \"low\"))\nshow(\"effort-low-again\", ask_effort(\"আরেকটা প্রশ্ন\", \"low\"))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** যদি তোমার model effort-কে cache-এর অংশ ধরে, প্রথম `effort-low`-তে নতুন write দেখবে আর দ্বিতীয়টাতে read। না দেখলে সেটাও লিখে রাখো: docs বলে প্রভাব model ও স্তরভেদে আলাদা। model effort সমর্থন না করলে error আসবে: তখন এই ধাপ বাদ দাও।"
+      },
+      {
+        "title": "ধাপ ৬: ছোট cost হিসাব",
+        "body": "কাল্পনিক rate দিয়ে তিনটা call-এর আপেক্ষিক খরচ হিসাব করো। আসল দাম pricing পাতা থেকে config-এ বসাবে; এখানে শুধু অনুপাত দেখছি।\n\n```python\nP, Q = 1.0, 5.0                      # কাল্পনিক input/output rate\nW, R = 1.25, 0.1                     # ৫ মিনিট write গুণক, read গুণক (docs-এ কিছু model-এ read 0.05)\n\ndef cost(r):\n    u = r.usage\n    cw = getattr(u, \"cache_creation_input_tokens\", 0) or 0\n    cr = getattr(u, \"cache_read_input_tokens\", 0) or 0\n    return (u.input_tokens * P + cw * P * W + cr * P * R + u.output_tokens * Q) / 1000\n\nfor name, r in [(\"call1\", r1), (\"call2\", r2), (\"call3\", r3)]:\n    print(name, round(cost(r), 2))\n```\n\n**প্রত্যাশিত পর্যবেক্ষণ:** call1 আর call3 (write) তুলনামূলক বেশি, call2 (hit) অনেক কম। output-এর দৈর্ঘ্য আলাদা হলে সংখ্যা সামান্য নড়বে। এটাই cost model: **কোন token কোন গুণকে গোনা হলো**।"
+      }
+    ],
+    "checkpoints": [
+      "call1 আর call2-তে `usage`-এর কোন কোন field বদলাল, আর মোট input হিসাব করার সূত্রটা কী?",
+      "call2-তে প্রশ্ন বদলানো সত্ত্বেও কেন cache hit হলো? breakpoint কোন block-এ ছিল আর কেন সেখানে?",
+      "call3-তে prefix-এর একটা শব্দ বদলাতেই কেন cache মিস হলো, আর পরিবর্তনটা prefix-এর শেষে হলে কী ভিন্ন হতো?",
+      "যদি `cache_creation_input_tokens` আর `cache_read_input_tokens` দুটোই `0` আসে, প্রথম কোন দুটো কারণ খুঁজবে?",
+      "`count_tokens` আর response-এর `usage.input_tokens`-এর সংখ্যা caching চালু থাকলে কেন মিলবে না, আর কীভাবে মেলানো যায়?"
+    ]
+  },
+  "notes": "# Chapter 2 cheat-sheet: Model selection, thinking ও cost\n\n## Tier-এর সংক্ষেপ (docs overview অনুযায়ী)\n\n| Tier | কাজ | latency | কখন |\n|---|---|---|---|\n| Haiku | classification, extraction, routing, উচ্চ-পরিমাণ | সবচেয়ে দ্রুত | সরল, বিপুল, খরচ-সংবেদনশীল |\n| Sonnet | speed + intelligence-এর সেরা মিশেল | দ্রুত | বেশির ভাগ production কাজ |\n| Opus | দীর্ঘ-চলা agentic coding, knowledge work | মাঝারি | কঠিন, বহু-ধাপ, ভুলের দাম বেশি |\n\nনিয়ম: **tier বাছো কাজ দিয়ে, নাম দিয়ে নয়; নিজের eval দিয়ে যাচাই করো।**\n\n## Thinking, effort, fast mode\n\n| ধারণা | কী | কীভাবে |\n|---|---|---|\n| Manual extended thinking | `thinking: {\"type\":\"enabled\",\"budget_tokens\":N}` | নতুন model-এ 400 (Opus 4.7+) |\n| Adaptive thinking | model নিজে ঠিক করে ভাববে কি না | `thinking: {\"type\":\"adaptive\"}` বা field বাদ |\n| Effort | নরম নির্দেশনা: `low`/`medium`/`high`/`xhigh`/`max` | `output_config: {\"effort\": ...}` |\n| Fast mode | একই model, ২.৫x পর্যন্ত output গতি, premium দাম | `speed: \"fast\"`; `usage.speed` দেখো |\n\n- Effort **soft guidance**, কঠোর token budget নয়। কম ভাবাতে **আগে effort কমাও**, তারপর prompt।\n- Thinking token **output হিসেবে বিল**; `max_tokens` thinking + উত্তর মিলিয়ে কঠিন সীমা। `stop_reason: \"max_tokens\"` এলে `max_tokens` বাড়াও বা effort কমাও।\n- Fast mode: TTFT নয়, OTPS বাড়ায়; Batch-এ চলে না; সীমিত model-এ; আলাদা rate limit (429); speed বদলালে cache মিস।\n- Effort বদলালেও cache ভাঙতে পারে; mid-conversation-এর জন্য per-message effort (beta) আছে।\n\n## Pinning ও breaking changes\n\n- Model ID = pinned snapshot; 4.6+ dateless ID evergreen নয়। প্রতিটা ID-র নিজস্ব retirement তারিখ।\n- Serving infrastructure বদলালে weights স্থির থাকলেও সামান্য আচরণ-পার্থক্য সম্ভব।\n- আপগ্রেড চেকলিস্ট: sampling param (`temperature`/`top_p`/`top_k`) সরাও; `budget_tokens` সরাও; prefill সরাও; tool_choice নিয়ম দেখো; content block `type` দিয়ে বাছো; tokenizer-এর ফলে `count_tokens` আবার চালাও (docs: Opus 4.7 থেকে প্রায় ১x–১.৩৫x token); effort sweep; eval।\n\n## usage ও cost\n\n| Field | অর্থ |\n|---|---|\n| `input_tokens` | শেষ breakpoint-এর **পরের** input |\n| `cache_creation_input_tokens` | cache-এ লেখা |\n| `cache_read_input_tokens` | cache থেকে পড়া |\n| `output_tokens` | থিঙ্কিং সহ মোট output (বিলের সংখ্যা) |\n\n**মোট input = read + creation + input_tokens**। cache দুটো `0` হলে caching হয়নি।\n\n## Caching সংখ্যা (docs)\n\n| বিষয় | মান |\n|---|---|\n| ক্রম | tools → system → messages |\n| Breakpoint সীমা | explicit সর্বোচ্চ ৪টা; automatic একটা slot নেয় |\n| Lookback | breakpoint থেকে পেছনে ২০ block |\n| TTL | ৫ মিনিট (ডিফল্ট, ব্যবহারে নবায়ন) / ১ ঘণ্টা (`\"ttl\":\"1h\"`) |\n| Write | ৫ মিনিট: ১.২৫x; ১ ঘণ্টা: ২x |\n| Read | ০.১x (Opus/Sonnet 5.5: ০.০৫x; Fable 5.1: ০.০২৫x) |\n| ন্যূনতম দৈর্ঘ্য | model-ভেদে ৫১২ / ১,০২৪ / ২,০৪৮ / ৪,০৯৬ token; কম হলে নীরবে বাদ |\n\nকী ভাঙে: tool বদলালে সব; system বদলালে system+messages; `tool_choice`/ছবি/thinking/effort/speed বদলালে messages (কিছু ক্ষেত্রে আরও)। Cache পাওয়া যায় প্রথম response শুরু হওয়ার পর।\n\n## Batch বনাম realtime\n\n| | Realtime | Batch |\n|---|---|---|\n| ছাড় | নেই | ৫০% |\n| গতি | সেকেন্ড | বেশির ভাগ ১ ঘণ্টার মধ্যে; ২৪ ঘণ্টায় expire |\n| সীমা | — | ১,০০,০০০ request / ২৫৬ MB |\n| ফল | সরাসরি | ২৯ দিন; `custom_id` দিয়ে মেলাও, ক্রম নিশ্চিত নয় |\n| চলে না | — | streaming, fast mode, `max_tokens: 0` |\n| Cache | নিশ্চিত hit সম্ভব | best-effort; ১ ঘণ্টা TTL ভাবো |\n\n## সাধারণ ফাঁদ\n\n- \"সবচেয়ে বড় model সবসময় ভালো\" ভুল। \"ছোট model সবসময় সস্তা ও যথেষ্ট\"-ও ভুল।\n- `temperature=0` গ্যারান্টি নয়, আর নতুন model-এ পাঠানোই যায় না।\n- `input_tokens` ≠ মোট input (caching থাকলে)।\n- Breakpoint বসাও শেষ **স্থির** block-এ।\n- Fast mode = একই model; Batch-এ নেই।",
+  "flashcards": [
+    {
+      "front": "Haiku tier কোন কাজে?",
+      "back": "উচ্চ-পরিমাণ, latency-সংবেদনশীল সরল কাজে: classification, extraction, routing। সবচেয়ে দ্রুত ও সস্তা tier।"
+    },
+    {
+      "front": "Sonnet tier-এর পরিচয়?",
+      "back": "speed আর intelligence-এর সেরা মিশেল; বেশির ভাগ production কাজের default পছন্দ।"
+    },
+    {
+      "front": "Opus tier কখন?",
+      "back": "কঠিন, বহু-ধাপ, দীর্ঘ-চলা agentic coding ও knowledge work, যেখানে ভুলের দাম বেশি।"
+    },
+    {
+      "front": "Model tier বাছার তিন অক্ষ?",
+      "back": "quality, latency, cost। তিনটা একসাথে সর্বোচ্চ হয় না, আর সিদ্ধান্ত যাচাই করো নিজের eval দিয়ে।"
+    },
+    {
+      "front": "Adaptive thinking কী?",
+      "back": "model নিজে প্রতিটা request-এ ঠিক করে ভাববে কি না ও কতটা। সরল প্রশ্নে thinking block নাও থাকতে পারে।"
+    },
+    {
+      "front": "Effort কোথায় বসে, আর এর স্তর?",
+      "back": "`output_config.effort`, `thinking`-এর ভেতরে নয়। স্তর: low, medium, high, xhigh, max।"
+    },
+    {
+      "front": "Effort কি কঠোর token budget?",
+      "back": "না। এটা নরম নির্দেশনা (behavioral signal)। কম ভাবাতে আগে effort কমাও, তারপর prompt।"
+    },
+    {
+      "front": "নতুন model-এ `budget_tokens` দিলে?",
+      "back": "400 error (docs: Opus 4.7 ও পরবর্তী)। adaptive thinking + effort ব্যবহার করো।"
+    },
+    {
+      "front": "Thinking token কীভাবে বিল হয়?",
+      "back": "output token হিসেবে। দেখা সারাংশ আসল thinking-এর চেয়ে ছোট হতে পারে, বিল আসল অনুযায়ী। `output_tokens_details.thinking_tokens` দেখো।"
+    },
+    {
+      "front": "উত্তর `max_tokens`-এ কেটে গেলে দুটো প্রতিকার?",
+      "back": "`max_tokens` বাড়াও (যদি ভাবনা দরকার) অথবা effort কমাও (যদি অতিরিক্ত ভাবছিল)।"
+    },
+    {
+      "front": "Fast mode কী বদলায়?",
+      "back": "একই model, দ্রুততর inference: ২.৫x পর্যন্ত output token/সেকেন্ড, premium দামে। TTFT-এর উন্নতি এর মূল লক্ষ্য নয়; intelligence বদলায় না।"
+    },
+    {
+      "front": "Fast mode কোথায় চলে না?",
+      "back": "Batch API-তে; সব model-এও নেই। সমর্থনহীন model বা সীমা পেরোলে error (429/529)।"
+    },
+    {
+      "front": "Dateless model ID (4.6+) কি evergreen?",
+      "back": "না। এটা নির্দিষ্ট pinned snapshot; আপডেট নতুন ID-তে আসে। প্রতিটা ID-র নিজস্ব retirement তারিখ।"
+    },
+    {
+      "front": "নতুন model-এ sampling parameter?",
+      "back": "`temperature`/`top_p`/`top_k` পাঠালে (non-default) error; prompt দিয়ে আচরণ ঠিক করো। `temperature=0` আগেও হুবহু একই output-এর গ্যারান্টি ছিল না।"
+    },
+    {
+      "front": "Prefill (assistant-এ শেষ হওয়া messages) নতুন Opus-এ?",
+      "back": "Opus 4.6 ও পরবর্তীতে 400 error; বদলে structured outputs বা system prompt।"
+    },
+    {
+      "front": "Tokenizer বদলালে কী করবে?",
+      "back": "`count_tokens` আবার চালাও, `max_tokens`-এ বাড়তি জায়গা রাখো, client-side token আন্দাজ কোড পুনর্পরীক্ষা করো (docs: ১x–১.৩৫x পর্যন্ত বেশি token)।"
+    },
+    {
+      "front": "মোট input token কীভাবে বের করবে (caching চালু)?",
+      "back": "`cache_read_input_tokens + cache_creation_input_tokens + input_tokens`। `input_tokens` শুধু শেষ breakpoint-এর পরের অংশ।"
+    },
+    {
+      "front": "Cache-এর দুটো field `0` হলে?",
+      "back": "caching হয়নি: প্রায়ই prompt ন্যূনতম দৈর্ঘ্যের চেয়ে ছোট (কোনো error আসে না) বা breakpoint ভুল জায়গায়।"
+    },
+    {
+      "front": "Cache-এর prefix ক্রম ও breakpoint-এর জায়গা?",
+      "back": "tools → system → messages। breakpoint বসাও শেষ **স্থির** block-এ, প্রতিবার-বদলানো block-এ নয়।"
+    },
+    {
+      "front": "Cache TTL ও দাম?",
+      "back": "৫ মিনিট (ডিফল্ট, ব্যবহারে নবায়ন; write ১.২৫x) বা ১ ঘণ্টা (`ttl:\"1h\"`; write ২x); read ০.১x (কিছু model-এ ০.০৫x)।"
+    },
+    {
+      "front": "কোন পরিবর্তনে cache ভাঙে?",
+      "back": "tool definition বদলালে সব; system বদলালে system+messages; tool_choice, ছবি, thinking, effort বা speed বদলালে messages cache। পরিবর্তন যত আগে, ক্ষতি তত বেশি।"
+    },
+    {
+      "front": "Parallel request-এ cache hit কীভাবে পাবে?",
+      "back": "প্রথম request পাঠিয়ে তার response শুরু হওয়া পর্যন্ত অপেক্ষা করো; তারপর বাকিগুলো। নইলে সবাই write করে।"
+    },
+    {
+      "front": "Batch API-র ছাড় ও সীমা?",
+      "back": "৫০% ছাড়; ১,০০,০০০ request বা ২৫৬ MB; ২৪ ঘণ্টায় expire; ফল ২৯ দিন। streaming ও fast mode চলে না; ফল `custom_id` দিয়ে মেলাও।"
+    }
+  ],
+  "mcqs": [
+    {
+      "question": "ChaiCart প্রতিদিন কয়েক লক্ষ incoming message-কে পাঁচটা category-তে ভাগ করে। প্রতিটা কাজ সরল, উত্তর এক শব্দ, আর latency ও খরচ গুরুত্বপূর্ণ। কোন পদ্ধতি সবচেয়ে ভালো?",
+      "options": [
+        "সবচেয়ে ছোট ও দ্রুত tier (Haiku-ধরনের) দিয়ে শুরু করে নিজের eval-এ মান যাচাই করা",
+        "সবচেয়ে শক্তিশালী tier ব্যবহার করা, কারণ এতে ভুল কম হবে",
+        "সবচেয়ে শক্তিশালী tier-এ সর্বোচ্চ effort দেওয়া",
+        "প্রতিটা message দুইবার দুই আলাদা model-এ চালানো"
+      ],
+      "answerIndexes": [0],
+      "explanation": "সরল, বিপুল-পরিমাণ classification হলো ছোট ও দ্রুত tier-এর আদর্শ ক্ষেত্র। eval দিয়ে মান যাচাই করাই সঠিক পদ্ধতি। সবচেয়ে বড় model বা সর্বোচ্চ effort খরচ ও latency অকারণে বাড়ায়; দুইবার চালানো খরচ দ্বিগুণ করে অথচ সমস্যার সমাধান নয়।",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs"
+    },
+    {
+      "question": "Rafi নতুন Opus model-এ আপগ্রেড করে আগের request-এ শুধু model id বদলাল। request-এ `temperature=0.2` আর `thinking: {\"type\":\"enabled\",\"budget_tokens\":8000}` ছিল। কী ঘটবে ও সঠিক সমাধান কী?",
+      "options": [
+        "সফল হবে, শুধু temperature উপেক্ষিত হবে; কিছু করার দরকার নেই",
+        "শুধু 429 rate limit আসবে; কিছুক্ষণ পর আবার চেষ্টা করলেই হবে",
+        "সফল হবে, কিন্তু উত্তর ধীর হবে; fast mode চালু করলে ঠিক হবে",
+        "400 error আসবে, কারণ নতুন model non-default sampling parameter ও manual budget_tokens প্রত্যাখ্যান করে; এগুলো সরিয়ে adaptive thinking ও effort ব্যবহার করতে হবে"
+      ],
+      "answerIndexes": [3],
+      "explanation": "docs অনুযায়ী Opus 4.7 ও পরবর্তী model-এ manual `budget_tokens` আর non-default `temperature`/`top_p`/`top_k` 400 error দেয়। সঠিক পথ adaptive thinking + `output_config.effort` এবং prompt দিয়ে আচরণ নিয়ন্ত্রণ। 429 হলো rate limit, এখানে প্রাসঙ্গিক নয়; fast mode গতির বিষয়, validation error ঠিক করে না।",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs"
+    },
+    {
+      "question": "Chai-Bot লাইভ চ্যাটে লম্বা উত্তর দেয়। গ্রাহকরা উত্তরের স্ট্রিমিং ধীর মনে করছে, কিন্তু উত্তরের মানে সন্তুষ্ট। দল এমন একটা সমাধান চায় যাতে model-এর বুদ্ধি না বদলে output দ্রুত আসে এবং বাড়তি দাম মেনে নিতে রাজি। কোনটা মানানসই?",
+      "options": [
+        "Haiku-ধরনের tier-এ নেমে যাওয়া",
+        "Batch API-তে পাঠানো",
+        "একই model-এ `speed: \"fast\"` ব্যবহার করা (যদি সেই model সমর্থন করে)",
+        "effort `max`-এ তোলা"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Fast mode একই model-কে দ্রুততর inference কনফিগারেশনে চালায়: বুদ্ধি বদলায় না, output token/সেকেন্ড বাড়ে, আর premium দাম লাগে। ছোট tier-এ নামলে মান বদলাতে পারে; Batch ধীর ও streaming-সাপোর্টহীন; `max` effort বেশি ভাবে, ফলে সাধারণত ধীর ও ব্যয়বহুল।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "Rafi দেখল একটা টাস্কে model প্রায়ই উত্তরের মাঝপথে `stop_reason: \"max_tokens\"` দিয়ে থামছে, আর thinking-এ বেশি token যাচ্ছে। কোন দুটো পদক্ষেপ যুক্তিসঙ্গত? Select TWO.",
+      "options": [
+        "`temperature` কমানো",
+        "উত্তরের জন্য জায়গা বাড়াতে `max_tokens` বাড়ানো (যদি ভাবনা প্রয়োজন হয়)",
+        "`cache_control` যোগ করা",
+        "`output_config.effort` কমানো (যদি অতিরিক্ত ভাবছিল)"
+      ],
+      "answerIndexes": [1, 3],
+      "explanation": "Thinking ও উত্তর দুটোই `max_tokens`-এর মধ্যে গোনা হয়। ভাবনা দরকার হলে `max_tokens` বাড়াও; অতিরিক্ত ভাবলে effort কমাও। `temperature` thinking-এর দৈর্ঘ্যের নিয়ন্ত্রক নয় (আর নতুন model-এ পাঠানোই যায় না); caching খরচ কমায় কিন্তু output কাটা ঠেকায় না।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "একটা টিম একটা পুরোনো alias দিয়ে model ব্যবহার করছিল (`claude-sonnet-4-5` ধরনের), আর এখন dateless ID `claude-sonnet-4-6`-এ যাচ্ছে। docs-এর model ID নীতি অনুযায়ী কোন বিবৃতি সঠিক?",
+      "options": [
+        "4.6-generation-এর dateless ID একটা নির্দিষ্ট pinned snapshot; নতুন সংস্করণ নতুন ID-তে আসে",
+        "dateless ID সবসময় সর্বশেষ সংস্করণে স্বয়ংক্রিয়ভাবে সরে যায়",
+        "pinned ID-র weights বা serving অংশ কখনোই বদলায় না, তাই eval দরকার নেই",
+        "প্রতিটা model ID-র retirement তারিখ একই"
+      ],
+      "answerIndexes": [0],
+      "explanation": "docs স্পষ্ট বলে 4.6-generation থেকে dateless ID হলো সেই নির্দিষ্ট snapshot, evergreen পয়েন্টার নয়। weights স্থির থাকলেও router, safety classifier বা sampling logic-এর মতো serving অংশ বদলাতে পারে, তাই eval জরুরি। প্রতিটা ID-র নিজস্ব deprecation/retirement সময়সূচি আছে।",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs"
+    },
+    {
+      "question": "Chai-Bot প্রতি request-এ ৮,০০০ token-এর স্থির policy ও tool definition পাঠায়। দল caching চালু করতে চায়। কোন বিন্যাস সঠিক?",
+      "options": [
+        "`cache_control` বসাবে সর্বশেষ user message-এ, কারণ ওটাই সবচেয়ে নতুন",
+        "`cache_control` বসাবে প্রতিটা block-এ, যত বেশি তত ভালো (সীমা নেই)",
+        "`cache_control` বসাবে স্থির policy block-এর শেষে, আর প্রতিবার-বদলানো user message তার পরে",
+        "caching-এর জন্য `messages`-এর আগে `system`-এর বদলে tools পরে রাখবে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "Breakpoint বসাতে হয় শেষ **স্থির** block-এ, প্রতিবার-বদলানো block-এ নয় (নইলে কখনো hit হবে না)। explicit breakpoint সর্বোচ্চ ৪টা। prefix-এর ক্রম tools → system → messages, তাই স্থির জিনিস আগে থাকা উচিত।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একটা request-এর `usage`-এ আছে: `input_tokens: 400`, `cache_read_input_tokens: 5000`, `cache_creation_input_tokens: 600`। এই request-এর মোট input token কত, আর কোনটা সঠিক ব্যাখ্যা? Select TWO.",
+      "options": [
+        "মোট input হলো ৬,০০০",
+        "মোট input হলো ৪০০, কারণ `input_tokens` সবসময় পুরো input",
+        "৫,০০০ token cache থেকে সস্তা হারে পড়া হয়েছে",
+        "৬০০ token cache থেকে পড়া হয়েছে এবং ৫,০০০ নতুন লেখা হয়েছে"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "মোট input = read + creation + `input_tokens` = ৫,০০০ + ৬০০ + ৪০০ = ৬,০০০। `input_tokens` caching চালু থাকলে শুধু শেষ breakpoint-এর পরের অংশ। `cache_read_input_tokens` = cache থেকে পড়া (সস্তা), `cache_creation_input_tokens` = নতুন লেখা। যে অপশন বলে ৬০০ পড়া ও ৫,০০০ লেখা হয়েছে, সেটা read আর creation উল্টো করেছে।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "Chai-Bot-এর cache hit আগে ভালো ছিল। Rafi policy block-এর একদম শুরুতে একটা `Generated at: <timestamp>` লাইন যোগ করার পর `cache_read_input_tokens` প্রায় সবসময় `0`। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "cache TTL ৫ সেকেন্ডে নেমে গেছে",
+        "batch API স্বয়ংক্রিয়ভাবে চালু হয়েছে",
+        "caching শুধু ইংরেজি টেক্সটে কাজ করে",
+        "প্রতিবার-বদলানো timestamp স্থির prefix-এর ভেতরে ঢুকে exact-match ভেঙে দিচ্ছে"
+      ],
+      "answerIndexes": [3],
+      "explanation": "Cache hit-এর জন্য breakpoint পর্যন্ত prefix হুবহু এক হতে হয়। স্থির অংশে প্রতিবার-বদলানো timestamp বসালে প্রতিবার ভিন্ন prefix হয়, তাই কখনো hit হয় না। বদলানো তথ্য breakpoint-এর পরে রাখতে হবে। TTL ডিফল্ট ৫ মিনিট; caching ভাষা-নির্ভর নয়।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "ChaiCart প্রতি রাতে ৫০,০০০ পুরোনো review-এর সারাংশ বানায়। ফল পরদিন সকাল পর্যন্ত লাগবে না। সবচেয়ে সাশ্রয়ী উপায় কোনটা?",
+      "options": [
+        "Realtime Messages API-তে সবগুলো একসাথে parallel পাঠানো",
+        "Message Batches API ব্যবহার করা",
+        "প্রতিটা request-এ fast mode চালু করা",
+        "Streaming চালু করে realtime-এ পাঠানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "অ-জরুরি, বিপুল কাজের জন্য Batch API-তে ৫০% ছাড়, আর ঘণ্টা-স্কেলের দেরি এখানে সমস্যা নয়। fast mode ও streaming খরচ বাড়ায়/কমায় না (আর Batch-এ চলেই না); realtime-এ পুরো দাম লাগে।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একটা batch জমা দেওয়ার পর `processing_status` `ended`, কিন্তু ফল ইনপুটের ক্রমে নেই। ডেভেলপার কী বুঝবে ও কী করবে?",
+      "options": [
+        "এটা বাগ; Batch API ক্রম বজায় রাখার প্রতিশ্রুতি দেয়",
+        "ফল একবার পড়লে মুছে যায়, তাই তখনই কপি করবে",
+        "ক্রম নিশ্চিত নয়; প্রতিটা ফল `custom_id` দিয়ে মেলাতে হবে",
+        "সব ফল `succeeded` ধরে নেওয়া নিরাপদ"
+      ],
+      "answerIndexes": [2],
+      "explanation": "docs অনুযায়ী batch-এর request স্বাধীনভাবে ও যেকোনো ক্রমে প্রক্রিয়া হয়, তাই ফল `custom_id` দিয়ে মেলাও। ফল ২৯ দিন পাওয়া যায়, আর প্রতিটা result `succeeded`, `errored`, `canceled` বা `expired` হতে পারে, তাই সব সফল ধরে নেওয়া ভুল।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "কোন দুটো বিবৃতি Message Batches API সম্পর্কে সঠিক? Select TWO.",
+      "options": [
+        "সব ব্যবহারে ৫০% ছাড় পাওয়া যায়",
+        "`stream: true` ও fast mode (`speed`) batch request-এ ব্যবহার করা যায়",
+        "বেশির ভাগ batch ১ ঘণ্টার মধ্যে শেষ হয়; ২৪ ঘণ্টায় শেষ না হলে মেয়াদোত্তীর্ণ হয়",
+        "একটা batch-এ অনির্দিষ্ট সংখ্যক request দেওয়া যায়"
+      ],
+      "answerIndexes": [0, 2],
+      "explanation": "docs: ৫০% ছাড়; বেশির ভাগ ১ ঘণ্টার মধ্যে, ২৪ ঘণ্টায় expire। `stream` ও `speed` batch-এ সমর্থিত নয়; সীমা ১,০০,০০০ request বা ২৫৬ MB।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একটা tool-use agent প্রতিটা turn-এ একই কথোপকথনে চলে, কিন্তু মাঝপথে কোড `output_config.effort` `medium` থেকে `low`-তে বদলায় (top-level)। আগের turn-এ messages cache ছিল। কী আশা করা সঠিক?",
+      "options": [
+        "কিছুই বদলাবে না, effort cache-কে প্রভাবিত করে না",
+        "cache স্বয়ংক্রিয়ভাবে ১ ঘণ্টার TTL-এ উন্নীত হবে",
+        "docs অনুযায়ী effort বদলালে cache breakpoint অবৈধ হতে পারে; তাই একটা আলাপে একই effort রাখা বা per-message effort (beta) ব্যবহার করা ভালো",
+        "শুধু tool definition-এর cache ভাঙবে, messages-এর নয়"
+      ],
+      "answerIndexes": [2],
+      "explanation": "docs-এর উদাহরণ দেখায় effort বদলালে (যেমন `medium` → `low`) messages cache মিস হয়: `cache_read=0` আর আবার পুরো `cache_creation`। প্রস্তাবনা: প্রতিটা আলাপে একটা thinking কনফিগারেশন ও effort রাখো, বা cache সংরক্ষণকারী per-message effort ব্যবহার করো (beta)।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    },
+    {
+      "question": "একজন ডেভেলপার বলছে 'determinism-এর জন্য নতুন Claude model-এ `temperature=0` দিলেই হুবহু একই উত্তর পাব'। কোনটা সবচেয়ে সঠিক প্রতিক্রিয়া?",
+      "options": [
+        "ভুল; নতুন model-এ non-default sampling parameter 400 দেয়, আর `temperature=0` আগেও হুবহু একই output-এর গ্যারান্টি ছিল না; prompt স্পষ্ট করো ও output validate করো",
+        "সঠিক; `temperature=0` সবসময় একই উত্তরের নিশ্চয়তা দেয়",
+        "সঠিক, তবে শুধু `top_k`-ও দিতে হবে",
+        "ভুল, কারণ `temperature` কেবল batch-এ কাজ করে"
+      ],
+      "answerIndexes": [0],
+      "explanation": "docs-এর মাইগ্রেশন নির্দেশিকা: নতুন Opus model-এ `temperature`, `top_p`, `top_k` omit করতে হয় (non-default মান error), আর `temperature=0` আগেও identical output-এর নিশ্চয়তা দেয়নি। বাস্তব সমাধান: স্পষ্ট prompt, structured output/validation। অন্য অপশনগুলো কোনোটাই docs-সমর্থিত নয়।",
+      "domain": 5,
+      "skill": "LLM Fundamentals"
+    },
+    {
+      "question": "একটা কোডবেস আপগ্রেডের পর `r.content[0].text` ধরে উত্তর পড়ত, আর এখন কখনো কখনো `AttributeError` পাচ্ছে। নতুন model সবসময় (বা প্রায়ই) response-এর শুরুতে `thinking` block দেয়। কোন পদ্ধতি ঠিক?",
+      "options": [
+        "thinking বন্ধ করার চেষ্টা করা, কারণ নতুন model-এ সবসময় সম্ভব",
+        "content block-গুলো `type` দিয়ে বাছা (`block.type == \"text\"`) এবং tool-use হলে thinking block অপরিবর্তিত ফেরত পাঠানো",
+        "`content[1]` ধরা",
+        "`max_tokens` বাড়ানো"
+      ],
+      "answerIndexes": [1],
+      "explanation": "নতুন model-এ response `thinking` block দিয়ে শুরু হতে পারে (আর কোনো turn-এ নাও থাকতে পারে), তাই index ধরে নেওয়া ভঙ্গুর। সঠিক কাজ `type` দিয়ে block বাছা। docs অনুযায়ী Opus 5.5-এ thinking বন্ধ করা যায় না (400), আর `content[1]` ধরলেও একই ভঙ্গুরতা থাকে।",
+      "domain": 5,
+      "skill": "Model Selection and Tradeoffs"
+    },
+    {
+      "question": "একটা model-এ আপগ্রেড করার পর একই বাংলা টেক্সটের জন্য বিল আনুমানিক ২০% বেড়েছে, যদিও traffic আর prompt একই। docs-এর কোন তথ্য এটা ব্যাখ্যা করতে পারে ও কী করা উচিত?",
+      "options": [
+        "সব model-এর tokenizer একই, তাই এটা অসম্ভব",
+        "prompt caching স্বয়ংক্রিয়ভাবে বন্ধ হয়ে গেছে",
+        "নতুন tokenizer (docs: Opus 4.7 থেকে) একই টেক্সটে প্রায় ১x–১.৩৫x token ব্যবহার করতে পারে; `count_tokens` আবার চালিয়ে cost model ও `max_tokens` হালনাগাদ করো",
+        "fast mode চুপিসারে চালু হয়েছে"
+      ],
+      "answerIndexes": [2],
+      "explanation": "docs-এ বলা আছে Opus 4.7-এ নতুন tokenizer এসেছে, যা সংস্করণ-পূর্ববর্তীর চেয়ে প্রায় ১x থেকে ১.৩৫x token ব্যবহার করতে পারে (বিষয়বস্তুভেদে)। তাই আপগ্রেডের পর token counting endpoint দিয়ে আবার মাপা ও `max_tokens` বাড়ানো সঠিক। বাকি অপশনগুলো প্রমাণহীন অনুমান; fast mode নিজে opt-in।",
+      "domain": 5,
+      "skill": "Cost and Token Management"
+    }
+  ]
+}
