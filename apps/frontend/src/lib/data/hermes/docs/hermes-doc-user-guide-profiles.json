@@ -1,0 +1,210 @@
+{
+  "contentId": "hermes-doc-user-guide-profiles",
+  "title": "Profiles",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/profiles",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এ আলাদা আলাদা profile বানানো, clone করা ও চালানো বুঝবে এবং alias, HERMES_HOME, bot token, sandbox-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: এক বাড়িতে আলাদা আলাদা ঘর\n\nএকটা বাড়িতে তুমি, তোমার ভাই আর বোন থাকো। প্রত্যেকের নিজের ঘর: নিজের বই, নিজের খেলনা, নিজের তালা-দেওয়া ড্রয়ার। বাড়ি একটাই, কিন্তু কেউ কারও জিনিস গুলিয়ে ফেলে না।\n\nHermes-এর **profile** হলো এমন একটা ঘর। প্রতিটা profile `~/.hermes/profiles/`-এর নিচে আলাদা Hermes home: নিজের config, key, memory, session, skill, cron job ও state। একজন `coder`, একজন `writer`, প্রত্যেকে আলাদা model, আলাদা ব্যক্তিত্ব, আলাদা স্মৃতি নিয়ে।\n\n**profile না থাকলে কী সমস্যা?** একটাই Hermes ঘর থাকলে কাজের আর মজার জিনিস, অফিসের আর ব্যক্তিগত চাবি সব এক ড্রয়ারে মিশে যেত। একটা কাজের Telegram bot-এর স্মৃতি ঢুকে পড়ত তোমার কোডিং সহকারীর মাথায়।\n\nএকটা ফোল্ডার তখনই profile ধরা হয় যখন তাতে অন্তত একটা identity ফাইল থাকে: `config.yaml`, `.env`, `SOUL.md`, `profile.yaml`, `auth.json` বা `state.db`। ফাঁকা ফোল্ডার উপেক্ষিত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Profile\nআলাদা ঘর, আলাদা পরিচয়। নিজের সেটিং, চাবি, স্মৃতি সব নিয়ে।\n\n### ২) Alias (ডাকনাম)\nলম্বা কমান্ডের ছোট নাম। যেমন \"মামা\" মানে \"মায়ের ভাই\"। এখানে `coder` মানে `hermes -p coder`।\n\n### ৩) HERMES_HOME\nএকটা **environment variable** (কমান্ডের পাশে রাখা ছোট নোট)। এটা Hermes-কে বলে \"তোমার ঘর কোথায়\"। profile আলাদা মানে `HERMES_HOME` আলাদা।\n\n### ৪) Config, `.env`, `SOUL.md`\n`config.yaml` = সেটিংয়ের খাতা (secret ছাড়া)। `.env` = গোপন চাবির খাতা। `SOUL.md` = agent-এর স্বভাব আর পরিচয়ের বর্ণনা।\n\n### ৫) Gateway ও bot token\n**Gateway** = Hermes-কে Telegram/Discord-এর মতো chat app-এর সঙ্গে জোড়া লাগানো পোস্ট অফিস। **Bot token** = ওই app-এর কাছে \"আমিই এই bot\" প্রমাণ করার গোপন চাবি।\n\n### ৬) Sandbox\nবালির বাক্স: ভেতরে যা খুশি ঘটুক, বাইরে ছড়ায় না। (নিচে দেখবে profile এমন নয়।)\n\n### ৭) Clone\nকপি করা। একটা profile থেকে আরেকটা বানানো, যেমন ছবির জেরক্স।\n\n### ৮) Subagent\nHermes নিজে কাজ ভাগ করতে যে ছোট সহকারী বানায়। এর জন্য আলাদা ঘর (profile) লাগে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## শব্দগুলো গুলিয়ো না\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Profile** | স্থায়ী ঘর (config ও data) | ঘরটা নিজে |\n| **Agent** | ওই profile ব্যবহার করে চলমান সহকারী | ঘরে থাকা মানুষ |\n| **Bot Mode bot** | desktop Bot Mode তালিকায় দেখানো profile (title, avatar, pinned chat সহ)। সব profile bot নয় | ঘরের দরজায় নামফলক |\n| **Messaging bot** | Telegram/Discord/Slack-এর account, gateway দিয়ে জোড়া, bot token দিয়ে চেনা | ঘরের ফোন নম্বর |\n| **Subagent** | `delegate_task`-এর বানানো ছোট সহকারী, নতুন আলাপ নিয়ে; আলাদা profile নয় | মানুষটার সাময়িক সাহায্যকারী |\n\n## শুরু\n\n```bash\nhermes profile create coder\ncoder setup\ncoder chat\n```\n\n| কমান্ড | মানে | কখন |\n|---|---|---|\n| `hermes profile create coder` | `coder` নামে নতুন ঘর বানাও | নতুন ভূমিকা চাইলে |\n| `coder setup` | ওই ঘরের প্রথম সেটআপ (কোন AI, কোন চাবি) | ঘর বানানোর পর একবার |\n| `coder chat` | ওই ঘরের Hermes-এর সঙ্গে কথা | রোজ |\n\n`profile create` প্রতিটা profile-এর জন্য `~/.local/bin/<name>` alias বানায়, তাই `coder chat`, `coder gateway start`, `coder doctor`, `coder skills list`, `coder config set model.default anthropic/claude-sonnet-4` সব চলে। এই alias মানে `hermes -p <name>`। `-p`/`--profile=` যেকোনো জায়গায় বসানো যায়: `hermes chat -p coder -q \"hello\"`।\n\n**Sticky default:** (sticky = আটকে থাকা, মানে স্থায়ী পছন্দ।) `hermes profile use coder` দিলে সাদা `hermes` কমান্ড coder-এ চলে; ফিরতে `hermes profile use default` (অনেকটা `kubectl config use-context`, যারা Kubernetes চেনে তাদের জন্য)। প্রম্পটে `coder ❯`, banner-এ `Profile: coder` দেখা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "প্রতিটা profile আলাদা ঘর: নিজের HERMES_HOME, নিজের গোপন key, নিজের gateway।",
+        "nodes": [
+          {
+            "id": "hermes",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "coder",
+            "kind": "server",
+            "label": "profile: coder",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "writer",
+            "kind": "server",
+            "label": "profile: writer",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "cd",
+            "kind": "database",
+            "label": "coder data",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "wd",
+            "kind": "database",
+            "label": "writer data",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "hermes",
+            "to": "coder",
+            "label": "coder chat"
+          },
+          {
+            "from": "hermes",
+            "to": "writer",
+            "label": "writer chat"
+          },
+          {
+            "from": "coder",
+            "to": "cd",
+            "label": "HERMES_HOME"
+          },
+          {
+            "from": "writer",
+            "to": "wd",
+            "label": "HERMES_HOME"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Profile বানানোর ধরন\n\n| রূপ | কী কপি হয় | কখন লাগে |\n|---|---|---|\n| ফাঁকা: `hermes profile create mybot` | শুধু bundled skill (Hermes-এর সঙ্গে আসা skill); তারপর `mybot setup` | একদম নতুন শুরু |\n| `--clone` | `config.yaml`, `.env`, `SOUL.md`, skills, `memories/MEMORY.md`, `memories/USER.md`, memory provider config, `plugins/`। Session, `state.db`, cron job খালি শুরু | একই সেটিং নিয়ে নতুন ঘর |\n| `--clone-all` | প্রায় সবই (API key, সব memory, skill, plugin)। বাদ: session history, `state.db`, `backups/`, `checkpoints/`। Cron job কখনও clone হয় না (দ্বিগুণ চলা এড়াতে) | পুরো ছবি তুলে নিতে |\n| `--clone-from <source>` | কোন profile থেকে কপি; config+skills+SOUL clone ধরে নেয় | নির্দিষ্ট ঘর থেকে কপি |\n| `--sync-imports` | `hermes import-agent`-এর manifest নেয় (এক-মুখী, ঐচ্ছিক) | অন্য agent থেকে আনা তথ্য চাইলে |\n| `--clone-channels` | messaging channel সেটিংও কপি (ডিফল্টে সব clone এগুলো বাদ দেয়) | জেনে-বুঝে একই channel চাইলে |\n\nআরও: `--description \"<role>\"` দিয়ে ভূমিকা লেখা যায় (kanban routing-এ কাজে লাগে, মানে কাজ কাকে দেওয়া হবে ঠিক করতে); পরে `hermes profile describe`। দ্রুত সেটআপে নতুন profile-এর ভেতর `hermes setup --portal`।\n\n**Channel কেন বাদ?** একটা bot token একটা profile-এরই। দুজন একই token ব্যবহার করলে long-polling (বারবার \"নতুন বার্তা আছে?\" জিজ্ঞেস করা) নিয়ে ঝগড়া করে, যেমন দুজন একই ফোন নম্বরে কল ধরতে চাইছে। তাই bot token, allowlist (কারা কথা বলতে পারবে তার তালিকা: `TELEGRAM_BOT_TOKEN`, `DISCORD_ALLOWED_USERS`...), `API_SERVER_KEY`, `WEBHOOK_SECRET` ইত্যাদি ডিফল্টে clone হয় না। Provider key, model, memory সেটিং, skill ও SOUL থাকে।\n\n**OAuth login:** (OAuth = \"Google দিয়ে login\"-এর মতো অনুমতি-ব্যবস্থা।) Anthropic (Claude Pro/Max), OpenAI Codex, xAI-এর refresh token একবার-ব্যবহারযোগ্য (একই চাবি দুই জায়গায় চললে একটা বাতিল হয়ে যায়), তাই `--clone-all`-এ এগুলো কপি হয় না; নিজস্ব login-এর জন্য `hermes -p <name> auth add <provider>`। Static API key কপি হয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "একই profile-এ দুটো agent নয়",
+      "markdown": "দুই process একই profile ধরলে দুজনেই memory-তে লেখে আর শুরুতে একে অপরের লেখা পড়ে, গোলমাল বাধে। (দুজন একই খাতায় একসঙ্গে লিখলে যেমন হয়।) শেয়ার করা memory চাইলে external memory provider ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Profile মানে sandbox নয়\n\nProfile শুধু **Hermes-এর state** (config, স্মৃতি, সেশন) আলাদা করে। agent-কে বন্দী করে না। ঘরের দরজা আলাদা, কিন্তু বাড়ির সদর দরজা খোলা। `local` backend-এ (নিজের কম্পিউটারে কমান্ড চালানো) agent তোমার user-এর পুরো filesystem (সব ফোল্ডার-ফাইল) পায়। কোথা থেকে কমান্ড শুরু হবে তা ঠিক করে `terminal.cwd` (cwd = current working directory):\n\n```yaml\nterminal:\n  backend: local\n  cwd: /absolute/path/to/project   # \".\" মানে launch করা ফোল্ডার, profile ফোল্ডার নয়\n```\n\n`SOUL.md` কোনো সীমানা জোর করে না, আর বদল শুধু নতুন session-এ কাজ করে। মডেলকে তার directory জিজ্ঞেস করা isolation-এর পরীক্ষা নয় (সে ভুল উত্তরও দিতে পারে)। সত্যিকারের আলাদা বদ্ধ ঘর চাইলে Docker backend লাগে।\n\n## Gateway, config ও dashboard\n\n- প্রতিটা profile নিজের gateway চালায়: `coder gateway start`; নিজের `.env`, আলাদা bot token। একই token অন্য profile নিলে token lock আটকায় (Telegram, Discord, Slack, WhatsApp, Signal)।\n- `coder gateway install` সার্ভিস বানায় `hermes-gateway-coder` (systemd/launchd, মানে কম্পিউটার চালু হলে নিজে চালু হওয়া ব্যবস্থা)। Docker image-এ s6-overlay প্রতিটা profile-এর gateway তদারক করে।\n- প্রতি profile-এ আলাদা: `config.yaml`, `.env`, `SOUL.md`। উদাহরণ: `echo \"You are a focused coding assistant.\" > ~/.hermes/profiles/coder/SOUL.md`।\n- Dashboard (browser-এর নিয়ন্ত্রণ-পাতা) পুরো machine-এর; sidebar switcher দিয়ে যেকোনো profile সামলায়, `coder dashboard` coder আগে থেকে বাছে।\n- `hermes update` একবার code টেনে সব profile-এ bundled skill sync করে (তোমার বদলানো skill মুছে না)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা profile-এর জীবনচক্র।",
+        "steps": [
+          {
+            "title": "তৈরি",
+            "body": "`hermes profile create coder`: ফোল্ডার, alias, (docker-এ) gateway service।"
+          },
+          {
+            "title": "সাজানো",
+            "body": "`coder setup`, `coder config set ...`, SOUL.md লেখা।"
+          },
+          {
+            "title": "ব্যবহার",
+            "body": "`coder chat`, `coder gateway start`, অথবা `hermes profile use coder`।"
+          },
+          {
+            "title": "ভাগ/বন্ধ",
+            "body": "`hermes profile export coder` (key বাদ), অথবা `hermes profile delete coder`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ব্যবস্থাপনা, বন্টন ও ভেতরের কৌশল\n\n| কমান্ড | কাজ |\n|---|---|\n| `hermes profile list` / `show coder` | সব ঘর দেখা / একটার বিবরণ |\n| `rename coder dev-bot` | নাম বদল |\n| `export coder` (→ `coder.tar.gz`, key বাদ) / `import coder.tar.gz` | প্যাকেট করে বের করা / ঢোকানো |\n| `migrate-identity`/`purge-identity` | rename/delete আটকালে পুনঃচেষ্টা |\n| chat-এ `/export`, `/import` | চলতি আলাপ থেকেই |\n\nDefault profile-এর display name বদলাতে `hermes profile rename default Harumesu` (শুধু উপস্থাপনা; ভেতরের ID `default`)।\n\n**Delete:** `hermes profile delete coder` গেটওয়ে থামায়, service ও alias সরায়, নাম টাইপ করালে সব data মোছে (`--yes` দিয়ে প্রশ্ন এড়ানো)। Default profile (`~/.hermes`) মোছা যায় না; তার জন্য `hermes uninstall`।\n\n**Tab completion:** (Tab চাপলে কমান্ডের নাম নিজে সম্পূর্ণ হওয়া।) `eval \"$(hermes completion zsh)\"` (bash-এ `bash`) `~/.zshrc`-এ। (`~/.zshrc` হলো shell চালু হওয়ার সময় পড়া সেটিংয়ের ফাইল।)\n\n**ভেতরে কীভাবে:** profile-এর সীমানা `HERMES_HOME`। Wrapper `HERMES_HOME=~/.hermes/profiles/coder` বসায়; ১১৯টির বেশি ফাইল `get_hermes_home()` দিয়ে পথ বের করে। Host tool subprocess আসল OS `HOME` রাখে (যাতে CLI credential কাজ করে); `terminal.home_mode: profile` দিলে `{HERMES_HOME}/home`। Default profile মানে `~/.hermes` নিজেই, তাই পুরনো install-এ migration লাগে না।\n\n**শেয়ার:** (১) export ফাইল: skill, memory, persona, cron, plugin, setting; (২) **Distribution**: git repo (SOUL, config, skill, cron, MCP); credential, memory, session স্থানীয়ই থাকে। `hermes profile install github.com/you/research-bot --alias`, আপডেট `hermes profile update research-bot` (memory ও `.env` অক্ষত)।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "কখন একটা ফোল্ডারকে profile ধরা হয়?",
+      "options": [
+        "অন্তত একটা identity ফাইল (config.yaml, .env, SOUL.md...) থাকলে",
+        "যেকোনো ফোল্ডার হলেই",
+        "শুধু `coder` নাম হলে",
+        "ফাঁকা হলে"
+      ],
+      "answerIndex": 0,
+      "explanation": "ফাঁকা ফোল্ডার উপেক্ষিত; identity ফাইল থাকলেই ঘর।"
+    },
+    {
+      "question": "`coder chat` আসলে কী?",
+      "options": [
+        "আলাদা program",
+        "একটা skill",
+        "`hermes -p coder chat`-এর alias",
+        "একটা model"
+      ],
+      "answerIndex": 2,
+      "explanation": "alias মানে লম্বা কমান্ডের ছোট ডাকনাম।"
+    },
+    {
+      "question": "`--clone` কোনটা কপি করে না?",
+      "options": ["config.yaml", "session ও state.db", "SOUL.md", "skills"],
+      "answerIndex": 1,
+      "explanation": "session, `state.db`, cron job খালি শুরু হয়।"
+    },
+    {
+      "question": "Messaging channel সেটিং ডিফল্টে clone হয় না কেন?",
+      "options": [
+        "জায়গা কম বলে",
+        "এটা গোপন নয় বলে",
+        "Hermes ভুলে যায় বলে",
+        "একই bot token দুই profile নিলে ঝগড়া বাধে"
+      ],
+      "answerIndex": 3,
+      "explanation": "একটা token একটা profile-এর; long-polling নিয়ে সংঘাত হয়।"
+    },
+    {
+      "question": "Profile কি agent-কে sandbox করে?",
+      "options": [
+        "হ্যাঁ, সম্পূর্ণ",
+        "শুধু Windows-এ",
+        "না, শুধু Hermes-এর state আলাদা করে",
+        "শুধু Docker-এ"
+      ],
+      "answerIndex": 2,
+      "explanation": "`local` backend-এ agent পুরো filesystem পায়; ঠিক করতে `terminal.cwd` আর Docker।"
+    },
+    {
+      "question": "`hermes profile use coder` কী করে?",
+      "options": [
+        "সাদা `hermes` কমান্ডকে coder-এ চালায় (sticky default)",
+        "coder মুছে দেয়",
+        "gateway চালু করে",
+        "নতুন profile বানায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "ফিরতে `hermes profile use default`।"
+    },
+    {
+      "question": "Default profile (`~/.hermes`) কীভাবে সরানো যায়?",
+      "options": [
+        "`hermes profile delete default`",
+        "`rename`",
+        "সম্ভব নয়",
+        "`hermes uninstall`"
+      ],
+      "answerIndex": 3,
+      "explanation": "default মোছা যায় না profile delete দিয়ে; `hermes uninstall` লাগে।"
+    }
+  ],
+  "recap": [
+    "Profile = আলাদা Hermes home: নিজের config, key, memory, session, skill, cron।",
+    "`hermes profile create` একটা alias দেয়; `coder chat` মানে `hermes -p coder chat`।",
+    "`--clone` ও `--clone-all` কপি করে, তবে channel token ও OAuth login ডিফল্টে নয়।",
+    "Profile sandbox নয়; `terminal.cwd` ঠিক করে কমান্ড কোথা থেকে শুরু হবে।",
+    "একই profile-এ দুটো agent নয়; share করতে export বা distribution।"
+  ]
+}

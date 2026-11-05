@@ -1,0 +1,217 @@
+{
+  "contentId": "hermes-doc-user-guide-configuring-models",
+  "title": "Configuring Models",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/configuring-models",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর main আর auxiliary model বেছে নেওয়া ও বদলানো বুঝবে এবং model, provider, token, prompt cache-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলের প্রধান শিক্ষক আর সহকারী\n\nস্কুলে একজন **প্রধান শিক্ষক** ক্লাস নেন, বেশিরভাগ প্রশ্নের উত্তর তিনিই দেন। কিন্তু ছোট ছোট কাজের জন্য আছেন **সহকারীরা**: একজন হাজিরা লেখেন, একজন ছবি দেখে বোঝেন, একজন লম্বা বই সংক্ষেপ করেন। প্রতিটা কাজের জন্য আলাদা সহকারী ঠিক করা যায়। ঠিক না করলে প্রধান শিক্ষকই সব করে দেন।\n\nHermes-এও তাই। একটা **main model** (প্রতিটা message, tool-call loop, stream করা উত্তর, সব মূল কাজ) আর অনেকগুলো **auxiliary model** (ছোট সহকারী কাজ: context compression, vision, web-page সারসংক্ষেপ, approval scoring, MCP tool routing, session title, skill search)। প্রতিটার নিজস্ব slot, আলাদাভাবে বদলানো যায়।\n\n**কেন আলাদা সহকারী?** প্রধান শিক্ষক দামি আর ধীর হতে পারেন। হাজিরা লেখার মতো ছোট কাজ সস্তা আর দ্রুত সহকারীকে দিলে টাকাও বাঁচে, সময়ও বাঁচে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Model\nAI-র \"মস্তিষ্ক\"। এটাই লেখা বোঝে আর উত্তর বানায়। যেমন `claude-sonnet-4` একটা model-এর নাম। বিভিন্ন model-এর দাম, গতি আর দক্ষতা আলাদা।\n\n### ২) Provider\nযে কোম্পানি বা সেবা model ভাড়া দেয়। যেমন `openrouter`, `nous`, `anthropic`। model হলো পণ্য, provider হলো দোকান।\n\n### ৩) Auxiliary model\nমূল model ছাড়া আলাদা ছোট কাজের জন্য রাখা সহকারী model।\n\n### ৪) Token\nAI যে ছোট ছোট লেখার টুকরো গুনে হিসাব করে (একটা শব্দ প্রায় ১-২ টুকরো)। খরচ আর সীমা token দিয়েই মাপা হয়।\n\n### ৫) Context window\nmodel একসঙ্গে যতটা কথা মনে রাখতে পারে, তার সীমা। মনে রাখার টেবিলের মাপ।\n\n### ৬) Prompt cache\nএকই লম্বা কথা বারবার পাঠালে provider যদি আগেরবারের হিসাব মনে রাখে, তখন দাম কম পড়ে (যেমন বাঁধা মাসিক বাজারের তালিকা, ছাড় পাওয়া যায়)। এই মনে রাখা নির্দিষ্ট model-এর সঙ্গে বাঁধা।\n\n### ৭) API key, endpoint, base URL\n**API key** = গোপন চাবি। **Endpoint/base URL** = সেই দোকানের ঠিকানা যেখানে অনুরোধ পাঠাতে হয়।\n\n### ৮) OAuth\nচাবি না দিয়ে \"Google দিয়ে login\" ধরনের অনুমতি-ব্যবস্থা। browser খুলে অনুমতি দিতে হয়।\n\n### ৯) Fallback\nপ্রথম পথ ব্যর্থ হলে বিকল্প পথ। যেমন বাস না এলে রিকশা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Main model মূল কাজ করে; প্রতিটা auxiliary slot ডিফল্টে `auto`, মানে main model-ই; চাইলে আলাদা model।",
+        "nodes": [
+          {
+            "id": "user",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "main",
+            "kind": "server",
+            "label": "Main model",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "aux1",
+            "kind": "external",
+            "label": "Vision (aux)",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "aux2",
+            "kind": "external",
+            "label": "Compression",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "user",
+            "to": "main",
+            "label": "message"
+          },
+          {
+            "from": "main",
+            "to": "aux1",
+            "label": "ছবির কাজ"
+          },
+          {
+            "from": "main",
+            "to": "aux2",
+            "label": "সারসংক্ষেপ"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "model-switch-cost"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবচেয়ে সহজ পথ ও `model:` key\n\n**Nous Portal:** এক subscription-এ ৩০০+ model। নতুন install-এ `hermes setup --portal` login করে Nous-কে provider বানায়; `hermes portal info` দেখায় কী set আছে। Portal subscriber-রা token-billed provider-এ ১০% ছাড় পান।\n\nনতুন install-এ `model: \"\"` থাকে। ফাঁকা স্ট্রিং মানে \"এখনও configure হয়নি\" (ফাঁকা ফর্ম)। `hermes setup`, `hermes model` (বা dashboard-এর **Change**) চালালে এটা একটা mapping হয়ে যায় (নাম-মানের জোড়া): `provider`, `default`, `base_url`, `api_mode`।\n\n**Dashboard** হলো browser-এ খোলা Hermes-এর নিয়ন্ত্রণ-পাতা। তার **Models পাতা**:\n1. *Model Settings*: slot-এ model বসানো;\n2. *Usage analytics*: কোন model কত token/cost খরচ করল, capability badge-সহ।\n\nMain picker-এ বাঁ দিকে authenticated provider (যেগুলোর API key, OAuth বা custom endpoint আছে), ডানে Hermes-এর বাছাই করা agentic model। OpenRouter-এর ৪০০+ কাঁচা তালিকা (TTS, image, reranker সহ) দেখায় না। **Switch** চাপলে `~/.hermes/config.yaml`-এর `model` অংশে লেখা হয়, **শুধু নতুন session-এর জন্য**; খোলা chat-এ `/model` দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `/model` আর `hermes model`\n\n```text\n/model gpt-5.4 --provider openrouter          # শুধু এই session\n/model gpt-5.4 --provider openrouter --global # config.yaml-এও সংরক্ষণ + চলমান session বদলায়\n/model claude-opus-4.6 --once                 # মাত্র এক turn, তারপর আগের model-এ ফেরে\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `/model gpt-5.4` | model-টা বদলাও | চলতি আলাপে অন্য মস্তিষ্ক চাইলে |\n| `--provider openrouter` | কোন দোকান থেকে আনবে | একই নাম একাধিক দোকানে থাকলে |\n| `--global` | config.yaml-এও লিখে রাখো, তাই পরের বারও থাকবে | স্থায়ী বদল চাইলে |\n| `--once` | মাত্র এক turn এই model, তারপর আগেরটা | একটা কঠিন প্রশ্নে সাময়িক বড় model চাইলে |\n\n`--once` সফল, ব্যর্থ বা interrupt, সব ক্ষেত্রেই আগের model ফেরত দেয় এবং কিছু persist (স্থায়ী) করে না। তবে এতে cache prefix দুবার ভাঙে, তাই লম্বা দামি session-এ ছোট প্রশ্নে সাশ্রয়ের চেয়ে খরচ বাড়তে পারে।\n\n`hermes model` একটা interactive picker (প্রশ্ন করে করে বাছাই): provider, authentication (OAuth হলে browser খোলে, API key হলে চায়), model; লেখে `model.provider` ও `model.default`। শেষে reasoning-effort ধাপ (ভাবনা কতটা গভীর হবে: `minimal` থেকে `ultra`, **Disable reasoning**, বা **Skip**), লেখে `agent.reasoning_effort`। দেখতে: `hermes config get model --json` ও `hermes status`।\n\n**Custom alias** (ডাকনাম): top-level `model_aliases:`-এ প্রতিটা alias-এর `model`, `provider`, ঐচ্ছিক `base_url` ও credential (`api_key` বা `key_env`)। ছোট রূপ `model.aliases.<name>: provider/model`, `hermes config set` দিয়ে, তবে এতে custom `base_url` যায় না। দুটোতে একই নাম থাকলে `model_aliases:` জেতে; user alias `sonnet`, `kimi`, `opus`-এর মতো built-in-কে ঢেকে দেয়। ব্যবহার: `/model fav` বা `hermes chat --model fav`। (লম্বা নাম মনে রাখার বদলে ছোট ডাকনাম, যেমন \"মামা\" বলে ডাকা।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "চলতি session-এ model বদলালে ঘটনাক্রম।",
+        "steps": [
+          {
+            "title": "`/model` দিলে",
+            "body": "Hermes আন্দাজ করে নতুন model-এর window-এ পরের message-এ compression লাগবে কি না; লাগলে switch-এর উত্তরে warning।"
+          },
+          {
+            "title": "Switch সঙ্গে সঙ্গে হয়",
+            "body": "Warning থাকলেও switch আটকায় না; compression পরের message-এর আগে চলে।"
+          },
+          {
+            "title": "Cache ভাঙে",
+            "body": "Prompt cache serving model-এর সঙ্গে বাঁধা, তাই পরের message-এ পুরো আলাপ পূর্ণ input দামে পড়া হয় (cache-এ সাধারণত ৭৫–৯০% ছাড় ছিল)।"
+          },
+          {
+            "title": "বড় session হলে জিজ্ঞাসা",
+            "body": "`model.switch_context_confirm_tokens` (ডিফল্ট ১,০০,০০০) ছাড়ালে Hermes আগে নিশ্চিত হতে চায়; `0` দিলে বন্ধ।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Auxiliary model: অনেকগুলো slot\n\n**Show auxiliary** দিলে প্রতিটা auxiliary task-এর জন্য এক সারি দেখা যায়। সবার ডিফল্ট `auto` = main model ব্যবহার। `auto` ব্যর্থ হলে (capacity-জাতীয় error, মানে provider-এর ভিড়) আগে `auxiliary.<task>.fallback_chain`, তারপর top-level `fallback_providers`/`fallback_model`। `auto` অনির্ধারিত provider আন্দাজ করে না। fallback না থাকলে task-টা warning দিয়ে বাদ পড়ে।\n\n| Task | কী কাজ / টিপ | কখন আলাদা model দেবে |\n|---|---|---|\n| Title Gen | আলাপের নাম বানায়; সস্তা/দ্রুত model; `auxiliary.title_generation.prefer_fast_model: true` | খরচ বাঁচাতে |\n| Vision | ছবি দেখে বোঝে। main model-এ vision না থাকলে, যেমন `google/gemini-2.5-flash`, `gpt-4o-mini` | main model ছবি পড়তে না পারলে |\n| Compression | লম্বা কথার সারসংক্ষেপ; reasoning model নয়, দ্রুত chat model | দ্রুত সংক্ষেপ চাইলে |\n| Approval | `approval_mode: smart`-এর জন্য সস্তা model (haiku, flash, gpt-5-mini) | \"এটা চালানো নিরাপদ কি?\" বিচারে |\n| Review | `/review` reviewer subagent চালায় | review-এর জন্য আলাদা model চাইলে |\n| Voice Chat | voice-chat-এ কথা বলে উত্তর বানায় | voice chat ব্যবহারে |\n| Skills Hub | `hermes skills search`; `auto` সাধারণত ঠিক | সাধারণত লাগে না |\n| MCP | MCP tool routing (**MCP** = বাইরের tool জোড়ার সাধারণ ভাষা); `auto` ঠিক | সাধারণত লাগে না |\n| Triage Specifier | `hermes kanban specify`-এ এক লাইনের কাজ বিস্তৃত করে | Kanban ব্যবহারে |\n| Kanban Decomposer | triage task ভেঙে child task বানায় | Kanban ব্যবহারে |\n| Profile Describer | `hermes profile describe --auto` | profile বর্ণনা করাতে |\n| Curator | skill-ব্যবহার review; মিনিট লাগতে পারে | skill গোছাতে |\n\nপ্রতিটা model card-এর **Use as** dropdown: *Main model*, *All auxiliary tasks* (সবগুলোতেই), বা আলাদা task। **Reset all to auto** সব ফেরায়। `config.yaml`-এ লেখা হয় `auxiliary.<task>:`: `provider`, `model`, `base_url`, `api_key`, `timeout` (যেমন ১২০), `extra_body`, `download_timeout` (যেমন ৩০)।\n\n```yaml\nauxiliary:\n  vision:\n    provider: openrouter\n    model: google/gemini-2.5-flash\n```\n\nএখানে বলা হচ্ছে: \"ছবির কাজের সহকারী হবে openrouter দোকানের `google/gemini-2.5-flash` model।\" বাকি সহকারীরা `auto` থেকে যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Provider-ভিত্তিক অপশন (`providers.<name>`)\n\nএগুলো উন্নত সেটিং, যাদের অনেকেরই কখনো লাগবে না। শুধু জানা থাকুক কী কী করা যায়:\n\n| অপশন | মানে | কখন লাগে |\n|---|---|---|\n| `api` (base URL), `api_key` | দোকানের ঠিকানা আর চাবি | নিজের বা অচেনা provider জুড়তে |\n| `extra_headers` | প্রতিটা request-এ পাঠানো HTTP header (খামের উপরের অতিরিক্ত লেখা: Cloudflare Access token, proxy auth ইত্যাদি)। মান কখনও log হয় না; OpenAI-compatible ও `anthropic_messages` route-এ চলে, `bedrock_converse`-এ নয় | কোম্পানির প্রক্সির পেছনে থাকলে |\n| `session_affinity_header` | conversation ID বহনকারী header-এর নাম (ডিফল্ট বন্ধ; উদাহরণ `x-litellm-session-id`) | মাঝখানে router থাকলে যাতে একই আলাপ একই জায়গায় যায় |\n| `discover_models` (ডিফল্ট `true`) | `false` দিলে শুধু তোমার `models` তালিকা, live probing (সরাসরি খুঁজে দেখা) নেই | নিজের তালিকাই চাইলে |\n| model-ভিত্তিক `prompt_caching`, `transport` (`openai_chat` বা `anthropic_messages`), `context_length` | cache চালু/বন্ধ, কোন ভাষায় কথা বলবে, window-এর মাপ | অচেনা model-এ হাতে ঠিক করতে |\n| `answer_in_reasoning: true` | যে server উত্তরটা `reasoning`-এ দেয় আর `content` ফাঁকা রাখে | সেরকম অদ্ভুত server-এর জন্য |\n\n- পুরনো `custom_providers:` এখনও চলে, `hermes update`-এ (config v12) নিজে migrate হয়।\n- Nous Portal-এর `nous.anthropic_wire`: `chat` (ডিফল্ট), `native`, `auto`; শুধু `anthropic/*` model-এ প্রভাব। বর্তমানে `auto` আচরণে `chat`-ই।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "`-contributor` model-এ সাবধান",
+      "markdown": "নামের শেষে `-contributor` থাকা model সস্তা, কারণ vendor তোমার prompt/completion দিয়ে train করতে পারে (মানে তোমার কথা দিয়ে তাদের AI শেখাতে পারে)। Interactive বাছাইয়ে সবসময় confirmation আসে; Kanban worker বা cron-এর মতো unattended (কেউ পাশে বসে নেই এমন) পথে এটা **fail closed**, মানে নিরাপদ দিকে থেমে যায়। মেনে নিতে চাইলে `security.allow_data_training_tiers_noninteractive` `true` করো (`hermes config set`), ফেরাতে `hermes config unset`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন বদল কার্যকর হয়? সমস্যা হলে?\n\n- **CLI (`hermes chat`):** পরের invocation-এ, মানে পরের বার চালালে।\n- **Gateway (Telegram, Discord, Slack...):** পরের নতুন session-এ; সবাইকে জোর করতে `hermes gateway restart`। (**Gateway** = Hermes-কে চ্যাট app-এর সঙ্গে জোড়া লাগানো পোস্ট অফিস।)\n- **Dashboard chat (`/chat`):** পরের নতুন PTY-তে (PTY = ভেতরের চালু terminal)।\n- Config বদল চলমান session-এর cache নষ্ট করে না।\n\n**Troubleshooting:**\n1. *\"No authenticated providers\"*: **Keys** দেখো বা `hermes setup` চালাও। মানে কোনো provider-এর চাবি জমা নেই।\n2. *চলমান chat-এ main model বদলায়নি*: স্বাভাবিক; chat-এ `/model <name>` দাও।\n3. *Auxiliary override কাজ করছে না*: নতুন session? `provider` এখনও `auto`? provider authenticated? auth না থাকলে openrouter ডিফল্টে নেমে `agent.log`-এ warning।\n4. *অপ্রত্যাশিত provider*: OpenRouter-এর মতো aggregator (একাধিক model এক জায়গায় জড়ো করা দোকান) নিজের ভেতরে নাম বদলায় (যেমন `claude-sonnet-4` হয় `anthropic/claude-sonnet-4.6`; native Anthropic-এ `claude-sonnet-4-6`)।\n\n**REST API (dashboard):** (প্রোগ্রাম দিয়ে dashboard-কে হুকুম দেওয়ার দরজা।) `GET /api/model/options`, `GET /api/model/auxiliary`, `POST /api/model/set` (`scope`: `main` বা `auxiliary`)। Header `X-Hermes-Session-Token` লাগে, dashboard restart-এ token বদলায়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "নতুন install-এ `model: \"\"`-এর মানে কী?",
+      "options": [
+        "এখনও configure হয়নি",
+        "সবচেয়ে ভালো model বসানো আছে",
+        "model মুছে ফেলা হয়েছে",
+        "শুধু auxiliary চালু"
+      ],
+      "answerIndex": 0,
+      "explanation": "ফাঁকা স্ট্রিং মানে ফাঁকা ফর্ম; `hermes setup` বা `hermes model` চালালে ভরে যায়।"
+    },
+    {
+      "question": "Auxiliary task-এর ডিফল্ট মান কী?",
+      "options": [
+        "কোনো model নেই",
+        "সস্তা model",
+        "`auto`, মানে main model",
+        "vision model"
+      ],
+      "answerIndex": 2,
+      "explanation": "ডিফল্টে প্রধান শিক্ষকই সহকারীর কাজ করেন।"
+    },
+    {
+      "question": "`/model x --once` কী করে?",
+      "options": [
+        "চিরতরে model বদলায়",
+        "এক turn-এর জন্য বদলায়, তারপর আগেরটা ফেরে",
+        "শুধু config লেখে",
+        "gateway restart করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "`--once` মাত্র এক turn; সফল-ব্যর্থ সব ক্ষেত্রে আগের model ফেরে।"
+    },
+    {
+      "question": "চলতি আলাপে model বদলালে খরচ বাড়তে পারে কেন?",
+      "options": [
+        "model দামি হয় বলে শুধু",
+        "internet ধীর হয়",
+        "session মুছে যায়",
+        "prompt cache ভাঙে, পুরো আলাপ পূর্ণ দামে পড়া হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "cache serving model-এর সঙ্গে বাঁধা; বদলালে ছাড় হারায়।"
+    },
+    {
+      "question": "Dashboard-এ main model Switch করলে প্রভাব কোথায়?",
+      "options": [
+        "খোলা সব chat-এ সঙ্গে সঙ্গে",
+        "শুধু cron-এ",
+        "শুধু নতুন session-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 2,
+      "explanation": "config-এ লেখা হয়; খোলা chat-এ `/model` দিতে হয়।"
+    },
+    {
+      "question": "Unattended (cron/Kanban) পথে `-contributor` model-এর আচরণ কী?",
+      "options": [
+        "fail closed, মানে বন্ধ থাকে",
+        "চুপচাপ চলে",
+        "বেশি দাম নেয়",
+        "ডিফল্টে সব সময় অনুমোদিত"
+      ],
+      "answerIndex": 0,
+      "explanation": "`security.allow_data_training_tiers_noninteractive: true` না দিলে চলে না।"
+    },
+    {
+      "question": "`switch_context_confirm_tokens`-এর ডিফল্ট কত?",
+      "options": ["১,০০০", "১০,০০০", "১০,০০,০০০", "১,০০,০০০"],
+      "answerIndex": 3,
+      "explanation": "১,০০,০০০ token ছাড়ালে Hermes switch-এর আগে নিশ্চিত হতে চায়; `0` দিলে বন্ধ।"
+    },
+    {
+      "question": "`model_aliases:` আর `model.aliases:` একই নামে থাকলে কে জেতে?",
+      "options": [
+        "`model.aliases:`",
+        "`model_aliases:`",
+        "দুটোই বাতিল",
+        "যেটা আগে লেখা"
+      ],
+      "answerIndex": 1,
+      "explanation": "top-level `model_aliases:` জেতে।"
+    }
+  ],
+  "recap": [
+    "Main model মূল কাজ করে, আর অনেকগুলো auxiliary slot ছোট কাজ সামলায়; ডিফল্ট `auto`।",
+    "`hermes model`, `/model`, `--global`, `--once` বদলানোর প্রধান উপায়।",
+    "চলতি আলাপে model বদলালে prompt cache ভাঙে, তাই দামি session-এ সাবধান।",
+    "Config বদল সাধারণত নতুন session থেকে কার্যকর; চলমান chat-এ `/model` লাগে।",
+    "`-contributor` model-এ training-এর ঝুঁকি থাকে; unattended পথে ডিফল্টে বন্ধ।"
+  ]
+}

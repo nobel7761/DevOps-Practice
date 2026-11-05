@@ -1,0 +1,165 @@
+{
+  "contentId": "hermes-doc-developer-guide-agent-loop",
+  "title": "Agent Loop",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/agent-loop",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Agent Loop কী, কেন Hermes একটা কাজ ধাপে ধাপে ঘুরে ঘুরে শেষ করতে পারে, আর tool call, interrupt, budget ও compression কীভাবে এর ভেতর কাজ করে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## রুটি-বানানো দিদার গল্প\n\nএকটা দিদা রুটি বানান। প্রতিবার একই কাজ: ময়দা মাখো → বেলো → সেঁকো → দেখো ঠিক হলো কি না → না হলে আবার। যতক্ষণ না রুটি তৈরি, ততক্ষণ **ঘুরতে থাকেন**। আর পাশের কেউ যদি বলে \"থামো!\", দিদা সঙ্গে সঙ্গে থামেন।\n\nHermes-এর **Agent Loop** (এজেন্ট লুপ, মানে \"ঘুরতে থাকা কাজের চক্র\") ঠিক এমন:\n\n1. AI-কে প্রশ্ন করো।\n2. AI বলে \"এই tool চালাও\" (যেমন একটা ফাইল পড়ো)।\n3. tool চালাও।\n4. ফল AI-কে দেখাও।\n5. আবার প্রশ্ন করো...\n\nএভাবে চলতে থাকে, **যতক্ষণ না AI শুধু সাধারণ লেখা (text) দিয়ে উত্তর দেয়।** তখন loop শেষ।\n\n**এটা না থাকলে কী সমস্যা হতো?** AI একবারই উত্তর দিত। \"ফাইল পড়ো, তারপর বদলাও, তারপর পরীক্ষা করো\" ধরনের কয়েক ধাপের কাজ হতো না। Loop আছে বলেই Hermes একটা কাজ ধাপে ধাপে নিজে শেষ করতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Loop (লুপ) আর Iteration\n- **Loop** = একই কাজ বারবার ঘোরা।\n- **Iteration** = সেই ঘোরার এক চক্কর।\n\n### ২) Tool আর Tool call\n- **Tool** = Hermes-এর হাতিয়ার (ফাইল পড়া, কমান্ড চালানো)।\n- **Tool call** = AI-র বলা \"এই tool-টা এই তথ্য দিয়ে চালাও।\" AI নিজে tool চালায় না, শুধু অনুরোধ করে। চালায় Hermes।\n\n### ৩) Message আর Role\nআলাপের প্রতিটা বার্তাকে বলে **message**। প্রতিটার একটা **role** (ভূমিকা) থাকে:\n| role | কে বলছে |\n|---|---|\n| `system` | শুরুর নির্দেশ (\"তুমি কে, কীভাবে কাজ করবে\") |\n| `user` | তুমি |\n| `assistant` | AI (সাথে ঐচ্ছিক `tool_calls`, মানে \"এই tool চালাও\") |\n| `tool` | tool চালানোর ফল (`tool_call_id` সহ, কোন অনুরোধের উত্তর তা চেনানোর নম্বর) |\n\n### ৪) API call আর Provider\n- **API call** = AI model-কে ডাকা (provider-এর server-এ অনুরোধ পাঠানো)।\n- **Provider** = model ভাড়া-দেওয়া কোম্পানি।\n- **API mode** = provider-এর সাথে কথা বলার ভাষার ধরন (নিচে তিনটা আছে)।\n\n### ৫) Thread আর Interrupt\n- **Thread** = একই প্রোগ্রামের ভেতর একসাথে চলা আলাদা কাজের ধারা। রান্নাঘরে একজন রাঁধছে আর অন্যজন দরজা দেখছে।\n- **Interrupt** = মাঝপথে থামানোর সংকেত।\n\n### ৬) Context window, Compression\n- **Context window** = AI একবারে কতটা লেখা মনে রেখে কাজ করতে পারে, তার সীমা (টেবিলের আকার)।\n- **Compression** = টেবিল ভরে এলে পুরোনো মাঝের অংশ ছোট সারাংশে বদলানো।\n\n### ৭) Callback আর Hook\n- **Callback** = \"কিছু ঘটলে আমাকে ডাকো\" বলে রাখা ছোট ফাংশন (যেমন \"tool শুরু হলে spinner দেখাও\")।\n- **Hook** = কাজের আগে বা পরে ঢোকানো নিজের কোড।\n\n### ৮) Fallback, Budget\n- **Fallback** = ব্যাকআপ provider-এ যাওয়া।\n- **Budget** = সর্বোচ্চ কত চক্কর চলবে তার সীমা, যাতে loop অনন্তকাল না ঘোরে।\n\n### ৯) Class, ABC, Facade\n- **Class** = কোডের একটা ছাঁচ। **ABC** (Abstract Base Class) = \"ছাঁচের ছাঁচ\", মানে নিয়ম যে অন্যরা অনুসরণ করবে। **Facade** = ভেতরের জটিলতা ঢেকে রাখা পাতলা সামনের মুখ।\n- **SQLite** = ফাইলের ভেতর থাকা ছোট ডাটাবেস।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন ফাইলে কী?\n\n| ফাইল | কী করে |\n|---|---|\n| **`run_agent.py`** | `AIAgent` class-এর পাতলা মুখ (facade) আর public entry point |\n| **`agent/conversation_loop.py`** | `run_conversation()`-এর আসল শরীর, মানে loop |\n| **`agent/turn_*.py`** | turn-এর ধাপ: iteration প্রস্তুতি, API call, API error, overflow (ভরে-যাওয়া), truncation (কাটা-পড়া), recovery (সামলে-নেওয়া) |\n| **`agent/agent_init.py`** | constructor-এর জোড়াতালি (agent তৈরির শুরুর ধাপ) |\n| **`agent/tool_executor.py`** | tool চালানো ও কিছু tool আটকে নেওয়া |\n| **`agent/prompt_builder.py`** | system prompt জোড়া |\n| **`agent/context_engine.py`** (ABC) ও **`agent/context_compressor.py`** | context সামলানোর নিয়ম ও default \"লসি\" সারাংশকারী (সারাংশে কিছু তথ্য হারায়) |\n| **`agent/prompt_caching.py`** | Anthropic cache marker (আগের পড়া অংশ মনে রাখার চিহ্ন) |\n| **`agent/auxiliary_client.py`** | ছোটখাটো কাজের জন্য আলাদা LLM client |\n| **`model_tools.py`** | tool schema (tool-এর পরিচয়-বর্ণনা) জোগাড় ও `handle_function_call()` dispatch |\n\n## দুটো দরজা: `chat()` আর `run_conversation()`\n\n- **`chat(message)`**: পাতলা wrapper (মোড়ক); শুধু `final_response` (শেষ উত্তর) ফেরত দেয়।\n- **`run_conversation()`**: আসল দরজা। নেয় `user_message`, `system_message` (না দিলে নিজে বানায়), `conversation_history` (না দিলে session থেকে লোড করে), `task_id`। ফেরত দেয় একটা dict (নাম-মানের তালিকা): messages, metadata, usage stats (ব্যবহারের হিসাব)।\n\n## তিনটা API mode\n\n| Mode | কোথায় | Client |\n|---|---|---|\n| `chat_completions` | OpenAI-compatible (OpenRouter, custom, বেশিরভাগ provider) | `openai.OpenAI` |\n| `codex_responses` | OpenAI Codex / Responses API | `openai.OpenAI` (Responses format) |\n| `anthropic_messages` | native Anthropic Messages API | `anthropic.Anthropic` (adapter দিয়ে) |\n\n**Mode বাছার ক্রম** (প্রথম যেটা মেলে):\n1. স্পষ্ট `api_mode` argument\n2. provider দেখে (যেমন `anthropic`)\n3. base URL (ঠিকানা) দেখে অনুমান (যেমন `api.anthropic.com`)\n4. default `chat_completions`"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "এক loop-iteration-এ কী কী ঘটে।",
+        "steps": [
+          {
+            "title": "১-২. শুরু",
+            "body": "`task_id` না থাকলে বানাও; user message history-তে যোগ করো।"
+          },
+          {
+            "title": "৩. System prompt",
+            "body": "cache করা system prompt বানাও বা আবার ব্যবহার করো।"
+          },
+          {
+            "title": "৪. Preflight compression",
+            "body": "context window-এর ৫০%-এর বেশি ভরলে আগে ছোট করো।"
+          },
+          {
+            "title": "৫-৭. API message বানাও",
+            "body": "mode অনুযায়ী (Responses input items / `anthropic_adapter.py`), ephemeral layer (budget warning, context pressure) বসাও, Anthropic cache marker দাও।"
+          },
+          {
+            "title": "৮. Interruptible API call",
+            "body": "`_interruptible_api_call` দিয়ে call করো।"
+          },
+          {
+            "title": "৯. Response parse",
+            "body": "tool call থাকলে চালিয়ে ধাপ ৫-এ ফেরো; শুধু text হলে save করো, দরকারে memory flush করে ফলাফল ফেরত দাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "**পুরো চক্কর এক লাইনে:** তৈরি → AI-কে ডাকো → উত্তর পড়ো → tool চাইলে চালিয়ে আবার ডাকো → শুধু text এলে শেষ। নিচের simulator-এ নিজে চালিয়ে দেখো।\n\n(**Preflight** = \"ওড়ার আগের পরীক্ষা\", মানে API call-এর ঠিক আগে যাচাই। **Ephemeral** = ক্ষণস্থায়ী, শুধু এই call-এর জন্য, স্থায়ী ইতিহাসে ঢোকে না। **Parse** = পাওয়া উত্তর ভেঙে বোঝা। **Memory flush** = জরুরি তথ্য স্মৃতি-ফাইলে লিখে ফেলা।)"
+    },
+    {
+      "type": "simulator",
+      "id": "agent-loop"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Message-এর নিয়ম\n\nভেতরের message-এ OpenAI-style role: `system`, `user`, `assistant` (ঐচ্ছিক `tool_calls` সহ), `tool` (`tool_call_id` সহ)। Reasoning model-এর (যে model ভাবার ধাপ লিখে দেখায়) চিন্তা থাকে `assistant_msg[\"reasoning\"]`-এ; `reasoning_callback` দিয়ে দেখানো যায়।\n\n**পালা-বদলের নিয়ম (alternation):**\n\n- system-এর পর: user, assistant, user, assistant…\n- tool ব্যবহার: assistant (tool calls) → এক বা একাধিক `tool` result → assistant।\n- পরপর দুটো assistant বা দুটো user **কখনো নয়**। শুধু `tool` পরপর আসতে পারে (parallel, মানে একসাথে চালানো tool-এর ফলের জন্য)।\n- ভুল ক্রম হলে provider ফিরিয়ে দেয়।\n\n**কেন এত কড়া নিয়ম?** AI provider-রা আলাপকে \"প্রশ্ন-উত্তর-প্রশ্ন-উত্তর\" ক্রমে ভাবে। ক্রম ভাঙলে তাদের কাছে বার্তাটা অর্থহীন লাগে।\n\n## Interruptible API call\n\n**সমস্যা:** AI-র উত্তর আসতে কয়েক সেকেন্ড লাগে। এর মধ্যে তুমি \"থামো\" বললে?\n\n**সমাধান:** HTTP call চলে একটা **background thread**-এ (পেছনের ধারা)। main thread অপেক্ষা করে তিনটার যেকোনো একটার জন্য: response, interrupt event, বা timeout (সময়সীমা)। Interrupt আসে নতুন user message, `/stop` command বা signal থেকে।\n\nInterrupt হলে API thread ছেড়ে দেওয়া হয়, তার response ফেলে দেওয়া হয়, আর **আধখানা উত্তর history-তে ঢোকে না**। ফলে আলাপের পালা-বদলের নিয়ম ভাঙে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Tool চালানো\n\n- একটা tool call: main thread-এ চলে।\n- একাধিক tool call: `ThreadPoolExecutor`-এ (কর্মীদের দল) একসাথে।\n- `clarify`-র মতো interactive tool (যেটা তোমাকে প্রশ্ন করে) থাকলে ক্রমানুসারে (sequential)।\n- ফল আবার বসে **মূল call-এর ক্রমে**, যার যত আগেই শেষ হোক।\n\nপ্রতিটা call-এর ভেতরের ধাপ:\n\n1. `tools/registry.py` থেকে handler (কাজ করার ফাংশন) খোঁজা\n2. `pre_tool_call` hook (চালানোর আগের পাহারা)\n3. `tools/approval.py`-এ dangerous command check (দরকারে `approval_callback` দিয়ে তোমার অনুমতি চাওয়া)\n4. handler চালানো (args + `task_id` দিয়ে)\n5. `post_tool_call` hook (চালানোর পরের পাহারা)\n6. `tool` message যোগ করা\n\n### Agent-level tool: registry এড়িয়ে\n\nকিছু tool-এর agent-এর নিজের অবস্থা (state) লাগে। `agent/tool_executor.py` এগুলোকে `handle_function_call()`-এর আগেই ধরে নেয় এবং নকল (synthetic) result দেয়:\n\n| Tool | কী |\n|---|---|\n| `todo` | agent-এর নিজের কাজের তালিকা |\n| `memory` | স্থায়ী memory ফাইল (অক্ষর-সীমা সহ) |\n| `session_search` | session DB থেকে পুরোনো আলাপ খোঁজা |\n| `delegate_task` | আলাদা context-এ subagent (সহকারী agent) বানানো |\n\n## Callback-এর তালিকা\n\n| Callback | কখন ডাকা হয় |\n|---|---|\n| `tool_progress_callback` | প্রতি tool-এর আগে/পরে (CLI spinner, gateway progress) |\n| `thinking_callback` | model ভাবা শুরু/শেষ |\n| `reasoning_callback` | reasoning ফিরলে |\n| `clarify_callback` | `clarify` ডাকলে |\n| `step_callback` | প্রতিটা পুরো turn শেষে (gateway, ACP) |\n| `stream_delta_callback` | stream-এর প্রতিটা token (লেখা একটু একটু করে আসার সময়) |\n| `tool_gen_callback` | stream থেকে tool call parse হলে |\n| `status_callback` | অবস্থা বদলালে (ACP) |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Budget, Fallback, Compression\n\n### Iteration budget\n`IterationBudget` default **৫০০ iteration**, বদলানো যায় `agent.max_turns` দিয়ে। Subagent-এর নিজস্ব budget, `delegation.max_iterations` (default ২৫০) পর্যন্ত। ১০০% হলে agent থামে ও সারাংশ ফেরত দেয়। **কেন?** AI ভুল করে অনন্ত ঘুরতে থাকলে টাকা পুড়ত, এটা বাঁধ।\n\n### Fallback\n- ট্রিগার: 429 rate limit (\"খুব বেশি অনুরোধ\"), 5xx (server-এর গোলমাল), 401/403 (আগে credential refresh চেষ্টা)।\n- `fallback_providers` তালিকা ক্রমে চেষ্টা হয়; সফল হলে নতুন provider-এই কথা চলে।\n- Codex Responses টানা তিনবার কিছু-দেখানোর-মতো-নেই continuation দিলে `incomplete_response` কারণে fallback হয়।\n- Auxiliary কাজ (vision, compression, title generation)-এর আলাদা fallback chain: `auxiliary.*` config।\n\n### Compression\n\n| কখন | কীভাবে |\n|---|---|\n| **Preflight** | API call-এর আগে, context ৫০% পেরোলে |\n| **Gateway auto-compression** | এক turn আর পরের turn-এর মাঝে (between turns), ৮৫%-এ |\n\nধাপ: (১) আগে memory disk-এ flush → (২) মাঝের turn সারাংশ → (৩) শেষ N message অক্ষত (`compression.protect_last_n`, default ২০) → (৪) tool call ও result-এর জোড়া কখনো ভাঙে না → (৫) নতুন session lineage ID (compressed session হয় child, মানে \"সন্তান-আলাপ\")।\n\n### সংরক্ষণ\nMessage SQLite-এ (`hermes_state.py`), memory `MEMORY.md`/`USER.md`-তে। `/resume` বা `hermes chat --resume` দিয়ে আগের আলাপে ফেরা যায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "একটা বড় ভুল ধারণা",
+      "markdown": "Tool চলার সময় তুমি \"থামো\" বললে আধখানা API উত্তর history-তে জমা হয় না। পুরোটা ফেলে দেওয়া হয়। এতে alternation-এর নিয়ম ভাঙে না।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Agent Loop কখন শেষ হয়?",
+      "options": [
+        "প্রথম উত্তর আসামাত্র",
+        "সবসময় ৫ বার ঘুরে",
+        "AI যখন tool call ছাড়া শুধু সাধারণ text দিয়ে উত্তর দেয়",
+        "কখনোই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "AI tool চাইলে Hermes চালিয়ে ফল দেখিয়ে আবার ডাকে। শুধু text এলে loop শেষ।"
+    },
+    {
+      "question": "পালা-বদলের নিয়মে কোনটা কখনো হতে পারে না?",
+      "options": [
+        "পরপর দুটো assistant বা দুটো user",
+        "user, assistant, user",
+        "assistant (tool_calls) → tool → assistant",
+        "পরপর দুটো `tool` message (parallel ফলের জন্য)"
+      ],
+      "answerIndex": 0,
+      "explanation": "শুধু `tool` পরপর আসতে পারে। দুটো assistant বা দুটো user পরপর হলে provider ফিরিয়ে দেয়।"
+    },
+    {
+      "question": "যথাযথ interrupt হলে আধখানা API উত্তরের কী হয়?",
+      "options": [
+        "history-তে জমা হয়",
+        "ছবি হয়ে যায়",
+        "আবার পাঠানো হয়",
+        "ফেলে দেওয়া হয়, history-তে ঢোকে না"
+      ],
+      "answerIndex": 3,
+      "explanation": "এতে alternation-এর নিয়ম ভাঙে না। API thread ছেড়ে দেওয়া হয়, response ফেলে দেওয়া হয়।"
+    },
+    {
+      "question": "একাধিক tool call একসাথে চললে ফল কোন ক্রমে বসে?",
+      "options": [
+        "যার আগে শেষ হয় সে আগে",
+        "মূল call-এর ক্রমে",
+        "এলোমেলো",
+        "উল্টো ক্রমে"
+      ],
+      "answerIndex": 1,
+      "explanation": "যার যত আগেই শেষ হোক, ফল বসে মূল call-এর ক্রমে। এতে আলাপ গোছানো থাকে।"
+    },
+    {
+      "question": "Iteration budget কেন আছে?",
+      "options": [
+        "গতি কমাতে",
+        "ছবি বানাতে",
+        "AI অনন্তকাল ঘুরে যেন টাকা ও সময় না পোড়ায় (default ৫০০)",
+        "key রাখতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "১০০% হলে agent থামে ও সারাংশ ফেরত দেয়। `agent.max_turns` দিয়ে বদলানো যায়।"
+    },
+    {
+      "question": "Preflight compression কখন চলে?",
+      "options": [
+        "API call-এর আগে, context window ৫০% পেরোলে",
+        "আলাপ শেষে",
+        "কখনো না",
+        "শুধু রাতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "আগেভাগে ছোট করলে context উপচে পড়ে না। Gateway-তে দুই turn-এর মাঝে ৮৫%-এ auto-compression।"
+    },
+    {
+      "question": "`todo`, `memory`, `session_search`, `delegate_task` কেন registry এড়িয়ে চলে?",
+      "options": [
+        "এগুলো tool নয়",
+        "এগুলো ধীর",
+        "এগুলো বন্ধ",
+        "এগুলোর agent-এর নিজের per-session অবস্থা লাগে, তাই `tool_executor.py` আগেই ধরে নেয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "registry-তে শুধু schema থাকে; আসল কাজ agent loop নিজে করে।"
+    }
+  ],
+  "recap": [
+    "Agent Loop = AI-কে প্রশ্ন → tool চাইলে চালানো → ফল দেখিয়ে আবার প্রশ্ন; শুধু text এলে শেষ।",
+    "তিন API mode: `chat_completions`, `codex_responses`, `anthropic_messages`; বাছার ক্রম: স্পষ্ট argument → provider → base URL → default।",
+    "message-এর পালা-বদলের নিয়ম আছে (user/assistant পরপর নয়); interrupt হলে আধখানা উত্তর ফেলে দেওয়া হয়।",
+    "Budget (default ৫০০ iteration) loop-কে অনন্ত ঘোরা থেকে থামায়; fallback ও compression (৫০%/৮৫%) আপনা-আপনি চলে।",
+    "Callback ও hook দিয়ে loop-এর প্রতিটা ধাপ দেখা যায়; `todo`/`memory`/`session_search`/`delegate_task` agent-level tool।"
+  ]
+}

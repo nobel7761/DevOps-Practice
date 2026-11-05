@@ -5,7 +5,7 @@ import Link from "next/link";
 import { StickyNote } from "lucide-react";
 import { Badge } from "@/components/shared/shadcn";
 import CustomButton from "@/components/shared/CustomButton";
-import NoteEditor from "@/components/modules/notes/NoteEditor";
+import TranscriptModal from "@/components/modules/notes/TranscriptModal";
 import { resolveContentHref } from "@/lib/data/content-href";
 import type {
   CourseContentItem,
@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<CourseContentType, string> = {
   project_submission: "Project",
   udemy_lecture: "Lecture",
   sd_lesson: "Lesson",
+  doc_lesson: "Doc",
 };
 
 export default function ModuleContentItemRow({
@@ -69,8 +70,8 @@ export default function ModuleContentItemRow({
       variant="icon"
       iconColor={hasNote ? "green" : "slate"}
       className="shrink-0"
-      aria-label={showNotes ? "Hide notes" : "Show notes"}
-      onClick={() => setShowNotes((prev) => !prev)}
+      aria-label={hasNote ? "View transcript" : "Add transcript"}
+      onClick={() => setShowNotes(true)}
     >
       <StickyNote className="size-4" />
     </CustomButton>
@@ -109,9 +110,13 @@ export default function ModuleContentItemRow({
         {row}
         {notesToggle}
       </div>
-      {canHaveNotes && showNotes && (
-        <NoteEditor
+      {canHaveNotes && (
+        <TranscriptModal
+          open={showNotes}
+          onOpenChange={setShowNotes}
           contentId={item.contentId!}
+          title={item.title ?? "Transcript"}
+          hasTranscript={hasNote}
           onSaved={(hasContent) => setHasNoteOverride(hasContent)}
         />
       )}

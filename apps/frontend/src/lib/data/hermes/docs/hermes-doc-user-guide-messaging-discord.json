@@ -1,0 +1,209 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-discord",
+  "title": "Discord",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/discord",
+  "oneLiner": "এই lesson শেষে তুমি Discord-এ Hermes-কে bot বানিয়ে ঢোকাতে এবং intent, permission, allowlist-এর মতো কঠিন শব্দগুলো বুঝে কে কথা বলতে পারবে তা ঠিক করতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলের ক্লাবরুমে নতুন সহকারী\n\nধরো তোমার স্কুলে একটা বড় ক্লাবরুম আছে, নাম **Discord server**। ভেতরে অনেক ঘর, প্রতিটা ঘরের নাম **channel**। তুমি রোবট বন্ধু **Hermes**-কে একটা **ব্যাজ** পরিয়ে ক্লাবরুমে ঢুকিয়ে দিলে। ব্যাজের নাম **bot token**। দারোয়ান ব্যাজ দেখে বলে, \"ও আসল Hermes, ঢুকতে দাও।\"\n\nকিন্তু নিয়ম আছে:\n\n- কেউ **আলাদা করে (DM)** ডাকলে Hermes সবসময় উত্তর দেয়।\n- **বড় ঘরে (server channel)** কেউ নাম ধরে ডাকলে (`@Hermes`) তবেই উত্তর দেয়। নইলে সবার কথায় ঢুকে পড়লে বিরক্তিকর হতো।\n- তোমার দেওয়া **অতিথি-তালিকায়** যাদের নাম নেই, তাদের কথা Hermes শোনেই না।\n\nএই lesson-এ ব্যাজ বানানো, ঘরে ঢোকানো আর নিয়ম ঠিক করা শিখব।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Discord server ও channel\n**Server** একটা বড় আড্ডাঘর। তার ভেতরে **channel** মানে আলাদা আলাদা বিষয়ের কামরা (যেমন #গল্প, #পড়াশোনা)।\n\n### Bot, Token\n**Bot** একটা প্রোগ্রাম-চালিত অ্যাকাউন্ট। **Token** তার গোপন পাসওয়ার্ড। এটা শুধু একবার দেখা যায়, তাই সাবধানে রাখো।\n\n### Intent (ইনটেন্ট)\nDiscord জানতে চায় তোমার bot কী কী জানতে পারবে। **Intent** হলো সেই অনুমতির সুইচ। যেমন \"বার্তার ভেতরের লেখা পড়তে পারবে কি না\" (Message Content Intent)। এটা বন্ধ থাকলে bot অন্ধ-বধির, তাই এটা অবশ্যই চালু রাখতে হয়।\n\n### Permission (অনুমতি)\nBot কোন channel-এ কী করতে পারবে (দেখা, লেখা, ফাইল দেওয়া)। স্কুলের চাবির গোছার মতো।\n\n### Role (রোল)\nDiscord-এ একদল মানুষের ব্যাজ-নাম, যেমন \"শিক্ষক\"। একজন একজন করে অনুমতি না দিয়ে পুরো role-কে অনুমতি দেওয়া যায়।\n\n### Thread (থ্রেড)\nএকটা বার্তার নিচে খোলা ছোট আলাদা কথোপকথন। বড় ঘরের কোণে ছোট্ট টেবিল।\n\n### OAuth2 / Invite URL\nBot-কে server-এ ঢোকানোর বিশেষ লিংক। লিংকে বলা থাকে bot কী কী অনুমতি চায়।\n\n### WebSocket\nএকবার সংযোগ খুলে রাখলে দুদিক থেকেই বার্তা যাওয়া-আসা করতে পারে, যেন চালু থাকা ফোন-কল। Hermes এই পথেই Discord-এর সব খবর শোনে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Discord-এর user বার্তা পাঠায়, Hermes gateway যাচাই করে agent চালায় আর উত্তর ফেরত দেয়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "Discord user",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "d",
+            "kind": "external",
+            "label": "Discord",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "g",
+            "kind": "gateway",
+            "label": "Hermes gateway",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Agent",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "d",
+            "label": "বার্তা"
+          },
+          {
+            "from": "d",
+            "to": "g",
+            "label": "WebSocket"
+          },
+          {
+            "from": "g",
+            "to": "a",
+            "label": "যাচাই পাস"
+          },
+          {
+            "from": "a",
+            "to": "g",
+            "label": "উত্তর"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hermes server-এ কীভাবে আচরণ করে\n\n| কোথায় | কী হয় |\n|---|---|\n| **DM** | mention ছাড়াই সব বার্তার উত্তর দেয়। প্রতিটা DM-এর আলাদা session (কথোপকথনের খাতা) |\n| **Server channel** | default-এ শুধু mention করলে উত্তর দেয় |\n| **Free-response channel** | `DISCORD_FREE_RESPONSE_CHANNELS`-এ থাকা channel-এ mention লাগে না |\n| **Thread** | thread-এ উত্তর দেয়। thread-এর history parent channel থেকে আলাদা |\n| **Shared channel** | `group_sessions_per_user: true` (default) থাকলে প্রত্যেক user-এর আলাদা session |\n\nআরও একটা সুন্দর নিয়ম: `DISCORD_IGNORE_NO_MENTION=true` (default) থাকলে, কোনো বার্তায় *অন্য মানুষকে* mention করা আছে কিন্তু bot-কে নয়, তখন Hermes চুপ থাকে। (DM-এ এটা খাটে না।) **কেন?** দুজনের কথার মাঝে Hermes ঢুকে পড়ুক, এটা কেউ চায় না।\n\nবার্তা আসার পর ভেতরের ধাপ: **authorization (অনুমতি দেখা) → mention বা free-response check → session খোঁজা ও আগের কথা লোড → agent চালানো (tool, memory, slash command) → উত্তর পাঠানো**।\n\nপ্রতিটা session key আলাদাভাবে ট্র্যাক হয়। তাই per-user session থাকলে একজনের interrupt অন্যজনের কাজ থামায় না। `group_sessions_per_user: false` করলে পুরো channel একটাই running-agent slot ভাগ করে। (slot = কাজ করার একটা জায়গা, তাই একজনের কাজ চলতে থাকলে বাকিদের লাইনে দাঁড়াতে হয়।)\n\n## Setup: ধাপে ধাপে\n\n1. **Discord Developer Portal-এ Application বানাও।** (Portal হলো Discord-এর ডেভেলপারদের ওয়েবসাইট।) Application ID টুকে রাখো।\n2. **Bot বানাও।** Discord-এর নিজস্ব invite link চাইলে *Public Bot* ON, আর *Require OAuth2 Code Grant* OFF রাখো।\n3. **Intent চালু করো:** *Server Members Intent* আর *Message Content Intent*। Message Content Intent ছাড়া bot online-ই আসবে না। *Presence Intent* ঐচ্ছিক।\n4. **Token নাও** (Reset Token)। শুধু একবার দেখা যায়, নিরাপদে রাখো।\n5. **Invite URL বানাও:** Installation ট্যাবে Guild Install, scope `bot` আর `applications.commands`। (**Scope** মানে \"এই লিংক দিয়ে কী কী ধরনের ক্ষমতা চাওয়া হচ্ছে\"।)\n6. **Bot-কে invite করো।** target server-এ তোমার *Manage Server* অনুমতি লাগবে।\n7. **নিজের User ID বের করো:** Developer Mode চালু করে নিজের নামে right-click → Copy User ID।\n8. **Hermes configure করো:** `hermes gateway setup` (সুপারিশকৃত), অথবা `~/.hermes/.env` সম্পাদনা করে `hermes gateway` চালাও।\n\n### দরকারি অনুমতি (permissions)\n\n- **আবশ্যক:** View Channels, Send Messages, Embed Links, Attach Files, Read Message History\n- **থাকলে ভালো:** Create Public Threads, Send Messages in Threads, Add Reactions\n- **Permission integer** হলো সব অনুমতিকে একটা সংখ্যায় লেখার রীতি। minimal `117760`, recommended `309237763136`, full `309240908864` (voice-এর জন্য Connect আর Speak যোগ হয়)।\n- পুরোনো install-এ নতুন permission চাইলে bot-কে **আবার invite** করতে হবে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "সবসময় allowlist দাও",
+      "markdown": "`DISCORD_ALLOWED_USERS` অথবা `DISCORD_ALLOWED_ROLES` অবশ্যই সেট করো। অনুমোদিত user-এর হাতে agent-এর **পূর্ণ ক্ষমতা** থাকে। Role-ভিত্তিক access role ID দিয়ে চলে আর user list-এর সাথে OR হয় (যেকোনো একটা মিললেই ঢুকতে পারে)। আর `@everyone`/roles mention বন্ধ রাখো, কারণ LLM-এর (বড় ভাষা-মডেলের) লেখায় ভুল করে `@everyone` চলে আসতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `~/.hermes/.env`-এর গুরুত্বপূর্ণ চাবি\n\n```bash\nDISCORD_BOT_TOKEN=...            # আবশ্যক\nDISCORD_ALLOWED_USERS=123,456    # কে কথা বলতে পারবে\nDISCORD_ALLOWED_ROLES=...        # role ID দিয়েও অনুমতি\nDISCORD_HOME_CHANNEL=...         # cron/proactive বার্তার ঠিকানা\nDISCORD_REQUIRE_MENTION=true\nDISCORD_FREE_RESPONSE_CHANNELS=...\nDISCORD_AUTO_THREAD=true\nDISCORD_ALLOW_BOTS=none          # none | mentions | all\nDISCORD_REPLY_TO_MODE=first      # off | first | all\nDISCORD_HISTORY_BACKFILL_LIMIT=50\n```\n\n| চাবি | মানে | কখন লাগে |\n|---|---|---|\n| `DISCORD_BOT_TOKEN` | bot-এর ব্যাজ | সবসময় |\n| `DISCORD_ALLOWED_USERS` | অনুমোদিত মানুষের ID | নিরাপত্তার জন্য সবসময় |\n| `DISCORD_ALLOWED_ROLES` | অনুমোদিত role-এর ID | অনেক মানুষকে একসাথে অনুমতি দিতে |\n| `DISCORD_HOME_CHANNEL` | cron বা নিজে থেকে পাঠানো বার্তার ঠিকানা | রোজকার রিপোর্ট পাঠাতে |\n| `DISCORD_REQUIRE_MENTION` | channel-এ mention লাগবে কি না | ঘর শান্ত রাখতে |\n| `DISCORD_FREE_RESPONSE_CHANNELS` | যেসব channel-এ mention লাগে না | শুধু Hermes-এর নিজস্ব channel-এ |\n| `DISCORD_AUTO_THREAD` | নিজে থেকে thread খুলবে কি না | channel গোছানো রাখতে |\n| `DISCORD_ALLOW_BOTS` | অন্য bot-এর কথা শুনবে কি না (`none`/`mentions`/`all`) | সাধারণত `none` |\n| `DISCORD_REPLY_TO_MODE` | উত্তর reply-আকারে দেবে কি না | `first` মানে প্রথম অংশে reply |\n| `DISCORD_HISTORY_BACKFILL_LIMIT` | আগের কতগুলো বার্তা পড়ে context নেবে | ডিফল্ট ৫০ |\n\nআরও কিছু default: `DISCORD_THREAD_REQUIRE_MENTION=false`, `DISCORD_REACTIONS=true`, `DISCORD_HISTORY_BACKFILL=true`, `DISCORD_ALLOW_ALL_USERS=false`, `DISCORD_COMMAND_SYNC_POLICY=safe` (`safe`/`bulk`/`off`)। Mention permission: `everyone` ও `roles` default **false**, `users` ও `replied_user` default **true**। Attachment-এর default সীমা `33554432` byte (৩২ MiB)। proxy লাগলে `DISCORD_PROXY`। (**Proxy** মানে মাঝখানের পথ-পাল্টানো মেশিন।)\n\n### config.yaml-এর `discord:` অংশ\n\nএকই জিনিস YAML সেটিংসের খাতাতেও সাজানো যায়: `require_mention`, `free_response_channels`, `auto_thread`, `ignored_channels`, `no_thread_channels`, `history_backfill`, `allow_mentions`। বিশেষ একটা হলো **`channel_prompts`**: প্রতি channel-এর জন্য আলাদা অস্থায়ী system prompt (parent channel থেকে fallback সহ)। **System prompt** মানে Hermes-কে দেওয়া গোপন আচরণ-নির্দেশ, যেমন \"এই channel-এ তুমি শুধু গণিতের শিক্ষক\"।\n\nশীর্ষস্তরের `group_sessions_per_user: true` সব platform-এ খাটে। `display.tool_progress` হতে পারে `off | new | all | verbose` (default `all`)। Approval-এর জন্য `approvals.discord_prompt_timeout` (default ৩০০, কমপক্ষে ৩০ সেকেন্ড), আর clarify-র জন্য `agent.clarify_timeout` (default ৩৬০০)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Discord bot চালু করার সংক্ষিপ্ত পথ।",
+        "steps": [
+          {
+            "title": "Portal-এ app আর bot",
+            "body": "Developer Portal-এ application বানিয়ে bot যোগ করো।"
+          },
+          {
+            "title": "Intent ও token",
+            "body": "**Message Content Intent** আর Server Members Intent চালু করো। token কপি করো।"
+          },
+          {
+            "title": "Invite",
+            "body": "`bot` + `applications.commands` scope-এ invite URL বানিয়ে server-এ যোগ করো।"
+          },
+          {
+            "title": "Configure",
+            "body": "`hermes gateway setup` চালাও, `DISCORD_ALLOWED_USERS` দাও।"
+          },
+          {
+            "title": "চালাও",
+            "body": "`hermes gateway` চালাও। bot online হলে DM বা mention করে পরীক্ষা করো।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## মজার feature-গুলো\n\n- **Slash command access:** `gateway.platforms.discord.extra`-এর নিচে `allow_admin_from` আর `user_allowed_commands` দিয়ে ঠিক করা যায় কে কোন command চালাবে। `/help` ও `/whoami` সবসময় চলে।\n- **Model picker:** `/model` (কিছু না লিখে) দিলে provider ও model-এর dropdown আসে। (**Provider** মানে যে কোম্পানি AI চালায়, **model** মানে তাদের নির্দিষ্ট AI।) ১২০ সেকেন্ড পর মেয়াদ শেষ।\n- **Skill = slash command:** install করা Skill (Hermes-কে শেখানো পদ্ধতি) native slash command হয়ে যায়। Discord-এর সীমা প্রতি bot-এ **১০০টা** command।\n- **Media:** `MEDIA:` ট্যাগ দিয়ে ছবি, GIF, video, voice, document পাঠানো যায়।\n- **আসা ফাইল:** যেকোনো ধরনের ফাইল নেয়, `~/.hermes/cache/documents/`-এ জমা রাখে (cache)। ছোট UTF-8 লেখার ফাইল (১০০ KiB পর্যন্ত) সরাসরি prompt-এ ঢোকে।\n- **Clarify:** Hermes প্রশ্ন করলে উত্তরের অপশন button হয়ে আসে, সাথে \"Other\"। `skip` লিখলে প্রশ্ন বাদ।\n- **Home channel:** `/sethome` বা env var দিয়ে ঠিক করো।\n- **Voice:** voice message লেখায় বদলায় (faster-whisper, Groq `GROQ_API_KEY`, বা OpenAI `VOICE_TOOLS_OPENAI_KEY`)। `/voice tts` দিলে মুখে উত্তর দেয়। Hermes voice channel-এও ঢুকতে পারে।\n- **Forum channel:** প্রতিবার পাঠালে নতুন thread পোস্ট হয়। নাম প্রথম লাইন থেকে, সর্বোচ্চ ১০০ অক্ষর।\n- **Bot-to-bot:** handoff শুরু করতে সরাসরি bot-কে mention করতে হয়। লুপ আটকাতে ৫ মিনিটে ২০টা bot-বার্তা এলে ১০ মিনিট সেগুলো ফেলে দেয়।\n\n### WebSocket স্বাস্থ্য পরীক্ষা\n\nREST (Discord-কে সরাসরি প্রশ্ন করার সাধারণ পথ) কাজ করছে মানেই বার্তা আসছে, তা নয়। তাই Hermes সংযোগের WebSocket-ও নজরে রাখে। `discord:`-এর নিচে: `websocket_liveness_interval_seconds` (১৫), `websocket_liveness_failure_threshold` (২), `websocket_heartbeat_ack_max_age_seconds` (৬০), `websocket_max_latency_seconds` (৩০), `websocket_event_max_silence_seconds` (১৪৪০০)। কোনোটা `0` করলে সেই পরীক্ষা বন্ধ। সংযোগ পুরো বন্ধ হলে সঙ্গে সঙ্গে reconnect (আবার জোড়া লাগানো)। নরম সংকেত পেলে কয়েকবার ব্যর্থ হওয়ার পর তবে।\n\n## সমস্যা হলে কী দেখবে\n\n| লক্ষণ | সমাধান |\n|---|---|\n| Bot চুপ | Message Content Intent আছে? Access policy সেট আছে? `~/.hermes/logs/gateway.log`-এ \"No Discord access policy configured\" খোঁজো |\n| `PrivilegedIntentsRequired` | log-এ বলা intent চালু করে save করো, `hermes gateway restart` |\n| Channel দেখতে পায় না | সেই channel-এ View Channel ও Read Message History দাও |\n| 403 error | (মানে \"অনুমতি নেই\") সঠিক permission দিয়ে আবার invite করো |\n| Bot offline | `hermes gateway` চলছে? token ঠিক আছে? |\n| কোনো user-কে অগ্রাহ্য করছে | তার ID `DISCORD_ALLOWED_USERS`-এ যোগ করো |\n| সবার context মিশে যাচ্ছে | `group_sessions_per_user: true` রাখো |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "শুরুতে wizard-ই সহজ",
+      "markdown": "হাতে `.env` লেখার চেয়ে `hermes gateway setup` wizard চালানো সহজ, আর ভুলের সম্ভাবনা কম।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Discord-এ bot token কীসের মতো?",
+      "options": [
+        "একটা ব্যাজ/পাসওয়ার্ড যা দেখালে bot-কে আসল বলে চেনা যায়",
+        "একটা ছবি",
+        "server-এর নাম",
+        "user-এর বয়স"
+      ],
+      "answerIndex": 0,
+      "explanation": "token হলো bot-এর গোপন পরিচয়। এটা ফাঁস হলে অন্য কেউ bot চালাতে পারে।"
+    },
+    {
+      "question": "Message Content Intent বন্ধ থাকলে কী হয়?",
+      "options": [
+        "bot শুধু ধীর হয়",
+        "bot বার্তার লেখা পড়তে পারে না, online-ই আসে না",
+        "bot সবাইকে admin করে",
+        "কিছু হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই intent না থাকলে bot বার্তার ভেতরের লেখা দেখতে পায় না, তাই কাজ করে না।"
+    },
+    {
+      "question": "Server channel-এ default-এ Hermes কখন উত্তর দেয়?",
+      "options": [
+        "সব বার্তায়",
+        "শুধু mention (`@Hermes`) করলে",
+        "কখনোই না",
+        "শুধু রাত্রে"
+      ],
+      "answerIndex": 1,
+      "explanation": "DM-এ mention লাগে না, কিন্তু server channel-এ default-এ লাগে।"
+    },
+    {
+      "question": "`DISCORD_ALLOWED_USERS` বা `DISCORD_ALLOWED_ROLES` কেন সেট করবে?",
+      "options": [
+        "রং বদলাতে",
+        "কারা কথা বলতে পারবে ঠিক করতে, কারণ অনুমোদিতদের হাতে পূর্ণ ক্ষমতা থাকে",
+        "ফাইল ছোট করতে",
+        "voice চালাতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "অনুমোদিত user agent-এর পূর্ণ ক্ষমতা পায়। তাই তালিকা ছাড়া খোলা রাখা বিপজ্জনক।"
+    },
+    {
+      "question": "`group_sessions_per_user: true` থাকলে shared channel-এ কী হয়?",
+      "options": [
+        "সবার একই session",
+        "প্রত্যেক user-এর আলাদা session, তাই কথা মিশে যায় না",
+        "কারও session থাকে না",
+        "bot বন্ধ"
+      ],
+      "answerIndex": 1,
+      "explanation": "এতে একজনের কথা বা interrupt অন্যজনের কাজে ঢোকে না।"
+    },
+    {
+      "question": "Discord-এ Skill হিসেবে কতগুলো native slash command পর্যন্ত রাখা যায়?",
+      "options": ["১০টা", "৫০টা", "১০০টা", "সীমা নেই"],
+      "answerIndex": 2,
+      "explanation": "Discord-এর সীমা প্রতি bot-এ ১০০টা command।"
+    },
+    {
+      "question": "নতুন permission দরকার, অথচ bot আগেই invite করা। কী করতে হবে?",
+      "options": [
+        "কিছুই না",
+        "bot-কে আবার invite করতে হবে",
+        "Hermes মুছে ফেলতে হবে",
+        "server বদলাতে হবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "পুরোনো install-এ নতুন permission চাইলে আবার invite লাগে।"
+    }
+  ],
+  "recap": [
+    "Discord-এ Hermes চালাতে Developer Portal-এ bot বানাতে হয়, Message Content Intent চালু করতে হয়, token নিতে হয়।",
+    "DM-এ mention লাগে না, server channel-এ default-এ mention লাগে।",
+    "`DISCORD_ALLOWED_USERS` বা `DISCORD_ALLOWED_ROLES` সেট না করা বিপজ্জনক।",
+    "`group_sessions_per_user: true` রাখলে প্রত্যেকের আলাদা session থাকে।",
+    "সমস্যা হলে `~/.hermes/logs/gateway.log` আর intent/permission দেখো।"
+  ]
+}

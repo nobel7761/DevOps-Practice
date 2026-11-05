@@ -1,0 +1,170 @@
+{
+  "contentId": "hermes-doc-guides-delegation-patterns",
+  "title": "Delegation Patterns",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/delegation-patterns",
+  "oneLiner": "এই lesson শেষে তুমি জানবে কখন ও কীভাবে subagent-এ কাজ ভাগ করে সমান্তরালে চালাতে হয়, এবং subagent, context window, toolset, iteration-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বিয়েবাড়ির প্রধান বাবুর্চি\n\nবিয়েবাড়িতে প্রধান বাবুর্চি একা সব রাঁধেন না। তিনি তিন সহকারীকে তিন কাজ দেন: একজন পোলাও, একজন কাবাব, একজন মিষ্টি। প্রত্যেককে আলাদা চুলা আর আলাদা হাঁড়ি।\n\nপ্রধান বাবুর্চি প্রতিটা সহকারীর চামচ-নাড়ার খুঁটিনাটি দেখেন না। শুধু শেষে \"হয়ে গেছে\" খবরটা শোনেন। কিন্তু সহকারীকে ঠিকঠাক বলতে হয়। \"সেই যে কালকের মশলা\" বললে সে বুঝবে না।\n\nHermes-এ **delegation** মানে এটাই: `delegate_task` দিয়ে আলাদা **child agent (subagent)** চালু করা। প্রতিটার আছে নিজের conversation, terminal session ও toolset। parent-এর কাছে ফেরে শুধু **চূড়ান্ত সারাংশ**। মাঝের tool call parent-এর context window-এ ঢোকে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Agent ও subagent:** Agent হলো এমন AI, যে নিজে ভেবে হাতিয়ার চালিয়ে কাজ করে। Subagent (child) হলো মূল agent (parent)-এর ডাকা ছোট সহকারী agent। প্রধান বাবুর্চি আর সহকারী।\n- **Delegate (ডেলিগেট):** কাজ অন্যকে ভাগ করে দেওয়া।\n- **Context window:** AI একসাথে কতটা লেখা মনে রাখতে পারে তার সীমা। ছোট টেবিলের মতো, বেশি বই রাখলে জায়গা ফুরোয়। Subagent আলাদা টেবিলে কাজ করে, তাই মূল টেবিল ভরে না।\n- **Tool ও toolset:** Tool হলো হাতিয়ার (ফাইল পড়া, web খোঁজা)। Toolset হলো হাতিয়ারের গোষ্ঠী, যেন যন্ত্রের বাক্স।\n- **Parallel (সমান্তরাল):** একসাথে, পাশাপাশি। তিন সহকারী একই সময়ে রাঁধে।\n- **Terminal ও working directory:** Terminal হলো লিখে কমান্ড চালানোর জানালা। Working directory হলো সেই জানালা এখন কোন ফোল্ডারে আছে।\n- **Iteration:** agent-এর একবার ভেবে একবার কাজ করার এক চক্কর। সীমা না থাকলে অনন্ত ঘুরতে পারে।\n- **Orchestrator ও leaf:** Orchestrator হলো যে নিজেও আরও সহকারী ডাকতে পারে (ম্যানেজার)। Leaf হলো যে শুধু নিজের কাজ করে (পাতা)। গাছের শাখা আর পাতা।\n- **Spawn / depth:** Spawn মানে নতুন সহকারী জন্ম দেওয়া। Depth মানে কয় স্তর পর্যন্ত, যেমন সহকারীর সহকারীর সহকারী।\n- **Prompt, goal, context (এই পাতায়):** `goal` হলো কী করতে হবে। `context` হলো সহকারীর জানা দরকার এমন সব তথ্য।\n- **Refactor:** কোডের কাজ একই রেখে ভেতরটা গুছিয়ে লেখা।\n- **Cron / background:** Cron হলো সময় ধরে নিজে চলা কাজ। Background মানে পেছনে চুপচাপ চলা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন delegate করবে?\n\n**কেন জানা দরকার?** সহকারী ডাকলেও খরচ আছে। সব কাজে তা লাভজনক নয়।\n\n**ভালো ক্ষেত্র**\n- যুক্তি-ভারী কাজ: debugging (ভুল খোঁজা), code review (কোড পরখ), গবেষণার সংশ্লেষ (অনেক তথ্য মিলিয়ে সারকথা)\n- যে কাজ মাঝের ডেটায় context ভরিয়ে দেবে\n- সমান্তরাল, স্বাধীন কাজ\n- নতুন চোখে (পক্ষপাতহীন) দেখার দরকার\n\n**অন্য কিছু ব্যবহার করো যখন**\n- একটা tool call-ই যথেষ্ট: সরাসরি tool।\n- যান্ত্রিক বহু ধাপ, মাঝে logic আছে: `execute_code` (একটা ছোট script চালায়)।\n- ব্যবহারকারীর সাথে কথা লাগবে: subagent `clarify` (ব্যবহারকারীকে প্রশ্ন করা) ব্যবহার করতে পারে না।\n- ছোট ফাইল edit: নিজেই করো।\n- session বন্ধ/restart পেরিয়ে টিকে থাকা কাজ: `cronjob_manage` বা `terminal(background=True, notify_on_complete=True)`।"
+    },
+    {
+      "type": "simulator",
+      "id": "delegation"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Pattern ১: সমান্তরাল গবেষণা\n\nতিনটা বিষয় একসাথে: browser-এর বাইরে WebAssembly, ২০২৫-এ RISC-V server chip, বাস্তব quantum computing। `delegate_task(tasks=[...])`-এ প্রতিটা task-এ `goal` ও `context` থাকে (যেমন WebAssembly-র context: Wasmtime/Wasmer, cloud/edge, WASI)। তিনটা একসাথে চলে। Parent সারাংশ জুড়ে একটা briefing বানায়।\n\nমানে তিন সহকারী তিনটা বিষয় পড়ে আসে, প্রধান বাবুর্চি তিনটা খবর জুড়ে একটা রিপোর্ট লেখে।\n\n## Pattern ২: Code review আর \"Context Problem\"\n\n`src/auth/` দেখো: SQL injection, JWT validation, password handling, session management। সমস্যা ঠিক করে test চালাও। context-এ দাও project root `/home/user/webapp`, Python 3.11/Flask/PyJWT/bcrypt, ফাইল `src/auth/login.py`, `jwt.py`, `middleware.py`, আর test command `pytest tests/auth/ -v`।\n\n(SQL injection = ডেটাবেসে লুকিয়ে খারাপ হুকুম ঢোকানোর আক্রমণ। JWT = লগইনের পরিচয়-টোকেন। `pytest` = কোড ঠিক আছে কি না যাচাইয়ের টুল।)\n\n> **Context Problem:** subagent একদম নতুন; তোমাদের কথোপকথন জানে না। \"আমরা যে bug নিয়ে কথা বলছিলাম সেটা ঠিক করো\" ব্যর্থ হবে। ফাইল path, error message, কাঠামো, সীমাবদ্ধতা স্পষ্ট করে দাও।\n\n## Pattern ৩: বিকল্প তুলনা\n\nDjango app-এ (Django = Python-এর ওয়েব ফ্রেমওয়ার্ক) full-text search (লেখার ভেতর খোঁজা): PostgreSQL tsvector, Elasticsearch (`django-elasticsearch-dsl`), Meilisearch (`meilisearch-python`)। তিনটা আলাদা subagent, একই মাপকাঠি (setup জটিলতা, query ক্ষমতা, resource, maintenance)। আলাদা থাকায় একটার চিন্তা অন্যটাকে দূষিত করে না। Parent তুলনা করে সুপারিশ দেয়।\n\n## Pattern ৪: বহু-ফাইল refactor\n\n`/home/user/api-server`-এ তিনটা সমান্তরাল task: **handlers** (`users.py`, `auth.py`, `billing.py`: `return {\"data\": result, \"status\": \"ok\"}` থেকে `return APIResponse(data=result, status=200).to_dict()`, import `from src.responses import APIResponse`, test `pytest tests/handlers/ -v`), **SDK** (`sdk/python/client.py`, `models.py`, test), **docs** (`docs/api/`, `overview.md`-তে \"Response Format\" অংশ)।\n\n**টিপ:** প্রতি subagent-এর আলাদা terminal, তাই ভিন্ন ফাইল হলে একই ডিরেক্টরিতে চলে। দুজনে একই ফাইল ছুঁতে পারে এমন হলে সেই ফাইল সমান্তরাল কাজের পর তুমি নিজে সামলাও। দুজন একই খাতায় লিখলে লেখা গুলিয়ে যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Gather Then Analyze: সস্তা সংগ্রহ আগে, দামি বিশ্লেষণ পরে।",
+        "steps": [
+          {
+            "title": "১. execute_code দিয়ে সংগ্রহ",
+            "body": "`hermes_tools`-এর `web_search`, `web_extract` দিয়ে তিনটা query (যেমন 'AI funding Q1 2026'), প্রতিটায় `limit=5`, শীর্ষ ৫ URL-এর পুরো লেখা আনো।"
+          },
+          {
+            "title": "২. ফাইলে রাখো",
+            "body": "JSON সেভ করো `~/.hermes/cache/scratch/ai-funding-data.json`-এ; গণনা ছাপো।"
+          },
+          {
+            "title": "৩. subagent-কে বিশ্লেষণ দাও",
+            "body": "`delegate_task` ফাইলটা পড়ে বাজার-রিপোর্ট লেখে: $100M-এর বড় deal, trend, প্রধান খেলোয়াড়, ভবিষ্যৎ।"
+          },
+          {
+            "title": "৪. কেন এই ভাগ?",
+            "body": "`execute_code` বহু সস্তা ধারাবাহিক call সামলায়; একটা subagent পরিষ্কার context-এ দামি চিন্তা করে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "অস্পষ্ট বনাম স্পষ্ট নির্দেশ: subagent-এর স্মৃতি নেই।",
+        "beforeTitle": "অস্পষ্ট (ব্যর্থ)",
+        "before": "\"আমরা যে bug নিয়ে কথা বলছিলাম সেটা ঠিক করো।\"\n\nSubagent জানে না কোন bug, কোন ফাইল।",
+        "afterTitle": "স্পষ্ট (সফল)",
+        "after": "\"`api/handlers.py` ৪৭ নম্বর লাইনে `parse_body()` `None` দিচ্ছে, `process_request()`-এ TypeError। ঠিক করো, `pytest tests/` চালাও।\"\n\nসব তথ্য হাতে।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিয়ম ও সীমা\n\n**Tool উত্তরাধিকার:** subagent parent-এর চালু toolset পায়। `delegate_task`-এ model-facing `toolsets` parameter নেই, তাই parent-এর নেই এমন ক্ষমতা পাওয়া যায় না। কথোপকথন শুরুর আগেই parent-এর tool ঠিক করো। Child সবসময় `clarify`, `memory`, `send_message` হারায়। (`execute_code` নিয়ে page-এর দুই জায়গায় দুই কথা আছে: এক জায়গায় child রাখে, অন্য জায়গায় leaf-এর জন্য বন্ধ। নিজের version-এ যাচাই করে নাও।)\n\n**Nested delegation opt-in** (সহকারীর সহকারী, নিজে চাইলে তবেই চালু):\n- Leaf subagent (default) `delegate_task`, `clarify`, `memory`, `execute_code` ডাকতে পারে না।\n- Orchestrator (`role=\"orchestrator\"`) `delegate_task` রাখে, তবে শুধু যদি `delegation.max_spawn_depth` default ১-এর বেশি হয়। বাকি তিনটা তখনও বন্ধ।\n- বিশ্বব্যাপী বন্ধ: `delegation.orchestrator_enabled: false`।\n\n| Config | Default | পরিসর | কাজ | কখন বদলাবে |\n|---|---|---|---|---|\n| `max_concurrent_children` | ১০ | ≥১ | এক `delegate_task` call-এ সমান্তরাল batch | আরও একসাথে চালাতে চাইলে |\n| `max_spawn_depth` | ১ | ≥১ | কত স্তর পর্যন্ত আরও spawn চলবে | nested সহকারী চাইলে |\n\n```yaml\ndelegation:\n  max_concurrent_children: 30\n  max_spawn_depth: 2\n```\n\nএই লাইনগুলো `config.yaml` (সেটিংসের নথি)-এ লেখা হয়। এতে ৩০ সমান্তরাল worker আর nested subagent চলে। প্রতি subagent-এর আলাদা terminal, working directory ও state। কোনো conversation history নেই, শুধু `goal` ও `context`। Default **২৫০ iteration**। সরল কাজের বহর হলে খরচ বাঁচাতে `delegation.max_iterations` কমাও।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "টেকসই নয়",
+      "markdown": "Top-level delegation background-এ চলে ও পরে ফল জানায়, কিন্তু owning session ও process-এর সাথে বাঁধা। session বন্ধ, `/stop`, `/new` বা restart হলে কাজ বাতিল বা আটকে যেতে পারে। টেকসই কাজে `cronjob_manage` বা `terminal(background=True, notify_on_complete=True)`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## টিপস\n\n- **লক্ষ্য নির্দিষ্ট করো:** \"`api/handlers.py` ৪৭ নম্বর লাইনে `parse_body()` থেকে `None` পেয়ে `process_request()`-এ TypeError, ঠিক করো\", \"bug ঠিক করো\" নয়।\n- **পরম path, project root, test command** দাও। (পরম path = পুরো ঠিকানা, `/` দিয়ে শুরু।)\n- Delegation context আলাদা রাখে এবং স্পষ্ট সমস্যা-বিবৃতি বাধ্য করে।\n- **ফল যাচাই করো:** নিজে test চালাও বা diff পড়ো। সারাংশ প্রমাণ নয়।\n- **ব্যর্থতা দৃশ্যমান:** subagent মরলে এক লাইনের `⚠️ Subagent failed` notice আসে (CLI-তে আর gateway platform-এ)। Parent পুরো error tool result-এ পায়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Subagent শেষ হলে parent-এর কাছে কী ফেরে?",
+      "options": [
+        "সব মাঝের tool call সহ পুরো log",
+        "কিছুই না",
+        "শুধু চূড়ান্ত সারাংশ",
+        "শুধু error"
+      ],
+      "answerIndex": 2,
+      "explanation": "প্রধান বাবুর্চি শুধু \"হয়ে গেছে\" খবর শোনেন। তাই parent-এর context window ভরে না।"
+    },
+    {
+      "question": "'আমরা আগে যে bug নিয়ে কথা বলছিলাম সেটা ঠিক করো', কেন ব্যর্থ হবে?",
+      "options": [
+        "Subagent-এর terminal নেই",
+        "Subagent কথোপকথন-ইতিহাস জানে না; শুধু `goal` ও `context` দেখে",
+        "Model ছোট",
+        "`clarify` চালু"
+      ],
+      "answerIndex": 1,
+      "explanation": "Subagent একদম নতুন, তাই সব তথ্য `goal` ও `context`-এ দিতে হয়।"
+    },
+    {
+      "question": "`delegation.max_concurrent_children`-এর default কত?",
+      "options": ["১", "৩০", "১০", "২৫০"],
+      "answerIndex": 2,
+      "explanation": "Default ১০। উদাহরণে ৩০ করা হয়েছে।"
+    },
+    {
+      "question": "Leaf subagent কোনটা পারে না?",
+      "options": [
+        "`terminal`",
+        "ফাইল পড়তে",
+        "`execute_code` ছাড়া সবই",
+        "`delegate_task`, `clarify`, `memory`, `execute_code` ডাকতে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Leaf হলো পাতা। সে আর সহকারী ডাকতে পারে না।"
+    },
+    {
+      "question": "দু'টা subagent একই ফাইল ছুঁতে পারে, কী করবে?",
+      "options": [
+        "দুজনকেই চালাও",
+        "`max_spawn_depth` বাড়াও",
+        "সেই ফাইল সমান্তরাল কাজের পর নিজে সামলাও",
+        "`memory` ব্যবহার করো"
+      ],
+      "answerIndex": 2,
+      "explanation": "একই খাতায় দুজন লিখলে গুলিয়ে যায়, তাই ওই ফাইল তুমি নিজে করো।"
+    },
+    {
+      "question": "Session restart-এও টিকে থাকা কাজে কী ব্যবহার করবে?",
+      "options": [
+        "`delegate_task`",
+        "`cronjob_manage` বা `terminal(background=True, notify_on_complete=True)`",
+        "`clarify`",
+        "দুটো orchestrator"
+      ],
+      "answerIndex": 1,
+      "explanation": "Delegation session-এর সাথে বাঁধা, restart হলে বাতিল হতে পারে।"
+    },
+    {
+      "question": "'Gather Then Analyze' pattern-এ কেন আগে `execute_code`?",
+      "options": [
+        "কারণ subagent ইন্টারনেট পায় না",
+        "`execute_code` বেশি বুদ্ধিমান",
+        "কোনো কারণ নেই",
+        "সস্তা বহু call `execute_code`-এ; দামি যুক্তি একটা subagent পরিষ্কার context-এ"
+      ],
+      "answerIndex": 3,
+      "explanation": "সস্তা কাজ সস্তা পথে, দামি চিন্তা পরিষ্কার টেবিলে।"
+    },
+    {
+      "question": "Orchestrator subagent `delegate_task` ডাকতে পারে কখন?",
+      "options": [
+        "সবসময়",
+        "শুধু `max_spawn_depth` default ১-এর বেশি হলে",
+        "শুধু `clarify` থাকলে",
+        "কখনোই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "Depth ১ হলে সবাই leaf। বেশি হলে তবেই orchestrator আরও সহকারী ডাকে।"
+    }
+  ],
+  "recap": [
+    "Delegation মানে `delegate_task` দিয়ে আলাদা subagent চালানো; parent শুধু চূড়ান্ত সারাংশ পায়।",
+    "Subagent একদম নতুন, তাই `goal` ও `context`-এ ফাইল path, error, test command সব দিতে হয়।",
+    "একই ফাইলে দুই subagent নয়; পাশাপাশি স্বাধীন কাজই সমান্তরালে চালাও।",
+    "`max_concurrent_children` (১০) ও `max_spawn_depth` (১) default; nested delegation opt-in।",
+    "টেকসই কাজে `cronjob_manage` বা background terminal; সারাংশ প্রমাণ নয়, ফল যাচাই করো।"
+  ]
+}

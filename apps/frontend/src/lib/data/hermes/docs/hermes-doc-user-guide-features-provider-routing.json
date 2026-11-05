@@ -1,0 +1,203 @@
+{
+  "contentId": "hermes-doc-user-guide-features-provider-routing",
+  "title": "Provider Routing",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/provider-routing",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে OpenRouter-এর পেছনের কোন কোম্পানি কাজ করবে তা `provider_routing` দিয়ে কীভাবে ঠিক করতে হয় এবং `sort`, `only`, `ignore`, `order`-এর মতো প্রতিটা key কেন লাগে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## পার্সেল ডেলিভারির বাছাই\n\nধরো তুমি একটা পার্সেল পাঠাবে। একটা **কুরিয়ার অফিস** আছে (এর নাম **OpenRouter**), যার পেছনে অনেক ডেলিভারি কোম্পানি কাজ করে। তুমি অফিসকে বলতে পারো:\n\n- \"সবচেয়ে **সস্তা** কোম্পানিকে দাও\" (`sort: price`)\n- \"সবচেয়ে **দ্রুত** কোম্পানিকে দাও\" (`sort: latency`)\n- \"শুধু এই দুই কোম্পানি, অন্য কেউ না\" (`only`)\n- \"ওই কোম্পানিকে কখনোই না\" (`ignore`)\n\nHermes-এর **Provider Routing** ঠিক এটাই। যখন তোমার AI provider হলো OpenRouter, তখন OpenRouter তোমার প্রশ্নটা পেছনের অনেক কোম্পানির (underlying provider) কোনো একটায় পাঠায়। `provider_routing` দিয়ে তুমি বলে দাও কোনগুলো, কোন ক্রমে, কী শর্তে।\n\n**এটা না থাকলে কী সমস্যা হতো?** OpenRouter নিজের মতো করে বাছত। তুমি খরচ কমাতে, গতি বাড়াতে বা নিজের লেখা কোনো কোম্পানির হাতে না যেতে দিতে চাইলে কিছুই বলার উপায় থাকত না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Provider, Aggregator, OpenRouter\n- **Provider** = যে কোম্পানি AI model চালায়।\n- **Aggregator / router** = একজন দালাল, যে অনেক provider-কে এক ছাতার নিচে এনেছে। **OpenRouter** একটা aggregator।\n- তাই এখানে দুই স্তর আছে: তুমি → OpenRouter → (পেছনের) Anthropic বা Google বা অন্য কেউ। এই পেছনের কোম্পানিগুলোকে বলা হয় **underlying provider** (মূল প্রদানকারী)।\n\n### ২) Config আর YAML\n- **`config.yaml`** = Hermes-এর সেটিং-খাতা (`~/.hermes/config.yaml`)। `~` মানে তোমার home ফোল্ডার।\n- **YAML** = `নাম: মান` আকারে সেটিং লেখার সোজা ধরন। **তালিকা** লেখা হয় `[a, b]` বা `- a` লাইনে।\n- `#` দিয়ে শুরু লেখা comment, মানে নিজের জন্য নোট, কম্পিউটার পড়ে না।\n\n### ৩) Whitelist আর Blacklist\n- **Whitelist** (সাদা-তালিকা) = \"শুধু এরাই চলবে।\" (`only`)\n- **Blacklist** (কালো-তালিকা) = \"এরা কখনো না।\" (`ignore`)\n\n### ৪) Latency, Throughput\n- **Latency** = প্রশ্ন করার পর **প্রথম শব্দ** আসতে কতক্ষণ লাগে। কম হলে সাড়া দ্রুত মনে হয়।\n- **Throughput** = উত্তর লেখা শুরু হলে প্রতি সেকেন্ডে কত token (শব্দের টুকরো) আসে। বেশি হলে লম্বা লেখা তাড়াতাড়ি শেষ হয়।\n\n### ৫) Parameter\nঅনুরোধের সাথে পাঠানো ছোট সেটিং, যেমন `temperature` (উত্তর কত এলোমেলো হবে), `top_p` (কত বিকল্প থেকে বাছবে), `tools` (কোন হাতিয়ার ব্যবহারযোগ্য)। সব provider সব parameter বোঝে না।\n\n### ৬) Slug\nএকটা কোম্পানির ছোট হাতের সংক্ষিপ্ত নাম, যেমন `anthropic`, `google`, `together`। OpenRouter-এর ওয়েবসাইটে এই নামই দেখায়।\n\n### ৭) Data collection / training\nকিছু provider তোমার পাঠানো লেখা জমিয়ে রেখে নিজের AI শেখাতে (train করতে) পারে। গোপন লেখা হলে এটা তুমি চাও না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন কাজ করে, কখন করে না\n\n- **শুধু OpenRouter-এ** কাজ করে। কারণ OpenRouter-ই একমাত্র যে \"পেছনের অনেক কোম্পানি\" থেকে বাছার সুযোগ দেয়।\n- **Nous Portal** নিজেই প্রতি model-এর routing ঠিক করে। Hermes Portal-কে `provider` object পাঠায়ই না, তাই `provider_routing` সেখানে কোনো কাজ করে না।\n- **সরাসরি provider connection** (যেমন সরাসরি Anthropic API) -এও এটা প্রভাব ফেলে না, কারণ ওখানে মাঝখানে বাছাই করার কেউ নেই।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তোমার Hermes OpenRouter-কে preference পাঠায়, OpenRouter সেই অনুযায়ী পেছনের provider বাছে।",
+        "nodes": [
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "or",
+            "kind": "gateway",
+            "label": "OpenRouter",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "external",
+            "label": "Anthropic",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "g",
+            "kind": "external",
+            "label": "Google",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "h",
+            "to": "or",
+            "label": "provider preferences"
+          },
+          {
+            "from": "or",
+            "to": "a",
+            "label": "বাছাই হলে"
+          },
+          {
+            "from": "or",
+            "to": "g",
+            "label": "বা এটা"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## config: `~/.hermes/config.yaml`\n\n```yaml\nprovider_routing:\n  sort: \"price\"               # How to rank providers\n  only: []                    # Whitelist: only use these providers\n  ignore: []                  # Blacklist: never use these providers\n  order: []                   # Explicit provider priority order\n  require_parameters: false   # Only use providers that support all parameters\n  data_collection: null       # Control data collection (\"allow\" or \"deny\")\n```\n\nপ্রতি লাইনের মানে: `provider_routing:` হলো শিরোনাম (\"এখানে routing-এর পছন্দ\")। তার নিচে ঢুকে-লেখা (indent) প্রতিটা লাইন একটা পছন্দ। `[]` মানে ফাঁকা তালিকা, অর্থাৎ \"কিছু বলিনি।\"\n\n## ছয়টা option\n\n| key | কী করে | কখন লাগে |\n|---|---|---|\n| `sort` | কীভাবে সাজাবে: `\"price\"` (সস্তা আগে), `\"throughput\"` (সবচেয়ে বেশি token/সেকেন্ড), `\"latency\"` (প্রথম token সবচেয়ে তাড়াতাড়ি) | খরচ, গতি বা সাড়া, যেটা প্রধান |\n| `only` | whitelist: শুধু এই provider-গুলো। OpenRouter-এর দেখানো ছোট হাতের slug দাও | একটা-দুটো ভরসার কোম্পানি চাইলে |\n| `ignore` | blacklist: সস্তা বা দ্রুত হলেও কখনো না | অপছন্দের বা অবিশ্বস্ত কোম্পানি এড়াতে |\n| `order` | স্পষ্ট priority তালিকা। তালিকার বাইরের provider শুধু fallback হিসেবে | \"আগে এটা, না পেলে ওটা\" চাইলে |\n| `require_parameters` | `true` হলে শুধু সেই provider যারা তোমার অনুরোধের সব parameter (`temperature`, `top_p`, `tools`...) সাপোর্ট করে, কিছু চুপচাপ বাদ পড়বে না | `tools` লাগলে, যেন tool-calling নষ্ট না হয় |\n| `data_collection` | `\"allow\"` বা `\"deny\"`: provider তোমার prompt দিয়ে training করতে পারবে কিনা | গোপন লেখায় `\"deny\"` |\n\n### চারটা উদাহরণ\n\n```yaml\n# শুধু দুটো provider\nprovider_routing:\n  only:\n    - \"anthropic\"\n    - \"google\"\n```\n\nমানে: \"শুধু Anthropic আর Google, বাকি সব বাদ।\"\n\n```yaml\n# কিছু provider এড়াও (data privacy)\nprovider_routing:\n  ignore:\n    - \"together\"\n    - \"lepton\"\n  data_collection: \"deny\"\n```\n\nমানে: \"ওই দুই কোম্পানি কখনো না, আর কেউ আমার লেখা জমিয়ে train করতে পারবে না।\"\n\n```yaml\n# পছন্দের ক্রম, সব parameter সাপোর্ট লাগবে\nprovider_routing:\n  order:\n    - \"anthropic\"\n    - \"google\"\n  require_parameters: true\n```\n\nমানে: \"আগে Anthropic, তারপর Google, কিন্তু যে কোম্পানি আমার সব parameter বুঝবে না তাকে দেবে না।\"\n\n```yaml\n# সব মিলিয়ে\nprovider_routing:\n  sort: \"price\"\n  ignore: [\"together\"]\n  require_parameters: true\n  data_collection: \"deny\"\n```\n\n**কোন লক্ষ্যে কোনটা:** খরচ কমাতে `price`; interactive কাজে (যেখানে তুমি বসে উত্তরের অপেক্ষায়) `latency`; লম্বা লেখা তৈরিতে `throughput`; সব সময় একই রকম আচরণ চাইলে `only` দিয়ে একটা provider-এ আটকে দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রতি model-এর জন্য আলাদা নিয়ম (`models`)\n\nকোনো একটা model-কে নির্দিষ্ট provider-এ বেঁধে দিতে চাও? `models`-এর নিচে model ID দিয়ে একই key গুলো লেখো। ওই model-এর জন্য flat (ওপরের সাধারণ) মান override (বদলে-দেওয়া) হয়; না দিলে flat default খাটে।\n\n```yaml\nprovider_routing:\n  sort: \"price\"                        # applies to every model\n  models:\n    \"openai/gpt-6-astra\":\n      only: [\"openai\"]                 # never let a reseller serve this one\n    \"anthropic/claude-fable-5.1\":\n      only: [\"anthropic\"]\n    \"moonshotai/kimi-k2.6\":\n      order: [\"moonshotai\", \"together\"]\n      sort: \"throughput\"\n```\n\n**পড়ার ধরন:** \"সবার জন্য সস্তা বাছো। কিন্তু `gpt-6-astra` শুধু `openai` থেকে (কোনো পুনঃবিক্রেতা নয়), আর `kimi-k2.6` আগে `moonshotai` তারপর `together`, এবং সেখানে গতি আগে।\"\n\n- Model নামের বানান-ভেদ চলে: `claude-fable-5.1` আর `claude-fable-5-1` দুটোই মেলে, `openrouter/` prefix থাকুক বা না থাকুক।\n- Override চলে Hermes এখন যে model ব্যবহার করছে তার সাথে মিলিয়ে। `/model` বদল, fallback চালু হওয়া, cron job, delegated subagent (কাজ ভাগ-করে-দেওয়া সহকারী Hermes) সবকিছুতেই।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "এই key গুলোর জন্য `hermes config set` ব্যবহার কোরো না",
+      "markdown": "Model ID-তে dot (`.`) থাকে (যেমন `claude-fable-5.1`), আর `hermes config set` dot-কে path-এর বিভাজক ধরে (ভেবে নেয় `claude-fable-5` এর ভেতরের `1`)। তাই `models` অংশ **সরাসরি `config.yaml` ফাইলে** edit করো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Routing preference কীভাবে OpenRouter-এ পৌঁছায়।",
+        "steps": [
+          {
+            "title": "১. config পড়া",
+            "body": "CLI mode-এ startup-এ `config.yaml` পড়া হয়। Gateway mode-এ messaging turn gateway চালুর সময়ের config ব্যবহার করে।"
+          },
+          {
+            "title": "২. request তৈরি",
+            "body": "agent chat request আর iteration-limit summary-তে `extra_body.provider` ফিল্ডে preference যায়। OpenAI Python SDK-র `extra_body` JSON request-এর top-level `provider` object হয়ে যায়।"
+          },
+          {
+            "title": "৩. OpenRouter বাছে",
+            "body": "OpenRouter তোমার `sort/only/ignore/order` দেখে provider ঠিক করে।"
+          },
+          {
+            "title": "৪. ভেতরের নাম",
+            "body": "config key গুলো `AIAgent` parameter-এ মেলে: `only`→`providers_allowed`, `ignore`→`providers_ignored`, `order`→`providers_order`, `sort`→`provider_sort`, `require_parameters`→`provider_require_parameters`, `data_collection`→`provider_data_collection`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## জেনে রাখো\n\n- `provider_routing` না থাকলে OpenRouter নিজের default routing ব্যবহার করে।\n- **Auxiliary task** (compression, title generation-এর মতো পাশের ছোট কাজ) আলাদাভাবে `auxiliary.<task>.extra_body`-তে সাজানো হয়।\n- Gateway mode-এ local `hermes chat`/TUI session নতুন তৈরি হওয়ার সময় profile পড়ে, তাই edit পরের **নতুন session-এ** খাটে; খোলা session পুরোনো মান ধরে রাখে।\n- **Provider routing ≠ fallback model।** দুটো আলাদা জিনিস:\n\n| | Provider Routing | Fallback Providers |\n|---|---|---|\n| কী বাছে | OpenRouter-এর **ভেতরের** sub-provider | সম্পূর্ণ **আলাদা** provider |\n| কখন কাজ | প্রতিটা অনুরোধে | মূল model ব্যর্থ হলে |\n\nমূল model ব্যর্থ হলে আলাদা provider-এ যেতে চাইলে **Fallback Providers** lesson দেখো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Provider Routing কী ঠিক করে?",
+      "options": [
+        "Hermes কোন ফাইল পড়বে",
+        "কোন terminal খুলবে",
+        "OpenRouter পেছনের কোন কোম্পানির কাছে অনুরোধ পাঠাবে",
+        "কোন ছবি আঁকবে"
+      ],
+      "answerIndex": 2,
+      "explanation": "OpenRouter দালালের মতো, পেছনে অনেক কোম্পানি। routing বলে দেয় কোনগুলো, কোন ক্রমে, কী শর্তে।"
+    },
+    {
+      "question": "Provider Routing কোথায় কাজ করে না?",
+      "options": [
+        "Nous Portal ও সরাসরি provider connection-এ",
+        "OpenRouter-এ",
+        "কোথাও না",
+        "সব জায়গায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Portal নিজে routing ঠিক করে, সরাসরি connection-এ মাঝখানে বাছাই করার কেউ নেই, তাই কাজ করে না।"
+    },
+    {
+      "question": "`only` আর `ignore`-এর পার্থক্য কী?",
+      "options": [
+        "দুটো একই",
+        "`only` ছবির জন্য",
+        "`ignore` শুধু খরচের জন্য",
+        "`only` সাদা-তালিকা (শুধু এরা), `ignore` কালো-তালিকা (এরা কখনো না)"
+      ],
+      "answerIndex": 3,
+      "explanation": "only = whitelist, ignore = blacklist। দুটোতেই OpenRouter-এর দেখানো ছোট হাতের slug ব্যবহার করো।"
+    },
+    {
+      "question": "`require_parameters: true` দিলে কী হয়?",
+      "options": [
+        "সব provider বন্ধ",
+        "শুধু সেই provider ব্যবহার হয় যারা অনুরোধের সব parameter (temperature, tools...) সাপোর্ট করে",
+        "খরচ বাড়ে না",
+        "key মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "নইলে কিছু provider চুপচাপ কিছু parameter বাদ দিতে পারে, যা tool-calling-এ গোলমাল বাধায়।"
+    },
+    {
+      "question": "`data_collection: \"deny\"` কেন দেওয়া হয়?",
+      "options": [
+        "গতি বাড়াতে",
+        "ছবি সাফ করতে",
+        "provider তোমার prompt জমিয়ে training করতে পারবে না, গোপন লেখার জন্য ভালো",
+        "খরচ বাড়াতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "কিছু provider লেখা জমিয়ে AI শেখাতে পারে। deny দিলে সেটা আটকায়।"
+    },
+    {
+      "question": "`models` অংশ লিখতে কেন `hermes config set` ব্যবহার করা যাবে না?",
+      "options": [
+        "Model ID-তে dot (`.`) থাকে, আর কমান্ড dot-কে path-এর বিভাজক ধরে",
+        "কমান্ডটা নেই",
+        "ফাইলটা read-only",
+        "কারণ নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "যেমন `claude-fable-5.1`-এর `.` ভেঙে ফেলে। তাই সরাসরি config.yaml সম্পাদনা করো।"
+    },
+    {
+      "question": "Provider routing আর fallback provider-এর পার্থক্য কী?",
+      "options": [
+        "একই জিনিস",
+        "fallback শুধু ছবি",
+        "routing শুধু local model",
+        "routing OpenRouter-এর ভেতরের sub-provider বাছে; fallback মূল model ব্যর্থ হলে সম্পূর্ণ আলাদা provider-এ যায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "দুটো আলাদা স্তর। routing দালালের ভেতরের পছন্দ, fallback হলো ব্যাকআপ পরিকল্পনা।"
+    }
+  ],
+  "recap": [
+    "Provider Routing শুধু OpenRouter-এর জন্য: পেছনের কোন কোম্পানি কাজ করবে তা `provider_routing`-এ বলে দাও।",
+    "ছয়টা option: `sort`, `only`, `ignore`, `order`, `require_parameters`, `data_collection`।",
+    "`sort` তিন রকম: `price` (সস্তা), `latency` (দ্রুত সাড়া), `throughput` (বেশি token/সেকেন্ড)।",
+    "`models` দিয়ে প্রতি model-এর আলাদা নিয়ম বাঁধা যায়; এই অংশ সরাসরি `config.yaml`-এ লেখো, `hermes config set` দিয়ে নয়।",
+    "Routing আর Fallback আলাদা: routing হলো OpenRouter-এর ভেতরের বাছাই, fallback হলো অন্য provider-এ ব্যাকআপ।"
+  ]
+}

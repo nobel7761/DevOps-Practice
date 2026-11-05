@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-developer-guide-plugins",
+  "questions": [
+    {
+      "id": "hermes-doc-developer-guide-plugins-q01",
+      "difficulty": "easy",
+      "question": "Hermes **plugin** কী?",
+      "options": [
+        "Hermes-এর মূল কোডের একটা নতুন কপি",
+        "core না ছুঁয়ে যোগ করা অ্যাড-অন",
+        "শুধু AI-র একটা নতুন system prompt",
+        "তৃতীয়-পক্ষের একটা chat অ্যাপ"
+      ],
+      "correctIndex": 1,
+      "explanation": "Plugin ফোনে অ্যাপ নামানোর মতো। tool, hook, CLI command, slash command যোগ হয়, কিন্তু মূল অংশ বদলায় না।",
+      "whyWrong": {
+        "0": "কপি নয়, আলাদা ফোল্ডারে থাকা অ্যাড-অন।",
+        "2": "system prompt আলাদা জিনিস।",
+        "3": "Chat অ্যাপ নয়, অ্যাড-অন।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q02",
+      "difficulty": "easy",
+      "question": "`plugin.yaml` কী?",
+      "options": [
+        "tool-এর আসল কাজের ফাংশন",
+        "tool-এর বর্ণনা লেখা schema ফাইল",
+        "plugin-এর পরিচয়-পত্র (manifest)",
+        "Hermes চালু হলে ডাকা register ফাংশন"
+      ],
+      "correctIndex": 2,
+      "explanation": "এতে নাম, version, কী কী দেয় লেখা থাকে। YAML হলো `নাম: মান` ধরনের সোজা লেখা।",
+      "whyWrong": {
+        "0": "কাজের ফাংশন হলো handler (`tools.py`)।",
+        "1": "বর্ণনা থাকে `schemas.py`-তে।",
+        "3": "Register ফাংশন `__init__.py`-তে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q03",
+      "difficulty": "easy",
+      "question": "`register(ctx)` ফাংশন কী করে?",
+      "options": [
+        "plugin-কে ফোল্ডার থেকে মুছে দেয়",
+        "শুধু plugin-এর কাজের log লিখে রাখে",
+        "শুধু user-কে বাছাইয়ের প্রশ্ন করে",
+        "plugin-কে Hermes-এ জুড়ে দেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Hermes চালু হওয়ার সময় এটা ডাকে। ভেতরে `ctx.register_tool(...)`, `ctx.register_hook(...)` দিয়ে সব জোড়া লাগে।",
+      "whyWrong": {
+        "0": "মোছার কাজ এর নয়।",
+        "1": "Log এর মুখ্য কাজ নয়।",
+        "2": "প্রশ্ন করে `ctx.ask_choice`।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q04",
+      "difficulty": "easy",
+      "question": "`post_tool_call` hook কখন চলে?",
+      "options": [
+        "প্রতিটা tool চলার পরে",
+        "প্রতিটা tool চলার আগে",
+        "শুধু session শুরুতে",
+        "শুধু plugin install-এর সময়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hook হলো কাজের আগে বা পরে ঢোকানো নিজের কোড, দরজার ঘণ্টার মতো।",
+      "whyWrong": {
+        "1": "আগে চলে `pre_tool_call`।",
+        "2": "Session শুরুর hook `on_session_start`।",
+        "3": "Install-এর সময় চলে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q05",
+      "difficulty": "easy",
+      "question": "Slash command আর CLI command-এর পার্থক্য কী?",
+      "options": [
+        "slash terminal-এ, CLI chat-এ `/` দিয়ে",
+        "দুটোই terminal-এ `hermes` দিয়ে চলে",
+        "slash শুধু gateway-তে চলে, CLI শুধু cron-এ চলে",
+        "slash chat-এ `/`, CLI terminal-এ `hermes`"
+      ],
+      "correctIndex": 3,
+      "explanation": "যেমন `/plugins` হলো slash command।",
+      "whyWrong": {
+        "0": "উল্টে বলা হয়েছে।",
+        "1": "Slash command chat-এ চলে।",
+        "2": "এমন বিভাগ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q06",
+      "difficulty": "easy",
+      "question": "`ctx` কী?",
+      "options": [
+        "Hermes-এর হাতিয়ার-বাক্স",
+        "plugin-এর পরিচয়-পত্র (manifest)",
+        "AI-র দেওয়া শেষ উত্তরের লেখা",
+        "একটা গোপন key-এর ছোট নাম"
+      ],
+      "correctIndex": 0,
+      "explanation": "`ctx` (context) থেকে `ctx.register_tool(...)`, `ctx.register_hook(...)` ইত্যাদি পাওয়া যায়।",
+      "whyWrong": {
+        "1": "পরিচয়-পত্র হলো manifest।",
+        "2": "উত্তরের সাথে সম্পর্ক নেই।",
+        "3": "Key-এর নাম নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q07",
+      "difficulty": "easy",
+      "question": "**Observer** hook বলতে কী বোঝায়?",
+      "options": [
+        "চলার আগে tool আটকাতে পারে",
+        "শুধু দেখে, কিছু বদলায় না",
+        "current user message-এ context ঢোকায়",
+        "পুরো turn বাতিল করে দিতে পারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`post_tool_call`, `on_session_start`-এর মতো hook দর্শক। শুধু দেখে, কিছু বদলায় না।",
+      "whyWrong": {
+        "0": "আটকায় `pre_tool_call`।",
+        "2": "`pre_llm_call` context ঢোকায়।",
+        "3": "Turn বাতিল `pre_llm_call` করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q08",
+      "difficulty": "medium",
+      "question": "calculator plugin-এর পাঁচটা ফাইল কোনগুলো?",
+      "options": [
+        "`plugin.yaml`, `registry.py`, `tools.py`, `main.py`, `utils.py`",
+        "`SKILL.md`, `schemas.py`, `tools.py`, `__init__.py`, `scripts/`",
+        "`plugin.yaml`, `schemas.py`, `tools.py`, `__init__.py`",
+        "`plugin.json`, `skills/`, `mcp.json`, `tools.py`"
+      ],
+      "correctIndex": 2,
+      "explanation": "পাঁচ ধাপ: পরিচয়, tool-এর বর্ণনা, handler, `register(ctx)` আর পরীক্ষা।",
+      "whyWrong": {
+        "0": "`registry.py`, `main.py` এ নেই।",
+        "1": "`SKILL.md` skill-এর ফাইল।",
+        "3": "ওগুলো Portable Agent Plugin-এর গড়ন।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q09",
+      "difficulty": "medium",
+      "question": "Plugin-এর handler-এর signature আর return কী?",
+      "options": [
+        "`(args: dict) -> dict`, সরাসরি raw dict ফেরত",
+        "`(ctx) -> None`, কিছুই ফেরত দেয় না",
+        "`(args: dict, **kwargs) -> str`, JSON string",
+        "`(**kwargs) -> bool`, শুধু True বা False"
+      ],
+      "correctIndex": 2,
+      "explanation": "সবসময় JSON string ফেরত, কখনো raise নয়।",
+      "whyWrong": {
+        "0": "Raw dict ফেরত দেওয়া ভুল।",
+        "1": "`ctx` নেয় `register`।",
+        "3": "True/False দেয় `check_fn`।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q10",
+      "difficulty": "medium",
+      "question": "Tool-এর description স্পষ্ট লিখতে বলা হয় কেন?",
+      "options": [
+        "Hermes সেটা দিয়ে tool-এর ফোল্ডার বানায়",
+        "AI সেটা পড়েই ঠিক করে কখন tool ডাকবে",
+        "user terminal-এ সেটা দেখে নাম বাছে",
+        "description থাকলে `register()` crash করে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "অস্পষ্ট description রাখলে AI জানে না কখন ডাকবে।",
+      "whyWrong": {
+        "0": "ফোল্ডার বানানোর সাথে সম্পর্ক নেই।",
+        "2": "AI পড়ে, user নয়।",
+        "3": "Crash-এর সাথে যোগ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q11",
+      "difficulty": "medium",
+      "question": "কোন দুটো hook আটকাতে বা বাতিল করতে পারে?",
+      "options": [
+        "`pre_tool_call` আর `pre_llm_call`",
+        "`post_tool_call` আর `post_llm_call`",
+        "`on_session_start` আর `post_compaction`",
+        "`api_request_error` আর `gateway_platform_event`"
+      ],
+      "correctIndex": 0,
+      "explanation": "এরা পাহারাদার। বাকিগুলো observer, শুধু দর্শক।",
+      "whyWrong": {
+        "1": "`post_*` observer।",
+        "2": "এগুলো observer।",
+        "3": "এগুলোও observer।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q12",
+      "difficulty": "medium",
+      "question": "Plugin-এর secret (যেমন API key) কোথায় রাখা উচিত?",
+      "options": [
+        "`config.yaml`-এ লিখে",
+        "`plugin.yaml`-এর description-এ",
+        "plugin ফোল্ডারের নোট-ফাইলে",
+        "`.env` ফাইলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Secret কখনো `config.yaml`-এ নয়। `config_schema`-এ type `secret` হলে `.env`-এ যায়।",
+      "whyWrong": {
+        "0": "Secret কখনো `config.yaml`-এ যায় না।",
+        "1": "Manifest-এ key লিখলে শেয়ার হয়ে যায়।",
+        "2": "Plugin ফোল্ডারে গোপন কিছু রাখা নিরাপদ নয়, update-এ মুছেও যেতে পারে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q13",
+      "difficulty": "medium",
+      "question": "Install করা plugin default-এ কী অবস্থায় থাকে, আর চালু করতে কী করবে?",
+      "options": [
+        "disabled, `hermes plugins enable <name>`",
+        "enabled, `hermes plugins disable <name>` দিয়ে বন্ধ",
+        "disabled, শুধু Hermes restart দিলেই চালু",
+        "enabled, `hermes plugins list` দিয়ে চালু"
+      ],
+      "correctIndex": 0,
+      "explanation": "নিরাপত্তার জন্য না দেখে চালু হয় না।",
+      "whyWrong": {
+        "1": "Default enabled নয়।",
+        "2": "Restart-এ চালু হয় না।",
+        "3": "`list` শুধু দেখায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q14",
+      "difficulty": "medium",
+      "question": "Plugin debug করতে লগ দেখার সঠিক কমান্ড কোনটা?",
+      "options": [
+        "`hermes plugins doctor --install-deps --debug`",
+        "`hermes logs --level plugin --follow`",
+        "`hermes plugins validate <path> --debug`",
+        "`HERMES_PLUGINS_DEBUG=1 hermes plugins list`"
+      ],
+      "correctIndex": 3,
+      "explanation": "Log থাকে `~/.hermes/logs/agent.log`-এ। `hermes logs --level WARNING | grep -i plugin`-ও চলে।",
+      "whyWrong": {
+        "0": "`doctor`-এর সাথে `--install-deps` মেলে না।",
+        "1": "level-এ `WARNING` লাগে, `plugin` নয়।",
+        "2": "`validate`-এ `--debug` নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q15",
+      "difficulty": "hard",
+      "question": "Plugin-এর `register()` crash করলে কী হয়?",
+      "options": [
+        "পুরো Hermes বন্ধ হয়ে যায়",
+        "সব plugin একসাথে মুছে যায়",
+        "শুধু ওই plugin বন্ধ হয়",
+        "Hermes নিজে plugin ঠিক করে ফেলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "তাই একটা plugin-এর ভুলে পুরো Hermes ভাঙে না।",
+      "whyWrong": {
+        "0": "বন্ধ হয় শুধু ওই plugin।",
+        "1": "মুছে যায় না।",
+        "3": "নিজে ঠিক করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q16",
+      "difficulty": "hard",
+      "question": "Capabilities (যেমন `tools.override`) কি sandbox?",
+      "options": [
+        "হ্যাঁ, plugin-কে জোর করে আটকায়",
+        "না, consent ও audit-এর জন্য",
+        "হ্যাঁ, শুধু gateway-তে",
+        "না, এগুলো শুধু tool লুকানোর জন্য"
+      ],
+      "correctIndex": 1,
+      "explanation": "Plugin কী চায় তা জানায়, কিন্তু জোর করে আটকায় না।",
+      "whyWrong": {
+        "0": "জোর করে আটকায় না।",
+        "2": "Gateway-র শর্ত নেই।",
+        "3": "Tool লুকায় `check_fn`।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q17",
+      "difficulty": "hard",
+      "question": "Plugin-এর স্থায়ী ডেটা কোথায় লেখা উচিত?",
+      "options": [
+        "plugin-এর নিজের ফোল্ডারের ভেতরে ফাইল বানিয়ে",
+        "`plugin_data_dir()` বা `plugin_db()`-তে",
+        "`plugin.yaml`-এর নতুন একটা field-এ রেখে",
+        "`SOUL.md`-এর শেষে নতুন লাইন যোগ করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Plugin ফোল্ডারে লিখলে update-এ মুছে যেতে পারে। এই দুটো update/remove পেরিয়েও টেকে।",
+      "whyWrong": {
+        "0": "Update-এ মুছে যায়।",
+        "2": "Manifest ডেটা রাখার জায়গা নয়।",
+        "3": "`SOUL.md` ব্যক্তিত্বের ফাইল।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q18",
+      "difficulty": "hard",
+      "question": "`pyproject.toml` আর `python_dependencies` দুটোতে dependency থাকলে কোনটা জেতে?",
+      "options": [
+        "`python_dependencies`",
+        "দুটো জোড়া লাগে",
+        "কোনোটাই নয়",
+        "`pyproject.toml`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`[project] dependencies` অগ্রাধিকার পায়।",
+      "whyWrong": {
+        "0": "`python_dependencies` পরে।",
+        "1": "জোড়া লাগে না।",
+        "2": "একটা তো জেতেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q19",
+      "difficulty": "hard",
+      "question": "Middleware-এ `next_call` দুবার ডাকলে কী হয়?",
+      "options": [
+        "দ্বিতীয় বার চুপচাপ উপেক্ষা হয়",
+        "দুবারই চলে, ফল জোড়া লাগে",
+        "শুধু প্রথম বার চলে, বাকিটা বাদ",
+        "error হয়, একবারই ডাকা যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "`next_call` একবারই ডাকা যায়, দুবার ডাকলে error। না ডাকলে downstream চলে না (short-circuit)।",
+      "whyWrong": {
+        "0": "চুপচাপ উপেক্ষা নয়, error আসে।",
+        "1": "দুবার ডাকা যায় না।",
+        "2": "দ্বিতীয় ডাকে error আসে, চুপচাপ বাদ পড়ে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-plugins-q20",
+      "difficulty": "hard",
+      "question": "নতুন chat অ্যাপের adapter plugin load হচ্ছে না। কোন কারণ ঘটতে পারে?",
+      "options": [
+        "manifest-এ `kind: platform` নেই",
+        "`post_tool_call` hook লেখা হয়নি",
+        "`ctx.state` ১০ MiB-এর বেশি",
+        "`provides_tools` ফাঁকা"
+      ],
+      "correctIndex": 0,
+      "explanation": "gateway adapter-এ `kind: platform` লাগে। আরও কারণ: enable করা হয়নি, ফোল্ডারের গভীরতা ভুল, `__init__.py` নেই।",
+      "whyWrong": {
+        "1": "hook থাকা বাধ্যতামূলক নয়।",
+        "2": "`state` সীমা আলাদা বিষয়।",
+        "3": "`provides_tools` load আটকায় না।"
+      }
+    }
+  ]
+}

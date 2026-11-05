@@ -1,0 +1,228 @@
+{
+  "contentId": "hermes-doc-user-guide-features-plugins",
+  "title": "Plugins",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Plugin কী ও কেন লাগে, কীভাবে নিরাপদে চালু করতে হয়, আর manifest, hook, gateway, consent, isolation-এর মতো শব্দ সহজ উপমায় চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nHermes একটা **খেলনার ঘর**, যেখানে অনেক খেলনা আগে থেকে আছে। কিন্তু তোমার একটা নতুন খেলনা চাই, যা দোকানে নেই। তুমি তো আর ঘরের দেয়াল ভাঙবে না! তাই তুমি একটা **প্লাগ-ইন বাক্স** বানালে: ভেতরে একটা পরিচয়পত্র (`plugin.yaml`), একটা চালু করার সুইচ (`register`), আর খেলনার আসল কল-কব্জা।\n\nবাক্সটা `~/.hermes/plugins/`-এর তাকে রাখলে ঘর তাকে চিনে নেয়। তবে একটা শর্ত: **নতুন বাক্স সাথে সাথে চালু হয় না**। তুমি নিজে \"হ্যাঁ, চালাও\" না বললে সে ঘুমিয়ে থাকে। কারণ অচেনা বাক্সে কী আছে কেউ জানে না!\n\nএটাই Plugin system: **core code না বদলিয়ে tool, hook, command আর integration যোগ করা।**\n\n**এটা না থাকলে কী সমস্যা?** নতুন ক্ষমতা চাইলে Hermes-এর মূল কোড ঘেঁটে বদলাতে হতো। সেটা কঠিন, বিপজ্জনক, আর প্রতিবার Hermes আপডেট হলে বদল হারিয়ে যেত। Plugin হলো বাইরে থেকে গুঁজে দেওয়া আলাদা বাক্স, মূল ঘর অক্ষত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Plugin** | Hermes-এ বাইরে থেকে যোগ করা অতিরিক্ত অংশ (tool, hook, command)। মূল কোড বদলাতে হয় না | খেলনার ঘরে নতুন বাক্স |\n| **Core code** | Hermes-এর ভেতরের মূল প্রোগ্রাম | ঘরের দেয়াল-ছাদ |\n| **Manifest / `plugin.yaml`** | plugin-এর পরিচয়পত্র (নাম, সংস্করণ, কী ক্ষমতা চায়)। **YAML** হলো `নাম: মান` আকারে লেখার ধরন | বাক্সের গায়ের লেবেল |\n| **Function / `register(ctx)`** | **Function** মানে কাজের একটা নামি ছোট অংশ। `register(ctx)` হলো সেই সুইচ, যা Hermes চালু হলে ডাকে। `ctx` (context) মানে Hermes-এর দেওয়া 'হাতল', যা দিয়ে সব জুড়ে দেওয়া যায় | বাক্সের চালু-করার সুইচ |\n| **Tool / Toolset** | **Tool** = Hermes যে ছোট কাজ করতে পারে। **Toolset** = tool-এর দল | যন্ত্র ও ড্রয়ার |\n| **Schema / Handler** | **Schema** = tool কী কী নেয়, কী দেয় তার বর্ণনা, যা AI পড়ে। **Handler** = সত্যিকারের কাজ করা কোড | মেনুর বর্ণনা বনাম রান্নাঘরের বাবুর্চি |\n| **Hook** | কিছু ঘটলে নিজে নিজে চলা ছোট কাজ | দরজায় ঝোলানো ঘণ্টা |\n| **Slash command** | `/` দিয়ে শুরু ছোট হুকুম (`/personality`) | দরজার বোতাম |\n| **Gateway / channel** | **Gateway** = Hermes-কে Telegram, Discord-এর মতো মেসেজ app-এর সাথে জোড়ার দরজা। **Channel** = সেই app-এর একটা আলাপের জায়গা | পোস্ট অফিস ও ডাকবাক্স |\n| **MCP** | AI-র জন্য 'সবার একই plug' নিয়ম, যেন অন্য প্রোগ্রামের tool ধার করা যায় | বিশ্বজনীন চার্জার-plug |\n| **Opt-in / consent** | নিজে 'হ্যাঁ' না বললে চালু না হওয়া / বাড়তি ক্ষমতায় সম্মতি দেওয়া | বাসায় অতিথি ঢোকার অনুমতি |\n| **Sandbox / isolation** | আলাদা বন্ধ বাক্সে চালানো, যাতে ভুল হলে বাইরের ক্ষতি না হয় | কাচের ঘরে বিজ্ঞান-পরীক্ষা |\n| **Security scan** | plugin-এ বিপজ্জনক কিছু আছে কিনা খুঁজে দেখা | বিমানবন্দরের ব্যাগ-স্ক্যান |\n| **git / repo / clone** | **git** কোডের ইতিহাস রাখে, **repo** সেই কোড-ভাণ্ডার, **clone** তার কপি নামানো | অ্যালবামের কপি করা |\n| **SHA** | ৪০ অক্ষরের আঙুলের ছাপ, যা একটা নির্দিষ্ট কোড-সংস্করণ চেনায় | ফাইলের ফিঙ্গারপ্রিন্ট |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Plugin ফোল্ডারের register(ctx) function Hermes-এর সাথে tool, hook আর command জুড়ে দেয়।",
+        "nodes": [
+          {
+            "id": "pl",
+            "kind": "external",
+            "label": "Plugin ফোল্ডার",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "r",
+            "kind": "server",
+            "label": "register(ctx)",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "t",
+            "kind": "server",
+            "label": "Tools",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "h",
+            "kind": "queue",
+            "label": "Hooks",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "pl",
+            "to": "r",
+            "label": "load"
+          },
+          {
+            "from": "r",
+            "to": "t",
+            "label": "register_tool"
+          },
+          {
+            "from": "r",
+            "to": "h",
+            "label": "register_hook"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "plugin-gate"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Plugin-এর গড়ন\n\nব্যক্তিগত বা দলের নিজস্ব tool-এর জন্য plugin ব্যবহার করো। `tools/` আর `toolsets.py` পথটা শুধু **built-in core tool**-এর জন্য।\n\n(ফোল্ডারের গড়ন নিচে। `__init__.py` হলো Python ফোল্ডারের মূল ফাইল। **Python** হলো একটা প্রোগ্রামিং ভাষা, plugin-এর কোড সাধারণত তাতে লেখা।)\n\n```text\n~/.hermes/plugins/my-plugin/\n  plugin.yaml     # manifest (পরিচয়পত্র)\n  __init__.py     # register(ctx) function, schema আর handler জোড়া লাগায়\n  schemas.py      # LLM যে tool schema দেখে\n  tools.py        # tool ডাকলে যে handler চলে\n```\n\n| ফাইল | কী কাজ | উপমা |\n|---|---|---|\n| `plugin.yaml` | plugin-এর নাম-পরিচয় | বাক্সের লেবেল |\n| `__init__.py` | `register(ctx)`, সব জুড়ে দেয় | চালু-সুইচ |\n| `schemas.py` | AI যে বর্ণনা পড়ে | মেনু |\n| `tools.py` | tool ডাকলে যে কোড চলে | বাবুর্চি |\n\nপাতার উদাহরণ: `hello-world` plugin একটা `hello_world` tool রেজিস্টার করে `ctx.register_tool(name, toolset, schema, handler)` দিয়ে, আর একটা `post_tool_call` hook রেজিস্টার করে `ctx.register_hook()` দিয়ে।\n\n**একটা সূক্ষ্ম নিয়ম:** মডেল দেখে `schema[\"description\"]`। `register_tool`-এর আলাদা `description=` argument শুধু registry-র metadata। দুটোই সেট করলে মিলিয়ে রাখো।\n\n### `ctx.*` দিয়ে কী কী যোগ করা যায়\n\n- Tool, hook, slash command: `register_tool`, `register_hook`, `register_command`, `dispatch_tool`\n- CLI subcommand: `register_cli_command` (`hermes <plugin> <sub>`)\n- বার্তা: `inject_message`, `post_message`\n- Skill: `register_skill` (নাম হয় `plugin:skill`)\n- Gateway channel: `register_platform`\n- Provider: `register_image_gen_provider`, `register_video_gen_provider`, `register_delegation_provider`, `register_computer_use_provider`\n- অন্য: `register_context_engine`, `register_terminal_environment_provider`, `register_approval_transport`, `ctx.llm.complete` / `complete_structured`, `ctx.call_mcp`, `ctx.platform_actions`\n\n(**Provider** মানে যে সেবা কিছু যোগান দেয়, যেমন স্মৃতি বা AI-র মগজ।) Memory provider আর model provider আলাদা discovery ব্যবহার করে (memory provider `MemoryProvider` subclass করে; model provider `register_provider(ProviderProfile(...))` দিয়ে)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা plugin-কে কীভাবে খোঁজা হয়, চালু করা হয় ও চালানো হয়।",
+        "steps": [
+          {
+            "title": "১. খোঁজা (discovery)",
+            "body": "ক্রম: bundled, তারপর user (`~/.hermes/plugins/`), তারপর project (`.hermes/plugins/`), তারপর pip entry point, তারপর Nix। নাম মিলে গেলে **পরেরটা আগেরটাকে ছাপিয়ে যায়**।"
+          },
+          {
+            "title": "২. Opt-in",
+            "body": "সাধারণ আর user-installed plugin **ডিফল্টে বন্ধ**। `plugins.enabled`-এ নাম যোগ করতে হয়। `plugins.disabled` সবসময় জেতে।"
+          },
+          {
+            "title": "৩. Security scan",
+            "body": "install বা update-এর সময় scan চলে: safe, caution, বা dangerous।"
+          },
+          {
+            "title": "৪. Capability consent",
+            "body": "plugin বাড়তি ক্ষমতা চাইলে তোমার সম্মতি লাগে।"
+          },
+          {
+            "title": "৫. Load ও run",
+            "body": "`register(ctx)` ডাকা হয়, tool ও hook যুক্ত হয়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## CLI কমান্ড\n\n```bash\nhermes plugins                       # interactive UI\nhermes plugins list\nhermes plugins search <term>\nhermes plugins browse\nhermes plugins info <name>\nhermes plugins install <name|owner/repo|url>   # --enable, --no-enable, --ref <40-char SHA>, --force\nhermes plugins update [name]         # --force, --yes\nhermes plugins enable <name>\nhermes plugins disable <name>\nhermes plugins remove <name>\nhermes plugins capabilities [name]\nhermes plugins check-updates\nhermes plugins validate <dir>\nhermes plugins show <name>\nhermes plugins pack show | install | export [--enabled-only]\nhermes pm status                     # update receipt\n```\n\n(`adopt <name>` আর `trust-update-url <name>`-ও আছে।)\n\n- Install করার সময় জিজ্ঞেস করে `Enable 'name' now? [y/N]`, default **না**। Memory provider হলে জিজ্ঞেস করে `Use 'name' as the memory provider now?`\n- `update` নাম ছাড়া দিলে শুধু update-যোগ্য plugin-এর তালিকা দেখায়। Terminal না থাকলে `--yes` লাগে।\n- Pin করা plugin `update` মানে না। আবার pin করতে `install <source> --force --ref <new>`।\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `hermes plugins` | মেনু-ওয়ালা পর্দা খোলে (interactive UI) | সহজে ঘুরে দেখতে |\n| `list` / `search` / `browse` / `info` | আছে এমন, খোঁজা, ঘুরে দেখা, বিস্তারিত | নতুন plugin খুঁজতে |\n| `install <name\\|owner/repo\\|url>` | নামিয়ে বসায়। `--enable` সঙ্গে সঙ্গে চালু, `--no-enable` চালু না, `--ref` নির্দিষ্ট সংস্করণ, `--force` সতর্কতা পেরিয়ে | বসাতে |\n| `update [name]` | নতুন সংস্করণ আনে | আপডেট করতে |\n| `enable` / `disable` / `remove` | চালু / বন্ধ / মুছে ফেলা | নিয়ন্ত্রণ করতে |\n| `capabilities` | কী কী বাড়তি ক্ষমতা চায় দেখায় | বিশ্বাস করার আগে |\n| `validate <dir>` | ফোল্ডারটা ঠিক গড়নে আছে কিনা পরীক্ষা | নিজের plugin বানালে |\n| `pack ...` | অনেক plugin একসাথে | দল-সেটআপে |\n\n### Config key\n\n(**Timeout** মানে 'এত সেকেন্ডে না হলে হাল ছাড়ো'। **Isolation** মানে আলাদা করে রাখা।)\n\n| Key | Default | নোট |\n|---|---|---|\n| `plugins.clone_timeout_seconds` | 300 | সর্বোচ্চ 3600 |\n| `plugins.hook_callback_timeout` | 30 | 0 মানে বন্ধ, সর্বোচ্চ 600; timeout হলে `pre_tool_call` tool আটকে দেয় |\n| `plugins.load_timeout_seconds` | 10 | 0 বন্ধ, সর্বোচ্চ 600 |\n| `plugins.auto_update_check_hours` | 24 | 0 বন্ধ |\n| `plugins.auto_apply` | | Git-tracked plugin নিজে নিজে update |\n| `plugins.scan_on_install: false` | | scan বন্ধ করে |\n| `plugins.isolation` | `in_process` | অথবা `host` |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Project-local plugin gateway-তে লোড হয় না",
+      "markdown": "`./.hermes/plugins/` গেটওয়ে লোড করে না, কারণ gateway সব session চালায়। `HERMES_ENABLE_PROJECT_PLUGINS=true` দিলেও session-এ কাজ হয় না, বরং session আর `gateway.log`-এ সতর্কবার্তা আসে। সমাধান: plugin-টা user plugin হিসেবে install করো (`~/.hermes/plugins/` বা `hermes plugins install`), তারপর `hermes plugins enable <name>`। (`gateway.log` হলো gateway কী করল তার লেখা খাতা, মানে log।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hook: ঘটনার সময় কিছু করা\n\n**কেন লাগে?** Hermes কাজ করার প্রতিটা ধাপে (tool চালানোর আগে-পরে, মগজকে ডাকার আগে-পরে) তুমি নিজের কোড গুঁজে দিতে পারো: লগ রাখা, আটকানো বা ফল বদলানো। মোট **২৭টা** lifecycle event (জীবনচক্রের ঘটনা) আছে (`VALID_HOOKS`)। তিন ধরনের:\n\n- **Directive** (নির্দেশক, যেমন ট্রাফিক পুলিশ): সিদ্ধান্ত বদলাতে পারে। যেমন `pre_tool_call`, `pre_llm_call`, `pre_verify`, `pre_gateway_dispatch`।\n- **Transform** (রূপান্তরক, যেমন অনুবাদক): ফল বদলাতে পারে। যেমন `transform_tool_result`, `transform_terminal_output`, `transform_llm_output`, `pre_transcription`।\n- **Observer** (দর্শক, যেমন CCTV): শুধু দেখে। যেমন `post_tool_call`, `post_llm_call`, আর API, stream, session, subagent, approval, kanban ইত্যাদির event।\n\nসময় আর payload-এর সঠিক তালিকা Event Hooks catalog-এ। আলাদা এক ধরনের gateway event hook আছে `~/.hermes/hooks/<name>/` (ভেতরে `HOOK.yaml` আর `handler.py`)। এগুলো `plugins.enabled` দিয়ে আটকানো নয়, ফোল্ডারে রাখাটাই opt-in।\n\n## Slash command gateway-র ভেতরে চলে\n\nplugin-এর বানানো slash command Telegram-এর মতো gateway-র ভেতরেও চলে, যেখানে কোনো terminal নেই। তাই কিছু নিয়ম (এগুলো প্রোগ্রামারদের জন্য; `print()` মানে পর্দায় লেখা, `os.getcwd()` মানে এখন কোন ফোল্ডারে আছি জানা, `input()` মানে মানুষের কাছে টাইপ চাওয়া, যা এখানে অসম্ভব):\n\n- Text return করো। `print()` যায় `gateway-stdio.log`-এ।\n- `os.getcwd()` নয়, `agent.runtime_cwd.resolve_agent_cwd()` ব্যবহার করো। (Gateway-র ভেতরে `os.getcwd()` মানে gateway-র নিজের ফোল্ডার; plugin-এ `ctx.session_cwd()` ও আছে।)\n- Handler `session_id`, `session_key`, `platform`, `source` keyword চাইতে পারে।\n- `HERMES_SESSION_*` variable পড়ো `gateway.session_context.get_session_env` দিয়ে, `os.environ` দিয়ে নয়।\n- `input()` EOF পায়, তাই `logging` ব্যবহার করো। `ctx.session_surface()` বলে দেয় তুমি `cli`, `tui`, `desktop`, `acp` না platform-এ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা: scan, consent, isolation\n\n### Security scan\nInstall আর update-এ চলে। ফল তিন রকম:\n\n| Verdict | কী হয় |\n|---|---|\n| **safe** | স্বাভাবিক install |\n| **caution** | `Install anyway? [y/N]` জিজ্ঞেস করে, বা `--force` |\n| **dangerous** | আটকে দেয়, `--force`-ও পারে না |\n\nUpdate-এ dangerous পেলে plugin বন্ধ হয়ে যায়, আবার চালু না করা পর্যন্ত।\n\n### Capability আর consent\n\n**Capability** মানে plugin যে বাড়তি ক্ষমতা চায় (যেমন tool বদলে দেওয়া)। **Consent** মানে তোমার সম্মতি। **Fail closed** মানে সন্দেহ হলে কিছু না করে বন্ধ থাকা (উল্টোটা fail open)। **Hash** মানে লেখার আঙুলের ছাপ।\n`plugin.yaml`-এর `capabilities:`-এ ঘোষণা করা হয়। চেনা ID: `tools.override`, `llm.provider_override`, `llm.model_override`, `llm.agent_id_override`, `llm.profile_override`, `llm.task_override`, `gateway.platform_actions`, `llm.side_question`। সম্মতি `plugins.entries.<id>.granted_capabilities`-এ consent hash আর সময় সহ রাখা হয়। Update নতুন capability চাইলে সম্মতি না দেওয়া পর্যন্ত তা ungranted। Non-interactive install **fail closed**; interactive-এ `hermes plugins enable <id>` দিয়ে grant করো।\n\n### Process isolation\n\n**Process** মানে চলতে থাকা প্রোগ্রাম। প্রতিটা plugin আলাদা process-এ চললে একটা বিগড়ালে অন্যগুলো বাঁচে। (**argv prefix** মানে কমান্ডের আগে বসানো অংশ, যেমন 'এটা বালির বাক্সে চালাও'।)\n`plugins.isolation: host` দিলে non-bundled plugin প্রতিটা profile-এর জন্য আলাদা একটা host process-এ চলে। `plugins.host.launcher`-এ sandbox runner-এর মতো argv prefix দেওয়া যায়। কিছু জিনিস host mode-এ চলে না (`register_platform`, approval transport, কিছু terminal backend ইত্যাদি), সেগুলোর জন্য `in_process` লাগে। `hermes plugins validate` আর `show` host-সামঞ্জস্য জানায়।\n\n### MCP access\n\n(**Allowlist** মানে অনুমোদিত নামের তালিকা। **Wildcard** মানে `*` দিয়ে 'সব'; এখানে চলে না। KB মানে কিলোবাইট, লেখার আকারের মাপ।)\n`ctx.call_mcp(server, tool, arguments, timeout=30)` ডিফল্টে বন্ধ। `plugins.entries.<id>.mcp_allowlist`-এ server ধরে ধরে অনুমতি দাও (wildcard চলে না)। Timeout ১ থেকে ৬০০ সেকেন্ডের মধ্যে ধরা হয়। প্রায় ৬৪ KB-এর বেশি ফল কেটে দেওয়া হয়। MCP-র আউটপুটকে **অবিশ্বস্ত data** ভাবো।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Capability মানেই sandbox নয়",
+      "markdown": "Capability হলো **সম্মতি আর audit-এর স্তর**, কোনো sandbox নয়। Plugin install করার আগে ভরসা করা যায় কিনা দেখো। Catalog-এর entry মানে code audit নয়। Catalog থেকে bare নাম দিলে SHA-pinned commit install হয়, আর `owner/repo` বা URL দিলে সেটা **unreviewed** হিসেবে চিহ্নিত হয়। (**Audit** মানে খতিয়ে দেখে রেকর্ড রাখা। **Catalog** মানে plugin-এর তালিকা।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## অন্যান্য কাজের জিনিস\n\n(এই অংশে নতুন শব্দ: **Pack** মানে প্যাকেজ, **deep link** মানে ক্লিক করলে অ্যাপ খুলে দেওয়া লিংক, **token** মানে পরিচয়-চাবি, **thread** মানে আলাপের সুতো, **reaction** মানে emoji-সাড়া।)\n\n- **Pack:** `hermes-pack.yaml` ফাইলে অনেক plugin একসাথে। প্রতিটা `ref` ৪০ অক্ষরের SHA হতে হবে। একবার review, `--yes` নেই। প্রতিটা plugin আলাদা করে install হয়।\n- **Private repo:** আগে বেনামে clone চেষ্টা হয়; ফিরিয়ে দিলে ক্রমে `GITHUB_TOKEN`/`GH_TOKEN`, `gh` CLI login, তারপর git credential helper। credential `.git/config`-এ লেখা হয় না। Metadata থাকে `.install-metadata.json`-এ।\n- **Platform actions:** `ctx.platform_actions.add_reaction(...)`, `set_thread_title(...)`। `gateway.platform_actions` grant না থাকলে বন্ধ। Telegram আর Discord-এ চলে।\n- **Live message:** `ctx.post_message(text)` একটা handle দেয় যার `edit(text)` আছে। `ctx.inject_message(content, role=\"user\", ...)` বার্তা ঢোকায়; gateway-তে এর জন্য `plugins.entries.<id>.allow_gateway_injection: true` লাগে, আর injection দিয়ে slash command চালানো বা approval সমাধান করা যায় না।\n- **Approval transport:** `ctx.register_approval_transport(name, present_fn)` approval prompt কোথায় দেখাবে তা ঠিক করে (কী approve লাগবে তা নয়)। চালু করতে plugin enable আর `security.approval.transport: <name>` দুটোই লাগে। `transport_fallback` default `deny`।\n- **Desktop deep link:** `hermes://plugin/install?catalog=NAME`। এগুলো কখনো নিজে নিজে install করে না, সবসময় নিশ্চিতকরণ চায়।\n- **Dependency:** Python dependency install-এর জন্য আলাদা সম্মতি লাগে; `--enable` তা এড়াতে পারে না।\n- **অবস্থা তিনটা:** enabled (`plugins.enabled`-এ), disabled (`plugins.disabled`-এ, এটা জেতে), not enabled (কোনোটাতেই নেই)।\n\nবিস্তারিত handler contract আর schema-র ফরম্যাট plugin developer guide-এ আছে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "একটা নতুন user-installed plugin ডিফল্টে কী অবস্থায় থাকে?",
+      "options": [
+        "চালু",
+        "শুধু CLI-তে চালু",
+        "বন্ধ, `plugins.enabled`-এ যোগ না করা পর্যন্ত",
+        "শুধু gateway-তে চালু"
+      ],
+      "answerIndex": 2,
+      "explanation": "সাধারণ আর user-installed plugin ডিফল্টে disabled; opt-in করতে হয়।"
+    },
+    {
+      "question": "Plugin ফোল্ডারের কোন ফাইলে `register(ctx)` function থাকে?",
+      "options": ["__init__.py", "schemas.py", "plugin.yaml", "tools.py"],
+      "answerIndex": 0,
+      "explanation": "`__init__.py`-এ `register(ctx)` থাকে, যা schema আর handler জোড়া লাগায়।"
+    },
+    {
+      "question": "`./.hermes/plugins/`-এ রাখা plugin gateway-তে কাজ না করলে সমাধান কী?",
+      "options": [
+        "`HERMES_ENABLE_PROJECT_PLUGINS=true` দেওয়া",
+        "`hook_callback_timeout` বাড়ানো",
+        "Gateway বন্ধ করা",
+        "User plugin হিসেবে install করে `hermes plugins enable <name>`"
+      ],
+      "answerIndex": 3,
+      "explanation": "ওই env var gateway session-এ কিছু বদলায় না; user plugin হিসেবে install ও enable করতে হয়।"
+    },
+    {
+      "question": "Security scan `dangerous` ফল দিলে কী হয়?",
+      "options": [
+        "Install হয়ে যায়",
+        "আটকে যায়, `--force`-ও কাজ করে না",
+        "`--force` দিলে install হয়",
+        "শুধু সতর্ক করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "dangerous হলে block, `--force` দিয়েও পার হওয়া যায় না।"
+    },
+    {
+      "question": "Capability নিয়ে কোনটা সত্য?",
+      "options": [
+        "এটা একটা সম্পূর্ণ sandbox",
+        "Update-এ নতুন capability নিজে নিজে grant হয়",
+        "এটা সম্মতি ও audit-এর স্তর, sandbox নয়",
+        "Non-interactive install-এ নিজে নিজে grant হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Capability sandbox নয়; update-এর নতুন capability সম্মতি না দেওয়া পর্যন্ত ungranted, আর non-interactive install fail closed।"
+    },
+    {
+      "question": "`pre_tool_call` hook `hook_callback_timeout` পেরিয়ে গেলে কী হয়?",
+      "options": [
+        "Tool আটকে যায়",
+        "Tool চলে",
+        "Plugin মুছে যায়",
+        "Hook নিজে নিজে retry হয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "পাতা বলে timed-out `pre_tool_call` tool-কে block করে।"
+    },
+    {
+      "question": "একই নামের plugin bundled আর user দুই জায়গায় থাকলে কোনটা কার্যকর হয়?",
+      "options": [
+        "bundled",
+        "user (পরের source আগেরটাকে ছাপিয়ে যায়)",
+        "দুটোই",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "Discovery-র ক্রমে পরেরটা জেতে (সাধারণ plugin-এর ক্ষেত্রে)।"
+    },
+    {
+      "question": "Plugin থেকে `ctx.call_mcp` ডিফল্টে কেমন?",
+      "options": [
+        "চালু, সব server-এ",
+        "শুধু host mode-এ চলে",
+        "শুধু wildcard দিয়ে চলে",
+        "বন্ধ; `mcp_allowlist`-এ server ধরে অনুমতি লাগে"
+      ],
+      "answerIndex": 3,
+      "explanation": "ডিফল্টে বন্ধ; per-server allowlist, wildcard মানা হয় না।"
+    }
+  ],
+  "recap": [
+    "Plugin হলো core না ছুঁয়ে tool, hook, command আর integration যোগ করার উপায়: `plugin.yaml` আর `register(ctx)` ভিত্তি।",
+    "User plugin থাকে `~/.hermes/plugins/`-এ; ডিফল্টে বন্ধ, `plugins.enabled`-এ যোগ করে চালু করতে হয়, আর `plugins.disabled` সবসময় জেতে।",
+    "Project-local `.hermes/plugins/` gateway-তে লোড হয় না; user plugin হিসেবে install করো।",
+    "২৭টা lifecycle hook আছে: directive, transform আর observer।",
+    "Install-এ scan হয় (safe, caution, dangerous); capability সম্মতি দিয়ে খোলা হয়, কিন্তু এটা sandbox নয়।",
+    "`plugins.isolation: host` দিয়ে non-bundled plugin আলাদা process-এ চালানো যায়।"
+  ]
+}

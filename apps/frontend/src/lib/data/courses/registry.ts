@@ -31,6 +31,10 @@ import {
   systemDesignAToZCourse,
 } from "./system-design-a-z";
 import { backendPythonAwsSeason2Course } from "./backend-python-aws-season-2";
+import {
+  HERMES_COURSE_ID,
+  hermesAgentMasteryCourse,
+} from "./hermes-agent-mastery";
 
 export type CoursePlatform = "poridhi" | "udemy" | "own";
 
@@ -66,6 +70,11 @@ export const courseRegistry: CourseRegistryEntry[] = [
     id: "backend-python-aws-season-2",
     platform: "poridhi",
     course: backendPythonAwsSeason2Course,
+  },
+  {
+    id: HERMES_COURSE_ID,
+    platform: "own",
+    course: hermesAgentMasteryCourse,
   },
   {
     id: "ai-builder-n8n",

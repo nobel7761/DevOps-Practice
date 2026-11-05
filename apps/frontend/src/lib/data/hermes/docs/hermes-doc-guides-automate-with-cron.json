@@ -1,0 +1,181 @@
+{
+  "contentId": "hermes-doc-guides-automate-with-cron",
+  "title": "Automate with Cron",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/automate-with-cron",
+  "oneLiner": "এই lesson শেষে তুমি cron দিয়ে ওয়েবসাইট পাহারা, সাপ্তাহিক রিপোর্ট, GitHub watcher ও data pipeline বানাতে পারবে এবং cron, script, stdout, delivery, [SILENT]-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: পাড়ার দোকানদার চাচা\n\nরহিম চাচা রোজ ভোর ছয়টায় দোকান খোলেন। আগে তিনি নিজে ঘুম থেকে উঠে খবরের কাগজ গুনতেন, দাম দেখতেন, তারপর ছেলেকে জানাতেন।\n\nএখন তিনি একটা কাগজে লিখে দেন: \"প্রতি ঘণ্টায় দামের খাতা দেখো, দাম পাল্টালে শুধু তখনই আমাকে ফোন করো।\" একজন সহকারী ঠিক সময়ে খাতা দেখে। কিছু না পাল্টালে সে **চুপ** থাকে।\n\nHermes-এর **cron job** ঠিক সেই সহকারী। তুমি একবার বলে দাও *কখন*, *কী কাজ* আর *ফল কোথায় যাবে*। বাকিটা Hermes নিজে করে।\n\nএই guide-এর মূল কথা হলো কয়েকটা কাজে-লাগা **pattern** (নকশা) শেখা। আর মনে রাখা: প্রতিটা run একদম নতুন session, আগের কথা মনে নেই। তাই prompt-এ সব লিখে দিতে হয়। (Persistent memory `MEMORY.md` লোড হয়, কিন্তু কাজের জরুরি তথ্য তার ওপর ছেড়ে দিও না।)\n\n> এটা Cron reference page-এর ব্যবহারিক সঙ্গী। schedule আর delivery-র গভীর নিয়ম সেখানে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Cron job:** \"এই কাজটা এই সময়ে নিজে নিজে করো\" ধরনের সময়-ঠিক-করা কাজ। অ্যালার্ম ঘড়ির মতো, কিন্তু ঘণ্টার বদলে কাজ করে।\n- **Schedule (সময়সূচি):** কখন চলবে, তার নিয়ম। যেমন `every 1h` (প্রতি ঘণ্টায়), `0 9 * * 1` (প্রতি সোমবার সকাল ৯টায়)।\n- **Run:** job একবার চলাকে বলে এক run।\n- **Prompt:** AI-কে লিখে দেওয়া নির্দেশ।\n- **Session ও context:** Session হলো একটা আলাদা আলাপ। Context হলো সেই আলাপে AI যা জানে। Cron প্রতিবার ফাঁকা session-এ চলে।\n- **Script:** ছোট প্রোগ্রাম, যা ধাপগুলো সারে (যেমন ওয়েবসাইট থেকে তথ্য আনা)। এখানে Python-এ লেখা।\n- **stdout:** প্রোগ্রাম পর্দায় যা ছাপে। Script যা ছাপে, Hermes সেটা পড়ে। প্রোগ্রামের মুখ দিয়ে বেরোনো কথা।\n- **LLM ও token:** LLM হলো AI-র মগজ। প্রতি কথার জন্য token (লেখার টুকরো) গুনে খরচ হয়। **Zero-token** মানে মগজ না ডেকে করা, তাই খরচ প্রায় শূন্য।\n- **Hash (SHA-256):** যেকোনো লেখার একটা অনন্য আঙুলের ছাপ। লেখা একটু বদলালে ছাপ পুরো বদলে যায়। তাই বদল ধরার সহজ উপায়।\n- **JSON ও JSONL:** JSON হলো কম্পিউটারের জন্য সাজানো তথ্য। JSONL মানে প্রতি লাইনে একটা JSON, নতুন তথ্য শুধু শেষে জুড়ে যায়।\n- **Delivery (`--deliver`):** ফল কোথায় পাঠাবে: Telegram, Discord, নাকি নিজের ফাইলে।\n- **Flag (`--name`, `--script`):** কমান্ডের পরে বসানো ছোট অপশন।\n- **Skill:** Hermes-এর রেসিপি-কার্ড, কাজ কীভাবে করতে হয় তা লেখা।\n- **Profile:** আলাদা আলাদা Hermes সেটআপ। যেমন একই বাড়ির দুজনের আলাদা ঘর।\n- **Channel ও thread:** chat app-এর নির্দিষ্ট ঘর ও তার ভেতরের আলাদা আলোচনা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা cron job বানানো থেকে ফল আসা পর্যন্ত ধাপ।",
+        "steps": [
+          {
+            "title": "১. schedule ঠিক করো",
+            "body": "`every 1h`, `0 9 * * 1`, `30m` বা ISO timestamp। এই guide পাতা `daily at 9am`-কে অসমর্থিত বললেও Hermes-এর source-এ এটা সমর্থিত (`croniter` লাগে); নিশ্চিত হতে চাইলে `0 9 * * *` লেখো।"
+          },
+          {
+            "title": "২. prompt লেখো (self-contained)",
+            "body": "URL, repo-র নাম, কেমন format চাও, কোথায় পাঠাবে। সব prompt-এই লিখে দাও।"
+          },
+          {
+            "title": "৩. দরকারে script জুড়ো",
+            "body": "`--script` দিলে আগে script চলে, তার stdout agent-এর context হয়। HTTP, ফাইল, state script-এ; বিচার agent-এ।"
+          },
+          {
+            "title": "৪. delivery বেছে নাও",
+            "body": "`--deliver telegram`, `local`, `discord`, `slack` ইত্যাদি।"
+          },
+          {
+            "title": "৫. test করো",
+            "body": "`/cron run <job_id>` দিয়ে সময়ের আগেই একবার চালিয়ে দেখো।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Zero-token অপশন\n\n**কেন লাগে?** সব কাজে LLM লাগে না। \"ওয়েবসাইটে লেখা বদলেছে?\" এই প্রশ্নের জন্য মগজ ডাকা মানে বাজারে যেতে হেলিকপ্টার ভাড়া করা। দুটো সস্তা পথ:\n\n- **Script-only cron job:** script নিজেই চূড়ান্ত message বানায়। chat থেকে `cronjob_manage` tool-এ `no_agent=True` দিয়ে বানানো যায়।\n- **`hermes send`:** চলমান script (CI step, post-commit hook, deploy script) থেকে stdout বা ফাইল সরাসরি Telegram, Discord, Slack-এ পাঠাও। একবারের কাজে। (CI step = কোড বদলালে নিজে চলা যাচাই; hook = কোনো ঘটনা ঘটলে নিজে চলা ছোট কাজ; deploy = কোড চালু করা।)\n\n## Pattern ১: ওয়েবসাইট বদলেছে কি?\n\nScript আনে আর তুলনা করে, agent বিচার করে বদলটা গুরুত্বপূর্ণ কি না।\n\n- Script: `~/.hermes/scripts/watch-site.py`; state ফাইল `~/.hermes/scripts/.watch-site-state.json` (state মানে \"আগেরবার কী দেখেছিলাম\" মনে রাখার খাতা)\n- এটা `https://example.com/pricing` আনে (User-Agent `Hermes-Monitor/1.0`, ৩০ সেকেন্ড timeout), SHA-256 hash করে।\n- বদলালে ছাপে `CHANGE DETECTED` (পুরনো ও নতুন hash আর প্রথম ২০০০ অক্ষর), না বদলালে `NO_CHANGE`।\n\n```bash\n/cron add \"every 1h\" \"script-এর আউটপুট দেখো; বদল গুরুত্বপূর্ণ হলে সারাংশ দাও, নইলে শুধু [SILENT] লেখো\" \\\n  --script ~/.hermes/scripts/watch-site.py --name \"Pricing monitor\" --deliver telegram\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `/cron add` | নতুন cron job যোগ করো | অ্যালার্ম বানানো |\n| `\"every 1h\"` | প্রতি ঘণ্টায় | অ্যালার্মের সময় |\n| `\"script-এর আউটপুট দেখো...\"` | prompt: agent-কে কী করতে হবে | সহকারীর চিরকুট |\n| `--script ...watch-site.py` | আগে এই script চালাও, তার ছাপা লেখা agent-কে দাও | সহকারী আগে খাতা খুলে দেখে |\n| `--name \"Pricing monitor\"` | job-এর নাম | লেবেল |\n| `--deliver telegram` | ফল Telegram-এ পাঠাও | কোথায় ফোন করবে |\n| `\\` (শেষে) | কমান্ড পরের লাইনে চলছে | লম্বা বাক্য ভাঙা |\n\n**`[SILENT]` কৌশল:** কিছু না বদলালে agent শুধু `[SILENT]` লেখে, তাই delivery দমন হয়। মানে \"চুপ থাকো, ফোন কোরো না\"। না হলে প্রতি ঘণ্টায় \"কিছু বদলায়নি\" মেসেজে তুমি বিরক্ত হতে।\n\n**ব্যর্থতার notice:** hard failure (job-ই চলতে পারেনি) হলে delivery target-এ `Cron 'X' failed...` notice যায়। `--failure-deliver local` দিলে লুকানো যায় (শুধু ফাইলে যায়); `--failure-deliver slack:C_OPS` দিলে ops channel-এ যায়। flag না দিলে `--deliver`-এর জায়গাতেই যায়।\n\n## Pattern ২: সাপ্তাহিক রিপোর্ট\n\nপ্রতি সোমবার সকাল ৯টায় (`0 9 * * 1`) AI-র শীর্ষ ৫ খবর, GitHub trending (`machine-learning` topic) আর Hacker News-এর আলোচিত AI/ML পোস্ট, ৫০০ শব্দের মধ্যে, link সহ।\n\n```bash\n/cron add \"0 9 * * 1\" \"...\" --name \"Weekly AI digest\" --deliver telegram\n# CLI-তে একই কাজ\nhermes cron create \"0 9 * * 1\" \"...\" --name \"Weekly AI digest\" --deliver telegram\n```\n\n`/cron add` chat-এর ভেতরে লেখা slash command। `hermes cron create` terminal থেকে একই কাজ। `\"...\"` জায়গায় তোমার সম্পূর্ণ prompt বসবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Pattern ৩: GitHub repo পাহারাদার\n\nGitHub হলো কোড রাখার ওয়েবসাইট। Issue হলো সমস্যা বা অনুরোধের নোট। PR (pull request) হলো কোড বদলের প্রস্তাব। Release হলো নতুন সংস্করণ প্রকাশ।\n\n`NousResearch/hermes-agent`-এর গত ৬ ঘণ্টার issue, PR, release দেখো। নতুন কিছু না থাকলে `[SILENT]`। Schedule `every 6h`, delivery `discord`। যেহেতু cron agent-এর আগের context নেই, prompt-এ সঠিক command লিখে দিতে হয়:\n\n```bash\ngh issue list --repo NousResearch/hermes-agent --state open --json number,title,author,createdAt --limit 10\ngh pr list --repo NousResearch/hermes-agent --state all --json number,title,author,createdAt,mergedAt --limit 10\n```\n\n`gh` হলো GitHub-এর কমান্ড-লাইন টুল। `issue list` মানে issue-এর তালিকা, `--repo` কোন কোড-ভাণ্ডার, `--state open` শুধু খোলাগুলো, `--json ...` কোন তথ্য চাই, `--limit 10` সর্বোচ্চ ১০টা।\n\n## Pattern ৪: ডেটা সংগ্রহ pipeline\n\nPipeline মানে ধাপে ধাপে চলা কাজের নল: আনো, জমাও, বিশ্লেষণ করো।\n\nScript ক্রিপ্টোর দাম (CoinGecko `simple/price`, `bitcoin,ethereum`, `usd`, ৩০ সেকেন্ড timeout) এনে `~/.hermes/data/prices/history.jsonl`-এ (JSON Lines, প্রতিবার যোগ হয়) timestamp (সময়ের ছাপ) সহ লেখে। শেষ ২৪টা পয়েন্ট পড়ে, বর্তমান দাম আর শেষ ৬টা entry ছাপে। Agent বলে: বর্তমান দাম, শেষ ৬ পয়েন্টের trend (up/down/flat), ৫%-এর বেশি নড়াচড়া। সমতল হলে `[SILENT]`।\n\n```bash\n/cron add \"every 1h\" \"...\" --script ~/.hermes/scripts/collect-prices.py --name \"Price tracker\" --deliver telegram\n```\n\n## Pattern ৫: একাধিক Skill জোড়া\n\nSkill গুলো prompt চলার আগে ক্রমে লোড হয়। যেমন `arxiv` (গবেষণা-paper খোঁজা) তারপর `obsidian` (নোট লেখা)। প্রতিদিন সকাল ৮টায় \"language model reasoning\"-এর শীর্ষ ৩ paper।\n\n```bash\n/cron add \"0 8 * * *\" \"...\" --skill arxiv --skill obsidian --name \"Paper digest\"\n```\n\n`--skill` যতবার ইচ্ছা দেওয়া যায়, প্রতিবার একটা skill। Tool call হিসেবে: `cronjob(action=\"create\", skills=[\"arxiv\",\"obsidian\"], prompt=..., schedule=\"0 8 * * *\", name=\"Paper digest\", deliver=\"local\")`।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Agent সবকিছু করলে খরচ বেশি; script কাজ করে agent শুধু বিচার করলে সস্তা।",
+        "beforeTitle": "সবকিছু agent-এর হাতে",
+        "before": "প্রতি ঘণ্টায় agent নিজে HTTP আনে, hash বানায়, তুলনা করে, লেখে। প্রতি run-এ token খরচ, আর ভুলের সুযোগও বেশি।",
+        "afterTitle": "script + agent ভাগাভাগি",
+        "after": "Script আনে ও diff করে; agent শুধু stdout দেখে বিচার করে। সস্তা ও নির্ভরযোগ্য।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Job পরিচালনা\n\n```bash\n/cron list                                   # চালু job\n/cron run <job_id>                           # এখনই চালাও (test)\n/cron pause <job_id>                         # না মুছে থামাও\n/cron edit <job_id> --schedule \"every 4h\"\n/cron edit <job_id> --prompt \"...\"\n/cron edit <job_id> --skill arxiv --skill obsidian\n/cron edit <job_id> --clear-skills\n/cron remove <job_id>                        # চিরতরে মোছো\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `/cron list` | সব job দেখাও | কী চলছে জানতে |\n| `/cron run <job_id>` | সময়ের আগেই এখনই একবার চালাও | নতুন job ঠিক চলছে কি না পরখ করতে |\n| `/cron pause` | না মুছে থামাও | কিছুদিনের বিরতি |\n| `/cron edit` | সময়, prompt বা skill বদলাও | নতুন করে না বানিয়ে ঠিক করতে |\n| `/cron remove` | চিরতরে মোছো | আর দরকার নেই |\n\n(`<job_id>` হলো প্রতিটা job-এর আলাদা পরিচয়-নম্বর, `/cron list`-এ পাবে।)\n\n## `--deliver` লক্ষ্য\n\n| লক্ষ্য | উদাহরণ | মানে |\n|---|---|---|\n| `origin` | `--deliver origin` | যে chat-এ job বানিয়েছ (default) |\n| `local` | `--deliver local` | শুধু ফাইলে |\n| `telegram` / `discord` / `slack` | `--deliver telegram` | সেই platform-এর home channel |\n| নির্দিষ্ট chat | `--deliver telegram:-1001234567890` | নির্দিষ্ট Telegram group |\n| thread | `--deliver telegram:-1001234567890:17585` | Telegram topic thread |\n| `bot-chat` | `--deliver bot-chat` | এই profile-এর Bot Chat |\n| নামসহ | `--deliver bot-chat:research` | অন্য local profile-এর Bot Chat |\n\n**Bot Chat:** পাঠানো লেখা একটা আসল message হয়ে bot-এর কাছে যায়, bot সেটা পড়ে উত্তর দেয় (আগে prefix থাকে যাতে বোঝে scheduled job থেকে এসেছে)। Profile থাকতে হবে (`hermes profile list`); প্রতি delivery-তে পুরো এক agent turn খরচ; `--deliver bot-chat,telegram` জোড়া যায়, কিন্তু `all` bot-chat-এ ছড়ায় না।"
+    },
+    {
+      "type": "simulator",
+      "id": "cron"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "চারটা সোনার নিয়ম",
+      "markdown": "- Prompt self-contained রাখো: URL, repo, format, delivery।\n- `[SILENT]`-এর ব্যাখ্যা agent-কে করতে বোলো না; cron ওটাকেই suppression চিহ্ন (চুপ থাকার সংকেত) ধরে।\n- HTTP, ফাইল, state script-এ; agent শুধু stdout দেখে। সস্তা ও ভরসাযোগ্য।\n- সময়ের জন্য অপেক্ষার আগে `/cron run <job_id>` দিয়ে test।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Schedule-এর ভাষা: দুই পাতার দুই কথা",
+      "markdown": "এই guide পাতা বলে: সমর্থিত format হলো relative delay (`30m`; যদিও source ও cron feature পাতা অনুযায়ী খালি `30m` আসলে বারবার চলা interval, একবারের জন্য `in 30m` লেখো), interval (`every 2h`), standard cron expression (`0 9 * * *`) আর ISO timestamp (`2025-06-15T09:00:00`)। আর স্পষ্ট লেখা আছে, `daily at 9am`-এর মতো natural language সমর্থিত নয়, `0 9 * * *` লেখো।\n\n**কিন্তু** মূল Scheduled Tasks (cron) feature পাতা আলাদা কথা বলে: সেখানে `every day at 9am`, `weekdays at 9am`, `daily at 7am`, `every monday 9am` ইত্যাদি natural day/time schedule সমর্থিত বলে লেখা আছে (এগুলো ভেতরে cron expression-এ compile হয়, `croniter` package লাগে)। অর্থাৎ official docs-এর দুই পাতা একমত নয়। **Source code-এ মীমাংসা:** Hermes repo-র `cron/jobs.py`-এর `parse_schedule` প্রথমেই natural day/time phrase (`every day at 9am`, `weekdays at 9am`, `monday, wednesday at 9am`, `every` ছাড়া `daily at 9am`-ও) cron expression-এ রূপান্তর করে। তাই feature পাতাই ঠিক, guide পাতার \"সমর্থিত নয়\" কথাটা পুরনো। শর্ত: `croniter` package লাগে। তবু সবচেয়ে নিশ্চিত পথ cron expression (`0 9 * * *`), আর job বানিয়ে `/cron run <job_id>` ও `/cron list` দিয়ে যাচাই করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Cron job প্রতিবার কেমন session-এ চলে, আর তার ফল কী?",
+      "options": [
+        "আগের কথোপকথন মনে রাখা session; তাই prompt ছোট হলেও চলে",
+        "নতুন session; তাই prompt-এ সব তথ্য লিখে দিতে হয়",
+        "শুধু terminal-এর session",
+        "কোনো session লাগে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রতিটা run ফাঁকা সেশন। সহকারীর স্মৃতি নেই, তাই চিরকুটে সব লিখে দিতে হয়।"
+    },
+    {
+      "question": "ওয়েবসাইট-monitor pattern-এ script আর agent-এর ভাগ কেমন?",
+      "options": [
+        "Agent আনে, script বিচার করে",
+        "দুটোই একই কাজ করে",
+        "কোনোটাই নয়",
+        "Script আনে ও diff করে, agent বিচার করে বদলটা গুরুত্বপূর্ণ কি না"
+      ],
+      "answerIndex": 3,
+      "explanation": "গণনার কাজ script (সস্তা), বিচারের কাজ agent।"
+    },
+    {
+      "question": "কিছু না বদলালে চুপ থাকতে agent কী লেখে?",
+      "options": [
+        "`NO_CHANGE` ব্যাখ্যা সহ",
+        "`[SILENT]`",
+        "খালি রেখে দেয়",
+        "`--failure-deliver local`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`[SILENT]` লিখলে cron delivery দমন করে।"
+    },
+    {
+      "question": "`hermes send` কখন কাজের?",
+      "options": [
+        "job মুছতে",
+        "skill install করতে",
+        "gateway চালু করতে",
+        "চলমান script (CI, hook, deploy) থেকে একবার Telegram/Discord-এ পাঠাতে, মগজ না ডেকে"
+      ],
+      "answerIndex": 3,
+      "explanation": "এটা zero-token পথ: script-এর output সরাসরি chat-এ।"
+    },
+    {
+      "question": "`daily at 9am` নিয়ে এই guide পাতা আর Hermes-এর source code কী বলে?",
+      "options": [
+        "দুটোই বলে `30m`-এর মতোই সমর্থিত",
+        "দুটোই বলে সমর্থিত নয়",
+        "guide পাতা বলে সমর্থিত নয়, কিন্তু source-এর parser এটাকে cron expression-এ compile করে (`croniter` লাগে)",
+        "শুধু ISO timestamp-এর সাথে চলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "guide পাতা স্পষ্ট বলে natural language সমর্থিত নয়; কিন্তু `cron/jobs.py`-এর parser natural day/time phrase `0 9 * * *`-এর মতো cron-এ বদলায়, আর cron feature পাতাও এগুলো তালিকাভুক্ত করেছে। তাই guide পাতার কথা পুরনো।"
+    },
+    {
+      "question": "`--failure-deliver slack:C_OPS` কী করে?",
+      "options": [
+        "সফল ফল ops channel-এ পাঠায়",
+        "job থামায়",
+        "hard failure-এর notice ops channel-এ পাঠায়",
+        "`[SILENT]` বন্ধ করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "ব্যর্থতার খবর আলাদা জায়গায় পাঠানোর flag।"
+    },
+    {
+      "question": "`--deliver bot-chat`-এর বিশেষ খরচ কী?",
+      "options": [
+        "কোনো খরচ নেই",
+        "প্রতি delivery-তে পুরো এক agent turn খরচ",
+        "শুধু একবার খরচ",
+        "`all`-এর মধ্যে আপনিই ঢোকে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Bot Chat-এ লেখা আসল message হয়ে bot-কে ভাবতে বাধ্য করে, তাই প্রতিবার agent turn খরচ।"
+    },
+    {
+      "question": "নতুন job সময়ের জন্য অপেক্ষা না করে পরখ করতে কী করবে?",
+      "options": [
+        "`/cron pause <job_id>`",
+        "`/cron run <job_id>`",
+        "`/cron remove <job_id>`",
+        "`/cron list`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`/cron run` এখনই একবার চালিয়ে দেখায়।"
+    }
+  ],
+  "recap": [
+    "Cron job হলো সময়-ঠিক-করা কাজ; প্রতি run নতুন session, তাই prompt self-contained হতে হবে।",
+    "Script আনে ও তুলনা করে, agent শুধু বিচার করে; এতে খরচ কম ও ভরসা বেশি।",
+    "কিছু না বদলালে `[SILENT]` লিখলে delivery দমন হয়।",
+    "`--skill` দিয়ে skill জোড়া যায়; `--deliver` দিয়ে ফল কোথায় যাবে ঠিক হয়।",
+    "`/cron run <job_id>` দিয়ে test আর `/cron list|pause|edit|remove` দিয়ে পরিচালনা করো।"
+  ]
+}

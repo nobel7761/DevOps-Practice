@@ -1,0 +1,185 @@
+{
+  "contentId": "hermes-doc-guides-tips",
+  "title": "Tips & Best Practices",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/tips",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে দ্রুত, সস্তা ও নিরাপদে ব্যবহারের অভ্যাসগুলো এবং প্রতিটা কঠিন শব্দ (context, token, session, sandbox...) বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: নতুন বাবুর্চি আর রান্নাঘর\n\nধরো তুমি একজন নতুন বাবুর্চি রেখেছ। এই বাবুর্চিই হলো **Hermes** (একটা AI সহকারী, যে তোমার হয়ে কাজ করে)।\n\nপ্রথম দিন তুমি শুধু বললে, \"কিছু একটা রান্না করো।\" বাবুর্চি হাঁড়ি-পাতিল নিয়ে বিভ্রান্ত। কী রাঁধবে, কতজনের জন্য, ঝাল কতটা, কিছুই জানে না।\n\nপরদিন তুমি বললে, \"ফ্রিজের বাম তাকের মাছ দিয়ে ঝোল, ঝাল কম, ৪ জনের।\" অর্ধেক সময়েই কাজ শেষ!\n\nএরপর তুমি দরজায় একটা কাগজ ঝুলিয়ে দিলে: \"এই বাড়ির সবাই ঝাল কম খায়।\" এই কাগজটা হলো `AGENTS.md`। আর বাবুর্চির নিজের স্বভাবের একটা নোট রাখলে, সেটা `SOUL.md`। ব্যস, রোজ একই কথা আর বলতে হয় না।\n\nHermes-এর **Tips & Best Practices** পাতাটা ঠিক এই রকম। এটা ছোট ছোট ভালো অভ্যাসের তালিকা। এগুলো মানলে Hermes **দ্রুত** কাজ করে, **কম খরচ** হয়, আর **নিরাপদে** থাকে। এই lesson-এ আমরা ছয় ভাগে দেখব।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\nএই lesson-এর শব্দগুলো আগে বুঝে নিলে বাকিটা সহজ লাগবে।\n\n- **Context (কনটেক্সট):** কাজটা বোঝার জন্য যে আশপাশের তথ্য লাগে। বাবুর্চিকে \"মাছ, ঝোল, ৪ জন\" বলাটাই context দেওয়া।\n- **Session (সেশন):** Hermes-এর সাথে একটা চলমান আলাপ। যেমন একটা ফোন-কল, শুরু আছে, শেষ আছে। নতুন কল মানে নতুন session।\n- **Token (টোকেন):** AI যে লেখা পড়ে, তা ছোট ছোট টুকরোয় ভাগ হয়। প্রতিটা টুকরো একটা token। যত বেশি token, তত বেশি খরচ আর তত ধীর। ভাবো, দোকানে প্রতি শব্দের জন্য পয়সা দিতে হচ্ছে।\n- **Prompt (প্রম্পট) ও system prompt:** AI-কে যা লিখে দেওয়া হয়, তা-ই prompt। **System prompt** হলো গোপন নির্দেশ-খাতা, যা Hermes প্রতিবার আগে পড়ে নেয় (যেমন \"তুমি একজন সাহায্যকারী\")।\n- **Model (মডেল) ও provider (প্রোভাইডার):** Model হলো AI-র \"মগজ\"। Provider হলো সেই কোম্পানি বা সেবা, যে ওই মগজ ভাড়া দেয়। ভাবো, মগজ = বাবুর্চি, provider = বাবুর্চি-সরবরাহকারী এজেন্সি।\n- **Skill (স্কিল):** একটা রেসিপি-কার্ড। একটা কাজ কীভাবে ধাপে ধাপে করতে হয়, তা লেখা থাকে।\n- **Memory (মেমোরি):** Hermes-এর খাতা, যেখানে সে তোমার সম্পর্কে দরকারি কথা লিখে রাখে।\n- **Terminal / CLI:** কালো জানালা, যেখানে ছবি বা বোতামের বদলে লিখে হুকুম দিতে হয়। **CLI** মানে ওই লিখে চালানোর পদ্ধতি।\n- **Docker (ডকার) ও container:** একটা সিল-করা বাক্স। বাক্সের ভেতরে প্রোগ্রাম চলে, বাইরের জিনিসে হাত দিতে পারে না। অচেনা কাজ চালানোর নিরাপদ খেলার ঘর।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ১. ভালো ফল পাওয়ার উপায়\n\nএটা না জানলে কী হয়? Hermes আন্দাজ করে কাজ করে, আর বারবার প্রশ্ন করে বা ভুল জায়গায় খোঁজে। এতে সময় আর token দুটোই নষ্ট।\n\n- **নির্দিষ্ট হও:** কোন file, কোন লাইন, কোন function, আর error-এর নাম কী, তা বলো। (File = কম্পিউটারে রাখা একটা নথি। Function = কোডের ভেতরের একটা ছোট কাজের ইউনিট। Error = ভুলের বার্তা।) নির্দিষ্ট বললে কম বার ঘুরতে হয়।\n- **আগেই context দাও:** file path (ফাইলের ঠিকানা), error message, আর কী হওয়ার কথা ছিল, সব বলো। **Traceback** (ভুল কোথায় কোথায় ঘুরে ঘটল তার তালিকা) সরাসরি paste করো। Paste মানে কপি করা লেখা বসিয়ে দেওয়া।\n- **`AGENTS.md` ব্যবহার করো:** যেসব কথা বারবার বলো (coding convention মানে কোড লেখার নিয়ম, test tool মানে কোড ঠিক আছে কি না যাচাই করার যন্ত্র), সেগুলো এই file-এ লেখো। প্রতিটা session-এ এটা আপনা-আপনি লোড হয়। দরজার ওই কাগজটার মতো।\n- **Agent-কে নিজের tool ব্যবহার করতে দাও:** Tool মানে Hermes-এর হাতিয়ার, যেমন file খোঁজা, terminal চালানো, code চালানো। প্রতিটা ধাপ হাতে ধরে বলতে হবে না। বাবুর্চিকে বলো কী চাই, কীভাবে কাটবে তা সে জানে।\n- **জটিল কাজে Skill:** `/skills` লিখে সব skill ঘুরে দেখো। `/axolotl`-এর মতো করে সরাসরিও চালাতে পারো। (`/` দিয়ে শুরু হওয়া ছোট কমান্ডকে বলে slash command।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "কম দক্ষ বনাম দক্ষ অনুরোধ।",
+        "beforeTitle": "অস্পষ্ট",
+        "before": "\"আমার app কাজ করছে না, দেখো তো।\"\n\n- কোন file? কোন error? অনেক ঘোরাঘুরি।",
+        "afterTitle": "নির্দিষ্ট",
+        "after": "\"`api/users.py`-এর `get_user()` ২০ নম্বর লাইনে KeyError দিচ্ছে। Traceback নিচে। প্রত্যাশা: missing হলে 404।\"\n\n- এক-দু ধাপেই ঠিক।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ২. CLI power user tips\n\nআগে মনে করো: CLI মানে terminal-এ লিখে Hermes চালানো। নিচের কৌশলগুলো সেখানে সময় বাঁচায়।\n\n| কাজ | কীভাবে | কখন লাগে |\n|---|---|---|\n| একাধিক লাইনে লেখা | Alt+Enter, Ctrl+J, বা Shift+Enter (শেষটা সব terminal-এ চলে না) | লম্বা নির্দেশ লিখতে গিয়ে Enter চাপলে message চলে যায়, তাই নতুন লাইন লাগে |\n| Multi-line paste | জমা হয়ে একটাই message হিসেবে যায় | অনেক লাইনের error বসানোর সময় |\n| থামানো ও দিক বদলানো | Ctrl+C একবার = interrupt; ২ সেকেন্ডে দুবার = জোর করে বের | Hermes ভুল পথে গেলে থামাতে, আর আটকে গেলে বেরোতে |\n| আগের session | `hermes -c` (শেষটা), `hermes -r \"title\"` (নাম ধরে) | কালকের আলাপ আবার চালু করতে |\n| ছবি paste | Ctrl+V; agent **vision** (ছবি দেখার ক্ষমতা) দিয়ে দেখে | screenshot-এর error বোঝাতে |\n| Autocomplete | `/` চেপে Tab; `/compress`, `/model`, `/title` ও skill দেখায় | কমান্ডের নাম মনে না থাকলে |\n| Output কতটা দেখবে | `/verbose`; off → new → all → verbose ঘুরে ঘুরে বদলায় | বেশি বা কম খুঁটিনাটি দেখতে |\n\n**Interrupt** মানে কাজের মাঝখানে \"থামো\" বলা। যেমন বাবুর্চি ভুল মশলা নিচ্ছে, তুমি হাত তুলে থামালে।\n\n**Flag** (যেমন `-c`, `-r`) মানে কমান্ডের পরে বসানো ছোট অপশন। `-c` মানে continue (চালিয়ে যাও), `-r` মানে resume (ফিরে এসো)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৩. Context file: কোনটা কোথায়?\n\nContext file হলো Hermes-এর জন্য রাখা নোটের কাগজ। **কেন লাগে?** না থাকলে প্রতি session-এ একই কথা নতুন করে বলতে হতো।\n\n```text\nAGENTS.md              -> project root; architecture, convention, rule (প্রতি session-এ)\n~/.hermes/SOUL.md      -> স্থায়ী personality ($HERMES_HOME/SOUL.md-ও চলে)\n.cursorrules, .cursor/rules/*.mdc -> নিজে নিজেই পড়া হয়\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `AGENTS.md` | project-এর নিয়মের নোট | বাড়ির দরজায় ঝোলানো নিয়মের কাগজ |\n| project root | project-এর সবচেয়ে বাইরের ফোল্ডার | বাড়ির সদর দরজা |\n| `~/.hermes/SOUL.md` | Hermes-এর স্থায়ী স্বভাব (`~` মানে তোমার নিজের home ফোল্ডার) | বাবুর্চির নিজের চরিত্রের নোট |\n| `$HERMES_HOME` | Hermes-এর data যে ফোল্ডারে থাকে, তার নাম (environment variable, মানে নামওয়ালা সেটিং) | বাড়ির ঠিকানা লেখা কাগজ |\n| `.cursorrules` ইত্যাদি | অন্য এক editor-এর (Cursor) নিয়মের file | অন্য বাড়ির নিয়ম, Hermes সেটাও পড়ে নেয় |\n\n- Top-level `AGENTS.md` session শুরুতেই লোড হয়। Subdirectory (ভেতরের ফোল্ডার)-র file গুলো **lazily** লোড হয়, মানে দরকার পড়লে, tool call-এর সময় (`subdirectory_hints.py` দিয়ে)।\n- Hermes প্রথমবার একটা starter `SOUL.md` নিজেই বানিয়ে দেয়।\n- **ফাইল ছোট রাখো।** কারণ এগুলো প্রতিটা message-এর সাথে যায়, আর token budget খায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা ভালো অভ্যাসের চক্র: প্রস্তুতি, কাজ, শেখা।",
+        "steps": [
+          {
+            "title": "Context file সাজাও",
+            "body": "`AGENTS.md`-তে project-এর নিয়ম, `SOUL.md`-তে তোমার পছন্দের স্বভাব লেখো। ছোট ও নির্দিষ্ট রাখো।"
+          },
+          {
+            "title": "নির্দিষ্ট করে বলো",
+            "body": "file, function, error আর প্রত্যাশিত ফল জানিয়ে কাজ দাও। ধাপে ধাপে dictate (মুখে বলে দেওয়া) কোরো না।"
+          },
+          {
+            "title": "৫+ ধাপের বারবার-করা কাজ Skill করো",
+            "body": "যেমন `/deploy-staging`। পরে এক কমান্ডে চলবে। রেসিপি একবার লিখে রাখলে বারবার লাগে না।"
+          },
+          {
+            "title": "শেষে মনে রাখতে বলো",
+            "body": "ফলপ্রসূ session-এর পর agent-কে key takeaway (মূল শিক্ষা) memory-তে রাখতে বলো।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৪. Memory বনাম Skill, আর Performance ও খরচ\n\n**সহজ কথা:** Memory মনে রাখে **\"কী\"** (fact, মানে তথ্য)। Skill মনে রাখে **\"কীভাবে\"** (procedure, মানে পদ্ধতি)।\n\n- Memory: \"রিয়া ঝাল খায় না।\" এটা তথ্য।\n- Skill: \"পোলাও রাঁধার ধাপগুলো।\" এটা পদ্ধতি।\n\nMemory-র সীমা আছে: `MEMORY.md` প্রায় ২,২০০ অক্ষর, `USER.md` প্রায় ১,৩৭৫। ভরলে agent নিজে গুছিয়ে নেয়।\n\nMemory একটা **frozen snapshot** (জমানো ছবি)। Session-এর মাঝে বদলালে বদলটা system prompt-এ আসে পরের session-এ। যেমন সকালে যে ছবি তুলেছ, দুপুরে ঘর বদলালেও ছবি আগের মতোই থাকে।\n\n### খরচ কমানোর অভ্যাস\n\nপ্রতিটা message-এ খরচ হয় token দিয়ে। তাই এই অভ্যাসগুলো কাজে লাগে।\n\n- **Prompt cache বাঁচাও:** Cache মানে আগে পড়া অংশ মনে রেখে সস্তায় আবার ব্যবহার করা, যেমন একবার পড়া বইয়ের পাতা। System prompt স্থির রাখলে cache কাজ করে। `/model` বদলানো, fallback provider (প্রথমটা না চললে বদলি সেবা), বা credential rotation (চাবি বদলানো) cache নষ্ট করে।\n- **`/compress`:** লম্বা history limit-এ পৌঁছানোর আগেই সারাংশ করে ছোট করে দেয়। `/usage` দিয়ে খরচ দেখো।\n- **`delegate_task`:** ছোট কাজ অন্য সহকারীকে দিয়ে সমান্তরালে (একসাথে) চালায়। মূল আলাপে শুধু সারাংশ ফেরে।\n- **`execute_code`:** অনেক ছোট command-এর বদলে একটা script চালায়। বাজারে দশবার না গিয়ে একবারে তালিকা ধরে কেনা।\n- **Model বাছাই:** জটিল যুক্তির কাজে frontier model (সবচেয়ে শক্তিশালী ধরনের), সহজ কাজে দ্রুত model। ঘন ঘন model বদলানোর চেয়ে নতুন session শুরু করা কখনও সস্তা।\n- **`/insights`:** ৩০ দিনের ব্যবহারের ধরন দেখায়। `hermes prompt-size` প্রতি message-এর নির্দিষ্ট খরচ offline (ইন্টারনেট ছাড়া) দেখায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৫. Messaging (Telegram/Discord) tips\n\nMessaging মানে Hermes-কে Telegram বা Discord-এর মতো chat app-এ বসিয়ে সেখান থেকে কথা বলা। কয়েকটা কাজের কমান্ড:\n\n| কমান্ড/ধারণা | কী করে | কখন লাগে |\n|---|---|---|\n| `/sethome` | cron-এর ফল ও proactive message যে channel-এ যাবে সেটা ঠিক করে। (Cron = সময় ধরে নিজে চলা কাজ। Channel = chat-এর নির্দিষ্ট ঘর। Proactive = না চাইতেই নিজে থেকে পাঠানো।) | নিজে থেকে পাঠানো খবর কোথায় আসবে ঠিক করতে |\n| `/title` | session-এর নাম দেয়। `hermes sessions list` দিয়ে খুঁজে পাও | পরে আলাপটা খুঁজে পেতে |\n| DM pairing | টিমমেটকে `hermes pairing approve telegram <CODE>` দিয়ে অনুমতি দাও | ID-র তালিকা হাতে না লিখে সহজে অনুমতি দিতে |\n\nDM মানে ব্যক্তিগত বার্তা। **Pairing** মানে বন্ধুকে একটা গোপন কোড দেখানো, তুমি সেই কোড মেনে নিলে সে ঢুকতে পারে, যেন দরজার পাসওয়ার্ড।\n\n- Messaging-এ `verbose`-এর `new` mode-ই রাখো। কম output ভালো, chat ভরে যায় না।\n- Messaging session `/new` বা `/reset` না দেওয়া পর্যন্ত চলতে থাকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৬. নিরাপত্তা\n\nHermes তোমার কম্পিউটারে কমান্ড চালাতে পারে। তাই সাবধান না হলে ভুল কমান্ড ক্ষতি করতে পারে। নিচের অভ্যাসগুলো সেটা আটকায়।\n\n```bash\nTERMINAL_ENV=docker\nTERMINAL_DOCKER_IMAGE=hermes-sandbox:latest   # ঐচ্ছিক\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `TERMINAL_ENV=docker` | Hermes-এর কমান্ড আসল কম্পিউটারে না চালিয়ে Docker বাক্সের ভেতরে চালাও | বাচ্চাকে ঘরের ভেতর না, বালির বাক্সে খেলতে দেওয়া |\n| `TERMINAL_DOCKER_IMAGE=...` | কোন বাক্সের নকশা (image) ব্যবহার হবে। ঐচ্ছিক, মানে না দিলেও চলে | কোন বালির বাক্স, তা বেছে নেওয়া |\n\n- **অচেনা code Docker-এ চালাও** (উপরের মতো)। এই বাক্সকে sandbox-ও বলে।\n- **Approval:** Hermes বিপজ্জনক কিছু করতে চাইলে তোমার অনুমতি চায়। চারটা উত্তর: once (এবার একবার), session (এই আলাপে সবসময়), always (চিরকাল), deny (না)। আগে \"session\" দিয়ে দেখো। \"always\" একটা pattern চিরতরে allowlist করে দেয় (allowlist = \"এগুলোকে আর জিজ্ঞেস কোরো না\" তালিকা)।\n- Command approval বিপজ্জনক pattern আটকায়, কিন্তু **container backend এই check এড়িয়ে যায়**। তাই image নিজেই lock down করো (অর্থাৎ বাক্সের ভেতরেও সীমা বেঁধে দাও)।\n- `GATEWAY_ALLOW_ALL_USERS=true` এড়াও। এটা মানে \"যে কেউ আমার bot-এ কথা বলুক\", ফলে অচেনা লোকও ঢুকে পড়ে। বদলে `TELEGRAM_ALLOWED_USERS`, `DISCORD_ALLOWED_USERS`, `GATEWAY_ALLOWED_USERS` বা DM pairing ব্যবহার করো। (Gateway = chat app আর Hermes-এর মাঝের সেতু।)\n- **Windows:** file খোলার সময় `encoding=\"utf-8\"` দাও (বাংলা ও অন্য অক্ষর ঠিক রাখার নিয়ম)। PowerShell-এ session-এর জন্য UTF-8 output encoding সেট করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "\"always\" দেওয়ার আগে ভাবো",
+      "markdown": "\"always\" মানে ওই command pattern স্থায়ীভাবে allowlist। অর্থাৎ ভবিষ্যতে আর জিজ্ঞেস করা হবে না। প্রথমে \"session\" দিয়ে দেখো সবকিছু ঠিক আছে কি না।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "ছোট context file = কম খরচ",
+      "markdown": "`AGENTS.md` আর `SOUL.md` প্রতিটা message-এ token খায়। যা সত্যিই সব সময় দরকার, শুধু তা-ই রাখো। ব্যাগ যত হালকা, হাঁটা তত সহজ।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "কোন তথ্য `AGENTS.md`-এ রাখা সবচেয়ে মানানসই?",
+      "options": [
+        "বারবার বলা project-এর convention ও test tool",
+        "তোমার ব্যক্তিগত API key",
+        "একবারের debug log",
+        "শুধু ছবি"
+      ],
+      "answerIndex": 0,
+      "explanation": "`AGENTS.md` হলো দরজার নিয়মের কাগজ। যে নিয়ম প্রতিবার লাগে, তা এখানে রাখো। গোপন key বা একবারের log এখানে নয়।"
+    },
+    {
+      "question": "Memory আর Skill-এর পার্থক্য কী?",
+      "options": [
+        "দুটোই একই",
+        "Memory শুধু ছবি রাখে",
+        "Memory \"কী\" (fact) মনে রাখে, Skill \"কীভাবে\" (procedure)",
+        "Skill শুধু API key রাখে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Memory = তথ্যের খাতা, Skill = রেসিপি-কার্ড।"
+    },
+    {
+      "question": "Ctrl+C ২ সেকেন্ডের মধ্যে দুবার চাপলে কী হয়?",
+      "options": [
+        "শুধু interrupt হয়",
+        "নতুন session শুরু হয়",
+        "Hermes জোর করে বের হয়ে যায় (force-exit)",
+        "history compress হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "একবার চাপলে শুধু থামে, ২ সেকেন্ডে দুবার চাপলে জোর করে বেরিয়ে যায়।"
+    },
+    {
+      "question": "কোনটা prompt cache নষ্ট করতে পারে?",
+      "options": [
+        "`/usage` চালানো",
+        "`/title` দেওয়া",
+        "`hermes sessions list`",
+        "session-এর মাঝে `/model` দিয়ে model বদলানো"
+      ],
+      "answerIndex": 3,
+      "explanation": "System prompt স্থির থাকলে cache কাজ করে। মাঝপথে model বদলালে cache নষ্ট হয়, তাই খরচ বাড়ে।"
+    },
+    {
+      "question": "টিমমেটকে Telegram bot-এ অনুমতি দিতে কোন কমান্ড বলা হয়েছে?",
+      "options": [
+        "`/sethome`",
+        "`hermes pairing approve telegram <CODE>`",
+        "`/compress`",
+        "`GATEWAY_ALLOW_ALL_USERS=true` সেট করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "DM pairing: বন্ধু কোড দেখায়, তুমি approve করো। সবাইকে খুলে দেওয়ার চেয়ে এটা নিরাপদ।"
+    },
+    {
+      "question": "Container backend নিয়ে কোন সতর্কতা দেওয়া আছে?",
+      "options": [
+        "Container-এ কিছুই চলে না",
+        "Container সব সময় নিরাপদ",
+        "Container শুধু Windows-এ চলে",
+        "Container backend dangerous-command approval check এড়ায়, তাই image lock down করতে হবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "বাক্সের ভেতরে approval চেক হয় না, তাই বাক্সটা নিজে সুরক্ষিত করতে হয়।"
+    },
+    {
+      "question": "Messaging-এ tool progress কোন mode রাখার পরামর্শ?",
+      "options": [
+        "`verbose` সব সময়",
+        "`all` সব সময়",
+        "`new` — কম output ভালো",
+        "বন্ধ করা যাবে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Chat-এ বেশি লেখা এলে ভরে যায়, তাই `new` mode ভালো।"
+    },
+    {
+      "question": "Context file ছোট রাখতে বলা হয় কেন?",
+      "options": [
+        "বড় file খোলা যায় না",
+        "file প্রতিটা message-এ token খরচ করে",
+        "Windows-এ সীমা আছে",
+        "ছোট file দ্রুত লেখা যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "`AGENTS.md` আর `SOUL.md` প্রতিটা message-এর সাথে যায়, তাই বড় হলে খরচ বাড়ে।"
+    }
+  ],
+  "recap": [
+    "নির্দিষ্ট করে বলো (file, error, প্রত্যাশা) আর `AGENTS.md`-তে বারবার-বলা নিয়ম রাখো; তাতে কম ঘুরতে হয়।",
+    "Memory মনে রাখে \"কী\", Skill মনে রাখে \"কীভাবে\"; দুটোই ছোট ও গোছানো রাখো।",
+    "খরচ কমাতে system prompt স্থির রাখো, `/compress` ও `delegate_task` কাজে লাগাও।",
+    "Telegram/Discord-এ `/sethome`, `/title` আর DM pairing ব্যবহার করো; সবাইকে খুলে দিয়ো না।",
+    "অচেনা code Docker sandbox-এ চালাও, আর \"always\" approval দেওয়ার আগে ভাবো।"
+  ]
+}

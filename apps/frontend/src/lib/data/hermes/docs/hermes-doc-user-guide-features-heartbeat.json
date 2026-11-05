@@ -1,0 +1,138 @@
+{
+  "contentId": "hermes-doc-user-guide-features-heartbeat",
+  "title": "Session Heartbeats (/heartbeat)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/heartbeat",
+  "oneLiner": "এই lesson শেষে তুমি একটা session-কে নির্দিষ্ট সময় পরপর নিজে জেগে কিছু দেখে আসতে বলতে পারবে, আর heartbeat, idle, interval, cron-এর পার্থক্য বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: মায়ের হাতঘড়ির মৃদু কাঁপুনি\n\nতুমি পড়তে বসেছ। মা বলে গেছেন, \"প্রতি আধঘণ্টায় একবার দেখো জল গরম হয়েছে কি না।\" তুমি পড়ার মধ্যে আছো। তোমার হাতঘড়ি আধঘণ্টা পরে মৃদু কাঁপে। তুমি লেখা শেষ করে (মাঝপথে থামো না), উঠে দেখো, ফিরে এসে আবার পড়ো। জল গরম না হলে চুপচাপ ফিরে আসো, কাউকে বলার কিছু নেই।\n\nHermes-এর **`/heartbeat`** হলো ঠিক এই কাঁপুনি। বর্তমান session-কে **একটা** বারবার-করার নির্দেশ দাও। Session যখন idle (অলস) আর সময় হয়েছে, নির্দেশটা একটা সাধারণ user message হয়ে **একই কথোপকথনে** ঢোকে: একই context, একই prompt cache।\n\n```text\n/heartbeat every 10m Check the deployment and report meaningful changes\n```\n\n**এটা না থাকলে কী সমস্যা হতো?** কিছু একটা বদলানোর খবর পেতে তোমাকে নিজে বারবার \"আবার দেখো\" লিখতে হতো। আবার Cron দিয়ে করলে প্রতিবার নতুন খাতা খোলে, তাই আগের কথা মনে থাকে না। Heartbeat **একই কথোপকথনে** ফিরে আসে বলে সব মনে রাখে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Heartbeat\n\"হৃৎস্পন্দন।\" নির্দিষ্ট সময় পরপর একটা মৃদু ধাক্কা, যা Hermes-কে বলে \"জাগো, একবার দেখে এসো।\" উপমা: হাতঘড়ির কাঁপুনি।\n\n### ২) Session\nHermes-এর সাথে একটা কথোপকথনের খাতা। Heartbeat এই খাতাতেই লেখে।\n\n### ৩) Idle\nঅলস, কিছু করছে না। Heartbeat শুধু তখনই চলে যখন Hermes কোনো কাজ করছে না।\n\n### ৪) Context\nHermes-এর চোখের সামনের খোলা খাতা, যেখানে এই কথোপকথনের সব লেখা আছে।\n\n### ৫) Prompt cache\nআগে পড়া অংশ মনে রেখে দেওয়া, যাতে পরের বার দ্রুত ও সস্তা হয়। উপমা: গতকালের পড়া পাতা আর নতুন করে পড়তে হয় না।\n\n### ৬) Interval\nদুবারের মাঝের সময়। `90s` = ৯০ সেকেন্ড, `10m` = ১০ মিনিট, `2h` = ২ ঘণ্টা, `1d` = ১ দিন।\n\n### ৭) Gateway\nHermes-এর সারাক্ষণ-চালু অংশ, যে Telegram-এর মতো chat app আর Hermes-এর মধ্যে সেতুর কাজ করে।\n\n### ৮) Cron\nসময় ধরে নিজে নিজে কাজ চালানোর ঘড়ি। প্রতিবার **নতুন, আলাদা** খাতায় কাজ করে।\n\n### ৯) CI / PR\n**CI** হলো স্বয়ংক্রিয় পরীক্ষা-ব্যবস্থা। **PR** (pull request) মানে কোড বদলের প্রস্তাব, যা পরীক্ষা পাস করলে গৃহীত হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Heartbeat বনাম Cron\n\n| | `/heartbeat` | `hermes cron` |\n|---|---|---|\n| কোথায় চলে | এই কথোপকথনে, পুরো context ও memory সহ | প্রতি tick-এ নতুন, বিচ্ছিন্ন session |\n| restart-এ | state `SessionDB`-তে থাকে; gateway watch নিজে ফেরে | হ্যাঁ, পূর্ণ টেকসই scheduler |\n| কয়টা | session প্রতি **একটা** | অসংখ্য |\n| সেরা | \"এই thread-এ\" কিছু নজরে রাখা | স্থায়ী job, রিপোর্ট, watchdog |\n\n(**restart** মানে বন্ধ করে আবার চালু। **Scheduler** হলো সময়ের তালিকা-রক্ষক। **Watchdog** হলো পাহারাদার কুকুর।)\n\n**নিয়ম:** recurring prompt-এ কথোপকথনের context লাগলে heartbeat; job নিজেতেই পূর্ণ হলে cron।\n\n## কমান্ড\n\n```text\n/heartbeat every <interval> <prompt>   সেট/বদল. interval: 90s, 10m, 2h, 1d. সর্বনিম্ন ৬০ সেকেন্ড\n/heartbeat  বা  /heartbeat status      অবস্থা ও পরের fire কখন\n/heartbeat pause                       থামাও, মুছো না\n/heartbeat resume                      আবার চালাও; timer নতুন করে ধরে, তাই সঙ্গে সঙ্গে বাসি fire হয় না\n/heartbeat clear                       মুছে ফেলো\n/hb ...                                alias\n```\n\n| কমান্ড | কখন লাগে |\n|---|---|\n| `/heartbeat every 10m <prompt>` | নতুন নজর-নির্দেশ দিতে বা বদলাতে |\n| `/heartbeat status` | চলছে কি না আর পরের বার কখন দেখতে |\n| `/heartbeat pause` | কিছুক্ষণ থামাতে, কিন্তু নির্দেশ রাখতে |\n| `/heartbeat resume` | থামানোর পর আবার চালাতে |\n| `/heartbeat clear` | আর দরকার নেই, মুছে দিতে |\n| `/hb ...` | ছোট করে লিখতে (alias মানে ডাকনাম) |\n\nCLI, TUI/Desktop ও gateway platform-এ চলে। Slack-এ `/hermes heartbeat ...`। (**CLI** মানে terminal-এ লিখে চালানো Hermes; **TUI** মানে terminal-এর ভেতরের ছবির মতো পর্দা।)\n\n### উদাহরণ\n\n```text\n/heartbeat every 15m Check whether the CI run for PR #1234 finished; summarize the result when it does\n```\n\n| অংশ | মানে |\n|---|---|\n| `every 15m` | প্রতি ১৫ মিনিটে |\n| `Check whether the CI run for PR #1234 finished` | PR নম্বর ১২৩৪-এর পরীক্ষা শেষ হলো কি না দেখো |\n| `summarize the result when it does` | শেষ হলে ফল সারাংশ করে বলো |\n\nনিশ্চিতকরণ: `Heartbeat set (every 15m)`। ১৫ মিনিট পর অন্য কাজের ফাঁকে Hermes `gh pr checks 1234` চালিয়ে (`gh` হলো GitHub-এর কমান্ড-লাইন যন্ত্র) উত্তর দেয়: \"CI এখনও চলছে (১৪/৩৭), জানানোর কিছু নেই।\" উত্তর স্থির হয়ে গেলে `/heartbeat clear` করো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা heartbeat tick-এর পথ।",
+        "steps": [
+          {
+            "title": "সময় হলো",
+            "body": "Interval পার হয়েছে; কিন্তু session ব্যস্ত হলে অপেক্ষা।"
+          },
+          {
+            "title": "Idle poll",
+            "body": "Session idle ও user input-এর queue খালি হলে tick দাবি করা হয়। (**Poll** মানে বারবার গিয়ে দেখা; **queue** মানে অপেক্ষার লাইন।)"
+          },
+          {
+            "title": "সাধারণ user message",
+            "body": "নির্দেশটা একটা সাধারণ user-role message হিসেবে একই কথোপকথনে ঢোকে।"
+          },
+          {
+            "title": "কিছু বদলায়নি?",
+            "body": "Agent সংক্ষেপে উত্তর দিয়ে থামে (বা `NO_REPLY`/`[SILENT]`)। ব্যস্ততা বানায় না।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ভেতরের নিয়ম (সরল ভাষায়)\n\n- **শুধু idle-এ:** চলমান turn কখনো থামায় না। ব্যস্ত থাকলে পরের idle poll-এ চলে। উপমা: তুমি লেখা শেষ করে তারপর উঠলে।\n- **মিস হওয়া tick মিলে এক:** অনেক interval ব্যস্ত বা বন্ধ থাকলেও ফিরে একটাই heartbeat turn, জমানো বোঝা নয়। প্রতি fire-এ timer নতুন করে ধরা হয়। কেন? নইলে বন্ধ থাকার পর হঠাৎ ১০টা \"দেখো\" একসাথে ছুটে আসত।\n- **User আগে:** queued user message সবসময় আগে।\n- **মালিকানা:** messaging chat থেকে সেট করলে gateway fire করে আর সেই chat-এই উত্তর দেয়, TUI/Desktop-এ একই session খোলা থাকলেও।\n- **Cache-safe:** system prompt (AI-কে শুরুতে দেওয়া স্থায়ী নির্দেশ) বা toolset (যন্ত্রের বাক্স) বদলায় না, তাই দ্রুত ও সস্তা থাকে।\n- **Gateway recovery:** চালুর সময় সক্রিয় heartbeat ফিরে আসে (নতুন chat message ছাড়াই)। Pause করা, clear করা বা suspend হওয়া কথোপকথন আর চালু হয় না।\n- **স্থায়িত্ব:** state `SessionDB.state_meta`-তে `heartbeat:<session_id>` key-তে (Hermes-এর ডেটাবেস-খাতা); context compression-এর (লম্বা কথা ছোট করা) session বদলেও সঙ্গে যায়। Gateway-তে reset/switch/suspend করলে heartbeat মুছে যায় (archived কথোপকথন ফিরলেও ফেরে না)। Fire করতে মালিক process (CLI session বা gateway) চালু থাকতে হবে। কম্পিউটার বা প্রোগ্রাম বন্ধ থাকলে কাঁপুনি বাজবে না।\n- **হিসাব:** gateway due tick আগে সংরক্ষণ করে; agent runner-এ ঢোকার আগে ব্যর্থ হলে tick ফেরত (refund) পায়; একবার ঢুকলে সফলতা ছাড়াই গোনা হয়।\n- **Gateway-তে চুপচাপ:** scheduled turn শুধু `NO_REPLY` বা `[SILENT]` দিলে কিছু পাঠানো হয় না; কাজের সময় typing indicator (\"লিখছে...\" চিহ্ন), tool progress বা \"still working\" bubble আসে না। তবে approval prompt (অনুমতি চাওয়া) ও failure দেখা যায়। কেন? \"কিছু বদলায়নি\" বার্তা বারবার এলে তুমি বিরক্ত হতে।\n- **কাজ বানানো নয়:** injected prompt agent-কে বলে কিছু না বদলালে সংক্ষেপে উত্তর দিয়ে থামতে।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "/heartbeat বনাম /loop",
+      "markdown": "দুটোই একই session-এ বারবার চলে, তবে `/loop` timer-ভিত্তিক ও থামার শর্ত (`--times`, `--until`, `LOOP_COMPLETE`) আছে; `/heartbeat` একটা সরল \"নজরে রাখো\" নির্দেশ, ন্যূনতম ৬০ সেকেন্ড, আর gateway-তে নীরব থাকার নিয়মসহ।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`/heartbeat` কোথায় চলে?",
+      "options": [
+        "একই কথোপকথনে, পুরো context সহ",
+        "প্রতিবার নতুন session-এ",
+        "একটা আলাদা server-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 0,
+      "explanation": "Cron-এর সাথে মূল পার্থক্য এটাই: heartbeat একই কথোপকথনে ফেরে, তাই আগের কথা মনে রাখে।"
+    },
+    {
+      "question": "Heartbeat-এর সর্বনিম্ন interval কত?",
+      "options": ["১ সেকেন্ড", "১০ সেকেন্ড", "৬০ সেকেন্ড", "১ ঘণ্টা"],
+      "answerIndex": 2,
+      "explanation": "সর্বনিম্ন ৬০ সেকেন্ড। এর চেয়ে ঘন ঘন দেখা খরচে পোষায় না।"
+    },
+    {
+      "question": "এক session-এ কয়টা heartbeat থাকতে পারে?",
+      "options": ["যত খুশি", "দুটো", "পাঁচটা", "একটাই"],
+      "answerIndex": 3,
+      "explanation": "Session প্রতি একটা। নতুন সেট করলে আগেরটা বদলে যায়।"
+    },
+    {
+      "question": "Session ব্যস্ত থাকলে heartbeat-এর সময় হলে কী হয়?",
+      "options": [
+        "চলমান turn থামিয়ে চলে",
+        "বাতিল হয়ে যায়",
+        "পরের idle poll-এ চলে",
+        "session মুছে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "চলমান turn কখনো থামায় না, ঠিক যেমন তুমি লেখা শেষ করে তারপর উঠে দেখতে যাও।"
+    },
+    {
+      "question": "কয়েক interval মিস হলে কী হয়?",
+      "options": [
+        "মিস হওয়া প্রতিটার জন্য আলাদা turn",
+        "মিস হওয়াগুলো মিলে একটাই heartbeat turn",
+        "heartbeat মুছে যায়",
+        "কম্পিউটার বন্ধ হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "জমানো বোঝা নয়, একটাই turn। নইলে একসাথে অনেক 'দেখো' ছুটে আসত।"
+    },
+    {
+      "question": "Gateway-তে scheduled heartbeat-এ কিছু জানানোর না থাকলে কী লেখা যায়?",
+      "options": [
+        "`NO_REPLY` বা `[SILENT]`",
+        "`/stop`",
+        "`HELLO`",
+        "কিছু লেখা যায় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "তাহলে কিছু পাঠানো হয় না, typing indicator বা 'still working' bubble-ও আসে না।"
+    },
+    {
+      "question": "Recurring prompt-এ কথোপকথনের context লাগলে কোনটা বেছে নেবে?",
+      "options": ["cron", "কোনোটাই নয়", "`/goal gate`", "heartbeat"],
+      "answerIndex": 3,
+      "explanation": "Heartbeat একই কথোপকথনে চলে। আর job নিজেতেই পূর্ণ হলে cron।"
+    },
+    {
+      "question": "Heartbeat-এর state কোথায় সেভ হয়?",
+      "options": [
+        "শুধু RAM-এ",
+        "ডেস্কটপে",
+        "`SessionDB.state_meta`-তে `heartbeat:<session_id>` key-তে",
+        "কোথাও না"
+      ],
+      "answerIndex": 2,
+      "explanation": "তাই gateway restart-এ সক্রিয় heartbeat ফেরে। তবে reset/switch/suspend করলে মুছে যায়।"
+    }
+  ],
+  "recap": [
+    "`/heartbeat every 10m <prompt>` session-এ একটা বারবার-নজরের নির্দেশ দেয়।",
+    "শুধু idle-এ চলে; মিস tick মিলে এক হয়; user message আগে।",
+    "সর্বনিম্ন ৬০ সেকেন্ড; session প্রতি একটা; alias `/hb`।",
+    "কিছু বদলালে না জানালে `NO_REPLY` বা `[SILENT]` দিয়ে gateway চুপ থাকে।",
+    "State `SessionDB`-তে; gateway restart-এ সক্রিয় heartbeat ফেরে।",
+    "কথোপকথনের context লাগলে heartbeat, স্বয়ংসম্পূর্ণ job হলে cron।"
+  ]
+}

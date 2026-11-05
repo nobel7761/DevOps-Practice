@@ -1,0 +1,187 @@
+{
+  "contentId": "hermes-doc-developer-guide-adding-tools",
+  "title": "Adding Tools",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/adding-tools",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে tool, handler, schema ও registry কী, আর `weather` উদাহরণের মাধ্যমে Hermes-এ একটা built-in tool কীভাবে যোগ করতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## স্কুলের যন্ত্রপাতির আলমারির গল্প\n\nস্কুলে একটা বড় আলমারি আছে, যেখানে সবার জন্য কাঁচি, স্কেল, আঠা রাখা। নতুন একটা যন্ত্র আলমারিতে ঢোকাতে হলে দুটো কাজ:\n\n1. যন্ত্রটা **বানাও** আর তার গায়ে একটা পরিচয়-কার্ড লাগাও (নাম, কী কাজ করে, কীভাবে ধরতে হয়)।\n2. আলমারির **তালিকায়** নামটা লিখে দাও, যাতে সবাই জানে এটা আছে।\n\nHermes-এর **built-in tool** (Hermes-এর নিজের সাথে আসা হাতিয়ার) ঠিক এমন। **দুটো ফাইল** ছুঁতে হয়:\n\n1. `tools/your_tool.py`: handler (কাজ করার ফাংশন), schema (পরিচয়-কার্ড), check function আর `registry.register()` call।\n2. `toolsets.py`: tool-এর নামটা `_HERMES_CORE_TOOLS` বা কোনো নির্দিষ্ট toolset-এ যোগ করা।\n\nকোনো ফাইল `tools/*.py`-এ থাকলে আর তার top-level-এ `registry.register()` থাকলে Hermes startup-এ **নিজেই খুঁজে নেয়**। আলাদা import-তালিকা লাগে না।\n\n**Tool না থাকলে কী সমস্যা হতো?** AI শুধু কথা বলতে পারত, কাজ করতে পারত না। ফাইল পড়া, ওয়েবে খোঁজা, কমান্ড চালানো সবই tool-এর মাধ্যমে হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Tool (টুল)\nAI-র হাতিয়ার। AI নিজে কিছু চালাতে পারে না। সে বলে \"এই tool-টা এই তথ্য দিয়ে চালাও\", আর Hermes চালিয়ে ফল ফেরত দেয়।\n\n### ২) Handler\ntool আসলে যে ফাংশন (ছোট কোড-টুকরো) দিয়ে কাজ করে। AI-র পাঠানো তথ্য নেয়, কাজ করে, ফল দেয়।\n\n### ৩) Schema\ntool-এর **পরিচয়-কার্ড**: নাম, কী কাজ করে, কোন কোন তথ্য (parameter) লাগে, কোনগুলো আবশ্যক। AI এই কার্ড পড়েই ঠিক করে কখন tool ডাকবে।\n\n### ৪) Registry আর Register\n- **Registry** = সব tool-এর নাম-তালিকা, হাজিরা-খাতার মতো।\n- **Register** = সেই খাতায় নিজের নাম লেখা।\n\n### ৫) Toolset\nকয়েকটা tool-এর বাক্স। কে কোন বাক্স দেখবে তা ঠিক করা যায় (যেমন CLI আর Telegram-এ আলাদা)।\n\n### ৬) JSON, JSON string\n- **JSON** = তথ্য সাজানোর একটা ধরন: `{ \"নাম\": \"মান\" }`।\n- **JSON string** = ওই সাজানো তথ্যকে এক লাইনের লেখায় (string) বদলে ফেলা। `json.dumps()` ফাংশন এটা করে।\n\n### ৭) Python শব্দগুলো (যা এই page-এ আসে)\n- **`def`** = ফাংশন বানানো। **`import`** = অন্য কোড ডাকা। **`lambda args, **kw: ...`** = নামহীন ছোট ফাংশন। **`**kwargs`** = \"অতিরিক্ত নামওয়ালা তথ্য যা পাঠানো হয়, সব নাও।\"\n- **Dict** = নাম-মানের তালিকা (`{\"location\": \"London\"}`)।\n- **`-> str`** = \"এই ফাংশন লেখা ফেরত দেয়।\"\n\n### ৮) Environment variable\nকম্পিউটারের নামওয়ালা সেটিং, যেমন `WEATHER_API_KEY`। গোপন key সাধারণত এভাবে রাখা হয়। `os.getenv(\"NAME\")` দিয়ে পড়া যায়।\n\n### ৯) API key\nকোনো সেবার পরিচয়পত্র, লম্বা গোপন পাসওয়ার্ডের মতো।\n\n### ১০) Async\nএমন কাজ, যেখানে অপেক্ষার সময় (যেমন ইন্টারনেটের উত্তর) অন্য কাজ চালানো যায়। রাঁধতে রাঁধতে ফোন ধরার মতো।\n\n### ১১) `task_id`\nএকটা আলাপ/কাজের পরিচয়-নম্বর।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে ভাবো: Skill, Tool, নাকি Plugin?\n\nনতুন ক্ষমতা যোগ করতে তিনটা পথ। ভুল পথ বাছলে অযথা কঠিন কাজ করতে হয়।\n\n| কী | কখন বাছবে | উপমা |\n|---|---|---|\n| **Skill** | নির্দেশ + shell command + আগের tool দিয়েই কাজ হয়ে যায় (arXiv search, git workflow, Docker, PDF) | রেসিপি-কার্ড: নতুন যন্ত্র লাগে না |\n| **Built-in tool** | API key, নিজস্ব processing, binary data (ছবি/ফাইলের কাঁচা বিট) বা streaming-সহ পুরো integration লাগে (browser, TTS, vision) | স্কুলের আলমারিতে নতুন যন্ত্র |\n| **Plugin** | ব্যক্তিগত/project-এর নিজস্ব tool, Hermes core না ছুঁয়ে। বেশিরভাগ custom tool-এর জন্য এটাই সুপারিশ | নিজের ব্যাগে আলাদা যন্ত্র |\n\nএই page শুধু **core-এ built-in tool** পাঠানোর কথা বলে। (**Core** = Hermes-এর মূল কোড।)\n\n## ধাপ ১: tool ফাইল (`tools/weather_tool.py`)\n\nফাইলে চারটা অংশ: **availability check**, **handler**, **schema**, **registration**। আমরা একটা আবহাওয়া (weather) tool বানাব।\n\n```python\n# tools/weather_tool.py\nimport json, os, logging\nlogger = logging.getLogger(__name__)\n\n# --- Availability check ---\ndef check_weather_requirements() -> bool:\n    return bool(os.getenv(\"WEATHER_API_KEY\"))\n\n# --- Handler ---\ndef weather_tool(location: str, units: str = \"metric\") -> str:\n    api_key = os.getenv(\"WEATHER_API_KEY\")\n    if not api_key:\n        return json.dumps({\"error\": \"WEATHER_API_KEY not configured\"})\n    try:\n        # ... call weather API ...\n        return json.dumps({\"location\": location, \"temp\": 22, \"units\": units})\n    except Exception as e:\n        return json.dumps({\"error\": str(e)})\n\n# --- Schema ---\nWEATHER_SCHEMA = {\n    \"name\": \"weather\",\n    \"description\": \"Get current weather for a location.\",\n    \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"location\": {\"type\": \"string\",\n                \"description\": \"City name or coordinates (e.g. 'London' or '51.5,-0.1')\"},\n            \"units\": {\"type\": \"string\", \"enum\": [\"metric\", \"imperial\"],\n                \"description\": \"Temperature units (default: metric)\", \"default\": \"metric\"}\n        },\n        \"required\": [\"location\"]\n    }\n}\n\n# --- Registration ---\nfrom tools.registry import registry\n\nregistry.register(\n    name=\"weather\",\n    toolset=\"weather\",\n    schema=WEATHER_SCHEMA,\n    handler=lambda args, **kw: weather_tool(\n        location=args.get(\"location\", \"\"),\n        units=args.get(\"units\", \"metric\")),\n    check_fn=check_weather_requirements,\n    requires_env=[\"WEATHER_API_KEY\"],\n)\n```\n\n### চার অংশ ধরে ধরে\n\n| অংশ | কী করে | উপমা |\n|---|---|---|\n| **Availability check** (`check_weather_requirements`) | `WEATHER_API_KEY` সেট আছে কি না দেখে `True`/`False` দেয় | যন্ত্র চালানোর আগে \"ব্যাটারি আছে?\" দেখা |\n| **Handler** (`weather_tool`) | আসল কাজ: key পড়ো, API ডাকো, ফল JSON string-এ দাও; ভুল হলে `{\"error\": ...}` | যন্ত্রটার ভেতরের কল-কবজা |\n| **Schema** (`WEATHER_SCHEMA`) | নাম `weather`, বর্ণনা, কোন তথ্য লাগে (`location` আবশ্যক; `units` হয় `metric` বা `imperial`) | যন্ত্রের পরিচয়-কার্ড |\n| **Registration** (`registry.register(...)`) | tool-কে registry-তে নাম লেখায়; `check_fn` আর `requires_env` সহ | আলমারির হাজিরা-খাতায় নাম তোলা |\n\n### চারটা সোনালি নিয়ম\n\n1. Handler **অবশ্যই** `json.dumps()` করা **JSON string** ফেরত দেবে, কখনো raw dict নয়।\n2. Error হলে `{\"error\": \"message\"}` **ফেরত** দাও। exception ছুঁড়ে দিও না। **কেন?** error JSON হিসেবে ফেরত গেলে AI সেটা পড়তে পারে। (page শুধু নিয়মটা বলে: error ফেরত দাও, raise করো না।)\n3. `check_fn` tool definition বানানোর সময় চলে; `False` হলে tool **চুপচাপ বাদ** পড়ে (এখানে `WEATHER_API_KEY` না থাকলে weather tool-কে AI দেখেই না)।\n4. Handler পায় `(args: dict, **kwargs)`। `args`-এ থাকে LLM-এর পাঠানো তথ্য।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Tool ফাইলে ঢুকলে registry তাকে তুলে নেয়, toolset ঠিক করে কে দেখবে, আর agent loop AI-র ডাক এনে handler চালায়।",
+        "nodes": [
+          {
+            "id": "f",
+            "kind": "server",
+            "label": "weather_tool.py",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "r",
+            "kind": "database",
+            "label": "registry.py",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "t",
+            "kind": "gateway",
+            "label": "toolsets.py",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "l",
+            "kind": "client",
+            "label": "Agent loop / AI",
+            "x": 440,
+            "y": 120
+          },
+          {
+            "id": "h",
+            "kind": "external",
+            "label": "handler(args)",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "f",
+            "to": "r",
+            "label": "register()"
+          },
+          {
+            "from": "t",
+            "to": "r",
+            "label": "নাম যোগ"
+          },
+          {
+            "from": "l",
+            "to": "r",
+            "label": "tool call"
+          },
+          {
+            "from": "r",
+            "to": "h",
+            "label": "dispatch"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ২ ও ৩: Toolset আর discovery\n\n`toolsets.py`-তে নামটা দুইভাবে যোগ করা যায়:\n\n```python\n# সব platform-এ (CLI + messaging) পাওয়া যাক:\n_HERMES_CORE_TOOLS = [\n    ...\n    \"weather\",  # <-- add here\n]\n\n# অথবা নিজস্ব toolset:\n\"weather\": {\n    \"description\": \"Weather lookup tools\",\n    \"tools\": [\"weather\"],\n    \"includes\": []\n},\n```\n\n| পথ | মানে | কখন |\n|---|---|---|\n| `_HERMES_CORE_TOOLS`-এ নাম | CLI, Telegram, সব জায়গায় সবার জন্য | সবার কাজে লাগে এমন tool |\n| নিজস্ব toolset | একটা আলাদা বাক্স, শুধু যে চায় সে চালু করে | বিশেষ কাজের tool |\n\n**ধাপ ৩ (discovery import)** এখন আর লাগে না: `tools/registry.py`-এর `discover_builtin_tools()` top-level `registry.register()` থাকা ফাইল নিজেই খুঁজে নেয়।\n\n## Async handler\n\nইন্টারনেটের মতো অপেক্ষার কাজে `is_async=True` দাও। registry নিজেই `_run_async()` চালায়, তুমি কখনো `asyncio.run()` ডাকবে না।\n\n```python\nasync def weather_tool_async(location: str) -> str:\n    async with aiohttp.ClientSession() as session:\n        ...\n    return json.dumps(result)\n\nregistry.register(\n    name=\"weather\", toolset=\"weather\", schema=WEATHER_SCHEMA,\n    handler=lambda args, **kw: weather_tool_async(args.get(\"location\", \"\")),\n    check_fn=check_weather_requirements,\n    is_async=True,  # registry calls _run_async() automatically\n)\n```\n\n## `task_id` লাগলে\n\nযে tool প্রতি-আলাপের নিজস্ব অবস্থা (state) রাখে, সে `**kwargs` থেকে `task_id` পায়:\n\n```python\ndef _handle_weather(args, **kw):\n    task_id = kw.get(\"task_id\")\n    return weather_tool(args.get(\"location\", \"\"), task_id=task_id)\n```"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Agent-loop intercepted tool",
+      "markdown": "`todo_list`, `memory`, `session_search`, `delegate_task`: এদের per-session agent state লাগে, তাই agent loop এদের registry-তে পৌঁছানোর **আগেই** ধরে নেয় (`agent/tool_executor.py`, ডাকা হয় `agent/conversation_loop.py` থেকে)। registry-তে শুধু schema থাকে; intercept এড়িয়ে `dispatch()` পর্যন্ত গেলে fallback error আসে। নতুন সাধারণ tool-এ এটা লাগে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ঐচ্ছিক: Setup wizard-এ API key\n\nTool-এর API key লাগলে `hermes_cli/config.py`-এর `OPTIONAL_ENV_VARS`-এ entry দাও, যাতে setup wizard (গাইড) key চাইতে পারে:\n\n```python\nOPTIONAL_ENV_VARS = {\n    ...\n    \"WEATHER_API_KEY\": {\n        \"description\": \"Weather API key for weather lookup\",\n        \"prompt\": \"Weather API key\",\n        \"url\": \"https://weatherapi.com/\",\n        \"tools\": [\"weather\"],\n        \"password\": True,\n    },\n}\n```\n\n| field | মানে |\n|---|---|\n| `description` | key-টা কীসের |\n| `prompt` | wizard-এ যা জিজ্ঞেস করবে |\n| `url` | key কোথায় পাওয়া যাবে |\n| `tools` | কোন tool-এর জন্য |\n| `password: True` | টাইপ করার সময় অক্ষর লুকিয়ে রাখো |\n\n## Checklist (page থেকে)\n\n- [ ] tool ফাইলে handler, schema, check function, registration আছে\n- [ ] `toolsets.py`-তে সঠিক toolset-এ যোগ করা\n- [ ] নিশ্চিত হয়েছ এটা built-in tool হওয়া উচিত, plugin নয়\n- [ ] Handler JSON string ফেরত দেয়; error `{\"error\": \"...\"}`\n- [ ] ঐচ্ছিক: `OPTIONAL_ENV_VARS`-এ API key; `toolset_distributions.py`-তে batch processing-এর জন্য\n- [ ] পরীক্ষা: `hermes chat -q \"Use the weather tool for London\"`\n\n**শেষ কমান্ড ভেঙে বুঝি:**\n\n| অংশ | মানে |\n|---|---|\n| `hermes chat` | Hermes-এর সাথে কথা শুরু |\n| `-q \"...\"` | একটা প্রশ্ন সরাসরি দিয়ে উত্তর নিয়ে শেষ (query) |\n| `\"Use the weather tool for London\"` | AI-কে বলা: লন্ডনের জন্য weather tool ব্যবহার করো |\n\n**আশা করা ফল:** AI `weather` tool ডাকে, তোমার handler চলে, আর উত্তরে আবহাওয়ার তথ্য আসে। (`WEATHER_API_KEY` না থাকলে tool-ই দেখা যাবে না, সেটাই `check_fn`-এর কাজ।)"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "Plugin-ই আগে ভাবো",
+      "markdown": "নিজের project-এর জন্য tool বানাচ্ছ? Hermes core বদলানোর দরকার নেই। page বেশিরভাগ ক্ষেত্রে plugin সুপারিশ করে (পরের lesson: Build a Hermes Plugin)।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Built-in tool যোগ করতে মূলত কোন দুটো ফাইল ছুঁতে হয়?",
+      "options": [
+        "`cli.py` আর `README.md`",
+        "`.env` আর `auth.json`",
+        "`tools/your_tool.py` আর `toolsets.py`",
+        "`registry.py` আর `cli.py`"
+      ],
+      "answerIndex": 2,
+      "explanation": "tool ফাইলে handler, schema, check function, `registry.register()`; আর `toolsets.py`-তে নাম যোগ।"
+    },
+    {
+      "question": "Handler কী ফেরত দেবে?",
+      "options": [
+        "`json.dumps()` করা JSON string",
+        "raw dict",
+        "ছবি",
+        "কিছুই না"
+      ],
+      "answerIndex": 0,
+      "explanation": "কখনো raw dict নয়। Error হলে `{\"error\": \"message\"}` JSON string ফেরত।"
+    },
+    {
+      "question": "Error হলে handler কী করবে?",
+      "options": [
+        "exception ছুঁড়ে দেবে",
+        "কম্পিউটার বন্ধ করবে",
+        "কিছুই করবে না",
+        "`{\"error\": \"message\"}` ফেরত দেবে, exception ছুঁড়বে না"
+      ],
+      "answerIndex": 3,
+      "explanation": "page-এর নিয়ম: error `{\"error\": ...}` আকারে ফেরত যাবে, raise হবে না; এতে AI error-টা পড়তে পারে।"
+    },
+    {
+      "question": "`check_fn` `False` দিলে কী হয়?",
+      "options": [
+        "error আসে",
+        "tool চুপচাপ বাদ পড়ে, AI তাকে দেখেই না",
+        "Hermes বন্ধ হয়",
+        "tool দুবার চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "যেমন `WEATHER_API_KEY` না থাকলে weather tool AI-র কাছে অদৃশ্য।"
+    },
+    {
+      "question": "Skill, built-in tool আর plugin-এর মধ্যে নিজের project-এর জন্য বেশিরভাগ custom tool-এ কী সুপারিশ?",
+      "options": ["Skill", "Built-in tool", "Plugin", "কোনোটাই না"],
+      "answerIndex": 2,
+      "explanation": "Hermes core না ছুঁয়ে নিজের tool যোগ করা যায় plugin দিয়ে। Built-in শুধু সবার কাজে লাগে এমন tool-এর জন্য।"
+    },
+    {
+      "question": "`discover_builtin_tools()` কী করে?",
+      "options": [
+        "`tools/*.py`-এ top-level `registry.register()` থাকা ফাইল নিজেই খুঁজে নেয়",
+        "tool মুছে দেয়",
+        "ছবি বানায়",
+        "key সংরক্ষণ করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "তাই আলাদা import-তালিকায় নাম লিখতে হয় না।"
+    },
+    {
+      "question": "`todo_list`, `memory`, `session_search`, `delegate_task` কেন সাধারণ tool-এর মতো নয়?",
+      "options": [
+        "এগুলো tool নয়",
+        "এগুলো বন্ধ",
+        "এগুলো ধীর",
+        "per-session agent state লাগে বলে agent loop আগেই ধরে নেয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "registry-তে শুধু schema থাকে। নতুন সাধারণ tool-এ এই ঝামেলা নেই।"
+    }
+  ],
+  "recap": [
+    "Built-in tool যোগ করতে দুটো ফাইল: `tools/your_tool.py` (handler, schema, check function, `registry.register()`) আর `toolsets.py`।",
+    "চার অংশ: availability check, handler, schema (পরিচয়-কার্ড), registration; `tools/*.py` নিজেই খুঁজে পাওয়া যায়।",
+    "Handler সবসময় JSON string ফেরত দেয়, error হলে `{\"error\": ...}` ফেরত দেয় (exception নয়)।",
+    "`check_fn` `False` হলে tool চুপচাপ লুকায়; async কাজে `is_async=True`; `task_id` আসে `**kwargs` থেকে।",
+    "নিজের project-এর tool-এর জন্য বেশিরভাগ ক্ষেত্রে plugin বা skill ভালো; built-in শুধু সবার কাজে লাগলে।"
+  ]
+}

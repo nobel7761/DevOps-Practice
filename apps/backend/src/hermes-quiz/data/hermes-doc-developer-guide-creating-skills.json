@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-developer-guide-creating-skills",
+  "questions": [
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q01",
+      "difficulty": "easy",
+      "question": "**Skill** কী?",
+      "options": [
+        "রেসিপি-কার্ড, একটা `SKILL.md`",
+        "Hermes-এর ভেতরের একটা নতুন যন্ত্র",
+        "সব tool-এর নামের তালিকা-খাতা",
+        "সময়মতো কাজ চালানোর একটা ঘড়ি"
+      ],
+      "correctIndex": 0,
+      "explanation": "Skill-এ নির্দেশ লেখা থাকে, কাজ চলে shell command ও আগের tool দিয়ে। Agent-এর কোড বদলাতে হয় না।",
+      "whyWrong": {
+        "1": "নতুন যন্ত্র হলো tool।",
+        "2": "তালিকা-খাতা হলো registry।",
+        "3": "ঘড়ি হলো cron।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q02",
+      "difficulty": "easy",
+      "question": "**Frontmatter** কী?",
+      "options": [
+        "ফাইলের শেষে রাখা সারাংশ",
+        "মাথায় `---`-এর মাঝে লেখা তথ্য",
+        "skill-এর ভেতরের `scripts/` ফোল্ডার",
+        "স্ক্রিনে প্রথম যা ছাপা হয় সেই লেখা"
+      ],
+      "correctIndex": 1,
+      "explanation": "নাম, বর্ণনা, কী কী লাগবে ইত্যাদি এখানে থাকে। সাধারণত YAML ধরনে `নাম: মান`।",
+      "whyWrong": {
+        "0": "মাথায় থাকে, শেষে নয়।",
+        "2": "`scripts/` আলাদা ফোল্ডার।",
+        "3": "ছাপা হওয়া লেখার সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q03",
+      "difficulty": "easy",
+      "question": "Skill-এর গোপন key সাধারণত কোন ফাইলে থাকে?",
+      "options": [
+        "`SKILL.md`-এর frontmatter-এ",
+        "`config.yaml`-এর ভেতরে",
+        "`~/.hermes/.env`",
+        "`references/` ফোল্ডারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Secret `~/.hermes/.env`-এ থাকে এবং মডেলকে কখনো দেখানো হয় না।",
+      "whyWrong": {
+        "0": "Frontmatter-এ key লিখলে শেয়ারে সবাই পেয়ে যাবে।",
+        "1": "`config.yaml`-এও key লিখতে নেই।",
+        "3": "`references/` বাড়তি নথির জায়গা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q04",
+      "difficulty": "easy",
+      "question": "**Sandbox** কী?",
+      "options": [
+        "গোপন key রাখার একটা আলাদা ফাইল",
+        "নতুন skill কেনা-বেচার একটা হাট",
+        "নির্দিষ্ট সময় মেপে কাজ চালানোর ঘড়ি",
+        "বালির বাক্স: বাইরের কিছু নষ্ট হয় না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Docker আর Modal এমন সীমাবদ্ধ জায়গা, যেখানে Hermes কমান্ড চালাতে পারে।",
+      "whyWrong": {
+        "0": "গোপন key রাখে `.env`।",
+        "1": "হাটের নাম Skills Hub।",
+        "2": "ঘড়ির নাম cron।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q05",
+      "difficulty": "easy",
+      "question": "**Blueprint** কী?",
+      "options": [
+        "পুরোনো skill-এর ব্যাকআপ কপি",
+        "শুধু ছবি দেখানোর skill",
+        "ঘড়ি-সহ skill",
+        "বিশ্বস্ত skill-এর তালিকা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Blueprint হলো `metadata.hermes.blueprint` ব্লক-ওয়ালা skill, যাতে `schedule`, `deliver`, `prompt`, `no_agent` থাকে।",
+      "whyWrong": {
+        "0": "ব্যাকআপ কপি এর কাজ নয়।",
+        "1": "ছবি দেখানো নির্দিষ্ট নয়।",
+        "3": "বিশ্বাসের স্তর আলাদা বিষয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q06",
+      "difficulty": "easy",
+      "question": "`hermes config show` কী করে?",
+      "options": [
+        "নতুন config key খুঁজে এনে যোগ করে",
+        "একটা সেটিং লিখে দেয়",
+        "skill-কে GitHub-এ publish করে",
+        "বর্তমান সেটিং দেখায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "তিন কমান্ড: `set` লেখে, `migrate` নতুন key এনে যোগ করে, `show` দেখায়।",
+      "whyWrong": {
+        "0": "ওটা `hermes config migrate`।",
+        "1": "ওটা `hermes config set`।",
+        "2": "Publish আলাদা কমান্ড।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q07",
+      "difficulty": "easy",
+      "question": "**Progressive disclosure** মানে কী?",
+      "options": [
+        "আগে সহজ অংশ, জটিলটা পরে",
+        "সব বিস্তারিত একসাথে প্রথম পাতায়",
+        "শুধু বিশ্বস্ত skill দেখানো",
+        "গোপন তথ্য ধাপে ধাপে লুকানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "সাধারণ workflow আগে রাখো, জটিল parsing logic `scripts/`-এ। প্রথম পাতায় সারমর্ম, পেছনে বিস্তারিত।",
+      "whyWrong": {
+        "1": "এটা উল্টো কথা।",
+        "2": "বিশ্বাসের স্তরের সাথে সম্পর্ক নেই।",
+        "3": "গোপন তথ্যের সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q08",
+      "difficulty": "medium",
+      "question": "নতুন ক্ষমতা যোগের সময় প্রথমে কী ভাবা উচিত, skill নাকি tool?",
+      "options": [
+        "আগে tool ভাবো, কারণ সেটা বেশি শক্তিশালী",
+        "আগে skill ভাবো, কোড বদলাতে হয় না",
+        "সবসময় tool, skill শুধু ছোট কাজে",
+        "দুটোই একসাথে বানাও, একটা ব্যাকআপ হিসেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Tool শুধু তখনই, যখন skill-এ কুলায় না। যেমন API key/auth সহ integration, binary data, streaming।",
+      "whyWrong": {
+        "0": "উল্টো নিয়ম।",
+        "2": "এমন নিয়ম নেই।",
+        "3": "দুটো একসাথে বানানো দরকার নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q09",
+      "difficulty": "medium",
+      "question": "Skill ফোল্ডারে কোনটা আবশ্যক?",
+      "options": [
+        "`scripts/`",
+        "`SKILL.md`",
+        "`references/`",
+        "`optional-skills/`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`SKILL.md` আবশ্যক। `scripts/` আর `references/` ঐচ্ছিক।",
+      "whyWrong": {
+        "0": "`scripts/` ঐচ্ছিক।",
+        "2": "`references/` ঐচ্ছিক।",
+        "3": "`optional-skills/` হলো Hermes-এর একটা বাইরের ফোল্ডার।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q10",
+      "difficulty": "medium",
+      "question": "`requires_toolsets` কখন skill লুকিয়ে ফেলে?",
+      "options": [
+        "কোনোটা **না** থাকলে",
+        "তালিকার কোনোটা থাকলে",
+        "সব tool চালু থাকলে",
+        "skill প্রথমবার চালালে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Skill ওই tool ছাড়া অর্থহীন হলে এটা দেওয়া হয়।",
+      "whyWrong": {
+        "1": "থাকলে লুকায় `fallback_for_*`।",
+        "2": "সব tool চালু থাকলে লুকানোর কারণ নেই।",
+        "3": "প্রথমবারের সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q11",
+      "difficulty": "medium",
+      "question": "`fallback_for_toolsets` কখন skill লুকিয়ে ফেলে?",
+      "options": [
+        "তালিকার কোনোটা না থাকলে",
+        "`platforms` ফাঁকা থাকলে",
+        "`description` না থাকলে",
+        "তালিকার কোনোটা থাকলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "আসল tool থাকলে বিকল্প skill দরকার নেই, তাই লুকায়।",
+      "whyWrong": {
+        "0": "না থাকলে লুকায় `requires_*`।",
+        "1": "`platforms` ফাঁকা মানে সর্বত্র load।",
+        "2": "`description` লুকানোর শর্ত নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q12",
+      "difficulty": "medium",
+      "question": "Skill-এ API key কীভাবে ব্যবহার করবে?",
+      "options": [
+        "`SKILL.md`-এর body-তে সরাসরি key লিখে",
+        "`config.yaml`-এর ভেতরে সরাসরি key বসিয়ে",
+        "`required_environment_variables`-এ ঘোষণা",
+        "`references/` ফোল্ডারে key-এর ফাইল রেখে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Skill শেয়ার করলে লেখা key-ও সবাই পেয়ে যেত, তাই শুধু ঘোষণা হয়।",
+      "whyWrong": {
+        "0": "শেয়ারে key ফাঁস হয়।",
+        "1": "`config.yaml`-এও key নিরাপদ নয়।",
+        "3": "এই ফোল্ডারে key রাখার নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q13",
+      "difficulty": "medium",
+      "question": "Blueprint install করলে নিজে schedule হয় না কেন?",
+      "options": [
+        "ঘড়ি Hermes-এ নেই বলে",
+        "Blueprint শুধু ছবির জন্য বলে",
+        "schedule করতে বাড়তি খরচ লাগে বলে",
+        "অনুমতি ছাড়া কাজ যেন না বসে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Install করলে শুধু একটা suggestion নথিভুক্ত হয়। `/suggestions accept N` দিলে তবে cron job তৈরি হয়।",
+      "whyWrong": {
+        "0": "Cron আছে।",
+        "1": "Blueprint ছবির জন্য নয়।",
+        "2": "খরচের কথা lesson-এ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q14",
+      "difficulty": "medium",
+      "question": "Inline shell (`` !`cmd` ``) সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "default-এ চালু, `false` দিলে বন্ধ",
+        "সবসময় চালু, বন্ধ করার উপায় নেই",
+        "default-এ বন্ধ, `true` দিলে চালু",
+        "শুধু gateway-তে চালু থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "সময়সীমা `skills.inline_shell_timeout`, output সর্বোচ্চ ৪০০০ অক্ষর।",
+      "whyWrong": {
+        "0": "Default বন্ধ, চালু নয়।",
+        "1": "বন্ধ থাকাই default।",
+        "3": "Gateway-র সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q15",
+      "difficulty": "hard",
+      "question": "Skill শুধু macOS-এ চলে। frontmatter-এ কী দেবে?",
+      "options": [
+        "`requires_tools: [macos]`",
+        "`platforms: [macos]`",
+        "`fallback_for_toolsets: [macos]`",
+        "`metadata.hermes.tags: [macos]`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`platforms`-এ `macos`, `linux`, `windows` দেওয়া যায়; ফাঁকা বা বাদ দিলে সর্বত্র load হয়।",
+      "whyWrong": {
+        "0": "`requires_tools` tool-এর শর্ত।",
+        "2": "`fallback_for_*` বিকল্প skill-এর শর্ত।",
+        "3": "Tags শুধু খোঁজার সুবিধা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q16",
+      "difficulty": "hard",
+      "question": "Brave Search tool আছে। একই কাজের বিকল্প skill রাখলে কী ব্যবহার করবে?",
+      "options": [
+        "`fallback_for_tools`",
+        "`requires_tools`",
+        "`required_credential_files`",
+        "`metadata.hermes.blueprint`"
+      ],
+      "correctIndex": 0,
+      "explanation": "আসল tool থাকলে `fallback_for_*` skill লুকিয়ে যায়, আর না থাকলে দেখা যায়।",
+      "whyWrong": {
+        "1": "`requires_tools` উল্টো কাজ করে।",
+        "2": "Credential file OAuth-এর জন্য।",
+        "3": "Blueprint ঘড়ির জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q17",
+      "difficulty": "hard",
+      "question": "Community hub থেকে install করা skill-এ `` !`cmd` `` snippet আছে। কী হবে?",
+      "options": [
+        "কখনো auto-execute হবে না",
+        "inline shell চালু থাকলে চলবে",
+        "প্রথমবার একবার চলবে",
+        "শুধু ১০ সেকেন্ড চলবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "অচেনা কেউ লুকিয়ে ক্ষতিকর কমান্ড রাখতে পারে, তাই community hub-এর snippet কখনো আপনা-আপনি চলে না।",
+      "whyWrong": {
+        "1": "চালু থাকলেও community-র ক্ষেত্রে চলে না।",
+        "2": "একবারও চলে না।",
+        "3": "১০ সেকেন্ড শুধু timeout-এর উদাহরণ।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q18",
+      "difficulty": "hard",
+      "question": "`community` trust level-এর skill-এ scanner `dangerous` verdict দিল। `--force` দিলে কী হবে?",
+      "options": [
+        "ছেড়ে দেয়",
+        "শুধু সতর্কবার্তা দেখায়",
+        "তবু সবসময় আটকায়",
+        "`trusted` হিসেবে গণ্য করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "ছোট findings `--force` দিয়ে পার করা যায়, কিন্তু `dangerous` verdict সবসময় আটকায়।",
+      "whyWrong": {
+        "0": "ছোট findings-এর জন্যই `--force`।",
+        "1": "সতর্কবার্তায় আটকায় না, ব্লক করে।",
+        "3": "Trust level বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q19",
+      "difficulty": "hard",
+      "question": "নিজের skill GitHub-এ publish করার সঠিক কমান্ড কোনটা?",
+      "options": [
+        "`hermes skills tap add skills/my-skill --to github`",
+        "`hermes skills publish skills/my-skill --to github --repo owner/repo`",
+        "`hermes config set skills.publish owner/repo --to github --repo owner/repo`",
+        "`hermes skills browse skills/my-skill --repo owner/repo`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`publish` ফোল্ডার তুলে দেয়, `--to github --repo owner/repo` গন্তব্য। `tap add owner/repo` আলাদা, অন্যের repo যোগ করতে।",
+      "whyWrong": {
+        "0": "`tap add` অন্যের repo যোগ করে।",
+        "2": "এমন config key নেই।",
+        "3": "`browse` খোঁজার জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-creating-skills-q20",
+      "difficulty": "hard",
+      "question": "একটা official কিন্তু niche skill কোথায় রাখা উচিত?",
+      "options": [
+        "`skills/` ফোল্ডারে",
+        "`references/` ফোল্ডারে",
+        "`scripts/` ফোল্ডারে",
+        "`optional-skills/`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`optional-skills/` official কিন্তু niche বা ভারী skill-এর জন্য, `hermes skills browse`-এ 'official' লেবেল সহ পাওয়া যায়।",
+      "whyWrong": {
+        "0": "`skills/` বেশিরভাগ user-এর কাজে লাগা skill-এর জন্য।",
+        "1": "`references/` skill-এর ভেতরের ফোল্ডার।",
+        "2": "`scripts/` skill-এর ভেতরের helper-এর জায়গা।"
+      }
+    }
+  ]
+}

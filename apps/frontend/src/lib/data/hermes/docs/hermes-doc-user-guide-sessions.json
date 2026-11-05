@@ -1,0 +1,214 @@
+{
+  "contentId": "hermes-doc-user-guide-sessions",
+  "title": "Sessions",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/sessions",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর session কোথায় জমে, কীভাবে resume, নাম, export ও search করতে হয় তা বুঝবে এবং SQLite, FTS5, token, prune-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলের খাতার তাক\n\nপ্রতিদিন তুমি স্কুলে একটা নতুন খাতায় লেখো। দিন শেষে খাতাটা তাকে তুলে রাখো। গায়ে লেবেল: তারিখ, বিষয়। কাল চাইলে পুরনো খাতা নামিয়ে আবার পড়তে পারো, বা তাকে গিয়ে \"বিজ্ঞান\" শব্দটা কোন খাতায় আছে খুঁজতে পারো।\n\nHermes-এর **session** হলো সেই খাতা। প্রতিটা আলাপ `~/.hermes/state.db`-তে জমে। প্রতি session-এ থাকে: ID (পরিচয় নম্বর), কোন platform থেকে (source), user ID, অনন্য title, model ও config, system prompt-এর কপি, পুরো message history (tool call ও result সহ), input/output token সংখ্যা, `started_at`/`ended_at` (শুরু-শেষের সময়), আর `parent_session_id` (compression আলাপ ভাগ করলে সেট হয়)।\n\n**এটা না থাকলে কী সমস্যা?** প্রতিবার terminal বন্ধ করলেই Hermes সব ভুলে যেত। কাল কী করেছিলে তা আজ জিজ্ঞেস করার উপায় থাকত না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Session\nএকটা আলাদা কথোপকথন, একটা খাতা। নতুন কাজ মানে নতুন খাতা।\n\n### ২) Database ও SQLite\n**Database** হলো সাজানো ডেটা রাখার আলমারি। **SQLite** তার একটা ছোট ধরন, যা একটা সাধারণ ফাইলেই থাকে (এখানে `state.db`), আলাদা server লাগে না।\n\n### ৩) FTS5 (full-text search)\nখাতার প্রতিটা শব্দ আলাদা সূচিপত্রে রেখে দেওয়া, যাতে \"বিজ্ঞান\" লিখে খুঁজলে সঙ্গে সঙ্গে পাওয়া যায়, প্রতিটা পাতা উল্টাতে না হয়। বইয়ের শেষের সূচিপত্রের মতো। এই সূচির কাজে কোনো AI call লাগে না।\n\n### ৪) WAL mode\nWrite-Ahead Logging। ডেটার আলমারিতে লেখার একটা নিরাপদ পদ্ধতি: আগে নোট খাতায় টুকে তারপর আলমারিতে সাজানো, যাতে বিদ্যুৎ গেলেও ডেটা নষ্ট না হয়।\n\n### ৫) Token\nAI যে ছোট ছোট লেখার টুকরো গুনে খরচ আর সীমা মাপে।\n\n### ৬) Context window ও compression\n**Context window** = Hermes একবারে যতটা কথা মনে রাখতে পারে, সেই টেবিল। **Compression** = টেবিল ভরলে পুরনো কথা ছোট সারসংক্ষেপে বদলে দেওয়া।\n\n### ৭) Prune, archive, pin\n**Prune** = পুরনো খাতা ফেলে দেওয়া। **Archive** = ফেলে না দিয়ে তাকের পেছনে লুকিয়ে রাখা। **Pin** = দরকারি খাতায় ক্লিপ আটকে দেওয়া, যাতে ভুলে ফেলে না দেওয়া হয়।\n\n### ৮) Gateway ও platform\n**Platform** = Telegram, Discord, Slack-এর মতো চ্যাট app। **Gateway** = Hermes-কে ওই app-এর সঙ্গে জোড়া লাগানো পোস্ট অফিস।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "প্রতিটা প্ল্যাটফর্মের আলাপ এক জায়গা, state.db-তে জমে; সেখান থেকে resume, search, export।",
+        "nodes": [
+          {
+            "id": "cli",
+            "kind": "client",
+            "label": "CLI / TUI",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "gw",
+            "kind": "gateway",
+            "label": "Chat apps",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "db",
+            "kind": "database",
+            "label": "state.db",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "srch",
+            "kind": "server",
+            "label": "session_search",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "exp",
+            "kind": "external",
+            "label": "export / resume",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "cli",
+            "to": "db",
+            "label": "সংরক্ষণ"
+          },
+          {
+            "from": "gw",
+            "to": "db",
+            "label": "সংরক্ষণ"
+          },
+          {
+            "from": "db",
+            "to": "srch",
+            "label": "FTS5"
+          },
+          {
+            "from": "db",
+            "to": "exp",
+            "label": "ফেরত/বের"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "session-resume"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Resume: পুরনো খাতা নামানো\n\n**Resume** মানে বন্ধ করা খাতা আবার খুলে সেখান থেকে লেখা চালিয়ে যাওয়া।\n\n```bash\nhermes -c                       # --continue : সর্বশেষ cli session\nhermes -c \"my project\"          # title দিয়ে\nhermes --resume <id>            # -r ; id বা title বা latest\nhermes --resume latest --in ./my-project   # ওই workspace-এর সর্বশেষ\nhermes --resume @claude         # Claude Code-এর আলাপ import করে resume (@codex-ও)\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes -c` | সর্বশেষ CLI session খোলো | কালকের কাজ চালিয়ে যেতে |\n| `hermes -c \"my project\"` | নাম ধরে খোলো | অনেক কাজের মধ্যে একটা বেছে নিতে |\n| `hermes --resume <id>` (`-r`) | id, title বা `latest` দিয়ে | নির্দিষ্ট খাতা চাইলে |\n| `--in ./my-project` | ওই ফোল্ডারের (workspace) সর্বশেষ | project ধরে খুঁজতে |\n| `--resume @claude` | অন্য agent (Claude Code, বা `@codex`)-এর আলাপ এনে চালানো | অন্য টুল থেকে Hermes-এ আসতে |\n\n- Session ID-র ছাঁচ `YYYYMMDD_HHMMSS_<hex>` (বছর-মাস-দিন_ঘণ্টা-মিনিট-সেকেন্ড_এলোমেলো অক্ষর)। CLI/TUI-তে ৬ অক্ষরের suffix, gateway-তে ৮। পূর্ণ ID বা অনন্য prefix (শুরুর অংশ যা আর কারো সঙ্গে মেলে না) চলে। `latest` শব্দটা সংরক্ষিত।\n- Resume করলে আগের working directory (কাজের ফোল্ডার) ফেরে (`↪ restored workspace dir: …`); `--no-restore-cwd` এটা বন্ধ করে। `--in <dir>` এটা বোঝায়।\n- প্রতি terminal-এর জন্য আলাদা `-c` হয় `~/.hermes/terminal-sessions/`-এর breadcrumb (পথের চিহ্ন) দিয়ে (৩০ দিন পরে stale, মানে বাসি); বন্ধ করতে `session.terminal_continue: false`।\n- Idle resume-এ (অনেকক্ষণ থেমে থাকার পর খোলায়) এখনকার profile config (toolset, MCP, `terminal`, `max_turns`...) নেওয়া হয়, কিন্তু session নিজের model ও launch flag রাখে। Config বদলালে নতুন prompt-cache prefix তৈরি হয়, একবার miss। (**Cache miss** = আগের হিসাব কাজে না লাগা, ফলে একবার পুরো দাম।)\n- Resume-এ recap panel: `display.resume_display: minimal` (ডিফল্ট `full`); শেষ ১০টা আদান-প্রদান দেখায়।\n- `hermes sessions list --workspace <needle>` git root বা cwd (current working directory) দিয়ে ছাঁকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নাম দেওয়া\n\nখাতায় লেবেল না থাকলে হাজারটা খাতার মধ্যে একটা খোঁজা কঠিন। তাই নাম।\n\n- **Auto-title:** প্রথম আদান-প্রদানের পর background thread-এ (পেছনে চুপচাপ কাজ করা অংশ) ৩–৭ শব্দের নাম; আগে থেকে থাকলে বাদ।\n- `/title <name>` নিজে দিতে (শুধু `/title` বর্তমানটা দেখায়); অথবা `hermes sessions rename <id> \"title\"`।\n- নিয়ম: অনন্য (আর কারো সঙ্গে মেলে না), সর্বোচ্চ ১০০ অক্ষর; control, zero-width (অদৃশ্য) ও RTL (ডান থেকে বাঁয়ে) অক্ষর বাদ; Unicode ঠিক আছে (বাংলাও চলে)।\n- Compression আলাপ ভাগ করলে: `my project` → `my project #2` → `#3`।\n\n## `hermes sessions ...` কমান্ড\n\n| কমান্ড | কাজ | কখন লাগে |\n|---|---|---|\n| `list` | ডিফল্ট ২০টা; `--source telegram`, `--limit 50` | কী কী খাতা আছে দেখতে |\n| `export` | `--format` jsonl (ডিফল্ট), md/qmd, html, trace; ফিল্টার: `--session-id`, `--source`, `--older-than`...; `--redact` secret মোছে (share করার আগে!) | ব্যাকআপ বা কাউকে দেখাতে |\n| `delete <id> [--yes]` | সক্রিয় turn/compression চলাকালে প্রত্যাখ্যান | একটা খাতা চিরতরে ফেলতে |\n| `rename <id> \"title\"` | নাম বদল | লেবেল ঠিক করতে |\n| `pin` / `unpin` / `pinned` | pinned session auto-archive ও prune থেকে মুক্ত | জরুরি খাতা বাঁচাতে |\n| `prune` | শুধু শেষ হওয়া session; খালি কমান্ডের ডিফল্ট ৯০ দিন; `--dry-run` আগে দেখো | জায়গা খালি করতে |\n| `archive` | লুকায় কিন্তু রাখে; অন্তত একটা ফিল্টার লাগে | সরিয়ে রাখতে, ফেলতে নয় |\n| `stats` | মোট session, message, source-ভিত্তিক গণনা, db আকার | কতটা জমেছে দেখতে |\n| `import [--from claude\\|codex]` | অন্য agent-এর transcript আনা (শুধু user ও assistant অংশ) | অন্য টুল থেকে ইতিহাস আনতে |\n| `optimize` | FTS5 segment merge ও VACUUM (ফাঁকা জায়গা গুছানো), ডেটা অক্ষত | search ধীর বা ফাইল ফোলা হলে |\n| `refresh-prompts` | `SOUL.md`/skill বদলের পর system prompt নতুন করে (প্রতি session-এ এক cache miss) | স্বভাব-ফাইল বদলের পর |\n\nআরও মেরামতের কমান্ড আছে: `repair-routing`, `repair-prompts`, `repair-profiles`, `set-journal-mode`। এগুলো চালানোর আগে gateway থামিয়ে `state.db` backup নাও। Bulk `export`-এ অন্তত একটা ফিল্টার লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Context window ও compression\n\nপ্রতি turn-এ model দেখে: system prompt, বর্তমান window, আর স্পষ্টভাবে ঢোকানো জিনিস। ছবি একবার attach/বর্ণনা হয়; audio-তে STT (speech-to-text, কথাকে লেখায় বদলানো) থাকলে transcribe; text document থেকে text; অন্য ফাইল শুধু path ও নোট। Context বাড়ে মূলত ভারী লেখা থেকে (pasted log, বড় tool output, লম্বা diff), media থেকে নয়।\n\nনিচের simulator-এ দেখো টেবিল কীভাবে ভরে আর compression কী করে। হাতিয়ার:\n\n| হাতিয়ার | কাজ | কখন |\n|---|---|---|\n| `/compress` | সক্রিয় context ছোট করে (privacy-delete নয়, মানে গোপন কথা মোছে না) | টেবিল ভরে এলে |\n| `/new` | নতুন thread; `/new <name>` নামসহ | নতুন কাজ শুরুতে |\n| `hermes sessions prune` | পুরনো মুছে জায়গা বাঁচায় | ডিস্ক ভরতে থাকলে |\n| `hermes sessions optimize` | ডেটা গুছায় | search ধীর হলে |\n\n**Task-এর সীমানায় `/new` দাও**: memory সংরক্ষিত হয়, খরচও কমে (কারণ আগের কাজের বোঝা সঙ্গে টানতে হয় না)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Search: `session_search` tool\n\n**সমস্যা:** Hermes-কে যদি জিজ্ঞেস করো \"গত সপ্তাহে ওই docker সমস্যাটা কীভাবে মিটিয়েছিলাম?\" সে কীভাবে খুঁজবে? তার জন্য একটা tool আছে, `session_search`। (**Tool** = Hermes-এর হাতের যন্ত্র, যা দিয়ে সে কাজ করে।) চারটা আকারে চলে:\n\n1. `query`: FTS5 দিয়ে আবিষ্কার (`limit`, `detail`, `sort`, `role_filter`)।\n2. `session_id` + `around_message_id` + `window`: কোনো বার্তার আশেপাশে স্ক্রল।\n3. শুধু `session_id`: পুরো session বা head/tail (শুরু ও শেষ)।\n4. কিছুই না: সাম্প্রতিক session ঘুরে দেখা।\n\nFTS5 সিনট্যাক্স: implicit AND (দুটো শব্দ লিখলে দুটোই থাকতে হবে), `\"phrase\"` (ঠিক এই বাক্য), `OR`, `NOT`, prefix `*` (শব্দের শুরু মিললেই চলবে)। এতে কোনো LLM call হয় না (AI-কে জিজ্ঞাসা না, তাই বিনা খরচে)।\n\n## Gateway session ও handoff\n\n- DM key: `agent:main:<platform>:dm:<chat_id>`; group-এ ডিফল্টে প্রতি user-এর আলাদা session (`group_sessions_per_user: true`), thread-এ ডিফল্টে shared। (DM = ব্যক্তিগত বার্তা; key = পরিচয়ের ঠিকানা।)\n- Gateway session মেয়াদ-উত্তীর্ণ হয় না; restart করলেও নতুন session শুরু হয় না। `/new`/`/reset` শুধু যে view চালিয়েছে তাকেই নতুন করে।\n- **`/handoff <platform>`:** CLI আলাপ Telegram/Discord/Slack ইত্যাদিতে সরানো। যেমন ডেস্কে শুরু করা কাজ ফোনে নিয়ে যাওয়া। home channel লাগে (`/sethome` দিয়ে ঠিক করা); turn চলার মাঝে প্রত্যাখ্যাত। সফল হলে `/resume <title>` hint।\n\n**Source tag:** `cli`, `telegram`, `discord`, `slack`, `cron`, `acp`...; `oneshot`, `kanban`, `tool` picker-এ লুকানো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## মেয়াদ, ছাঁটাই ও গার্ড\n\n- `sessions.auto_prune`: ডিফল্ট `false`। `true` হলে শেষ হওয়া session `sessions.retention_days` (ডিফল্ট ৯০) পেরোলে startup-এ (চালু হওয়ার সময়) ছাঁটা হয়।\n- Prune-এর পর VACUUM হয় শুধু যদি `vacuum_after_prune` সত্য, শেষ VACUUM থেকে `min_vacuum_interval_days` (ডিফল্ট ৩০) গেছে, আর ২৫%-এর বেশি page ফাঁকা। Sweep (ঝাড়ু দেওয়া) সর্বোচ্চ প্রতি `min_interval_hours` (ডিফল্ট ২৪)।\n- ডিস্ক কমে গেলে (২ GB-এর নিচে, বা ১০%-এর নিচে ও ২০ GB-এর কম) প্রশ্ন আসে: `/autoprune on|off|later`।\n- `sessions.max_resume_messages` ও `max_export_messages` ডিফল্ট ২০,০০০ (সীমা ছাড়ালে export প্রত্যাখ্যাত হয়); `0` মানে বন্ধ।\n- Storage: `~/.hermes/state.db` মূল; `sessions/sessions.json` পুরনো routing mirror; `sessions/saved/*.json` হলো `/save` snapshot।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Export শেয়ার করার আগে `--redact`",
+      "markdown": "JSONL backup-এ archived সহ সব সারি থাকে। কাউকে transcript দিতে md বা html বেছে `--redact` দাও (`redact` = কালো কালি দিয়ে গোপন অংশ ঢাকা), নইলে secret বেরিয়ে যেতে পারে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "মুছার আগে `--dry-run`",
+      "markdown": "`prune` বা `archive` চালানোর আগে `--dry-run` দিয়ে দেখে নাও কী কী যাবে (মহড়া, আসলে কিছু মোছে না)। Pinned session নিরাপদ থাকে।"
+    },
+    {
+      "type": "simulator",
+      "id": "context-window"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "সব session মূলত কোথায় জমে?",
+      "options": [
+        "`~/.hermes/state.db`-তে",
+        "`config.yaml`-এ",
+        "`.env`-এ",
+        "`SOUL.md`-এ"
+      ],
+      "answerIndex": 0,
+      "explanation": "state.db একটা SQLite ডেটার আলমারি, সব খাতা এখানেই।"
+    },
+    {
+      "question": "`hermes -c` কী করে?",
+      "options": [
+        "নতুন session বানায়",
+        "সব session মোছে",
+        "সর্বশেষ session-এ ফেরে",
+        "config দেখায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "`--continue` সর্বশেষ খাতাটা আবার খোলে।"
+    },
+    {
+      "question": "Compression আলাপ ভাগ করলে title কেমন হয়?",
+      "options": [
+        "একই থাকে",
+        "`my project #2`, `#3`...",
+        "এলোমেলো",
+        "মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "নাম এগিয়ে যায়: `my project` → `#2` → `#3`।"
+    },
+    {
+      "question": "`session_search` কীভাবে কাজ করে?",
+      "options": [
+        "প্রতিবার LLM-কে জিজ্ঞেস করে",
+        "internet-এ খোঁজে",
+        "শুধু নাম দিয়ে",
+        "FTS5 সূচি দিয়ে, কোনো LLM call ছাড়াই"
+      ],
+      "answerIndex": 3,
+      "explanation": "বইয়ের সূচির মতো; তাই দ্রুত আর বিনা খরচে।"
+    },
+    {
+      "question": "`sessions.auto_prune`-এর ডিফল্ট কী?",
+      "options": ["`true`", "৯০", "`false`", "`later`"],
+      "answerIndex": 2,
+      "explanation": "ডিফল্টে স্বয়ংক্রিয় ছাঁটাই বন্ধ; ৯০ দিন হলো `retention_days`।"
+    },
+    {
+      "question": "কোন session auto-archive ও prune থেকে মুক্ত?",
+      "options": [
+        "pinned session",
+        "সব পুরনো session",
+        "cron session",
+        "খালি session"
+      ],
+      "answerIndex": 0,
+      "explanation": "pin মানে খাতায় ক্লিপ, তাই বাঁচে।"
+    },
+    {
+      "question": "কাউকে transcript পাঠাতে কী করা উচিত?",
+      "options": [
+        "সরাসরি JSONL পাঠানো",
+        "state.db পাঠানো",
+        "`.env` সহ পাঠানো",
+        "md বা html export করে `--redact` দেওয়া"
+      ],
+      "answerIndex": 3,
+      "explanation": "`--redact` secret ঢেকে দেয়, নইলে চাবি বেরিয়ে যেতে পারে।"
+    },
+    {
+      "question": "কেন task শেষে `/new` দেওয়া ভালো?",
+      "options": [
+        "Hermes দ্রুত চলে বলে শুধু",
+        "আগের কাজের বোঝা না টেনে খরচ কমে, memory সংরক্ষিত থাকে",
+        "session মুছে যায় বলে",
+        "gateway restart হয় বলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "নতুন thread-এ পুরনো লম্বা context বয়ে বেড়াতে হয় না।"
+    }
+  ],
+  "recap": [
+    "প্রতিটা আলাপ `state.db`-এ session হয়ে জমে: title, token, model, history সহ।",
+    "`-c`, `--resume`, `--in` দিয়ে পুরনো আলাপে ফেরা যায়; workspace dir-ও ফেরে।",
+    "`hermes sessions` কমান্ডে list/export/prune/archive/pin/import সবই আছে।",
+    "`session_search` FTS5 দিয়ে, LLM ছাড়া দ্রুত পুরনো আলাপ খোঁজে।",
+    "Auto-prune ডিফল্টে বন্ধ; task শেষে `/new` দিলে খরচ কমে।"
+  ]
+}

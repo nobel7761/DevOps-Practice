@@ -1,0 +1,140 @@
+{
+  "contentId": "hermes-doc-user-guide-features-fallback-providers",
+  "title": "Fallback Providers",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে মূল AI provider পড়ে গেলে Hermes কীভাবে ব্যাকআপ provider-এ চলে যায়, আর HTTP error কোড (429, 500, 401...) দেখে কখন কী ঘটে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## স্কুলে যাওয়ার তিন রাস্তা\n\nরোজ তুমি বাসে স্কুলে যাও। একদিন বাস আসেনি। কী করবে? রিকশা নেবে। রিকশাও না পেলে হেঁটে যাবে। আর পরদিন সকালে আবার **প্রথমে বাসই** ধরার চেষ্টা করবে।\n\nHermes-এর টিকে-থাকার (resilience, মানে ধাক্কা সামলে চলতে থাকা) ব্যবস্থাও এমন তিন স্তরের:\n\n1. **Credential pools**: একই provider-এর একাধিক API key ঘুরিয়ে ব্যবহার। (একটা বাস গেলে একই রুটের পরের বাস।) এটা সবার আগে চেষ্টা হয়।\n2. **Primary model fallback**: মূল model ব্যর্থ হলে অন্য `provider:model`-এ যাওয়া। (বাস না এলে রিকশা।)\n3. **Auxiliary task fallback**: vision, compression-এর মতো পাশের কাজের জন্য আলাদা provider খোঁজা।\n\nস্তর ২ ও ৩ ঐচ্ছিক, credential pool ছাড়াই চলে।\n\n**এটা না থাকলে কী সমস্যা হতো?** তুমি রাত দুটোয় লম্বা কাজ চালিয়ে ঘুমোতে গেছ। provider-এর server হঠাৎ পড়ে গেল। fallback না থাকলে কাজ মাঝপথে থেমে যেত, আর সকালে উঠে দেখতে একটা error।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Provider, Model\n- **Provider** = যে কোম্পানি AI model ভাড়া দেয় (OpenRouter, Anthropic, ...)।\n- **Model** = ওই কোম্পানির নির্দিষ্ট AI-মস্তিষ্ক।\n- `provider:model` = \"কোম্পানি + তার মস্তিষ্ক\" জোড়া।\n\n### ২) Primary (প্রাইমারি) আর Fallback (ফলব্যাক)\n- **Primary** = তোমার মূল পছন্দ, প্রথমবার যেটা চেষ্টা হয়।\n- **Fallback** = ব্যাকআপ, মূল জিনিস কাজ না করলে যেটায় ফেরা হয়।\n\n### ৩) HTTP error কোড\nProvider-এর server উত্তরে একটা সংখ্যা পাঠায়। সংখ্যা দেখে বোঝা যায় কী ঘটেছে:\n| কোড | মানে (সোজা ভাষায়) |\n|---|---|\n| **429** | \"খুব বেশি অনুরোধ, একটু থামো\" (**rate limit**, মানে ব্যবহারের হার-সীমা) |\n| **500 / 502 / 503** | \"আমার server-এর ভেতরে গোলমাল / এখন ব্যস্ত বা বন্ধ\" |\n| **401 / 403** | \"তুমি কে? / তোমাকে ঢুকতে দেব না\" (পরিচয় বা অনুমতির সমস্যা) |\n| **404** | \"যা চাইছ তা পাচ্ছি না\" |\n| **402** | \"টাকা বা quota শেষ\" |\n\n### ৪) Retry আর Backoff\n- **Retry** = আবার চেষ্টা।\n- **Exponential backoff** = প্রতিবার অপেক্ষা দ্বিগুণ করা (১ মিনিট, ২ মিনিট, ৪ মিনিট...)। দরজায় ধাক্কা দিয়ে না খুললে একটু বেশি সময় দিয়ে আবার ধাক্কা দেওয়ার মতো।\n\n### ৫) Rate limit আর Quota\n- **Rate limit** = নির্দিষ্ট সময়ে কতবার ডাকতে পারবে তার সীমা।\n- **Quota** = মোট কতটা ব্যবহার করতে পারবে তার বরাদ্দ।\n\n### ৬) Prompt cache\nProvider মনে রাখে \"এই লম্বা শুরুর অংশটা আগেও পড়েছি,\" ফলে দ্বিতীয়বার সস্তায় ও দ্রুত পড়ে। কিন্তু cache থাকে নির্দিষ্ট model ও account-এর কাছে।\n\n### ৭) Auxiliary task\nমূল আলাপ ছাড়া পাশের ছোট কাজ: ছবি বোঝা (**vision**), আলাপ ছোট করা (**compression**), শিরোনাম বানানো ইত্যাদি। এগুলোর জন্য আলাদা ছোট model ব্যবহার করা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা turn-এ failover কীভাবে চলে।",
+        "steps": [
+          {
+            "title": "মূল model ব্যর্থ",
+            "body": "429/500/502/503 (retry শেষে), 401/403/404 (সঙ্গে সঙ্গে), বা বারবার খালি/ভাঙা response।"
+          },
+          {
+            "title": "Fallback খোঁজা",
+            "body": "`fallback_providers` তালিকার প্রথম entry-র credential resolve করে নতুন client বানায়।"
+          },
+          {
+            "title": "জায়গায় বদল",
+            "body": "model, provider, client বদলে যায়; reasoning effort আবার ঠিক হয়; retry counter reset। history, tool call, context অক্ষত।"
+          },
+          {
+            "title": "পরের user message",
+            "body": "প্রতিটা নতুন user message-এ আবার **primary** ফিরে আসে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "**Turn** মানে তোমার একটা প্রশ্ন আর Hermes-এর তার উত্তর দেওয়ার পুরো পালা। **Client** এখানে মানে provider-এর সাথে কথা বলা জোড়ার অংশ। **Credential resolve** মানে \"কোন key/login ব্যবহার হবে তা খুঁজে বের করা।\"\n\n## ১. Primary Model Fallback\n\n### সাজানোর দুই উপায়\n\n**উপায় ক: interactive (প্রশ্নোত্তরে)** — `hermes fallback`। এটা `hermes model`-এর provider picker (বাছাইয়ের মেনু) ব্যবহার করে।\n\n| subcommand | কাজ |\n|---|---|\n| `add` | নতুন fallback যোগ |\n| `list` (বা `ls`) | তালিকা দেখো |\n| `remove` (বা `rm`) | একটা সরাও |\n| `clear` | সব সরাও |\n\nপরিবর্তন `config.yaml`-এর `fallback_providers:` অংশে থাকে।\n\n**উপায় খ: হাতে YAML** (**YAML** = `নাম: মান` আকারে সেটিং লেখার সোজা ধরন)। top-level `fallback_providers` তালিকা; প্রতি entry-তে `provider` আর `model` **দুটোই** লাগবে, নাহলে entry বাদ।\n\n```yaml\nfallback_providers:\n  - provider: openrouter\n    model: anthropic/claude-sonnet-4\n```\n\n| লাইন | মানে |\n|---|---|\n| `fallback_providers:` | \"ব্যাকআপের তালিকা\" |\n| `- provider: openrouter` | তালিকার একটা entry; `-` মানে নতুন entry শুরু |\n| `model: anthropic/claude-sonnet-4` | ওই provider-এর কোন মস্তিষ্ক |\n\nপুরোনো singular `fallback_model` key এখনো চলে। দুটোই থাকলে `fallback_providers` জেতে, আর `hermes fallback` লেখার সময় পুরোনোটা migrate (নতুন ধরনে নিয়ে আসা) করে। **Primary chain-এর জন্য কোনো environment variable নেই**, শুধু `config.yaml` বা `hermes fallback`।\n\n### Custom endpoint\n\nনিজের server বা অন্য ঠিকানা হলে:\n\n```yaml\nfallback_providers:\n  - provider: custom\n    model: my-local-model\n    base_url: http://localhost:8000/v1\n    key_env: MY_LOCAL_KEY   # env var name holding the key\n```\n\n| অংশ | মানে |\n|---|---|\n| `provider: custom` | নিজের তৈরি/নিজের ঠিকানার provider |\n| `base_url` | কোন ঠিকানায় ডাকবে (`localhost` = আমার কম্পিউটার, `8000` = দরজা-নম্বর) |\n| `key_env` | কোন env var-এ key রাখা আছে তার নাম (key নিজে নয়, শুধু নাম) |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### Supported provider (কয়েকটা, কী credential লাগে)\n\n| provider | কী লাগে |\n|---|---|\n| `openrouter` | `OPENROUTER_API_KEY` |\n| `anthropic` | `ANTHROPIC_API_KEY` বা Claude Code credentials |\n| `nous` | `hermes setup --portal` বা `hermes auth add nous` |\n| `openai-codex` | `hermes model` (ChatGPT/Codex subscription, OAuth login) |\n| `gemini` | `GOOGLE_API_KEY` (alias `GEMINI_API_KEY`) |\n| `deepseek` | `DEEPSEEK_API_KEY` |\n| `huggingface` | `HF_TOKEN` |\n| `custom` | `base_url` + `key_env` |\n| `moa` | `model`-এ Mixture of Agents preset-এর নাম; পুরো preset চলে |\n\n(পুরো তালিকা অনেক বড়: zai, kimi-coding, minimax, xai, bedrock, lmstudio, llamacpp ইত্যাদিও আছে।) `llamacpp` Hermes-managed local server; চালু না থাকলে entry বাদ যায়, model নাম অন্য কোথাও পাঠানো হয় না।\n\n### কখন fallback চালু হয়\n\n| ঘটনা | কখন চালু | কেন |\n|---|---|---|\n| 429, 500, 502, 503 | retry শেষ হলে | প্রথমে আবার চেষ্টা, কারণ সাময়িক হতে পারে |\n| 401, 403, 404 | সঙ্গে সঙ্গে | আবার চেষ্টায় লাভ নেই, পরিচয় বা ঠিকানাই ভুল |\n| ভাঙা/খালি response | বারবার হলে | একবার হলে সাময়িক ভুল, বারবার মানে সমস্যা |\n\nStreamed **refusal** (model কাজটা করতে অস্বীকার) terminal `content_filter` result হয়। সেটা দেখানো হয়, retry হয় না।\n\n### Rate limit আর reset\n\n- 429-এ reset সময় দেওয়া থাকলে primary সেই সময় পর্যন্ত বিশ্রামে থাকে। না থাকলে exponential backoff **৬০ সেকেন্ড থেকে ৪ ঘণ্টা** পর্যন্ত।\n- `fallback.min_switch_reset_seconds` (default `0` = সবসময় switch)। primary-র reset এর চেয়ে কম সময়ে হলে Hermes switch না করে অপেক্ষা করে।\n- **Reset-aware:** reset সময় না আসা পর্যন্ত Hermes fallback-এই থাকে (যেমন Claude Pro/Max-এর ৫ ঘণ্টার window)। সময় পেরোলে primary আবার যোগ্য হয়, কিন্তু সুস্থ হবেই এমন গ্যারান্টি নেই।\n\n### প্রতি turn-এর আচরণ\n\n- নতুন user message এলেই primary ফেরত।\n- এক turn-এ fallback সর্বোচ্চ **একবার** চালু হয়। fallback-ও ব্যর্থ হলে সাধারণ error handling।\n- `hermes chat --reasoning <level>` স্পষ্ট দিলে switch-এর পরও তা থাকে। (**reasoning level** = model কতটা গভীরভাবে ভাববে।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Prompt cache-এর খরচ",
+      "markdown": "Cache থাকে serving model (এবং সাধারণত account) অনুযায়ী। switch-এর পরের request পুরো history **পুরো input দামে** আবার পড়ে (কারণ নতুন model-এর cache খালি); primary ফিরলেও একই। তাই যে session বারবার provider বদলায় তার খরচ বেড়ে যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### কোথায় কোথায় কাজ করে\n\n- **CLI** (interactive ও `hermes -z`), **messaging gateway** (chat অ্যাপের সাথে সংযোগ), **Desktop/TUI**: হ্যাঁ। চলতি chat-এ chain edit করলে পরের turn থেকে খাটে।\n- **Subagent delegation** (Hermes কাজ ভাগ করে সহকারী Hermes-কে দেয়): `delegation.fallback_providers` থাকলে সেটা; নাহলে শুধু **unpinned** child parent-এর chain পায়। `[]` দিলে বন্ধ। (**Pinned** = নিজের provider/model আলাদা করে বেঁধে দেওয়া।)\n- **Cron** (সময়মতো কাজ): unpinned job chain পায়; নিজের provider/model/`base_url` দেওয়া job কখনো fallback করে না।\n\n## ২. Auxiliary Task Fallback\n\nপাশের কাজগুলোর config key: `auxiliary.vision`, `auxiliary.compression`, `auxiliary.skills_hub`, `auxiliary.mcp`, `auxiliary.approval`, `auxiliary.title_generation`, `auxiliary.review`, `auxiliary.triage_specifier`।\n\n`provider: auto` (default) হলে ক্রম:\n\n1. main provider + main model\n2. `auxiliary.<task>.fallback_chain` (থাকলে)\n3. top-level `fallback_providers`\n4. warning দিয়ে task বাদ\n\n```yaml\nauxiliary:\n  vision:\n    provider: \"auto\"    # auto | openrouter | nous | codex | main | anthropic\n    model: \"\"           # e.g. \"openai/gpt-4o\"\n    base_url: \"\"        # overrides provider\n    api_key: \"\"         # for base_url\n  compression:\n    provider: \"auto\"\n    model: \"\"\n    fallback_chain:     # optional, task-specific\n      - provider: openrouter\n        model: inclusionai/ring-2.6-1t:free\n```\n\n`base_url` দিলে provider খোঁজা এড়িয়ে সরাসরি ওই endpoint (ঠিকানা) ব্যবহার হয়; `api_key` না থাকলে `OPENAI_API_KEY`, কিন্তু `OPENROUTER_API_KEY` নয়।\n\n## ৩. Capacity-error fallback\n\n**Capacity error** মানে provider-এর \"জায়গা বা সামর্থ্য শেষ\": HTTP 402, দৈনিক-quota 429, বা connection failure। explicit provider দিলে সেটা আগে; তবে capacity error হলে ক্রম: configured provider → `fallback_chain` → main agent provider/model → \"all fallbacks exhausted\" warning ও error।\n\n- সাধারণ `Retry-After` সহ 429 (মানে \"একটু পরে আসো\") এই ধাপে যায় না।\n- explicit provider-এ **401** হলে শুধু `fallback_chain` ক্রমে চলে।\n\n```yaml\nauxiliary:\n  compression:\n    provider: openrouter\n    fallback_chain:\n      - provider: openai\n        model: gpt-4o-mini\n        timeout: 240    # this candidate's own deadline, in seconds\n```\n\n`timeout: 240` মানে এই candidate-এর নিজের সময়সীমা ২৪০ সেকেন্ড।\n\n## ৪–৬. Compression, Delegation, Cron\n\n- **Compression:** `auxiliary.compression`। provider না মিললে মাঝের turn-গুলো summary ছাড়াই বাদ যায়, session চলতে থাকে।\n- **Delegation:** `delegate_task` subagent parent-এর chain পায়; override করতে `delegation.provider/model/base_url/api_key/fallback_providers`।\n- **Cron:** pinned job (নিজের provider/model) fallback করে না, তবে একই provider-এর **credential-pool rotation** (key ঘোরানো) খাটে। fallback রাখতে job unpinned রেখে `cron.model` ও `cron.model_provider` দাও।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Fallback provider কেন লাগে?",
+      "options": [
+        "Hermes দ্রুত করতে",
+        "ছবি আঁকতে",
+        "মূল provider ব্যর্থ বা ব্যস্ত হলে যেন কাজ থেমে না যায়, ব্যাকআপে চলে",
+        "key মুছতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "বাস না এলে রিকশা, এই ধরনের ব্যবস্থা। মাঝরাতে provider পড়ে গেলেও কাজ চলতে থাকে।"
+    },
+    {
+      "question": "`fallback_providers`-এর প্রতিটা entry-তে কী কী থাকতে হবে?",
+      "options": [
+        "`provider` আর `model` দুটোই",
+        "শুধু model",
+        "শুধু provider",
+        "শুধু API key"
+      ],
+      "answerIndex": 0,
+      "explanation": "দুটোর একটাও না থাকলে entry বাদ পড়ে। custom endpoint-এ `base_url` আর `key_env` যোগ হয়।"
+    },
+    {
+      "question": "401, 403, 404 error-এ fallback কখন চালু হয়?",
+      "options": ["অনেকবার retry-র পরে", "কখনো না", "শুধু রাতে", "সঙ্গে সঙ্গে"],
+      "answerIndex": 3,
+      "explanation": "এগুলো পরিচয় বা ঠিকানার ভুল, আবার চেষ্টায় লাভ নেই। আর 429/5xx সাময়িক হতে পারে, তাই আগে retry।"
+    },
+    {
+      "question": "fallback চালু হলে পরের user message-এ কোন model ব্যবহার হয়?",
+      "options": [
+        "fallback-ই চিরকাল",
+        "প্রতিটা নতুন user message-এ আবার primary ফিরে আসে",
+        "দুটো একসাথে",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "পরদিন সকালে আবার বাসই ধরার চেষ্টা। তবে 429-এ reset সময় পর্যন্ত primary বিশ্রামে থাকতে পারে।"
+    },
+    {
+      "question": "বারবার provider বদলালে খরচ বাড়ে কেন?",
+      "options": [
+        "provider বেশি টাকা নেয়",
+        "Hermes বেশি লেখে",
+        "cache থাকে নির্দিষ্ট model/account-এর কাছে, তাই switch-এ পুরো history আবার পুরো দামে পড়া হয়",
+        "internet ধীর হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "নতুন model-এর cache খালি, তাই পুরো আগের কথা আবার পুরো input দামে পড়তে হয়।"
+    },
+    {
+      "question": "`provider: auto` হলে auxiliary task-এর ক্রম কী?",
+      "options": [
+        "main provider+model → task-এর `fallback_chain` → top-level `fallback_providers` → warning দিয়ে বাদ",
+        "শুধু top-level",
+        "random",
+        "কোনো ক্রম নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "পরপর চেষ্টা। সব ব্যর্থ হলে warning দিয়ে ওই পাশের কাজটা বাদ দেওয়া হয়, মূল আলাপ চলে।"
+    },
+    {
+      "question": "pinned cron job (নিজের provider/model দেওয়া) সম্পর্কে কোনটা সত্য?",
+      "options": [
+        "সে fallback করে, তবে credential-pool rotation খাটে না",
+        "সে সব provider ব্যবহার করে",
+        "সে চলেই না",
+        "সে fallback করে না, তবে একই provider-এর credential-pool rotation খাটে"
+      ],
+      "answerIndex": 3,
+      "explanation": "fallback রাখতে চাইলে job-কে unpinned রাখো আর `cron.model` ও `cron.model_provider` দাও।"
+    }
+  ],
+  "recap": [
+    "টিকে-থাকার তিন স্তর: credential pool (একই provider-এর key ঘোরানো), primary model fallback (অন্য provider:model), auxiliary task fallback (পাশের কাজ)।",
+    "`hermes fallback` বা `config.yaml`-এর `fallback_providers` দিয়ে ব্যাকআপ সাজাও; প্রতি entry-তে `provider` আর `model` দুটোই লাগবে।",
+    "429/5xx-এ retry-র পর, 401/403/404-এ সঙ্গে সঙ্গে fallback চালু হয়; এক turn-এ সর্বোচ্চ একবার।",
+    "প্রতিটা নতুন user message-এ primary ফিরে আসে; switch-এ prompt cache হারায় বলে খরচ বাড়তে পারে।",
+    "Auxiliary কাজের আলাদা `fallback_chain` আছে; pinned cron job fallback করে না।"
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging",
+  "title": "Messaging Overview",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Messaging Gateway কী, কেন লাগে, কীভাবে চালাতে হয় আর কারা bot-এর সাথে কথা বলতে পারবে তা কীভাবে ঠিক করবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: গ্রামের পিওন\n\nএকটা গ্রামে একজন পিওন আছে। কেউ তাকে Telegram পাড়ায় চিঠি দেয়, কেউ Discord পাড়ায়, কেউ Slack পাড়ায়। পিওন সব চিঠি এনে **একজন জ্ঞানী মাস্টারমশাইয়ের** (এটাই AI agent) হাতে দেয়। মাস্টার উত্তর লিখলে পিওন ঠিক সেই পাড়ায় গিয়ে উত্তর পৌঁছে দেয়।\n\nHermes-এর **Messaging Gateway** হলো সেই পিওন। সে একটা **background process**, মানে একটা প্রোগ্রাম যে চুপচাপ পেছনে চলতেই থাকে, তুমি টার্মিনালের দিকে না তাকালেও। সে একসাথে অনেক chat app-এর সাথে জুড়ে থাকে, প্রতিটা chat-এর কথোপকথন মনে রাখে, সময়-ঠিক-করা কাজ (cron) চালায়, আর voice message পৌঁছে দেয়।\n\n**এটা না থাকলে কী সমস্যা হতো?** তখন Hermes-এর সাথে কথা বলতে হলে প্রতিবার কম্পিউটারের টার্মিনালে বসতে হতো। Gateway থাকলে তুমি ফোনের Telegram থেকেই বন্ধুর মতো Hermes-কে হুকুম দিতে পারো।\n\nসমর্থিত platform অনেক: Telegram, Discord, Slack, Google Chat, WhatsApp (Baileys ও Cloud API), Signal, SMS, Email, Home Assistant, Mattermost, Matrix, DingTalk, Feishu/Lark, WeCom, Weixin, BlueBubbles, Microsoft Teams, LINE, ntfy, IRC, SimpleX আর আরও কিছু।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Gateway (গেটওয়ে)\n\"Gateway\" মানে **প্রবেশদ্বার**। বাইরের chat app আর ভেতরের Hermes-এর মাঝখানের দরজা। পিওনের মতো, সে চিঠি নেয় আর পৌঁছে দেয়।\n\n### Platform (প্ল্যাটফর্ম)\nযে chat app বা সেবার ভেতর দিয়ে কথা হয়। Telegram একটা platform, Slack আরেকটা platform। যেমন চিঠি যায় আলাদা আলাদা পাড়ায়, তেমন বার্তা যায় আলাদা আলাদা platform-এ।\n\n### Adapter (অ্যাডাপ্টার)\nপ্রতিটা platform-এর ভাষা আলাদা। Adapter হলো একটা অনুবাদক, যে Telegram-এর ভাষাকে Hermes-এর ভাষায় আর উল্টোটা বদলে দেয়। যেমন বিদেশে যাওয়ার সময় প্লাগ-অ্যাডাপ্টার লাগে, সব দেশের সকেট এক নয়।\n\n### Session (সেশন)\nএকটা কথোপকথনের খাতা। যতক্ষণ খাতা চলছে, Hermes আগের কথা মনে রাখে। নতুন খাতা খুললে (`/new`) আগের কথা আর সামনে থাকে না।\n\n### Background process ও Service\nBackground process পেছনে চলা প্রোগ্রাম। **Service** মানে এমন প্রোগ্রাম যেটাকে কম্পিউটার নিজেই চালু রাখে, বন্ধ হয়ে গেলে আবার তুলে দেয়। যেমন বাড়ির পানির পাম্প, তুমি হাত না দিলেও চলে।\n\n### Allowlist (অ্যালাউলিস্ট)\n\"অতিথি-তালিকা\"। তালিকায় যাদের নাম আছে শুধু তারাই ঢুকতে পারে। বাকিদের দারোয়ান ফিরিয়ে দেয়।\n\n### Slash command\n`/` দিয়ে শুরু করা ছোট হুকুম, যেমন `/new`। chat-এর ভেতরেই লিখে Hermes-কে বলা হয় \"এটা করো\"।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "প্রতিটা platform-এর adapter বার্তা এনে session store-এর মধ্য দিয়ে agent-এ পৌঁছায়। cron প্রতি 60 সেকেন্ডে একবার টিক দেয়।",
+        "nodes": [
+          {
+            "id": "tg",
+            "kind": "client",
+            "label": "Telegram",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "dc",
+            "kind": "client",
+            "label": "Discord",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "gw",
+            "kind": "gateway",
+            "label": "Gateway",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "ss",
+            "kind": "database",
+            "label": "Session খাতা",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "ag",
+            "kind": "server",
+            "label": "Agent",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "tg",
+            "to": "gw",
+            "label": "বার্তা"
+          },
+          {
+            "from": "dc",
+            "to": "gw",
+            "label": "বার্তা"
+          },
+          {
+            "from": "gw",
+            "to": "ss",
+            "label": "chat অনুযায়ী"
+          },
+          {
+            "from": "ss",
+            "to": "ag",
+            "label": "কাজ দেয়"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "gateway-auth"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Gateway চালানোর command\n\nআগে বুঝি **command** কী: টার্মিনালে লেখা একটা হুকুম। নিচের প্রতিটা লাইন `hermes gateway` দিয়ে শুরু, তারপর একটা কাজের নাম।\n\n```bash\nhermes gateway setup      # interactive wizard; শেষে start/restart-এর প্রস্তাব\nhermes gateway            # foreground-এ চালাও\nhermes gateway install    # service হিসেবে বসাও\nhermes gateway start\nhermes gateway stop\nhermes gateway status\nhermes gateway restart    # আগে drain (SIGUSR1) করে, তারপর নতুনটার অপেক্ষা\n```\n\n| command | কী করে | কখন লাগে |\n|---|---|---|\n| `setup` | **wizard**: প্রশ্ন করে করে সব ঠিক করিয়ে দেয় (wizard = জাদুকর-গাইড, তুমি শুধু উত্তর দাও) | প্রথমবার, সবচেয়ে সহজ পথ |\n| `hermes gateway` | **foreground**-এ চালায়: টার্মিনালের জানালায় সামনেই চলে, জানালা বন্ধ করলে থামে | পরীক্ষা করার সময়, log চোখে দেখতে |\n| `install` | service বানায়, যাতে কম্পিউটার চালু হলেই নিজে চালু হয় | রোজকার ব্যবহারে |\n| `start` / `stop` | service চালু / বন্ধ | দরকারমতো |\n| `status` | এখন চলছে কি না বলে | \"bot সাড়া দিচ্ছে না\" মনে হলে |\n| `restart` | নতুন করে চালায়। **drain** করে, মানে চলতে থাকা কাজ শেষ হতে দেয়, তারপর নতুন চালু করে | settings বদলের পর |\n\n- Linux-এ কম্পিউটার চালু (boot) হওয়ার সময়েই service চাইলে: `sudo hermes gateway install --system`। `sudo` মানে সাময়িকভাবে admin-এর ক্ষমতা নেওয়া। `--force` service-এর ফাইল নতুন করে বানায়। `--run-as-user <user>` লেখা যায় `--system`-এর সাথে, কোন user চালাবে তা বলার জন্য।\n- `kill -USR2 <pid>` একটা বিশেষ সংকেত। এতে Hermes restart না হয়েই নিজের ভেতরের অবস্থার একটা ছবি (thread stack dump) `~/.hermes/logs/gateway_faulthandler.log` ফাইলে লিখে রাখে। `pid` মানে চলতে থাকা প্রোগ্রামের নম্বর। কিছু আটকে গেলে ডাক্তারকে দেখানোর জন্য এই ছবি কাজে লাগে।\n\n### Chat-এর ভেতরে ব্যবহার করা যায় এমন command\n\n| ধরন | command | সোজা মানে |\n|---|---|---|\n| Session | `/new`, `/reset`, `/retry`, `/undo`, `/status`, `/title [name]`, `/resume [name]`, `/sessions`, `/compress` | নতুন খাতা খোলা, আবার চেষ্টা, শেষটা ফেরানো, নাম দেওয়া, পুরোনো খাতায় ফেরা, খাতা ছোট করা |\n| Model ও আচরণ | `/model [provider:model]`, `/personality`, `/reasoning`, `/voice` | কোন AI ব্যবহার হবে, কেমন স্বভাব, কতটা ভাববে, কথা বলা |\n| নিয়ন্ত্রণ | `/stop`, `/approve`, `/deny`, `/whoami`, `/sethome`, `/rollback`, `/reload-mcp`, `/update`, `/help` | থামানো, অনুমতি দেওয়া বা না দেওয়া, আমি কে, ডিফল্ট ঠিকানা ঠিক করা, ফেরত যাওয়া |\n| হিসাব | `/usage`, `/insights [days]` | কত খরচ হলো, ক'দিনের সারাংশ |\n| Background | `/bg <prompt>`, `/btw <question>` | আলাদা কাজ চালানো, পাশের প্রশ্ন |\n| Skill | `/<skill-name>` | শেখানো কোনো পদ্ধতি সরাসরি চালানো |\n\n**`/model` সম্পর্কে:** তুমি `/model` দিয়ে যে বদল করো তা restart-এর পরও থাকে। credential (গোপন চাবি) কখনো disk-এ লেখা হয় না। `/model reset` ওই বদল মুছে দেয়। `/model <name> --global` বদলটাকে `config.yaml` ফাইলে স্থায়ীভাবে লিখে দেয়। `--once` শুধু একটা turn-এর জন্য। (`config.yaml` হলো Hermes-এর সেটিংসের খাতা। turn মানে একবার তুমি বললে আর একবার সে উত্তর দিলে।)\n\n### Session ও ধারাবাহিকতা\n\nSession নিজে থেকে শেষ হয় না। তুমি reset না করা পর্যন্ত খাতা চলতেই থাকে। idle থাকলে বা দিন গড়ালেও কথোপকথন আপনা-আপনি reset হয় না। পুরোনো `session_reset` সেটিং এখন উপেক্ষিত হয় আর warning দেয়।\n\n**Delivery ledger** হলো একটা হিসাবের খাতা (`state.db` ফাইলে)। চূড়ান্ত উত্তর পাঠানোর আগে আর পরে সে লিখে রাখে \"পাঠানো হচ্ছে\" আর \"পাঠানো হয়েছে\"। **কেন লাগে?** মাঝপথে Hermes crash (হঠাৎ বন্ধ) করলে উত্তর হারিয়ে যেত। এই খাতা দেখে আবার পাঠানো যায়। মাঝপথে ভাঙলে উত্তরের আগে \"♻️ Recovered reply … may be a duplicate\" লেখা থাকে, মানে \"আগেরটাও পৌঁছে থাকতে পারে\"। সীমা: ৩ বার চেষ্টা, ২৪ ঘণ্টা, আর ৭ দিন পর খাতা থেকে মুছে যায়। বন্ধ করতে `gateway.delivery_ledger: false`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা: কে কথা বলতে পারবে?\n\n**ডিফল্ট নিয়ম কড়া:** allowlist-এ নেই, আবার DM pairing-ও করেনি, এমন সবাইকে ফিরিয়ে দেওয়া হয়।\n\n**কেন এত কড়া?** Hermes-এর হাতে tool থাকে, যেমন কম্পিউটারে command চালানো। অচেনা কেউ বার্তা পাঠিয়ে সেই ক্ষমতা ব্যবহার করুক, এটা চাই না।\n\n| উপায় | কী | সোজা মানে |\n|---|---|---|\n| allowlist | `<PLATFORM>_ALLOWED_USERS` (যেমন `TELEGRAM_ALLOWED_USERS`), অথবা সবার জন্য `GATEWAY_ALLOWED_USERS` | অতিথি-তালিকায় নাম লিখে রাখা |\n| সবাইকে খুলে দেওয়া | `GATEWAY_ALLOW_ALL_USERS=true` | **সুপারিশ করা হয় না**, বিশেষ করে terminal-ক্ষমতাওয়ালা bot-এ |\n| DM pairing | অচেনা user একটা এককালীন code পায় | অচেনা অতিথিকে একটা টোকেন দেওয়া, তুমি দেখে অনুমতি দাও |\n\n**DM** মানে Direct Message, শুধু দুজনের মধ্যে সরাসরি বার্তা। **Env var** (`..._ALLOWED_USERS`) মানে environment variable, `.env` ফাইলে লেখা একটা নামওয়ালা সেটিং, যেমন `নাম=মান`।\n\nPairing-এর command:\n\n```bash\nhermes pairing approve <platform> <code>   # code দেখে অনুমতি দাও\nhermes pairing list                        # কে অপেক্ষায় আছে\nhermes pairing revoke <platform> <id>      # অনুমতি ফিরিয়ে নাও\n```\n\ncode ১ ঘণ্টায় মেয়াদ হারায় আর বারবার চাইলে আটকে দেওয়া হয় (rate-limited)।\n\n### Admin বনাম সাধারণ user\n\nপ্রতিটা জায়গায় (DM বা group/channel) আলাদা করে ঠিক করা যায়। **Admin** সব slash command চালাতে পারে। **সাধারণ user** শুধু `user_allowed_commands`-এ লেখা command পারে (অন্তত `/help` আর `/whoami` সবসময় পারে)। config key গুলো: `allow_admin_from`, `user_allowed_commands`, `group_allow_admin_from`, `group_user_allowed_commands`, `allow_from`। **ফাঁদ:** কোনো জায়গায় `allow_admin_from` না দিলে ভাগাভাগিই বন্ধ থাকে, মানে **সবাই পূর্ণ অধিকার পায়**।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Allow-all বিপজ্জনক",
+      "markdown": "যে bot-এর terminal tool আছে সেখানে সবাইকে allow করা মানে অচেনা যে কেউ তোমার কম্পিউটারে command চালাতে বলতে পারে। যেন বাড়ির চাবি রাস্তায় ফেলে রাখা। সবসময় allowlist বা pairing ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কাজের মাঝে নতুন বার্তা পাঠালে (Redirect)\n\nধরো Hermes একটা কাজ করছে, তুমি তখন আরেকটা বার্তা পাঠালে। কী হবে, তা ঠিক করে `display.busy_input_mode` (**busy** = ব্যস্ত, **input** = তোমার লেখা):\n\n| মান | কী হয় | কখন বাছবে |\n|---|---|---|\n| `interrupt` (default) | চলতি কাজ থামিয়ে নতুনটা ধরে | বুঝতে পারলে \"এটা না, ওটা করো\" |\n| `queue` | নতুনটা পরের turn হিসেবে লাইনে দাঁড়ায় | কাজ থামাতে চাও না |\n| `steer` | পরের tool call-এর পর একটা ছোট নির্দেশ হিসেবে ঢুকে যায় | দিক একটু বদলাতে চাও, থামাতে না |\n\nমূল কথা: model আবার শুরু হয় আগের context নিয়ে। আগের tool-এর ফলাফল থাকে। যে tool চলছে সে নিরাপদে শেষ হয়। আর `/stop` হলো কড়া থামানো।\n\n### Tool progress (কাজ কতদূর)\n\nHermes যখন tool চালায়, chat-এ খবর দেখানো যায়। কতটা দেখাবে তা `display.tool_progress`: `off`, `new`, `all`, `verbose`, `log`। `log` দিলে chat-এ কিছু আসে না, সব `~/.hermes/logs/tool_calls.log` ফাইলে লেখা হয় (৫ MB করে ৩টা backup, secret লুকিয়ে)। **Log** মানে ঘটনার দিনলিপি। `display.tool_progress_grouping`: `accumulate` (default, এক বুদবুদে বদলাতে থাকে) বা `separate` (আলাদা আলাদা)।\n\n### Background কাজ\n\n`/bg <prompt>` একই সেটিংয়ে আলাদা একটা agent চালায়, একটা task ID দেয় (`bg_HHMMSS_xxxxxx` আকারে), আর শেষে \"✅ Background task complete\" বা \"❌ ... failed\" জানায়। **কখন লাগে:** লম্বা কাজ দিয়ে তুমি অন্য কথা চালিয়ে যেতে চাও। কতটা জানাবে তা `display.background_process_notifications`: `concise` (default), `all`, `result`, `error`, `off`।\n\n### ইচ্ছাকৃত নীরবতা\n\nপুরো চূড়ান্ত উত্তর যদি `[SILENT]`, `SILENT`, `NO_REPLY`, `NO REPLY` (বা এর চীনা রূপ) হয়, তাহলে chat-এ কিছুই পাঠানো হয় না। কিন্তু turn-এর লিখিত রেকর্ডে (transcript) থাকে। কোনো মানুষ শুধু এই শব্দ পাঠালে সে ছোট একটা নোটিস পায়। কোনো turn ব্যর্থ হলে তবুও error দেখায়। **কখন লাগে:** cron-এর কাজে কিছু বলার না থাকলে চুপ থাকতে।\n\n### প্রতি channel-এর আলাদা নিয়ম\n\n`platforms.<name>.channel_overrides`-এর ভেতরে `model`, `provider`, `system_prompt`, `allow_silence` দেওয়া যায়। **System prompt** হলো Hermes-কে দেওয়া গোপন \"তুমি এমন আচরণ করবে\" নির্দেশ। অগ্রাধিকারের ক্রম: session-এর `/model` → channel override → global সেটিং। Discord-এর thread তার parent channel-এর override পায়। বদলের পর restart লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Service হিসেবে চালানো, প্রতি system-এ আলাদা\n\nআগে মনে করো: service মানে কম্পিউটার নিজে চালু রাখে। প্রতিটা system-এর নিজস্ব \"চালু-রাখার ম্যানেজার\" আছে:\n\n| System | ম্যানেজার | জরুরি তথ্য |\n|---|---|---|\n| **Linux** | systemd | ডিফল্টে user service। log দেখতে `journalctl --user -u hermes-gateway -f`। logout-এর পরও চালু রাখতে `sudo loginctl enable-linger $USER`। `ExecStopPost` kill drop-in **দিও না**, restart loop হয় (বারবার চালু-বন্ধ) |\n| **Container** (Docker-এর মতো বন্ধ বাক্স) | নেই | `hermes gateway install` user service প্রত্যাখ্যান করে। `hermes gateway run` বা system scope ব্যবহার করো |\n| **macOS** | launchd | plist ফাইল `~/Library/LaunchAgents/ai.hermes.gateway.plist`। log `~/.hermes/logs/gateway.log` |\n| **Windows** | Scheduled Task | নাম `Hermes_Gateway`, logon-এর সময় চলে |\n\n### Liveness (বেঁচে আছে কি না)\n\nএকটা watchdog (পাহারাদার কুকুর) প্রতি `gateway.loop_watchdog_probe_interval_s` (default ৩০ সেকেন্ড) পর পর asyncio loop পরীক্ষা করে। asyncio loop হলো Hermes-এর ভেতরের সেই চক্র যেটা বার্তা সামলায়। পরপর `loop_watchdog_max_strikes` (default ৩) বার ব্যর্থ হলে সে ভেতরের ছবি (stack dump) তোলে, `gateway_state: degraded` লেখে আর exit code ৭৫ নিয়ে বেরিয়ে যায়, যাতে service ম্যানেজার আবার চালু করতে পারে। বন্ধ করতে `gateway.loop_watchdog: false`। heartbeat (হৃৎস্পন্দন) ১২০ সেকেন্ডের বেশি পুরোনো হলে status-এ \"Heartbeat stale\" দেখায়।\n\n### একাধিক platform সামলানো\n\n- `/platform list`, `/platform pause <name>`, `/platform resume <name>`।\n- `paused-by-breaker` মানে বারবার ব্যর্থ হওয়ায় নিজেই থেমে গেছে। (breaker = বিদ্যুতের সার্কিট-ব্রেকারের মতো, বেশি গোলমালে নিজে কেটে যায়।) নিজে আর চালু হয় না, তুমি `/platform resume` দাও।\n- `platforms.<name>.enabled: false` দিলে `.env`-এর credential থাকলেও সেটা কাজ করে না।\n- Telegram-এর ডিফল্ট: `tool_progress` বন্ধ, `interim_assistant_messages` চালু (মাঝপথের ছোট খবর), `long_running_notifications` চালু। platform ধরে বদলাতে `display.platforms.<name>`।\n- `cleanup_progress` (default false) শেষ উত্তরের পর progress বুদবুদ মুছে ফেলে। শুধু Telegram ও Discord-এ।\n\nপ্রতিটা platform-এর নিজস্ব **toolset** আছে (`hermes-telegram`, `hermes-slack` ইত্যাদি)। Toolset মানে হাতিয়ারের একটা দল। বেশিরভাগে terminal সহ পুরো tool থাকে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Messaging Gateway কোন গল্পের পিওনের মতো?",
+      "options": [
+        "একটা বাক্স যেখানে শুধু পুরোনো চিঠি জমে",
+        "যে সব chat app থেকে বার্তা এনে agent-কে দেয় আর উত্তর ফিরিয়ে দেয়",
+        "যে শুধু কম্পিউটারের গান বাজায়",
+        "যে কম্পিউটার বন্ধ করে দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Gateway একটা background process। সে অনেক platform থেকে বার্তা এনে agent-কে দেয় আর উত্তর যথাস্থানে পৌঁছায়।"
+    },
+    {
+      "question": "ডিফল্টে allowlist-এ নেই আর pairing-ও করেনি, এমন অচেনা কেউ বার্তা পাঠালে কী হয়?",
+      "options": [
+        "Hermes সব কথা শোনে",
+        "তাকে ফিরিয়ে দেওয়া হয়",
+        "তাকে admin করে দেওয়া হয়",
+        "Hermes বন্ধ হয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ডিফল্ট নিয়ম কড়া: অনুমতি-না-পাওয়া সবাইকে প্রত্যাখ্যান করা হয়।"
+    },
+    {
+      "question": "`display.busy_input_mode: queue` থাকলে Hermes ব্যস্ত থাকার সময় নতুন বার্তা এলে কী করে?",
+      "options": [
+        "চলতি কাজ থামিয়ে ফেলে",
+        "নতুন বার্তাকে পরের turn হিসেবে লাইনে রাখে",
+        "বার্তা মুছে ফেলে",
+        "গেটওয়ে বন্ধ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "`queue` মানে লাইনে দাঁড়ানো। `interrupt` থামিয়ে নতুনটা ধরে, `steer` পরের tool call-এর পর ঢুকিয়ে দেয়।"
+    },
+    {
+      "question": "`hermes pairing approve telegram AB12CD` কী করে?",
+      "options": [
+        "Telegram মুছে দেয়",
+        "অচেনা user-এর পাঠানো code দেখে তাকে অনুমতি দেয়",
+        "bot-এর token বদলায়",
+        "সব user-কে admin বানায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "DM pairing-এ অচেনা user একটা এককালীন code পায়। তুমি `approve` দিয়ে তাকে অনুমতি দাও।"
+    },
+    {
+      "question": "কোনো জায়গায় `allow_admin_from` ফাঁকা থাকলে কী ঘটে?",
+      "options": [
+        "কেউ কোনো command চালাতে পারে না",
+        "শুধু একজন চালাতে পারে",
+        "ভাগাভাগি বন্ধ, তাই সবাই পূর্ণ অধিকার পায়",
+        "শুধু /help চলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "এটাই বিপজ্জনক ফাঁদ। admin না ঠিক করলে সবাই সব slash command চালাতে পারে।"
+    },
+    {
+      "question": "উত্তর যদি শুধু `[SILENT]` হয় তাহলে কী হয়?",
+      "options": [
+        "chat-এ `[SILENT]` লেখাটাই যায়",
+        "chat-এ কিছু পাঠানো হয় না, কিন্তু turn-এর রেকর্ডে থাকে",
+        "Hermes crash করে",
+        "user ban হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ইচ্ছাকৃত নীরবতা: delivery চাপা পড়ে, কিন্তু transcript-এ turn-টা থাকে।"
+    },
+    {
+      "question": "Delivery ledger কেন আছে?",
+      "options": [
+        "বিজ্ঞাপন দেখাতে",
+        "crash হলে চূড়ান্ত উত্তর আবার পাঠাতে যাতে উত্তর হারিয়ে না যায়",
+        "chat-এর রং ঠিক করতে",
+        "password জমা রাখতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাঠানোর আগে-পরে লিখে রাখা হয়, তাই crash-এর পর পুনরায় পাঠানো যায়। মাঝপথে ভাঙলে 'Recovered reply' লেখা থাকে।"
+    },
+    {
+      "question": "`hermes gateway` (শুধু এই লাইন) আর `hermes gateway install`-এর পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "প্রথমটা সামনের জানালায় চলে, দ্বিতীয়টা service বানিয়ে কম্পিউটার নিজে চালু রাখে",
+        "প্রথমটা মুছে দেয়, দ্বিতীয়টা বানায়",
+        "প্রথমটা শুধু Windows-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "foreground মানে টার্মিনালে সামনেই চলে, জানালা বন্ধে থামে। install মানে service, যা পেছনে নিজেই চালু থাকে।"
+    }
+  ],
+  "recap": [
+    "Messaging Gateway হলো পিওন: একটা background process যে অনেক chat app-কে একই agent-এর সাথে জোড়ে।",
+    "ডিফল্টে অচেনা কেউ ঢুকতে পারে না। allowlist বা DM pairing দিয়ে অনুমতি দিতে হয়।",
+    "`hermes gateway setup` সহজ পথ, `install` দিয়ে service বানালে নিজে নিজে চালু থাকে।",
+    "`busy_input_mode`, `tool_progress`, `/bg` দিয়ে ঠিক করা যায় কাজের মাঝে কী হবে।",
+    "`allow_admin_from` না দিলে সবাই admin হয়ে যায়, তাই সেট করো।"
+  ]
+}

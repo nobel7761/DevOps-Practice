@@ -1,0 +1,179 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-email",
+  "title": "Email",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/email",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে নিজস্ব email ঠিকানা দিয়ে চিঠির উত্তর দেওয়াতে এবং IMAP, SMTP, app password আর জাল sender ঠেকানোর শব্দগুলো বুঝতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: চিঠির বাক্স\n\nধরো Hermes-এর নিজস্ব একটা **চিঠির বাক্স** আছে (এটাই email address)। প্রতি ১৫ সেকেন্ডে সে বাক্স খুলে দেখে নতুন চিঠি এসেছে কি না। যে চিঠি **অনুমোদিত লোকের** কাছ থেকে এসেছে সেটা সে পড়ে, কাজ করে, আর একই সুতোয় (thread) উত্তর লিখে পাঠায়।\n\nকিন্তু ডাকে জাল চিঠিও আসে! কেউ \"আমি তোমার বস\" বলে ভুয়া ঠিকানা থেকে চিঠি পাঠাতে পারে। তাই Hermes **ডাকঘরের সিল** দেখে নেয়। এই সিলের নাম `Authentication-Results` header। সিল না মিললে চিঠি ফেলে দেয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### IMAP ও SMTP\nEmail-এর দুটো আলাদা পথ। **IMAP** হলো চিঠির বাক্স থেকে চিঠি **আনার** পথ (ডাকপিয়নের কাছ থেকে চিঠি নেওয়া)। **SMTP** হলো চিঠি **পাঠানোর** পথ (ডাকবাক্সে চিঠি ফেলা)। তাই Hermes-কে দুটোরই ঠিকানা (host) জানাতে হয়।\n\n### Host ও Port\n**Host** হলো কোন কম্পিউটার (যেমন `imap.gmail.com`)। **Port** হলো সেই কম্পিউটারের কোন দরজা-নম্বর। যেমন বাড়ির ঠিকানা আর ফ্ল্যাট নম্বর।\n\n### Poll (পোল)\nবারবার গিয়ে জিজ্ঞেস করা \"নতুন কিছু আছে?\" Hermes প্রতি ১৫ সেকেন্ডে inbox-কে poll করে।\n\n### App password\nGmail-এর মতো সেবায় 2FA (দুই-ধাপ নিরাপত্তা) চালু থাকলে সাধারণ পাসওয়ার্ড কাজ করে না। তখন শুধু একটা প্রোগ্রামের জন্য আলাদা একটা পাসওয়ার্ড বানাতে হয়, নাম **App password**। এতে তোমার আসল পাসওয়ার্ড ঝুঁকিতে পড়ে না।\n\n### Header\nপ্রতিটা email-এর ওপরে লুকানো কিছু তথ্য থাকে: কে পাঠাল, কোন পথে এল। এই তথ্যের নাম header। খামের ওপরের ডাকঘরের সিল।\n\n### SPF, DKIM, DMARC\nএগুলো জাল চিঠি ধরার তিনটা পরীক্ষা। সহজ কথায়: \"এই ঠিকানা থেকে চিঠি পাঠানোর অধিকার এই সার্ভারের আছে কি না।\" ডাকঘর পরীক্ষা করে সিল বসায়।\n\n### TLS / STARTTLS\nচিঠি পথে যাওয়ার সময় সবার সামনে খোলা থাকলে চুরি যেতে পারে। TLS হলো চিঠিকে তালাবদ্ধ খামে ভরার ব্যবস্থা। **STARTTLS** মানে সংযোগ শুরু করে তারপর তালা লাগানো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes IMAP-এ inbox পোল করে, যাচাই শেষে agent চালায়, SMTP-তে উত্তর পাঠায়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "Sender",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "m",
+            "kind": "external",
+            "label": "Mail server",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "g",
+            "kind": "gateway",
+            "label": "Email adapter",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Agent",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "m",
+            "label": "চিঠি"
+          },
+          {
+            "from": "g",
+            "to": "m",
+            "label": "IMAP poll"
+          },
+          {
+            "from": "g",
+            "to": "a",
+            "label": "যাচাই পাস"
+          },
+          {
+            "from": "g",
+            "to": "m",
+            "label": "SMTP reply"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## মূল ধারণা\n\nEmail gateway adapter Python-এর বিল্ট-ইন `imaplib`, `smtplib`, `email` ব্যবহার করে। কোনো বাড়তি package বা service লাগে না। Gmail, Outlook, Yahoo, Fastmail বা যেকোনো IMAP/SMTP provider চলে।\n\n> এটা bundled **Himalaya email skill** থেকে আলাদা। **Skill** মানে Hermes-কে শেখানো একটা পদ্ধতি। Himalaya skill-এ agent নিজে terminal থেকে mail ম্যানেজ করে (`himalaya` CLI ও `~/.config/himalaya/config.toml` লাগে)। আর gateway adapter-এ **মানুষ** agent-কে চিঠি পাঠায়। দিক উল্টো।\n\n### আগে যা লাগবে\n\n- agent-এর জন্য **আলাদা email account** (ব্যক্তিগত নয়)\n- IMAP চালু থাকা। 2FA থাকলে **app password**\n\n### Provider টিপস\n\n- **Gmail:** 2FA চালু করো, তারপর App Password (১৬ অক্ষর) বানাও। IMAP চালু: Settings → Forwarding and POP/IMAP।\n- **Outlook/Microsoft 365:** IMAP `outlook.office365.com`, SMTP `smtp.office365.com`।\n- **অন্যরা:** সাধারণত IMAP port 993 (SSL), SMTP port 587 (STARTTLS)।\n- **Proton Mail Bridge বা local relay:** loopback (নিজের কম্পিউটারের ভেতরেই), STARTTLS ও self-signed cert (নিজে বানানো সনদ)। এগুলো default-এ ব্যর্থ হয়। তাই `platforms.email.extra`-এ লেখো: `imap_host: 127.0.0.1`, `imap_security: starttls` (`tls` default | `starttls` | `plain`), `imap_tls_verify: false`, `smtp_host`, `smtp_security`, `smtp_tls_verify: false`। আর `.env`-এ `EMAIL_IMAP_PORT=1143`, `EMAIL_SMTP_PORT=1025`। TLS verify বন্ধ করো **শুধু** loopback host-এ।\n\n## Setup\n\nসবচেয়ে সহজ: `hermes gateway setup` → **Email**। হাতে করলে `~/.hermes/.env`:\n\n| Variable | আবশ্যক? | Default | কাজ |\n|---|---|---|---|\n| `EMAIL_ADDRESS` | হ্যাঁ | — | agent-এর ঠিকানা |\n| `EMAIL_PASSWORD` | হ্যাঁ | — | password বা app password |\n| `EMAIL_IMAP_HOST` | হ্যাঁ | — | যেমন `imap.gmail.com` (চিঠি আনার ঠিকানা) |\n| `EMAIL_SMTP_HOST` | হ্যাঁ | — | যেমন `smtp.gmail.com` (চিঠি পাঠানোর ঠিকানা) |\n| `EMAIL_IMAP_PORT` | না | `993` | IMAP-এর দরজা-নম্বর |\n| `EMAIL_SMTP_PORT` | না | `587` | SMTP-র দরজা-নম্বর |\n| `EMAIL_POLL_INTERVAL` | না | `15` | কত সেকেন্ডে inbox দেখবে |\n| `EMAIL_ALLOWED_USERS` | সুপারিশকৃত | — | কমা-দিয়ে অনুমোদিত sender |\n| `EMAIL_AUTHSERV_ID` | হ্যাঁ (sender-auth চালু থাকলে) | — | `Authentication-Results`-এর authserv-id (সিল-দেওয়া ডাকঘরের নাম) |\n| `EMAIL_HOME_ADDRESS` | না | — | cron-এর default গন্তব্য |\n| `EMAIL_ALLOW_ALL_USERS` | না | `false` | সবাইকে অনুমতি (প্রস্তাবিত নয়) |\n\nচালাও:\n\n```bash\nhermes gateway                           # foreground (সামনের জানালায়)\nhermes gateway install                   # user service (নিজে চালু থাকে)\nsudo hermes gateway install --system     # Linux boot-time\n```\n\nচালু হওয়ার সময় adapter IMAP ও SMTP দুটোই পরীক্ষা করে। inbox-এর পুরোনো চিঠিকে \"seen\" (দেখা হয়েছে) ধরে নেয়, যাতে শুধু নতুনগুলো প্রক্রিয়া হয়। তারপর poll শুরু করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চিঠি আসা ও যাওয়া\n\n**আসা:** `UNSEEN` (এখনো না-পড়া) চিঠি poll হয়। বিষয় context হিসেবে `[Subject: ...]` আকারে যোগ হয় (`Re:` দিয়ে শুরু হলে নয়)। ছবি (JPEG/PNG/GIF/WebP) vision tool-এ যায় (ছবি দেখে বোঝার ক্ষমতা)। PDF/ZIP ইত্যাদি ফাইল যাতে agent পড়তে পারে সেজন্য cache-এ জমা হয়। শুধু-HTML চিঠির tag ছেঁটে সাধারণ লেখা হয়। নিজের পাঠানো চিঠি আর automated sender (`noreply@`, `mailer-daemon@`, `bounce@`, `Auto-Submitted`, `Precedence: bulk`, `List-Unsubscribe`) নিঃশব্দে বাদ যায়। কেন? নইলে দুটো স্বয়ংক্রিয় প্রোগ্রাম একে অপরকে অনন্তকাল চিঠি দিত। সব attachment এড়াতে `platforms.email.skip_attachments: true`।\n\n**যাওয়া:** SMTP-তে `In-Reply-To` ও `References` header দিয়ে thread ঠিক রাখে, যেন উত্তর একই কথোপকথনে বসে। subject-এ একটাই `Re:`। উত্তর UTF-8 সাধারণ লেখা। ফাইল জুড়তে উত্তরে `MEDIA:/path/to/file` লেখো।\n\n## Access control (chat-এর চেয়ে কড়া)\n\nএই ক্রমে নিয়ম খাটে:\n\n1. `EMAIL_ALLOWED_USERS` থাকলে শুধু তালিকার sender (আর `GATEWAY_ALLOWED_USERS` বা pairing)।\n2. তালিকা না থাকলে অচেনা sender চুপচাপ উপেক্ষিত।\n3. `EMAIL_ALLOW_ALL_USERS=true` দিলে যে কেউ পারে (সতর্ক!)।\n4. `unauthorized_dm_behavior: pair` দিলে pairing code পাঠায়।\n5. `unauthorized_dm_behavior: decline` দিলে একবার ভদ্র প্রত্যাখ্যান, তারপর ২৪ ঘণ্টা চুপ।\n\nতালিকার entry পুরো ঠিকানা মেলে। শুধু `alice` কখনো `alice@যেকোনো-domain`-এর সাথে মেলে না।\n\n**কেন chat-এর চেয়ে কড়া?** Email-এ \"From:\" ঠিকানা সহজেই জাল করা যায়, কিন্তু Telegram-এ user ID জাল করা কঠিন। তাই এখানে সিল দেখা জরুরি।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Sender authentication ও authserv-id",
+      "markdown": "Hermes কেবল তখনই চিঠি মানে যখন receiving server-এর `Authentication-Results` header `From:` domain-কে প্রমাণ করে (DMARC বা aligned SPF/DKIM)। এজন্য `EMAIL_AUTHSERV_ID` দিতে হয়। মান হবে **সবচেয়ে ওপরের** header-এর প্রথম `;`-এর আগের টোকেন (Gmail-এ যেমন `mx.google.com`)। না দিলে প্রমাণ-লাগা সব চিঠি drop হয় আর log-এ \"authserv-id is not configured\" আসে। যদি সার্ভার header না বসায়, `platforms.email.require_authenticated_sender: false` বা `EMAIL_TRUST_FROM_HEADER=true` দিয়ে opt-out করা যায়। তখন `From:` যেমন আছে তেমন বিশ্বাস করা হয়, এটা ঝুঁকির।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সমস্যা হলে\n\n| সমস্যা | করণীয় |\n|---|---|\n| \"IMAP connection failed\" | host/port ঠিক? IMAP চালু? |\n| \"SMTP connection failed\" | SMTP host/port, password (Gmail-এ App Password) |\n| চিঠি পায় না | sender allowlist-এ আছে? \"authserv-id is not configured\" লেখা আছে? spam ফোল্ডার দেখো |\n| Authentication failed | Gmail-এ App Password আর 2FA |\n| দ্বিগুণ উত্তর | একটাই gateway চালাও। `hermes gateway status` দিয়ে দেখো |\n| ধীর | `EMAIL_POLL_INTERVAL=5` দাও (তবে IMAP সংযোগ বেশি খরচ হয়) |\n| thread হয় না | কিছু web client automated বার্তা thread করে না |\n\n**নিরাপত্তা checklist:** আলাদা account আর App Password। `EMAIL_ALLOWED_USERS`। `EMAIL_AUTHSERV_ID` দাও আর MTA (মেইল-সার্ভার প্রোগ্রাম) জাল stamp ছাঁটে কি না যাচাই করো। `~/.hermes/.env`-এ `chmod 600` (শুধু তুমি পড়তে পারবে)। ডিফল্টে সংযোগ এনক্রিপ্টেড (IMAP SSL ৯৯৩, SMTP STARTTLS ৫৮৭)।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes নতুন চিঠি কীভাবে পায়?",
+      "options": [
+        "সার্ভার ধাক্কা দিয়ে পাঠায়",
+        "প্রতি `EMAIL_POLL_INTERVAL` (default ১৫) সেকেন্ডে IMAP দিয়ে inbox দেখে (poll)",
+        "শুধু ফোনে SMS-এ",
+        "কখনো পায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "poll মানে বারবার গিয়ে জিজ্ঞেস করা। default ১৫ সেকেন্ড।"
+    },
+    {
+      "question": "IMAP আর SMTP-র পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "IMAP চিঠি আনার পথ, SMTP চিঠি পাঠানোর পথ",
+        "IMAP পাঠায়, SMTP আনে",
+        "দুটোই শুধু Gmail-এর"
+      ],
+      "answerIndex": 1,
+      "explanation": "IMAP দিয়ে inbox থেকে চিঠি আনে, SMTP দিয়ে উত্তর পাঠায়।"
+    },
+    {
+      "question": "Gmail-এ 2FA চালু থাকলে `EMAIL_PASSWORD`-এ কী দিতে হয়?",
+      "options": [
+        "সাধারণ পাসওয়ার্ড",
+        "১৬ অক্ষরের App Password",
+        "কিছুই না",
+        "ফোন নম্বর"
+      ],
+      "answerIndex": 1,
+      "explanation": "2FA থাকলে শুধু প্রোগ্রামের জন্য বানানো App Password লাগে।"
+    },
+    {
+      "question": "`EMAIL_AUTHSERV_ID` না দিলে (আর sender-auth চালু থাকলে) কী ঘটে?",
+      "options": [
+        "সব চিঠি পাস হয়",
+        "প্রমাণ-লাগা সব চিঠি drop হয়, log-এ \"authserv-id is not configured\" আসে",
+        "শুধু spam আসে",
+        "Hermes crash করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "ডাকঘরের সিল কে দিয়েছে তা না জানলে Hermes সিল বিশ্বাস করতে পারে না।"
+    },
+    {
+      "question": "অনুমোদিত তালিকায় শুধু `alice` লিখলে কী হয়?",
+      "options": [
+        "`alice@যেকোনো-domain`-এর সাথে মেলে",
+        "মেলে না, পুরো ঠিকানা লাগে",
+        "সবাইকে মেলে",
+        "সবাইকে ban করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "তালিকার entry পুরো ঠিকানা মেলে। শুধু নাম দিয়ে মেলানো হয় না।"
+    },
+    {
+      "question": "Hermes কেন `noreply@` বা `mailer-daemon@` থেকে আসা চিঠি বাদ দেয়?",
+      "options": [
+        "সেগুলো খুব বড়",
+        "দুটো স্বয়ংক্রিয় প্রোগ্রামের মধ্যে অনন্ত চিঠির লুপ ঠেকাতে",
+        "সেগুলো সুন্দর না",
+        "সেগুলো ভাইরাস"
+      ],
+      "answerIndex": 1,
+      "explanation": "automated sender-কে নিঃশব্দে বাদ দেওয়া হয় যাতে লুপ না হয়।"
+    },
+    {
+      "question": "একই চিঠির দ্বিগুণ উত্তর আসছে। প্রথম কী দেখবে?",
+      "options": [
+        "`hermes gateway status` দিয়ে একটাই gateway চলছে কি না",
+        "কম্পিউটার রং",
+        "IMAP port বদলাও",
+        "Hermes মুছে ফেলো"
+      ],
+      "answerIndex": 0,
+      "explanation": "দুটো gateway একই inbox দেখলে দুইবার উত্তর যায়।"
+    }
+  ],
+  "recap": [
+    "Email gateway IMAP-এ inbox poll করে আর SMTP-তে উত্তর পাঠায়।",
+    "আলাদা email account আর App Password ব্যবহার করো।",
+    "`EMAIL_ALLOWED_USERS` দিয়ে কারা চিঠি পাঠাতে পারবে ঠিক করো।",
+    "`EMAIL_AUTHSERV_ID` দিয়ে জাল sender ঠেকাতে ডাকঘরের সিল মেলানো হয়।",
+    "Himalaya skill আলাদা জিনিস: সেটায় agent নিজে mail চালায়।"
+  ]
+}

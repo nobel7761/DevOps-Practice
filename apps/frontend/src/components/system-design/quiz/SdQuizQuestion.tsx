@@ -7,6 +7,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@/components/shared/shadcn";
+import InlineCode from "@/components/shared/InlineCode";
 import LessonDiagramSlot from "@/components/system-design/lesson/LessonDiagramSlot";
 import { DIFFICULTY_LABELS, type SdServedQuestion } from "./sd-quiz.types";
 
@@ -26,7 +27,7 @@ export function SdQuizQuestion({
     <li className="flex flex-col gap-3 rounded-xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
         <p id={`${id}-q`} className="text-sm font-medium">
-          {number}. {question.question}
+          {number}. <InlineCode text={question.question} />
         </p>
         <Badge variant="outline" className="shrink-0">
           {DIFFICULTY_LABELS[question.difficulty]}
@@ -58,7 +59,9 @@ export function SdQuizQuestion({
               value={String(index)}
               className="mt-0.5"
             />
-            <span className="leading-relaxed">{option}</span>
+            <span className="leading-relaxed">
+              <InlineCode text={option} />
+            </span>
           </Label>
         ))}
       </RadioGroup>

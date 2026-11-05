@@ -1,0 +1,289 @@
+{
+  "contentId": "hermes-doc-user-guide-features-hooks",
+  "title": "Hooks",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর নানা ঘটনায় নিজের কোড কীভাবে চালানো যায়, আর hook, event, handler, sandbox-এর মানে কী।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বাড়ির দরজার ঘণ্টা\n\nতোমার বাড়ির দরজায় একটা ঘণ্টা আছে। কেউ এলে ঘণ্টা বাজে, আর তুমি ঠিক করে রেখেছ: \"ঘণ্টা বাজলে আগে জানালা দিয়ে দেখো কে এল।\" রান্নাঘরে টাইমার আছে: \"বাজলে চুলা বন্ধ করো।\" কেউ ঘরে ঢোকার **আগে** একজন দারোয়ান থামাতে পারে (\"না, ঢোকা যাবে না\"), আবার কেউ বেরোনোর **পরে** শুধু একজন খাতায় লিখে রাখে।\n\nHermes-এর **Hooks** এই \"ঘটনা ঘটলে এই কাজটা চলুক\" ব্যবস্থা। Agent-এর জীবনের নানা মুহূর্তে (gateway চালু, কথোপকথন শুরু, tool চালানোর আগে-পরে...) তোমার নিজের কোড চালানো যায়, **Hermes-এর মূল কোড না ছুঁয়ে**।\n\n**এটা না থাকলে কী সমস্যা হতো?** নিজের মতো কিছু করাতে চাইলে (যেমন \"কাজ বেশি লম্বা হলে আমাকে মেসেজ করো\") Hermes-এর আসল কোড খুলে বদলাতে হতো। আপডেট এলে সব মুছে যেত। Hook থাকলে তোমার কোড আলাদা থাকে।\n\n> মনে রেখো, hook-এর কোডে ভুল হলে agent crash করে না; error আলাদা করে log হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Hook (হুক)\n\"আঙটা\", যেখানে তুমি নিজের কাজ ঝুলিয়ে দিতে পারো। Hermes যখন একটা নির্দিষ্ট মুহূর্তে পৌঁছায়, তখন ঝোলানো কাজটা চলে। উপমা: দরজার ঘণ্টা।\n\n### ২) Event (ঘটনা)\nযে মুহূর্তে hook চলে, তার নাম। যেমন `gateway:startup` (\"gateway চালু হলো\")।\n\n### ৩) Gateway\nHermes-এর যে অংশ সারাক্ষণ চালু থেকে Telegram-এর মতো chat app আর Hermes-এর মধ্যে ডাকপিয়নের কাজ করে।\n\n### ৪) Handler\nঘটনা ঘটলে যে ফাংশন (ছোট কাজের টুকরো) চলে। উপমা: ঘণ্টা বাজলে যে মানুষ দরজা দেখতে যায়।\n\n### ৫) Plugin\nHermes-এ বাড়তি ক্ষমতা যোগ করা ছোট প্যাক।\n\n### ৬) Sandbox\nবন্ধ খেলার ঘর, যার ভেতরে কিছু ভুল করলেও বাইরের ক্ষতি হয় না। **Gateway hook-এ এই ঘর নেই**, তাই সাবধান।\n\n### ৭) Log\nঘটনার লিখিত খাতা। কিছু ভুল হলে এখানে লেখা থাকে।\n\n### ৮) YAML / Config\n**Config** হলো সেটিং। **YAML** তার লেখার ধরন (`নাম: মান`)।\n\n### ৯) Webhook\nঅন্য কোনো সেবাকে ইন্টারনেটে খবর পাঠানো (\"দরজায় টোকা\")। **HTTP** হলো ইন্টারনেটে খবর আদান-প্রদানের নিয়ম।\n\n### ১০) Directive / Transform / Observer\n**Directive** hook নিয়ন্ত্রণ বদলাতে পারে (যেমন কিছু আটকানো)। **Transform** hook জিনিসের ভেতরটা বদলে দেয়। **Observer** hook শুধু দেখে, কিছু বদলাতে পারে না। উপমা: দারোয়ান (আটকায়), দর্জি (বদলায়), দর্শক (দেখে)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চার রকম hook ব্যবস্থা\n\n| ধরন | কী | কোথায় চলে | কখন লাগে |\n|---|---|---|---|\n| **Gateway hooks** | `HOOK.yaml` + `handler.py` ডিরেক্টরি | শুধু messaging gateway | chat app-এর ঘটনায় (যেমন নতুন session) সাড়া দিতে |\n| **Plugin hooks** | plugin-এর `register(ctx)`-এ `ctx.register_hook(...)` | CLI ও gateway দুটোতেই | সব জায়গায় চলা কাজে, যেমন tool-এর আগে-পরে |\n| **Shell hooks** | shell command | `pre_tool_call` ইত্যাদি, tool block করতেও পারে | শুধু একটা কমান্ড চালিয়ে কাজ সারতে |\n| **Outbound webhooks** | বাইরে HTTP পাঠানো | - | অন্য সেবাকে খবর দিতে |\n\n(**CLI** মানে terminal-এ লিখে চালানো Hermes।) কিছু hook flow বদলাতে পারে: **directive** hook নিয়ন্ত্রণ বদলায় (যেমন tool block), **transform** hook কনটেন্ট বদলে দেয়, **observer** hook শুধু দেখে (return মূল্য উপেক্ষিত)।\n\n## Gateway hooks\n\n**বিশ্বাস-নিয়ম:** hooks ডিরেক্টরিতে ফাইল রাখাটাই opt-in (তুমি নিজে রাখলেই চালু হয়); `plugins.enabled`/`plugins.disabled` এখানে খাটে না।\n\n**লোড:** gateway চালুর সময় একবার (`HookRegistry.discover_and_load()`)। অর্থাৎ নতুন hook যোগ করলে gateway restart লাগে। CLI, TUI, Desktop ও cron কখনো gateway hook লোড করে না।\n\n**গঠন:** `<profile home>/hooks/<নাম>/`-এ দুটো ফাইল, **দুটোই** লাগে:\n\n```text\n~/.hermes/hooks/my-hook/\n  HOOK.yaml     # name আর non-empty events তালিকা\n  handler.py    # handle(event_type, context) function\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `~/.hermes/hooks/` | সব hook-এর বাড়ি ফোল্ডার (`~` মানে তোমার হোম ফোল্ডার) | ঘণ্টাগুলোর তাকের ঘর |\n| `my-hook/` | তোমার hook-এর নিজস্ব ফোল্ডার | একটা নির্দিষ্ট ঘণ্টা |\n| `HOOK.yaml` | নাম আর কোন ঘটনায় চলবে তার তালিকা | ঘণ্টার গায়ে লেবেল |\n| `handler.py` | ঘটনায় যে Python কোড চলবে | ঘণ্টা বাজলে যা করবে |\n\n`handler.py` in-process চলে (Hermes-এর ভেতরেই, আলাদা বাক্সে নয়), **gateway-এর পূর্ণ অধিকার সহ, কোনো sandbox নেই**, আর `HERMES_SAFE_MODE` এটা এড়ায় না। Function-এর নাম অবশ্যই `handle`; `event_type` ও `context` নেয়; `async` বা সাধারণ দুই-ই চলে।\n\n### ঘটনার তালিকা\n\n| ঘটনা | কখন | মূল context field |\n|---|---|---|\n| `gateway:startup` | gateway চালু | `platforms` |\n| `session:start` | নতুন session | `platform`, `user_id`, `session_id`, `session_key` |\n| `session:end` | reset-এর আগে | `platform`, `user_id`, `session_key` |\n| `session:reset` | `/new` বা `/reset` | `platform`, `user_id`, `session_key` |\n| `session:compress` | compression শেষ | `session_id`, `old_session_id`, `compression_count` |\n| `agent:start` | কাজ শুরু | `platform`, `user_id`, `chat_id`, `message` (৫০০ অক্ষর) |\n| `agent:step` | tool loop-এর প্রতি ধাপ | `iteration`, `tool_names` |\n| `agent:end` | কাজ শেষ | `agent:start`-এর মতো + `response` (৫০০ অক্ষর) |\n| `command:*` | যেকোনো slash command | `command`, `args` |\n\n(**Session** হলো একটা কথোপকথনের খাতা; **compression** মানে লম্বা কথা ছোট করে সারাংশ বানানো; **context** এখানে মানে ঘটনার সাথে আসা তথ্যের ঝুলি; **slash command** হলো `/` দিয়ে শুরু ছোট হুকুম।) Wildcard চলে: `command:*` সব `command:` ঘটনা ধরে। (Wildcard মানে `*` চিহ্ন, যা \"যেকোনো কিছু\" বোঝায়।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### উদাহরণ: লম্বা কাজের সতর্কতা\n\n`long-task-alert` hook `agent:step` শোনে। `THRESHOLD = 10` ধাপ ছাড়ালে `httpx` দিয়ে (ইন্টারনেটে খবর পাঠানোর Python লাইব্রেরি) Telegram-এ message পাঠায় (`TELEGRAM_BOT_TOKEN` ও `TELEGRAM_HOME_CHANNEL` দিয়ে; token হলো Telegram-এর দেওয়া গোপন চাবি, আর home channel হলো তোমার ডিফল্ট chat)। সোজা কথায়: Hermes একটা কাজে ১০ ধাপের বেশি চললে তোমার ফোনে খবর আসে, \"এখনো চলছে।\"\n\nআরও দুটো উদাহরণ: `command-logger` (`command:*` শুনে `~/.hermes/logs/command_usage.jsonl`-এ JSON লাইন লেখে) ও `session-webhook` (`session:start`/`session:reset`-এ ৫ সেকেন্ড timeout-এ POST; **POST** মানে ইন্টারনেটে কোথাও তথ্য পাঠানো, **timeout** মানে \"এতক্ষণে উত্তর না এলে হাল ছাড়ো\")।\n\n### BOOT.md: প্রতি gateway চালুতে একটা checklist\n\nHermes এটা built-in দেয় না; তুমি নিজে বানাতে পারো। যেমন সকালে ঘুম থেকে উঠে রোজ একই কাজের তালিকা দেখা। `~/.hermes/hooks/boot-md/` ডিরেক্টরিতে:\n\n```yaml\n# HOOK.yaml\nname: boot-md\nevents: [gateway:startup]\n```\n\n`handler.py` একটা background daemon thread শুরু করে (যাতে gateway চালু আটকে না যায়; **thread** মানে একই প্রোগ্রামের ভেতরের আলাদা সুতো যা পাশাপাশি চলে), সেই thread `~/.hermes/BOOT.md` পড়ে একটা `AIAgent` চালায় (`quiet_mode=True`, `skip_context_files=True`, `skip_memory=True`, `max_iterations=20`)। উত্তর `[SILENT]`, `SILENT`, `NO_REPLY` বা `NO REPLY` হলে কিছু পাঠানো হয় না।\n\nপরীক্ষা:\n\n```bash\nhermes gateway restart\nhermes logs --follow --level INFO | grep boot-md\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes gateway restart` | gateway বন্ধ করে আবার চালু করো (নতুন hook লোড হবে) |\n| `hermes logs --follow --level INFO` | log লাইভ দেখো, শুধু INFO স্তর ও ওপরের |\n| `\\| grep boot-md` | শুধু যে লাইনে `boot-md` আছে সেগুলো ছেঁকে দেখাও |\n\n`BOOT.md` মুছে দিলে hook আনলোড না করেই checklist বন্ধ হয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা gateway hook-এর জীবন।",
+        "steps": [
+          {
+            "title": "ফাইল রাখো",
+            "body": "`~/.hermes/hooks/<name>/`-এ `HOOK.yaml` (events সহ) আর `handler.py`।"
+          },
+          {
+            "title": "Gateway চালু",
+            "body": "`discover_and_load()` চলে ও hook নিবন্ধিত হয়।"
+          },
+          {
+            "title": "ঘটনা ঘটে",
+            "body": "যেমন `agent:step`। Hermes event_type ও context দিয়ে `handle` ডাকে।"
+          },
+          {
+            "title": "তোমার কোড চলে",
+            "body": "Error হলে ধরা ও log হয়; agent চলতে থাকে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "hook-events"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Plugin hooks\n\nPlugin-এর `register(ctx)`-এ `ctx.register_hook(...)` দিয়ে নিবন্ধন (registration, মানে \"আমার নাম তালিকায় লেখো\"); CLI ও gateway দুটোতেই চলে। Callback (ঘটনা ঘটলে যে ফাংশন ডাকা হয়) keyword argument নেয়, তাই `**kwargs` রাখো, যাতে ভবিষ্যতে নতুন তথ্য এলেও তোমার কোড না ভাঙে। Exception log হয়ে উপেক্ষিত; বারবার একই ব্যর্থতা একবার WARNING, তারপর DEBUG।\n\n**Timeout:** `plugins.hook_callback_timeout` default ৩০ সেকেন্ড (০ = বন্ধ, সর্বোচ্চ ৬০০)। `pre_tool_call` timeout হলে **fail closed** (tool আটকায়: \"সন্দেহ হলে ঢুকতে দিয়ো না\"); অন্য সীমাবদ্ধ hook **fail open** (চলতে দেয়)।\n\n### Hook তালিকা (পেজে যা দেখা গেছে)\n\n| Hook | ধরন | কাজ |\n|---|---|---|\n| `pre_tool_call` | directive | প্রতি tool-এর আগে; `block` > `approve`; `modify` args মেশায়; error হলে fail closed |\n| `post_tool_call` | observer | `result`, `status`, `duration_ms` পায়; return উপেক্ষিত |\n| `transform_tool_result` | transform | প্রথম string ফলকে বদলে দেয় |\n| `pre_llm_call` | directive | `context` user message-এ ঢোকে; `block` inference-এর আগে turn থামায় |\n| `post_llm_call` | observer | শুধু সফল, না-ব্যাহত turn-এ |\n| `transform_llm_output` | transform | শেষ উত্তরের লেখা বদলায় |\n| `pre_verify` | directive | কোড বদলের পর; `agent.max_verify_nudges` (default ৩) |\n| `on_session_start` / `on_session_end` | observer | প্রথম turn / **প্রতি turn-এর শেষে** (শুধু session-শেষে নয়) |\n| `on_session_finalize` | - | `/new`, quit বা gateway shutdown-এ teardown |\n| `post_compaction` | - | `kind`: `summarize`, `micro_summarize`, `prune_tool_results`, `provider_native` |\n| `subagent_start` / `subagent_stop` | - | প্রতি child-এ একবার; `child_status`, `duration_ms` |\n| `pre_gateway_dispatch` | directive | `skip`, `rewrite`, `allow` |\n| `pre_approval_request` / `post_approval_response` | observer | approval-এর `choice` (`once`, `session`, `always`, `deny`...) |\n| `kanban_task_claimed` / `kanban_task_completed` / `kanban_task_blocked` | - | Kanban lifecycle |\n\nসহজ ভাষায় কয়েকটা শব্দ: `pre_` মানে \"আগে\", `post_` মানে \"পরে\"। **Tool** হলো Hermes-এর হাতের যন্ত্র; **LLM call** হলো AI মস্তিষ্ককে প্রশ্ন পাঠানো; **inference** মানে AI-র উত্তর তৈরির কাজ; **subagent** হলো পাঠানো সহকারী; **approval** হলো মানুষের অনুমতি চাওয়া; **Kanban** হলো কাজের কার্ড-বোর্ড; **duration_ms** মানে কত মিলিসেকেন্ড লাগল।\n\nকয়েকটা উদাহরণ ভাবো: `pre_tool_call` দিয়ে `rm` (মুছে ফেলার কমান্ড) চলার আগেই আটকে দেওয়া যায়; `post_tool_call` দিয়ে প্রতিটা tool কতক্ষণ নিল তা খাতায় লেখা যায়; `transform_llm_output` দিয়ে উত্তরের শেষে নিজের সই জুড়ে দেওয়া যায়।\n\n### Cache-safe system prompt section\n\n`ctx.register_system_prompt_section(id, callable_or_string, position=\"after_memory\", max_chars=4000)`: id ১-১২৮ অক্ষর (ছোট হাতের অক্ষর, সংখ্যা, `.`, `_`, `-`); প্রতি section ৪,০০০ অক্ষর, মোট ৮,০০০, সর্বোচ্চ ৩২টা। Callable নতুন session-এ একবার চলে। প্রতি-turn গতিশীল context লাগলে `pre_llm_call` ব্যবহার করো। (**System prompt** হলো AI-কে শুরুতে দেওয়া স্থায়ী নির্দেশ-পাতা। **Cache-safe** মানে বারবার বদলায় না বলে দ্রুত ও সস্তা থাকে।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Plugin hooks: আরও কিছু যা আগে বাদ পড়েছিল\n\nগল্পে ফিরি: দরজার ঘণ্টার পাশে আরও কিছু সুইচ আছে। কেউ যখন **তোমার জন্য অপেক্ষা করছে**, বা রান্নাঘরে কাজ চলছে, সেসবের জন্যও আলাদা ঘণ্টা।\n\n### মানুষের উত্তরের অপেক্ষা (human-input hooks)\n\n- **`on_human_input_request`** (observer): Hermes যখন কোনো মানুষের জন্য থেমে যায়, তার ঠিক আগে চলে। `kind` তিন রকম: `sudo`, `clarify`, `approval`। Field: `kind`, `request_id`, `session_id`, `session_key`, `platform`, `prompt`। `prompt` সবসময় redacted (গোপন অংশ ঢাকা), আর টাইপ করা password বা উত্তর **কখনো** hook-কে দেওয়া হয় না। Callback অপেক্ষার thread-এই চলে, তাই নেটওয়ার্কের কাজ থাকলে সেটা background thread-এ পাঠাও।\n- **`on_human_input_resolved`**: প্রতিটা request-এর জন্য ঠিক **একবার**, একই `request_id` আর একটা `outcome` সহ। যেমন sudo-তে `provided`/`skipped`/`timeout`/`cancelled`/`error`; clarify-তে `submitted`/`timed_out`/`cancelled`/`undelivered`/`terminated`/`error`; approval-এ `once`/`session`/`always`/`deny`/`timeout`/`cancelled`/`notify_failed`/`transport_<failure>`।\n\n### Group Chat, Kanban ও dispatch observer\n\n- **`on_room_member_activity`**: hosted Group Chat-এর সদস্যের turn চলাকালীন প্রতিটা runtime ঘটনায় (`tool.started`, `tool.completed`, `request.opened`, `message.delta`, `turn.error` ইত্যাদি)। প্রতি callback-এর নিজস্ব সীমিত queue আছে; ভরে গেলে সবচেয়ে পুরনো ঘটনা ফেলে দেয়। কিছুই স্থায়ীভাবে জমা থাকে না, আর শুধু local সদস্যরা দেখা যায়।\n- **`kanban_task_claimed`**, **`kanban_task_completed`** (`summary`-তে প্রকল্পের কথা থাকতে পারে), **`kanban_task_blocked`** (`reason`-এ থাকতে পারে)।\n- **`on_kanban_worker_spawned`**: dispatch lock-এর **ভেতরে** চলে, তাই callback দ্রুত হতে হবে। `workspace_path` দিলে পথ বা username ফাঁস হতে পারে।\n- **`on_kanban_worker_exited`**, **`on_kanban_worker_stale_claim`**: শুধু identifier আর exit/claim-এর তথ্য।\n- **`on_kanban_task_updated`**: `changed_fields` শুধু field-এর **নাম** বলে, মান নয়।\n- **`on_kanban_dispatch_tick`**: প্রতি tick-এ, idle বা ব্যস্ত হলেও, lock ছাড়ার পরে। `result`-এ task ID, assignee, workspace path থাকতে পারে।\n\n### Streaming hooks\n\n`on_stream_start`, `on_stream_delta` (`kind` হয় `\"text\"` নয়তো reasoning), `on_stream_end` (`final_text`, `finished`, `error` যোগ হয়), `on_interim_message` (`text`, `already_streamed` যোগ হয়)। Reasoning delta ডিফল্টে বন্ধ; চালাতে `plugins: stream_reasoning_deltas: true`। Return মূল্য উপেক্ষিত, আর exception log হয় কিন্তু stream থামে না।\n\n### Tool hooks: আরেকটু গভীরে\n\n- **`pre_tool_call`** তিন রকম উত্তর দিতে পারে: `block` (খালি নয় এমন message লাগে), `approve` (মানুষের অনুমতির দরজায় পাঠায়; deny, timeout বা error হলে আটকে যায়), `modify` (args-এর সাথে shallow merge; একাধিক modify জমা হয়, বিরোধ হলে পরের hook জেতে)। অগ্রাধিকার: **block > approve > কিছু না**, register করার ক্রম যা-ই হোক (source code-এও তাই: যেকোনো hook-এর বৈধ block পরে এলেও আগের approve-কে হারায়; একাধিক approve থাকলে প্রথম বৈধটা জেতে)। `modify` আলাদা পথে চলে — approve-এর সাথে প্রতিদ্বন্দ্বিতা করে না: modify-এর মেশানো args জমা হয় আর approve থাকলে মানুষের অনুমতির পরে সেই বদলানো args-ই চলে; block হলে tool-ই চলে না, তাই modify-এর ফল কাজে আসে না।\n- Timeout বা exception হলে **fail closed**। কোনো callback আটকে গেলে ৬০ সেকেন্ড চেপে রাখা হয় (suppressed), আর প্রতি callback-এ সর্বোচ্চ তিনটা ছেড়ে-দেওয়া worker থাকতে পারে।\n- **`post_tool_call`** `duration_ms` পায়। Unhandled exception হলে এটা চলে না (তখন error JSON ফেরে)।\n- **`transform_tool_result`** ও **`transform_terminal_output`** ফল বদলায়। Terminal transform redaction-এর **আগে** চলে (background process-এর output-এও), তাই বদলানো লেখায় credential থাকলেও সেটা ঢাকা পড়বে।\n\n### LLM ও verify hooks\n\n- **`pre_llm_call`**: প্রতি turn-এ একবার। ফেরত দেওয়া `context` user message-এর শেষে যোগ হয়, system prompt-এ **কখনো নয়** (prompt cache অটুট রাখতে)। `block` দিলে inference-এর আগেই turn থামে এবং একটা withheld placeholder জমা হয়। Callback ভেঙে বা timeout হলে সেটা বাদ দিয়ে turn চলতে থাকে (fail open)।\n- **`post_llm_call`**: শুধু সফল, না-ব্যাহত turn-এ।\n- **`pre_verify`**: কোড বদলের পর। `continue` agent-কে চালু রাখে; পরপর continue-এর সীমা `agent.max_verify_nudges` (default ৩)। `attempt` দেখে এটাকে এক-বারের কাজ বানানো যায়।\n\n### আরও কিছু plugin hook (সংক্ষেপে)\n\n| Hook | কী করে |\n|---|---|\n| `transform_api_error_classification` | শুধু Python plugin; `reason` (FailoverReason-এর নাম) আর ঐচ্ছিক `retryable`, `should_fallback` দেয় |\n| `on_session_start` / `on_session_end` / `on_session_finalize` / `on_session_reset` / `on_session_delete` | `on_session_start` শুধু নতুন session-এ; `on_session_end` প্রতি turn-এ; finalize ব্যবহারকারীকে দেখানোর message ফেরাতে পারে (delivery-র সীমা আছে); `on_session_delete` commit-এর পরে, process-এর ভেতরে, exactly-once-এর গ্যারান্টি নেই |\n| `post_compaction`, `agent_loop_stopped` | compaction শেষ / agent loop থামা |\n| `subagent_start` / `subagent_stop` | start শুধু observer; stop প্রতি child-এ একবার, তাই এক turn-এ অনেকবার ঘটতে পারে |\n| `pre_gateway_dispatch` | `skip` (message ফেলে দাও), `rewrite` (লেখা বদলাও), `allow`/`None` (চলুক)। Internal ঘটনায় চলে না; async callback চলে আর timeout-এ বাঁধা নয় |\n| `post_gateway_admission` | `handled` দিলে message খেয়ে ফেলে, ঐচ্ছিক reply সহ; fail open |\n| `gateway_platform_event` | `reaction`, `message_edited`, `message_deleted`, `thread_created`, `thread_renamed` |\n| `pre_transcription` | `prompt`, `language`, `model` ফেরাতে পারে; প্রতি field-এ শেষ লেখক জেতে; `\"\"` দিলে prompt মুছে যায় |\n| `transform_llm_output` | প্রথম non-empty string জেতে। `hold_stream=True` দিলে user শুধু বদলানো চূড়ান্ত উত্তর দেখে; hook ভাঙলে আসল উত্তরের বদলে \"reply withheld\" notice দেখায় |\n| `pre_api_request`, `post_api_request`, `api_request_error` | API call-এর observer |\n| `pre_auxiliary_call`, `post_auxiliary_call` | সহায়ক call-এর observer; এগুলো turn-scoped API hook ছোঁয় না |\n| `on_skill_lifecycle` | Skill-এর ব্যবহারের অবস্থা বদলের observer |"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "তিনটা নামের ফাঁদ",
+      "markdown": "`on_session_end` প্রতি **turn**-এর শেষে চলে; `subagent_stop` এক turn-এ বহুবার; `pre_llm_call` ভাঙলে turn চলে (fail open), কিন্তু `pre_tool_call` ভাঙলে tool আটকায় (fail closed)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Shell hooks: কোড না লিখে শুধু script\n\nগল্প: Python না জানলেও চলে। তুমি একটা ছোট script লিখে বললে, \"এই ঘটনা ঘটলে এই script চালাও।\" Hermes script-কে একটা চিঠি (JSON) পাঠায়, script চাইলে জবাবি চিঠি (JSON) পাঠায়।\n\nShell hook তোমার profile-এর `config.yaml`-এর `hooks:` ব্লকে ঘোষণা করা script। CLI, gateway, Desktop, TUI, dashboard chat, সব জায়গায় চলে; প্রতিটা profile নিজের config থেকে নিজের hook নেয়। Gateway hook-এর সাথে পার্থক্য: এগুলো plugin-hook ঘটনার (`pre_tool_call` ইত্যাদি) নামে চলে এবং tool আটকাতে বা বদলাতে পারে।\n\n### Config schema\n\n```yaml\nhooks:\n  <event_name>:                  # VALID_HOOKS-এর ভেতরের নাম\n    - matcher: \"<regex>\"         # ঐচ্ছিক; শুধু pre/post_tool_call-এর জন্য\n      command: \"<shell command>\" # বাধ্যতামূলক; shlex.split দিয়ে, shell=False\n      timeout: <seconds>         # ঐচ্ছিক; default 60, সর্বোচ্চ 300\n      fail_closed: <bool>        # ঐচ্ছিক; default false; শুধু pre_tool_call\nhooks_auto_accept: false\n```\n\n| নিয়ম | মানে |\n|---|---|\n| ঘটনার নাম ভুল বানান | \"Did you mean X?\" warning, entry বাদ |\n| `command` নেই | warning, entry বাদ |\n| `timeout` 300-এর বেশি | 300-এ কেটে দেওয়া হয়, warning |\n| `pre_tool_call` ছাড়া অন্য ঘটনায় `fail_closed: true` | উপেক্ষিত, warning |\n| `failClosed` | Cursor/Claude Code-এর সাথে মিলিয়ে এটাও চলে |\n| Windows | command কোনো আসল script দিয়ে শুরু হলে (যেমন `.sh`, `.py`) সেই script-এর interpreter দিয়ে চলে |\n\n**Matcher** একটা regex, শুধু `pre_tool_call` ও `post_tool_call`-এ খাটে। যেমন `matcher: \"terminal|write_file|patch\"`।\n\n### JSON wire protocol\n\nHermes stdin-এ JSON পাঠায়:\n\n```json\n{\n  \"hook_event_name\": \"pre_tool_call\",\n  \"tool_name\":       \"terminal\",\n  \"tool_input\":      {\"command\": \"rm -rf /\"},\n  \"session_id\":      \"sess_abc123\",\n  \"cwd\":             \"/home/user/project\",\n  \"profile\":         \"default\",\n  \"extra\":           {\"task_id\": \"...\", \"tool_call_id\": \"...\"}\n}\n```\n\n- `profile` হলো যে profile ঘটনাটা ঘটিয়েছে (profile ছাড়া হলে `\"default\"`); subprocess সেই profile-এর `HERMES_HOME` নিয়েই চলে।\n- Tool-বিহীন ঘটনায় `tool_name` ও `tool_input` হলো `null`।\n- `extra`-তে ঘটনা-নির্দিষ্ট তথ্য। `extra.kanban_task_id` বোর্ডের task চেনায়; সাধারণ session, delegated child আর in-process cron-এ খালি।\n\nStdout-এ ঐচ্ছিক JSON ফেরালে:\n\n```json\n// pre_tool_call আটকাও (দুই আকারই চলে):\n{\"decision\": \"block\", \"reason\":  \"Forbidden: rm -rf\"}\n{\"action\":   \"block\", \"message\": \"Forbidden: rm -rf\"}\n\n// pre_tool_call-এর args বদলাও:\n{\"action\": \"modify\", \"args\": {\"new_string\": \"fixed content\"}}\n{\"decision\": \"modify\", \"tool_input\": {\"new_string\": \"fixed content\"}}\n\n// মানুষের অনুমতির দরজায় পাঠাও (শুধু Hermes-এ; message, rule_key ঐচ্ছিক):\n{\"action\": \"approve\", \"message\": \"Why approval is required\", \"rule_key\": \"optional:scope\"}\n\n// pre_llm_call-এ context ঢোকাও:\n{\"context\": \"Today is Friday, 2026-04-17\"}\n\n// inference-এর আগেই turn আটকাও (pre_llm_call):\n{\"action\": \"block\", \"message\": \"Blocked by policy: prompt contains a customer ID\"}\n\n// verify gate-এ agent-কে চালু রাখো (pre_verify):\n{\"action\": \"continue\", \"message\": \"Run the formatter, then finish.\"}\n```\n\nখালি বা না-মেলা output মানে চুপচাপ no-op।\n\n**মনে রাখার মতো:** Claude Code-এর `{\"decision\": \"approve\"}` মানে \"নিজে থেকে অনুমতি\", এটা Hermes-এ approve-এ map হয় **না**। Hermes-এর approve মানে মানুষের কাছে পাঠানো।\n\n### Exit code 2 = block\n\n`pre_tool_call` hook exit code `2` দিয়ে বের হলে, block JSON না থাকলেও call আটকে যায় (Claude Code/Cursor-এর সাথে মেলানো)। Message আসে এই ক্রমে: stdout-এর `reason`/`message`, তারপর stderr-এর প্রথম ৪০০ অক্ষর, তারপর `\"Blocked by shell hook.\"`। অন্য ঘটনায় exit 2 সাধারণ non-zero exit।\n\n```bash\n#!/usr/bin/env bash\necho \"policy violation: rm -rf is not permitted\" >&2\nexit 2\n```\n\n### Fail-open বনাম fail-closed\n\nডিফল্টে ভাঙা JSON, সাধারণ non-zero exit আর timeout **fail open**: warning log করে কাজ চলে। `pre_tool_call`-এ `fail_closed: true` দিলে এই অবস্থায় call আটকে যায় (`hook <command> failed closed: <reason>`): command না পাওয়া/চালানো না যাওয়া, timeout, চেনা directive ছাড়া non-zero exit, বা non-JSON stdout। পরিষ্কার `{}` হলে তবু চলে।\n\n```yaml\nhooks:\n  pre_tool_call:\n    - matcher: \"terminal|write_file|patch\"\n      command: \"~/.hermes/agent-hooks/secret-scan.sh\"\n      timeout: 10\n      fail_closed: true\n```"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা shell hook-এর জীবন: config থেকে সিদ্ধান্ত পর্যন্ত।",
+        "steps": [
+          {
+            "title": "config-এ ঘোষণা",
+            "body": "`hooks:` ব্লকে ঘটনা, `matcher`, `command`, `timeout` লেখো।"
+          },
+          {
+            "title": "Consent",
+            "body": "প্রথম ব্যবহারে `(event, command)` অনুমোদন; `shell-hooks-allowlist.json`-এ জমা।"
+          },
+          {
+            "title": "ঘটনা ঘটে",
+            "body": "Hermes subprocess চালিয়ে stdin-এ JSON পাঠায়।"
+          },
+          {
+            "title": "Script উত্তর দেয়",
+            "body": "stdout-এ `block`/`modify`/`approve`/`context`, নয়তো `{}`; অথবা exit code `2`।"
+          },
+          {
+            "title": "Hermes সিদ্ধান্ত নেয়",
+            "body": "block > approve; ভুল হলে ডিফল্টে fail open, `fail_closed: true` হলে আটকায়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "### Shell hook-এর চারটা উদাহরণ\n\n**১) লেখার পর Python ফাইল auto-format:**\n\n```yaml\nhooks:\n  post_tool_call:\n    - matcher: \"write_file|patch\"\n      command: \"~/.hermes/agent-hooks/auto-format.sh\"\n```\n\n```bash\n#!/usr/bin/env bash\n# ~/.hermes/agent-hooks/auto-format.sh\npayload=\"$(cat -)\"\npath=$(echo \"$payload\" | jq -r '.tool_input.path // empty')\n[[ \"$path\" == *.py ]] && command -v black >/dev/null && black \"$path\" 2>/dev/null\nprintf '{}\\n'\n```\n\n(agent-এর মাথায় থাকা ফাইলের ছবি নতুন হয় না; পরের `read_file` ফরম্যাট-করা ফাইল দেখে।)\n\n**২) ভয়ংকর `terminal` কমান্ড আটকানো:**\n\n```yaml\nhooks:\n  pre_tool_call:\n    - matcher: \"terminal\"\n      command: \"~/.hermes/agent-hooks/block-rm-rf.sh\"\n      timeout: 5\n```\n\n```bash\n#!/usr/bin/env bash\n# ~/.hermes/agent-hooks/block-rm-rf.sh\npayload=\"$(cat -)\"\ncmd=$(echo \"$payload\" | jq -r '.tool_input.command // empty')\nif echo \"$cmd\" | grep -qE 'rm[[:space:]]+-rf?[[:space:]]+/'; then\n  printf '{\"decision\": \"block\", \"reason\": \"blocked: rm -rf / is not permitted\"}\\n'\nelse\n  printf '{}\\n'\nfi\n```\n\n**৩) প্রতি turn-এ `git status` ঢোকানো (`pre_llm_call`):**\n\n```yaml\nhooks:\n  pre_llm_call:\n    - command: \"~/.hermes/agent-hooks/inject-cwd-context.sh\"\n```\n\n```bash\n#!/usr/bin/env bash\n# ~/.hermes/agent-hooks/inject-cwd-context.sh\ncat - >/dev/null   # discard stdin payload\nif status=$(git status --porcelain 2>/dev/null) && [[ -n \"$status\" ]]; then\n  jq --null-input --arg s \"$status\" \\\n     '{context: (\"Uncommitted changes in cwd:\\n\" + $s)}'\nelse\n  printf '{}\\n'\nfi\n```\n\n**৪) subagent শেষ হলে খাতায় লেখা:**\n\n```yaml\nhooks:\n  subagent_stop:\n    - command: \"~/.hermes/agent-hooks/log-orchestration.sh\"\n```\n\n```bash\n#!/usr/bin/env bash\n# ~/.hermes/agent-hooks/log-orchestration.sh\nlog=~/.hermes/logs/orchestration.log\njq -c '{ts: now, parent: .session_id, extra: .extra}' < /dev/stdin >> \"$log\"\nprintf '{}\\n'\n```\n\n(`jq` হলো JSON পড়া/বানানোর একটা কমান্ড-লাইন যন্ত্র; script-গুলো সেটা ধরে নিয়েছে।)\n\n### Consent model: প্রথমবার জিজ্ঞাসা\n\nযেহেতু shell hook আসলে কোড চালায়, Hermes প্রতিটা অনন্য `(event, command)` জোড়া প্রথম ব্যবহারে একবার অনুমোদন চায়; উত্তর `~/.hermes/shell-hooks-allowlist.json`-এ জমা থাকে।\n\n- শুধু foreground `hermes chat` (বা `hermes rl`) জিজ্ঞাসা করে। Gateway, cron, `hermes mcp-serve --tools`, `hermes acp` আর CI **কখনো** জিজ্ঞাসা করে না।\n- তিনটা bypass, যেকোনো একটাই যথেষ্ট: CLI-তে `--accept-hooks` (যেমন `hermes --accept-hooks chat`); `HERMES_ACCEPT_HOOKS=1`; `config.yaml`-এ `hooks_auto_accept: true`।\n- `hermes gateway run --accept-hooks` ওই gateway-র সব profile-এর hook অনুমোদন করে।\n- অনুমোদন **ঠিক command string** ধরে, script-এর hash ধরে নয়। তাই script বদলালে অনুমোদন বাতিল হয় না; `hermes hooks doctor` mtime বদল ধরে দেয়।\n- Gateway allowlist ও `hooks:`-এর বদল লোকাল session তৈরি/resume-এ, নইলে প্রায় ৩০ সেকেন্ডের মধ্যে ধরে।\n\n**হাতে allowlist লেখা** (TTY ছাড়া বা service account-এ): ফাইলে `approvals` array, প্রতিটায় `event` ও হুবহু `command`:\n\n```json\n{\n  \"approvals\": [\n    {\n      \"event\": \"post_llm_call\",\n      \"command\": \"/home/hermes/.hermes/hooks/my-hook.py\"\n    }\n  ]\n}\n```\n\nপথ-কী ধরা object বা `sha256` field কাজ করে না। `hermes hooks list` দিয়ে যাচাই করো।\n\n### `hermes hooks` CLI\n\n| কমান্ড | কাজ |\n|---|---|\n| `hermes hooks list` | hook, matcher, timeout আর consent অবস্থা দেখাও (outbound target-ও) |\n| `hermes hooks test <event> [--for-tool X] [--payload-file F]` | নকল payload দিয়ে মেলা hook চালাও ও পার্স-করা উত্তর দেখাও |\n| `hermes hooks revoke <command>` | ওই command-এর allowlist entry মোছো |\n| `hermes hooks doctor` | exec bit, allowlist, mtime drift, JSON বৈধতা আর মোটামুটি সময় পরীক্ষা |\n\n**ক্রম:** Python plugin hook আগে register হয়, তারপর shell hook; তাই একাধিক `approve`-এর মধ্যে প্রথম বৈধটা (Python-টা) জেতে। যেকোনো বৈধ block (Python বা shell) জেতে, আর block আগের `approve`-কেও হারায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Shell hook তোমার পুরো অধিকার নিয়ে চলে",
+      "markdown": "শুধু নিজের লেখা বা পরীক্ষা করা script ব্যবহার করো, `~/.hermes/agent-hooks/`-এ রাখো, shared config টেনে আনার পর `hermes hooks doctor` চালাও, আর `hooks:`-এর বদল CI config-এর মতো review করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "আগে test, পরে ভরসা",
+      "markdown": "`hermes hooks test <event> [--for-tool X] [--payload-file F]` দিয়ে নকল payload-এ hook চালিয়ে উত্তর দেখে নাও। `pre_tool_call`-এ নিরাপত্তার script হলে `fail_closed: true` ভাবো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Outbound webhooks: বাইরে খবর পাঠানো\n\nগল্প: ডাকপিয়ন নয়, তুমি নিজেই বন্ধুকে ফোন করে জানাও, \"আমার কাজ শেষ!\" বন্ধু বারবার জিজ্ঞাসা করে না (polling নেই); তুমিই ধাক্কা (push) দাও।\n\nOutbound webhook হলো inbound webhook-এর উল্টো দিক: ঘটনা ঘটলে Hermes নির্ধারিত endpoint-এ **signed JSON POST** পাঠায়। ব্যবহার: agent turn শেষ হলে CI বা dashboard-কে জানানো (`on_session_end`), subagent-এর শেষ ট্র্যাক (`subagent_stop`), tool-এর কাজ monitoring-এ পাঠানো (`post_tool_call` + `matcher`), বা অন্য Hermes-কে জাগানো (তার inbound webhook-এর URL দিয়ে)।\n\n### Config\n\n`~/.hermes/config.yaml`-এ `hooks.outbound:`-এর নিচে:\n\n```yaml\nhooks:\n  outbound:\n    - name: ci-notify                       # ঐচ্ছিক, log-এর নাম\n      url: https://ci.example.com/hermes-events\n      events: [on_session_end, subagent_stop]\n      secret_env: HERMES_OUTBOUND_WEBHOOK_SECRET   # HMAC secret যে env var-এ আছে\n      timeout: 10                           # প্রতি চেষ্টায় সেকেন্ড (1-60)\n    - name: tool-monitor\n      url: https://metrics.example.com/hooks/hermes\n      events: [post_tool_call]\n      matcher: \"terminal|delegate_task\"     # regex, শুধু tool-সংক্রান্ত ঘটনায়\n```\n\n- যেকোনো plugin-hook ঘটনা চলে (`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `post_llm_call`, `on_session_start`, `on_session_end`, `subagent_start`, `subagent_stop` ইত্যাদি)।\n- ভাঙা entry warning দিয়ে বাদ যায়; খারাপ webhook agent-কে ভাঙে না।\n- বদল কার্যকর হয় পরের CLI session বা gateway restart-এ।\n- Inline `secret:` লিখো না; `secret_env` ব্যবহার করো (env var, সাধারণত `~/.hermes/.env`-এ), যাতে config-এ গোপন কথা না থাকে। Secret না দিলে unsigned যায়, আর `hermes hooks list` তাতে `UNSIGNED` লেখে।\n\n### Wire format ও header\n\nBody-র আকার shell-hook stdin-এর মতো, সাথে delivery-র তথ্য:\n\n```json\n{\n  \"hook_event_name\": \"on_session_end\",\n  \"profile\": \"default\",\n  \"tool_name\": null,\n  \"tool_input\": null,\n  \"session_id\": \"sess_abc123\",\n  \"cwd\": \"/home/user/project\",\n  \"extra\": {\"completed\": true, \"interrupted\": false, \"model\": \"...\", \"platform\": \"cli\"},\n  \"delivery_id\": \"3f2c9a...\",\n  \"timestamp\": \"2026-07-22T14:00:00Z\"\n}\n```\n\n| Header | মান |\n|---|---|\n| `Content-Type` | `application/json` |\n| `X-Hermes-Event` | ঘটনার নাম |\n| `X-Hermes-Delivery` | প্রতি delivery-র অনন্য ID, body-র `delivery_id`-এর সমান |\n| `X-Hermes-Signature-256` | `sha256=<hex>`, raw body-র HMAC-SHA256 (GitHub-ধাঁচের); শুধু secret থাকলে |\n\nReceiver-এর দিকে যাচাই (HMAC হলো গোপন চাবি দিয়ে বানানো \"সিল\"; সিল মিললে বোঝা যায় বার্তা আসল ও অবিকৃত):\n\n```python\nimport hashlib, hmac\n\ndef verify(body: bytes, header: str, secret: str) -> bool:\n    expected = \"sha256=\" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()\n    return hmac.compare_digest(expected, header)\n```\n\n`delivery_id` আর `timestamp` signed body-র ভেতরে, তাই receiver-কে: `delivery_id` দিয়ে duplicate বাদ দিতে হবে (ব্যর্থ delivery একবার retry হয়, তাই দুবার আসতে পারে), আর পুরনো `timestamp` (সাধারণত ৫ মিনিটের বেশি) বাতিল করতে হবে।\n\n### Delivery-র নিয়ম\n\n- **Asynchronous:** ঘটনা queue-তে ঢোকে, একটা background thread POST করে; ধীর endpoint tool বা turn আটকায় না।\n- **Notify-only:** shell hook-এর মতো block বা context ঢোকানো যায় না; response body উপেক্ষিত।\n- **Retry:** connection error ও 5xx একবার backoff সহ retry; 4xx নয়। ব্যর্থ হলে log করে ফেলে দেয় (best-effort)।\n- **Redirect নয়:** 3xx অনুসরণ হয় না, ভুল config হিসেবে log হয়; চূড়ান্ত endpoint দাও।\n- **Bounded queue:** ভরে গেলে নতুন ঘটনা warning দিয়ে ফেলে দেওয়া হয়।\n- **Consent নেই, তবে:** target শুধু ডাটা পায়, কোড চালায় না, তাই প্রশ্ন করা হয় না। `HERMES_SAFE_MODE=1` হলে register-ই হয় না। Payload-এ tool input থাকে, তাই বিশ্বস্ত endpoint আর সম্ভব হলে `https://` ব্যবহার করো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Shell hook আর outbound webhook-এর মূল পার্থক্য।",
+        "beforeTitle": "Shell hook",
+        "before": "- তোমার মেশিনে script চালায় (subprocess)\n- stdin-এ JSON, stdout-এ JSON উত্তর\n- tool **আটকাতে/বদলাতে** পারে, context ঢোকাতে পারে\n- প্রথমবার consent লাগে\n- full user credentials নিয়ে চলে",
+        "afterTitle": "Outbound webhook",
+        "after": "- বাইরের URL-এ signed JSON POST\n- উত্তর উপেক্ষিত; **শুধু জানায়**\n- async, retry একবার (5xx/connection), best-effort\n- consent লাগে না, `HERMES_SAFE_MODE=1`-এ বন্ধ\n- `X-Hermes-Signature-256` দিয়ে যাচাই"
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Gateway hook-এ কোনো sandbox নেই",
+      "markdown": "`handler.py` পুরো gateway অধিকার নিয়ে চলে। অচেনা কারো hook ফাইল বসিয়ো না; ডিরেক্টরিতে ফাইল রাখাই অনুমতি।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Gateway hook তৈরিতে কোন দুটো ফাইল লাগে?",
+      "options": [
+        "`HOOK.yaml` আর `handler.py`",
+        "`config.yaml` আর `README.md`",
+        "`BOOT.md` আর `hook.json`",
+        "শুধু `handler.py`"
+      ],
+      "answerIndex": 0,
+      "explanation": "দুটোই লাগে: `HOOK.yaml` (নাম ও ঘটনার তালিকা) আর `handler.py` (কাজ)।"
+    },
+    {
+      "question": "Gateway hook-এর `handler.py`-এর function-এর নাম কী হতে হবে?",
+      "options": ["`handle`", "`run`", "`main`", "যেকোনো নাম"],
+      "answerIndex": 0,
+      "explanation": "নাম অবশ্যই `handle`; সে `event_type` ও `context` নেয়।"
+    },
+    {
+      "question": "কোন ঘটনা প্রতিটা tool loop-এর ধাপে ঘটে?",
+      "options": [
+        "`gateway:startup`",
+        "`session:start`",
+        "`command:*`",
+        "`agent:step`"
+      ],
+      "answerIndex": 3,
+      "explanation": "`agent:step` প্রতি ধাপে `iteration` ও `tool_names` দেয়। লম্বা কাজের সতর্কতা hook এটা শোনে।"
+    },
+    {
+      "question": "Gateway hook কি cron বা CLI-তে লোড হয়?",
+      "options": [
+        "হ্যাঁ, সব জায়গায়",
+        "শুধু cron-এ",
+        "না, শুধু messaging gateway লোড করে",
+        "শুধু রাতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "CLI, TUI, Desktop ও cron কখনো gateway hook লোড করে না। Plugin hook দুই জায়গাতেই চলে।"
+    },
+    {
+      "question": "`pre_tool_call` hook timeout হলে কী হয়?",
+      "options": [
+        "tool চলে যায়",
+        "fail closed: tool আটকে যায়",
+        "agent crash করে",
+        "কিছুই হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "সন্দেহ হলে ঢুকতে দেওয়া হয় না। অন্য সীমাবদ্ধ hook fail open।"
+    },
+    {
+      "question": "`on_session_end` কখন ঘটে?",
+      "options": [
+        "প্রতি turn-এর শেষে",
+        "শুধু session শেষে",
+        "gateway চালুর সময়",
+        "কখনোই না"
+      ],
+      "answerIndex": 0,
+      "explanation": "নামে ভুল বোঝা সহজ: এটা প্রতি turn-এর শেষে ঘটে, শুধু session-শেষে নয়।"
+    },
+    {
+      "question": "Hook callback-এ exception হলে agent-এর কী হয়?",
+      "options": [
+        "agent crash করে",
+        "সব session মুছে যায়",
+        "gateway বন্ধ হয়",
+        "error log হয়, agent চলতে থাকে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Hook-এর ভুলে agent ভাঙে না। log-এ দেখে ঠিক করো।"
+    },
+    {
+      "question": "BOOT.md hook-এর কাজ কী?",
+      "options": [
+        "Hermes install করা",
+        "প্রতি gateway চালুতে `BOOT.md`-র checklist একটা agent দিয়ে চালানো",
+        "session মোছা",
+        "cron বানানো"
+      ],
+      "answerIndex": 1,
+      "explanation": "Hermes এটা built-in দেয় না; তুমি `gateway:startup` শুনে নিজে বানাও।"
+    },
+    {
+      "question": "Shell hook-এ একটা `pre_tool_call` script exit code `2` দিয়ে বের হলে কী হয়?",
+      "options": [
+        "কিছুই হয় না",
+        "tool call আটকে যায়, block JSON না থাকলেও",
+        "পুরো gateway বন্ধ হয়",
+        "hook মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Exit 2 মানে block। message আসে stdout-এর reason/message থেকে, নইলে stderr-এর প্রথম ৪০০ অক্ষর, নইলে \"Blocked by shell hook.\"।"
+    },
+    {
+      "question": "Shell hook-এর ডিফল্ট আচরণ ভাঙা JSON বা timeout হলে কী?",
+      "options": [
+        "fail closed: tool আটকায়",
+        "fail open: warning log করে কাজ চলে",
+        "agent crash করে",
+        "hook স্থায়ীভাবে বন্ধ হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ডিফল্টে fail open। শুধু `pre_tool_call`-এ `fail_closed: true` দিলে এই অবস্থায় call আটকায়।"
+    },
+    {
+      "question": "Shell hook-এর consent (অনুমোদন) কীসের ভিত্তিতে মনে রাখা হয়?",
+      "options": [
+        "script-এর sha256 hash",
+        "ঠিক `(event, command)` string জোড়া",
+        "শুধু ফাইলের নাম",
+        "প্রতি রাতে নতুন করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Command string ধরে। তাই script-এর ভেতর বদলালে consent বাতিল হয় না; `hermes hooks doctor` mtime drift ধরে দেয়।"
+    },
+    {
+      "question": "নিচের কোনটা Outbound webhook সম্পর্কে ঠিক?",
+      "options": [
+        "tool call আটকাতে পারে",
+        "response body দিয়ে context ঢোকায়",
+        "notify-only; asynchronous; secret থাকলে `X-Hermes-Signature-256` পাঠায়",
+        "3xx redirect অনুসরণ করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "এগুলো শুধু জানায়, response উপেক্ষিত। 3xx অনুসরণ হয় না; 5xx/connection error একবার retry।"
+    },
+    {
+      "question": "Receiver কেন `delivery_id` আর `timestamp` যাচাই করবে?",
+      "options": [
+        "retry-র কারণে duplicate আসতে পারে, আর পুরনো ঘটনা বাতিল করতে",
+        "রং ঠিক করতে",
+        "secret বদলাতে",
+        "queue খালি করতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "ব্যর্থ delivery একবার retry হয় বলে duplicate সম্ভব (dedupe করো), আর ৫ মিনিটের মতো সীমায় stale event বাদ দাও।"
+    }
+  ],
+  "recap": [
+    "Hooks হলো \"ঘটনা ঘটলে আমার কোড চলুক\"; চার রকম: gateway, plugin, shell, outbound webhook।",
+    "Gateway hook = `HOOK.yaml` + `handler.py` (`handle` function); sandbox নেই, তাই সাবধান।",
+    "ঘটনা: `gateway:startup`, `session:*`, `agent:start/step/end`, `command:*`।",
+    "Plugin hook: `pre_tool_call` (block/modify), `post_tool_call`, `pre_llm_call` ইত্যাদি; `pre_tool_call` fail closed।",
+    "Directive hook flow বদলায়, transform কনটেন্ট বদলায়, observer শুধু দেখে।",
+    "Hook-এর error agent ভাঙে না; `plugins.hook_callback_timeout` default ৩০ সেকেন্ড।",
+    "Shell hook = `config.yaml`-এর `hooks:` ব্লকে script; stdin-এ JSON, stdout-এ `block`/`modify`/`approve`/`context` বা exit code 2।",
+    "Shell hook ডিফল্টে fail open; `pre_tool_call`-এ `fail_closed: true` দিলে ভুলে আটকায়; প্রথমবার consent লাগে (`hermes hooks list/test/revoke/doctor`)।",
+    "Outbound webhook (`hooks.outbound:`) async, notify-only, `secret_env` দিয়ে HMAC-signed; retry একবার, queue bounded।",
+    "`pre_tool_call`-এ block > approve; `pre_llm_call`-এর context user message-এ ঢোকে, system prompt-এ নয়।"
+  ]
+}

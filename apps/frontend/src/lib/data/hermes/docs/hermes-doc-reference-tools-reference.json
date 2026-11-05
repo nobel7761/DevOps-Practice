@@ -1,0 +1,218 @@
+{
+  "contentId": "hermes-doc-reference-tools-reference",
+  "title": "Tools Reference",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/tools-reference",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর tool কী, কোন tool কোন কাজে লাগে (file, terminal, web, browser...) এবং কেন tool দলে ভাগ করা তা বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: এক মস্ত যন্ত্রপাতির দেয়াল\n\nধরো তোমার দাদুর গ্যারাজে একটা বিশাল দেয়াল-ভর্তি যন্ত্রপাতি। হাতুড়ি, স্ক্রুড্রাইভার, করাত, টেপ... সব **দল করে** সাজানো: \"কাঠের কাজ\", \"বিদ্যুতের কাজ\", \"রং-এর কাজ\"। কাজ পড়লে দাদু আগে দল খোঁজেন, তারপর ঠিক যন্ত্রটা তুলে নেন।\n\nHermes-এর **Tools Reference** পাতাটা সেই দেয়ালের ম্যাপ। Hermes-এর প্রায় **৮৫টা built-in tool** আছে। প্রতিটা tool একটা করে **toolset**-এ (দলে) থাকে। কোন tool পাবে তা নির্ভর করে তুমি কোন platform-এ আছো, কোন credential (API key) দিয়েছো আর কোন toolset চালু করেছো।\n\n**Tool না থাকলে কী সমস্যা হতো?** AI শুধু লিখতে আর কথা বলতে পারে। সে নিজে ফাইল খুলতে, ইন্টারনেটে খুঁজতে, বা কম্পিউটারে হুকুম চালাতে পারে না। Tool হলো তার **হাত-পা**।\n\n> ছোট্ট নিয়ম: MCP-এর tool গুলোর নাম শুরু হয় `mcp__<server>__` দিয়ে, যেমন `mcp__github__create_issue`। এগুলো আলাদা করে MCP integration-এ সেট করা হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Tool (টুল)\nHermes-এর একটা নির্দিষ্ট ক্ষমতা। যেমন `read_file` মানে \"ফাইল পড়ার হাত\"। AI ঠিক করে কোন tool কখন ডাকবে।\n\n### Toolset (টুলসেট)\nকয়েকটা tool-এর দল, একটা নাম দিয়ে। যেমন `file` দলে চারটা tool। কম tool চালু রাখলে ঝুঁকি কম আর খরচও কম।\n\n### Parameter\nTool-কে দেওয়া ছোট নির্দেশ। যেমন `read_file`-এ `offset` (কোন লাইন থেকে) আর `limit` (কয় লাইন)। দোকানে অর্ডারের মতো: \"চা (tool), কম চিনি (parameter)।\"\n\n### Terminal ও Shell\n**Terminal** হলো লিখে হুকুম দেওয়ার জানালা, আর **shell** হলো যে প্রোগ্রাম সেই হুকুম বোঝে। Hermes-এর `terminal` tool কম্পিউটারে হুকুম চালায়।\n\n### Regex ও ripgrep\n**Regex** হলো লেখার ছাঁচ দিয়ে খোঁজার পদ্ধতি। **ripgrep** হলো হাজার হাজার ফাইলে চোখের পলকে খোঁজার টুল। `search_files` ভেতরে এটা ব্যবহার করে।\n\n### Subagent\nHermes নিজের মতো একটা সহকারী বানায়, যাকে একটা ছোট কাজ ভাগ করে দেয়। যেমন শিক্ষক এক ছাত্রকে বললেন \"এই অংশটা তুমি দেখো।\"\n\n### Cron ও Session\n**Cron** মানে সময় ঠিক করে দেওয়া কাজ। **Session** মানে একটা কথোপকথনের খাতা। **FTS5** হলো পুরোনো লেখায় দ্রুত শব্দ খোঁজার ডাটাবেস-কৌশল।\n\n### Vision, CDP, API key\n**Vision** মানে ছবি দেখে বোঝা। **CDP** হলো ব্রাউজারকে প্রোগ্রাম দিয়ে চালানোর একটা পথ। **API key** হলো কোনো সেবার কাছে তোমার পরিচয়পত্র।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Tool মানে হাতিয়ার, Toolset মানে হাতিয়ারের দল। Agent দলের ভেতর থেকে tool বেছে নেয়।",
+        "nodes": [
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "ts",
+            "kind": "gateway",
+            "label": "Toolset (দল)",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "t1",
+            "kind": "external",
+            "label": "read_file/patch",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "t2",
+            "kind": "external",
+            "label": "terminal",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "t3",
+            "kind": "external",
+            "label": "web_search",
+            "x": 440,
+            "y": 200
+          }
+        ],
+        "edges": [
+          {
+            "from": "agent",
+            "to": "ts",
+            "label": "কাজ চায়"
+          },
+          {
+            "from": "ts",
+            "to": "t1",
+            "label": "file দল"
+          },
+          {
+            "from": "ts",
+            "to": "t2",
+            "label": "terminal দল"
+          },
+          {
+            "from": "ts",
+            "to": "t3",
+            "label": "web দল"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## পাতাটা কীভাবে সাজানো? (ম্যাপ পড়তে শেখো)\n\nপাতাটা toolset-এর নাম ধরে ভাগ করা। প্রতিটা অংশে `toolset নাম` → tool → তার parameter। কিছু দলের গণনা: browser ৪ · file ৪ · terminal ২ · desktop-GUI ১১ (শুধু desktop app) · web ২ · kanban ১৪ · Feishu ৫ · Yuanbao ৫ · Discord ২ · video ৩।\n\nকোনো tool খুঁজছো? আগে ভাবো সে কোন *কাজ* করে (ফাইল? ওয়েব? সময়সূচি?), তারপর সেই দল দেখো।\n\n## সবচেয়ে দরকারি tool গুলো\n\n### File দল (`file`)\n\n| Tool | কী করে | কখন লাগে |\n|---|---|---|\n| `read_file` | লাইন-নম্বরসহ ফাইল পড়ে (`LINE_NUM\\|CONTENT`)। `offset`/`limit` আছে। প্রায় ১০০K অক্ষরে কেটে দেয় আর `next_offset` দেয়। `.ipynb`, `.docx`, `.xlsx`-ও পড়ে | কোনো ফাইলের ভেতর দেখতে |\n| `write_file` | পুরো ফাইল নতুন করে লেখে, দরকারে parent folder বানায়। ফাইল আগে পুরো না পড়া থাকলে বা ডিস্কে বদলে গেলে **অস্বীকার করে** | নতুন ফাইল বানাতে বা পুরোটা বদলাতে |\n| `patch` | খুঁজে-বদলাও, ৯টা fuzzy-matching কৌশলসহ (মিল ঠিক না থাকলেও কাছাকাছি খুঁজে নেয়)। unified diff (কী বদলাল তার তালিকা) ফেরত দেয় | ফাইলের শুধু একটুখানি বদলাতে |\n| `search_files` | ripgrep-ভিত্তিক। `target='content'` দিলে ফাইলের ভেতরে regex খোঁজে | কোথায় কী লেখা আছে খুঁজতে |\n\n### Terminal দল (`terminal`)\n\n- `terminal`: shell চালায়। `background=true` (server-এর মতো চলতেই থাকা কাজের জন্য), `notify_on_complete=true` (শেষ হলে জানাবে), `heartbeat=N` (প্রতি N সেকেন্ডে \"বেঁচে আছি\" সংকেত, সর্বনিম্ন ৬০)।\n- `process_manage`: চলতে থাকা কাজ সামলায়: `list`, `poll`, `log`, `wait`, `kill`, `write`।\n- নিয়ম: `cat/head/tail`-এর বদলে `read_file`, আর `grep/rg/find`-এর বদলে `search_files` ব্যবহার করো।\n\n### Web দল (`web`)\n\n- `web_search`: default ৫টা ফল, `limit` ১–১০০। `site:`, `filetype:`, `intitle:`, `-term` চলে (backend অনুমতি দিলে)। **কখন লাগে:** ইন্টারনেটে খুঁজতে।\n- `web_extract`: পরিষ্কার markdown (সাজানো লেখা), LLM-সারাংশ ছাড়া। PDF-ও পারে। default ১৫০০০ অক্ষর, এক call-এ সর্বোচ্চ **৫টা URL**। **কখন লাগে:** নির্দিষ্ট ওয়েবপেজের লেখা পড়তে।\n- কাজ করতে এদের যেকোনো একটা key লাগে: `EXA_API_KEY`, `PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `TAVILY_API_KEY`, `PERPLEXITY_API_KEY`, `KEENABLE_API_KEY`।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "write_file-এর baseline নিয়ম",
+      "markdown": "`write_file` আর `patch` নিরাপদ থাকে কারণ Hermes দেখে ফাইলটা তুমি (বা agent) আগে **পুরো** পড়েছো কি না। (এটাই **baseline**, মানে তুলনার ভিত্তি।) শুধু পুরো unredacted পড়া, সফল `write_file`, বা full-read `patch` baseline বানায়। **terminal দিয়ে লেখা বা `execute_code` দিয়ে লেখা baseline বানায় না।** তাই terminal দিয়ে ফাইল বদলালে পরে `write_file` আপত্তি করতে পারে। **কেন এই নিয়ম?** না পড়ে লিখলে অন্যের লেখা কাজ অজান্তে মুছে যেতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও কিছু গুরুত্বপূর্ণ tool\n\n| Tool (দল) | এক কথায় | কখন লাগে |\n|---|---|---|\n| `execute_code` (`code_execution`) | Python চালায় যা Hermes tool গুলোকে প্রোগ্রাম থেকে ডাকে | অনেক ধাপ, বড় output ছাঁকা, বা শাখা-লজিকের কাজে |\n| `delegate_task` (`delegation`) | আলাদা subagent বানায়, প্রত্যেকের নিজস্ব কথোপকথন, terminal, toolset। শুধু শেষ সারাংশ ফেরত আসে। `goal` (একটা) বা `tasks` (সমান্তরাল) | বড় কাজ ভাগ করে একসাথে করাতে |\n| `cronjob_manage` (`cronjob`) | `create`, `list`, `update`, `pause`, `resume`, `run`, `remove`। cron-এর run নতুন session, আগের chat মনে থাকে না | \"রোজ সকালে এটা করো\" ধরনের কাজে |\n| `memory` (`memory`) | session জুড়ে স্থায়ী স্মৃতি। session শুরুতে system prompt-এ ঢোকে | তোমার পছন্দ-অপছন্দ মনে রাখাতে |\n| `session_search` (`session_search`) | পুরোনো session-এ FTS5 খোঁজ, LLM call ছাড়াই। চার mode: Discovery (`query`), Scroll (`session_id`+`around_message_id`), Read (শুধু `session_id`), Browse (কিছুই না) | \"আমরা আগে কী বলেছিলাম?\" খুঁজতে |\n| `skill_manage` / `skill_view` / `skills_list` | Skill বানানো-বদলানো-মোছা (`~/.hermes/skills/`), পড়া, তালিকা | শেখানো পদ্ধতি সামলাতে |\n| `todo_list` | session-এর কাজের তালিকা। `parent` id দিয়ে nested (ভেতরে ভেতরে ভাগ করা) | বড় কাজ ধাপে ধাপে ট্র্যাক করতে |\n| `clarify` | ইউজারকে ১–৫টা প্রশ্ন। single-select-এ ৪টা choice + \"Other\"। প্রথম choice-এ \"(Recommended)\" লেবেল | Hermes কিছু বুঝতে না পারলে |\n| `vision_analyze` | ছবি বিশ্লেষণ। vision-সক্ষম model সরাসরি pixel পায়। না হলে auxiliary (সহায়ক) vision model | ছবি দেখে উত্তর চাইলে |\n| `image_generate` | text-to-image বা `image_url` দিয়ে image-to-image। কোন model হবে তা তুমি ঠিক করো, agent না | ছবি বানাতে |\n| `text_to_speech` | `MEDIA:` path ফেরত। CLI-তে `~/voice-memos/`-এ সেভ হয় | লেখা থেকে কণ্ঠ বানাতে |\n| `computer_use` | `cua-driver` দিয়ে background-এ desktop নিয়ন্ত্রণ। cursor/focus চুরি করে না | মাউস-ক্লিকের মতো কাজ করাতে |\n\n### Browser দল\n\n`browser_exec` (Python helper সহ। browser-এর অবস্থা থাকে, Python variable থাকে না। timeout default ৩০০s, সর্বোচ্চ ১৮০০s), `browser_cdp`, `browser_dialog`, `browser_vault` (saved login/কার্ড সিক্রেট না দেখিয়ে ব্যবহার)। `browser_cdp` ও `browser_dialog` লাগে CDP endpoint (`/browser connect`, `BROWSER_CDP_URL` বা `browser.cdp_url`)। launched ও cloud session-এ এরা থাকে না।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Plugin-এ সরে গেছে",
+      "markdown": "Honcho, Home Assistant (`ha_*`), Spotify (`spotify_*`) আর built-in নেই। (**Plugin** মানে পরে জুড়ে দেওয়ার অতিরিক্ত অংশ।) প্রয়োজনে: `hermes plugins install honcho` / `homeassistant` / `spotify` (Spotify-র পর `hermes spotify login`)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Opt-in আর বিশেষ দল\n\n**Opt-in** মানে ডিফল্টে বন্ধ, তুমি নিজে চালু না করলে আসে না।\n\n- **`video`** → `video_analyze` (ভিডিও বিশ্লেষণ)। চালু করতে `--toolsets video`।\n- **`video_gen`** → `video_generate`, `xai_video_edit`, `xai_video_extend`। চালু: `--toolsets video_gen` বা `hermes tools`।\n- **`x_search`** → X (Twitter)-এ শুধু পড়া। post/reply/DM পারে না। default বন্ধ। `XAI_API_KEY` বা xAI OAuth লাগে।\n- **`kanban`** → ১৪টা tool (কাজের বোর্ড)। `HERMES_KANBAN_TASK` সেট থাকলে বা toolset চালু থাকলে নিবন্ধিত। attachment সর্বোচ্চ ২৫ MB।\n- **`discord` / `discord_admin`** → `DISCORD_BOT_TOKEN` লাগে। admin-এ ban/kick/role আছে, তাই bot-এর সঠিক permission দরকার।\n- **`desktop_ui`, `project`, `catalog`** → শুধু desktop app session-এ।\n- **`connections`** → `manage_connections`, শুধু Nous Portal connector চালু থাকলে।\n\n## ভুল ধারণা যা এড়াবে\n\n1. \"সব tool সবসময় আছে\": না। platform, credential আর toolset ঠিক করে কোনটা আছে।\n2. `cat`/`grep` terminal-এ চালানো: Hermes-এর নিজস্ব `read_file`/`search_files` ভালো।\n3. `write_file` দিয়ে ফাইল ওভাররাইট: আগে পুরো পড়ো।\n4. `web_extract`-এ ৫টার বেশি URL: এক call-এ সর্বোচ্চ ৫।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "কোনো tool সম্পর্কে জানতে এই পথে ম্যাপ ধরো।",
+        "steps": [
+          {
+            "title": "কাজ ভাবো",
+            "body": "ফাইল, ওয়েব, সময়সূচি, ছবি... কোন ধরনের কাজ?"
+          },
+          {
+            "title": "Toolset খোঁজো",
+            "body": "Tools Reference-এ সেই দলের heading দেখো।"
+          },
+          {
+            "title": "Parameter ও key দেখো",
+            "body": "`limit`, `timeout_s`, API key: কী লাগবে পড়ে নাও।"
+          },
+          {
+            "title": "চালু আছে কি না দেখো",
+            "body": "`/tools list` বা `hermes tools` দিয়ে দলটা চালু কি না মেলাও।"
+          }
+        ]
+      }
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এ প্রতিটা tool কয়টা toolset-এ থাকে?",
+      "options": ["একাধিক", "একটা", "কোনোটাতেই না", "সবগুলোতে"],
+      "answerIndex": 1,
+      "explanation": "প্রতিটা tool একটা করে toolset (দল)-এ থাকে।"
+    },
+    {
+      "question": "`web_extract` এক call-এ সর্বোচ্চ কয়টা URL নেয়?",
+      "options": ["১", "৫", "৫০", "সীমা নেই"],
+      "answerIndex": 1,
+      "explanation": "এক call-এ সর্বোচ্চ ৫টা URL।"
+    },
+    {
+      "question": "`write_file` কখন অস্বীকার করতে পারে?",
+      "options": [
+        "ফাইলটা আগে পুরো না পড়া থাকলে বা ডিস্কে বদলে গেলে",
+        "সবসময়",
+        "শুধু রাত্রে",
+        "ফাইল ছোট হলে"
+      ],
+      "answerIndex": 0,
+      "explanation": "আগে পুরো পড়া না থাকলে না জেনে লিখলে অন্যের কাজ মুছে যেতে পারে, তাই অস্বীকার করে।"
+    },
+    {
+      "question": "MCP server `github`-এর `create_issue` tool-এর Hermes-নাম কী?",
+      "options": [
+        "`github_create_issue`",
+        "`mcp__github__create_issue`",
+        "`create_issue`",
+        "`mcp.github.create`"
+      ],
+      "answerIndex": 1,
+      "explanation": "MCP tool-এর নাম `mcp__<server>__<tool>` আকারের।"
+    },
+    {
+      "question": "`session_search`-এর বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "LLM call লাগে",
+        "পুরোনো session-এ FTS5 দিয়ে খোঁজে, LLM call ছাড়াই",
+        "ইন্টারনেটে খোঁজে",
+        "ছবি বানায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটা পুরোনো আলাপে দ্রুত শব্দ খোঁজে, LLM call ছাড়া।"
+    },
+    {
+      "question": "Honcho বা Spotify tool পেতে কী করতে হয়?",
+      "options": [
+        "কিছুই না, built-in",
+        "`hermes plugins install ...` দিয়ে plugin বসাতে হয়",
+        "Hermes মুছে ফেলতে হয়",
+        "নতুন কম্পিউটার কিনতে হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "এগুলো plugin-এ সরে গেছে, তাই আলাদাভাবে install করতে হয়।"
+    },
+    {
+      "question": "কেন `cat` বা `grep`-এর বদলে `read_file`/`search_files` পছন্দনীয়?",
+      "options": [
+        "ওগুলো নিষিদ্ধ",
+        "Hermes-এর নিজস্ব tool লাইন-নম্বর, সীমা আর baseline-এর মতো সুবিধা দেয়",
+        "ওগুলো ধীর",
+        "কোনো কারণ নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "নিজস্ব tool-এ লাইন-নম্বর, `offset`/`limit`, নিরাপত্তা-baseline আছে।"
+    },
+    {
+      "question": "`delegate_task` কী করে?",
+      "options": [
+        "ফাইল মোছে",
+        "আলাদা subagent বানিয়ে কাজ ভাগ করে দেয়, শুধু শেষ সারাংশ ফেরত আসে",
+        "ছবি বানায়",
+        "ইন্টারনেট বন্ধ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রতিটা subagent-এর নিজস্ব কথোপকথন, terminal ও toolset থাকে।"
+    }
+  ],
+  "recap": [
+    "Tool হলো AI-এর হাত-পা, আর toolset হলো হাতিয়ারের দল।",
+    "কোন tool আছে তা ঠিক করে platform, credential আর চালু করা toolset।",
+    "`write_file` আগে পুরো ফাইল পড়া চায়, terminal দিয়ে লেখা baseline বানায় না।",
+    "`web_extract` এক call-এ সর্বোচ্চ ৫টা URL নেয়।",
+    "Honcho, Spotify, Home Assistant এখন plugin: `hermes plugins install`।"
+  ]
+}

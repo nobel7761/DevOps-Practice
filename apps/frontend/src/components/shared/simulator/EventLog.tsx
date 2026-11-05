@@ -2,9 +2,11 @@
 export function EventLog({
   entries,
   limit = 30,
+  emptyText = "এখনো কিছু ঘটেনি। Traffic পাঠান।",
 }: {
   entries: string[];
   limit?: number;
+  emptyText?: string;
 }) {
   const recent = entries.slice(-limit).reverse();
   return (
@@ -15,9 +17,7 @@ export function EventLog({
         className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-lg border border-border p-2 font-mono text-xs"
       >
         {recent.length === 0 ? (
-          <li className="text-muted-foreground">
-            এখনো কিছু ঘটেনি। Traffic পাঠান।
-          </li>
+          <li className="text-muted-foreground">{emptyText}</li>
         ) : (
           recent.map((entry, index) => (
             <li key={entries.length - index}>{entry}</li>

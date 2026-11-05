@@ -1,0 +1,355 @@
+{
+  "contentId": "hermes-doc-guides-troubleshooting-agent-quality",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q01",
+      "difficulty": "easy",
+      "question": "Hermes \"বোকা\" লাগলে সবচেয়ে সহজ কারণ কী?",
+      "options": [
+        "তুমি হয়তো ভুল model-এ আছো",
+        "Hermes-এর `MEMORY.md` ফাইলটা মুছে গেছে",
+        "তোমার internet-এর গতি অনেক কমে গেছে",
+        "Hermes নিজে থেকে নতুন skill ভুলে গেছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "তাই প্রথম ধাপ: `/model` (বা `/status`) দিয়ে সক্রিয় model দেখো।",
+      "whyWrong": {
+        "1": "লেসনে এমন কারণ প্রথমে আসেনি।",
+        "2": "internet এই চেকলিস্টে নেই।",
+        "3": "skill ধাপ ৬-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q02",
+      "difficulty": "easy",
+      "question": "Context window কী?",
+      "options": [
+        "Hermes-এর স্থায়ী স্মৃতির ছোট খাতা (`MEMORY.md`)",
+        "AI-র একসাথে মনে রাখার সীমা",
+        "একটা সেটিংসের নথি, যার নাম `config.yaml`",
+        "AI-কে প্রতিবার আগে পড়ানো গোপন নির্দেশ-খাতা"
+      ],
+      "correctIndex": 1,
+      "explanation": "টেবিলের মতো: ভরে গেলে পুরোনো জিনিস সরাতে হয়, তখন গাইড ভুলতে শুরু করে।",
+      "whyWrong": {
+        "0": "এটা memory।",
+        "2": "এটা config।",
+        "3": "এটা system prompt।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q03",
+      "difficulty": "easy",
+      "question": "`/usage` কী দেখায়?",
+      "options": [
+        "কোন skill বসানো আছে তার তালিকা",
+        "কোন model কোন provider-এর",
+        "token খরচ আর context কতটা ভরা",
+        "পুরনো session-এর খোঁজ"
+      ],
+      "correctIndex": 2,
+      "explanation": "`/context` দেখায় কী কী জায়গা নিচ্ছে তার ভাগ।",
+      "whyWrong": {
+        "0": "এটা `/skills`।",
+        "1": "এটা `/status`।",
+        "3": "এটা `session_search`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q04",
+      "difficulty": "easy",
+      "question": "`/new` কী করে?",
+      "options": [
+        "পুরনো ইতিহাস সারাংশ করে",
+        "নতুন model বাছাই করে",
+        "skill-ফোল্ডার আবার স্ক্যান করে",
+        "একদম নতুন session শুরু করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "পরিষ্কার টেবিলের মতো।",
+      "whyWrong": {
+        "0": "এটা `/compress`।",
+        "1": "এটা `/model`।",
+        "2": "এটা `/reload-skills`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q05",
+      "difficulty": "easy",
+      "question": "`MEMORY.md`-এর অক্ষর সীমা কত?",
+      "options": ["১,৩৭৫", "৪,০০০", "২,২০০", "১০,০০০"],
+      "correctIndex": 2,
+      "explanation": "`USER.md`-এর সীমা ১,৩৭৫ অক্ষর। প্রায় ভরে গেলে 'clean up your memory' বলো।",
+      "whyWrong": {
+        "0": "এটা `USER.md`-এর।",
+        "1": "এই সীমা নেই।",
+        "3": "এই সীমা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q06",
+      "difficulty": "easy",
+      "question": "`/reload-skills` কখন লাগে?",
+      "options": [
+        "নতুন skill যোগের পর",
+        "model বদলানোর আগে চালাতে হয়",
+        "memory ভরে গেলে চালাতে হয়",
+        "session মুছে ফেলতে চালাতে হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটা `~/.hermes/skills/` আবার স্ক্যান করে।",
+      "whyWrong": {
+        "1": "model-এর জন্য `/model`।",
+        "2": "memory-র জন্য 'clean up your memory'।",
+        "3": "মোছার জন্য নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q07",
+      "difficulty": "easy",
+      "question": "Compression কী?",
+      "options": [
+        "নতুন model-এ বদলে নেওয়ার ব্যবস্থা",
+        "সব skill মুছে ফেলার ব্যবস্থা",
+        "API key লুকিয়ে রাখার ব্যবস্থা",
+        "সারাংশ করে ছোট করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "উপকার: জায়গা বাঁচে। দাম: খুঁটিনাটি হারায়।",
+      "whyWrong": {
+        "0": "এটা `/model`।",
+        "1": "skill-এর সাথে সম্পর্ক নেই।",
+        "2": "key-র সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q08",
+      "difficulty": "medium",
+      "question": "Session-এর মাঝখানে model বদলালে খরচ নিয়ে কী সতর্কতা আছে?",
+      "options": [
+        "খরচ আপনাআপনি অর্ধেক হয়ে যায় বলে",
+        "prompt cache রিসেট, পুরো দামে বিল",
+        "`MEMORY.md` মুছে যায় আর খরচ বাড়ে",
+        "শুধু `--global` দিলেই খরচ বাড়ে বলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "লম্বা session হলে নতুন করে শুরু করা সস্তা হতে পারে।",
+      "whyWrong": {
+        "0": "উল্টো, বাড়ে।",
+        "2": "memory মুছে যায় না।",
+        "3": "`--global` শুধু সেভ করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q09",
+      "difficulty": "medium",
+      "question": "`/model <name>` আর `/model <name> --global`-এর পার্থক্য কী?",
+      "options": [
+        "প্রথমটা `config.yaml`-এ সেভ, দ্বিতীয়টা শুধু এই session",
+        "প্রথমটা শুধু এই session, দ্বিতীয়টা `config.yaml`-এ সেভ",
+        "দুটোই একই, শুধু নাম আলাদা",
+        "প্রথমটা model মুছে ফেলে, দ্বিতীয়টা বসায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "যদি না `model.persist_switch_by_default: true` থাকে, সাধারণ `/model <name>` শুধু session-এর জন্য।",
+      "whyWrong": {
+        "0": "উল্টো হয়ে গেছে।",
+        "2": "পার্থক্য আছে।",
+        "3": "মোছার কথা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q10",
+      "difficulty": "medium",
+      "question": "Dashboard-এর Models পাতায় main model বদলালে কী হয়?",
+      "options": [
+        "খোলা chat-এও সঙ্গে সঙ্গে বদলে যায়",
+        "শুধু `/status`-এর লেখায় বদলায়, আর কিছুতে নয়",
+        "কোনো প্রভাবই পড়ে না, কখনোই কোথাও",
+        "নতুন session-এ কার্যকর, খোলা chat-এ নয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "তাই খোলা আলাপে বদলাতে `/model <name>` লাগে।",
+      "whyWrong": {
+        "0": "খোলা chat বদলায় না।",
+        "1": "সীমাবদ্ধ নয়, নতুন session-এ কার্যকর।",
+        "2": "নতুন session-এ কার্যকর।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q11",
+      "difficulty": "medium",
+      "question": "Hermes context length ভুল ধরলে কী ঘটতে পারে?",
+      "options": [
+        "আগেভাগে compress শুরু করে বা হোঁচট খায়",
+        "memory আপনাআপনি পুরোটা মুছে যায় ফলে",
+        "skill-গুলো আর লোডই হয় না কখনো",
+        "model নিজে নিজেই অন্য একটা model-এ বদলে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "ঠিক করতে `~/.hermes/config.yaml`-এ `model.context_length` দাও (যেমন ১৩১০৭২)।",
+      "whyWrong": {
+        "1": "memory-র সাথে সম্পর্ক নেই।",
+        "2": "skill আলাদা ধাপ।",
+        "3": "model বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q12",
+      "difficulty": "medium",
+      "question": "এই session-এ এইমাত্র memory-তে সেভ করা তথ্য system prompt-এ কখন আসে?",
+      "options": [
+        "সঙ্গে সঙ্গে এই session-এই",
+        "প্রতি message-এ নতুন করে",
+        "পরের session-এ",
+        "কখনোই আসে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Memory snapshot জমাট (prefix cache বাঁচাতে)। ডিস্কে সঙ্গে সঙ্গে লেখা হয়, আর এই session-এ কথোপকথন-ইতিহাসে থাকে।",
+      "whyWrong": {
+        "0": "snapshot মাঝপথে বদলায় না।",
+        "1": "প্রতি message নয়, session শুরুতে।",
+        "3": "আসে, পরের session-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q13",
+      "difficulty": "medium",
+      "question": "গত সপ্তাহের আলোচনা মনে করাতে কী চাইবে?",
+      "options": [
+        "`/compress here 5`",
+        "`/tools list`",
+        "`/usage`",
+        "`session_search`"
+      ],
+      "correctIndex": 3,
+      "explanation": "Memory-তে শুধু বাছাই-করা তথ্য থাকে; পুরনো session খোঁজে `session_search` (SQLite-এ full-text search)।",
+      "whyWrong": {
+        "0": "এটা সাম্প্রতিক ৫টা আদান-প্রদান রাখে।",
+        "1": "tool তালিকা দেখায়।",
+        "2": "token ও context দেখায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q14",
+      "difficulty": "medium",
+      "question": "`compression.in_place: true` (default) হলে কী ঘটে?",
+      "options": [
+        "প্রতি compaction নতুন session বানায়",
+        "compression আর হয় না",
+        "একটাই স্থায়ী session ID থাকে",
+        "শেষ ২০টা message-ও সারাংশ হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "compaction-এর আগের turn 'soft-archive' হয়, তখনও খোঁজা ও পুনরুদ্ধারযোগ্য। `false` হলে 'my project #2', '#3'।",
+      "whyWrong": {
+        "0": "এটা `false`-এর আচরণ।",
+        "1": "compression হয়।",
+        "3": "শেষ ২০টা অসংকুচিত থাকে (`protect_last_n`)।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q15",
+      "difficulty": "hard",
+      "question": "লম্বা session-এ মান পড়ছে। কোন command দিয়ে শুরু করবে?",
+      "options": ["`/model`", "`/usage`", "`/skills`", "`session_search`"],
+      "correctIndex": 1,
+      "explanation": "দ্রুত সূচি: লম্বা session-এ মান পড়লে প্রথম command `/usage`। কারণ সম্ভবত context চাপ: compress বা নতুন session।",
+      "whyWrong": {
+        "0": "সবকিছু দুর্বল লাগলে `/model`।",
+        "2": "ক্ষমতা হারালে `/skills`।",
+        "3": "গত সপ্তাহের কথা ভুললে `session_search`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q16",
+      "difficulty": "hard",
+      "question": "তুমি `/compress here 5` দিলে কী হয়?",
+      "options": [
+        "শেষ ৫ আদান-প্রদান হুবহু থাকে",
+        "প্রথম ৫টা আদান-প্রদান সারাংশ হয়",
+        "পাঁচ বার পরপর compress চলতে থাকে",
+        "পাঁচটা নতুন session একসাথে খুলে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "`/compress here 5` শেষ ৫ আদান-প্রদান যেমন আছে তেমন রাখে। `/compress focus <topic>` সারাংশ নির্দিষ্ট বিষয়ের দিকে ঝোঁকায়।",
+      "whyWrong": {
+        "1": "সাম্প্রতিক অংশই অবিকৃত থাকে, প্রথম অংশ নয়।",
+        "2": "একবারই চলে।",
+        "3": "নতুন session খোলে `/new`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q17",
+      "difficulty": "hard",
+      "question": "একজন গত সপ্তাহের deploy আলোচনা চাইল, agent মনে করতে পারল না। সঠিক পদক্ষেপ কোনটা?",
+      "options": [
+        "`/compress here 5` চালাও",
+        "`MEMORY.md` ২,২০০-র বেশি বড় করো",
+        "\"search our past sessions\" বলো",
+        "`/tools disable` দিয়ে সব tool বন্ধ করো"
+      ],
+      "correctIndex": 2,
+      "explanation": "Memory-তে বাছাই-করা তথ্য থাকে; পুরনো আলোচনার জন্য `session_search` (SQLite-এ full-text search)।",
+      "whyWrong": {
+        "0": "compress পুরনো session খোঁজে না।",
+        "1": "সীমা ২,২০০ অক্ষর, আর transcript memory-তে রাখার জিনিস নয়।",
+        "3": "tool বন্ধ করলে আরও খারাপ হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q18",
+      "difficulty": "hard",
+      "question": "Compression-এ default কোন message সুরক্ষিত?",
+      "options": [
+        "শেষ ২০টা অসংকুচিত, প্রথম ৩ আদান-প্রদান পিন করা",
+        "শেষ ৩টা অসংকুচিত, প্রথম ২০ আদান-প্রদান পিন করা",
+        "সব message সংকুচিত, কিছুই সুরক্ষিত নয়",
+        "শুধু প্রথম message সুরক্ষিত, বাকি সব সংকুচিত"
+      ],
+      "correctIndex": 0,
+      "explanation": "`protect_last_n` শেষ ২০টা, `protect_first_n: 3` প্রথম ৩ আদান-প্রদান।",
+      "whyWrong": {
+        "1": "সংখ্যা দুটো উল্টে গেছে।",
+        "2": "কিছু সুরক্ষিত থাকে।",
+        "3": "প্রথম ৩ আদান-প্রদান পিন।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q19",
+      "difficulty": "hard",
+      "question": "Ollama-তে নিজে `num_ctx` ঠিক করেছ। Hermes-এ কী করবে?",
+      "options": [
+        "Ollama-র `/api/show`-এর মান বসিয়ে দাও",
+        "Hermes-এও একই `context_length` দাও",
+        "`num_ctx` ছাড়া কিছুই বদলাতে হয় না",
+        "`context_length` মুছে ফেলো"
+      ],
+      "correctIndex": 1,
+      "explanation": "`/api/show` model-এর সর্বোচ্চ বলে, তোমার সেট করা মান নয়।",
+      "whyWrong": {
+        "0": "এটা সর্বোচ্চ, তোমার সেট করা নয়।",
+        "2": "Hermes-এও মেলাতে হয়।",
+        "3": "মুছলে ভুল ধরার ঝুঁকি।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-troubleshooting-agent-quality-q20",
+      "difficulty": "hard",
+      "question": "চলমান gateway-তে `model.context_length` বা `compression.*` key বদলালে কী লাগে?",
+      "options": [
+        "gateway পুরোপুরি restart দিতে হয়",
+        "নতুন session শুরু করে নিতে হয়",
+        "`/reload-skills` চালিয়ে নিতে হয়",
+        "কিছু না; পরের message থেকেই"
+      ],
+      "correctIndex": 3,
+      "explanation": "restart লাগে না।",
+      "whyWrong": {
+        "0": "restart লাগে না।",
+        "1": "নতুন session লাগে না।",
+        "2": "skill-এর সাথে সম্পর্ক নেই।"
+      }
+    }
+  ]
+}

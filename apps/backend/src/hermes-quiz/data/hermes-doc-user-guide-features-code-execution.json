@@ -1,0 +1,345 @@
+{
+  "contentId": "hermes-doc-user-guide-features-code-execution",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q01",
+      "difficulty": "easy",
+      "question": "`execute_code` চালালে LLM-এর context-এ কী ফেরে?",
+      "options": [
+        "script-এর প্রতিটা মাঝের ফল জমা হয়ে",
+        "শুধু `print()` করা শেষ লেখা",
+        "প্রতিটা tool call-এর পুরো log ও ফল",
+        "script-এর পুরো সোর্স কোড, লাইন ধরে ধরে"
+      ],
+      "correctIndex": 1,
+      "explanation": "মাঝের সব ফল script-এর ভেতরেই থাকে, তাই token কম লাগে।",
+      "whyWrong": {
+        "0": "মাঝের ফল LLM-কে দেখানো হয় না।",
+        "2": "tool call-এর log LLM-এ ফেরে না।",
+        "3": "সোর্স কোড তো LLM নিজেই লিখেছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q02",
+      "difficulty": "easy",
+      "question": "`execute_code`-এ agent কী লেখে?",
+      "options": [
+        "একটা SQL query-র তালিকা",
+        "একটা Dockerfile-এর খসড়া",
+        "একটা YAML সেটিং-ফাইল",
+        "একটা Python script"
+      ],
+      "correctIndex": 3,
+      "explanation": "রবিনের নির্দেশ-কাগজের মতো, Python script-ই এখানে লেখা হয়।",
+      "whyWrong": {
+        "0": "SQL ডেটাবেসের ভাষা।",
+        "1": "Dockerfile বাক্স বানানোর নির্দেশ।",
+        "2": "YAML সেটিং-ফাইলের ধরন।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q03",
+      "difficulty": "easy",
+      "question": "`execute_code` ব্যবহারের মূল সুবিধা কী?",
+      "options": [
+        "আরও রঙিন ও সুন্দর উত্তর",
+        "ইন্টারনেট ছাড়াই সব চলা",
+        "অনেক কম token",
+        "সব নিরাপত্তা বন্ধ করে রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "এক turn-এ অনেক কাজ, কিন্তু LLM-এর খাতায় কম জায়গা লাগে।",
+      "whyWrong": {
+        "0": "রঙের সাথে সম্পর্ক নেই।",
+        "1": "`web_search` ইত্যাদি তো ইন্টারনেটই লাগে।",
+        "3": "নিরাপত্তা নিয়ম দুই mode-এই একই থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q04",
+      "difficulty": "easy",
+      "question": "Script-এর ভেতরে কোন tool ডাকা যায়?",
+      "options": [
+        "`read_file`",
+        "`delegate_task`",
+        "`execute_code` নিজেই",
+        "MCP-র যেকোনো tool"
+      ],
+      "correctIndex": 0,
+      "explanation": "`web_search`, `web_extract`, `read_file`, `write_file`, `search_files`, `patch`, `terminal` ডাকা যায়।",
+      "whyWrong": {
+        "1": "`delegate_task` whitelist-এ নেই।",
+        "2": "`execute_code` নিজেকে ডাকতে পারে না।",
+        "3": "MCP tool-ও বাদ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q05",
+      "difficulty": "easy",
+      "question": "`code_execution.mode`-এর default কোনটা?",
+      "options": ["`project`", "`strict`", "`sandbox`", "`remote`"],
+      "correctIndex": 0,
+      "explanation": "`project` mode session-এর working directory-তে চলে।",
+      "whyWrong": {
+        "1": "`strict` আলাদা mode, default নয়।",
+        "2": "`sandbox` নামে mode লেসনে নেই।",
+        "3": "`remote` নামে mode লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q06",
+      "difficulty": "easy",
+      "question": "`execute_code`-এর timeout default কত?",
+      "options": ["৫০ সেকেন্ড", "১৮০০ সেকেন্ড", "৩০০ সেকেন্ড", "১০ সেকেন্ড"],
+      "correctIndex": 2,
+      "explanation": "৩০০ সেকেন্ডে SIGTERM, ৫ সেকেন্ড পর SIGKILL।",
+      "whyWrong": {
+        "0": "৫০ হলো প্রতি execution-এ tool call-এর সীমা।",
+        "1": "১৮০০ হলো kernel-এর idle timeout।",
+        "3": "১০ KB হলো stderr-এর সীমা, ১০ সেকেন্ড নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q07",
+      "difficulty": "easy",
+      "question": "Stdout-এর সীমা কত?",
+      "options": ["১০ KB", "৩০০ KB", "১ MB", "৫০ KB"],
+      "correctIndex": 3,
+      "explanation": "৫০ KB ছাড়ালে মাথা ও লেজ দেখায়; পুরোটা `~/.hermes/cache/exec/`-এ থাকে।",
+      "whyWrong": {
+        "0": "১০ KB হলো stderr-এর সীমা।",
+        "1": "এমন সীমা লেসনে নেই।",
+        "2": "এমন সীমা লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q08",
+      "difficulty": "medium",
+      "question": "`strict` mode কখন ভালো?",
+      "options": [
+        "project-এর `pandas` লাগলে",
+        "প্রতিবার একই ফল (পুনরুৎপাদনযোগ্যতা) চাইলে",
+        "`.env` ফাইল পড়তে চাইলে",
+        "project-এর নিজের module import করতে চাইলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`strict` অস্থায়ী staging ডিরেক্টরিতে, Hermes-এর নিজের python দিয়ে চলে।",
+      "whyWrong": {
+        "0": "`pandas` project-এর python-এ, `project` mode-এ মেলে।",
+        "2": "relative path `project` mode-এ কাজ করে।",
+        "3": "`from my_project import foo` `project` mode-এ চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q09",
+      "difficulty": "medium",
+      "question": "একই session-এ পরপর দুটো `execute_code` call-এ variable মনে থাকে কেন?",
+      "options": [
+        "প্রতিবার নতুন করে সব ডেটা আবার লোড হয়",
+        "LLM variable মনে রেখে ফেরত পাঠায়",
+        "persistent kernel একই child চালায়",
+        "gateway কপি করে রেখে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "import, variable ও লোড করা data call-এর মাঝে থেকে যায়।",
+      "whyWrong": {
+        "0": "উল্টো: একই child চলে, তাই নতুন করে লোড লাগে না।",
+        "1": "LLM শুধু `print()` পায়।",
+        "3": "gateway-র সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q10",
+      "difficulty": "medium",
+      "question": "Kernel-এর state মুছতে কী করবে?",
+      "options": [
+        "`strict` mode চালু করবে",
+        "`HERMES_HOME` বদলে ফেলবে",
+        "stdout সীমা বাড়িয়ে দেবে",
+        "`reset: true` দেবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`reset: true` দিলে state মুছে যায়; timeout বা interrupt-ও state হারাতে পারে।",
+      "whyWrong": {
+        "0": "mode বদলালে ভিন্ন kernel হয়, কিন্তু এটা reset-এর উপায় নয়।",
+        "1": "`HERMES_HOME` অন্য কাজের।",
+        "2": "সীমা বাড়ালে state মোছে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q11",
+      "difficulty": "medium",
+      "question": "Child process-এ `OPENAI_API_KEY`-এর মতো variable কেন যায় না?",
+      "options": [
+        "কারণ Python এগুলো চিনতে পারে না",
+        "নামে `KEY`, `TOKEN` থাকে বলে",
+        "কারণ শুধু বড় হাতের নাম বাদ যায়",
+        "কারণ শুধু `strict` mode-এ এগুলো বাদ"
+      ],
+      "correctIndex": 1,
+      "explanation": "ব্যাংকের চেকবইয়ের মতো গোপন জিনিস ছোট দোকানের কাজে পাঠানো হয় না।",
+      "whyWrong": {
+        "0": "চেনা-না-চেনার ব্যাপার নয়।",
+        "2": "নাম দেখেই বাদ; অক্ষরের আকারের নিয়ম নয়।",
+        "3": "দুই mode-এই নিরাপত্তা নিয়ম একই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q12",
+      "difficulty": "medium",
+      "question": "নিজের একটা key child-এ পাঠাতে চাইলে কোথায় লিখবে?",
+      "options": [
+        "`terminal.env_passthrough`-এ",
+        "`code_execution.timeout`-এর পাশে",
+        "`HERMES_RPC_DIR` variable-এ",
+        "`max_tool_calls`-এর ভেতরে"
+      ],
+      "correctIndex": 0,
+      "explanation": "শুধু যে key সত্যিই লাগবে তা-ই দাও।",
+      "whyWrong": {
+        "1": "`timeout` সময়ের সীমা।",
+        "2": "এটা RPC-র variable, key-র জায়গা নয়।",
+        "3": "`max_tool_calls` সংখ্যার সীমা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q13",
+      "difficulty": "medium",
+      "question": "সহজ shell command চালাতে কোনটা ভালো?",
+      "options": ["`execute_code`", "`web_extract`", "`patch`", "`terminal`"],
+      "correctIndex": 3,
+      "explanation": "shell, build, test, interactive বা background হলে `terminal`।",
+      "whyWrong": {
+        "0": "`execute_code` মাঝে যুক্তি রেখে tool ডাকার জন্য।",
+        "1": "`web_extract` ওয়েব-পাতা থেকে লেখা তোলে।",
+        "2": "`patch` ফাইলের অংশ বদলায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q14",
+      "difficulty": "medium",
+      "question": "Windows-এ script আর Hermes-এর মধ্যে RPC কীভাবে চলে?",
+      "options": [
+        "Unix socket দিয়ে, Linux/macOS-এর মতোই",
+        "loopback TCP দিয়ে, কম্পিউটারের ভেতরেই",
+        "ইমেইল পাঠিয়ে ও ইনবক্স দেখে দেখে",
+        "USB তার জুড়ে দিয়ে দুই কম্পিউটারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Linux/macOS-এ Unix socket, Windows-এ loopback TCP।",
+      "whyWrong": {
+        "0": "Unix socket Linux/macOS-এর জন্য।",
+        "2": "ইমেইল এখানে ব্যবহার হয় না।",
+        "3": "USB-র কোনো ভূমিকা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q15",
+      "difficulty": "hard",
+      "question": "তুমি `src/`-এর ৩০০টা ফাইলে `old_api_call(` বদলে `new_api_call(` করবে এবং কয়টা বদলালো গুনবে। কোনটা সঠিক পথ?",
+      "options": [
+        "`execute_code`-এ `search_files` + `patch`",
+        "প্রতিটা ফাইলের জন্য আলাদা আলাদা tool call",
+        "`delegate_task` দিয়ে ৩০০ child চালানো",
+        "`terminal` দিয়ে `vim` খুলে হাতে বদলানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "মাঝে loop ও গোনা লাগলে script ভালো; এটা Bulk refactor উদাহরণ।",
+      "whyWrong": {
+        "1": "৩০০ বার ভাবতে হলে token ও সময় নষ্ট।",
+        "2": "এখানে বিচারবুদ্ধি লাগে না; যান্ত্রিক কাজ।",
+        "3": "`vim` interactive, এই কাজের জন্য অচল।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q16",
+      "difficulty": "hard",
+      "question": "`pytest` চালিয়ে শুধু passed/failed গুনতে চাও। কী করবে?",
+      "options": [
+        "`terminal`-এ `background=true` দিয়ে পেছনে চালানো",
+        "`execute_code` থেকে `delegate_task` ডেকে নেওয়া",
+        "script-এ `terminal` দিয়ে `pytest --tb=short -q`",
+        "strict mode-এ `terminal` পুরো বন্ধ করে দেওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "Build ও test উদাহরণে `terminal`-এর foreground ব্যবহার হয়, `exit_code` ও শেষ ৫০০ অক্ষর print করা হয়।",
+      "whyWrong": {
+        "0": "script-এর ভেতর `terminal()`-এ `background` parameter নেই।",
+        "1": "`delegate_task` script থেকে ডাকা যায় না।",
+        "3": "এমন কোনো নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q17",
+      "difficulty": "hard",
+      "question": "Script ১০ মিনিটের লম্বা server চালাতে চায়। কী হবে?",
+      "options": [
+        "৩০০ সেকেন্ডে থেমে যায়",
+        "১০ মিনিট ঠিকঠাক চলবে",
+        "stdout ৫০ KB হয়ে যাবে",
+        "`strict` mode সীমা বাড়িয়ে দেবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "script-এ `background` বা `pty` নেই, লম্বা server চালাতে `execute_code` নয়।",
+      "whyWrong": {
+        "1": "সীমা ৩০০ সেকেন্ড।",
+        "2": "এটা stdout-এর প্রশ্ন নয়।",
+        "3": "mode সীমা বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q18",
+      "difficulty": "hard",
+      "question": "Gateway session আর local CLI-এর মধ্যে script-এর approval-এ কী তফাত?",
+      "options": [
+        "দুটোতেই একই নিয়ম, কোনো তফাত নেই",
+        "local-এ অনুমোদন বেশি কড়াভাবে লাগে",
+        "gateway-তে আগে অনুমোদন লাগে",
+        "কোথাও কোনো অনুমোদনই লাগে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "local-এও `terminal()` call জিজ্ঞেস করে।",
+      "whyWrong": {
+        "0": "তফাত আছে, লেসনে স্পষ্ট বলা।",
+        "1": "উল্টো: gateway-তে বেশি কড়া।",
+        "3": "gateway-তে লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q19",
+      "difficulty": "hard",
+      "question": "পুরোনো script ভেঙেছে: `HERMES_` দিয়ে শুরু একটা variable আর পৌঁছাচ্ছে না। কোথায় খুঁজবে?",
+      "options": [
+        "`stdout`-এর ৫০ KB-র মাথা ও লেজ অংশে",
+        "`agent.log`-এর `dropped` লাইনে",
+        "`kernel_idle_timeout`-এর সেটিংয়ে খুঁজবে",
+        "dashboard-এর রঙ ও ফন্ট-সেটিংয়ে খুঁজবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এখন শুধু `HERMES_HOME`, `HERMES_PROFILE`, `HERMES_CONFIG`, `HERMES_ENV` যায়; আগে যেকোনো `HERMES_*` যেত।",
+      "whyWrong": {
+        "0": "stdout script-এর ছাপা লেখা, বাদ-যাওয়া variable নয়।",
+        "2": "kernel-এর সময়ের সীমা।",
+        "3": "রঙের সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-code-execution-q20",
+      "difficulty": "hard",
+      "question": "Kernel-এর সংখ্যা `max_session_kernels` (default ৪) ছাড়ালে কী ঘটে?",
+      "options": [
+        "নতুন call ব্যর্থ হয়ে error আসে",
+        "সব kernel একসাথে মুছে যায়",
+        "সবচেয়ে নতুনটা চুপচাপ সরানো হয়",
+        "সবচেয়ে পুরনোটা সরানো হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "পুরনো kernel সরলে তার state-ও হারায়।",
+      "whyWrong": {
+        "0": "নতুনটা চালু থাকে।",
+        "1": "সব মোছা হয় না।",
+        "2": "নতুন call সরানো হয় না; পুরনোটা যায়।"
+      }
+    }
+  ]
+}

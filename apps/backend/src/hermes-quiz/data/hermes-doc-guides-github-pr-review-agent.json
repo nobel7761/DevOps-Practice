@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-github-pr-review-agent",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q01",
+      "difficulty": "easy",
+      "question": "PR (Pull Request) কী?",
+      "options": [
+        "কোডে করা বদল মূল কোডে মেশানোর প্রস্তাব",
+        "পুরনো ও নতুন কোডের তফাতের তালিকা",
+        "কোড রাখার ওয়েবসাইট ও ভাণ্ডার",
+        "প্রস্তাবিত বদল মূল কোডে মিলিয়ে দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "PR হলো 'আমি এই বদল করেছি, মূল কোডে মেশাবে কি?' প্রস্তাব।",
+      "whyWrong": {
+        "1": "এটা diff।",
+        "2": "এটা GitHub ও repo।",
+        "3": "এটা merge।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q02",
+      "difficulty": "easy",
+      "question": "Diff কী?",
+      "options": [
+        "কোডের ভুল খুঁজে বের করার টুল",
+        "পুরনো ও নতুন কোডের তফাত",
+        "GitHub-এর কমান্ড-লাইন টুল",
+        "সময় ধরে নিজে চলা কাজ"
+      ],
+      "correctIndex": 1,
+      "explanation": "কোন লাইন যোগ বা মোছা হলো, তাই দেখায়।",
+      "whyWrong": {
+        "0": "ভুল খোঁজা review।",
+        "2": "এটা `gh` CLI।",
+        "3": "এটা cron।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q03",
+      "difficulty": "easy",
+      "question": "`gh` কী?",
+      "options": [
+        "Hermes-এর একটা skill-এর নাম",
+        "GitHub-এর একটা ওয়েবসাইট",
+        "GitHub-এর কমান্ড-লাইন টুল",
+        "cron job-এর একটা flag"
+      ],
+      "correctIndex": 2,
+      "explanation": "`gh auth login` করলে সে তোমার নামে GitHub-এর সঙ্গে কথা বলতে পারে।",
+      "whyWrong": {
+        "0": "skill আলাদা জিনিস।",
+        "1": "এটা CLI, ওয়েবসাইট নয়।",
+        "3": "flag নয়, আলাদা টুল।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q04",
+      "difficulty": "easy",
+      "question": "এই agent-এ Skill কী দেয়?",
+      "options": [
+        "দলের নিয়ম, যা session পেরিয়ে থাকে",
+        "GitHub-এ ঢোকার পাসওয়ার্ড",
+        "job কখন চলবে তার সময়সূচি",
+        "review-র চেকলিস্ট ও output format"
+      ],
+      "correctIndex": 3,
+      "explanation": "Skill `~/.hermes/skills/code-review/SKILL.md`-এ থাকে। দলের নিয়ম থাকে memory-তে।",
+      "whyWrong": {
+        "0": "এটা memory-র কাজ।",
+        "1": "পাসওয়ার্ড skill-এ নয়, `gh auth login`-এ।",
+        "2": "সময়সূচি cron-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q05",
+      "difficulty": "easy",
+      "question": "`REQUEST_CHANGES` কী বোঝায়?",
+      "options": [
+        "মঞ্জুর, merge করা যাবে",
+        "শুধু মন্তব্য, মত নেই",
+        "বদল চাই",
+        "review শুরুই হয়নি"
+      ],
+      "correctIndex": 2,
+      "explanation": "শেষ verdict তিনটার একটা: `APPROVE` (মঞ্জুর), `REQUEST_CHANGES` (বদল চাই), `COMMENT` (শুধু মন্তব্য)।",
+      "whyWrong": {
+        "0": "এটা `APPROVE`।",
+        "1": "এটা `COMMENT`।",
+        "3": "এমন verdict নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q06",
+      "difficulty": "easy",
+      "question": "Test-এর সময় `deliver: \"local\"` দিলে review কোথায় জমে?",
+      "options": [
+        "`~/.hermes/cron/output/`-এ",
+        "Telegram-এ সরাসরি",
+        "GitHub-এর PR পাতায়",
+        "`~/.hermes/skills/code-review/`-এ"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটা নিরাপদ শুরু, কারণ কোথাও বার্তা যায় না।",
+      "whyWrong": {
+        "1": "Telegram-এ যায় `--deliver telegram` দিলে।",
+        "2": "পোস্ট করতে `gh pr review` লাগে।",
+        "3": "এটা skill-এর ফোল্ডার, output-এর নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q07",
+      "difficulty": "easy",
+      "question": "Gateway কী কাজে লাগে?",
+      "options": [
+        "PR-এর diff পড়ে ফেলে নিজে নিজেই সারাংশ লেখে",
+        "দলের নিয়ম লিখে রাখে যাতে পরে মনে থাকে",
+        "GitHub-এ review পোস্ট করে দেয় সরাসরি",
+        "cron job এখানেই চলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cron চালাতে gateway চালু রাখতে হয়: `hermes gateway install` (service) অথবা `hermes gateway` (foreground)।",
+      "whyWrong": {
+        "0": "diff পড়ে `gh pr diff`।",
+        "1": "এটা memory-র কাজ।",
+        "2": "পোস্ট করে `gh pr review`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q08",
+      "difficulty": "medium",
+      "question": "কেন webhook না নিয়ে cron-polling বেছে নেওয়া হলো?",
+      "options": [
+        "polling রিয়েল-টাইম, কোনো দেরি হয় না",
+        "public endpoint লাগে না",
+        "GitHub webhook সমর্থনই করে না, তাই polling",
+        "polling-এ কোনো token লাগে না, তাই সহজ"
+      ],
+      "correctIndex": 1,
+      "explanation": "Polling-এ সামান্য দেরি হয়। রিয়েল-টাইম চাইলে webhook, তখন public endpoint লাগে।",
+      "whyWrong": {
+        "0": "polling-এ দেরি হয়।",
+        "2": "webhook-ভিত্তিক আলাদা guide আছে।",
+        "3": "`gh` authenticated থাকা দরকার।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q09",
+      "difficulty": "medium",
+      "question": "ধাপ ১ ও ২-এ আগে হাতে review করা হয় কেন?",
+      "options": [
+        "যাতে Hermes-এর খরচ কমে যায় অনেকটা",
+        "যাতে cron ভুল কাজ বারবার না করে",
+        "যাতে memory আর দরকারই না হয় পরে",
+        "যাতে gateway চালু রাখতে না হয় কখনো"
+      ],
+      "correctIndex": 1,
+      "explanation": "স্বয়ংক্রিয় করার আগে নিশ্চিত হতে হয় সব সংযোগ ঠিক আছে।",
+      "whyWrong": {
+        "0": "দামের সাথে সম্পর্ক নেই।",
+        "2": "memory ধাপ ৪-এ লাগে।",
+        "3": "cron-এর জন্য gateway লাগেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q10",
+      "difficulty": "medium",
+      "question": "ধাপ ৪-এ team-নিয়ম `Remember: ...` দিয়ে বলার ফল কী?",
+      "options": [
+        "review পুরোপুরি বন্ধ হয়ে যায় ফলে",
+        "নিয়ম শুধু ওই একটা session-এই থাকে",
+        "নিয়ম `SKILL.md`-এ সেভ হয়ে যায় নিজে",
+        "দলের নিয়ম ধরে review হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Memory session পেরিয়েও থাকে। আপা যেমন জানেন 'এই স্কুলে লাল কালি চলে না'।",
+      "whyWrong": {
+        "0": "review চলে, ভালো হয়।",
+        "1": "session পেরিয়ে থাকে।",
+        "2": "এটা memory-তে যায়, skill-এ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q11",
+      "difficulty": "medium",
+      "question": "`0 9,13,17 * * 1-5` schedule-এর মানে কী?",
+      "options": [
+        "কর্মদিবসে দিনে তিনবার",
+        "প্রতি ২ ঘণ্টায়",
+        "সোমবার সকালে সপ্তাহে একবার",
+        "প্রতি ৩০ মিনিটে"
+      ],
+      "correctIndex": 0,
+      "explanation": "`0 */2 * * *` প্রতি ২ ঘণ্টা; `0 9 * * 1` সোমবার সকাল; `30m` ব্যস্ত repo-র জন্য।",
+      "whyWrong": {
+        "1": "এটা `0 */2 * * *`।",
+        "2": "এটা `0 9 * * 1`।",
+        "3": "এটা `30m`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q12",
+      "difficulty": "medium",
+      "question": "`gh: command not found` এলে কী করবে?",
+      "options": [
+        "`gh` মুছে আবার নতুন করে login করো",
+        "review skill মুছে আবার নতুন করে লেখো",
+        "PATH ঠিক করো, gateway restart",
+        "Telegram বন্ধ করে আবার চালু করো"
+      ],
+      "correctIndex": 2,
+      "explanation": "Gateway-র সীমিত environment-এ `gh` PATH-এ থাকে না।",
+      "whyWrong": {
+        "0": "সমস্যা PATH-এ।",
+        "1": "skill-এর সাথে সম্পর্ক নেই।",
+        "3": "delivery-র সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q13",
+      "difficulty": "medium",
+      "question": "GitHub review পোস্ট করতে কী লাগে?",
+      "options": [
+        "শুধু `gh pr list` চালালেই হয়ে যায়",
+        "webhook ও public endpoint বসালেই হয়",
+        "শুধু memory-র নিয়ম লিখে রাখলেই হয়",
+        "`gh pr review` ও `repo` token"
+      ],
+      "correctIndex": 3,
+      "explanation": "`--comment`, `--request-changes` বা `--approve` দেওয়া যায়; review authenticated `gh` ব্যবহারকারীর নামে যায়।",
+      "whyWrong": {
+        "0": "`list` শুধু তালিকা দেয়।",
+        "1": "এগুলো webhook-ভিত্তিক review-র কথা।",
+        "2": "নিয়ম review-র মান বাড়ায়, পোস্ট করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q14",
+      "difficulty": "medium",
+      "question": "প্রতি review finding-এ কী কী থাকে?",
+      "options": [
+        "শুধু লেখকের নাম আর verdict লেখা",
+        "শুধু diff-এর পুরো কপি জুড়ে দেওয়া",
+        "`File:Line`, তীব্রতা, সমস্যা, fix",
+        "শুধু `APPROVE` বা `COMMENT` শব্দটা দেওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "তীব্রতা তিন ধরনের: Critical / Warning / Suggestion।",
+      "whyWrong": {
+        "0": "লেখক ও verdict PR প্রতি শিরোনামে আসে।",
+        "1": "পুরো diff কপি finding নয়।",
+        "3": "verdict শেষে একবার আসে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q15",
+      "difficulty": "hard",
+      "question": "Schedule প্রতি ২ ঘণ্টা, কিন্তু prompt বলে \"গত ৪ ঘণ্টার PR\"। কী ঘটতে পারে?",
+      "options": [
+        "কোনো PR-ই review হবে না আর",
+        "একই PR বারবার review",
+        "শুধু ৪ ঘণ্টার PR বাদ পড়ে যাবে",
+        "job আপনাআপনি বন্ধ হয়ে যাবে এবার"
+      ],
+      "correctIndex": 1,
+      "explanation": "জানালা schedule-এর সাথে মেলাও।",
+      "whyWrong": {
+        "0": "review হয়, কিন্তু একাধিকবার।",
+        "2": "বাদ যায় না, বরং দ্বিগুণ।",
+        "3": "job চলতে থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q16",
+      "difficulty": "hard",
+      "question": "Review \"খুব সাধারণ\" মনে হচ্ছে। কোন সমাধান লেসনে আছে?",
+      "options": [
+        "skill, memory ও context বাড়াও",
+        "rate limit বাড়াও আর `gh` টুল বদলে ফেলো",
+        "`APPROVE` সবসময় দিয়ে দাও জোর করে",
+        "gateway বন্ধ করে আবার চালিয়ে দাও"
+      ],
+      "correctIndex": 0,
+      "explanation": "কারণ Hermes তোমার দলের নিয়ম জানে না।",
+      "whyWrong": {
+        "1": "rate limit সমস্যা নয়।",
+        "2": "verdict কখনো জোর করে দেওয়ার নয়।",
+        "3": "gateway সমস্যা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q17",
+      "difficulty": "hard",
+      "question": "দিনে ১০০টা PR review করলে GitHub rate limit নিয়ে কী বলা আছে?",
+      "options": [
+        "ঘণ্টায় ৫০ request, তাই ১০০ PR অসম্ভব",
+        "প্রতি review ৫০০ request, তাই চলবে না",
+        "ঘণ্টায় ৫,০০০ request, তাই নিরাপদ",
+        "rate limit authenticated ব্যবহারকারীর জন্য প্রযোজ্য নয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Authenticated হলে ঘণ্টায় ৫,০০০ request।",
+      "whyWrong": {
+        "0": "সংখ্যা ৫,০০০।",
+        "1": "প্রতি review মাত্র ~৩-৫ request।",
+        "3": "প্রযোজ্য, authenticated হলে সীমা ঊর্ধ্বে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q18",
+      "difficulty": "hard",
+      "question": "Cron চলছে না। কোনটা প্রথম পরখ?",
+      "options": [
+        "`gateway status` আর `cron list`",
+        "review skill মুছে নতুন করে লেখা",
+        "Telegram থেকে logout করে আবার ঢোকা",
+        "memory পুরো মুছে নতুন করে শুরু করা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Gateway বন্ধ থাকতে পারে।",
+      "whyWrong": {
+        "1": "skill সমস্যা নয়।",
+        "2": "delivery সমস্যা না।",
+        "3": "memory সমস্যা না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q19",
+      "difficulty": "hard",
+      "question": "এক repo-র বদলে বহু repo review করতে চাও। কী করবে?",
+      "options": [
+        "প্রতি repo-র জন্য আলাদা gateway চালাবে",
+        "prompt-এ আরও repo জুড়ে দেবে",
+        "cron-এর বদলে webhook বাধ্যতামূলক",
+        "`--skill` বন্ধ করবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "prompt-এ আরও repo জুড়লে একসাথে অনেক repo নজরে রাখা যায়।",
+      "whyWrong": {
+        "0": "gateway আলাদা লাগে না।",
+        "2": "webhook বাধ্যতামূলক নয়।",
+        "3": "skill বন্ধ করার দরকার নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-github-pr-review-agent-q20",
+      "difficulty": "hard",
+      "question": "নতুন PR না থাকলে prompt-এ কী বলা হয়েছে?",
+      "options": [
+        "চুপ করে থাকো",
+        "job মুছে ফেলো",
+        "পুরনো PR আবার review করো",
+        "তাই জানাও"
+      ],
+      "correctIndex": 3,
+      "explanation": "Prompt-এ 'নতুন PR না থাকলে তাই জানাও' আছে, `[SILENT]`-এর কথা এখানে নেই।",
+      "whyWrong": {
+        "0": "এই guide-এ চুপ থাকার কথা নেই।",
+        "1": "job মোছার কথা নেই।",
+        "2": "পুরনো PR আবার review করতে বলা নেই।"
+      }
+    }
+  ]
+}

@@ -3,14 +3,24 @@
 import { ListChecks } from "lucide-react";
 import Loader from "@/components/shared/Loader";
 import LabComingSoonPanel from "@/components/modules/lab/LabComingSoonPanel";
+import { QUESTION_BANK_SIZE } from "./sd-quiz.types";
 import { SdQuizAttempt } from "./SdQuizAttempt";
 import { SdQuizIntro } from "./SdQuizIntro";
 import { SdQuizResult } from "./SdQuizResult";
 import { useSdQuiz } from "./useSdQuiz";
 
 /** A topic's quiz (Plan doc Section 7): intro → 20 questions → result with explanations → retry. */
-export function SdQuiz({ topicId }: { topicId: string }) {
-  const quiz = useSdQuiz(topicId);
+export function SdQuiz({
+  topicId,
+  basePath = "/sd-quiz",
+  bankSize = QUESTION_BANK_SIZE,
+}: {
+  topicId: string;
+  /** API prefix; the System Design quiz and the Hermes quiz share this UI. */
+  basePath?: string;
+  bankSize?: number;
+}) {
+  const quiz = useSdQuiz(topicId, basePath);
   const { phase } = quiz;
 
   switch (phase.name) {
@@ -21,7 +31,7 @@ export function SdQuiz({ topicId }: { topicId: string }) {
         <LabComingSoonPanel
           icon={ListChecks}
           title="Quiz"
-          description="এই topic-এর 60টা প্রশ্নের bank এখনো তৈরি হয়নি।"
+          description="এই lesson-এর quiz এখনো তৈরি হয়নি।"
         />
       );
     case "error":
@@ -31,7 +41,13 @@ export function SdQuiz({ topicId }: { topicId: string }) {
         </p>
       );
     case "intro":
-      return <SdQuizIntro status={quiz.status} onStart={quiz.start} />;
+      return (
+        <SdQuizIntro
+          status={quiz.status}
+          bankSize={bankSize}
+          onStart={quiz.start}
+        />
+      );
     case "answering":
     case "submitting":
       return (
@@ -41,6 +57,7 @@ export function SdQuiz({ topicId }: { topicId: string }) {
           submitting={phase.name === "submitting"}
           onAnswer={quiz.answer}
           onSubmit={quiz.submit}
+          bankSize={bankSize}
         />
       );
     case "result":

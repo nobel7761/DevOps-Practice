@@ -1,0 +1,170 @@
+{
+  "contentId": "hermes-doc-guides-daily-briefing-bot",
+  "title": "Daily Briefing Bot",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/daily-briefing-bot",
+  "oneLiner": "এই lesson শেষে তুমি প্রতিদিন নিজে-নিজে খবর সারাংশ পাঠানো একটা Hermes cron bot বানাতে পারবে এবং cron, gateway, prompt, delivery-র মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: ভোরের খবরের কাগজওয়ালা\n\nরোজ সকাল ৮টায় কাগজওয়ালা তোমার দরজার সামনে খবরের কাগজ ফেলে যায়। তুমি কিছু বলো না, সে নিজেই আসে।\n\nএখন ভাবো কাগজওয়ালা একজন রোবট। সে নিজেই ইন্টারনেট ঘেঁটে তোমার পছন্দের বিষয়ের সেরা ৩টা খবর লিখে তোমার Telegram-এ পাঠায়। এটাই **Daily Briefing Bot**। (Briefing মানে ছোট সারাংশ।)\n\nকিন্তু একটা মজার ব্যাপার: এই কাগজওয়ালার **স্মৃতি নেই**! প্রতিদিন সে নতুন করে ঘুম থেকে ওঠে। তাই তাকে দেওয়া চিরকুটে (prompt) সব কথা পুরোপুরি লেখা থাকতে হবে। এটা এই guide-এর সোনালি নিয়ম।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Cron job:** \"এই কাজটা এই সময়ে নিজে নিজে করে ফেলো\", এমন একটা সময়-ঠিক-করা কাজ। উপমা: অ্যালার্ম ঘড়ি, কিন্তু যে ঘণ্টা বাজানোর বদলে কাজ করে। **Cron** হলো এই সময়-মেপে-চালানো ব্যবস্থার নাম।\n- **Cron expression:** সময়টা লেখার একটা সংক্ষিপ্ত ছক, যেমন `0 8 * * *` মানে \"প্রতিদিন সকাল ৮:০০\"। নিচে ভেঙে বলব।\n- **Prompt (প্রম্পট):** AI-কে লিখে দেওয়া নির্দেশ। রোবট কাগজওয়ালার চিরকুট।\n- **Session (সেশন):** একটা আলাদা আলাপ। Cron job প্রতিবার **নতুন** session-এ চলে, তাই আগের কথা মনে থাকে না।\n- **Gateway (গেটওয়ে):** একটা চলতে-থাকা প্রোগ্রাম, যা Hermes-কে Telegram/Discord-এর মতো chat app-এর সঙ্গে জোড়ে। আর cron job-ও এখানেই চলে। দারোয়ান যেমন সারাক্ষণ গেটে বসে থাকে। না থাকলে কেউ কাজ ধরিয়ে দেবে না।\n- **Service ও foreground:** Service মানে পেছনে চুপচাপ সারাক্ষণ চলা প্রোগ্রাম (দারোয়ান ডিউটিতে)। Foreground মানে terminal-এর জানালা খোলা রেখে চালানো, জানালা বন্ধ করলে বন্ধ।\n- **Environment variable:** নামওয়ালা সেটিং, যেমন `FIRECRAWL_API_KEY=...`। প্রোগ্রাম নাম ধরে মান খুঁজে নেয়।\n- **API key:** কোনো সেবা (যেমন web search) ব্যবহারের গোপন পাসওয়ার্ড। **Firecrawl** হলো ওয়েব থেকে তথ্য আনার একটা সেবা।\n- **Sub-agent:** মূল Hermes-এর ডাকা ছোট সহকারী, যে আলাদা কাজ করে।\n- **Deliver / delivery target:** ফলাফল কোথায় পাঠাবে। Telegram, নাকি কম্পিউটারের ফোল্ডার।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে যা লাগবে\n\n- Hermes install করা\n- **Gateway চালু।** Cron job এখানেই চলে। না চললে কেউ ঘড়ি দেখে কাজ শুরু করবে না। তিনটা উপায়:\n  - `hermes gateway install`: user service হিসেবে বসাও (শুধু তোমার account-এর জন্য, পেছনে চলবে)\n  - `sudo hermes gateway install --system`: Linux boot-time service (কম্পিউটার চালু হলেই নিজে শুরু; `sudo` মানে admin-এর অনুমতি নিয়ে চালাও)\n  - `hermes gateway`: foreground-এ, terminal খোলা থাকলে চলবে\n- web search-এর জন্য environment-এ `FIRECRAWL_API_KEY`\n- ঐচ্ছিক: Telegram/Discord ও একটা home channel (যে ঘরে ফল আসবে)। messaging না থাকলে `deliver: \"local\"` দাও। briefing সেভ হবে `~/.hermes/cron/output/`-এ।\n- সবচেয়ে দ্রুত setup হিসেবে পাতা `hermes setup --portal` সুপারিশ করে (search, summarization ও ঐচ্ছিক TTS মানে লেখা থেকে কথা, Portal subscription-এ bundled, মানে একসাথে দেওয়া)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Briefing bot বানানোর চার ধাপ।",
+        "steps": [
+          {
+            "title": "১. হাতে পরীক্ষা",
+            "body": "`hermes` চালিয়ে বলো: আমার বিষয়ের সর্বশেষ খবর খুঁজে সেরা ৩টা লিংকসহ সারাংশ করো। format পছন্দ না হওয়া পর্যন্ত বদলাও।"
+          },
+          {
+            "title": "২. Cron job বানাও",
+            "body": "সাধারণ ভাষায় বলো, অথবা `/cron add \"0 8 * * *\" \"<prompt>\"`।"
+          },
+          {
+            "title": "৩. কাস্টমাইজ করো",
+            "body": "একাধিক বিষয়, সমান্তরাল research, শুধু কর্মদিবস, দিনে দুবার।"
+          },
+          {
+            "title": "৪. পরিচালনা করো",
+            "body": "`/cron list`, `hermes cron list`, `hermes cron status`, `/cron remove <ID>`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ২: Cron job বানানো\n\nশুরুর আগে নিশ্চিত করো global-এ (সব জায়গার জন্য) একটা default model ও provider সেট আছে। (Model = AI-র মগজ, provider = যে সেবা সেটা চালায়।) কোনো job আলাদা চাইলে per-job override দেওয়া যায়, মানে শুধু ওই job-এর জন্য আলাদা বেছে নেওয়া।\n\n**উপায় ক (সাধারণ ভাষা):** chat-এ বলো কখন, কোন বিষয়, কেমন tone, কোথায় পাঠাবে। Hermes `cronjob_manage` tool (হাতিয়ার) দিয়ে job বানায়।\n\n**উপায় খ (slash command):**\n\n```text\n/cron add \"0 8 * * *\" \"Search for the latest news on AI and Python. Summarize the top 3 stories with links, in 5 short sentences, friendly tone.\"\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `/cron add` | নতুন সময়-ঠিক-করা কাজ যোগ করো (`/` দিয়ে শুরু হলে slash command) | অ্যালার্ম যোগ করার বোতাম |\n| `\"0 8 * * *\"` | কখন চলবে: প্রতিদিন সকাল ৮:০০ | অ্যালার্মের সময় |\n| `\"Search for ...\"` | prompt: কী কাজ করবে | চিরকুট |\n\n**Cron expression-এর পাঁচ ঘর:** মিনিট, ঘণ্টা, মাসের দিন, মাস, সপ্তাহের দিন। `*` মানে \"যেকোনো\"। তাই `0 8 * * *` = ০ মিনিট, ৮ ঘণ্টা, প্রতিদিন, প্রতি মাস, সপ্তাহের যেকোনো দিন।\n\nকী আশা করবে? Hermes job বানিয়ে নিশ্চিত করবে। পরের সময় এলে gateway কাজটা চালাবে আর ফল পাঠাবে।\n\n### সোনালি নিয়ম: prompt হতে হবে স্বয়ংসম্পূর্ণ\n\nCron job **নতুন session-এ** চলে, আগের কোনো chat মনে নেই। তাই prompt-এ বলতে হবে কী খুঁজবে, কতগুলো article, কেমন format, কেমন tone। না বললে সে আন্দাজ করবে, বা ব্যর্থ হবে।\n\n| ভুল | ঠিক |\n|---|---|\n| \"আমার রোজকার briefing দাও\" | \"AI আর DevOps নিয়ে গত ২৪ ঘণ্টার ৩টা খবর, প্রতিটার ২ বাক্য ও লিংক, ইমোজি header সহ\" |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Prompt-এর পার্থক্য।",
+        "beforeTitle": "অস্পষ্ট (ব্যর্থ)",
+        "before": "\"do my usual briefing\" — job-এর কোনো পূর্ব context নেই, সে জানে না \"usual\" কী।",
+        "afterTitle": "স্বয়ংসম্পূর্ণ (সফল)",
+        "after": "বিষয়, সংখ্যা, format, tone, পাঠকের পরিচয় — সব prompt-এর ভেতরেই।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৩: কাস্টমাইজ\n\n- **বহু বিষয়:** প্রতিটা বিষয়ের জন্য কয়টা খবর ও কোন focus, সব লিখে দাও।\n- **সমান্তরাল research:** সমান্তরাল মানে একসাথে। প্রতিটা বিষয় একটা sub-agent-কে delegate করো (কাজ ভাগ করে দাও), শেষে একটা briefing-এ মিলিয়ে নাও (Delegation docs দেখো)।\n- **শুধু কর্মদিবস:** `0 8 * * 1-5`। শেষ ঘরের `1-5` মানে সোমবার থেকে শুক্রবার।\n- **দিনে দুবার:** সকালে `0 8 * * *`, সন্ধ্যায় `0 18 * * *`। প্রতিটা ছোট সময়সীমা (যেমন গত ১২ ঘণ্টা) কভার করবে।\n- **ব্যক্তিগত context:** cron session-এ memory আসে না (memory = Hermes-এর স্থায়ী খাতা)। তাই পাঠকের role, আগ্রহ আর যা বাদ দিতে চাও, prompt-এই লিখে দাও।\n\n## ধাপ ৪: Job পরিচালনা\n\n```bash\nhermes cron list      # ID, নাম, schedule, পরের run, delivery target\nhermes cron status    # scheduler চলছে কিনা\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes cron list` | সব job-এর তালিকা: ID, নাম, সময়, পরের run, কোথায় যাবে | কী কী চালু আছে দেখতে |\n| `hermes cron status` | scheduler (সময় দেখে কাজ ধরিয়ে দেওয়ার অংশ) চলছে কি না | briefing না এলে প্রথমে এটা দেখো |\n| `/cron list` | chat-এর ভেতর থেকে তালিকা | terminal ছাড়াই দেখতে |\n| `/cron remove <ID>` | ওই ID-র job মুছে দাও | আর দরকার নেই |\n\nঅথবা কথোপকথনে বললে Hermes `cronjob(action=\"list\")` / `cronjob(action=\"remove\")` ব্যবহার করে। এখানে ID হলো প্রতিটা job-এর আলাদা পরিচয়-নম্বর।"
+    },
+    {
+      "type": "simulator",
+      "id": "cron"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Gateway না চললে job চলে না",
+      "markdown": "`hermes cron status` দিয়ে দেখো। Gateway বন্ধ থাকলে কোনো briefing পাঠানো হবে না। দারোয়ান ছুটিতে থাকলে চিঠি বিলি হয় না।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Messaging ছাড়া?",
+      "markdown": "`deliver: \"local\"` দিলে ফল জমা হয় `~/.hermes/cron/output/`-এ। সেখান থেকে পড়তে পারো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## অন্য কী কী বানানো যায়?\n\nএকই pattern দিয়ে competitor monitoring (প্রতিদ্বন্দ্বীর খবর রাখা), repo সারাংশ (repo = কোড রাখার ভাণ্ডার), আবহাওয়া, portfolio tracking বা server health check, সবই সম্ভব। শুধু মনে রাখো: স্বয়ংসম্পূর্ণ prompt, চালু gateway, আর আগে-থেকে-ঠিক-করা default model।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Cron job কেন \"do my usual briefing\" prompt-এ ব্যর্থ হয়?",
+      "options": [
+        "Cron শুধু ইংরেজি বোঝে",
+        "Cron job নতুন session-এ চলে, আগের আলাপ মনে থাকে না",
+        "Prompt ১০ শব্দের বেশি হলে চলে না",
+        "Gateway অতিরিক্ত দ্রুত"
+      ],
+      "answerIndex": 1,
+      "explanation": "কাগজওয়ালা রোবটের স্মৃতি নেই। \"usual\" কী তা prompt-এই লিখতে হয়।"
+    },
+    {
+      "question": "শুধু সোম-শুক্র সকাল ৮টায় চালাতে cron expression কী?",
+      "options": [
+        "`0 8 * * *`",
+        "`0 18 * * *`",
+        "`8 0 * * 1-5`",
+        "`0 8 * * 1-5`"
+      ],
+      "answerIndex": 3,
+      "explanation": "শেষ ঘর সপ্তাহের দিন, `1-5` মানে সোম থেকে শুক্র।"
+    },
+    {
+      "question": "Messaging ছাড়া briefing কোথায় সেভ হয় (`deliver: \"local\"`)?",
+      "options": [
+        "`~/.hermes/memories/`",
+        "`/etc/cron.d/`",
+        "`~/.hermes/cron/output/`",
+        "`~/.hermes/SOUL.md`"
+      ],
+      "answerIndex": 2,
+      "explanation": "Local delivery মানে নিজের কম্পিউটারের ফোল্ডারে জমা।"
+    },
+    {
+      "question": "Scheduler চলছে কিনা দেখতে কোন কমান্ড?",
+      "options": [
+        "`hermes cron add`",
+        "`hermes cron status`",
+        "`/new`",
+        "`hermes setup --portal`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`status` মানে অবস্থা দেখাও।"
+    },
+    {
+      "question": "Cron job কোথায় চলে?",
+      "options": [
+        "Browser tab-এ",
+        "Gateway-র মধ্যে",
+        "শুধু Telegram app-এ",
+        "Ollama-র ভেতরে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Gateway হলো সারাক্ষণ চলা দারোয়ান, সে সময় দেখে job চালায়।"
+    },
+    {
+      "question": "Web search-এর জন্য কোন environment variable লাগে?",
+      "options": [
+        "`TELEGRAM_BOT_TOKEN`",
+        "`OLLAMA_KEEP_ALIVE`",
+        "`FIRECRAWL_API_KEY`",
+        "`TERMINAL_ENV`"
+      ],
+      "answerIndex": 2,
+      "explanation": "Firecrawl হলো ওয়েব থেকে তথ্য আনার সেবা, তার চাবি এই variable-এ থাকে।"
+    },
+    {
+      "question": "দিনে দুবার briefing-এর জন্য কী করবে?",
+      "options": [
+        "একটা job-কে দুবার run করতে বলবে",
+        "সকাল ও সন্ধ্যার (`0 8`, `0 18`) দুটো আলাদা job বানাবে",
+        "Memory-তে লিখে রাখবে",
+        "কোনোভাবেই সম্ভব নয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "দুই সময়ের জন্য দুটো cron job, প্রতিটা ছোট সময়সীমা কভার করে।"
+    }
+  ],
+  "recap": [
+    "Cron job হলো সময়-ঠিক-করা কাজ; `0 8 * * *` মানে প্রতিদিন সকাল ৮টা।",
+    "Cron job নতুন session-এ চলে, তাই prompt হতে হবে স্বয়ংসম্পূর্ণ: বিষয়, সংখ্যা, format, tone।",
+    "Job চালানোর জন্য gateway চালু থাকতে হবে; `hermes cron status` দিয়ে দেখো।",
+    "Messaging ছাড়া `deliver: \"local\"` দিলে ফল `~/.hermes/cron/output/`-এ জমা হয়।",
+    "`hermes cron list` ও `/cron remove <ID>` দিয়ে job পরিচালনা করো।"
+  ]
+}

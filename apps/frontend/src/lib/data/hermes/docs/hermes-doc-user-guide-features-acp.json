@@ -1,0 +1,203 @@
+{
+  "contentId": "hermes-doc-user-guide-features-acp",
+  "title": "ACP",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/acp",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে ACP কী, কেন লাগে, কীভাবে VS Code/Zed/JetBrains-এর ভেতরে Hermes চালাতে হয় এবং approval ও tool কীভাবে নিয়ন্ত্রণ করতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## পাশের চেয়ারের সহকারী\n\nHermes একজন সহকারী, যে সাধারণত নিজের ঘরে (terminal-এ) বসে কাজ করে। এখন তুমি একটা **কোড-এডিটরে** (যেখানে প্রোগ্রামাররা কোড লেখে, যেমন VS Code) কাজ করছ। তুমি চাও সহকারী তোমার **পাশের চেয়ারেই** বসুক: তুমি কোড লিখছ, সে দেখছে, ফাইল বদলাচ্ছে, কমান্ড চালাচ্ছে, আর তুমি সব এডিটরের ভেতরেই দেখতে পাচ্ছ।\n\nকিন্তু এডিটর আর Hermes দুজন দুই ভাষায় কথা বলে। তাই একটা **সাধারণ ভাষা** দরকার। সেই ভাষার নাম **ACP**।\n\n**এটা না থাকলে কী সমস্যা হতো?** প্রতিটা এডিটরের (VS Code, Zed, JetBrains) জন্য Hermes-কে আলাদা আলাদা করে বানাতে হতো। ACP আছে বলে একটাই Hermes সব এডিটরে বসে যায়।\n\nএডিটর (যাকে বলে **host**, মানে আশ্রয়দাতা) যোগাযোগের পথটা সামলায়। আর Hermes নিজের পরিচয়, provider, memory, skill, tool সব নিয়েই থাকে। এডিটরের ভেতরে তুমি দেখতে পাও: chat, tool-এর কাজ, ফাইলের পরিবর্তন (diff), terminal command, অনুমতি-চাওয়া (approval prompt) আর স্ট্রিমিং চিন্তা (ভাবনা একটু একটু করে ভেসে ওঠা)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) ACP (Agent Client Protocol)\n**Protocol** = কথা বলার সবার-মানা নিয়ম। **ACP** = \"এডিটর (client) আর AI agent একে অপরের সাথে কীভাবে কথা বলবে\" তার নিয়ম। ফোনের চার্জারের সার্বজনীন পোর্টের মতো: একই নিয়ম মানলে যেকোনো দুই পক্ষ জোড়া লাগে।\n\n### ২) IDE / Editor\nযে প্রোগ্রামে কোড লেখা হয়। VS Code, Zed, JetBrains (এর অনেক IDE আছে) তিনটাই জনপ্রিয় নাম।\n\n### ৩) stdio আর JSON-RPC\n- **stdio** = একটা প্রোগ্রামের \"কথা বলার নল\" (standard input/output)। এডিটর Hermes-কে চালু করে আর এই নলে কথা চালাচালি করে। দুই ঘরের মাঝে একটা পাইপ-ফোন।\n- **JSON-RPC** = ওই নলে পাঠানো বার্তার ছাঁচ। **JSON** = `{ \"নাম\": \"মান\" }` ধরনের সাজানো তথ্য। **RPC** = \"দূরের প্রোগ্রামকে কাজ করতে বলা।\"\n- সেজন্য নিয়ম: **stdout শুধু JSON-RPC-র জন্য**। কোনো log বা অন্য লেখা ওই নলে পাঠালে কথা গুলিয়ে যেত, তাই log যায় **stderr**-এ (আলাদা নল, ভুল-খবরের জন্য)।\n\n### ৪) Toolset আর Tool\n**Tool** = Hermes-এর হাতিয়ার (ফাইল পড়া, কমান্ড চালানো)। **Toolset** = এমন কয়েকটা tool-এর বাক্স।\n\n### ৫) Session, working directory (cwd)\n- **Session** = একটা আলাপ, শুরু থেকে শেষ।\n- **Working directory / cwd** = এখন তুমি যে ফোল্ডারে কাজ করছ। এডিটরে প্রজেক্টের ফোল্ডারটাই।\n\n### ৬) Approval (অনুমতি)\nHermes কোনো বিপজ্জনক কমান্ড (যেমন ফাইল মোছা) চালাতে চাইলে আগে তোমার কাছে অনুমতি চায়। বাচ্চা বড়দের জিজ্ঞেস করে \"আমি কি এটা করব?\" এরকম।\n\n### ৭) MCP\nবাইরের tool জোড়ার সার্বজনীন সকেট (আলাদা lesson আছে)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "এডিটর stdio-তে Hermes-কে চালায়।",
+        "nodes": [
+          {
+            "id": "e",
+            "kind": "client",
+            "label": "VS Code / Zed",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "a",
+            "kind": "gateway",
+            "label": "hermes acp",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "s",
+            "kind": "database",
+            "label": "state.db, .env",
+            "x": 660,
+            "y": 100
+          }
+        ],
+        "edges": [
+          {
+            "from": "e",
+            "to": "a",
+            "label": "JSON-RPC"
+          },
+          {
+            "from": "a",
+            "to": "h",
+            "label": "চালায়"
+          },
+          {
+            "from": "h",
+            "to": "s",
+            "label": "শেয়ার্ড config"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ইন্সটল ও চালু\n\n```bash\ncd ~/.hermes/hermes-agent && python -c \"import pm; pm.sync_venv(['acp'], explicit=True)\"\n```\n\n**এই লাইনটা ভেঙে বুঝি:**\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `cd ~/.hermes/hermes-agent` | Hermes-এর কোড-ফোল্ডারে ঢোকো | ঘরের ভেতরে ঢোকা |\n| `&&` | \"আগেরটা সফল হলে তবেই পরেরটা\" | দরজা খুললে তবে ঢোকা |\n| `python -c \"...\"` | Python-কে একটা ছোট কোড চালাতে বলা | ছোট নির্দেশ মুখে বলা |\n| `pm.sync_venv(['acp'], ...)` | ACP-র জন্য দরকারি অতিরিক্ত অংশ (extra) বসাও | অতিরিক্ত যন্ত্র আনা |\n\n(**venv** = Hermes-এর আলাদা Python-এর বাক্স, যাতে অন্য প্রোগ্রামের সাথে গোলমাল না হয়।)\n\nএতে `agent-client-protocol` ইন্সটল হয় এবং তিনটা নাম চালু হয়: `hermes acp`, `hermes-acp`, `python -m acp_adapter`।\n\nপরীক্ষা: `hermes acp --version` (সংস্করণ দেখাও), `hermes acp --check` (ঠিকঠাক আছে কি না দেখো)।\n\n### প্রতিটা এডিটরে কীভাবে জোড়ে\n\n| Host | কী করবে |\n|---|---|\n| **VS Code** | ACP Client extension (formulahendry) ইন্সটল করে \"Hermes Agent\" বাছো। অথবা settings-এ নিচের JSON |\n| **Zed** | `agent_servers`-এ `hermes-agent` নামে `\"type\": \"custom\"`, `\"command\": \"hermes\"`, `\"args\": [\"acp\"]`। আগে `hermes model` দিয়ে credential ঠিক করো |\n| **JetBrains** | ACP-compatible plugin-কে `hermes acp` বা `hermes-acp`-এ দেখাও |\n| **Buzz Desktop** | Settings → Runtimes-এ নিজে খুঁজে পায়; না পেলে `command -v hermes-acp \\|\\| command -v hermes` |\n\nVS Code-এর JSON:\n\n```json\n{ \"acp.agents\": { \"Hermes Agent\": { \"command\": \"hermes\", \"args\": [\"acp\"] } } }\n```\n\nএখানে `command` মানে চালানোর হুকুম (`hermes`), আর `args` মানে সাথের নির্দেশ (`acp`)। মোট: \"এডিটর, Hermes-কে `hermes acp` বলে চালাও।\"\n\n**Credential ও config CLI-র সাথেই ভাগ হয়:** `~/.hermes/.env` (key), `config.yaml` (সেটিং), `skills/` (শেখা কৌশল), `state.db` (আলাপের স্মৃতি-ডাটাবেস)। **কেন ভালো?** আলাদা করে সেটআপ করতে হয় না, terminal-এ যা ঠিক করেছ এডিটরেও তাই চলে। Credential না থাকলে `hermes model` বা `hermes acp --setup`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ACP-তে Hermes কী tool পায়\n\nACP-র জন্য toolset-এর নাম `hermes-acp`। ভেতরে আছে:\n\n| ধরন | tool |\n|---|---|\n| ফাইল | `read_file`, `write_file`, `patch`, `search_files` |\n| terminal | `terminal`, `process` |\n| ওয়েব/browser | web ও browser tool |\n| স্মৃতি, কাজের তালিকা | memory, todo, session search |\n| অন্যান্য | skill, `execute_code`, `delegate_task`, vision |\n\n**বাদ:** messaging delivery (chat অ্যাপে বার্তা পাঠানো) ও cronjob ব্যবস্থাপনা (সময়মতো কাজ)। কারণ এডিটরে বসে এগুলোর দরকার নেই।\n\n`hermes tools` কমান্ডে ACP-র আলাদা entry নেই, তাই toolset বদলাতে **`config.yaml` সরাসরি** বদলাও:\n\n```yaml\nplatform_toolsets:\n  acp: [file, web, skills, github]   # শুধু github MCP server\nagent:\n  disabled_toolsets: [code_execution]\n```\n\n| key | মানে | কখন লাগে |\n|---|---|---|\n| `platform_toolsets.acp` | ACP-র default `hermes-acp`-কে বদলে নিজের তালিকা দেয় | কম tool দিতে চাইলে |\n| `agent.disabled_toolsets` | সব ACP session থেকে এই toolset সরিয়ে দেয় | নির্দিষ্ট ক্ষমতা (যেমন code চালানো) বন্ধ করতে |\n\n`mcp_servers`-এর ক্ষেত্রে: নাম তালিকায় দিলে শুধু সেই server; `no_mcp` দিলে সব MCP বাদ। (`github` এখানে একটা MCP server-এর নাম।)\n\n### Browser tool (ঐচ্ছিক)\n\n`browser_exec`, `browser_cdp`, `browser_dialog`, `browser_vault` চাইলে তোমার কম্পিউটারে একটা local **Chromium** (Chrome-এর খোলা-সোর্স ভাই, ব্রাউজার) লাগে। `hermes acp --setup-browser` চালাও। প্রায় ৪০০ MB ডাউনলোডের আগে সে জিজ্ঞেস করে; `--yes` দিলে জিজ্ঞেস না করেই হ্যাঁ ধরে।\n\n## Session ও working directory\n\nSession-এর তথ্য (ID, working directory, মডেল, history, cancel event) **memory-তে** (চলতি অবস্থায় RAM-এ) থাকে। আলাপ **`state.db`-তে সেভ** হয়, তাই restart-এর পরও list, load, resume, fork করা যায়। (**Fork** = একটা আলাপের কপি নিয়ে আলাদা শাখায় নতুন দিকে যাওয়া।)\n\nএডিটরের cwd Hermes-এর task ID-র সাথে বাঁধা। **ফল:** file ও terminal tool তোমার প্রজেক্ট ফোল্ডারেই চলে, অন্য কোথাও না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "বিপজ্জনক command এলে approval-এর পথ।",
+        "steps": [
+          {
+            "title": "Hermes command চালাতে চায়",
+            "body": "dangerous terminal command এডিটরে approval প্রম্পট হয়ে আসে।"
+          },
+          {
+            "title": "তুমি বাছো",
+            "body": "`allow_once`, `allow_session`, `allow_always` বা `deny`।"
+          },
+          {
+            "title": "উত্তর না দিলে",
+            "body": "timeout বা error হলে **deny**। অপেক্ষার সময় `approvals.timeout` (default ৩০০ সেকেন্ড)।"
+          },
+          {
+            "title": "ফল",
+            "body": "`allow_always` স্থায়ী allowlist-এ লেখে; `allow_session` শুধু ওই ACP session-এ।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "### চার উত্তরের অর্থ\n\n| Option | সীমা | স্থায়ী? | কখন বাছবে |\n|---|---|---|---|\n| `allow_once` | শুধু এই একটা call | না | অচেনা command-এ |\n| `allow_session` | এই ACP session-এর মিলে-যাওয়া call | না | বারবার নিরাপদ মনে হলে |\n| `allow_always` | ভবিষ্যতের সব session | হ্যাঁ | শুধু idempotent command-এ (যেমন `git status`) |\n| `deny` | এই call | না | সন্দেহ হলে |\n\n**Idempotent** মানে বারবার চালালেও কিছু বদলায় না। `git status` শুধু অবস্থা দেখায়, কিছু ভাঙে না, তাই বারবার ছাড় দেওয়া নিরাপদ।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Buzz-এ approval নিজে নিজে হয়ে যায়",
+      "markdown": "Buzz bridge যেকোনো permission request-কে নিজে `allow_once` দিয়ে দেয়। ফলে `terminal` ও `execute_code` কোনো প্রম্পট ছাড়াই চলে, আর `approvals.mode: manual` কাজে আসে না। Buzz-এর **\"Who can talk to this agent\"** সেটিং **Owner only** রাখো। `Anyone` দিলে channel-এর সবাই তোমার shell (কমান্ড-জানালা) চালানোর ক্ষমতা পেয়ে যায়। Shell সরাতে `terminal` ও `code_execution` `platform_toolsets.acp` থেকে বাদ দাও বা `agent.disabled_toolsets`-এ দাও। Owner `!shutdown` পাঠিয়ে agent থামাতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সমস্যা সমাধান\n\n| লক্ষণ | কী দেখবে |\n|---|---|\n| এডিটরে agent দেখা যায় না | host-এর command `hermes acp` কি না; Hermes **PATH**-এ আছে কি না (PATH = কম্পিউটারের কমান্ড-খোঁজার ফোল্ডার-তালিকা); ACP extra ইন্সটল হয়েছে কি না |\n| সঙ্গে সঙ্গে error | `hermes acp --version`, `hermes acp --check`, `hermes doctor`, `hermes status` |\n| খালি session row জমে গেছে | `hermes sessions show <id>` দেখে নিশ্চিত হয়ে `hermes sessions delete <id>` |\n\nআরেকটা তথ্য: `HERMES_ACP_SKIP_CONFIGURED_MCP=1`-এর কোনো প্রভাব নেই। ACP কখনোই `config.yaml`-এর MCP server নিজে চালু করে না।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "ACP-র মূল কাজ কী?",
+      "options": [
+        "Hermes-কে ইন্টারনেট থেকে নামানো",
+        "chat অ্যাপে মেসেজ পাঠানো",
+        "কোড-এডিটর (VS Code, Zed, JetBrains) আর Hermes-কে একই ভাষায় কথা বলানো",
+        "মডেল ট্রেন করা"
+      ],
+      "answerIndex": 2,
+      "explanation": "ACP এডিটর ও agent-এর সাধারণ ভাষা। এতে একটাই Hermes সব এডিটরের ভেতরে বসে কাজ করে।"
+    },
+    {
+      "question": "Hermes-কে ACP-তে চালু করার কমান্ড কোনটা?",
+      "options": [
+        "`hermes acp`",
+        "`hermes stop`",
+        "`hermes chat --acp-off`",
+        "`hermes install-editor`"
+      ],
+      "answerIndex": 0,
+      "explanation": "`hermes acp` (বা `hermes-acp`, `python -m acp_adapter`)। এডিটর এটাই stdio-তে চালায়।"
+    },
+    {
+      "question": "ACP চলার সময় stdout কীসের জন্য সংরক্ষিত?",
+      "options": [
+        "log লেখার জন্য",
+        "error দেখানোর জন্য",
+        "রঙিন ছবির জন্য",
+        "শুধু JSON-RPC বার্তার জন্য"
+      ],
+      "answerIndex": 3,
+      "explanation": "stdout হলো কথা-বলার নল। log গেলে কথা গুলিয়ে যেত, তাই log যায় stderr-এ।"
+    },
+    {
+      "question": "`allow_always` কী করে?",
+      "options": [
+        "শুধু এই call",
+        "ভবিষ্যতের সব session-এর জন্য স্থায়ী allowlist-এ লেখে",
+        "শুধু এই session",
+        "call বাতিল করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "allow_always স্থায়ী। তাই শুধু `git status`-এর মতো নিরাপদ, idempotent command-এ দাও।"
+    },
+    {
+      "question": "approval-এ কোনো উত্তর না এলে কী হয়?",
+      "options": [
+        "আপনা-আপনি allow",
+        "Hermes বন্ধ হয়",
+        "timeout বা error-এ deny, অপেক্ষা `approvals.timeout` (default ৩০০ সেকেন্ড)",
+        "আবার শুরু"
+      ],
+      "answerIndex": 2,
+      "explanation": "নিরাপদ দিকে যাওয়া: উত্তর না এলে deny। ভুল করে বিপজ্জনক কমান্ড চলে না।"
+    },
+    {
+      "question": "`hermes tools` দিয়ে ACP toolset বদলানো যায় না কেন, আর কী করতে হয়?",
+      "options": [
+        "ACP-র আলাদা entry নেই, তাই `config.yaml`-এ `platform_toolsets.acp` বা `agent.disabled_toolsets` বদলাতে হয়",
+        "ACP বন্ধ থাকে",
+        "কারণ Hermes ভুল",
+        "tool বদলানো যায়ই না"
+      ],
+      "answerIndex": 0,
+      "explanation": "hermes tools-এ ACP নেই। তাই সরাসরি config.yaml সম্পাদনা করতে হয়।"
+    },
+    {
+      "question": "Buzz-এ \"Who can talk to this agent\" কেন Owner only রাখা জরুরি?",
+      "options": [
+        "দেখতে সুন্দর লাগে",
+        "এটা বন্ধ করা যায় না",
+        "গতি বাড়ে",
+        "Buzz নিজে approval দিয়ে দেয়; `Anyone` দিলে channel-এর সবাই shell চালানোর ক্ষমতা পায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "Buzz bridge permission-কে auto allow_once দেয়। তাই Anyone দিলে সবাই তোমার কমান্ড চালাতে পারত।"
+    }
+  ],
+  "recap": [
+    "ACP হলো এডিটর (VS Code, Zed, JetBrains) আর Hermes-এর সাধারণ ভাষা; এডিটর `hermes acp` চালিয়ে stdio-তে JSON-RPC দিয়ে কথা বলে।",
+    "stdout শুধু JSON-RPC-র জন্য, log যায় stderr-এ; credential ও config CLI-র সাথেই ভাগ হয়।",
+    "ACP toolset `hermes-acp` (ফাইল, terminal, web ইত্যাদি), messaging ও cron বাদ; বদলাতে `config.yaml` সম্পাদনা করো।",
+    "বিপজ্জনক command-এ চার অনুমতি: `allow_once`, `allow_session`, `allow_always`, `deny`; উত্তর না এলে deny।",
+    "Buzz-এ approval নিজে হয়ে যায়, তাই \"Owner only\" রাখো আর দরকারে `terminal` toolset বাদ দাও।"
+  ]
+}

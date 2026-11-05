@@ -62,7 +62,10 @@ export default function Markdown({ children }: { children: string }) {
           />
         ),
         code: ({ className, children, ...props }) => (
-          <code className="rounded bg-muted px-1.5 py-0.5 text-sm" {...props}>
+          <code
+            className="rounded bg-muted px-1.5 py-0.5 text-sm break-words [overflow-wrap:anywhere]"
+            {...props}
+          >
             {children}
           </code>
         ),

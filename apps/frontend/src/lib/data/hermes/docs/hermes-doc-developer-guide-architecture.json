@@ -1,0 +1,238 @@
+{
+  "contentId": "hermes-doc-developer-guide-architecture",
+  "title": "Architecture",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/architecture",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর ভেতরের কারখানার নকশা: কোন কোন দরজা দিয়ে কাজ আসে, একটাই AIAgent কীভাবে সব সামলায়, আর কোন ফোল্ডারে কী থাকে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## খেলনা কারখানার গল্প\n\nধরো একটা বড় **খেলনা কারখানা** আছে। ঢোকার দরজা অনেকগুলো: সামনের গেট, পেছনের গেট, জানালা, ডাকপিয়নের ঝুড়ি। কিন্তু ভেতরে খেলনা বানায় **একজনই মিস্ত্রি**। যে দরজা দিয়েই অর্ডার আসুক, মিস্ত্রি একই। শুধু দরজা আলাদা।\n\nHermes Agent-ও এমন। তুমি terminal-এ লেখো, Telegram-এ মেসেজ দাও, এডিটর থেকে ডাকো, বা cron (ঘড়ি) সময়মতো জাগিয়ে দেয়। এগুলো সব **দরজা (entry point)**। ভেতরে কাজ করে একটাই মিস্ত্রি: **`AIAgent`** নামের একটা class, ফাইল `run_agent.py`।\n\n**এই নকশা কেন ভালো?** দরজা বাড়ালেও (নতুন chat অ্যাপ যোগ করলেও) মিস্ত্রিকে নতুন করে বানাতে হয় না। একই মিস্ত্রির সব দক্ষতা সব দরজায় মেলে।\n\nএই lesson কারখানার নকশা দেখাবে: কোন ঘরে কী, কোন ফাইলে কী। এটা **developer guide**, মানে যারা Hermes-এর ভেতরটা বুঝতে বা বদলাতে চায় তাদের জন্য। প্রতিটা অচেনা শব্দ আগে বুঝিয়ে দেওয়া হচ্ছে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Class আর Object\n- **Class** (ক্লাস) = একটা ছাঁচ বা নকশা। যেমন \"মিস্ত্রি কেমন হয়\" তার বর্ণনা।\n- `AIAgent` একটা class। এর থেকে বানানো প্রতিটা বাস্তব মিস্ত্রিকে বলে **object** (এখানে একটা agent)।\n\n### ২) Entry point\nপ্রোগ্রামে ঢোকার দরজা। কোথা থেকে কাজ শুরু হয়।\n\n### ৩) CLI\n**Command Line Interface**, মানে terminal-এ লিখে চালানোর ধরন। ফাইল `cli.py`।\n\n### ৪) Gateway আর Adapter\n- **Gateway** = chat অ্যাপ (Telegram, Discord) আর Hermes-এর মাঝের ডাকঘর।\n- **Adapter** = অনুবাদক। Telegram-এর বার্তার ধরন আর Discord-এর ধরন আলাদা। Adapter সেটা Hermes-এর নিজের ধরনে (`MessageEvent`) অনুবাদ করে দেয়।\n\n### ৫) ACP\nকোড-এডিটর (VS Code, Zed, JetBrains) আর Hermes-এর সাধারণ ভাষা।\n\n### ৬) Prompt আর System prompt\n- **Prompt** = AI-কে দেওয়া লেখা।\n- **System prompt** = আলাপ শুরুর আগে AI-কে দেওয়া \"তুমি কে, কীভাবে কাজ করবে\" নির্দেশ।\n\n### ৭) Tool, Registry, Dispatch\n- **Tool** = Hermes-এর হাতিয়ার (ফাইল পড়া, ওয়েব search)।\n- **Registry** = সব tool-এর নামের তালিকা-খাতা।\n- **Dispatch** = AI যে tool চাইল তাকে খুঁজে সঠিক জায়গায় পাঠানো। (ডাকঘরে চিঠি সঠিক বিভাগে পাঠানোর মতো।)\n\n### ৮) SQLite আর FTS5\n- **SQLite** = ছোট একটা ডাটাবেস, যা একটা ফাইলের ভেতরে থাকে।\n- **FTS5** = full-text search, মানে পুরো লেখার ভেতর থেকে শব্দ খোঁজার ব্যবস্থা। এতে পুরোনো আলাপ খোঁজা যায়।\n\n### ৯) Session, History\n- **Session** = একটা আলাপ।\n- **History** = সেই আলাপের আগের সব বার্তা।\n\n### ১০) Provider, API mode, Compression, Caching\n- **Provider** = AI model ভাড়া-দেওয়া কোম্পানি। **API mode** = সেই provider-এর সাথে কথা বলার ভাষার ধরন।\n- **Compression** = আলাপ বেশি লম্বা হলে মাঝের অংশ ছোট করে সারাংশ বানানো।\n- **Caching** = আগের পড়া অংশ মনে রেখে সময় ও খরচ বাঁচানো।\n\n### ১১) Cron, Plugin, Profile\n- **Cron** = সময়মতো কাজ চালানোর ঘড়ি। **Plugin** = অ্যাড-অন। **Profile** = আলাদা একটা Hermes-পরিচয় (নিজস্ব সেটিং, স্মৃতি)।\n\n### ১২) Test\n**Test** = এমন কোড, যা অন্য কোডকে চালিয়ে দেখে ঠিক আছে কি না। ভুল ধরার পাহারাদার।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "সব entry point একই AIAgent-এ এসে মেলে; AIAgent চারপাশের helper-দের ডাকে।",
+        "nodes": [
+          {
+            "id": "cli",
+            "kind": "client",
+            "label": "CLI",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "gw",
+            "kind": "gateway",
+            "label": "Gateway",
+            "x": 0,
+            "y": 110
+          },
+          {
+            "id": "acp",
+            "kind": "client",
+            "label": "ACP (editor)",
+            "x": 0,
+            "y": 220
+          },
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "AIAgent",
+            "x": 240,
+            "y": 110
+          },
+          {
+            "id": "pb",
+            "kind": "server",
+            "label": "Prompt Builder",
+            "x": 480,
+            "y": 20
+          },
+          {
+            "id": "tools",
+            "kind": "server",
+            "label": "Tool Dispatch",
+            "x": 480,
+            "y": 110
+          },
+          {
+            "id": "db",
+            "kind": "database",
+            "label": "SessionDB",
+            "x": 480,
+            "y": 220
+          }
+        ],
+        "edges": [
+          {
+            "from": "cli",
+            "to": "agent",
+            "label": "chat"
+          },
+          {
+            "from": "gw",
+            "to": "agent",
+            "label": "message"
+          },
+          {
+            "from": "acp",
+            "to": "agent",
+            "label": "editor"
+          },
+          {
+            "from": "agent",
+            "to": "pb",
+            "label": "system prompt"
+          },
+          {
+            "from": "agent",
+            "to": "tools",
+            "label": "tool call"
+          },
+          {
+            "from": "agent",
+            "to": "db",
+            "label": "save"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Entry point-গুলো (দরজা)\n\npage অনুযায়ী ছয়টা দরজা, সবগুলো একই `AIAgent`-এ এসে মিশেছে:\n\n| দরজা | কোথায় (ফাইল) | কখন ব্যবহার |\n|---|---|---|\n| CLI | `cli.py` | terminal-এ নিজে লিখে কথা বলতে |\n| Gateway (Telegram, Discord…) | `gateway/run.py` | chat অ্যাপ থেকে |\n| ACP (editor integration) | `acp_adapter/` | কোড-এডিটরের ভেতর থেকে |\n| Batch Runner | `batch_runner.py` | অনেক কাজ একসাথে চালাতে |\n| API Server | — | বাইরের অ্যাপ থেকে API দিয়ে |\n| Python Library | — | নিজের Python কোডের ভেতর থেকে |\n\n**নিয়ম:** platform-এর (Telegram, ইত্যাদি) পার্থক্য থাকে *দরজায়*, মিস্ত্রির ভেতরে নয়। এটাই **platform-agnostic core** (মানে \"কোন platform থেকে এলো তা নিয়ে মাথা ঘামায় না এমন কেন্দ্র\")।\n\n## AIAgent-এর চারপাশের সহকারীরা\n\nমিস্ত্রির পাশে ছোট ছোট সহকারী:\n\n| সহকারী | ফাইল | কাজ |\n|---|---|---|\n| **Prompt Builder** | `prompt_builder.py` | system prompt বানায় |\n| **Provider Resolution** | `runtime_provider.py` | কোন provider আর কোন API mode ব্যবহার হবে ঠিক করে |\n| **Tool Dispatch** | `model_tools.py` | tool call কোথায় যাবে ঠিক করে |\n| **Compression ও Caching** | — | কথা বেশি লম্বা হলে ছোট করে, cache বাঁচায় |\n\n**তিনটা API mode:** `chat_completions` (সবচেয়ে সাধারণ), `codex_responses` (OpenAI Codex-এর) আর `anthropic` (Anthropic-এর নিজস্ব ভাষা)।\n\n## Tool আর backend\n\nTool registry থাকে `registry.py`-তে। page বলছে ৭০+ tool, ২৮টা toolset। (**Toolset** = একই ধরনের tool-এর বাক্স।) **Backend** মানে কাজটা আসলে কে করে: Terminal-এর ৭টা backend, Browser-এর ৫টা, Web-এর ৪টা, MCP dynamic (বাইরের tool চলার সময় যোগ হয়)। Session জমা থাকে SQLite + FTS5-এ (`hermes_state.py`, `gateway/session.py`)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## তিনটা যাত্রাপথ (Data Flow)\n\n**Data flow** মানে তথ্য এক ধাপ থেকে আরেক ধাপে কীভাবে বয়ে যায়। তিন দরজার তিন গল্প:\n\n### ১) CLI session\n\n```text\nuser input → HermesCLI.process_input() → AIAgent.run_conversation()\n→ prompt build → provider resolution → API call\n→ tool call-এর loop → response → SessionDB-তে save\n```\n\nপড়ার ধরন: তুমি কিছু লিখলে → CLI সেটা নেয় → মিস্ত্রি আলাপ শুরু করে → নির্দেশ-খাতা (prompt) সাজায় → কোন provider ঠিক করে → AI-কে ডাকে → AI tool চাইলে চালায় (ঘুরে ঘুরে) → উত্তর দেয় → আলাপটা ডাটাবেসে জমা রাখে।\n\n### ২) Gateway message\n\n```text\nplatform event → adapter → MessageEvent → GatewayRunner._handle_message()\n→ authorize → session key বের করা → history সহ AIAgent তৈরি → adapter দিয়ে উত্তর\n```\n\n**Authorize** মানে \"এই মানুষকে ঢুকতে দেওয়া যাবে কি না যাচাই।\" **Session key** মানে \"এটা কার আলাপ\" তা চেনার চাবি।\n\n### ৩) Cron job\n\n```text\nscheduler tick → jobs.json থেকে due job লোড → নতুন AIAgent (কোনো history নেই)\n→ skill inject → run → deliver → next_run আপডেট\n```\n\n**Scheduler tick** = ঘড়ির টিক। **due job** = যে কাজের সময় হয়ে গেছে। **inject** = ঢুকিয়ে দেওয়া। **Deliver** = ফল পাঠিয়ে দেওয়া। লক্ষ করো: cron-এর মিস্ত্রি প্রতিবার **নতুন**, আগের কথা মনে নেই। Gateway-তে মিস্ত্রি আগের history নিয়ে আসে। এটা তাই, কারণ cron-এর কাজ আলাদা আলাদা, আগের আলাপের সাথে যোগ নেই।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা Gateway মেসেজ ভেতরে কোন কোন ধাপ পেরোয়।",
+        "steps": [
+          {
+            "title": "Platform event",
+            "body": "Telegram/Discord-এ কেউ মেসেজ দিল।"
+          },
+          {
+            "title": "Adapter → MessageEvent",
+            "body": "adapter মেসেজটাকে একটা সাধারণ `MessageEvent`-এ বদলে দেয়।"
+          },
+          {
+            "title": "`GatewayRunner._handle_message()`",
+            "body": "authorize করে, session key খুঁজে বের করে।"
+          },
+          {
+            "title": "AIAgent তৈরি",
+            "body": "আগের history সহ `AIAgent` বানানো হয়।"
+          },
+          {
+            "title": "উত্তর",
+            "body": "adapter দিয়ে সেই platform-এই ফিরে যায়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ফোল্ডারের ম্যাপ (Directory Structure)\n\n**Directory** মানে ফোল্ডার। কারখানার কোন ঘরে কী, তার মানচিত্র:\n\n| ফোল্ডার/ফাইল | কী আছে |\n|---|---|\n| **মূল ফাইল** | `run_agent.py` (মিস্ত্রি), `cli.py`, `model_tools.py`, `toolsets.py`, `hermes_state.py`, `hermes_constants.py`, `batch_runner.py` |\n| **`agent/`** | prompt builder, context engine ও compressor, prompt caching, auxiliary client (পাশের ছোট কাজের client), memory manager, Anthropic adapter ইত্যাদি |\n| **`hermes_cli/`** | `main.py`, `config.py`, `commands.py`, `auth.py`, `runtime_provider.py`, `models.py`, `setup.py`, `plugins.py`, `skills_hub.py`… |\n| **`tools/`** | registry, approval (অনুমতি), terminal, file, web, browser, code execution, delegation, MCP, আর `environments/` |\n| **`gateway/`** | `run.py`, `session.py`, `delivery.py`, `pairing.py`, `hooks.py`, `platforms/`… |\n| **`plugins/platforms/`** | ২৬টা bundled platform plugin (Telegram, Discord, Slack, WhatsApp, Matrix, Signal…) |\n| আরও | `acp_adapter/`, `cron/`, `plugins/memory/`, `plugins/context_engine/`, `skills/`, `optional-skills/`, `website/`, `tests/` |\n\nTests: প্রায় ২৫,০০০টা test, ~১,২৫০টা ফাইলে। **কেন এত test?** এত বড় কারখানায় একটা জায়গায় বদল করলে অন্য জায়গা ভাঙতে পারে, test সেই ভুল সঙ্গে সঙ্গে ধরে।\n\n## দশটা বড় subsystem\n\n**Subsystem** = কারখানার একেকটা বড় বিভাগ।\n\n1. **Agent Loop**: synchronous (একটার পর একটা) orchestration (সমন্বয়): provider বাছা, prompt, tool চালানো, retry, fallback, compression, save।\n2. **Prompt System**: তিন স্তরের system prompt (stable, context, volatile) + Anthropic cache breakpoint।\n3. **Provider Resolution**: (provider, model) → (api_mode, api_key, base_url); ১৮+ provider।\n4. **Tool System**: নিজে-register-হওয়া tool, schema (পরিচয়-বর্ণনা) জোগাড়, dispatch, availability check।\n5. **Session Persistence**: SQLite + FTS5, compression-এর পরেও lineage (বংশধারা) ট্র্যাক।\n6. **Messaging Gateway**: ২৫+ adapter, allowlist (অনুমোদিত তালিকা), DM pairing (ব্যক্তিগত বার্তায় পরিচয় জোড়া), slash command, hook।\n7. **Plugin System**: user dir, project dir আর pip entry point থেকে খুঁজে পায়।\n8. **Cron**: shell task নয়, *agent task* (মানে সময়মতো একজন AI-কে কাজ দেওয়া); JSON-এ জমা।\n9. **ACP Integration**: VS Code, Zed, JetBrains-এর জন্য stdio/JSON-RPC।\n10. **Trajectories**: training data হিসেবে ShareGPT format (agent কীভাবে ধাপে ধাপে কাজ করল তার রেকর্ড)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নকশার ছয়টা নীতি\n\n| নীতি | মানে | না মানলে কী হতো |\n|---|---|---|\n| **Prompt stability** | কথোপকথনের মাঝে system prompt বদলায় না (শুধু `/model`-এর মতো স্পষ্ট user action ছাড়া) | cache নষ্ট হতো, খরচ বাড়ত |\n| **Observable execution** | প্রতিটা tool call callback দিয়ে দেখা যায় (callback = \"কিছু ঘটলে আমাকে জানাও\" বলে রাখা ফাংশন) | কী ঘটছে বোঝা যেত না |\n| **Interruptible** | API call আর tool চলার মাঝখানে থামানো যায় | ভুল পথে চলা agent থামাতে পারতে না |\n| **Platform-agnostic core** | সব দরজার জন্য একটাই `AIAgent` | প্রতি platform-এর আলাদা কোড, ভুলও বেশি |\n| **Loose coupling** | optional অংশ registry আর `check_fn` দিয়ে জোড়া (জোড়াটা আলগা, ঢিলে) | একটা tool ভাঙলে সব ভাঙত |\n| **Profile isolation** | প্রতিটা profile-এর নিজের home directory, config, memory, session ও gateway PID | দুই profile-এর স্মৃতি মিশে যেত |\n\n## ফাইলের নির্ভরতার শিকল\n\n```text\ntools/registry.py\n   ↑\ntools/*.py   (import হলে নিজে register করে)\n   ↑\nmodel_tools.py\n   ↑\nrun_agent.py, cli.py, batch_runner.py, environments/\n```\n\nতীরচিহ্ন বলছে \"ওপরেরটা নিচেরটার ওপর নির্ভর করে।\" যে `tools/*.py` ফাইলে top-level-এ `registry.register()` call আছে, সেটা **নিজে নিজেই** খুঁজে পাওয়া যায়। **Import** মানে অন্য ফাইলের কোড ডেকে আনা। নতুন tool বানাতে তাই কোনো আলাদা তালিকায় নাম লিখতে হয় না।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কোন ক্রমে পড়বে",
+      "markdown": "page-এর সুপারিশ: Architecture → Agent Loop → Prompt Assembly → Provider Runtime Resolution → Adding Providers → Tools Runtime → Session Storage → Gateway Internals → Context Compression & Prompt Caching → ACP Internals।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এ \"একজন মিস্ত্রি, অনেক দরজা\" বলতে কী বোঝায়?",
+      "options": [
+        "প্রতি platform-এর আলাদা agent",
+        "একটাই দরজা",
+        "CLI, Gateway, ACP ইত্যাদি সব entry point একই `AIAgent`-এ এসে মেলে",
+        "agent নেই"
+      ],
+      "answerIndex": 2,
+      "explanation": "platform-এর পার্থক্য দরজায় থাকে, মিস্ত্রির ভেতরে নয়। এটাই platform-agnostic core।"
+    },
+    {
+      "question": "`AIAgent` class কোন ফাইলে?",
+      "options": ["`run_agent.py`", "`cli.py`", "`registry.py`", "`config.py`"],
+      "answerIndex": 0,
+      "explanation": "`run_agent.py`-তে। `cli.py` হলো CLI-র দরজা, `registry.py` tool-এর তালিকা-খাতা।"
+    },
+    {
+      "question": "Cron job-এর agent আর Gateway-এর agent-এর মূল পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "gateway-তে agent নেই",
+        "cron-এ tool নেই",
+        "cron প্রতিবার নতুন `AIAgent`, কোনো history নেই; Gateway আগের history নিয়ে আসে"
+      ],
+      "answerIndex": 3,
+      "explanation": "cron-এর কাজগুলো আলাদা আলাদা, আগের আলাপের সাথে যোগ নেই। Gateway-তে আলাপ চলমান।"
+    },
+    {
+      "question": "Adapter কী কাজ করে?",
+      "options": [
+        "ডিস্ক পরিষ্কার করে",
+        "Telegram/Discord-এর আলাদা বার্তাকে Hermes-এর সাধারণ `MessageEvent`-এ অনুবাদ করে",
+        "মডেল ট্রেন করে",
+        "tool মুছে দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "অনুবাদকের মতো। তাই ভেতরের মিস্ত্রি জানে না বার্তা কোন platform থেকে এলো।"
+    },
+    {
+      "question": "\"Prompt stability\" নীতি কী বলে?",
+      "options": [
+        "system prompt প্রতি turn-এ বদলায়",
+        "prompt সবসময় ফাঁকা",
+        "কথোপকথনের মাঝে system prompt বদলায় না (স্পষ্ট user action ছাড়া), তাই cache নষ্ট হয় না",
+        "prompt মুছে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "নইলে provider-এর prompt cache নষ্ট হতো, খরচ ও সময় বাড়ত।"
+    },
+    {
+      "question": "নতুন tool ফাইল `tools/*.py`-এ রাখলে Hermes কীভাবে জানে?",
+      "options": [
+        "top-level-এ `registry.register()` থাকা ফাইল নিজে নিজেই খুঁজে পাওয়া যায়",
+        "কোনো আলাদা import-তালিকায় লিখতে হয়",
+        "কম্পিউটার restart করতে হয়",
+        "জানে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "import হলেই ফাইল নিজেকে register করে নেয়। তাই আলাদা তালিকা রাখতে হয় না।"
+    },
+    {
+      "question": "`SessionDB` (SQLite + FTS5) কী কাজে লাগে?",
+      "options": [
+        "tool চালাতে",
+        "ছবি বানাতে",
+        "key সংরক্ষণে",
+        "আলাপ জমা রাখতে ও পুরোনো আলাপে শব্দ খুঁজতে"
+      ],
+      "answerIndex": 3,
+      "explanation": "SQLite হলো ফাইল-ভিত্তিক ডাটাবেস, FTS5 হলো পুরো লেখায় শব্দ-খোঁজার ব্যবস্থা।"
+    }
+  ],
+  "recap": [
+    "Hermes-এ অনেক দরজা (CLI, Gateway, ACP, Batch Runner, API Server, Python Library) আছে, কিন্তু ভেতরে একটাই `AIAgent` (`run_agent.py`)।",
+    "AIAgent-এর সহকারী: Prompt Builder, Provider Resolution, Tool Dispatch, Compression ও Caching; তিনটা API mode আছে।",
+    "Gateway বার্তা: adapter → `MessageEvent` → authorize → session key → history সহ `AIAgent` → উত্তর; cron প্রতিবার নতুন agent চালায়।",
+    "নকশার ছয় নীতি: prompt stability, observable execution, interruptible, platform-agnostic core, loose coupling, profile isolation।",
+    "`tools/*.py`-এ top-level `registry.register()` থাকলে tool নিজে নিজেই খুঁজে পাওয়া যায়।"
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "contentId": "hermes-doc-user-guide-features-web-dashboard",
+  "title": "Hermes Web Dashboard",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/web-dashboard",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে `hermes dashboard` দিয়ে কীভাবে বোতাম-ফর্মে Hermes সামলানো যায়, আর localhost, port, auth, session, cookie, proxy-র মতো শব্দ সহজ উপমায় চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nগাড়ি চালাতে তুমি ইঞ্জিনের ভেতরে হাত ঢোকাও না। তুমি **ড্যাশবোর্ড** দেখো: স্পিড, তেল কতটুকু, কোন বাতি জ্বলছে। Hermes-ও তাই। তার ভেতরের সব কিছু (config, key, session, log, cron job) টার্মিনালে ফাইল ঘেঁটে দেখা যায়, কিন্তু একটা **ওয়েব ড্যাশবোর্ড** থাকলে সবকিছু বোতাম আর ফর্ম দিয়ে এক জায়গায় দেখা ও বদলানো যায়।\n\n```bash\nhermes dashboard\n```\n\nএটা `http://127.0.0.1:9119`-এ একটা local server চালু করে ব্রাউজার খুলে দেয়। তোমার data তোমার মেশিনেই থাকে।\n\n**এটা না থাকলে কী সমস্যা?** terminal-এ লিখে লিখে সব বদলাতে হতো, আর `config.yaml` হাতে এডিট করতে গিয়ে ভুল হতো (একটা জায়গা ঠিক না থাকলেই ফাইল ভেঙে যায়)। ড্যাশবোর্ডে বোতাম, dropdown আর toggle থাকে, তাই নতুনদের জন্য অনেক নিরাপদ।\n\n`http://127.0.0.1:9119` ঠিকানাটা ভেঙে দেখি: `http://` হলো ওয়েবের ভাষা, `127.0.0.1` হলো **loopback**, মানে 'আমার নিজের কম্পিউটার' (তাই বাইরের কেউ ঢুকতে পারে না), আর `9119` হলো **port**, ঠিকানার ভেতরের দরজা-নম্বর।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Dashboard** | এক পর্দায় সব দেখা ও বদলানোর ওয়েব পাতা | গাড়ির ড্যাশবোর্ড |\n| **Server / local server** | অনুরোধের উত্তর দেওয়া প্রোগ্রাম। local মানে তোমার নিজের কম্পিউটারে | বাড়ির রিসেপশনিস্ট |\n| **Port / host / bind** | **Host** = কোন ঠিকানায় শুনবে। **Port** = দরজা-নম্বর। **Bind** = ওই ঠিকানা-দরজায় শোনা শুরু করা | বাড়ির ঠিকানা ও দরজার নম্বর |\n| **localhost / 127.0.0.1 / loopback** | 'আমার নিজের কম্পিউটার' বোঝানোর ঠিকানা | নিজের ঘরের ভেতরের ইন্টারকম |\n| **`0.0.0.0` / LAN** | সব ঠিকানায় শোনা, মানে একই নেটওয়ার্কের (LAN) সবাই পৌঁছাতে পারে | বাড়ির সব জানালা খুলে দেওয়া |\n| **Authentication (auth)** | 'তুমি কে' প্রমাণ করা (username-password ইত্যাদি) | দরজায় পরিচয়পত্র দেখানো |\n| **Provider (auth)** | যে ব্যবস্থা পরিচয় যাচাই করে: `basic`, `nous`, `self-hosted` | আলাদা আলাদা প্রহরী |\n| **OAuth / OIDC / IdP** | অন্য বিশ্বস্ত সেবা (যেমন Google) দিয়ে লগইন করার নিয়ম। **IdP** = যে সেবা পরিচয় দেয় | 'আমার স্কুল আমাকে চেনে' বলে প্রমাণ |\n| **Session / cookie / token** | লগইনের পর ব্রাউজারে রাখা ছোট চিহ্ন (cookie), যাতে বারবার password দিতে না হয়; **token** = সেই চাবি | সিনেমা হলের হাতের ব্যান্ড |\n| **Fail closed** | সন্দেহ হলে কিছু না করে বন্ধ থাকা | সন্দেহ হলে দরজা বন্ধ |\n| **Profile** | আলাদা আলাদা Hermes-পরিচয় (নিজস্ব সেটিং, skill) | পরিবারের প্রতিজনের আলাদা আলমারি |\n| **Config / YAML** | সেটিং-ফাইল `config.yaml` (YAML = `নাম: মান` লেখার নিয়ম) | ফর্মের ঘর |\n| **`.env`** | গোপন চাবি-পাসওয়ার্ড রাখার ফাইল | তালা-দেওয়া ডায়েরি |\n| **Gateway / channel** | Hermes-কে Telegram-Discord-এর মতো app-এর সাথে জোড়ার দরজা / সেই app | পোস্ট অফিস / ডাকবাক্স |\n| **Cron** | অ্যালার্ম-ঘড়ির মতো সময় ধরে কাজ চালানো | দেয়াল-ঘড়ি |\n| **MCP / Webhook** | **MCP** = AI-র জন্য 'সবার একই plug' নিয়ম। **Webhook** = কিছু ঘটলে অন্য প্রোগ্রামের ঠিকানায় খবর পাঠানো | বিশ্বজনীন plug / ডাকপিয়ন |\n| **Log** | কী ঘটল তার লেখা খাতা | রোজনামচা |\n| **API / REST API** | প্রোগ্রামে প্রোগ্রামে কথা বলার জানালা। REST হলো তার একটা নিয়ম | পিকআপ-কাউন্টার |\n| **Proxy / reverse proxy** | মাঝখানে বসা মধ্যস্থতাকারী সার্ভার | রিসেপশন-ডেস্ক |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "hermes dashboard একটা local server চালায়; ব্রাউজার তার সাথে কথা বলে, আর server তোমার ~/.hermes পড়ে-লেখে।",
+        "nodes": [
+          {
+            "id": "b",
+            "kind": "client",
+            "label": "ব্রাউজার",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "d",
+            "kind": "server",
+            "label": "Dashboard :9119",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "h",
+            "kind": "database",
+            "label": "~/.hermes ফোল্ডার",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "g",
+            "kind": "server",
+            "label": "Gateway, Chat",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "b",
+            "to": "d",
+            "label": "HTTP / WebSocket"
+          },
+          {
+            "from": "d",
+            "to": "h",
+            "label": "পড়ে-লেখে"
+          },
+          {
+            "from": "d",
+            "to": "g",
+            "label": "চালায়"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চালানো আর flag\n\n| Flag | কাজ |\n|---|---|\n| `--port` | Port বদলাও (default 9119) |\n| `--host` | Bind address (default 127.0.0.1) |\n| `--no-open` | ব্রাউজার নিজে খুলবে না |\n| `--insecure` | deprecated, কোনো কাজ করে না; auth আর বন্ধ করে না |\n| `--isolated` | নির্দিষ্ট profile-এর জন্য আলাদা server |\n\n**Flag** মানে কমান্ডের পরে যোগ করা বাড়তি পছন্দ। **কখন লাগে:** `--port` যদি 9119 অন্য প্রোগ্রাম ব্যবহার করছে। `--no-open` যদি ব্রাউজার নিজে খুলতে না চাও। `--host` শুধু তখনই, যখন অন্য কম্পিউটার থেকে ঢুকতে চাও (সাবধানে)। **Deprecated** মানে পুরনো, আর ব্যবহার করার কথা না। **Isolated** মানে আলাদা করে রাখা।\n\n```bash\nhermes dashboard --port 8080\nhermes dashboard --host 0.0.0.0   # সাবধান: shared network-এ ঝুঁকি\nhermes dashboard --no-open\n```\n\n### আগে যা লাগে\n\n(এই অংশ কৌতূহলীদের জন্য। **FastAPI / Uvicorn** হলো Python-এর ওয়েব সার্ভার তৈরির জিনিস। **PTY** হলো ব্রাউজারে terminal চালানোর ব্যবস্থা। **Dependency** মানে আগে থেকে যে প্রোগ্রাম লাগে। **Frontend** মানে পর্দায় যা দেখা যায়। **`npm`** হলো JavaScript প্রোগ্রাম নামানোর ও বানানোর হাতিয়ার। `hermes pm repair` ভাঙা package মেরামত করে।)\nFastAPI, Uvicorn আর platform PTY helper core dependency। `web` extra HTTP stack pin করে; সাধারণ setup-এ `all`-এর মাধ্যমে আসে। গোলমাল হলে `hermes pm repair`, তারপর restart। Frontend build না থাকলে আর `npm` থাকলে প্রথম launch-এ নিজে build হয়। `hermes update` npm থাকলে frontend আবার build করে।\n\n### একাধিক profile\n**একটা dashboard server মেশিনের সব profile সামলায়।** Sidebar-এ (একাধিক profile থাকলে) profile switcher দেখায়; Config, API Keys, Skills, MCP, Models ও Chat সেই profile-কে লক্ষ্য করে। বাছাই URL-এ `?profile=<name>` হিসেবে থাকে, refresh-এও টিকে যায়। Chat বাছা profile-এর `HERMES_HOME` দিয়ে PTY চালায়; profile বদলালে নতুন terminal session। Gateway process, session database আর cron scheduler এখনো profile-প্রতি আলাদা (Cron পাতা সব profile মিলিয়ে দেখায়)। `--isolated` দিলে আগের মতো profile-প্রতি এক server।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## পাতাগুলো ঘুরে দেখা\n\nএখানে প্রতিটা পাতার কাজ এক লাইনে: **Status** = এখন সব ঠিক আছে কিনা। **Chat** = Hermes-এর সাথে কথা। **Config** = সেটিং বদলানো। **API Keys** = গোপন চাবি। **Sessions/Logs/Analytics** = ইতিহাস, লেখা-খাতা, খরচের হিসাব। **Cron/Profiles/Skills** = সময়-কাজ, পরিচয়, ক্ষমতা। **MCP/Webhooks/Pairing/Channels** = বাইরের জগতের সাথে যোগ। **System** = Hermes-এর নিজের স্বাস্থ্য।\n\n### Status\nAgent-এর version, gateway-র অবস্থা (PID, platform), গত ৫ মিনিটে সক্রিয় session, আর সাম্প্রতিক ২০টা session। প্রতি ৫ সেকেন্ডে refresh। **Resource pressure banner** (সম্পদে টান পড়লে সতর্ক-ফিতা; memory = কাজের টেবিলের জায়গা, disk = স্থায়ী জায়গা; OOM মানে Out Of Memory, টেবিল ভরে গিয়ে কম্পিউটার জোর করে প্রোগ্রাম বন্ধ করা): memory \"elevated\" যখন 128 MiB বা 15%-এর নিচে, \"critical\" যখন 64 MiB বা 5%-এর নিচে; disk \"elevated\" 512 MB-র নিচে, \"critical\" 256 MB-র নিচে। শুধু সবচেয়ে গুরুতরটা দেখায়। Memory-চাপে অপ্রত্যাশিত restart হলে সন্দেহজনক OOM kill হিসেবে চিহ্নিত হয়।\n\n### Chat\nআসল Hermes TUI (TUI = terminal-এর ভেতরের সাজানো পর্দা) (`hermes --tui`) ব্রাউজারে বসানো, `/api/pty` WebSocket (দুই দিকে অবিরাম কথা চালানোর সংযোগ) আর xterm.js (ব্রাউজারে terminal আঁকার হাতিয়ার) দিয়ে। Keepalive মানে 'আমি এখনও আছি' সংকেত। Idle proxy timeout ঠেকাতে প্রতি ২০ সেকেন্ডে keepalive যায়। কিছু tunnel ৩০ সেকেন্ডের কাছাকাছি সংযোগ কেটে দিলে chat নিজে আবার জোড়া লাগে। Sessions tab-এর play আইকন `/chat?resume=<id>` খুলে `--resume` দিয়ে আগের session চালায়। ডানের rail-এ session switcher আর model picker; workspace picker প্রজেক্ট (`hermes projects`) আর git repo দেখায়। Node.js, `ptyprocess` আর POSIX kernel (POSIX = Linux/macOS-পরিবারের নিয়ম; WSL2 = Windows-এর ভেতরে Linux) (Linux, macOS, WSL2) লাগে; native Windows-এ এই tab-এ WSL2 banner আসে। Tab বন্ধ করলে PTY বন্ধ হয়।\n\n### Config\n`config.yaml`-এর ফর্ম-সম্পাদক, `DEFAULT_CONFIG` থেকে স্বয়ংক্রিয় (150+ field)। Enum (নির্দিষ্ট কয়েকটা বিকল্প)-এর জন্য dropdown, boolean (হ্যাঁ/না)-এর জন্য toggle। Save সঙ্গে সঙ্গে লেখে; Reset to defaults Save না করা পর্যন্ত অসংরক্ষিত; JSON Export/Import আছে। পরিবর্তন **পরের session বা gateway restart-এ** কার্যকর।\n\n### API Keys\n`.env` এন্ট্রি (গোপন চাবি) চার ভাগে: LLM provider, tool key, messaging platform, agent setting। প্রতিটার জন্য set কিনা, ঢাকা preview, বিবরণ, signup link, set/delete বোতাম। Advanced key একটা toggle-এর পেছনে।\n\n### Sessions, Logs, Analytics\n- **Sessions:** Chats (default)/Automation/All ফিল্টার, FTS5 full-text search (লেখার ভেতরের শব্দ ধরে খোঁজা), বার্তার ইতিহাস (tool call ভাঁজ করা), rename, JSON export, \"Prune old sessions\" (শুধু শেষ হওয়া session, N দিনের পুরনো), delete।\n- **Logs:** `agent`, `errors`, `gateway` ফাইল; ALL/DEBUG/INFO/WARNING/ERROR; 50/100/200/500 লাইন; প্রতি ৫ সেকেন্ডে refresh।\n- **Analytics:** ৭, ৩০ বা ৯০ দিন; token (লেখার টুকরো, যার হিসেবে খরচ হয়), cache hit % (আগে জমানো উত্তর কতবার কাজে লাগল), cost (খরচ), session সংখ্যা; দৈনিক stacked chart ও model ধরে বিভাজন।\n\n### Cron, Profiles, Skills\n- **Cron:** নাম (ঐচ্ছিক), prompt, cron expression (যেমন `0 9 * * *`, মানে প্রতিদিন সকাল ৯টায়)  আর delivery target (local, Telegram, Discord, Slack, email)। অবস্থা: enabled, paused, error। কাজ: pause/resume, edit, trigger now, delete।\n- **Profiles:** কার্ডে model, skill সংখ্যা, gateway অবস্থা, badge; clone করে নতুন profile; `/profiles/new`-তে Profile Builder; model, বিবরণ ও SOUL-এর inline editor।\n- **Skills:** search, category, enable/disable (পরের session-এ কার্যকর), toolset দৃশ্য, Browse hub থেকে install ও \"Update all\"।\n\n### MCP, Webhooks, Pairing, Channels\n- **MCP:** HTTP/SSE (ইন্টারনেট ঠিকানা) বা stdio (সরাসরি কমান্ড) server যোগ; disable (gateway restart-এ কার্যকর); Test; Remove। Secret-আকারের env মান ঢাকা থাকে। Nous-অনুমোদিত catalog এক ক্লিকে install (`hermes mcp catalog`/`hermes mcp install`-এর সমতুল্য)।\n- **Webhooks:** webhook platform চালু থাকতে হয়। একবারই দেখানো HMAC secret (HMAC = বার্তা আসল কিনা যাচাইয়ের গোপন ছাপ) তৈরির সময় আসে। বন্ধ route 403 দেয়, restart ছাড়া hot-reload হয়।\n- **Pairing:** অপেক্ষমাণ request Approve, অনুমোদিত user Revoke, Clear pending (`hermes pairing`-এর সমতুল্য)।\n- **Channels:** Telegram, Discord, Slack, Matrix, Mattermost, WhatsApp, Signal, iMessage, Email, SMS, DingTalk, Feishu/Lark, WeCom, WeChat, QQ Bot, Yuanbao, API server, webhook। Secret যায় `.env`-এ, enabled flag যায় `config.yaml`-এ। Enable/disable, test, gateway restart।\n\n### System\n\n(**Pairing** মানে নতুন কেউ Hermes-এর সাথে কথা বলতে চাইলে তোমার 'হ্যাঁ' বলা। **Hook** মানে কিছু ঘটলে নিজে নিজে চলা ছোট কাজ।)\nHost তথ্য (OS, CPU, memory, disk, uptime) ও update (Check/Update now), Nous Portal অবস্থা, Skill curator, Gateway start/stop/restart, Memory (external provider বাছা ও `MEMORY.md`/`USER.md` রিসেট), Credential pool, Operations (doctor, security audit, backup, restore ইত্যাদি), Checkpoints (`/rollback`), আর Shell hooks (সম্মতির checkbox সহ, কারণ hook যেকোনো command চালায়)।\n\n`/reload` slash command চালু CLI session-এ `~/.hermes/.env` আবার পড়ে, restart ছাড়াই।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Network-এ dashboard খুললে authentication কীভাবে ঢোকে।",
+        "steps": [
+          {
+            "title": "১. Loopback",
+            "body": "`127.0.0.1`, `::1` বা `localhost`-এ bind করলে auth লাগে না।"
+          },
+          {
+            "title": "২. অন্য ঠিকানা",
+            "body": "`0.0.0.0` বা LAN address-এ bind করলে **gate** চালু হয়; `--insecure` উপেক্ষিত।"
+          },
+          {
+            "title": "৩. Fail-closed",
+            "body": "কোনো auth provider নিবন্ধিত না থাকলে dashboard bind করতেই অস্বীকার করে। Interactive হলে basic auth setup বা `hermes dashboard register` দেখায়; Docker/CI-তে fail।"
+          },
+          {
+            "title": "৪. Provider বাছো",
+            "body": "`basic`, `nous`, `self-hosted` (OIDC), এবং আরও।"
+          },
+          {
+            "title": "৫. Sign-in",
+            "body": "সফল হলে session cookie বসে; audit log লেখা হয়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Authentication-এর বিস্তারিত\n\n**কেন লাগে?** ড্যাশবোর্ডে ঢুকতে পারা মানে তোমার সব চাবি ও সেটিং হাতে পাওয়া। তাই `127.0.0.1`-এর বাইরে খুললে অবশ্যই পরিচয় যাচাই লাগে।\n\n(**PKCE / scrypt / RS256 / TTL / Bearer** ইত্যাদি হলো নিরাপত্তার কারিগরি নাম। সংক্ষেপে: **hash** = পাসওয়ার্ডের একমুখী আঙুলের ছাপ (মূল পাসওয়ার্ড ফেরানো যায় না), **TTL** = কতক্ষণ বৈধ, **Bearer** = 'এই চাবি যার হাতে সে-ই ঢুকবে', **429** = বেশি বার চেষ্টা, **401** = পরিচয় ভুল। **Cookie `HttpOnly`** মানে JavaScript পড়তে পারে না।)\n\n| Provider | কখন | মূল কথা |\n|---|---|---|\n| **basic** | বিশ্বস্ত network বা VPN, public internet নয় | username আর password; session default ১২ ঘণ্টা (`session_ttl_seconds` 43200) |\n| **nous** | internet-facing হলে সুপারিশ | Nous Portal OAuth, PKCE (S256); `hermes dashboard register` |\n| **self-hosted** | নিজের IdP | OIDC (Keycloak, Authentik, Okta, Auth0, Google...) |\n| **session-token** | স্ক্রিপ্ট বা saved client | `HERMES_DASHBOARD_SESSION_TOKEN` সেট করলে Bearer auth |\n| **drain** | `/api/gateway/drain` | `HERMES_DASHBOARD_DRAIN_SECRET` bearer |\n\n### Basic auth\n`dashboard.basic_auth`-এর অধীনে `username`, `password_hash` (পছন্দনীয়, scrypt) বা `password` (plaintext), `secret` (signing key), `session_ttl_seconds`। Env: `HERMES_DASHBOARD_BASIC_AUTH_USERNAME`, `..._PASSWORD_HASH`, `..._PASSWORD` (config hash-কে হারায়), `..._SECRET`, `..._TTL_SECONDS`। **স্পষ্ট secret না দিলে restart-এ session রিসেট হয়।** `/auth/password-login` প্রতি IP-তে মিনিটে ১০ বারের বেশি নেয় না (HTTP 429), আর ভুল হলে সবসময় একই সাধারণ `401 Invalid credentials`।\n\n### Nous OAuth\nClient ID-র আকার `agent:{id}`, `HERMES_DASHBOARD_OAUTH_CLIENT_ID` বা `dashboard.oauth.client_id`-এ। Access token ১৫ মিনিটের; refresh token নেই (contract v1), মেয়াদ গেলে পুরো পাতা আবার login। `dashboard.oauth.token_leeway` default ৬০ সেকেন্ড।\n\n### Self-hosted OIDC\n`dashboard.oauth.provider: self-hosted` ও `dashboard.oauth.self_hosted`-এ `issuer`, `client_id` (public PKCE client, secret নেই), `scopes` (default `openid profile email`)। ID token RS256/ES256 যাচাই হয়। Confidential client সমর্থিত নয়। **তোমার IdP-তে অ্যাপটাকে শুধু নিজের account-এ সীমিত করো;** যে ঢুকবে সে পূর্ণ অধিকার পাবে।\n\n### Public URL, proxy, cookie\n- `dashboard.public_url` (`HERMES_DASHBOARD_PUBLIC_URL`) OAuth callback `<public_url>/auth/callback` ঠিক করে। Wildcard host নেওয়া হয় না; non-loopback হলে gate সবসময় চালু।\n- `dashboard.trusted_proxies`-এ নির্দিষ্ট IP বা সীমাবদ্ধ CIDR; `*`, `0.0.0.0/0`, `::/0` প্রত্যাখ্যাত। Loopback নিজে থেকে বিশ্বস্ত। Tailscale Serve loopback-proxied HTTPS হিসেবে চলে, তবুও auth লাগে।\n- Cookie: `hermes_session_at` (HttpOnly, SameSite=Lax), `hermes_session_pkce` (১০ মিনিট), `hermes_session_rt` (সংরক্ষিত, v1-এ অব্যবহৃত)।\n- Logout: POST `/auth/logout`। Audit log: JSON lines, `$HERMES_HOME/logs/dashboard-auth.log`, সংবেদনশীল field ঢাকা।\n- যাচাই: `curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'` এর ফল `true` ও provider তালিকা হওয়া উচিত।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "বাইরে খোলার আগে ভাবো",
+      "markdown": "`--host 0.0.0.0` মানে LAN-এর যে কেউ পৌঁছাতে পারে। Basic auth শুধু বিশ্বস্ত network বা VPN-এ; internet-facing হলে `nous` সুপারিশ। আর Dashboard-এ ঢুকলে config, key আর shell hook-এর ওপর নিয়ন্ত্রণ মেলে, তাই কাকে ঢুকতে দিচ্ছো ভেবে নাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Desktop-এর remote backend\n\n**Remote backend** মানে Hermes অন্য কম্পিউটারে (যেমন VM, ভাড়া করা সার্ভার) চলে, আর তোমার Desktop অ্যাপ তার সাথে দূর থেকে কথা বলে। (**Systemd / tmux** = পেছনে প্রোগ্রাম চালু রাখার হাতিয়ার। **Probe** = 'জেগে আছো?' পরীক্ষা। **Firewall** = নেটওয়ার্কের পাহারাদার।) Remote মেশিনে `hermes dashboard` চালু থাকতে হয় (systemd বা tmux-এ)। Messaging gateway আলাদা process।\n\n- Desktop-এর readiness probe `/api/status` দেখে, যেটা public, তাই probe পাশ করেও chat ব্যর্থ হতে পারে। Chat `/api/ws` ও `/api/pty` ব্যবহার করে যাতে auth আর মেলা Host header লাগে।\n- `--host 0.0.0.0` দিয়ে bind করো (loopback দূরের peer নেয় না), আর Remote URL bind host-এর সাথে মিলতে হবে।\n- Systemd উদাহরণে: `EnvironmentFile=%h/.hermes/.env`, `Restart=always`, `RestartSec=10`, `RestartPreventExitStatus=78`। Exit 78 মানে অন্য backend host-টা দখল করে আছে; তখন `--isolated`।\n- `.env`-এ `HERMES_DASHBOARD_BASIC_AUTH_USERNAME`, `..._PASSWORD`, `..._SECRET` (secret বানাও `openssl rand -base64 32` দিয়ে)।\n- Desktop: Settings, Gateways, Remote gateway-তে Remote URL (যেমন `http://VM_IP:9119`) দিয়ে Sign in ও Save and reconnect। `HERMES_DESKTOP_REMOTE_URL` সেট থাকলে সেটা সংরক্ষিত URL-কে ছাপায়।\n- WebSocket close code: 4403 (Host/peer অমিল), 4401 (ticket ব্যর্থ)।\n- সমস্যা: 401 = credential অমিল; \"Sign in\" নেই = `basic` বিজ্ঞাপিত হচ্ছে না; restart-এ বেরিয়ে যায় = স্থায়ী secret নেই; connection refused = loopback bind বা firewall।\n\n## CORS, থিম আর extension\n\n(**CORS / Origin** মানে ব্রাউজারের নিয়ম, কোন ওয়েব ঠিকানা থেকে আসা অনুরোধ মানা হবে। **Port forward** = দূরের port নিজের কম্পিউটারের port হিসেবে দেখা। **Extension** = অতিরিক্ত অংশ যোগ করা।)\n\n- অনুমোদিত origin শুধু server-এর নিজের loopback origin (default `127.0.0.1:9119`)। Port forward চলে যদি Origin dial-করা host/port-এর সাথে মেলে। Host বদলে দেওয়া loopback reverse proxy-র origin `dashboard.public_url`-এ দিতে হয়।\n- **আটটা থিম:** `default`, `default-large`, `nous-blue`, `midnight`, `ember`, `mono`, `cyberpunk`, `rose`; header-এর palette আইকন দিয়ে বদলাও, `dashboard.theme`-এ সংরক্ষিত। Font আলাদা, `dashboard.font`।\n- কাস্টম থিম, plugin tab, slot আর REST route Extending the Dashboard guide-এ।\n\n## Dashboard-এর development (কৌতূহলীদের জন্য)\n\n(**Stack** = কোন কোন প্রযুক্তিতে বানানো। **SPA** = এক পাতার অ্যাপ। **Proxy** = মাঝের পথ-দেখানো সার্ভার।) একটা terminal-এ `hermes dashboard --no-open`, আরেকটায় `web/`-এ `npm run dev`; Vite `http://localhost:5173`-এ `/api` (WebSocket সহ) 9119-এ proxy করে। Stack: React 19, TypeScript, Tailwind CSS v4, shadcn/ui-ধাঁচের component; build যায় `hermes_cli/web_dist/`-এ, static SPA হিসেবে।\n\n## REST API এক নজরে\n\nপ্রায় সব profile-scoped API `?profile=<name>` নেয় (অজানা নামে 404)। কয়েকটা উদাহরণ: `GET /api/status` (public), `GET/PUT /api/config`, `GET/PUT/DELETE /api/env`, `GET /api/sessions`, `GET /api/logs`, `GET /api/analytics/usage?days=`, `GET/POST /api/cron/jobs`, `GET /api/skills`। Session delete-এর জন্য mutation identity লাগে। Bulk maintenance (bulk-delete, prune ইত্যাদি) exclusive `gateway.lock` চায়; gateway চললে `409`, তাই `hermes gateway stop`, কাজ, তারপর restart।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`hermes dashboard` চালালে default কোন ঠিকানায় server চলে?",
+      "options": [
+        "http://0.0.0.0:80",
+        "http://localhost:3000",
+        "http://127.0.0.1:9119",
+        "https://dashboard.nousresearch.com"
+      ],
+      "answerIndex": 2,
+      "explanation": "Default host 127.0.0.1, port 9119; data মেশিনেই থাকে।"
+    },
+    {
+      "question": "একাধিক profile থাকলে dashboard-এ কী ঘটে?",
+      "options": [
+        "একটা server সব profile সামলায়, sidebar-এর switcher দিয়ে বাছা যায়",
+        "প্রতিটার জন্য আলাদা server লাগে",
+        "শুধু default profile দেখা যায়",
+        "Profile বদলাতে restart লাগে"
+      ],
+      "answerIndex": 0,
+      "explanation": "`--isolated` না দিলে এক server সব profile সামলায়; বাছাই `?profile=<name>`-এ থাকে।"
+    },
+    {
+      "question": "`--host 0.0.0.0` দিলে auth সম্পর্কে কী সত্য?",
+      "options": [
+        "কিছুই বদলায় না",
+        "শুধু CORS বদলায়",
+        "`--insecure` দিয়ে auth বন্ধ করা যায়",
+        "Gate চালু হয়; provider না থাকলে dashboard bind-ই করে না"
+      ],
+      "answerIndex": 3,
+      "explanation": "Non-loopback bind-এ gate চালু; `--insecure` উপেক্ষিত; provider না থাকলে fail-closed।"
+    },
+    {
+      "question": "Basic auth সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "Public internet-এর জন্য সেরা",
+        "বিশ্বস্ত network বা VPN-এর জন্য; স্পষ্ট secret না দিলে restart-এ session রিসেট হয়",
+        "কখনো rate-limited নয়",
+        "Password ডিফল্টে hash হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতা basic-কে শুধু বিশ্বস্ত network/VPN-এ ব্যবহারের কথা বলে; login প্রতি IP-তে মিনিটে ১০ বার সীমিত।"
+    },
+    {
+      "question": "Dashboard-এর Chat tab-এর পেছনে কী চলে?",
+      "options": [
+        "আলাদা web chatbot",
+        "শুধু log viewer",
+        "আসল Hermes TUI, `/api/pty` WebSocket ও xterm.js দিয়ে",
+        "Slack bot"
+      ],
+      "answerIndex": 2,
+      "explanation": "Chat `hermes --tui`-কে PTY-র মাধ্যমে ব্রাউজারে দেখায়।"
+    },
+    {
+      "question": "Config page-এ কিছু Save করলে পরিবর্তন কখন কার্যকর হয়?",
+      "options": [
+        "পরের session বা gateway restart-এ",
+        "সঙ্গে সঙ্গে চলমান সব session-এ",
+        "শুধু dashboard restart-এ",
+        "কখনো না"
+      ],
+      "answerIndex": 0,
+      "explanation": "Save ফাইলে সঙ্গে সঙ্গে লেখে, কিন্তু কার্যকর হয় পরের session বা gateway restart-এ।"
+    },
+    {
+      "question": "Desktop-এর remote backend-এ probe পাশ করেও chat ব্যর্থ হতে পারে কেন?",
+      "options": [
+        "Probe-এ দেরি হয়",
+        "Probe `/api/status` দেখে যা public, আর chat `/api/ws`/`/api/pty` ব্যবহার করে যাতে auth লাগে",
+        "Chat শুধু loopback-এ চলে",
+        "Port আলাদা"
+      ],
+      "answerIndex": 1,
+      "explanation": "Public status endpoint probe পাশ করায়, কিন্তু chat-এর endpoint-এ auth ও Host header মেলা দরকার।"
+    },
+    {
+      "question": "Dashboard-এর কয়টা built-in থিম আছে?",
+      "options": ["তিনটা", "পাঁচটা", "বারোটা", "আটটা"],
+      "answerIndex": 3,
+      "explanation": "`default`, `default-large`, `nous-blue`, `midnight`, `ember`, `mono`, `cyberpunk`, `rose`।"
+    }
+  ],
+  "recap": [
+    "`hermes dashboard` একটা local web UI চালায় (default `127.0.0.1:9119`), যেখানে Status, Chat, Config, Keys, Sessions, Logs, Analytics, Cron, Skills, MCP ইত্যাদি এক জায়গায়।",
+    "একটা server সব profile সামলায়; profile বাছাই URL-এর `?profile=` অংশে থাকে।",
+    "Chat tab আসল TUI-কে PTY দিয়ে ব্রাউজারে আনে; Config পরিবর্তন পরের session বা gateway restart-এ কার্যকর।",
+    "Loopback ছাড়া অন্য ঠিকানায় bind করলে auth gate চালু, আর provider না থাকলে dashboard bind-ই করে না।",
+    "Provider: basic (বিশ্বস্ত network), nous (internet), self-hosted OIDC, session-token ও drain।",
+    "আটটা থিম আছে, `dashboard.theme`-এ সংরক্ষিত; বাইরে খোলার আগে কাকে ঢুকতে দিচ্ছো ভেবে নাও।"
+  ]
+}

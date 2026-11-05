@@ -1,3 +1,4 @@
+import { fitNodeLabel } from "./fit-node-label";
 import {
   DIAGRAM_KINDS,
   kindColor,
@@ -10,10 +11,6 @@ export const NODE_WIDTH = 132;
 export const NODE_HEIGHT = 64;
 
 const LABEL_OFFSET = 42;
-const MAX_FONT = 13;
-const MIN_FONT = 10;
-/** Rough average glyph width as a share of font size, for shrinking long labels to fit. */
-const GLYPH_RATIO = 0.6;
 
 /** One component box (icon + English name) inside a diagram's <svg>. x/y is the top-left corner. */
 export function DiagramNode({
@@ -37,10 +34,7 @@ export function DiagramNode({
   const stroke = status === "failed" ? "var(--sd-fail)" : kindColor(kind);
   const text = label ?? kindLabel;
   const room = width - LABEL_OFFSET - 8;
-  const fontSize = Math.max(
-    MIN_FONT,
-    Math.min(MAX_FONT, room / (text.length * GLYPH_RATIO)),
-  );
+  const { lines, fontSize } = fitNodeLabel(text, room);
 
   return (
     <g opacity={status === "dimmed" ? 0.35 : 1}>
@@ -64,13 +58,17 @@ export function DiagramNode({
       />
       <text
         x={x + LABEL_OFFSET}
-        y={y + height / 2}
+        y={y + height / 2 - ((lines.length - 1) * fontSize * 1.2) / 2}
         dominantBaseline="central"
         fontSize={fontSize}
         fontWeight={600}
         fill="var(--sd-label)"
       >
-        {text}
+        {lines.map((line, i) => (
+          <tspan key={i} x={x + LABEL_OFFSET} dy={i === 0 ? 0 : fontSize * 1.2}>
+            {line}
+          </tspan>
+        ))}
       </text>
       {status === "failed" && (
         <text

@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-sessions",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-sessions-q01",
+      "difficulty": "easy",
+      "question": "Hermes-এ **session** বলতে কী বোঝায়?",
+      "options": [
+        "একটা আলাদা আলাপ, যেন খাতার একটা পাতা",
+        "একটা model, যা AI-র মস্তিষ্কের কাজ করে",
+        "একটা ছোট command, যা চ্যাটে `/` দিয়ে লেখা হয়",
+        "একটা backup ফাইল, যা শুধু export-এ বানানো হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা আলাপ session হয়ে `state.db`-তে জমে।",
+      "whyWrong": {
+        "1": "ওটা model।",
+        "2": "ওটা slash command।",
+        "3": "session export ছাড়াই আপনা-আপনি জমে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q02",
+      "difficulty": "easy",
+      "question": "সব session কোন ফাইলে জমা থাকে?",
+      "options": [
+        "`~/.hermes/config.yaml`",
+        "`~/.hermes/state.db`",
+        "`~/.hermes/.env`",
+        "`~/.hermes/SOUL.md`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`state.db` একটা SQLite ফাইল। এতে message, token সংখ্যা, model, title সব থাকে।",
+      "whyWrong": {
+        "0": "`config.yaml` সেটিং রাখে।",
+        "2": "`.env` গোপন চাবি রাখে।",
+        "3": "`SOUL.md` agent-এর স্বভাব রাখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q03",
+      "difficulty": "easy",
+      "question": "**SQLite** কী?",
+      "options": [
+        "একটা চ্যাট app, যেমন Telegram",
+        "একটা model, যা ছবি দেখে বোঝে",
+        "ছোট database, সাধারণ ফাইলেই থাকে",
+        "একটা server, যা আলাদা করে চালাতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "আলাদা server লাগে না, তাই `state.db` একটা সাধারণ ফাইল।",
+      "whyWrong": {
+        "0": "চ্যাট app হলো platform।",
+        "1": "ছবি বোঝে Vision model।",
+        "3": "SQLite-এর আলাদা server লাগে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q04",
+      "difficulty": "easy",
+      "question": "**FTS5** কী কাজে লাগে?",
+      "options": [
+        "পুরনো কথা ছোট সারসংক্ষেপে বদলানো",
+        "ফাঁকা জায়গা গুছিয়ে ফাইল ছোট করা",
+        "secret মুছে export নিরাপদ করা",
+        "শব্দের সূচি রেখে দ্রুত খোঁজা"
+      ],
+      "correctIndex": 3,
+      "explanation": "বইয়ের শেষের সূচিপত্রের মতো। এই সূচির কাজে AI call লাগে না।",
+      "whyWrong": {
+        "0": "ওটা compression।",
+        "1": "ওটা `optimize` বা VACUUM-এর কাজ।",
+        "2": "ওটা `--redact`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q05",
+      "difficulty": "easy",
+      "question": "`hermes -c` কী করে?",
+      "options": [
+        "নতুন ফাঁকা session খোলে",
+        "সব পুরনো session মুছে দেয়",
+        "সর্বশেষ CLI session খোলে",
+        "সব session-এর তালিকা ছাপে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`-c` মানে `--continue`। কালকের কাজ চালিয়ে যেতে লাগে।",
+      "whyWrong": {
+        "0": "নতুন session `/new` দেয়।",
+        "1": "মোছে `delete` বা `prune`।",
+        "3": "তালিকা দেয় `hermes sessions list`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q06",
+      "difficulty": "easy",
+      "question": "চ্যাটের ভেতরে `/new` কী করে?",
+      "options": [
+        "নতুন thread শুরু করে",
+        "সক্রিয় context ছোট করে",
+        "পুরনো session pin করে",
+        "session-এর export বানায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "`/new <name>` দিলে নামসহ নতুন thread হয়।",
+      "whyWrong": {
+        "1": "ওটা `/compress`।",
+        "2": "ওটা `hermes sessions pin`।",
+        "3": "export `hermes sessions export` দিয়ে হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q07",
+      "difficulty": "easy",
+      "question": "session **pin** করলে কী লাভ?",
+      "options": [
+        "session দ্বিগুণ দ্রুত খোলে",
+        "session-এর token খরচ কমে যায়",
+        "session সবসময় context-এর শুরুতে থাকে",
+        "auto-archive ও prune থেকে মুক্ত"
+      ],
+      "correctIndex": 3,
+      "explanation": "pin মানে খাতায় ক্লিপ আটকানো, যাতে ভুলে ফেলে না দেওয়া হয়।",
+      "whyWrong": {
+        "0": "গতির সঙ্গে সম্পর্ক নেই।",
+        "1": "খরচের সঙ্গে সম্পর্ক নেই।",
+        "2": "context-এ অবস্থান বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q08",
+      "difficulty": "medium",
+      "question": "`hermes --resume @claude` কী করে?",
+      "options": [
+        "Claude model-কে main model বানায়",
+        "Claude Code-এর আলাপ import করে",
+        "সব session `claude` নামে পাঠিয়ে দেয়",
+        "নতুন profile `claude` নামে বানায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "`@codex` দিলে Codex-এর আলাপ আসে। অন্য টুল থেকে Hermes-এ আসতে কাজে লাগে।",
+      "whyWrong": {
+        "0": "model বদলায় না।",
+        "2": "session পাঠানো হয় না, আনা হয়।",
+        "3": "profile বানায় `hermes profile create`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q09",
+      "difficulty": "medium",
+      "question": "`hermes sessions prune` সম্পর্কে কোনটা সত্যি?",
+      "options": [
+        "সক্রিয় session-ও মোছে, তাই সাবধান",
+        "শুধু শেষ হওয়া session মোছে",
+        "সব pinned session-ও মোছে",
+        "কিছুই মোছে না, শুধু লুকায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ডিফল্ট ৯০ দিন। pinned session নিরাপদ থাকে।",
+      "whyWrong": {
+        "0": "সক্রিয় নয়, শেষ হওয়াগুলো।",
+        "2": "pinned নিরাপদ।",
+        "3": "লুকায় `archive`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q10",
+      "difficulty": "medium",
+      "question": "`archive` আর `prune`-এর তফাত কী?",
+      "options": [
+        "`archive` মুছে ফেলে, `prune` লুকায়",
+        "দুটোই একই, শুধু নাম আলাদা",
+        "`archive` শুধু export-এর জন্য, `prune` শুধু import-এর জন্য",
+        "`archive` লুকায় কিন্তু রাখে, `prune` মুছে ফেলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`archive` অন্তত একটা ফিল্টার চায়। সরিয়ে রাখতে চাইলে `archive`, ফেলতে চাইলে `prune`।",
+      "whyWrong": {
+        "0": "উল্টো বলা হয়েছে।",
+        "1": "দুটো আলাদা কাজ।",
+        "2": "export/import-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q11",
+      "difficulty": "medium",
+      "question": "`hermes sessions export`-এর ডিফল্ট format কোনটা?",
+      "options": ["`jsonl`", "`html`", "`md`", "`trace`"],
+      "correctIndex": 0,
+      "explanation": "বিকল্প: md/qmd, html, trace। filter দেওয়া যায় `--session-id`, `--source`, `--older-than`।",
+      "whyWrong": {
+        "1": "`html` ডিফল্ট নয়।",
+        "2": "`md` ডিফল্ট নয়।",
+        "3": "`trace` ডিফল্ট নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q12",
+      "difficulty": "medium",
+      "question": "`session_search` কি প্রতিবার LLM call করে?",
+      "options": [
+        "হ্যাঁ, প্রতিটা শব্দের জন্য একবার",
+        "হ্যাঁ, তবে শুধু `limit` দিলে",
+        "না, FTS5 দিয়ে খোঁজে, বিনা খরচে",
+        "না, তবে প্রতি খোঁজায় ২ মিনিট লাগে"
+      ],
+      "correctIndex": 2,
+      "explanation": "FTS5 সূচি দিয়ে খোঁজা হয়, তাই কোনো LLM call বা খরচ লাগে না।",
+      "whyWrong": {
+        "0": "LLM call হয় না।",
+        "1": "`limit`-এর সঙ্গে সম্পর্ক নেই।",
+        "3": "খুব দ্রুত।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q13",
+      "difficulty": "medium",
+      "question": "`session_search`-এ দুটো শব্দ লিখলে (যেমন `docker error`) কী ধরা হয়?",
+      "options": [
+        "যেকোনো একটা থাকলেই হবে, মানে `OR`",
+        "শুধু প্রথম শব্দটা ধরা হয়",
+        "ঠিক এই বাক্যটাই থাকতে হবে",
+        "implicit AND, দুটো শব্দই লাগে"
+      ],
+      "correctIndex": 3,
+      "explanation": "একসঙ্গে ঠিক বাক্য চাইলে `\"phrase\"` দাও। `OR`, `NOT`, prefix `*` আছে।",
+      "whyWrong": {
+        "0": "`OR` লিখলে তবে।",
+        "1": "দুটোই দেখা হয়।",
+        "2": "বাক্য চাইলে quote লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q14",
+      "difficulty": "medium",
+      "question": "`hermes sessions optimize` কী করে?",
+      "options": [
+        "ডেটা ছোট করতে পুরনো message মুছে ফেলে",
+        "`SOUL.md` বদলের পর system prompt নতুন করে",
+        "FTS5 segment merge আর VACUUM, ডেটা অক্ষত",
+        "অন্য agent-এর transcript আনে"
+      ],
+      "correctIndex": 2,
+      "explanation": "search ধীর বা ফাইল ফোলা হলে কাজে লাগে।",
+      "whyWrong": {
+        "0": "ডেটা মোছে না।",
+        "1": "ওটা `refresh-prompts`।",
+        "3": "ওটা `import`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q15",
+      "difficulty": "hard",
+      "question": "কাউকে transcript পাঠাবে। কোনটা নিরাপদ পথ?",
+      "options": [
+        "JSONL backup যেমন আছে তেমন পাঠানো",
+        "md বা html format বেছে `--redact` দেওয়া",
+        "শুধু `--format trace` দেওয়া, redact ছাড়া",
+        "`state.db` ফাইলটাই কপি করে পাঠানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "JSONL backup-এ archived সহ সব সারি থাকে। `--redact` কালো কালি দিয়ে গোপন অংশ ঢাকে।",
+      "whyWrong": {
+        "0": "secret বেরিয়ে যেতে পারে।",
+        "2": "redact ছাড়া ঝুঁকি আছে।",
+        "3": "`state.db`-তে সব আলাপ আছে, আরও ঝুঁকিপূর্ণ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q16",
+      "difficulty": "hard",
+      "question": "`SOUL.md` বদলানোর পর system prompt নতুন করতে কোন কমান্ড চালাবে?",
+      "options": [
+        "`hermes sessions refresh-prompts`",
+        "`hermes sessions repair-prompts`",
+        "`hermes sessions repair-routing`",
+        "`hermes sessions set-journal-mode`"
+      ],
+      "correctIndex": 0,
+      "explanation": "system prompt নতুন করে বানাতে হয় বলে প্রতি session-এ এক cache miss হয়।",
+      "whyWrong": {
+        "1": "`repair-prompts` মেরামতের কমান্ড, SOUL বদলের জন্য নয়।",
+        "2": "`repair-routing` মেরামতের কমান্ড।",
+        "3": "`set-journal-mode` মেরামতের কমান্ড।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q17",
+      "difficulty": "hard",
+      "question": "`/compress` কি privacy-delete, মানে গোপন কথা মোছে?",
+      "options": [
+        "না, শুধু সক্রিয় context ছোট করে",
+        "হ্যাঁ, গোপন কথা স্থায়ীভাবে মোছে",
+        "হ্যাঁ, তবে শুধু pinned session-এ",
+        "না, এটা শুধু session-এর নাম বদলায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "গোপন কথা মুছতে হলে আলাদা পথ লাগে।",
+      "whyWrong": {
+        "1": "মোছে না।",
+        "2": "pinned-এর সঙ্গে সম্পর্ক নেই।",
+        "3": "নাম বদলায় `rename`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q18",
+      "difficulty": "hard",
+      "question": "একটা আলাপ এখনো সক্রিয় turn চালাচ্ছে। তখন `hermes sessions delete <id>` দিলে কী হয়?",
+      "options": [
+        "আলাপ সঙ্গে সঙ্গে মুছে যায়",
+        "আলাপ চুপচাপ archive হয়ে যায়",
+        "প্রত্যাখ্যান করা হয়",
+        "আলাপ pin হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "সক্রিয় turn বা compression চলাকালে delete প্রত্যাখ্যান হয়।",
+      "whyWrong": {
+        "0": "চলার সময় মোছে না।",
+        "1": "archive হয় না।",
+        "3": "pin হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q19",
+      "difficulty": "hard",
+      "question": "context window সবচেয়ে বেশি ভরে কীসে?",
+      "options": [
+        "একটা ছবি attach করলে, প্রতিবার নতুন করে ভরে",
+        "session-এর title লম্বা হলে",
+        "`state.db` ফাইল বড় হলে",
+        "pasted log, বড় tool output, লম্বা diff"
+      ],
+      "correctIndex": 3,
+      "explanation": "media-র চেয়ে ভারী লেখা বেশি ভরায়। ছবি একবার attach বা বর্ণনা হয়।",
+      "whyWrong": {
+        "0": "ছবি একবারই।",
+        "1": "title তুচ্ছ।",
+        "2": "`state.db` আলাদা, context নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-sessions-q20",
+      "difficulty": "hard",
+      "question": "নতুন কাজ শুরুর আগে `/new` দিলে কী লাভ?",
+      "options": [
+        "পুরনো session চিরতরে মুছে যায়",
+        "memory সংরক্ষিত হয়, খরচও কমে",
+        "সব memory মুছে নতুন করে শুরু হয়",
+        "খরচ বাড়ে, তবে উত্তর নিখুঁত হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "task-এর সীমানায় `/new` দেওয়াই ভালো রীতি।",
+      "whyWrong": {
+        "0": "মোছে না।",
+        "2": "memory সংরক্ষিত থাকে।",
+        "3": "খরচ কমে।"
+      }
+    }
+  ]
+}

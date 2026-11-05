@@ -1,0 +1,164 @@
+{
+  "contentId": "hermes-doc-guides-team-telegram-assistant",
+  "title": "Team Telegram Assistant",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/team-telegram-assistant",
+  "oneLiner": "এই lesson শেষে তুমি টিমের জন্য access-control সহ একটা shared Hermes Telegram bot চালু করতে পারবে এবং bot token, gateway, allowlist, DM pairing, VPS-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: অফিসের রিসেপশন ডেস্ক\n\nএকটা অফিসে একজন দক্ষ রিসেপশনিস্ট আছেন। তিনিই **Hermes**, আর তিনি কাজ করেন Telegram-এ।\n\nকিন্তু দরজায় একজন গার্ড দাঁড়িয়ে আছে। তার হাতে একটা তালিকা (allowlist)। শুধু তালিকার চেনা লোকরাই ঢুকতে পারে।\n\nনতুন সহকর্মী এলে গার্ড তাকে একটা **কোড** দেয়। তুমি (অ্যাডমিন) সেই কোড দেখে বলো \"ঢুকতে দাও\"। এটাই **DM pairing**।\n\nএই guide-এ একটা shared Telegram bot বানাব যা Hermes চালায়, এবং প্রতিজন ইউজারের জন্য আলাদা access control থাকবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Telegram ও bot:** Telegram একটা chat app। Bot হলো এমন একটা \"মানুষ-সাজা প্রোগ্রাম\", যে chat-এ মেসেজ পড়ে উত্তর দেয়। এখানে bot-এর পেছনের মগজ হলো Hermes।\n- **@BotFather:** Telegram-এর নিজের একটা বিশেষ bot, যার কাছে গিয়ে নতুন bot-এর জন্ম দিতে হয়। যেমন জন্ম-নিবন্ধন অফিস।\n- **Token:** BotFather যে লম্বা গোপন কোড দেয়। এটা bot-এর পাসওয়ার্ড। যার কাছে token আছে সে bot চালাতে পারে।\n- **Gateway:** একটা চলতে-থাকা প্রোগ্রাম, যা Telegram আর Hermes-এর মাঝে সেতু হয়। Telegram থেকে মেসেজ আনে, Hermes-কে দেয়, উত্তর ফেরত পাঠায়। ডাকপিয়নের মতো।\n- **Allowlist:** \"শুধু এই লোকদের ঢুকতে দাও\" তালিকা। তালিকার বাইরে কেউ কথা বললে bot সাড়া দেয় না।\n- **User ID (numeric):** Telegram প্রতিটা মানুষকে একটা সংখ্যার পরিচয় দেয়। এটা username (@নাম) থেকে আলাদা। ID কখনো বদলায় না, username বদলাতে পারে।\n- **DM:** Direct Message, মানে ব্যক্তিগত মেসেজ।\n- **VPS / server:** ইন্টারনেটে ভাড়া নেওয়া একটা কম্পিউটার, যা সারাক্ষণ চালু থাকে। তোমার laptop বন্ধ হলে bot বন্ধ হয়, কিন্তু VPS বন্ধ হয় না।\n- **Environment variable ও `.env` file:** নামওয়ালা সেটিং (`নাম=মান`)। `.env` হলো সেই সেটিংসের গোপন খাতা। `~/.hermes/.env` মানে তোমার home ফোল্ডারের Hermes ফোল্ডারে।\n- **LLM provider ও API key:** LLM হলো AI-র মগজ। Provider (OpenAI, Anthropic ইত্যাদি) সেই মগজ ভাড়া দেয়। API key হলো ওই ভাড়ার পাসওয়ার্ড।\n- **Service / log:** Service হলো পেছনে চুপচাপ চলা প্রোগ্রাম। Log হলো প্রোগ্রামের ডায়েরি, কী ঘটল তা লেখা থাকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ১: আগে যা লাগবে\n\n- Hermes install করো **server বা VPS-এ** (laptop-এ নয়), যাতে bot সারাক্ষণ online থাকে।\n- একটা Telegram account আর LLM provider-এর API key (OpenAI, Anthropic বা অন্য supported) `~/.hermes/.env`-এ।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Team Telegram bot চালু করার ধাপগুলো।",
+        "steps": [
+          {
+            "title": "১. @BotFather-এ bot বানাও",
+            "body": "`/newbot` পাঠাও, display name ও `bot`-এ শেষ হওয়া username দাও; token সংরক্ষণ করো।"
+          },
+          {
+            "title": "২. Gateway configure",
+            "body": "`hermes gateway setup` বা `.env`-এ `TELEGRAM_BOT_TOKEN` ও `TELEGRAM_ALLOWED_USERS`।"
+          },
+          {
+            "title": "৩. Gateway চালাও",
+            "body": "আগে `hermes gateway` (foreground) দিয়ে পরীক্ষা, পরে `hermes gateway install`।"
+          },
+          {
+            "title": "৪. টিমকে access দাও",
+            "body": "static allowlist, অথবা DM pairing (`hermes pairing approve telegram <CODE>`)।"
+          },
+          {
+            "title": "৫. Bot সাজাও",
+            "body": "`/sethome`, `display.tool_progress`, `SOUL.md`, `AGENTS.md`।"
+          },
+          {
+            "title": "৬. Scheduled task ও production",
+            "body": "cron job, Docker backend, `/update`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ২: @BotFather-এ bot বানানো\n\n- `/newbot` পাঠাও → display name দাও (লোকে যা দেখবে) → `bot`-এ শেষ হওয়া username দাও (যেমন `my_team_bot`)।\n- BotFather যে **token** দেয় সেটা সংরক্ষণ করো। ঐচ্ছিকভাবে `/setdescription` (বিবরণ) ও `/setcommands` (command menu) দাও।\n- **Token গোপন রাখো।** ফাঁস হলে BotFather-এ `/revoke` করো (মানে পুরোনো token বাতিল, নতুন নাও)।\n\n## ধাপ ৩: Gateway configure\n\nসবচেয়ে সহজ: `hermes gateway setup` চালিয়ে prompt (প্রশ্ন) অনুসরণ করো।\n\nহাতে করতে চাইলে `~/.hermes/.env`-এ:\n\n```bash\nTELEGRAM_BOT_TOKEN=<BotFather-এর token>\nTELEGRAM_ALLOWED_USERS=<তোমার numeric ID>\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `TELEGRAM_BOT_TOKEN=...` | bot-এর পাসওয়ার্ড (`<...>` অংশে নিজের token বসাও) | অফিসের চাবি |\n| `TELEGRAM_ALLOWED_USERS=...` | যাদের ঢুকতে দেবে তাদের ID | গার্ডের হাতের তালিকা |\n\nAllowlist-এ লাগে **numeric Telegram user ID**, username নয়। নিজের ID পেতে @userinfobot ব্যবহার করো (Telegram-এর আরেকটা bot, যে ID বলে দেয়)।\n\n## ধাপ ৪: Gateway চালু করা\n\n```bash\nhermes gateway            # foreground-এ পরীক্ষা; Ctrl+C-তে বন্ধ\nhermes gateway install    # production service (Linux-এ --system দিলে boot-time)\nhermes gateway start\nhermes gateway stop\nhermes gateway status\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes gateway` | terminal খোলা রেখে চালাও (foreground) | প্রথমবার পরীক্ষা করতে; Ctrl+C দিলে বন্ধ |\n| `hermes gateway install` | পেছনে সারাক্ষণ চলার service হিসেবে বসাও | পরীক্ষা শেষে স্থায়ীভাবে |\n| `start` / `stop` | service চালু / বন্ধ | দরকারমতো |\n| `status` | চলছে কি না দেখাও | bot সাড়া না দিলে |\n\n- **Linux log:** `journalctl --user -u hermes-gateway -f` (`journalctl` হলো Linux-এর log পড়ার যন্ত্র; `-f` মানে নতুন লাইন আসামাত্র দেখাও)। SSH logout-এর পরও চালু রাখতে `sudo loginctl enable-linger $USER`। (SSH মানে অন্য কম্পিউটারে নিরাপদে ঢোকার পদ্ধতি। Logout করলে সাধারণত তোমার চালানো জিনিস বন্ধ হয়, `enable-linger` তা আটকায়।)\n- **macOS log:** `~/.hermes/logs/gateway.log`। নতুন tool install করলে আবার `hermes gateway install` দাও, যাতে service তোমার PATH পায় (PATH = কমান্ড কোথায় খুঁজবে তার ঠিকানা-তালিকা)।\n- `hermes gateway status` দিয়ে নিশ্চিত হও, তারপর bot-কে message পাঠাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৫: টিমকে access দেওয়া\n\n**কেন লাগে?** Bot-এর হাতে terminal আছে, মানে সে তোমার server-এ কমান্ড চালাতে পারে। যে কেউ কথা বললে বিপদ।\n\n**পদ্ধতি ১: static allowlist।** `TELEGRAM_ALLOWED_USERS`-এ কমা দিয়ে ID যোগ করো, তারপর gateway restart।\n\n**পদ্ধতি ২: DM pairing (টিমের জন্য সুপারিশ)।** টিমমেট bot-কে DM করলে একটা code পায়। তুমি দাও:\n\n```bash\nhermes pairing approve telegram <CODE>\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes pairing approve` | pairing-এর অনুরোধ মঞ্জুর করো |\n| `telegram` | কোন platform-এর জন্য |\n| `<CODE>` | টিমমেট যে কোড পেয়েছে |\n\nRestart লাগে না। আরও কমান্ড:\n\n```bash\nhermes pairing list\nhermes pairing revoke telegram <ID>\nhermes pairing clear-pending\n```\n\n`list` অপেক্ষমাণ ও অনুমোদিতদের তালিকা দেখায়, `revoke` অনুমতি ফিরিয়ে নেয়, `clear-pending` অপেক্ষমাণ অনুরোধ সাফ করে।\n\n### নিরাপত্তার default\n\n- terminal access আছে এমন bot-এ কখনও `GATEWAY_ALLOW_ALL_USERS=true` দিও না।\n- Code ১ ঘণ্টা পর expire (মেয়াদ শেষ) হয়; request rate-limited (খুব ঘন ঘন অনুরোধ আটকায়)।\n- পাঁচবার ভুল approve করলে ১ ঘণ্টার lockout (তালা)।\n- Pairing file `0600` permission-এ থাকে (শুধু file-এর মালিক পড়তে-লিখতে পারে)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "দুই ধরনের access।",
+        "beforeTitle": "Static allowlist",
+        "before": "`TELEGRAM_ALLOWED_USERS=111,222` — ID আগে থেকে জানতে হয়, বদলালে gateway restart।",
+        "afterTitle": "DM pairing",
+        "after": "টিমমেট DM করে code পায়, তুমি `hermes pairing approve telegram <CODE>` দাও — restart ছাড়াই।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৬: Bot সাজানো\n\n- **Home channel:** chat-এ `/sethome` দাও, বা `TELEGRAM_HOME_CHANNEL` (ঐচ্ছিক `TELEGRAM_HOME_CHANNEL_NAME`) সেট করো। Cron-এর ফল (সময় ধরে চলা কাজের ফল) এখানে যায়। এটা না থাকলে নিজে থেকে পাঠানো খবর কোথায় যাবে, বোঝা যায় না।\n- **Tool progress:** `~/.hermes/config.yaml`-এ `display.tool_progress` (config.yaml হলো সেটিংসের নথি, YAML তার লেখার ধরন) = `off`, `new` (chat-এর জন্য সুপারিশ), `all` বা `verbose`। এটা ঠিক করে Hermes কাজের ধাপ কতটা দেখাবে। ইউজার `/verbose` দিয়ে নিজের session-এ বদলাতে পারে।\n- **Personality:** `~/.hermes/SOUL.md` সম্পাদনা করো। এখানে Hermes-এর স্বভাব লেখা থাকে।\n- **Project context:** `~/.hermes/AGENTS.md`-তে টিম ও stack-এর (ব্যবহৃত প্রযুক্তির) সংক্ষিপ্ত নোট। এটা প্রতি session-এর system prompt-এ যায়, তাই ছোট রাখো।\n\n## ধাপ ৭: Scheduled task\n\nTelegram-এ recurring (বারবার হওয়া) কাজটা বর্ণনা করলেই agent একটা cron job বানায়। পরিচালনা:\n\n```bash\nhermes cron list\nhermes cron status\n/cron remove <job_id>     # chat-এ\n```\n\nCron নতুন session-এ চলে, মনে কিছু নেই। তাই prompt-এ path, URL, নির্দেশ, সব দিতে হবে।\n\n## ধাপ ৮: Production টিপস\n\nProduction মানে \"আসল ব্যবহারের পরিবেশ\"।\n\n- ঝুঁকি কমাতে commands container-এ চালাও: `TERMINAL_ENV=docker` ও `TERMINAL_DOCKER_IMAGE`, বা `config.yaml`-এ `terminal.backend: docker`। (Container = সিল-করা বাক্স; ভুল কমান্ড বাক্সের বাইরে ক্ষতি করতে পারে না।)\n- আপডেট: chat-এ `/update`, অথবা `hermes update` চালিয়ে gateway restart।\n\n| কী | কোথায় |\n|---|---|\n| cron output | `~/.hermes/cron/output/` |\n| job definition | `~/.hermes/cron/jobs.json` |\n| pairing data | `~/.hermes/pairing/` |\n| session history | `~/.hermes/sessions/` |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Token আর allow-all সতর্কতা",
+      "markdown": "Bot token ফাঁস হলে `/revoke`। আর terminal-সক্ষম bot-এ `GATEWAY_ALLOW_ALL_USERS=true` কখনও নয়। যে কেউ তোমার server-এ command চালাতে পারবে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "VPS-এ চালাও",
+      "markdown": "Laptop বন্ধ হলে bot-ও বন্ধ। Server/VPS-এ install করলে সারাক্ষণ online থাকে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Allowlist-এ কোন ধরনের পরিচয় দিতে হয়?",
+      "options": [
+        "Telegram username",
+        "Numeric Telegram user ID",
+        "ফোন নম্বর",
+        "ইমেইল"
+      ],
+      "answerIndex": 1,
+      "explanation": "Username বদলাতে পারে, numeric ID বদলায় না। তাই allowlist-এ ID লাগে।"
+    },
+    {
+      "question": "DM pairing-এ কোন কমান্ডে টিমমেটকে অনুমোদন করা হয়?",
+      "options": [
+        "`hermes gateway approve`",
+        "`/sethome`",
+        "`hermes pairing clear-pending`",
+        "`hermes pairing approve telegram <CODE>`"
+      ],
+      "answerIndex": 3,
+      "explanation": "টিমমেট কোড পায়, তুমি এই কমান্ডে কোডটা মঞ্জুর করো।"
+    },
+    {
+      "question": "Pairing code কতক্ষণ বৈধ থাকে?",
+      "options": ["১ মিনিট", "২৪ ঘণ্টা", "১ ঘণ্টা", "কখনো expire হয় না"],
+      "answerIndex": 2,
+      "explanation": "নিরাপত্তার জন্য code ১ ঘণ্টা পর expire হয়।"
+    },
+    {
+      "question": "Bot token ফাঁস হলে কী করবে?",
+      "options": [
+        "BotFather-এ `/revoke` করে পুরোনোটা বাতিল করবে",
+        "কিছুই করবে না, token এমনিতেই বদলায়",
+        "`hermes update` দেবে",
+        "`/sethome` দেবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "Token হলো bot-এর পাসওয়ার্ড। ফাঁস হলে `/revoke` দিয়ে বাতিল করতে হয়।"
+    },
+    {
+      "question": "Cron-এর ফল কোথায় পৌঁছায়?",
+      "options": [
+        "BotFather-এ",
+        "`SOUL.md`-তে",
+        "GitHub-এ",
+        "Home channel-এ (`/sethome`)"
+      ],
+      "answerIndex": 3,
+      "explanation": "`/sethome` দিয়ে ঠিক করা ঘরেই নিজে-থেকে-পাঠানো ফল আসে।"
+    },
+    {
+      "question": "Chat-এর জন্য `display.tool_progress` কোন মান সুপারিশ করা হয়েছে?",
+      "options": ["`verbose`", "`new`", "`all`", "`off` ছাড়া কিছু নয়"],
+      "answerIndex": 1,
+      "explanation": "`new` কম output দেয়, chat ভরে যায় না।"
+    },
+    {
+      "question": "Host-কে রক্ষা করতে command কীভাবে চালানো যায়?",
+      "options": [
+        "`GATEWAY_ALLOW_ALL_USERS=true` দিয়ে",
+        "`/compress` দিয়ে",
+        "`TERMINAL_ENV=docker` বা `terminal.backend: docker` দিয়ে",
+        "`hermes pairing list` দিয়ে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Docker container মানে সিল-করা বাক্স; ভুল কমান্ড আসল server-কে ছুঁতে পারে না।"
+    }
+  ],
+  "recap": [
+    "Shared Telegram bot-এ গার্ড (allowlist) আর DM pairing দিয়ে ঠিক করো কে ঢুকবে।",
+    "Allowlist-এ numeric user ID লাগে, username নয়; DM pairing-এ restart ছাড়াই `hermes pairing approve telegram <CODE>`।",
+    "Token গোপন রাখো; terminal-সক্ষম bot-এ `GATEWAY_ALLOW_ALL_USERS=true` কখনো না।",
+    "VPS-এ চালাও যাতে সারাক্ষণ online থাকে; `/sethome` দিয়ে cron-এর ফলের ঘর ঠিক করো।",
+    "ঝুঁকি কমাতে commands Docker container-এ চালাও।"
+  ]
+}

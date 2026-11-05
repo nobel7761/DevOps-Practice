@@ -1,0 +1,332 @@
+{
+  "contentId": "hermes-doc-user-guide-configuration",
+  "title": "Configuration",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/configuration",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর config.yaml আর .env-এর তফাত, অগ্রাধিকার, terminal backend, compression, approvals, delegation ও security সেটিং বুঝবে এবং YAML, env var, API key-র মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বাড়ির আলমারি আর সিন্দুক\n\nতোমার বাড়িতে দুটো জায়গা আছে। একটা **খোলা আলমারি**, যেখানে জামা, বই, খেলনা সাজানো (সবাই দেখলে ক্ষতি নেই)। আরেকটা **তালা-দেওয়া সিন্দুক**, যেখানে টাকা আর চাবি।\n\nHermes-এর সেটিংসও ঠিক এভাবে ভাগ করা। সব থাকে একটা ফোল্ডারে: `~/.hermes/`। তার ভেতরে `config.yaml` হলো আলমারি (secret নয় এমন সেটিং), আর `.env` হলো সিন্দুক (API key, token, password)। নিয়মটা সহজ: **secret সবসময় `.env`-এ।**\n\n**কেন দুই ভাগ?** আলমারির ছবি বন্ধুকে দেখানো যায়, সিন্দুকের ছবি দেখানো যায় না। তেমনি `config.yaml` শেয়ার করা যায় (সেটিং বোঝাতে), কিন্তু `.env` কখনোই না। দুটো এক জায়গায় থাকলে একটা শেয়ার করতে গিয়ে ভুলে চাবিও ফাঁস হয়ে যেত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Config\n**Configuration** (সংক্ষেপে config) মানে \"সেটিং\", মানে প্রোগ্রাম কীভাবে চলবে তার পছন্দের খাতা। যেমন টিভির volume, brightness। Hermes-এর config-এ থাকে কোন AI ব্যবহার হবে, কতটা মনে রাখবে ইত্যাদি।\n\n### ২) YAML\n`config.yaml`-এর শেষে `.yaml` মানে ফাইলটা YAML ধরনে লেখা। YAML হলো খুব সহজ লেখার নিয়ম: `নাম: মান`। ভেতরে ঢুকলে দুই স্পেস সরিয়ে লেখা হয়, যেমন তালিকার ভেতরে উপ-তালিকা।\n\n### ৩) Environment variable (env var) ও `.env`\nকমান্ডের আশেপাশের পরিবেশে রাখা ছোট নোট, যেমন `OPENROUTER_API_KEY=abc`। `.env` ফাইল হলো এমন নোটের খাতা। নামগুলো সাধারণত বড় হাতের অক্ষর আর আন্ডারস্কোরে লেখা (`UPPER_SNAKE`)।\n\n### ৪) API key, token, password\n**API key** মানে একটা গোপন চাবি, যা দেখিয়ে তুমি কোনো AI কোম্পানির সেবা ব্যবহার করো। **Token** আর **password**-ও গোপন। ফাঁস হলে অন্য কেউ তোমার খরচে ব্যবহার করতে পারে।\n\n### ৫) Backend\nপেছনের যে ব্যবস্থা আসল কাজ করে। \"terminal backend\" মানে কমান্ড আসলে কোথায় চলবে সেই জায়গা।\n\n### ৬) Context window ও compression\n**Context window** হলো Hermes-এর \"মনে রাখার টেবিল\": একসঙ্গে যতটা কথা সে দেখতে পারে। টেবিল ভরলে **compression** (সারসংক্ষেপ করে ছোট করা) কাজে লাগে।\n\n### ৭) Precedence (অগ্রাধিকার)\nএকই জিনিস দুই জায়গায় থাকলে কে জিতবে সেই নিয়ম। যেমন মা বললেন \"ভাত খাও\", বাবা বললেন \"রুটি খাও\", তখন কার কথা চলবে তার নিয়ম।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `~/.hermes/`-এর ভেতরে কী আছে\n\n`~` মানে তোমার home ফোল্ডার (ব্যক্তিগত ঘর)। `.hermes` নামের আগে ডট মানে ফোল্ডারটা সাধারণত লুকোনো থাকে।\n\n| ফাইল/ফোল্ডার | কী রাখে | উপমা |\n|---|---|---|\n| `config.yaml` | model, terminal, compression, memory, toolset, secret ছাড়া সব সেটিং | খোলা আলমারি |\n| `.env` | API key, token, password | তালা-দেওয়া সিন্দুক |\n| `auth.json` | OAuth credential (**OAuth** = \"Google দিয়ে login\"-এর মতো, পাসওয়ার্ড না দিয়ে অনুমতি পাওয়ার ব্যবস্থা) | অতিথির অনুমতিপত্র |\n| `SOUL.md` | agent-এর মূল পরিচয়/ব্যক্তিত্ব | তার স্বভাবের খাতা |\n| `memories/`, `skills/`, `cron/`, `sessions/`, `logs/` | স্মৃতি, দক্ষতা (skill), নির্ধারিত কাজ (cron), আলাপ, লগ (log = ঘটনার লেখা খাতা) | আলাদা আলাদা তাক |\n\nসেটিং বদলানোর কমান্ড (`hermes config ...`):\n\n| কমান্ড | কাজ | কখন লাগে |\n|---|---|---|\n| `edit` | ফাইল খুলে হাতে বদলানো | অনেকগুলো একসঙ্গে বদলাতে |\n| `get` | একটা মান দেখা | এখন কী সেট আছে জানতে |\n| `set` | একটা মান বসানো | একটা সেটিং বদলাতে |\n| `unset` | মান সরিয়ে ডিফল্টে ফেরা | পরীক্ষা বাতিল করতে |\n| `check` | ভুল আছে কিনা পরীক্ষা | কিছু কাজ না করলে |\n| `migrate` | পুরনো config নতুন নিয়মে আনা | Hermes আপডেটের পর |\n\n```bash\nhermes config set terminal.backend docker                   # dotted key -> config.yaml\nhermes config set OPENROUTER_API_KEY sk-...                 # UPPER_SNAKE -> .env\nhermes setup --portal                                       # চটজলদি কাজের config\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes config set` | \"একটা সেটিং বসাও\" |\n| `terminal.backend` | **dotted key**, মানে ডট দিয়ে ঠিকানা লেখা: `terminal` অংশের ভেতরে `backend`। এটা আলমারি (`config.yaml`)-র জিনিস |\n| `OPENROUTER_API_KEY` | বড় হাতের নাম মানে গোপন চাবি, তাই সিন্দুকে (`.env`) যায় |\n| `sk-...` | চাবির আসল মান (এখানে উদাহরণ) |\n\n`hermes config set` নিজে বুঝে নেয়: `UPPER_SNAKE` নাম গেলে `.env`-এ, dotted key গেলে `config.yaml`-এ। ভুল বানান হলে \"did you mean\" বলে; তবু লিখতে চাইলে `--force`।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "একই সেটিং একাধিক জায়গা থেকে এলে কে জেতে: বাঁ থেকে ডানে অগ্রাধিকার।",
+        "nodes": [
+          {
+            "id": "cli",
+            "kind": "user",
+            "label": "CLI argument",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "yaml",
+            "kind": "database",
+            "label": "config.yaml",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "env",
+            "kind": "database",
+            "label": ".env",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "def",
+            "kind": "server",
+            "label": "Default",
+            "x": 660,
+            "y": 0
+          }
+        ],
+        "edges": [
+          {
+            "from": "cli",
+            "to": "yaml",
+            "label": "না থাকলে"
+          },
+          {
+            "from": "yaml",
+            "to": "env",
+            "label": "না থাকলে"
+          },
+          {
+            "from": "env",
+            "to": "def",
+            "label": "না থাকলে"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## অগ্রাধিকার (precedence)\n\nএকই জিনিস একাধিক জায়গায় থাকলে এই ক্রমে জেতে (সবচেয়ে শক্তিশালী আগে):\n\n1. **CLI argument**: কমান্ডের সঙ্গে সরাসরি লেখা, যেমন `--model`। সবচেয়ে তাজা কথা, তাই জেতে।\n2. **`config.yaml`**\n3. **`.env`**\n4. **Built-in default**: Hermes-এর নিজের আগে থেকে ঠিক করা মান, যখন কেউ কিছু বলেনি।\n\n**এটা না থাকলে কী সমস্যা?** দুই জায়গায় আলাদা কথা থাকলে Hermes বুঝত না কোনটা মানবে। এই ক্রম থাকায় তুমি জানো: \"আজ একবারের জন্য\" কিছু চাইলে CLI argument দাও, স্থায়ী চাইলে config।\n\nআবারও মনে রাখো: secret `.env`-এ রাখো।\n\n**Variable substitution:** config ফাইলে `${VAR}` বা `${env:VAR}` লিখলে মান বসে যায়, যেমন ফর্মে \"এখানে নাম বসবে\" ফাঁকা জায়গা। সেট না থাকলে লেখাটা যেমন ছিল তেমনই থাকে, সঙ্গে warning। Multi-profile gateway-তে (একাধিক আলাদা Hermes ব্যক্তিত্ব একসঙ্গে চালালে) প্রতিটা profile নিজের `.env` থেকে মান নেয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Terminal backend: কমান্ড কোথায় চলবে?\n\nHermes-এর terminal tool (যে tool দিয়ে সে কমান্ড চালায়) বিভিন্ন জায়গায় কমান্ড চালাতে পারে। **কেন বিভিন্ন জায়গা?** নিজের কম্পিউটারে চালানো সহজ, কিন্তু বিপজ্জনক হতে পারে। কখনো তাই আলাদা বন্ধ ঘরে চালানো ভালো।\n\n| backend | মানে | কখন লাগে |\n|---|---|---|\n| **local** | তোমার কম্পিউটারেই। `home_mode` (`auto`, `real`, `profile`) ঠিক করে subprocess-এর `HOME` (কমান্ডের \"নিজের ঘর\") | সহজ, দ্রুত, নিজের কাজে |\n| **docker** | শক্ত করা container (আলাদা বন্ধ বাক্স; capability কমানো, PID limit, tmpfs); ডিফল্টে persistent। অপশন: `docker_image`, `docker_volumes`, `docker_network`, `container_cpu`, `container_memory`, `container_disk`। Podman চাইলে `HERMES_DOCKER_BINARY` | নিরাপত্তা চাইলে |\n| **ssh** | অন্য কম্পিউটারে দূর থেকে ঢুকে চালানো (**SSH** = নিরাপদ দূরবর্তী দরজা)। `TERMINAL_SSH_HOST` ও `TERMINAL_SSH_USER` লাগবেই | অন্য server-এ কাজ করতে |\n| **modal** | ক্লাউডে ভাড়া করা জায়গা। `MODAL_TOKEN_ID` + `MODAL_TOKEN_SECRET` (বা `~/.modal.toml`); filesystem snapshot session জুড়ে টিকে থাকে | ক্লাউডে চালাতে |\n| **daytona** | ক্লাউড sandbox। `DAYTONA_API_KEY`; sandbox থামে/চলে, disk সীমা ১০ GiB | ক্লাউডে, থামানো-চালানো সুবিধা |\n| **vercel_sandbox** | `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` | Vercel ব্যবহারকারীদের |\n| **singularity** | Apptainer/Singularity-র official plugin, সাধারণত HPC-তে (বিশাল গবেষণা-কম্পিউটার) | গবেষণা cluster-এ |\n\n**Sandbox** মানে খেলার বালির বাক্স: ভেতরে যা-ই ভাঙুক, বাইরে কিছু হয় না।\n\n`persistent_shell` ঠিক করে local ও SSH-এ export করা variable (একটা কমান্ডে সেট করা নোট) এক কমান্ড থেকে পরেরটায় থাকবে কি না। SSH, Modal, Daytona বন্ধ হওয়ার সময় `~/.hermes/` state ফেরত sync হয় (`sync_back_max_bytes` সীমা), মানে ওখানে জমা কাজ ঘরে ফিরে আসে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও কিছু গুরুত্বপূর্ণ সেটিং\n\n**Runtime ও database**\n- `runtime.nofile_soft_limit` (ডিফল্ট ৪০৯৬): একসঙ্গে কতগুলো ফাইল খোলা রাখা যাবে তার নরম সীমা। `runtime.malloc_arena_max` (Linux/glibc, ডিফল্ট ৪): স্মৃতি বরাদ্দের একটা সূক্ষ্ম সেটিং।\n- `database.journal_mode`: `wal` বা `delete`। এটা ডেটার আলমারিতে লেখার নিরাপত্তা-পদ্ধতি। বিদ্যমান database বদলাতে `hermes sessions set-journal-mode delete`।\n\n**Provider timeout:** (**provider** = যে কোম্পানি AI দেয়, **timeout** = কতক্ষণ অপেক্ষার পর হাল ছাড়বে।) `providers.<id>.request_timeout_seconds`, `stale_timeout_seconds` (model-ভিত্তিক override-ও আছে)। ডিফল্ট: `HERMES_API_TIMEOUT=1800` সেকেন্ড, stale-call ৯০ সেকেন্ড।\n\n**Update:** background check ২৪ ঘণ্টায় বড়জোর একবার, `git fetch` চালায় না। `updates.pre_update_backup` (`quick`/`full`/`off`), `backup_keep`, `non_interactive_local_changes` (`stash`/`discard`)। Config snapshot `backups/config/`-এ থাকে; YAML ভাঙলে Hermes সবচেয়ে নতুন ভালো কপিতে ফেরে। **না থাকলে** একটা ভুল স্পেসেই পুরো config নষ্ট হতো।\n\n**Skills ও memory:** `skills.config`, `skills.auto_load`, `skills.guard_agent_created`, `skills.write_approval`; memory-র `memory_enabled`, `user_profile_enabled`, `write_approval`।\n\n**ফাইল পড়া ও output:** `file_read_max_chars` ডিফল্ট ১,০০,০০০। বড় tool result disk-এ spill হয় (স্ক্রিনে না ঢেলে ফাইলে রাখা), সাধারণত ১,০০,০০০ অক্ষরের পর, `mcp_*` tool-এর জন্য ৫০,০০০।\n\n**Toolset:** (সম্পর্কিত tool-এর দল।) `agent.disabled_toolsets` সব platform থেকে tool সরায়। **Worktree:** (একই project-এর আলাদা কপি-ঘর।) `worktree`, `worktree_sync`, `.worktreeinclude`।\n\n**Display (কয়েকটি ডিফল্ট):** `tool_progress: all`, `show_reasoning: true`, `streaming: false`, `bell_on_complete: false`, `resume_display: full`, `cli_multiline_shortcuts: true`, `language: en`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Context compression (`compression:`)\n\n**সমস্যা:** আলাপ লম্বা হলে model-এর জানালা (মনে রাখার টেবিল) ভরে যায়। তখন মাঝের অংশ সারসংক্ষেপ করা হয়, যেমন লম্বা গল্পের মাঝের অধ্যায়ের সংক্ষিপ্তসার।\n\n```yaml\ncompression:\n  enabled: true\n  threshold: 0.50      # context ৫০% ভরলে শুরু\n  target_ratio: 0.20\n  protect_first_n: 3   # প্রথম ৩ turn অক্ষত\n  protect_last_n: 20   # শেষ ২০ turn অক্ষত\n  in_place: true\n```\n\n| key | মানে | উপমা |\n|---|---|---|\n| `enabled` | চালু কিনা | সুইচ |\n| `threshold: 0.50` | টেবিল ৫০% ভরলে কাজ শুরু | অর্ধেক ভরলেই গুছিয়ে নেওয়া |\n| `target_ratio: 0.20` | ছোট করার লক্ষ্য অনুপাত | |\n| `protect_first_n: 3` | প্রথম ৩ turn অক্ষত (**turn** = এক দফা কথা-কাজ)। প্রথমে সাধারণত আসল নির্দেশ থাকে | বইয়ের প্রথম পাতা |\n| `protect_last_n: 20` | শেষ ২০ turn অক্ষত, কারণ সদ্য কাজ দরকার | সবশেষ পাতা |\n\nআরও আছে `threshold_tokens`, `tail_mode` (`lean`/`legacy`), gateway-র নিরাপত্তায় `hygiene_hard_message_limit` (৫০০০), idle/background অপশন (`idle_compact_after_seconds`, `prepare_ahead`, `proactive_prune_*`)। সারসংক্ষেপ করা model ঠিক হয় `auxiliary.compression` (`model`, `provider`, `base_url`, `timeout`, `fallback_chain`) দিয়ে। Gateway-তে `compression.*` ও `model.context_length` বদলালে restart ছাড়াই পরের message থেকে কার্যকর।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Web, browser, Display, voice (সংক্ষেপে)\n\n**Web search:** `web.backend` ডিফল্ট `firecrawl`; বিকল্প `searxng`, `parallel`, `tavily`, `perplexity`, `keenable`, `exa`। আলাদা করে `search_backend` ও `extract_backend` দেওয়া যায়; আরও আছে `keyless_fallback` (true), `keyless_rescue` (true), `provider_tier`। key-গুলো env var-এ: `FIRECRAWL_API_KEY`, `SEARXNG_URL`, `PARALLEL_API_KEY`, `TAVILY_API_KEY`, `PERPLEXITY_API_KEY`, `EXA_API_KEY` (সবই `.env`-এ)।\n\n**Browser:** `inactivity_timeout` (১২০), `command_timeout` (৩০), `headed` (false), `engine` (`auto` বা `lightpanda`), `cloud_provider` (`local`), `auto_local_for_private_urls` (true), `allow_private_urls` (false), `use_real_profile` (false)। JavaScript dialog-এর জন্য `dialog_policy`: `must_respond` (ডিফল্ট), `auto_dismiss`, `auto_accept`; অপেক্ষা `dialog_timeout_s` (৩০০)।\n\n**Display:** `tool_progress` চার mode: `off`, `new`, `all` (ডিফল্ট), `verbose`; CLI-তে `/verbose` দিয়ে ঘোরে। `/focus` tool_progress বন্ধ করে দেখার জায়গা সরল করে (শুধু দেখানো, কাজ বদলায় না)। প্রতি turn-এর শেষে এক লাইনের **per-turn summary** (সময়, tool-সংখ্যা) আসে। **File-mutation verifier** (ডিফল্ট true) write/patch ব্যর্থ হলে সতর্ক করে; বন্ধ করতে config key বা `HERMES_FILE_MUTATION_VERIFIER=0`। UI ভাষা `language` (ডিফল্ট `en`; zh, ja, de, es, fr, ko, ru, ar ইত্যাদিসহ অনেক ভাষা)। প্ল্যাটফর্ম ধরে বদলাতে `display.platforms.<name>`, যেমন `hermes config set display.platforms.telegram.streaming false`। Status bar-এর field (model, context_pct, git_branch ইত্যাদি) তালিকা দিয়ে বাছা যায়; তালিকা ফাঁকা হলে ডিফল্ট সেট।\n\n**Streaming:** CLI-তে `display.streaming` (ডিফল্ট false)। Gateway-তে `streaming.enabled` (false), `edit_interval` (০.৮) ইত্যাদি; বার্তা প্রায় ৪০৯৬ অক্ষরে উপচে পড়ে। Streaming ডিফল্টে বন্ধ (`enabled: false`); চালু করলে ডিফল্ট transport `auto`।\n\n**TTS (text-to-speech, লেখাকে কণ্ঠ বানানো):** `tts.provider` ডিফল্ট `edge`; বিকল্প elevenlabs, openai, minimax, mistral, gemini, xai, neutts, kittentts, piper, deepinfra। গতির অগ্রাধিকার: provider-এর নিজের মান, তারপর global `tts.speed`, তারপর ১.০।\n\n**STT (speech-to-text, কণ্ঠকে লেখা বানানো):** `stt.enabled` (true), `stt.provider` (`local`), `language` (`en`; খালি = auto-detect)। কোনো provider না বাছলে auto-detect ক্রম: local, groq, openai। upload সীমা: OpenAI/Groq/DeepInfra ২৫ MB, Mistral/xAI ৫০০ MB। `stt.prompt` hosted provider-এর কাছে যায়, তাই secret লিখো না।\n\n**CLI Voice mode:** `record_key` (`ctrl+b`), `max_recording_seconds` (১২০), `auto_tts` (false); কমান্ড `/voice on`, `/voice tts`।\n\n**Turn liveness watchdog:** `agent.turn_liveness.timeout_s` (৬০০.০) আর `poll_s` (১৫.০)। turn আটকে গেলে (stalled) তাকে চিহ্নিত করে interrupt করা হয়। streaming, ৩০ সেকেন্ডের tool heartbeat আর approval-এর অপেক্ষা সবই \"অগ্রগতি\" ধরা হয়। শূন্য বা ঋণাত্মক দিলে watchdog বন্ধ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চ্যাট, ডিএম আর ছোট ছোট সুবিধা\n\n**Unauthorized DM:** অচেনা কেউ Hermes-কে ব্যক্তিগত বার্তা (DM) পাঠালে কী হবে, তা `unauthorized_dm_behavior` ঠিক করে।\n- `pair` (chat-ধরনের platform-এর ডিফল্ট): ঢুকতে দেয় না, কিন্তু প্রেরককে একবারের pairing code পাঠায়।\n- `ignore`: চুপচাপ বার্তা ফেলে দেয়। `decline`: একটা ছোট ভদ্র না বলে, তারপর ২৪ ঘণ্টা চুপ; লেখা বদলাতে `unauthorized_dm_decline_message`। allowlist ফাঁকা থাকলে `hermes gateway setup` এই অপশন দেয়।\n- Email-এর ডিফল্ট `ignore` (inbox-এ অন্য চিঠি থাকে); বদলাতে `pair` লিখে দাও। platform-এর নিজের অংশ global মানকে হারায়, যেমন `whatsapp: unauthorized_dm_behavior: ignore`।\n\n**Group chat:** `max_concurrent_sessions` (ডিফল্ট `null` = সীমাহীন) একসঙ্গে কতগুলো session চলবে। session-এর প্রথম turn-এ একটা slot নেওয়া হয়; ব্যবহার দেখতে `hermes status --full`। `group_sessions_per_user` ডিফল্ট `true`। hosted room-এর আলোচনায় `hosted_rooms.discussion.max_rounds` (৩) ও `max_messages` (১০); শুধু ধনাত্মক পূর্ণসংখ্যা, ভুল মান হলে warning দিয়ে ডিফল্টে ফেরে, বদলালে process restart করো।\n\n**Discord:** `require_mention` (true), `free_response_channels` (\"\"), `auto_thread` (true), `free_response_auto_thread` (false)।\n\n### Quick commands: টোকেন-খরচ ছাড়া শর্টকাট\n\n```yaml\nquick_commands:\n  disk:\n    type: exec\n    command: df -h /\n  restart:\n    type: alias\n    target: /gateway restart\n```\n\n- `exec`: host-এ shell কমান্ড চালিয়ে ফল সরাসরি দেয়; **কোনো LLM call নেই, token খরচ শূন্য**। ৩০ সেকেন্ডে শেষ না হলে মেরে ফেলা হয়।\n- `alias`: অন্য একটা slash command-এ পাল্টে দেয়।\n- শুধু এই দুই ধরন; অন্য কিছু লিখলে error। শুধু একটা লেখা (prompt shortcut) এখানে চলে না; reusable prompt চাইলে skill বা alias।\n- skill command-এর আগে খোঁজা হয় (তাই skill-এর নাম ঢেকে দিতে পারে), slash autocomplete-এ দেখা যায় না, CLI ও সব messaging platform-এ চলে।\n\n### Code execution\n\n```yaml\ncode_execution:\n  mode: project\n  timeout: 300\n  max_tool_calls: 50\n```\n\n- `project` (ডিফল্ট): script চলে session-এর working directory-তে, active virtualenv/conda Python দিয়ে; `./data.csv`-এর মতো relative path কাজ করে।\n- `strict`: temp staging directory আর Hermes-এর নিজের Python; বেশি পুনরুৎপাদনযোগ্য, কিন্তু project dependency ও relative path মেলে না।\n- `*_API_KEY`, `*_TOKEN`, `*_SECRET` ধরনের environment variable মুছে ফেলা আর tool whitelist **দুই mode-এই একই**, তাই mode বদলালে নিরাপত্তা বদলায় না।\n- `timeout` সেকেন্ডে সর্বোচ্চ সময়, `max_tool_calls` কোডের ভেতর থেকে tool call-এর সীমা।\n\n### Human delay, clarify, ক্ষুদ্র সেটিং\n- `human_delay.mode`: `off` (ডিফল্ট), `natural` (৮০০ থেকে ২৫০০ ms), বা `custom` (`min_ms` ৮০০, `max_ms` ২৫০০)। উত্তর যেন মানুষের মতো একটু থেমে আসে।\n- `agent.clarify_timeout` (৩৬০০): Hermes প্রশ্ন করে কতক্ষণ উত্তর অপেক্ষা করবে; `0` বা কম হলে চিরকাল। পুরনো `clarify.timeout`-ও মানা হয়। সময় পার হলে `timed_out` ফেরে।\n- `timezone` ফাঁকা থাকলে server-এর local সময়; `HERMES_TIMEZONE` এটাকে হারায়।\n- `network.force_ipv4` (false): IPv6 আর IPv4 দুটোকে দৌড় করানো হয় (IPv6-কে ২৫০ ms এগিয়ে দিয়ে); route নিয়ে সন্দেহ হলে `hermes doctor`।\n- `privacy.redact_pii` (false): WhatsApp, Signal, Telegram-এ system prompt-এর user ID, ফোন নম্বর, chat ID-র hash বসায়; Discord ও Slack-এ নয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তার সেটিং: security আর approvals\n\nআবার আমাদের বাড়ির গল্পে ফিরি। বাড়িতে এখন একজন সহকারী (Hermes) কাজ করছে। তুমি তিনটা নিয়ম বানাতে পারো: (১) সহকারী যেন চিঠিতে লেখা গোপন পাসওয়ার্ড জোরে পড়ে না ফেলে, (২) কিছু ঠিকানায় যেন সে কখনও না যায়, (৩) বিপজ্জনক কাজের আগে সে যেন অনুমতি নেয়। এই তিনটাই `security` আর `approvals`।\n\n### `security:`\n\n```yaml\nsecurity:\n  redact_secrets: true\n  website_blocklist:\n    enabled: false\n    domains:\n      - \"*.internal.company.com\"\n      - \"admin.example.com\"\n      - \"*.local\"\n    shared_files:\n      - \"/etc/hermes/blocked-sites.txt\"\n```\n\n- **`redact_secrets`** (ডিফল্ট `true`): redact মানে কালো কালি দিয়ে ঢেকে দেওয়া। tool output আর log-এ API key/token/password-এর মতো লেখা আলাপে ঢোকার আগেই ঢেকে যায়। `.env`, shell rc ফাইল বা Hermes-এর `config.yaml`-এর মতো secret-ভরা ফাইল পড়লে credential-এর মতো দেখতে লাইনও ঢাকা পড়ে। সাধারণ source ফাইলে শুধু vendor-prefix ধরনের প্যাটার্ন ঢাকে, তাই `MAX_TOKENS: 100`-এর মতো মান নষ্ট হয় না। বন্ধ করবে শুধু debugging বা redactor বানানোর সময়।\n- **`website_blocklist`** (ডিফল্টে বন্ধ): মিললে URL-টা `web_search`, `web_extract` বা browser navigation চলার *আগেই* ফিরিয়ে দেওয়া হয়। নিয়ম তিন ধরনের: সরাসরি ডোমেইন (`admin.example.com`), subdomain wildcard (`*.internal.company.com`), আর TLD wildcard (`*.local`)। `shared_files`-এ প্রতি লাইনে একটা নিয়ম, ফাঁকা লাইন আর `#` মন্তব্য উপেক্ষা হয়। ফাইল না পাওয়া গেলে warning আসে, কিন্তু বাকি নিয়ম বন্ধ হয় না। নীতিটা ৩০ সেকেন্ড cache থাকে, তাই বদলালে restart লাগে না।\n- পুরনো `tirith_*` key সরিয়ে ফেলা হয়েছে; আপগ্রেড করলে সেগুলো বাদ পড়ে।\n\n### `approvals:` (smart approvals)\n\n**Approval** মানে \"করার আগে অনুমতি\"। সব কমান্ডে নয়, শুধু *flagged* (সন্দেহজনক বলে চিহ্নিত) কমান্ডে।\n\n```yaml\napprovals:\n  mode: smart              # smart | manual | off\n  denial_breaker_threshold: 3\n  deny:\n    - \"git push --force*\"\n    - \"*curl*|*sh*\"\n  smart_policy: |\n    Always ESCALATE commands that modify anything under /etc.\n```\n\n| `mode` | কী ঘটে | উপমা |\n|---|---|---|\n| `smart` (ডিফল্ট) | আলাদা একটা auxiliary LLM প্রতিটা flagged কমান্ড বিচার করে: কম ঝুঁকি হলে ওই এক কমান্ডের জন্য অনুমোদন, ঝুঁকি বেশি হলে নাকচ, দ্বিধায় থাকলে তোমাকে জিজ্ঞাসা | বুদ্ধিমান দারোয়ান |\n| `manual` | প্রতিটা flagged কমান্ডে তোমাকে জিজ্ঞাসা। CLI-তে dialog, messaging-এ অনুরোধ pending হয়ে থাকে | প্রতিবার মায়ের সই |\n| `off` | কোনো approval check নেই। এটা `HERMES_YOLO_MODE=true`-এর সমান। শুধু বিশ্বস্ত, sandbox-করা পরিবেশে | দরজা খোলা রাখা |\n\n- **`denial_breaker_threshold`** (ডিফল্ট `3`): reviewer বারবার না বললে Hermes যেন একই কমান্ডের নতুন নতুন রূপ নিয়ে ঘুরতে না থাকে (প্রতি চেষ্টায় একটা guardian LLM call খরচ হয়)। পরপর এতবার denial হলে denial বার্তাটা hard stop হয়ে যায়: agent-কে বলা হয় থামো, আটকে যাওয়া কাজ জানাও, আর তোমাকে হাতে চালাতে বা `/approve` দিতে বলো। কোনো একটা approval এলে গোনা শূন্য থেকে শুরু। `0` দিলে এই সুরক্ষা বন্ধ।\n- **`deny`**: glob প্যাটার্নের তালিকা; মিললে কমান্ড *সবসময়* আটকায়, `--yolo`, `/yolo` বা `mode: off` থাকলেও। মেলানো case-insensitive fnmatch দিয়ে। YAML-এ প্যাটার্ন অবশ্যই quote-এর ভেতরে লিখবে, কারণ শুরুতে খোলা `*` থাকলে parse error হয়।\n- **`smart_policy`**: reviewer-এর নির্দেশনায় তোমার নিজের নিয়ম জোড়া। লেখাটা guardian-এর system prompt-এ যায়, অবিশ্বস্ত কমান্ডের লেখার পাশে নয়, তাই কমান্ড নিজে এটা বদলাতে পারে না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা flagged কমান্ড smart mode-এ কীভাবে সিদ্ধান্ত পায়, ধাপে ধাপে।",
+        "steps": [
+          {
+            "title": "১) আগে deny তালিকা",
+            "body": "কমান্ড `approvals.deny`-র কোনো প্যাটার্নে মিললে সোজা **আটকে যায়**, yolo বা `mode: off` থাকলেও।"
+          },
+          {
+            "title": "২) reviewer বিচার করে",
+            "body": "`smart` mode-এ auxiliary LLM কমান্ডটা দেখে (সঙ্গে তোমার `smart_policy`)। কম ঝুঁকি হলে **অনুমোদন**, ঝুঁকি বেশি হলে **নাকচ**।"
+          },
+          {
+            "title": "৩) দ্বিধা হলে তোমাকে জিজ্ঞাসা",
+            "body": "reviewer নিশ্চিত না হলে সিদ্ধান্ত তোমার। `manual` mode-এ প্রতিটাতেই তোমাকে জিজ্ঞাসা।"
+          },
+          {
+            "title": "৪) বারবার নাকচ হলে থামা",
+            "body": "পরপর `denial_breaker_threshold` (৩) বার নাকচ হলে agent-কে থামতে বলা হয়; তুমি হাতে চালাও বা `/approve` দাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Checkpoints: ভুল হলে পেছনে ফেরার ব্যবস্থা\n\nখেলতে খেলতে ছবি আঁকা কাগজে ভুল রং পড়লে? যদি আগে থেকে ফটোকপি রাখা থাকত! **Checkpoint** সেই ফটোকপি: ফাইল ধ্বংস করতে পারে এমন কাজের আগে Hermes নিজে filesystem snapshot রাখে।\n\n```yaml\ncheckpoints:\n  enabled: false\n  max_snapshots: 20\n```\n\n- ডিফল্টে **বন্ধ** (opt-in)। একটা run-এর জন্য চালু করতে: `hermes chat --checkpoints`।\n- `max_snapshots`: প্রতি directory-তে সর্বোচ্চ কতগুলো checkpoint রাখা হবে (ডিফল্ট ২০)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Delegation: ছোট সহকারী (subagent) পাঠানো\n\nবড় দিদি (parent agent) একটা বড় কাজ পেয়েছে। সে ছোট ভাইবোনদের (**child**/subagent) আলাদা আলাদা অংশ ধরিয়ে দিতে পারে। `delegation:` ঠিক করে কতজন, কোন model-এ, কত গভীর পর্যন্ত।\n\n```yaml\ndelegation:\n  backend: default\n  model: \"google/gemini-3-flash-preview\"\n  provider: \"openrouter\"\n  max_concurrent_children: 10\n  worktree_isolation: false\n  max_spawn_depth: 1\n  orchestrator_enabled: true\n  oneshot_max_children: 2\n  gateway_mode: auto\n```\n\n**কোন route-এ কাজ যাবে**\n- `backend: default` মানে নিচের key-গুলো ব্যবহার হবে। `model_map` বা `profile_routes`-এর মতো plugin strategy থাকলে সেটা নিজের সেটিং পড়ে `delegation.backends.<name>` থেকে। plugin না থাকলে বা বন্ধ থাকলে `delegate_task` চুপচাপ অন্য পথে না গিয়ে error দেয়।\n- endpoint-এর অগ্রাধিকার: `base_url`, তারপর `provider`, তারপর parent থেকে উত্তরাধিকার। শুধু `model` দিলে নামটাই বদলায়, parent-এর credential থাকে।\n- `api_key` শুধু `OPENAI_API_KEY`-তে fallback করে। URL দেখে ধরন বোঝা না গেলে `api_mode` নিজে দেওয়া যায়।\n- আরও key আছে: `compression_threshold_tokens` (ডিফল্ট ০; দিলে সর্বনিম্ন ১৬০০০) আর `request_overrides`।\n- `fallback_providers: []` মানে child-এর fallback chain বন্ধ; না দিলে বা `null` হলে unpinned child parent-এর chain পায়। pinned child parent-এর পথ ধার না নিয়ে জোরে ব্যর্থ হয়।\n\n**কতজন, কত গভীর**\n- `max_concurrent_children` (ডিফল্ট ১০ — Hermes-এর source code-এর `_DEFAULT_MAX_CONCURRENT_CHILDREN` ও config defaults-এ এটাই; Configuration পাতায় আগে ৩ লেখা ছিল, Delegation পাতায় ১০, দুটো পাতা মেলে না, code-এর মানই ধরো; ন্যূনতম ১, ওপরে সীমা নেই; env `DELEGATION_MAX_CONCURRENT_CHILDREN`): এক batch-এ একসঙ্গে কতজন। বেশি চাইলে চুপচাপ কেটে না ফেলে tool error দেয়।\n- `max_spawn_depth` (ডিফল্ট ১, ১ থেকে ৩-এ আটকানো): গাছ কত স্তর। ১ হলে সব সমতল, `role=\"orchestrator\"` দিলেও সে leaf-এর মতো চলে। ২ হলে orchestrator child তার নিচে leaf নাতি-নাতনি বানাতে পারে।\n- **খরচ গুণ হয়:** depth ৩ আর width ৩ হলে ৩×৩×৩ = ২৭টা leaf agent একসঙ্গে চলতে পারে।\n- `orchestrator_enabled: false` দিলে depth যা-ই হোক, সব child leaf।\n- `oneshot_max_children` (ডিফল্ট ২, `0` = সীমাহীন): শুধু `hermes chat -q` বা `--oneshot` run-এ কতজন subagent বানানো যাবে। interactive বা gateway session-এ খাটে না। one-shot-এ `clarify` tool আর live-control প্যারামিটার বাদ যায়, কারণ উত্তর দেওয়ার বা চালানোর কেউ নেই।\n\n**আলাদা কপি আর gateway**\n- `worktree_isolation: false`: `true` করলে প্রতিটা child HEAD থেকে নিজের git worktree পায়। শুধু local backend আর git repository-তে চলে।\n- `gateway_mode`: `auto`, `inline` বা `background`। `auto`-তে messaging চ্যাটে `display.interim_assistant_messages` বন্ধ থাকলে children একই turn-এর ভেতরে জোড়া লাগে, তুমি একটাই উত্তর পাও। `inline`/`background`-এর বিস্তারিত পেজে নেই।\n- `surface_child_process_notifications` ডিফল্টে বন্ধ: child-দের background-process notification parent-এর আলাপে আসে না। delegation-এর ফলাফল কখনও লুকানো হয় না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "max_spawn_depth ২ হলে parent -> orchestrator child -> leaf; depth বাড়লে খরচও গুণ হয়।",
+        "nodes": [
+          {
+            "id": "p",
+            "kind": "user",
+            "label": "Parent agent",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "o",
+            "kind": "server",
+            "label": "Orchestrator child",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "l1",
+            "kind": "external",
+            "label": "Leaf 1",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "l2",
+            "kind": "external",
+            "label": "Leaf 2",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "p",
+            "to": "o",
+            "label": "delegate_task"
+          },
+          {
+            "from": "o",
+            "to": "l1",
+            "label": "spawn"
+          },
+          {
+            "from": "o",
+            "to": "l2",
+            "label": "spawn"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Context files আর working directory\n\n**SOUL.md** (`~/.hermes/` বা `$HERMES_HOME`-এ) agent-এর মূল পরিচয়। system prompt-এর #১ জায়গা সে-ই নেয় এবং ডিফল্ট পরিচয় বদলে দেয়। না থাকলে, খালি হলে বা লোড না হলে ডিফল্ট পরিচয়। Hermes নিজেই একটা ডিফল্ট `SOUL.md` বসিয়ে দেয়, আর এটা সবসময় আলাদাভাবে লোড হয়।\n\n**Project context** হিসেবে *শুধু একটা ধরন* লোড হয়, ক্রমে যেটা আগে মেলে:\n1. `.hermes.md` / `HERMES.md` (git root পর্যন্ত ওপরে খোঁজে)\n2. `AGENTS.md` (recursive; subdirectory-র ফাইল জুড়ে দেয়)\n3. `CLAUDE.md` (শুধু working directory)\n4. `.cursorrules` ও `.cursor/rules/*.mdc` (শুধু working directory)\n\nসব context file `context_file_max_chars` পর্যন্ত, বেশি হলে বুদ্ধি করে কাটা হয়। এর ডিফল্ট `null` — মানে model-এর context window অনুযায়ী বাড়ে-কমে (নিচে ২০,০০০, ওপরে ৫,০০,০০০ অক্ষর); একটা পূর্ণসংখ্যা দিলে সেটাই স্থির সীমা। (২০,০০০ হলো শুধু নিচের সীমা, ডিফল্ট নয়।)\n\n**Working directory:** CLI-তে যেখানে দাঁড়িয়ে চালাও। Gateway-তে `terminal.cwd`, না থাকলে home। Docker, SSH-এর মতো backend-এ environment-এর ভেতরের home।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Webapp, Dashboard আর Onboarding\n\n- **Onboarding:** `profile_build` (`ask` ডিফল্ট, বা `off`)। `run` (null/true/false) desktop-এর প্রথমবার onboarding নিয়ন্ত্রণ করে; `seen` ভেতরের জন্য।\n- **Webapp:** `enabled` (false), `host` (ডিফল্ট `127.0.0.1`; `0.0.0.0` বা `::` দিলে sign-in লাগে), `port` (৯১২০), `public_url` (https বা http; credential, query, fragment থাকবে না)। কমান্ড: `hermes gateway restart`, `hermes webapp`, `hermes webapp --status`।\n- **Dashboard:** `theme` (`default`; বিকল্প `midnight`, `ember`, `mono`, `cyberpunk`, `rose`), `show_token_analytics` (false), `trusted_proxies` (ফাঁকা; wildcard আর `/0` প্রত্যাখ্যাত)। auth ব্লক: `oauth`, `basic_auth` (`session_ttl_seconds` ০ মানে ১২ ঘণ্টা), `drain_auth`। WebSocket-এর ping/timeout ঘড়ি এবং `startup_orphan_sweep` (true) আছে; TUI session TTL `HERMES_TUI_SESSION_TTL_S`, ডিফল্ট ৬ ঘণ্টা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Agent-এর budget ও guardrail (কিছু ডিফল্ট)\n\n**Guardrail** হলো রাস্তার পাশের রেলিং, যাতে Hermes হারিয়ে না যায় বা বেহিসাবি খরচ না করে।\n\n- `agent.max_turns`: ডিফল্টে সীমাহীন; `agent.api_max_retries`: ৩ (AI কোম্পানির সঙ্গে যোগাযোগ ব্যর্থ হলে কতবার আবার চেষ্টা); `agent.auto_recovery_cycles`: ৫ (০ = বন্ধ)।\n- `agent.reasoning_effort`: unset মানে medium (ভাবনার গভীরতা)। `agent.service_tier`: `\"\"` (normal)।\n- Tool-loop guardrail (একই কাজ ঘুরে ঘুরে করা আটকানো): warning চালু, hard stop (interactive) বন্ধ। ব্যর্থতা ২/৩ বার ও অগ্রগতিহীন ২ বারে warning; ৫/৮/৫-এ hard-stop threshold। `loop_caps`: `max_web_searches` ৫০, `max_subagents` ৫০।\n- Gateway: `agent.session_stall_timeout` ৩০০ সেকেন্ড (শুধু জানায়), `agent.cron_drain_timeout` ৩০ সেকেন্ড, `agent.restart_drain_timeout` ০ (restart-এ সঙ্গে সঙ্গে থামে)।\n- `goals.max_turns`: ২০।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "API key কখনও config.yaml-এ নয়",
+      "markdown": "`config.yaml` সহজেই share বা commit হয়ে যায় (commit = Git-এ save point বানানো, যা অন্যরা দেখতে পারে)। key/token/password সবসময় `.env`-এ রাখো; config-এ লাগলে `${VAR}` দিয়ে রেফার করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "প্রথমে `hermes setup --portal`",
+      "markdown": "নিজে সব key মুখস্থ করতে হবে না। এই কমান্ড একটা কাজ-চালানো config বানিয়ে দেয়। পরে `hermes config get/set` দিয়ে ধীরে ধীরে বদলাও।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "API key কোথায় রাখা উচিত?",
+      "options": ["`config.yaml`-এ", "`.env`-এ", "`SOUL.md`-এ", "`logs/`-এ"],
+      "answerIndex": 1,
+      "explanation": "config সহজে শেয়ার হয়, তাই secret সবসময় `.env` সিন্দুকে।"
+    },
+    {
+      "question": "`hermes config set OPENROUTER_API_KEY ...` কোথায় লেখে?",
+      "options": ["`config.yaml`", "`SOUL.md`", "`.env`", "`auth.json`"],
+      "answerIndex": 2,
+      "explanation": "`UPPER_SNAKE` নাম গেলে `.env`-এ, dotted key গেলে `config.yaml`-এ যায়।"
+    },
+    {
+      "question": "অগ্রাধিকারে সবার ওপরে কোনটা?",
+      "options": [
+        "Built-in default",
+        "`.env`",
+        "`config.yaml`",
+        "CLI argument"
+      ],
+      "answerIndex": 3,
+      "explanation": "সবচেয়ে সরাসরি, তাজা কথা CLI argument; সবশেষে default।"
+    },
+    {
+      "question": "`compression.threshold: 0.50`-এর মানে কী?",
+      "options": [
+        "৫০টা turn পরে compress",
+        "context ৫০% ভরলে compress শুরু",
+        "৫০ সেকেন্ড পরে",
+        "৫০ MB-র পরে"
+      ],
+      "answerIndex": 1,
+      "explanation": "টেবিল অর্ধেক ভরলে সারসংক্ষেপ শুরু হয়।"
+    },
+    {
+      "question": "Compression-এ কোন turn-গুলো সুরক্ষিত?",
+      "options": ["সব", "কোনোটাই না", "প্রথম ৩ আর শেষ ২০", "শুধু মাঝের ১০টা"],
+      "answerIndex": 2,
+      "explanation": "`protect_first_n: 3`, `protect_last_n: 20`।"
+    },
+    {
+      "question": "Config-এ `${VAR}` সেট না থাকলে কী হয়?",
+      "options": [
+        "Hermes বন্ধ হয়ে যায়",
+        "লেখাটা যেমন আছে তেমন থাকে, সঙ্গে warning",
+        "খালি মান বসে",
+        "`.env` মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "ফাঁকা ফর্মের মতো, না ভরলে ওই লেখাই থাকে আর warning আসে।"
+    },
+    {
+      "question": "কোন terminal backend-এ কমান্ড তোমার নিজের কম্পিউটারে চলে?",
+      "options": ["docker", "ssh", "local", "modal"],
+      "answerIndex": 2,
+      "explanation": "local = নিজের কম্পিউটার; বাকিগুলো আলাদা বাক্স বা দূরের জায়গা।"
+    },
+    {
+      "question": "Terminal backend হিসেবে docker বেছে নেওয়ার একটা কারণ কী?",
+      "options": [
+        "সব key সরাসরি দেখা যায়",
+        "কমান্ড আলাদা শক্ত করা বাক্সে চলে, নিরাপত্তা বাড়ে",
+        "এতে internet লাগে না",
+        "এতে config.yaml লাগে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "container-এ capability কমানো থাকে, তাই ভুল কমান্ডেও তোমার আসল কম্পিউটার সুরক্ষিত।"
+    },
+    {
+      "question": "`approvals.mode: smart` (ডিফল্ট)-এ একটা flagged কমান্ড কে বিচার করে?",
+      "options": [
+        "সবসময় তুমি নিজে",
+        "একটা auxiliary LLM; দ্বিধা হলে তোমাকে জিজ্ঞাসা",
+        "কেউ না, সব চলে",
+        "শুধু `.env` ফাইল"
+      ],
+      "answerIndex": 1,
+      "explanation": "smart mode-এ reviewer LLM কম ঝুঁকিতে অনুমোদন, বেশি ঝুঁকিতে নাকচ দেয়; অনিশ্চিত হলে সিদ্ধান্ত তোমার।"
+    },
+    {
+      "question": "`approvals.deny`-তে থাকা প্যাটার্ন `--yolo` চালু থাকলেও কী করে?",
+      "options": [
+        "উপেক্ষা হয়",
+        "কমান্ড তবু আটকায়",
+        "শুধু warning দেয়",
+        "শুধু CLI-তে কাজ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "deny তালিকা বিনা শর্তে আটকায়, yolo বা `mode: off` থাকলেও।"
+    },
+    {
+      "question": "`delegation.max_spawn_depth: 3` আর `max_concurrent_children: 3` হলে সর্বোচ্চ কতগুলো leaf agent একসঙ্গে চলতে পারে?",
+      "options": ["৩", "৯", "২৭", "৮১"],
+      "answerIndex": 2,
+      "explanation": "খরচ গুণ হয়: ৩×৩×৩ = ২৭।"
+    },
+    {
+      "question": "`quick_commands`-এর `exec` ধরনের বিশেষত্ব কী?",
+      "options": [
+        "LLM call করে উত্তর বানায়",
+        "shell কমান্ড চালায়, কোনো LLM call বা token খরচ নেই",
+        "শুধু অন্য slash command-এ পাল্টায়",
+        "ফাইল মুছে দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "`exec` সরাসরি কমান্ড চালিয়ে ফল দেয়; ৩০ সেকেন্ডে শেষ না হলে মারা পড়ে।"
+    }
+  ],
+  "recap": [
+    "সব সেটিং `~/.hermes/`-এ; `config.yaml` non-secret, `.env` secret।",
+    "`hermes config set/get/edit/check` দিয়ে সেটিং সামলাও; `UPPER_SNAKE` যায় `.env`-এ।",
+    "অগ্রাধিকার: CLI argument, config.yaml, .env, default।",
+    "Terminal backend (local, docker, ssh, modal...) ঠিক করে কমান্ড কোথায় চলবে।",
+    "Compression threshold ০.৫০ আর প্রথম ৩/শেষ ২০ turn সুরক্ষা লম্বা আলাপ সামলায়।",
+    "`security.redact_secrets` secret ঢেকে রাখে; `website_blocklist` নির্দিষ্ট সাইট আগেই আটকায়।",
+    "`approvals` (smart/manual/off), `deny`, `denial_breaker_threshold` বিপজ্জনক কমান্ডে অনুমতির নিয়ম ঠিক করে; `deny` yolo-তেও খাটে।",
+    "`delegation` ঠিক করে subagent কতজন ও কত গভীর; depth বাড়লে খরচ গুণ হয়।"
+  ]
+}

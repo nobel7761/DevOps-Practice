@@ -1,0 +1,246 @@
+{
+  "contentId": "hermes-doc-user-guide-features-memory",
+  "title": "Memory",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/memory",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes কীভাবে দুটো ছোট খাতায় তোমাকে মনে রাখে, আর session, token, cache, profile, YAML, FTS-এর মতো শব্দগুলো সহজ উপমায় চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nধরো তোমার একটা রোবট বন্ধু আছে — নাম **Hermes**। সে খুব বুদ্ধিমান, কিন্তু একটা সমস্যা আছে: **প্রতিদিন ঘুম থেকে উঠলে সে সব ভুলে যায়।**\n\nকাল তুমি বললে, \"আমি নিরামিষ খাই।\" আজ সে আবার জিজ্ঞেস করছে, \"মাছ রান্না করব?\" 😅\n\nতুমি বিরক্ত হয়ে একটা উপায় বের করলে। বন্ধুকে **দুটো ছোট খাতা** দিলে:\n\n- 📒 **প্রথম খাতার নাম `MEMORY.md`** — এতে Hermes নিজের জন্য নোট লেখে। যেমন: \"এই কম্পিউটারে Docker চালাতে sudo লাগে না\"।\n- 📗 **দ্বিতীয় খাতার নাম `USER.md`** — এতে লেখা থাকে *তোমার* কথা। যেমন: \"ও নিরামিষ খায়, ছোট উত্তর পছন্দ করে\"।\n\nএখন প্রতি সকালে ঘুম থেকে উঠে Hermes আগে খাতা দুটো পড়ে নেয়। ব্যস — সে তোমাকে মনে রাখে! এটাই Hermes-এর **Persistent Memory** (স্থায়ী স্মৃতি)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Memory (স্মৃতি)** | Hermes-এর ছোট নোটবই-ফাইল, যা এক কথোপকথন থেকে আরেকটায় টিকে থাকে | ফ্রিজের গায়ে সাঁটা কাগজ |\n| **Session** | শুরু থেকে শেষ পর্যন্ত একটা কথোপকথন। `/new` দিলে নতুন session | একটা ফোনকল |\n| **Token** | লেখার ছোট টুকরো। AI যত token পড়ে তত খরচ ও জায়গা লাগে | ডাকে চিঠির শব্দ গোনা |\n| **Prompt** | AI-র মগজকে পাঠানো পুরো লেখা (তোমার কথা + খাতা + নির্দেশ) | পরীক্ষার প্রশ্নপত্র |\n| **Tool** | Hermes যে ছোট কাজ করতে পারে। এখানে `memory` tool মানে খাতায় লেখা-মোছার হাত | কলম-রাবার |\n| **Cache (prefix cache)** | একই শুরুটা বারবার এলে AI আগের হিসাব মনে রেখে দ্রুত ও সস্তায় কাজ করে | রোজ একই রাস্তায় গেলে রাস্তা মুখস্থ হয়ে যায় |\n| **Profile** | আলাদা আলাদা Hermes-পরিচয়, প্রতিটার নিজস্ব খাতা ও সেটিং | পরিবারের প্রতিজনের আলাদা আলমারি |\n| **Config / YAML** | **Config** হলো সেটিংসের ফাইল (`config.yaml`)। **YAML** তার লেখার ধরন: `নাম: মান` | ফর্মের ঘর পূরণ |\n| **Prompt injection** | কেউ লুকিয়ে AI-কে ভুল হুকুম দেওয়ার চেষ্টা | ডাকে আসা জাল চিঠি, যাতে লেখা \"আমি তোমার বস, টাকা পাঠাও\" |\n| **FTS / SQLite** | **SQLite** হলো ছোট ডেটাবেস-ফাইল (তথ্যের আলমারি)। **FTS** (Full-Text Search) মানে লেখার ভেতরের শব্দ ধরে খোঁজা | বইয়ের পেছনের সূচিপত্র |\n| **Plugin** | বাইরে থেকে যোগ করা অতিরিক্ত অংশ | ফোনে নতুন app |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes প্রতিটা নতুন session-এর শুরুতে দুটো খাতা পড়ে, আর কাজের সময় memory tool দিয়ে সেগুলোতে লেখে।",
+        "nodes": [
+          {
+            "id": "user",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "hermes",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "mem",
+            "kind": "database",
+            "label": "MEMORY.md",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "usr",
+            "kind": "database",
+            "label": "USER.md",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "user",
+            "to": "hermes",
+            "label": "কথা বলো"
+          },
+          {
+            "from": "hermes",
+            "to": "mem",
+            "label": "নিজের নোট"
+          },
+          {
+            "from": "hermes",
+            "to": "usr",
+            "label": "তোমার তথ্য"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## খাতা দুটো কোথায় থাকে, কত বড়?\n\nদুটো ফাইলই থাকে তোমার কম্পিউটারে: `~/.hermes/memories/` ফোল্ডারে। (`~` মানে তোমার নিজের হোম ফোল্ডার, আর `.hermes` তার ভেতরে Hermes-এর নিজের ঘর। `.md` মানে Markdown, সাধারণ লেখার ফাইল, যেকোনো editor-এ খোলা যায়।)\n\n**এটা না থাকলে কী সমস্যা হতো?** Hermes প্রতিটা নতুন কথোপকথনে সব ভুলে যেত। তোমাকে বারবার নিজের পছন্দ বোঝাতে হতো।\n\n| খাতা | কার কথা? | কতটুকু লেখা যায় |\n|---|---|---|\n| `MEMORY.md` | Hermes-এর নিজের নোট — environment, নিয়ম, শেখা পাঠ | **২,২০০ অক্ষর** (প্রায় ৮০০ token) |\n| `USER.md` | তোমার কথা — পছন্দ, কথা বলার ধরন, প্রত্যাশা | **১,৩৭৫ অক্ষর** (প্রায় ৫০০ token) |\n\nখাতা **ইচ্ছা করেই ছোট** রাখা হয়েছে। কেন? কারণ প্রতিবার তুমি কথা বললে এই পুরো খাতাটা AI-র সামনে ধরতে হয়, আর যত বড় খাতা তত বেশি খরচ (token cost)। তাই শুধু সবচেয়ে দরকারি কথাগুলো থাকে — যেন একটা sticky note, পুরো ডায়েরি না।\n\nHermes নিজে খাতায় লিখতে-মুছতে পারে `memory` নামের একটা **tool** দিয়ে। এই tool-এর তিনটা কাজ:\n\n- ➕ **add** — নতুন একটা লাইন যোগ করা\n- ✏️ **patch** — আগের লাইনের একটা অংশ বদলানো\n- 🗑️ **remove** — একটা লাইন মুছে ফেলা\n\n(খেয়াল করো: `read` বলে কিছু নেই — কারণ খাতা তো সকালেই পড়া হয়ে যায়। আর `replace` নামের একটা কাজ আগে ছিল, কিন্তু সেটা পুরো লাইন ঘষে ফেলত বলে সরিয়ে দেওয়া হয়েছে।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "এক Hermes home-এ একটাই agent",
+      "markdown": "দুটো আলাদা agent যেন **একই** `~/.hermes` ফোল্ডারে না চলে। দুজনে একই খাতায় লিখলে এমন সব লাইন জমে যাবে যেটা কেউই লেখেনি! দ্বিতীয় agent চাইলে তাকে আলাদা **profile** দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবচেয়ে মজার ব্যাপার: \"জমানো ছবি\" (Frozen Snapshot)\n\nHermes সকালে খাতা পড়ে নেয়। এবার ভাবো — দুপুরে তুমি তাকে বললে, \"মনে রেখো, আমি কফি খাই না।\" Hermes সঙ্গে সঙ্গে খাতায় লিখে ফেলল ✅\n\nকিন্তু… **সেই দিনের বাকি সময়ে** সে নিজের \"মাথায়\" থাকা খাতার কপি আর বদলায় না। নতুন লাইনটা সত্যি সত্যি ফাইলে লেখা হয়েছে, কিন্তু Hermes-এর সামনে রাখা কপিটা সকালের ছবির মতোই **জমে (frozen) আছে**। পরের **নতুন session**-এ সেটা দেখা যাবে।\n\n**কেন এমন?** কারণ AI প্রতিবার একই শুরুটা (prefix) দেখলে সেটা মনে রেখে দ্রুত আর সস্তায় কাজ করতে পারে (prefix cache)। খাতার লেখা মাঝপথে বদলালে সেই সুবিধা নষ্ট হতো।\n\nতাহলে কি তখনকার মতো কিছু জানা যায় না? যায়! Hermes যখন `memory` tool চালায়, tool-এর উত্তরে **এখনকার আসল অবস্থা** দেখানো হয়। শুধু \"শুরুর কপি\" জমানো থাকে।\n\n**সহজ উপমা:** সকালে তুমি দিনের কাজের তালিকা ছাপিয়ে নিলে। দুপুরে মূল ফাইলে নতুন কাজ যোগ হলো, কিন্তু তোমার হাতের ছাপানো কাগজ বদলাল না। পরদিন নতুন কাগজ ছাপালে তবে সেটা আসবে। **`/new`** হলো সেই 'নতুন করে ছাপানো', মানে নতুন session।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা session-এর জীবনে খাতার কপি কীভাবে জমানো থাকে।",
+        "steps": [
+          {
+            "title": "Session শুরু",
+            "body": "Hermes `MEMORY.md` আর `USER.md` পড়ে নেয়। এই কপিটাই AI-র সামনে ধরা হয়।"
+          },
+          {
+            "title": "তুমি বললে \"মনে রেখো…\"",
+            "body": "Hermes `memory` tool দিয়ে **ফাইলে সঙ্গে সঙ্গে** লিখে ফেলে। ফাইল এখন আপডেট।"
+          },
+          {
+            "title": "কথা চলতে থাকে",
+            "body": "AI-র সামনের কপি কিন্তু **আগের মতোই** (frozen)। এতে cache ঠিক থাকে, খরচ কম।"
+          },
+          {
+            "title": "`/new` দিয়ে নতুন session",
+            "body": "এবার Hermes ফাইল আবার পড়ে — নতুন লাইনটা এখন সামনের কপিতে আছে। 🎉"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "memory"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন কথা খাতায় লিখবে, কোনটা লিখবে না?\n\nখাতা ছোট, তাই জায়গা দামী। Hermes-কে (আর তোমাকেও) জানতে হবে কোনটা লেখার যোগ্য।\n\n### ✅ লেখো\n\n- **পছন্দ** → `USER.md`: \"আমি JavaScript-এর চেয়ে TypeScript পছন্দ করি\"\n- **Environment** → `MEMORY.md`: \"এই server-এ Debian 12 আর PostgreSQL 16 চলছে\"\n- **শুধরে দেওয়া কথা** → `MEMORY.md`: \"Docker command-এ sudo দিও না, user docker group-এ আছে\"\n- **Project-এর নিয়ম** → `MEMORY.md`: \"Tab ব্যবহার হয়, লাইন ১২০ অক্ষর\"\n- **শেষ হওয়া কাজ** → `MEMORY.md`: \"২০২৬-০১-১৫ তারিখে MySQL থেকে PostgreSQL-এ migrate করা হয়েছে\"\n- **সরাসরি অনুরোধ**: \"মনে রেখো, আমার API key প্রতি মাসে বদলায়\"\n\n### ❌ লিখো না\n\n- তুচ্ছ কথা: \"ও Python নিয়ে জিজ্ঞেস করেছিল\"\n- সহজে আবার খুঁজে পাওয়া যায় এমন তথ্য: \"Python 3.12 f-string nesting সাপোর্ট করে\"\n- বিশাল code, log বা data-র টেবিল\n- সাময়িক জিনিস: একবারের debug-এর temporary path\n- যা আগে থেকেই `SOUL.md` বা `AGENTS.md`-এ আছে\n\n### ভালো লাইন vs খারাপ লাইন\n\n```text\n✅ ভালো: Project ~/code/api uses Go 1.22, sqlc for DB queries, chi router.\n         Run tests with 'make test'. CI via GitHub Actions.\n\n❌ খারাপ: User has a project.\n```\n\nভালো লাইন **নির্দিষ্ট আর কাজে লাগার মতো**; খারাপ লাইন অস্পষ্ট।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "ঘন ঘন করা কাজের জন্য Skill ভালো",
+      "markdown": "কোনো কাজের পদ্ধতি বা জায়গা বারবার লাগলে সেটা খাতায় না লিখে একটা **Skill** বানাও। Skill দরকারের সময় তবেই লোড হয়, তাই ২,২০০ অক্ষরের জায়গা খায় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## খাতা ভরে গেলে কী হয়?\n\nখাতা নিজে নিজে ছোট হয় না — **auto-compaction নেই**। খাতা ভরে গেলে `memory` tool একটা error দেয়, যেমন:\n\n```text\nMemory at 2,100/2,200 chars; adding this entry (250 chars)\nwould exceed the limit by 153 chars.\n```\n\nতখন Hermes-কে নিজেই পুরনো/অপ্রয়োজনীয় লাইন মুছে বা ছোট করে জায়গা বানাতে হয়, তারপর নতুনটা যোগ করতে হয় — একই turn-এ।\n\n**কাজের নিয়ম:** খাতা **৮০%-এর বেশি ভরলে** (header-এ দেখা যায়, যেমন `[67% — 1,474/2,200 chars]`) নতুন লাইন যোগের আগে গুছিয়ে নাও। যেমন \"project X ব্যবহার করে\" ধরনের তিনটা আলাদা লাইনকে এক লাইনে মিলিয়ে দাও।\n\nআরও দুটো সুরক্ষা আছে:\n\n- একই লাইন দুবার যোগ করা যায় না (duplicate আটকানো হয়)।\n- লেখার আগে স্ক্যান হয় — prompt injection, credential চুরির চেষ্টা বা অদৃশ্য Unicode অক্ষর থাকলে লেখা **বাতিল**।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `old_text` দিয়ে লাইন বদলানো\n\n`patch` বা `remove` করার সময় পুরো লাইন লিখতে হয় না — শুধু লাইনের একটা **অনন্য টুকরো** (`old_text`) দিলেই হয়।\n\nধরো খাতায় আছে: `User prefers dark mode in all editors`\n\n```python\nmemory(action=\"patch\", target=\"memory\",\n       old_text=\"dark mode in all editors\",\n       content=\"light mode in VS Code, dark mode in terminal\")\n```\n\nফল: `User prefers light mode in VS Code, dark mode in terminal`\n\n**নিয়ম:** টুকরোটা খাতায় **ঠিক একবার** মিলতে হবে। একাধিক জায়গায় মিললে error আসে — তখন আরও নির্দিষ্ট টুকরো দাও। প্রতিটা call-এ `target` (`\"memory\"` বা `\"user\"`) বলতেই হবে।\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `action=\"patch\"` | কী কাজ: লাইনের একটা অংশ বদলাও | রাবার দিয়ে একটা শব্দ মুছে নতুন লেখা |\n| `target=\"memory\"` | কোন খাতা: `\"memory\"` (Hermes-এর নিজের) নাকি `\"user\"` (তোমার) | কোন খাতা খুলব |\n| `old_text=\"...\"` | লাইনের কোন টুকরো খুঁজে পাবে। ঠিক একবার মিলতে হবে | পাতায় আঙুল রাখার জায়গা |\n| `content=\"...\"` | ওই টুকরোর বদলে নতুন কী বসবে | নতুন লেখা |\n\n(`memory(...)` হলো একটা **function call**, মানে একটা tool-কে নাম ধরে ডেকে কী করতে হবে বলে দেওয়া।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## \"আমি তো বললাম মনে রাখতে, ভুলে গেল!\" — কী করবে?\n\nএই অবস্থায় এই ক্রমে দেখো:\n\n1. **সত্যিই কি লেখা হয়েছে?** ফাইল দেখো:\n   ```bash\n   cat ~/.hermes/memories/MEMORY.md\n   cat ~/.hermes/memories/USER.md\n   ```\n   ছোট বা দুর্বল মডেল (প্রায় ৩০B parameter-এর কম; **parameter** হলো AI-র মগজের ছোট ছোট সংখ্যা-সুতো, যত বেশি তত সাধারণত বেশি বুদ্ধি) মাঝে মাঝে tool না চালিয়েই বলে \"সেভ করেছি\"। তখন স্পষ্ট বলো: \"`memory` tool ব্যবহার করে সেভ করো।\" আর setup-এর সময় শক্ত মডেল ব্যবহার করো।\n2. **Approval-এ আটকে নেই তো?** `write_approval: true` থাকলে লেখা অপেক্ষায় থাকে। দেখো `/memory pending`, তারপর `/memory approve all`।\n3. **ঠিক profile-এ আছো তো?** `hermes -p work` চালালে খাতা থাকে `~/.hermes/profiles/work/memories/`-এ। `hermes profile list` দিয়ে দেখো।\n4. **Memory চালু আছে তো?** `memory.memory_enabled: false` হলে tool-ই থাকে না।\n5. **Frozen snapshot মনে রাখো** — লেখার পর `/new` দিয়ে নতুন session শুরু করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "`/new` অভ্যাস করো",
+      "markdown": "Memory বানানো হয়েছে session-এর **শেষ** ধরে। Telegram বা Discord-এ একটা chat সপ্তাহের পর সপ্তাহ একটাই session হয়ে চলতে পারে — তাতে খরচ বাড়ে আর মনে-করা-ভুলে-যাওয়া-খোঁজার চক্রটাও নষ্ট হয়। কাজ শেষে, topic বদলালে, বা নতুন দিনের শুরুতে `/new` দাও। (CLI-তে প্রতিবার চালানো মানেই নতুন session।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Memory vs Session Search — দুটো আলাদা জিনিস\n\nHermes আসলে দুভাবে \"মনে রাখে\":\n\n| | Persistent Memory (খাতা) | Session Search (পুরনো আলাপ খোঁজা) |\n|---|---|---|\n| জায়গা | সব মিলিয়ে ~১,৩০০ token | সীমাহীন |\n| গতি | তাৎক্ষণিক | ~২০ms |\n| খরচ | প্রতি prompt-এ token খরচ | LLM call লাগে না |\n| কী কাজে | সবসময় দরকারি তথ্য | পুরনো কোনো কথা খুঁজে বের করা |\n| কে চালায় | Agent নিজে গুছিয়ে রাখে | নিজে নিজে সব সেভ হয় |\n\nসব CLI আর messaging আলাপ `~/.hermes/state.db` নামের SQLite ফাইলে সেভ থাকে, আর full-text search (FTS5) দিয়ে খোঁজা যায়। পুরনো session দেখতে: `hermes sessions list`।\n\n**সহজ উপমা:** খাতা হলো তোমার *পকেটের ছোট নোটবই*, আর Session Search হলো *পুরো লাইব্রেরি*।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Config: খাতার নিয়ন্ত্রণ নিজের হাতে\n\n`~/.hermes/config.yaml` ফাইলে:\n\n```yaml\nmemory:\n  memory_enabled: true\n  user_profile_enabled: true\n  memory_char_limit: 2200\n  user_char_limit: 1375\n  write_approval: false   # true হলে লেখার আগে তোমার অনুমতি লাগবে\n```\n\n| key | মানে | কখন বদলাবে |\n|---|---|---|\n| `memory_enabled` | `MEMORY.md` খাতা চালু কিনা | Hermes-এর নিজের নোট একদম না চাইলে `false` |\n| `user_profile_enabled` | `USER.md` (তোমার তথ্য) চালু কিনা | তোমার সম্পর্কে মনে রাখা না চাইলে `false` |\n| `memory_char_limit` | `MEMORY.md`-এর অক্ষর-সীমা (২২০০) | বড় খাতা চাইলে বাড়াও, তবে খরচও বাড়বে |\n| `user_char_limit` | `USER.md`-এর অক্ষর-সীমা (১৩৭৫) | একই |\n| `write_approval` | লেখার আগে তোমার অনুমতি লাগবে কিনা | Hermes কী মনে রাখছে নিজে দেখে নিতে চাইলে `true` |\n\n- **`write_approval: true`** করলে Hermes খাতায় যা লিখতে চায় সেটা আগে তোমার সামনে আসে। CLI-তে সরাসরি জিজ্ঞেস করে; অন্য জায়গায় (Telegram, background review) লেখা **staged** হয়ে অপেক্ষা করে।\n- অনুমতির কমান্ড:\n  ```text\n  /memory pending        # অপেক্ষমাণ লেখার তালিকা\n  /memory approve <id>   # একটা (বা all) মঞ্জুর\n  /memory reject <id>    # একটা (বা all) বাতিল\n  /memory approval on    # gate চালু (off = বন্ধ)\n  ```\n- Memory **পুরো বন্ধ** করতে `memory_enabled` আর `user_profile_enabled` দুটোই `false` করো।\n\n### Background review — নিজে নিজে শেখা\n\n(**Background** মানে পেছনে, তুমি টের না পেয়ে। **Provider** মানে যে কোম্পানি AI-র মগজ ভাড়া দেয়। **max_input_tokens** মানে ওই মগজকে সর্বোচ্চ কত token পাঠানো যাবে।)\n\nHermes কাজের ফাঁকে পেছনে একটা \"review\" চালিয়ে নতুন memory বা skill বানাতে পারে। এটা চললে chat-এ `💾 Memory updated` ধরনের লাইন আসে (`display.memory_notifications: off | on | verbose` দিয়ে নিয়ন্ত্রণ করো)। খরচ কমাতে review-এর জন্য সস্তা আলাদা মডেল দেওয়া যায়:\n\n```yaml\nauxiliary:\n  background_review:\n    provider: openrouter\n    model: google/gemini-3-flash-preview\n    max_input_tokens: 48000\n```\n\n(এই setting-গুলো `auxiliary:`-এর **ভেতরে** থাকতে হবে; আলাদা `background_review:` লিখলে সেটা উপেক্ষা করা হয়।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও বড় স্মৃতি চাই? External Memory Provider\n\n২,২০০ অক্ষর যথেষ্ট না হলে বাইরের memory plugin যোগ করা যায় — যেমন **Honcho, Mem0, Hindsight, Supermemory**। এগুলো built-in খাতার **পাশাপাশি** চলে এবং knowledge graph, semantic search, নিজে নিজে fact বের করা — এসব যোগ করে।\n\n(**Knowledge graph** মানে তথ্যের মধ্যে সম্পর্ক-জাল, যেমন 'রহিম → ভাই → করিম'। **Semantic search** মানে শব্দ হুবহু না মিললেও অর্থ ধরে খোঁজা।)\n\n```bash\nhermes memory setup    # provider বেছে নাও ও সাজাও\nhermes memory status   # এখন কোনটা চালু দেখো\n```\n\n## শেখার যাত্রা দেখো: `/journey`\n\n`hermes journey` চালালে একটা **timeline** দেখা যায় — Hermes কোন skill আর memory কখন শিখল, পুরনো থেকে নতুন ক্রমে। ভুল কিছু শিখলে ছাঁটাই করা যায়:\n\n```bash\nhermes journey list            # node-এর ID দেখো\nhermes journey edit <node>     # $EDITOR-এ খুলে ঠিক করো\nhermes journey delete <node>   # skill archive হয়, memory মুছে যায়\n```"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এর `MEMORY.md` ফাইলে সর্বোচ্চ কত অক্ষর রাখা যায় (default)?",
+      "options": [
+        "১,৩৭৫ অক্ষর",
+        "১০,০০০ অক্ষর",
+        "২,২০০ অক্ষর",
+        "কোনো সীমা নেই"
+      ],
+      "answerIndex": 2,
+      "explanation": "`MEMORY.md`-এর default সীমা ২,২০০ অক্ষর (~৮০০ token)। `USER.md`-এর সীমা ১,৩৭৫ অক্ষর।"
+    },
+    {
+      "question": "`USER.md` ফাইলে কী লেখা থাকে?",
+      "options": [
+        "তোমার পছন্দ, কথা বলার ধরন ও প্রত্যাশা",
+        "Hermes-এর নিজের environment-এর নোট",
+        "পুরনো সব chat-এর পুরো কপি",
+        "API key-এর তালিকা"
+      ],
+      "answerIndex": 0,
+      "explanation": "`USER.md` হলো user profile — তোমার পছন্দ, communication style, প্রত্যাশা। Hermes-এর নিজের নোট যায় `MEMORY.md`-এ।"
+    },
+    {
+      "question": "দুপুরে তুমি Hermes-কে কিছু মনে রাখতে বললে, সে ফাইলে লিখলও। কিন্তু একই session-এ সে নতুন তথ্যটা \"জানে না\" বলে মনে হলো। কারণ কী?",
+      "options": [
+        "লেখা ব্যর্থ হয়েছে",
+        "Internet বন্ধ ছিল",
+        "Memory মাত্র একবার লেখা যায়",
+        "Session শুরুর খাতার কপি frozen snapshot হিসেবে জমানো থাকে"
+      ],
+      "answerIndex": 3,
+      "explanation": "খাতা session-এর শুরুতে একবার লোড হয় আর জমে থাকে (prefix cache বাঁচাতে)। ফাইলে লেখা হয়ে যায়, কিন্তু নতুন session-এ (`/new`) সেটা দেখা যায়।"
+    },
+    {
+      "question": "`memory` tool-এর কোন কাজটা (action) **নেই**?",
+      "options": ["add", "read", "remove", "patch"],
+      "answerIndex": 1,
+      "explanation": "`read` নেই, কারণ memory session-এর শুরুতেই prompt-এ ঢুকিয়ে দেওয়া হয়। `replace`-ও সরানো হয়েছে।"
+    },
+    {
+      "question": "খাতা ভরে গেলে কী হয়?",
+      "options": [
+        "নিজে নিজে পুরনো লাইন সংক্ষেপ হয়ে যায়",
+        "Hermes বন্ধ হয়ে যায়",
+        "`memory` tool error দেয়, Agent-কে নিজে জায়গা বানাতে হয়",
+        "সব মুছে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Memory auto-compact হয় না। সীমা পেরোলে tool error দেয়; Agent পুরনো লাইন মুছে/ছোট করে একই turn-এ আবার চেষ্টা করে।"
+    },
+    {
+      "question": "কোনটা খাতায় **না** লেখাই ভালো?",
+      "options": [
+        "বিশাল error log-এর পুরো কপি",
+        "\"Docker-এ sudo লাগে না\" — এমন শুধরে দেওয়া কথা",
+        "\"আমি TypeScript পছন্দ করি\"",
+        "\"Project-এ tab ব্যবহার হয়\""
+      ],
+      "answerIndex": 0,
+      "explanation": "বিশাল log, code dump আর সাময়িক জিনিস খাতায় রাখা উচিত না — জায়গা খুব কম আর খরচ প্রতি prompt-এ।"
+    },
+    {
+      "question": "তুমি `hermes -p work` দিয়ে চালিয়ে memory লিখলে, কিন্তু `~/.hermes/memories/MEMORY.md`-এ কিছুই নেই। সম্ভাব্য কারণ?",
+      "options": [
+        "Memory একবারই লেখা যায়",
+        "Profile `work`-এর খাতা অন্য জায়গায়: `~/.hermes/profiles/work/memories/`",
+        "Hermes পুরনো version",
+        "ফাইল encrypted"
+      ],
+      "answerIndex": 1,
+      "explanation": "Memory প্রতিটা profile-এ আলাদা। `work` profile-এর খাতা থাকে `~/.hermes/profiles/work/memories/`-এ।"
+    },
+    {
+      "question": "কোন কমান্ডে `write_approval: true` অবস্থায় অপেক্ষমাণ memory-লেখা দেখা যায়?",
+      "options": [
+        "/new",
+        "/journey",
+        "hermes sessions list",
+        "/memory pending"
+      ],
+      "answerIndex": 3,
+      "explanation": "`/memory pending` staged লেখার তালিকা দেখায়; `/memory approve all` দিয়ে সব মঞ্জুর করা যায়।"
+    }
+  ],
+  "recap": [
+    "Hermes-এর স্থায়ী স্মৃতি দুটো ছোট ফাইলে: `MEMORY.md` (২,২০০ অক্ষর, নিজের নোট) ও `USER.md` (১,৩৭৫ অক্ষর, তোমার কথা)।",
+    "খাতা session-এর শুরুতে একবার লোড হয় আর frozen থাকে; নতুন লেখা পেতে `/new` দিয়ে নতুন session শুরু করো।",
+    "`memory` tool-এর কাজ: add, patch, remove — `old_text`-এর অনন্য টুকরো দিয়ে লাইন খোঁজা হয়।",
+    "খাতা ৮০%-এর বেশি ভরলে আগে গুছিয়ে নাও; auto-compaction নেই।",
+    "পুরনো আলাপ খোঁজার জন্য আলাদা Session Search (SQLite + FTS5) আছে — memory আর search এক জিনিস না।",
+    "বড় স্মৃতি চাইলে external provider (Honcho, Mem0…) ব্যবহার করো: `hermes memory setup`।"
+  ]
+}

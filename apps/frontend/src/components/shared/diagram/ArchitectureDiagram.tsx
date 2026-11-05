@@ -47,13 +47,13 @@ export function ArchitectureDiagram({
       viewBox={`${-PADDING} ${-PADDING} ${width + PADDING} ${height + PADDING}`}
       width="100%"
     >
-      {edges.map((edge) => {
+      {edges.map((edge, index) => {
         const from = byId.get(edge.from);
         const to = byId.get(edge.to);
         if (!from || !to) return null;
         return (
           <DiagramEdge
-            key={`${edge.from}-${edge.to}`}
+            key={`${edge.from}-${edge.to}-${index}`}
             segment={edgeEndpoints(boxOf(from), boxOf(to))}
             label={edge.label}
             dashed={edge.dashed}

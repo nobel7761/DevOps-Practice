@@ -42,6 +42,9 @@ const COURSE_LAYOUTS: Record<string, Partial<CourseLayoutOptions>> = {
     sidebarHomeLink: false,
     careerOutlook: DEVOPS_CAREER,
   },
+  "hermes-agent-mastery": {
+    topicTree: true,
+  },
 };
 
 export function getCourseLayout(courseId: string): CourseLayoutOptions {

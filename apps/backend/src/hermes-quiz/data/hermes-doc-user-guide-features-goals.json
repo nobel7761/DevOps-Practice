@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-features-goals",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-features-goals-q01",
+      "difficulty": "easy",
+      "question": "`/goal` চালু থাকলে প্রতি turn-এর পর কে \"কাজ শেষ?\" দেখে?",
+      "options": [
+        "একটা ছোট judge model",
+        "তুমি নিজেই, হাতে হাতে",
+        "Kanban-এর dispatcher",
+        "gateway-র ঘড়ি (cron)"
+      ],
+      "correctIndex": 0,
+      "explanation": "judge হলো আলাদা, ছোট ও সস্তা মস্তিষ্ক, যার একটাই কাজ লক্ষ্য পূরণ হলো কি না বিচার করা।",
+      "whyWrong": {
+        "1": "`/goal`-এর কাজই হলো তোমাকে বারবার বলা থেকে বাঁচানো।",
+        "2": "dispatcher Kanban-এর অংশ, `/goal`-এর নয়।",
+        "3": "cron সময় ধরে কাজ চালায়, বিচার করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q02",
+      "difficulty": "easy",
+      "question": "`/goal`-এর default turn budget কত?",
+      "options": ["৫", "১০০", "২০", "অসীম"],
+      "correctIndex": 2,
+      "explanation": "`goals.max_turns` default ২০।",
+      "whyWrong": {
+        "0": "৫ default নয়।",
+        "1": "১০০ default নয়।",
+        "3": "সীমা থাকে বলেই অসম্ভব লক্ষ্যে চিরকাল চলে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q03",
+      "difficulty": "easy",
+      "question": "Turn budget কেন দরকার?",
+      "options": [
+        "judge-কে কিছুক্ষণ বিশ্রাম দিয়ে ঘুমাতে দিতে",
+        "অসম্ভব লক্ষ্যে অনন্ত চলা ঠেকাতে",
+        "চ্যাটের চেহারা ঠিক করতে",
+        "উত্তর আরও দ্রুত পেতে"
+      ],
+      "correctIndex": 1,
+      "explanation": "মা যেমন বলেন \"বড়জোর ২০ মিনিট\", budget তেমন সীমা বেঁধে দেয়।",
+      "whyWrong": {
+        "0": "judge ঘুমায় না।",
+        "2": "রঙের সাথে সম্পর্ক নেই।",
+        "3": "budget কাজ দ্রুত করে না, সীমা দেয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q04",
+      "difficulty": "easy",
+      "question": "`/goal pause` কী করে?",
+      "options": [
+        "লক্ষ্য একদম মুছে দেয়, কিছুই বাকি রাখে না",
+        "turn গণনা বাড়িয়ে দেয়",
+        "নতুন subgoal যোগ করে",
+        "loop থামায়, লক্ষ্য মুছে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "pause থামায় কিন্তু লক্ষ্য রাখে; পরে `/goal resume` দেওয়া যায়।",
+      "whyWrong": {
+        "0": "লক্ষ্য মুছতে `/goal clear`।",
+        "1": "গণনা শূন্য হয় `resume`-এ।",
+        "2": "subgoal যোগ করতে `/subgoal`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q05",
+      "difficulty": "easy",
+      "question": "Quality gate কী?",
+      "options": [
+        "judge-এর আরেকটা নাম, যে আলাদা করে বিচার করে",
+        "একটা নতুন chat app, Telegram-এর মতো",
+        "turn গোনার একটা যন্ত্র, budget-এর মতো",
+        "shell command, `0` না দিলে শেষ নয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "gate কঠিন যন্ত্র-পরীক্ষা, যাকে ফাঁকি দেওয়া যায় না।",
+      "whyWrong": {
+        "0": "judge শুধু কথা পড়ে; gate command চালায়।",
+        "1": "chat app নয়, একটা shell command।",
+        "2": "turn গোনা budget-এর কাজ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q06",
+      "difficulty": "easy",
+      "question": "Exit code `0` মানে কী?",
+      "options": [
+        "\"সমস্যা হয়েছে\", কমান্ড ব্যর্থ",
+        "\"ঠিক আছে\", কমান্ড সফল",
+        "\"কমান্ড একেবারেই চলেনি\"",
+        "\"আরও সময় লাগবে\""
+      ],
+      "correctIndex": 1,
+      "explanation": "পরীক্ষার পাসের মতো `0` মানে ঠিক আছে।",
+      "whyWrong": {
+        "0": "অন্য সংখ্যা মানে সমস্যা।",
+        "2": "না চলার আলাদা সংকেত থাকে।",
+        "3": "`0`-এর সাথে সময়ের সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q07",
+      "difficulty": "easy",
+      "question": "Judge-এর রায়ের চারটা মান কোনগুলো?",
+      "options": [
+        "`approve`, `reject`, `retry`, `abort`",
+        "`pass`, `fail`, `retry`, `skip`",
+        "`done`, `continue`, `blocked`, `wait`",
+        "`success`, `failure`, `pending`, `cancelled`"
+      ],
+      "correctIndex": 2,
+      "explanation": "judge এক লাইনের JSON-এ এই চারটার একটা দেয়।",
+      "whyWrong": {
+        "0": "এগুলো `/goal` কমান্ডের কাছাকাছি, কিন্তু রায় নয়।",
+        "1": "`retry` gate-এর ধারণা।",
+        "3": "এমন মান নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q08",
+      "difficulty": "medium",
+      "question": "লক্ষ্যের লেখা `pause the nightly cron` দিয়ে শুরু করতে হলে কী লিখতে হয়?",
+      "options": [
+        "`/goal -- pause the nightly cron`",
+        "`/goal pause the nightly cron`",
+        "`/goal draft pause the nightly cron`",
+        "`/goal show pause the nightly cron`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`--` দিলে Hermes বোঝে এটা লক্ষ্যের লেখা, সেটিং-কমান্ড নয়।",
+      "whyWrong": {
+        "1": "`--` ছাড়া Hermes ভাবে তুমি `pause` কমান্ড দিচ্ছ।",
+        "2": "`draft` খসড়া বানায়, `--`-এর কাজ করে না।",
+        "3": "`show` সক্রিয় contract দেখায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q09",
+      "difficulty": "medium",
+      "question": "Gate কেন লাগে, যখন judge আছেই?",
+      "options": [
+        "judge সবসময় ইচ্ছে করে মিথ্যা বলে",
+        "judge শুধু কথা পড়ে, ভুলও করে",
+        "gate না থাকলে `/goal` একদমই চলে না",
+        "gate judge-কে দ্রুত করে তোলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "gate যন্ত্রের কঠিন পরীক্ষা, তাই আস্থা বাড়ে।",
+      "whyWrong": {
+        "0": "লেসন বলে ভুল হতে পারে, ইচ্ছাকৃত মিথ্যা নয়।",
+        "2": "gate ঐচ্ছিক।",
+        "3": "gate গতি বাড়ায় না, নিশ্চয়তা বাড়ায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q10",
+      "difficulty": "medium",
+      "question": "Gate ব্যর্থ হলে কী ঘটে?",
+      "options": [
+        "লক্ষ্য সাথে সাথে `done` ধরে নেওয়া হয়",
+        "পুরো session আপনাআপনি মুছে ফেলা হয়",
+        "ব্যর্থ gate-এর exit code ও output ফেরে",
+        "gate নিজে নিজে সরে গিয়ে শেষ হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "default ৩ বার retry, তারপর লক্ষ্য নিজে pause হয়।",
+      "whyWrong": {
+        "0": "ব্যর্থ gate মানে শেষ নয়।",
+        "1": "session মোছা হয় না।",
+        "3": "gate নিজে সরে না; তোমাকে ঠিক বা সরাতে হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q11",
+      "difficulty": "medium",
+      "question": "`/goal draft <text>` কী করে?",
+      "options": [
+        "`goal_judge` এক লাইন থেকে contract বানায়",
+        "লক্ষ্যটা পুরোপুরি মুছে ফেলে দেয়",
+        "একটা নতুন gate যোগ করে দেয়",
+        "background process শেষ হওয়ার জন্য অপেক্ষা করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "model না পেলে লেখাটা free-form লক্ষ্য হিসেবেই থাকে।",
+      "whyWrong": {
+        "1": "মুছতে `/goal clear`।",
+        "2": "gate যোগ করতে `/goal gate add`।",
+        "3": "অপেক্ষার জন্য `/goal wait <pid>`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q12",
+      "difficulty": "medium",
+      "question": "Judge `wait` রায় দিলে কী হয়?",
+      "options": [
+        "আরও দ্রুত turn চলতে থাকে, থামে না",
+        "লক্ষ্য আপনাআপনি মুছে যায়",
+        "gate-এর সংখ্যা দ্বিগুণ হয়",
+        "loop পার্ক হয়, খরচ থামে"
+      ],
+      "correctIndex": 3,
+      "explanation": "গাড়ি পার্কের মতো, ১০ মিনিটের CI-র জন্য টাকা নষ্ট করে না।",
+      "whyWrong": {
+        "0": "`wait` মানে থেমে অপেক্ষা, দ্রুত চালানো নয়।",
+        "1": "মোছার সাথে সম্পর্ক নেই।",
+        "2": "gate-এর সংখ্যা বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q13",
+      "difficulty": "medium",
+      "question": "Judge error দিলে (`fail-open`) কী ধরা হয়?",
+      "options": [
+        "`done` (শেষ ঘোষণা)",
+        "`blocked` (আটকে গেছে)",
+        "`continue`",
+        "`clear` (লক্ষ্য মোছা)"
+      ],
+      "correctIndex": 2,
+      "explanation": "বিচারক অসুস্থ হলে খেলা চলতে থাকে, থেমে যায় না।",
+      "whyWrong": {
+        "0": "`done` ধরলে ভুল করে শেষ ঘোষণা হতো।",
+        "1": "`blocked` অসম্ভব লক্ষ্যের জন্য।",
+        "3": "`clear` কমান্ড, রায় নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q14",
+      "difficulty": "medium",
+      "question": "`/subgoal` ব্যবহার করলে judge কী দাবি করে?",
+      "options": [
+        "মূল লক্ষ্য ও সব subgoal পূরণ",
+        "শুধু সর্বশেষ যোগ করা subgoal",
+        "শুধু মূল লক্ষ্য, subgoal উপেক্ষা",
+        "শুধু subgoal-এর সংখ্যা ঠিক থাকা"
+      ],
+      "correctIndex": 0,
+      "explanation": "নতুন `/goal` বা `/goal clear` সব subgoal মুছে দেয়।",
+      "whyWrong": {
+        "1": "মূল লক্ষ্যও পূরণ হতে হয়।",
+        "2": "subgoal উপেক্ষা হয় না।",
+        "3": "সংখ্যা নয়, শর্ত পূরণই বিচার্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q15",
+      "difficulty": "hard",
+      "question": "তুমি `/goal Migrate auth to JWT` দিলে এবং সাথে `constraints: keep the /login response shape unchanged` লিখলে। এর মানে কী?",
+      "options": [
+        "শুধু /login ফাইলটা মুছে ফেলতে হবে",
+        "JWT-এর বদলে পুরোনো পদ্ধতি রাখতে হবে",
+        "`pytest` চালানো পুরোপুরি নিষিদ্ধ করা হয়েছে",
+        "/login-এর response বদলানো যাবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "`constraints` মানে কী নষ্ট করা যাবে না।",
+      "whyWrong": {
+        "0": "মোছার কথা নেই।",
+        "1": "লক্ষ্য তো JWT-তে যাওয়া।",
+        "2": "পরীক্ষার কথা `verify:`-এ আসে, নিষেধ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q16",
+      "difficulty": "hard",
+      "question": "একটা লক্ষ্যে ২০ turn শেষ হলে এবং আরও কাজ বাকি থাকলে কী করবে?",
+      "options": [
+        "কিছুই করা যায় না, লক্ষ্য শেষ হয়ে গেছে",
+        "`/goal resume` দেবে; গণনা আবার শূন্য",
+        "নতুন session খুলে সব আবার শুরু",
+        "`/goal gate clear` চালাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "শেষ হলে pause হয়; `resume` বা `clear` বলা হয়।",
+      "whyWrong": {
+        "0": "budget শেষ হলে pause হয়, লক্ষ্য মুছে যায় না।",
+        "2": "session বদলের দরকার নেই, state স্থায়ী থাকে।",
+        "3": "gate clear budget-এর সাথে সম্পর্কহীন।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q17",
+      "difficulty": "hard",
+      "question": "Messaging gateway-তে লক্ষ্য চলছে, এমন সময় নতুন লক্ষ্য দিতে চাও। নিয়ম কী?",
+      "options": [
+        "সাথে সাথে নতুন লক্ষ্যে বদলে যায়",
+        "আপনাআপনি pause হয়ে নতুনটা চালু হয়",
+        "দুটো লক্ষ্য একসাথে পাশাপাশি চলে",
+        "মাঝপথে নতুন লক্ষ্য প্রত্যাখ্যাত"
+      ],
+      "correctIndex": 3,
+      "explanation": "`status`, `pause`, `clear`, `wait`, `unwait` মাঝপথে নিরাপদ।",
+      "whyWrong": {
+        "0": "মাঝপথে বদলানো প্রত্যাখ্যাত হয়।",
+        "1": "এমন স্বয়ংক্রিয় pause নেই।",
+        "2": "একটা session-এ একটাই লক্ষ্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q18",
+      "difficulty": "hard",
+      "question": "Judge `done` দিল, কিন্তু আসলে কাজ বাকি (false positive)। কী করবে?",
+      "options": [
+        "`/goal pause` করে ভুলে যাও",
+        "follow-up দাও বা contract নির্দিষ্ট করো",
+        "turn budget আরও বাড়ার জন্য চুপচাপ অপেক্ষা করো",
+        "সব gate সরিয়ে ফেলো"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা `Goal achieved` লাইনের reason পড়ে বোঝা যায় judge কী দেখেছে।",
+      "whyWrong": {
+        "0": "pause করলে ভুলটা থেকে যায়।",
+        "2": "budget এর সাথে সম্পর্ক নেই।",
+        "3": "gate সরালে আরও দুর্বল হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q19",
+      "difficulty": "hard",
+      "question": "`/goal` আর Kanban-এর মধ্যে সঠিক পার্থক্য কোনটা?",
+      "options": [
+        "`/goal` একটাই session-এ; Kanban অনেক task-এ",
+        "`/goal` অনেক profile-কে কাজ ভাগ করে দেয়",
+        "Kanban একটাই session-এ সীমাবদ্ধ থাকে, বেশি পারে না",
+        "দুটো আসলে একই জিনিসের দুই নাম"
+      ],
+      "correctIndex": 0,
+      "explanation": "`/goal` একজন ছাত্রের হোমওয়ার্ক, Kanban পুরো ক্লাসের বোর্ড।",
+      "whyWrong": {
+        "1": "`/goal` কখনো অন্য profile-কে কাজ দেয় না।",
+        "2": "উল্টো: এটা `/goal`-এর বৈশিষ্ট্য।",
+        "3": "Kanban card `--goal` দিলে শুধু engine ধার করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-goals-q20",
+      "difficulty": "hard",
+      "question": "`wait_on_session <id>` কখন ছাড়ে?",
+      "options": [
+        "শুধু ৩০ মিনিট পার হয়ে গেলে তবেই",
+        "যখনই তুমি নতুন একটা message পাঠাও",
+        "শেষ হলে বা `watch_patterns` মিললে",
+        "কোনো অবস্থাতেই কখনো ছাড়ে না, চিরকাল পার্ক থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`wait_on_pid` ছাড়ে শুধু শেষ হলে; session-অপেক্ষা `watch_patterns`-ও দেখে।",
+      "whyWrong": {
+        "0": "সময়ের হিসাব `wait_for_seconds`-এ।",
+        "1": "তোমার message আগে চলে, তবে ছাড়ার শর্ত আলাদা।",
+        "3": "সীমা ৩০ মিনিট, চিরকাল নয়।"
+      }
+    }
+  ]
+}

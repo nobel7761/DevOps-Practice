@@ -1,0 +1,185 @@
+{
+  "contentId": "hermes-doc-getting-started-platform-support",
+  "title": "Platform Support",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/getting-started/platform-support",
+  "oneLiner": "এই lesson শেষে তুমি জানবে তোমার কম্পিউটার বা ফোন Hermes-এর কোন স্তরে (Tier 1, Tier 2, অসমর্থিত) পড়ে, আর platform, architecture, Docker, Nix, Termux-এর মতো শব্দগুলো বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## দোকানের তিন তাকের গল্প\n\nএকটা বড় দোকানে তিন তাক আছে:\n\n- 🥇 **সামনের তাক:** সবচেয়ে বেশি বিক্রি হওয়া জিনিস। কিছু ভাঙলে দোকানদার সবার আগে এটাই ঠিক করে।\n- 🥈 **পাশের তাক:** জিনিস আছে, যত্নও হয়, কিন্তু ঠিক করতে দেরি হতে পারে।\n- 🚫 **পেছনের গুদাম:** \"এটা আর রাখি না, নতুন কিছু নিয়ে যাও।\"\n\nHermes-এর Platform Support পাতা ঠিক এই তিন তাকে platform সাজিয়েছে: **Tier 1, Tier 2, Unsupported।** docs শুরুতেই সৎভাবে বলে: Hermes অনেক platform সমর্থন করে, কিন্তু *সম্ভাব্য প্রতিটা install পদ্ধতি* সমর্থন করা সম্ভব না।\n\n**এটা কেন দরকার?** তুমি যে কম্পিউটারে বা যে পদ্ধতিতে Hermes বসাতে যাচ্ছ, সেটা ভাঙলে কে ঠিক করবে আর কত তাড়াতাড়ি, এটা আগে থেকে জানা থাকলে পরে অবাক হতে হয় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Platform\nযে ধরনের কম্পিউটার বা পরিবেশে Hermes চলে: Mac, Windows, Linux, Docker, ফোন। যেমন একই খেলনা বাড়িতে, স্কুলে বা পার্কে খেলা যায়। এই তিনটা জায়গাই একেকটা platform।\n\n### ২) OS (Operating System)\nকম্পিউটারের \"ম্যানেজার\" প্রোগ্রাম, যা সব প্রোগ্রামকে চালায়: macOS, Windows, Linux।\n\n### ৩) Architecture (আর্কিটেকচার)\nকম্পিউটারের প্রসেসরের ধরন। দুটো নাম দেখবে: **x86_64** (বেশিরভাগ পুরনো Intel/AMD কম্পিউটার) আর **aarch64 / arm64** (Apple Silicon Mac, বেশিরভাগ ফোন, আধুনিক ARM কম্পিউটার)। একই প্রোগ্রাম দুই ধরনের প্রসেসরে আলাদা করে বানাতে হয়, যেমন ডান-হাতি আর বাঁ-হাতি দস্তানা।\n\n### ৪) Install পদ্ধতি\nকীভাবে Hermes বসাচ্ছ: `install.sh` (Linux/Mac-এর জন্য এক লাইনের script), `install.ps1` (Windows-এর জন্য), Desktop app, Docker, Nix ইত্যাদি। (Script মানে ধাপ নিজে নিজে করে দেওয়া ছোট প্রোগ্রাম।)\n\n### ৫) Docker ও image\n**Docker** হলো একটা সিল করা বাক্স (container)। ভেতরে প্রোগ্রাম আর তার সব দরকারি জিনিস আছে। **Image** হলো সেই বাক্সের ছাঁচ। নতুন সংস্করণ চাইলে নতুন ছাঁচ থেকে নতুন বাক্স বানাতে হয়।\n\n### ৬) Nix\nএকটা package manager (প্যাকেজ এনে বসানোর ডেলিভারি-লোক), যা সব কিছু নিজের নিয়মে একদম নির্দিষ্ট সংস্করণে বসায়। Nix যখন Hermes-এর মালিক, তখন update-ও Nix-ই করে।\n\n### ৭) Termux\nAndroid ফোনের ভেতরে একটা ছোট Linux-ধাঁচের terminal app। এতে ফোনে Hermes চালানো যায়।\n\n### ৮) Best effort\n\"চেষ্টা করব, কিন্তু কথা দিচ্ছি না।\" ভাঙলে ঠিক করার গ্যারান্টি নেই বা দেরি হতে পারে।\n\n### ৯) PR (Pull Request)\nঅন্য কারও project-এ নিজের বদলানো কোড পাঠিয়ে বলা: \"আমার এই সংশোধনটা নাও।\""
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তিন স্তর: Tier 1 সবচেয়ে নিরাপদ, তারপর Tier 2, শেষে অসমর্থিত।",
+        "nodes": [
+          {
+            "id": "t1",
+            "kind": "server",
+            "label": "Tier 1",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "t2",
+            "kind": "cache",
+            "label": "Tier 2",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "un",
+            "kind": "external",
+            "label": "Unsupported",
+            "x": 0,
+            "y": 240
+          },
+          {
+            "id": "fix",
+            "kind": "user",
+            "label": "Bug fix-এর ক্রম",
+            "x": 260,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "t1",
+            "to": "fix",
+            "label": "আগে"
+          },
+          {
+            "from": "t2",
+            "to": "fix",
+            "label": "পরে"
+          },
+          {
+            "from": "un",
+            "to": "fix",
+            "label": "PR নেওয়া হয় না"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Tier 1: সর্বোচ্চ অগ্রাধিকার (সামনের তাক)\n\nপ্রকল্পের লক্ষ্য: এই platform-গুলোতে install ও update **কখনো না ভাঙা**। Tier 1-এর সমস্যা অন্য সব সমস্যার আগে দেখা হয়।\n\n| OS / আর্কিটেকচার | install পদ্ধতি | মন্তব্য |\n|---|---|---|\n| **macOS** (Apple Silicon) | Hermes Desktop; `install.sh` | Apple Silicon মানে M1, M2, M3... চিপওয়ালা Mac |\n| **Windows 10 / 11** (x86_64, aarch64) | `install.ps1`; MSIX desktop | MSIX-এ Windows 11 22H2 বা তার পরে লাগে। optional dependency (ঐচ্ছিক সহায়ক প্রোগ্রাম)-এর আর্কিটেকচার-সীমা আছে |\n| **Linux / WSL2** (x86_64, aarch64) | `install.sh` | সর্বশেষ Ubuntu ও WSL2-তে পরীক্ষিত। glibc, systemd ও FHS-ওয়ালা distro-তে সম্ভবত ভালো চলবে |\n| **Docker Container** (x86_64, aarch64) | `docker pull` | Docker install-এ `hermes update` চলে না, নতুন image চালাতে হয় |\n\nকঠিন শব্দগুলো: **MSIX** হলো Windows-এর একটা সই-করা প্যাকেজ-ধরন। **WSL2** হলো Windows-এর ভেতরে ছোট Linux চালানোর সুবিধা। **distro** মানে Linux-এর একেক সংস্করণ (Ubuntu, Fedora...)। **glibc, systemd, FHS** তিনটাই Linux-এর সাধারণ ভিত: যথাক্রমে মূল লাইব্রেরি, service চালু রাখার ম্যানেজার, আর ফোল্ডার সাজানোর প্রচলিত নিয়ম। মোটকথা: সাধারণ আধুনিক Linux-এ চলার কথা।\n\n`docker pull` মানে নতুন image নামিয়ে আনা। **Docker-এ কেন `hermes update` চলে না?** বাক্স সিল করা। ভেতরে বদল করা হয় না, পুরো বাক্স নতুন করে আনতে হয়।\n\n## Tier 2: best effort (পাশের তাক)\n\nএগুলো repo-তে রক্ষণাবেক্ষণ হয়, কিন্তু **release-এ ভাঙতে পারে**, আর ঠিক করার গ্যারান্টি দ্রুত নয়। PR নেওয়া হয়, তবে Tier 1 fix-এর পরে।\n\n| OS | পদ্ধতি | মন্তব্য |\n|---|---|---|\n| **Nix** (macOS, Linux, NixOS) | Nix flake ও module | runtime install ও update-এর মালিক Nix |\n| **Android / Termux** (aarch64) | signed APT repository, তারপর `pkg install hermes-agent` | prerelease package (Python, Node, TUI সহ); default-এ build হয় না। gateway চালাও Termux session-এ, কারণ Android background process মেরে ফেলতে পারে |\n\nশব্দ: **flake** হলো Nix-এর একটা প্যাকেজ-বর্ণনা ফাইল। **APT** হলো Linux/Termux-এর প্যাকেজ-দোকান, **signed** মানে সই-করা, মানে আসল কিনা যাচাই করা যায়। **Prerelease** মানে চূড়ান্ত নয়, আগেভাগে দেওয়া পরীক্ষামূলক সংস্করণ। **Gateway** হলো Hermes-কে chat app-এর সাথে জুড়ে জাগিয়ে রাখা প্রক্রিয়া। **Background process** মানে পর্দার আড়ালে চলা প্রোগ্রাম। Android ব্যাটারি বাঁচাতে এগুলো মেরে ফেলতে পারে, তাই gateway-কে Termux-এর খোলা জানালায় (session) চালু রাখতে বলা হয়েছে।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Termux ও Intel Mac: default build-এ নেই",
+      "markdown": "Termux APT package default-এ build হয় না: release বানানোর সময় `release.py release --with termux` দিলে তবেই হয় (সাথে `windows` ও `macos-arm64`)। Termux বাদ গেলে APT channel আগের release-এই থাকে। আর Intel macOS (`x64`) bundle কোনো release বা CI workflow-তে build বা test হয় না। macOS update feed শুধু arm64, তাই পুরোনো desktop bundle থেকে install করা Intel Mac কোনো update পায় না। (এগুলো Hermes-এর maintainer-দের বানানোর ধাপ, তোমার চালানোর কমান্ড না। **feed** হলো update-এর খবর পাঠানোর চ্যানেল।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Build target ও অগ্রাধিকার: খুঁটিনাটি\n\n**Build** মানে source code থেকে চালানো যায় এমন প্রোগ্রাম বানানো। **Bundle** মানে সব বাঁধা একটা প্যাকেজ।\n\n- Stable release macOS desktop bundle বানায় শুধু **Apple Silicon (`arm64`)**-এর জন্য।\n- `Hermes-Setup.dmg` bootstrap installer-ও শুধু Apple Silicon-এর। Intel Mac-এ এটা বলে \"not supported on this Mac\"। (**DMG** হলো Mac-এর install-ফাইলের ধরন।)\n- তবে Intel Mac-এ CLI install করা যায় (Installation গাইডের Linux/macOS/WSL2 অংশ) এবং `hermes desktop` চালানো যায়। (পুরোনো Intel desktop bundle থাকলে সেটা আর update পায় না।)\n- Linux desktop packaging release workflow-তে **বন্ধ**। local AppImage build আর native Linux package-manager bundle check এখনো আছে।\n\n## Unsupported: যা সমর্থিত নয় (গুদাম)\n\nএগুলো ধরলে অন্য supported পদ্ধতিতে সরে যাওয়াই উচিত। সময়ের সাথে ভাঙন বাড়তে পারে, এগুলো ঠিক করার PR **গ্রহণ করা হবে না**, আর এদের জন্য compatibility code (পুরনোর সাথে মানিয়ে নেওয়ার কোড) যেকোনো সময় সরিয়ে দেওয়া হতে পারে।\n\n| অসমর্থিত | সহজ কথায় |\n|---|---|\n| Android/Termux, **aarch64 ছাড়া** অন্য আর্কিটেকচারে | aarch64 ফোনে APT package-এ সমর্থিত, অন্য প্রসেসরে নয় |\n| **AUR** দিয়ে install | AUR হলো Arch Linux-এর সম্প্রদায়-দোকান। পাতা বলছে upstream patch জমা দেওয়া যেতে পারে |\n| **32-bit x86 macOS** | খুব পুরনো ধরনের Mac। (Intel x86_64 macOS desktop bundle কোনো release-এ বানানো হয় না) |\n| **PyPI** দিয়ে: `uv tool install hermes-agent` বা `pip install hermes-agent` | PyPI হলো Python প্রোগ্রামের সরকারি দোকান। `pip`/`uv` সেখান থেকে আনার টুল |\n| **Homebrew:** `brew install hermes-agent` | Homebrew হলো Mac-এর জনপ্রিয় package manager |\n\nঅসমর্থিত পদ্ধতিতে থাকলে Installation গাইড দেখে বদলে নাও (আগের Installation lesson দেখো)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "সমর্থিত বনাম অসমর্থিত install পদ্ধতির তুলনা।",
+        "beforeTitle": "সমর্থিত পথ",
+        "before": "- `install.sh` (Linux/macOS/WSL2)\n- `install.ps1` (Windows)\n- Desktop (macOS Apple Silicon, Windows MSIX)\n- Docker image\n- Nix, Termux APT (best effort)",
+        "afterTitle": "অসমর্থিত পথ",
+        "after": "- `pip install hermes-agent`\n- `uv tool install hermes-agent`\n- `brew install hermes-agent`\n- AUR\n- Termux non-aarch64"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ছোট চেকলিস্ট: আমি কোন তাকে?\n\n1. Apple Silicon Mac, Windows 10/11, Ubuntu/WSL2 বা Docker? → **Tier 1**, নিশ্চিন্ত।\n2. Nix বা aarch64 Android Termux? → **Tier 2**, কাজ করবে কিন্তু release-এ ভাঙতে পারে।\n3. pip/Homebrew/AUR বা Intel-এ desktop bundle আশা করছো? → অসমর্থিত বা সীমিত। Installation গাইডের CLI পথ নাও।\n\n**নিজের Mac কোনটা জানার উপায়:** উপরের বাঁ কোণে Apple লোগো, তারপর **About This Mac**। চিপের নামে \"Apple M...\" থাকলে Apple Silicon।\n\nআরও মনে রাখো: Docker-এ update মানে নতুন image, আর Nix/Termux-এ update করে তাদের নিজস্ব package manager (Updating lesson দেখো)।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Tier 1 platform সম্পর্কে docs কী প্রতিশ্রুতি দেয়?",
+      "options": [
+        "শুধু Linux-এ চলবে",
+        "কোনো প্রতিশ্রুতি নেই",
+        "install ও update কখনো না ভাঙা, আর সমস্যা সবার আগে দেখা হয়",
+        "শুধু বিনামূল্যে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Tier 1 হলো সামনের তাক: সবচেয়ে বেশি যত্ন, আর ভাঙলে সবার আগে ঠিক হয়।"
+    },
+    {
+      "question": "কোনটা Tier 1 নয়?",
+      "options": [
+        "Windows 10/11",
+        "Linux/WSL2",
+        "Nix",
+        "macOS (Apple Silicon)"
+      ],
+      "answerIndex": 2,
+      "explanation": "Nix আর aarch64 Termux হলো Tier 2 (best effort), মানে release-এ ভাঙতে পারে।"
+    },
+    {
+      "question": "Docker install-এ Hermes নতুন করতে কী করতে হয়?",
+      "options": [
+        "কিছুই করা যায় না",
+        "`hermes update` চালাতে হয়",
+        "নতুন image pull করে container আবার চালাতে হয়",
+        "কম্পিউটার restart"
+      ],
+      "answerIndex": 2,
+      "explanation": "Docker-এর বাক্স সিল করা। ভেতরে বদল না করে পুরো নতুন ছাঁচ (image) আনতে হয়।"
+    },
+    {
+      "question": "MSIX desktop-এর জন্য Windows-এর সর্বনিম্ন সংস্করণ কী?",
+      "options": [
+        "Windows 10 যেকোনো",
+        "Windows 11 22H2 বা তার পরে",
+        "শুধু Windows Server",
+        "Windows 7"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতায় লেখা আছে MSIX-এ Windows 11 22H2 বা তার পরের সংস্করণ লাগে। (Windows 10-এ `install.ps1` পথ আছে।)"
+    },
+    {
+      "question": "`brew install hermes-agent` সম্পর্কে পাতা কী বলে?",
+      "options": [
+        "শুধু Intel Mac-এর জন্য ভালো",
+        "সবচেয়ে সহজ পথ",
+        "অসমর্থিত। ঠিক করার PR নেওয়া হবে না",
+        "Tier 1"
+      ],
+      "answerIndex": 2,
+      "explanation": "Homebrew, PyPI (pip/uv) আর AUR অসমর্থিত। Installation গাইডের supported পথে যাও।"
+    },
+    {
+      "question": "Termux-এ gateway কেন Termux session-এ চালাতে বলা হয়েছে?",
+      "options": [
+        "Android background process মেরে ফেলতে পারে",
+        "Termux-এ gateway নেই",
+        "বিনামূল্যের জন্য",
+        "session-এ দ্রুত চলে"
+      ],
+      "answerIndex": 0,
+      "explanation": "Android ব্যাটারি বাঁচাতে পর্দার আড়ালের প্রোগ্রাম বন্ধ করে দিতে পারে, তাই খোলা Termux জানালায় রাখো।"
+    },
+    {
+      "question": "Intel Mac ব্যবহারকারী হিসেবে docs অনুযায়ী কী করতে পারো?",
+      "options": [
+        "DMG installer চালাও, সেটাই চলে",
+        "কিছুই করা যায় না",
+        "CLI install করে `hermes desktop` চালানো",
+        "শুধু Windows-এ যাও"
+      ],
+      "answerIndex": 2,
+      "explanation": "DMG installer শুধু Apple Silicon-এর। Intel Mac-এ CLI install করা যায় এবং `hermes desktop` চালানো যায়।"
+    }
+  ],
+  "recap": [
+    "Tier 1 (Apple Silicon Mac, Windows 10/11, Linux/WSL2, Docker) সবচেয়ে নিরাপদ; এগুলোর সমস্যা সবার আগে ঠিক হয়।",
+    "Tier 2 (Nix, aarch64 Termux) best effort: কাজ করে, কিন্তু release-এ ভাঙতে পারে।",
+    "pip/uv, Homebrew, AUR আর অন্য আর্কিটেকচারের Termux অসমর্থিত; এগুলোর জন্য PR নেওয়া হবে না।",
+    "Docker-এ update মানে নতুন image; Nix/Termux-এ নিজস্ব package manager।",
+    "Intel Mac-এ DMG চলে না, তবে CLI install আর `hermes desktop` চলে।"
+  ]
+}

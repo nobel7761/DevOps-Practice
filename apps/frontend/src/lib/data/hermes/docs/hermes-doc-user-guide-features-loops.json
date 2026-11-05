@@ -1,0 +1,143 @@
+{
+  "contentId": "hermes-doc-user-guide-features-loops",
+  "title": "Recurring Loops (/loop)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/loops",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে একই session-এ নির্দিষ্ট ছন্দে বারবার কাজ চালাতে বলতে পারবে, আর loop, tick, polling, self-paced-এর মানে বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: প্রতি পাঁচ মিনিটে চুলার দিকে তাকানো\n\nমা ডাল সেদ্ধ করতে বসিয়ে বললেন, \"দাদু, প্রতি পাঁচ মিনিটে একবার দেখবে ডাল হয়েছে কি না।\" দাদু ঘড়ি দেখে দেখে প্রতি পাঁচ মিনিটে উঠে দেখে আসে। \"না, এখনও না\"। পরের বার: \"হ্যাঁ হয়েছে!\" তখন দাদু আর উঠবে না।\n\nHermes-এর **`/loop`** হলো এই দাদু। তুমি বলো: `/loop 5m check the deploy status and tell me if it's live yet`। Hermes **এই একই session-এ** প্রতি ৫ মিনিটে একটা পুরো agent turn চালিয়ে অবস্থা দেখে, জানায়, আবার অপেক্ষা করে।\n\nনামটা Claude Code-এর `/loop`-এর Hermes সংস্করণ; `/proactive` alias-ও চলে। (**Alias** মানে একই কাজের আরেকটা ডাকনাম।)\n\n**এটা না থাকলে কী সমস্যা হতো?** কোনো কিছু শেষ হওয়ার অপেক্ষায় তোমাকে নিজে বারবার লিখতে হতো \"আবার দেখো, হলো?\" `/loop` সেই বারবার জিজ্ঞেস করার কাজটা নিজে করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Loop\n\"চক্র।\" একই কাজ বারবার ঘুরে ঘুরে করা। উপমা: দাদুর বারবার চুলা দেখা।\n\n### ২) Session\nHermes-এর সাথে একটা কথোপকথনের খাতা। `/loop` এই একই খাতায় লেখে।\n\n### ৩) Turn / Agent turn\nHermes-এর একবার কাজ করার পালা (ভাবা, যন্ত্র চালানো, উত্তর দেওয়া)। **Agent** হলো সেই Hermes, যে নিজে ভেবে ভেবে কাজ করে।\n\n### ৪) Wakeup / Tick\nLoop যখন ঘুম ভেঙে একবার কাজ করে, সেটা **wakeup**। ঘড়ির একটা টিককে **tick** বলে।\n\n### ৫) Interval\nদুই wakeup-এর মাঝের সময়। `5m` মানে ৫ মিনিট, `30s` মানে ৩০ সেকেন্ড, `2h` মানে ২ ঘণ্টা।\n\n### ৬) Polling\nকিছু শেষ হলো কি না বারবার গিয়ে দেখা। উপমা: ডাল হলো কি না দাদুর বারবার দেখা।\n\n### ৭) Deploy / CI\n**Deploy** মানে তৈরি সফটওয়্যার ইন্টারনেটে চালু করা। **CI** মানে স্বয়ংক্রিয় পরীক্ষা-ব্যবস্থা। এগুলো শেষ হতে সময় লাগে, তাই বারবার দেখতে হয়।\n\n### ৮) Cron\nসময় ধরে নিজে নিজে কাজ চালানোর ঘড়ি, যে session-এর বাইরে প্রতি বার নতুন খাতায় চলে।\n\n### ৯) Judge / Condition\n**Judge** হলো একটা ছোট AI মস্তিষ্ক, যে \"শর্ত পূরণ হলো কি না\" বিচার করে। **Condition** মানে শর্ত, যেমন \"queue খালি হলে\"।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন কাজে লাগে\n\n- বাইরের অবস্থা দেখা (deploy, CI, **queue**, মানে কাজের লাইন)\n- সবুজ না হওয়া পর্যন্ত চালাও (test চালাও, ঠিক করো, আবার)\n- সেশনের সময় error rate বা লম্বা job-এর উপর নজর\n- নিয়মিত ঘরোয়া কাজ (lint pass, status summary)\n\nরাতভর বা কেউ-নেই অবস্থার কাজে **cron**; একটাই লক্ষ্য ও শেষের সংজ্ঞা থাকলে **`/goal`**।\n\n## শুরু\n\n```text\n/loop 5m check the deploy status and tell me if it's live yet\n/loop 10m /recap\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `/loop` | loop শুরুর কমান্ড | \"দাদু, দেখতে থাকো\" |\n| `5m` / `10m` | কত সময় পরপর | প্রতি ৫ মিনিটে |\n| `check the deploy ...` | প্রতিবার যে কাজ (prompt) | \"ডাল হলো কি না দেখো\" |\n| `/recap` | slash command-ও loop করা যায় | নির্দিষ্ট সারাংশ-কমান্ড বারবার চালানো |\n\nফল: \"Loop set (every 5m)\" আসে। প্রথম wakeup পরের idle poll-এ (gateway-তে ১৫ সেকেন্ডের watcher scan)। (**Gateway** হলো Hermes-এর সারাক্ষণ-চালু অংশ, যে chat app-এর সাথে সেতু। **Idle** মানে অলস, কিছু করছে না।) Slash command-ও loop করা যায়।\n\n**Live দেখা:** Classic CLI-তে prompt-এর উপরে dock row: `loop · every 5m · 2 runs · next in 4m · <prompt>`; Ctrl+R দিয়ে ছোট করা যায়। TUI-তে (terminal-এর ভেতরের ছবির মতো পর্দা) goal bar-এর নিচে একই row। Desktop-এ composer-এর উপরে card।\n\n## ছন্দ দুই রকম\n\n| Mode | কীভাবে | কখন লাগে |\n|---|---|---|\n| **Fixed interval** | তুমি ঘড়ি ঠিক করো: `30s`, `5m`, `2h`, `1h30m` | বাইরের ঘড়ি কাজ চালালে (যেমন CI প্রতি ৫ মিনিটে আপডেট হয়) |\n| **Self-paced** | interval বাদ দাও; ১ মিনিটে শুরু, না বদলালে ক্রমে ২মি, ৪মি, ৮মি... সর্বোচ্চ ১৫ মিনিট; উত্তর বদলালে আবার ১ মিনিট | কাজই ছন্দ ঠিক করলে: কিছু ঘটছে তো ঘন ঘন দেখো, থেমে থাকলে কম দেখো |\n\nSelf-paced মানে \"নিজের গতিতে।\" উপমা: দাদু প্রথমে ঘন ঘন দেখেন, ডাল একই থাকলে ধীরে ধীরে কম দেখেন। বদল ধরা পড়ে timestamp উপেক্ষা করা local digest দিয়ে (**digest** মানে উত্তরের ছোট আঙুলের ছাপ; সময়ের অংশ বাদ দিয়ে মেলানো হয়, তাই শুধু সময় বদলালে \"বদলেছে\" ধরা হয় না)। নিয়ম: বাইরের ঘড়ি কাজ চালালে fixed; কাজই ছন্দ ঠিক করলে self-paced।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা loop-এর চক্র ও থামার শর্ত।",
+        "steps": [
+          {
+            "title": "`/loop` দিলে",
+            "body": "প্রথম wakeup সঙ্গে সঙ্গে; তারপর timer বা self-paced ছন্দ।"
+          },
+          {
+            "title": "Wakeup = পূর্ণ turn",
+            "body": "Agent বর্তমান অবস্থা পড়ে, কাজ করে, জানায়।"
+          },
+          {
+            "title": "থামার শর্ত দেখা",
+            "body": "`LOOP_COMPLETE`? `--times N` পূর্ণ? `--until` সত্য? `loops.max_ticks` ছুঁল?"
+          },
+          {
+            "title": "না থামলে অপেক্ষা",
+            "body": "পরের tick পর্যন্ত; তুমি কিছু বললে তোমার message আগে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## থামবে কীভাবে\n\nথামার ব্যবস্থা না থাকলে loop চিরকাল চলত আর টাকা খরচ হতো। তাই কয়েকটা উপায়:\n\n| উপায় | কী | কখন লাগে |\n|---|---|---|\n| **Agent নিজে** | উত্তরের শেষে আলাদা লাইনে `LOOP_COMPLETE` লিখলে (কাজ শেষ বা অপ্রাসঙ্গিক হলে) | \"ডাল হয়ে গেছে, আর দেখার দরকার নেই\" |\n| **সংখ্যা** | `--times N` | \"মোট ৩০ বার দেখো, তারপর থামো\" |\n| **প্রমাণ-ভিত্তিক** | `--until <condition>`: `/goal`-এর একই judge প্রতি wakeup-এর পর দেখে। অসম্ভব হলে loop কারণ সহ pause হয়। Judge ভাঙলেও loop আটকায় না (fail-open) | \"queue খালি হলে থামো\" |\n| **তুমি** | `/loop stop` শেষ করে; `/loop pause` রেখে দেয় | নিজে নিয়ন্ত্রণ চাইলে |\n| **পাহারাদার** | `loops.max_ticks` default ১০০ (০ = সীমাহীন) | ভুলে থাকলেও সীমা ছাড়ায় না |\n\n```text\n/loop 2m poll CI --times 30\n/loop 5m watch the queue --until queue depth reaches zero\n```\n\nপ্রথম লাইন: প্রতি ২ মিনিটে CI দেখো, মোট ৩০ বার। দ্বিতীয় লাইন: প্রতি ৫ মিনিটে queue দেখো, queue-এর গভীরতা শূন্য হলে থামো।\n\n## কমান্ড\n\n```text\n/loop [interval] <prompt> [--times N] [--until <cond>]   শুরু বা প্রতিস্থাপন (প্রথম wakeup তৎক্ষণাৎ)\n/loop  বা  /loop status      cadence, কয়বার চলেছে, পরের wakeup\n/loop pause   /loop resume\n/loop stop\n/proactive ...               /loop-এর alias\n```\n\n(**Cadence** মানে ছন্দ।)\n\n## অন্য ব্যবস্থার সঙ্গে\n\n**`/goal`-এর সঙ্গে:** সক্রিয় goal session-এর মালিক; judge \"continue\" বললে loop-এর wakeup পিছিয়ে যায়। Goal শেষ, pause বা wait-barrier-এ পার্ক হলে (পার্ক মানে গাড়ির মতো দাঁড়িয়ে অপেক্ষা) loop আবার চলে। আসল user message সবসময় আগে: wakeup শুধু session idle ও queue খালি থাকলে।\n\n**ভেতরের নিয়ম:** Wakeup সাধারণ user-role turn (যেন তুমি নিজে লিখেছ), system prompt বা toolset বদলায় না, তাই prompt cache ঠিক থাকে (cache মানে আগের কাজ মনে রেখে দ্রুত ও সস্তা করা)। Loop state `/resume` ও compression (লম্বা কথা ছোট করা) পার হয়ে টেকে। **এক session-এ একটাই loop**; নতুন `/loop` পুরনোটা বদলে দেয় (অনেক loop চাইলে অনেক session বা cron)। চলার সময় Ctrl+C দিলে loop pause হয়, `/loop resume` দাও। খরচ cadence-এর সাথে বাড়ে, কারণ প্রতি tick একটা পূর্ণ turn।\n\n**Platform:** CLI, TUI, dashboard chat, desktop ও Telegram/Discord/Slack/WhatsApp-এ। Desktop/dashboard-এ সক্রিয় loop বা `/heartbeat` session \"disconnected\" হিসেবে মুছে ফেলা থেকে বাদ থাকে; তবে backend process চালু থাকতে হবে।\n\n### Config\n\n```yaml\nloops:\n  min_interval_seconds: 30\n  max_ticks: 100\n  self_paced_floor_seconds: 60\n  self_paced_ceiling_seconds: 900\n```\n\n| লাইন | মানে |\n|---|---|\n| `min_interval_seconds: 30` | এর চেয়ে ঘন ঘন চলবে না |\n| `max_ticks: 100` | সর্বোচ্চ ১০০ বার |\n| `self_paced_floor_seconds: 60` | self-paced-এ সবচেয়ে ছোট বিরতি (১ মিনিট) |\n| `self_paced_ceiling_seconds: 900` | self-paced-এ সবচেয়ে বড় বিরতি (১৫ মিনিট) |\n\n(**Config** হলো সেটিং-ফাইল; **YAML** তার লেখার ধরন।) `--until` judge `auxiliary.goal_judge`-এর model ব্যবহার করে।\n\n## তিন ব্যবস্থার তুলনা\n\n| | `/loop` | `/goal` | cron |\n|---|---|---|---|\n| ট্রিগার | timer (বা self-paced) | প্রতি turn-এর পর judge | schedule, session-এর বাইরে |\n| থাকে | বর্তমান session | বর্তমান session | প্রতি run-এ নিজস্ব session |\n| শেষ | stop শর্ত, সীমা, বা তুমি | লক্ষ্য পূরণ, budget, বা তুমি | তুমি job মুছলে |\n| সেরা | polling, monitoring | একটা লক্ষ্য শেষ করা | অনুপস্থিত অবস্থায় নিয়মিত কাজ |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "খরচের হিসাব",
+      "markdown": "প্রতি wakeup পূর্ণ agent turn। ৩০ সেকেন্ডের loop মানে অনেক token (token হলো AI-র পড়া-লেখার মাপ, যার দাম লাগে)। যতটা কম ঘন ঘন দরকার তত কম রাখো, অথবা self-paced দাও।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`/loop 5m check the deploy` এর wakeup কেমন?",
+      "options": [
+        "শুধু একটা ছোট বার্তা",
+        "একটা পূর্ণ agent turn, একই session-এ",
+        "নতুন session-এ cron job",
+        "কিছুই চালায় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রতি tick একটা পূর্ণ turn, তাই খরচও সেই অনুযায়ী বাড়ে।"
+    },
+    {
+      "question": "Self-paced loop-এর ছন্দ কেমন?",
+      "options": [
+        "১ মিনিটে শুরু, না বদলালে ক্রমে ২, ৪, ৮ মিনিট, সর্বোচ্চ ১৫ মিনিট",
+        "সবসময় ৫ সেকেন্ড",
+        "সবসময় ১ ঘণ্টা",
+        "কখনো চলে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "উত্তর বদলালে আবার ১ মিনিটে ফিরে যায়।"
+    },
+    {
+      "question": "Agent নিজে কীভাবে জানায় loop শেষ?",
+      "options": [
+        "`/loop stop` লিখে",
+        "চুপ করে থেকে",
+        "session মুছে",
+        "উত্তরের শেষে আলাদা লাইনে `LOOP_COMPLETE` লিখে"
+      ],
+      "answerIndex": 3,
+      "explanation": "এটা agent-এর নিজের 'আর দরকার নেই' সংকেত।"
+    },
+    {
+      "question": "`loops.max_ticks` default কত?",
+      "options": ["১০", "৫০", "১০০", "সীমাহীন"],
+      "answerIndex": 2,
+      "explanation": "পাহারাদার: ১০০ বার পর থামে। `0` দিলে সীমাহীন।"
+    },
+    {
+      "question": "এক session-এ কয়টা loop থাকতে পারে?",
+      "options": [
+        "যত খুশি",
+        "একটাই; নতুন `/loop` পুরনোটা বদলে দেয়",
+        "দুটো",
+        "কোনোটাই নয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "অনেক loop চাইলে অনেক session বা cron।"
+    },
+    {
+      "question": "Active goal-এর সঙ্গে loop কীভাবে কাজ করে?",
+      "options": [
+        "goal-এর মালিকানা আগে; judge 'continue' বললে loop-এর wakeup পিছিয়ে যায়",
+        "দুটো একসাথে চলে",
+        "loop goal মুছে দেয়",
+        "কোনো সম্পর্ক নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "আসল user message সবসময় আগে; wakeup শুধু session idle ও queue খালি থাকলে।"
+    },
+    {
+      "question": "রাতভর কেউ-নেই অবস্থায় নিয়মিত কাজের জন্য সবচেয়ে ভালো কোনটা?",
+      "options": ["`/loop`", "`/goal`", "`/subgoal`", "cron"],
+      "answerIndex": 3,
+      "explanation": "Cron session-এর বাইরে, প্রতি run-এ নিজস্ব session নিয়ে চলে।"
+    },
+    {
+      "question": "`--until <condition>` কীভাবে যাচাই হয়?",
+      "options": [
+        "মানুষ দেখে",
+        "প্রতি সেকেন্ডে",
+        "`/goal`-এর একই judge প্রতি wakeup-এর পর দেখে",
+        "যাচাই হয় না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Judge ভাঙলেও loop আটকায় না (fail-open)।"
+    }
+  ],
+  "recap": [
+    "`/loop` একই session-এ প্রতি ছন্দে একটা পূর্ণ turn চালায়।",
+    "ছন্দ: fixed interval (`30s`, `5m`, `2h`) বা self-paced (১ মিনিট থেকে ১৫ মিনিট)।",
+    "থামার উপায়: `LOOP_COMPLETE`, `--times N`, `--until`, `/loop stop`, `loops.max_ticks` (১০০)।",
+    "এক session-এ একটাই loop; goal সক্রিয় থাকলে loop অপেক্ষা করে।",
+    "খরচ ঘন ঘন tick-এর সাথে বাড়ে।",
+    "অনুপস্থিতিতে নিয়মিত কাজে cron, লক্ষ্য শেষ করতে `/goal`, নজর রাখতে `/loop`।"
+  ]
+}

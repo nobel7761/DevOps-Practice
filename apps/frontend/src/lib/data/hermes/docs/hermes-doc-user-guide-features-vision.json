@@ -1,0 +1,162 @@
+{
+  "contentId": "hermes-doc-user-guide-features-vision",
+  "title": "Vision",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/vision",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে ছবি দেখিয়ে প্রশ্ন করতে পারবে এবং vision model, pixel, clipboard, routing, context-এর মতো শব্দগুলো ও কেন লাগে তা বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বন্ধুকে ছবি দেখানো\n\nতুমি বন্ধুকে ফোনে বললে, \"আমার screen-এ একটা লাল error আসছে!\" বন্ধু কিছুই বুঝল না। এবার তুমি **screenshot তুলে পাঠালে**। সে এক নজরে বলে দিল সমস্যা কোথায়।\n\nHermes-এর **Vision** ঠিক সেটাই: তুমি clipboard থেকে ছবি **paste** করো, আর Hermes ছবিটা দেখে বোঝে। ছবি model-এর কাছে base64 কোডে (OpenAI vision format-এ `data:image/png;base64,...`) যায়, তাই যেকোনো vision-সক্ষম model পারে।\n\n**এটা না থাকলে কী সমস্যা হতো?** তুমি error-এর ছবিটা লেখায় বর্ণনা করতে বসতে, যা কষ্টের আর ভুলও হতো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Vision ও vision-সক্ষম model\n**Vision** মানে ছবি দেখে বোঝার ক্ষমতা। সব model ছবি দেখতে পারে না। যে পারে, তাকে বলে **vision-সক্ষম** (GPT-4V, Claude, Gemini, Qwen-VL...)। যে পারে না, সে **text-only** (শুধু লেখা বোঝে), যেমন DeepSeek V3।\n\n### ২) Clipboard ও paste\n**Clipboard** হলো কম্পিউটারের অস্থায়ী \"কপি-করা জিনিসের পকেট\"। `Ctrl+C` করলে জিনিস সেখানে ঢোকে। **Paste** (`Ctrl+V`) মানে পকেট থেকে বের করে বসানো।\n\n### ৩) Pixel ও base64\n**Pixel** হলো ছবির ছোট ছোট রঙিন বিন্দু। **base64** হলো ছবিকে সাধারণ অক্ষরে বদলানোর ছাঁচ, যাতে লেখার সাথে একই পথে পাঠানো যায়। ছবি যেন চিঠির খামে ভরা।\n\n### ৪) Terminal ও escape sequence\n**Terminal** শুধু লেখা বোঝে। **Escape sequence** হলো terminal-এর ভেতরে লুকানো বিশেষ নির্দেশ-সংকেত। ছবির জন্য এমন কোনো সর্বজনীন সংকেত নেই।\n\n### ৫) Auxiliary tool ও `vision_analyze`\n**Tool** মানে Hermes-এর হাতের যন্ত্র। **Auxiliary** মানে সহায়ক। `vision_analyze` হলো সেই সহায়ক যন্ত্র, যে ছবি দেখে **বর্ণনা লিখে দেয়**।\n\n### ৬) Context ও replay\n**Context** হলো model যে লেখা-ছবি এখন মাথায় ধরে আছে (তার \"টেবিল\")। **Replay** মানে আগের ছবি আবার পরের প্রশ্নে জুড়ে দেওয়া, কারণ model আগের কিছু নিজে মনে রাখে না।\n\n### ৭) SSH\nঅন্য কম্পিউটারে (দূরের সার্ভারে) নিরাপদে ঢুকে কাজ করার পথ। SSH দিয়ে Hermes চালালে সেটা আসলে অন্য কম্পিউটারে চলে।\n\n### ৮) Config ও YAML\n**Config** মানে সেটিং, থাকে `~/.hermes/config.yaml` ফাইলে। **YAML** হলো `নাম: মান` ধাঁচে লেখা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "ছবি পাঠানোর ধাপ।",
+        "steps": [
+          {
+            "title": "ছবি কপি করো",
+            "body": "screenshot বা browser-এর ছবি clipboard-এ নাও।"
+          },
+          {
+            "title": "attach করো",
+            "body": "`/paste` লেখো, বা `Ctrl+V` / `Cmd+V` চাপো।"
+          },
+          {
+            "title": "প্রশ্ন লেখো",
+            "body": "`[📎 Image #1]` badge (ছোট চিহ্ন) input-এর উপরে দেখা যাবে। প্রশ্ন লিখে Enter।"
+          },
+          {
+            "title": "Hermes দেখে উত্তর দেয়",
+            "body": "ছবি vision content block হয়ে model-এর কাছে যায়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Paste করার উপায়\n\n- একাধিক ছবি attach করা যায়, প্রতিটার নিজের badge। `Ctrl+C` সব attach করা ছবি মুছে দেয়।\n- ছবি `~/.hermes/images/`-এ timestamp-সহ (সময়ের ছাপ) PNG হিসেবে জমা হয়।\n\n**`/paste` command:** `/paste` লিখে Enter। Hermes clipboard-এ ছবি খোঁজে। terminal যখন Cmd/Ctrl+V নিজে আটকে দেয় বা clipboard-এ **শুধু ছবি** থাকে, তখন এটাই সবচেয়ে নিরাপদ।\n\n**Ctrl+V / Cmd+V:** স্তরে স্তরে চলে:\n1. সাধারণ text paste।\n2. native clipboard বা OSC52 fallback (সরাসরি না পারলে বিকল্প পথ)।\n3. clipboard বা paste-এ ছবি/ছবির path (ফাইলের ঠিকানা) থাকলে image attach। macOS screenshot-এর temp path ও `file://` URI সঙ্গে সঙ্গে ছবি হিসেবে attach হয়।\n\n**`/terminal-setup`:** VS Code, Cursor, Windsurf-এর integrated terminal-এ (macOS-এ, **local machine-এ**) চালাও। multiline input ও undo/redo-এর keybinding (চাবি-জোড়া) বসায়। SSH-এর উপর চালিও না, কারণ এটা local IDE keybinding লেখে।\n\n### কেন terminal সরাসরি ছবি paste করতে পারে না?\n\nterminal শুধু লেখা বোঝে। clipboard-এ শুধু ছবি থাকলে পাঠানোর মতো text নেই, আর binary ছবির জন্য কোনো স্ট্যান্ডার্ড escape sequence নেই। (যেন চিঠির বাক্সে শুধু লেখা ঢোকে, ছবির বড় বাক্স ঢোকে না।) তাই Hermes আলাদা করে clipboard পড়ে: `osascript`, `powershell.exe`, `xclip` বা `wl-paste` চালিয়ে।\n\n### প্ল্যাটফর্ম অনুযায়ী setup\n\n| পরিবেশ | লাগবে | সহজ কথায় |\n|---|---|---|\n| macOS | কিছু না (built-in `osascript`); চাইলে `brew install pngpaste` দ্রুত করে | Mac নিজেই পারে |\n| Linux X11 | `xclip` | পুরনো ধাঁচের পর্দা-ব্যবস্থার clipboard-পাঠক |\n| Linux Wayland | `wl-clipboard` (`wl-paste`)। `echo $XDG_SESSION_TYPE` দিয়ে দেখো `wayland`/`x11`/`tty` | নতুন ধাঁচের পর্দা-ব্যবস্থার জন্য |\n| WSL2 | কিছু না; `powershell.exe` দিয়ে Windows clipboard পড়ে | Windows-এর ভেতরের Linux |\n| যেকোনো SSH | ❌ remote clipboard পাওয়া যায় না | নিচে দেখো |\n\n(`echo $XDG_SESSION_TYPE` কমান্ডটা তোমার পর্দা-ব্যবস্থার নাম ছাপে। `echo` মানে \"বলো\", `$...` মানে ওই সেটিং-এর মান।) WSLg-তে শুধু BMP আসে, Hermes Pillow বা ImageMagick `convert` দিয়ে PNG করে নেয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "SSH-এ ছবি paste হয় না",
+      "markdown": "Clipboard tool-গুলো **যে মেশিনে Hermes চলছে** তার clipboard পড়ে। SSH-এ সেটা remote server, তোমার laptop নয়। উপায়: (১) `scp`/VS Code drag-drop দিয়ে ছবি তুলে path দাও, (২) ছবির URL paste করো (agent `vision_analyze` চালাবে), (৩) `ssh -X` (ধীর, XQuartz লাগে), (৪) Telegram/Discord/Slack/WhatsApp দিয়ে ছবি পাঠাও। (`scp` হলো SSH দিয়ে ফাইল পাঠানোর কমান্ড।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Vision-সক্ষম আর text-only model: Image routing\n\n**Routing** মানে পথ বাছা। Hermes provider-এর তথ্য (metadata) দেখে পথ বাছে। তুমি মাঝপথে model বদলালেও workflow একই থাকে।\n\n- **Vision-সক্ষম model** (GPT-4V, Claude, Gemini, Qwen-VL ...) আসল pixel পায়।\n- **Text-only model** (যেমন DeepSeek V3, ছোট open-source model) ছবি দেখতে পায় না। তাই ছবিটা `vision_analyze` auxiliary tool-এ যায়। একটা vision model **বর্ণনা লিখে দেয়**, আর সেই বর্ণনা text হয়ে মূল model-এর কাছে ঢোকে। (অন্ধ বন্ধুকে অন্য একজন ছবির বর্ণনা শোনানোর মতো।)\n\n### `agent.image_input_mode`\n\n| মান | আচরণ | কখন বাছবে |\n|---|---|---|\n| `auto` (default) | model পারলে pixel, নইলে বর্ণনা। `auxiliary.vision` আলাদা করে ঠিক করলে (provider `auto` ছাড়া, বা model/base_url) বর্ণনার পথই বাছা হয় | সাধারণত এটাই রাখো |\n| `native` | সবসময় pixel পাঠাও | model ছবি পারে জানা থাকলে |\n| `text` | সবসময় `vision_analyze` বর্ণনা, pixel কখনো না | backend ছবি নিতে পারে না বলে |\n\nকখন কাজে লাগে: কোনো backend text নেয় কিন্তু ছবি নেয় না (যেমন `openai-codex` account `server_error` দিচ্ছে)। তখন `auxiliary.vision` অন্য vision provider-এ ঠেলে দাও আর `agent.image_input_mode: text` দিয়ে স্পষ্ট করো।\n\n### `vision_analyze`-এর দুই রূপ\n\nmain model vision-সক্ষম এবং provider tool-result-এ ছবি নিতে পারলে (Anthropic, OpenAI, Azure-OpenAI, Gemini 3.x) `vision_analyze` সরাসরি pixel ফেরত দেয়। আলাদা auxiliary call নেই, তথ্য হারায় না। নইলে পুরনো পথে বর্ণনা। call-এর signature (লেখার ধরন) একই। runtime-এ tool নিজেই বাছে। browser screenshot, `computer_use`, MCP image-ও একই নিয়ম মানে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "ছবি model-এ দুই পথে যায়।",
+        "beforeTitle": "Vision-সক্ষম model",
+        "before": "**আসল pixel** native format-এ যায়। কোনো তথ্য হারায় না, বাড়তি call নেই।",
+        "afterTitle": "Text-only model",
+        "after": "`vision_analyze` একটা vision model দিয়ে **বর্ণনা** লেখায়। সেই text model-কে দেওয়া হয়।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Embed সীমা ও replay\n\nnative `vision_analyze` ফলাফল context-এ থেকে যায় এবং **প্রতিটা পরের API call-এ আবার পাঠানো হয়**। (API call মানে model-এর কাছে প্রতিটা নতুন অনুরোধ।) ছবি ভারী, তাই খরচ বাড়ে। খরচ নিয়ন্ত্রণে তিনটা key:\n\n```yaml\nvision:\n  embed_target_bytes: 262144   # ছবিপ্রতি বাজেট; 64 KiB..4 MiB (default 256 KB)\n  max_calls_per_image: 3       # unset = delegated subagent-এ 3, main agent-এ সীমাহীন\n  replay_recent_images: 3      # default; 0 = আগের ছবি আর পাঠাবে না\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `embed_target_bytes` | ছবিপ্রতি বাজেট। বেশি বা 1568 px-এর চওড়া ছবি ছোট করে JPEG করা হয় | ঘন table-screenshot অস্পষ্ট হলে বাড়াও (যেমন `1048576`) |\n| `max_calls_per_image` | একই ছবি কতবার context-এ ঢুকবে | খরচ ঠেকাতে। `0` = সব জায়গায় সীমাহীন |\n| `replay_recent_images` | সাম্প্রতিক কয়টা ছবি আবার জুড়ে দেবে | `0` দিলে আগের ছবি আর যাবে না |\n\n- `max_calls_per_image`: সীমা ছুঁলে `vision_analyze refused: ...` আসে, model আগে যা দেখেছে তা দিয়ে উত্তর দেয়। (একবার একটা নজরহীন লুপ পাঁচটা ফাইলে 158 call খরচ করেছিল! তাই এই সীমা।) (**subagent** মানে মূল agent-এর ভাড়া-করা ছোট সহকারী।)\n- `replay_recent_images`: session database ছবি রাখে শুধু `[screenshot]` লেখা হিসেবে। তাই `hermes chat --resume`, gateway restart ইত্যাদির পরের turn-এ Hermes সাম্প্রতিক ছবি আবার মূল message-এ জুড়ে দেয়। gateway-তে chat-এ আসা ছবির কপি **24 ঘণ্টা** পর মোছা হয়।\n\n### SVG ও অন্য format\n\nResponses backend-গুলো (যেমন `openai-codex`) শুধু JPEG, PNG, GIF, WebP নেয়। inline SVG থাকলে `cairosvg`, `svglib`+`reportlab`, `rsvg-convert`, বা `inkscape` থাকলে PNG করে পাঠানো হয়। নইলে SVG/BMP/TIFF-এর জায়গায় `[image omitted: ...]` লেখা বসে। বাকি ঠিক ছবিগুলো যায়। (**SVG** হলো রেখা-ভিত্তিক ছবির ধরন, লোগো-আইকনে বেশি দেখা যায়।)"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "ছবির URL-ও চলে",
+      "markdown": "paste না করে ছবির URL (ওয়েব-ঠিকানা) লিখে দিলেও agent `vision_analyze` চালিয়ে দেখতে পারে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Terminal-এ শুধু ছবি clipboard-এ থাকলে `Ctrl+V` কেন কাজ নাও করতে পারে?",
+      "options": [
+        "কম্পিউটার পুরনো",
+        "ছবি খুব ছোট",
+        "terminal শুধু লেখা বোঝে; ছবির জন্য স্ট্যান্ডার্ড escape sequence নেই, তাই `/paste` নিরাপদ",
+        "Hermes ছবি পছন্দ করে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Hermes আলাদা করে clipboard পড়ে (`osascript`, `xclip`, `wl-paste` ইত্যাদি দিয়ে)। terminal নিজে ছবি পাঠাতে পারে না।"
+    },
+    {
+      "question": "`agent.image_input_mode: text` দিলে কী হয়?",
+      "options": [
+        "সবসময় `vision_analyze`-এর বর্ণনা যায়, pixel কখনো না",
+        "ছবি মুছে যায়",
+        "Hermes বন্ধ হয়",
+        "সবসময় pixel যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "যে backend ছবি নেয় না, তার জন্য কাজের: অন্য একটা vision model বর্ণনা লিখে দেয়।"
+    },
+    {
+      "question": "Text-only model-কে ছবি দিলে কী ঘটে?",
+      "options": [
+        "model নিজে দেখতে শেখে",
+        "error",
+        "`vision_analyze` একটা vision model দিয়ে বর্ণনা লেখায়, সেই লেখা model-কে দেওয়া হয়",
+        "ছবি ফেলে দেওয়া হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "অন্ধ বন্ধুকে অন্য একজন ছবির বর্ণনা শোনানোর মতো।"
+    },
+    {
+      "question": "SSH দিয়ে Hermes-এ ছবি পাঠাতে সরাসরি `Ctrl+V` কেন কাজ করে না?",
+      "options": [
+        "clipboard tool যে মেশিনে Hermes চলে তার clipboard পড়ে, আর সেটা remote server, তোমার laptop নয়",
+        "Hermes SSH পছন্দ করে না",
+        "ছবি বড়",
+        "SSH-এ ছবি নিষিদ্ধ"
+      ],
+      "answerIndex": 0,
+      "explanation": "উপায়: `scp` দিয়ে ছবি তুলে path দাও, URL paste করো, `ssh -X`, বা chat app দিয়ে পাঠাও।"
+    },
+    {
+      "question": "`vision.max_calls_per_image` কী ঠেকায়?",
+      "options": [
+        "বড় ছবি ছোট করা",
+        "একই ছবি বারবার context-এ ঢুকে খরচ বাড়ানো (যেমন নজরহীন লুপে 158 call)",
+        "ছবি আঁকা",
+        "Wi-Fi"
+      ],
+      "answerIndex": 1,
+      "explanation": "সীমা ছুঁলে `vision_analyze refused: ...` আসে আর model আগে যা দেখেছে তা দিয়েই উত্তর দেয়।"
+    },
+    {
+      "question": "`replay_recent_images` কেন দরকার?",
+      "options": [
+        "ছবি সুন্দর করতে",
+        "Hermes-কে ঘুমাতে",
+        "ছবি মুছতে",
+        "session database ছবি রাখে শুধু `[screenshot]` লেখা হিসেবে, তাই পরে সাম্প্রতিক ছবি আবার জুড়ে দিতে"
+      ],
+      "answerIndex": 3,
+      "explanation": "resume বা restart-এর পর model ছবিটা ভুলে যেত। replay সেটা আবার সামনে এনে দেয়।"
+    },
+    {
+      "question": "macOS-এ ছবি paste-এর জন্য বাড়তি কী লাগে?",
+      "options": [
+        "`ssh -X`",
+        "`xclip`",
+        "`wl-clipboard`",
+        "কিছু না (built-in `osascript` আছে); `pngpaste` শুধু দ্রুত করে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Mac নিজেই পারে। Linux X11-এ `xclip`, Wayland-এ `wl-clipboard`।"
+    }
+  ],
+  "recap": [
+    "`/paste` বা `Ctrl+V`/`Cmd+V` দিয়ে clipboard-এর ছবি attach হয়; ছবি `~/.hermes/images/`-এ জমে।",
+    "Terminal নিজে ছবি বোঝে না, তাই Hermes আলাদা tool (`osascript`, `xclip`, `wl-paste`) দিয়ে clipboard পড়ে; SSH-এ পড়তে পারে না।",
+    "Vision-সক্ষম model আসল pixel পায়; text-only model `vision_analyze`-এর লেখা বর্ণনা পায়।",
+    "`agent.image_input_mode`: `auto` (default), `native`, `text`।",
+    "খরচ নিয়ন্ত্রণে `vision.embed_target_bytes`, `max_calls_per_image`, `replay_recent_images`।"
+  ]
+}

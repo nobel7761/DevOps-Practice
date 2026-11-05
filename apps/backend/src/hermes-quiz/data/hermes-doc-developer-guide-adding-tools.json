@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-developer-guide-adding-tools",
+  "questions": [
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q01",
+      "difficulty": "easy",
+      "question": "Tool-এর **handler** কী?",
+      "options": [
+        "tool-এর পরিচয়-কার্ড, যেখানে নাম লেখা",
+        "সব tool-এর নাম রাখা হাজিরা-খাতা",
+        "কয়েকটা tool ভরে রাখা একটা বাক্স",
+        "কাজ করার ফাংশন"
+      ],
+      "correctIndex": 3,
+      "explanation": "Handler AI-র পাঠানো তথ্য নেয়, আসল কাজ করে আর ফল ফেরত দেয়।",
+      "whyWrong": {
+        "0": "পরিচয়-কার্ডের নাম schema।",
+        "1": "হাজিরা-খাতা হলো registry।",
+        "2": "বাক্সের নাম toolset।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q02",
+      "difficulty": "easy",
+      "question": "Tool-এর **schema** কী?",
+      "options": [
+        "tool-এর পরিচয়-কার্ড",
+        "tool চালানোর আগে চলা পাহারা",
+        "tool-এর ভেতরের আসল কল-কবজা",
+        "সব tool-এর নামের তালিকা-খাতা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Schema-তে নাম, কী কাজ করে, কোন তথ্য (parameter) লাগে ও কোনগুলো আবশ্যক লেখা থাকে। AI এটা পড়েই ঠিক করে কখন tool ডাকবে।",
+      "whyWrong": {
+        "1": "চালানোর আগের পাহারা হলো hook বা check।",
+        "2": "কল-কবজা হলো handler।",
+        "3": "তালিকা-খাতা হলো registry।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q03",
+      "difficulty": "easy",
+      "question": "**Register** করা মানে কী?",
+      "options": [
+        "tool-কে প্রতি আলাপে নতুন করে বানানো",
+        "registry-খাতায় নিজের নাম লেখা",
+        "handler-কে raw dict ফেরত দিতে বলা",
+        "API key-কে একটা ফাইলে সরিয়ে রাখা"
+      ],
+      "correctIndex": 1,
+      "explanation": "`registry.register(...)` call-এর মাধ্যমে tool নিজেকে registry-তে নথিভুক্ত করে।",
+      "whyWrong": {
+        "0": "Register মানে বানানো নয়, নাম তোলা।",
+        "2": "Handler-এর return আলাদা নিয়ম।",
+        "3": "API key রাখার কাজ env var-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q04",
+      "difficulty": "easy",
+      "question": "**Toolset** বলতে কী বোঝায়?",
+      "options": [
+        "একটা tool-এর ভেতরের ছোট ফাংশন",
+        "tool ফাইলের উপরের import-তালিকা",
+        "কয়েকটা tool-এর একটা বাক্স",
+        "tool-এর API key লুকানোর ব্যবস্থা"
+      ],
+      "correctIndex": 2,
+      "explanation": "কে কোন বাক্স দেখবে তা ঠিক করা যায়, যেমন CLI আর Telegram-এ আলাদা।",
+      "whyWrong": {
+        "0": "ভেতরের ফাংশন হলো handler।",
+        "1": "import-তালিকা লাগে না, আপনা-আপনি খুঁজে পায়।",
+        "3": "Key লুকায় `password: True`-এর মতো ব্যবস্থায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q05",
+      "difficulty": "easy",
+      "question": "**JSON string** বলতে কী বোঝায়?",
+      "options": [
+        "নাম-মানের তালিকা যা কোডে সরাসরি রাখা",
+        "`json.dumps()`-এ বানানো এক লাইনের লেখা",
+        "`{\"error\": ...}` ছাড়া আর কিছু ফেরত দেওয়া",
+        "tool-এর পরিচয়-কার্ডের বাইরের ঘরে লেখা নোট"
+      ],
+      "correctIndex": 1,
+      "explanation": "Dict-এর মতো সাজানো তথ্যকে এক লাইনের লেখায় বদলে ফেলাই JSON string।",
+      "whyWrong": {
+        "0": "সরাসরি রাখা তালিকা হলো dict।",
+        "2": "`{\"error\": ...}` একটা JSON string-ই হতে পারে।",
+        "3": "নোট-এর সাথে এর সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q06",
+      "difficulty": "easy",
+      "question": "Weather tool-এর `WEATHER_API_KEY` সাধারণত কোথায় রাখা হয়?",
+      "options": [
+        "`SOUL.md` ফাইলের ভেতরে",
+        "tool-এর schema-র ভেতরে",
+        "environment variable-এ",
+        "`registry.py`-র ভেতরে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Environment variable কম্পিউটারের নামওয়ালা সেটিং। কোডে `os.getenv(\"NAME\")` দিয়ে পড়া যায়।",
+      "whyWrong": {
+        "0": "`SOUL.md` ব্যক্তিত্বের ফাইল।",
+        "1": "Schema-তে key লেখা নিরাপদ নয়।",
+        "3": "Registry শুধু নামের তালিকা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q07",
+      "difficulty": "easy",
+      "question": "`task_id` কী?",
+      "options": [
+        "tool-এর নামের শেষে বসানো সংখ্যা",
+        "API key-এর একটা ছোট কপি",
+        "registry-র ভেতরের সিরিয়াল নম্বর",
+        "একটা আলাপ বা কাজের পরিচয়-নম্বর"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতি-আলাপের নিজস্ব অবস্থা (state) রাখা tool `**kwargs` থেকে `task_id` পায়।",
+      "whyWrong": {
+        "0": "tool-এর নাম আলাদা জিনিস।",
+        "1": "Key-এর সাথে সম্পর্ক নেই।",
+        "2": "Registry-র সিরিয়াল নয়, আলাপের নম্বর।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q08",
+      "difficulty": "medium",
+      "question": "Built-in tool যোগ করতে কোন কোন দুটো ফাইল ছুঁতে হয়?",
+      "options": [
+        "`tools/your_tool.py` আর `toolsets.py`",
+        "`tools/your_tool.py` আর `hermes_cli/main.py`",
+        "`toolsets.py` আর `agent/prompt_builder.py`",
+        "`tools/registry.py` আর `hermes_state.py`"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রথম ফাইলে handler, schema, check function ও `registry.register()`; দ্বিতীয়টায় নামটা toolset-এ যোগ।",
+      "whyWrong": {
+        "1": "`cli.py` ছুঁতে হয় না।",
+        "2": "`run_agent.py` ছুঁতে হয় না।",
+        "3": "`registry.py` আপনা-আপনি খুঁজে নেয়, বদলাতে হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q09",
+      "difficulty": "medium",
+      "question": "নিজের project-এর জন্য custom tool বানাতে চাও, Hermes core ছুঁতে চাও না। page কী সুপারিশ করে?",
+      "options": [
+        "Plugin",
+        "Built-in tool",
+        "Skill-এর `SKILL.md`",
+        "`toolset_distributions.py` বদলানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "ব্যক্তিগত বা project-এর নিজস্ব tool-এর জন্য বেশিরভাগ ক্ষেত্রে plugin সুপারিশ, কারণ core বদলাতে হয় না।",
+      "whyWrong": {
+        "1": "Built-in মানে core-এ পাঠানো।",
+        "2": "Skill নির্দেশ-ভিত্তিক, tool-কোড নয়।",
+        "3": "ওটা batch processing-এর ঐচ্ছিক বিষয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q10",
+      "difficulty": "medium",
+      "question": "Handler কী ফেরত দেবে?",
+      "options": [
+        "সাজানো Python dict, সরাসরি",
+        "শুধু `True` বা `False` মান",
+        "একটা async object বা coroutine",
+        "JSON string (`json.dumps()`)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Handler অবশ্যই JSON string ফেরত দেবে, কখনো raw dict নয়।",
+      "whyWrong": {
+        "0": "Raw dict দেওয়া নিষেধ।",
+        "1": "True/False দেয় `check_fn`।",
+        "2": "Async handler-এর কথা আলাদা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q11",
+      "difficulty": "medium",
+      "question": "Handler-এ ভুল হলে exception না ছুঁড়ে কী করা উচিত?",
+      "options": [
+        "exception ছুঁড়ে agent loop থামানো",
+        "কিছুই না ফেরত দিয়ে চুপ থাকা",
+        "`{\"error\": \"message\"}` ফেরত দেওয়া",
+        "পুরো Hermes বন্ধ করে দেওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "Exception ছুঁড়লে agent loop ভেঙে যেতে পারে। Error ফেরত দিলে AI পড়ে নিজেই সামলাতে পারে।",
+      "whyWrong": {
+        "0": "Loop ভেঙে যেতে পারে।",
+        "1": "চুপ থাকলে AI কিছু বুঝবে না।",
+        "3": "বন্ধ করা কোনো সমাধান নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q12",
+      "difficulty": "medium",
+      "question": "`check_fn` `False` ফেরত দিলে tool-এর কী হয়?",
+      "options": [
+        "Hermes error দিয়ে বন্ধ হয়",
+        "tool চুপচাপ বাদ পড়ে",
+        "tool চালু থাকে, শুধু সতর্কবার্তা আসে",
+        "tool অন্য toolset-এ চলে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "যেমন `WEATHER_API_KEY` না থাকলে AI weather tool দেখেই না।",
+      "whyWrong": {
+        "0": "Error দিয়ে বন্ধ হয় না।",
+        "2": "সতর্কবার্তা নয়, বাদ পড়ে।",
+        "3": "Toolset বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q13",
+      "difficulty": "medium",
+      "question": "Async handler-এ `is_async=True` দিলে কী ঘটে?",
+      "options": [
+        "তুমি নিজে `asyncio.run()` ডাকবে",
+        "handler আপনা-আপনি JSON string-এর বদলে dict দেবে",
+        "registry নিজে `_run_async()` চালায়",
+        "check function আর চলে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "তুমি কখনো `asyncio.run()` ডাকবে না, registry সেটা সামলায়।",
+      "whyWrong": {
+        "0": "`asyncio.run()` ডাকা নিষেধ।",
+        "1": "JSON string নিয়ম বদলায় না।",
+        "3": "`check_fn` যথারীতি চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q14",
+      "difficulty": "medium",
+      "question": "Setup wizard-এ API key টাইপ করার সময় অক্ষর লুকাতে কোন field দিতে হয়?",
+      "options": [
+        "`prompt: \"password\"`",
+        "`password: True`",
+        "`url: \"hidden\"`",
+        "`tools: [\"secret\"]`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`OPTIONAL_ENV_VARS`-এর entry-তে `password: True` দিলে wizard-এ অক্ষর লুকিয়ে থাকে।",
+      "whyWrong": {
+        "0": "`prompt` wizard-এ যা জিজ্ঞেস করবে সেই লেখা।",
+        "2": "`url` key কোথায় পাওয়া যাবে সেটা।",
+        "3": "`tools` কোন tool-এর জন্য তা বলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q15",
+      "difficulty": "hard",
+      "question": "API key, নিজস্ব processing আর streaming সহ পুরো integration দরকার (যেমন TTS)। কী বাছবে?",
+      "options": [
+        "Built-in tool",
+        "শুধু একটা Skill",
+        "শুধু একটা Plugin",
+        "একটা Blueprint skill"
+      ],
+      "correctIndex": 0,
+      "explanation": "নির্দেশ + shell command দিয়ে না চললে, এমন integration-এ built-in tool বাছতে হয়।",
+      "whyWrong": {
+        "1": "Skill-এ কুলায় না এই ক্ষেত্রে।",
+        "2": "ব্যক্তিগত tool-এ plugin, পুরো core-এর integration-এ নয়।",
+        "3": "Blueprint ঘড়ি-সহ skill।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q16",
+      "difficulty": "hard",
+      "question": "একটা tool শুধু বিশেষ কাজে লাগে, সবার জন্য নয়। `toolsets.py`-তে কীভাবে যোগ করবে?",
+      "options": [
+        "`_HERMES_CORE_TOOLS`-এ নাম রেখে",
+        "`registry.py`-তে নাম হাতে লিখে",
+        "`cli.py`-এ import বসিয়ে",
+        "নিজস্ব toolset বানিয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "নিজস্ব toolset হলো আলাদা বাক্স, যে চায় সে চালু করে। `_HERMES_CORE_TOOLS` মানে সব জায়গায় সবার জন্য।",
+      "whyWrong": {
+        "0": "সবার জন্য হয়ে যেত।",
+        "1": "হাতে লেখা লাগে না।",
+        "2": "Import লাগে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q17",
+      "difficulty": "hard",
+      "question": "Weather tool-এর কোড ঠিক, তবু AI সেটা দেখছে না। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "handler JSON string-এর বদলে raw dict ফেরত দিচ্ছে",
+        "async tool-এ `is_async=True` দেওয়া হয়নি",
+        "আলাপে `task_id` কখনো পাঠানো হয়নি",
+        "`WEATHER_API_KEY` নেই বলে `check_fn` `False`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`check_fn` `False` হলে tool চুপচাপ বাদ পড়ে, তাই AI তাকে দেখেই না।",
+      "whyWrong": {
+        "0": "Raw dict দিলে error আসত, tool লুকাত না।",
+        "1": "Async না হলে কাজ ধীর, লুকায় না।",
+        "2": "`task_id` লুকানোর কারণ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q18",
+      "difficulty": "hard",
+      "question": "`memory`-র মতো tool কেন registry-র সাধারণ পথে চলে না?",
+      "options": [
+        "registry এই tool-দের schema রাখতে পারে না",
+        "state লাগে, তাই agent loop আগেই ধরে",
+        "এগুলো শুধু plugin হিসেবে চলে",
+        "এগুলো `check_fn` ছাড়া চলতে পারে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "`agent/tool_executor.py` এদের আগেই ধরে। Registry-তে শুধু schema থাকে; intercept এড়িয়ে `dispatch()` পর্যন্ত গেলে fallback error আসে।",
+      "whyWrong": {
+        "0": "Registry-তে schema থাকেই।",
+        "2": "এগুলো built-in, plugin নয়।",
+        "3": "`check_fn`-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q19",
+      "difficulty": "hard",
+      "question": "নতুন tool ফাইলের জন্য আলাদা import-তালিকায় নাম লিখতে হবে কি?",
+      "options": [
+        "না, `discover_builtin_tools()` খুঁজে নেয়",
+        "হ্যাঁ, `cli.py`-তে লিখতে হবে",
+        "হ্যাঁ, `registry.py`-তে হাতে import করতে হবে",
+        "না, কিন্তু `config.py`-তে নাম লিখতে হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "top-level `registry.register()` থাকা ফাইল `tools/registry.py`-এর `discover_builtin_tools()` নিজেই খুঁজে নেয়।",
+      "whyWrong": {
+        "1": "`cli.py`-তে লাগে না।",
+        "2": "হাতে import লাগে না।",
+        "3": "`config.py` শুধু ঐচ্ছিক API key-এর জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-adding-tools-q20",
+      "difficulty": "hard",
+      "question": "Tool যোগ করে তাড়াতাড়ি পরীক্ষা করতে একটা প্রশ্ন দিয়ে উত্তর নিয়ে শেষ করতে চাও। কোন কমান্ড?",
+      "options": [
+        "`hermes setup \"Use the weather tool for London\"`",
+        "`hermes config show -q weather`",
+        "`hermes chat -q \"Use the weather tool for London\"`",
+        "`hermes chat --toolsets skills -q \"Use the weather tool for London\"`"
+      ],
+      "correctIndex": 2,
+      "explanation": "`-q` মানে query: প্রশ্ন সরাসরি দিয়ে উত্তর নিয়ে শেষ। AI `weather` tool ডাকে আর তোমার handler চলে।",
+      "whyWrong": {
+        "0": "`hermes setup` wizard চালায়।",
+        "1": "`config show` সেটিং দেখায়।",
+        "3": "`--toolsets skills` skill পরীক্ষার কমান্ড।"
+      }
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "contentId": "hermes-doc-reference-mcp-config-reference",
+  "title": "MCP Config Reference",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/mcp-config-reference",
+  "oneLiner": "এই lesson শেষে তুমি MCP server কী, `mcp_servers:` config-এর key গুলো কখন লাগে এবং কীভাবে নিরাপদে tool ছেঁকে ও সিক্রেট ব্যবহার করতে হয় তা বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: পাড়ার দোকানে যাওয়ার চিরকুট\n\nমা তোমাকে চিরকুট দিলেন: \"মুদি দোকানে যাও। সেখানে শুধু **চাল আর ডাল** কিনবে, মিষ্টি না। টাকা আছে এই খামে, খামটা কাউকে দেখিও না।\"\n\nMCP server হলো এমন একেকটা \"দোকান\" যেখানে Hermes তার নতুন tool আনতে যায়। **`mcp_servers:` config** হলো চিরকুট: কোন দোকানে যাবে (`command`/`url`), কোন জিনিস কিনবে (`tools.include`), কোনটা কিনবে না (`tools.exclude`), আর গোপন খাম (`${VAR}`) কীভাবে ব্যবহার করবে।\n\n**এটা না থাকলে কী সমস্যা হতো?** Hermes-এর নিজের tool ছাড়া বাইরের সেবা (GitHub, Stripe, নিজের কোম্পানির সিস্টেম) ব্যবহার করা যেত না। আবার সব tool বিনা বিচারে আনলে বিপজ্জনক tool-ও (যেমন \"customer মুছে ফেলো\") চলে আসত। এই config সেই নিয়ন্ত্রণ দেয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### MCP\nModel Context Protocol। একটা সাধারণ নিয়ম, যেটা মেনে যেকোনো সেবা AI-কে নিজের tool দিতে পারে। যেমন সব ফোনের চার্জার একই হলে যেকোনো চার্জার চলে। MCP সেই \"একই চার্জারের\" নিয়ম।\n\n### MCP server\nযে প্রোগ্রাম বা সেবা tool দেয়। ওপরের গল্পের \"দোকান\"। Hermes হলো খদ্দের (client)।\n\n### stdio server বনাম HTTP server\n- **stdio server:** তোমার কম্পিউটারেই একটা ছোট প্রোগ্রাম চালু হয় (Hermes একটা **subprocess** চালায়, মানে ছোট সহকারী প্রোগ্রাম)। কথা হয় সরাসরি তার সাথে। বাড়ির কাছের দোকান।\n- **HTTP server:** দূরের কোনো ওয়েব-ঠিকানা (`url`)। ইন্টারনেটের মধ্য দিয়ে কথা হয়। শহরের অন্য মাথার দোকান।\n\n### Command, args, env\n`command` কী প্রোগ্রাম চালাবে (যেমন `npx`)। `args` সেই প্রোগ্রামকে দেওয়া নির্দেশ। `env` হলো তার জন্য গোপন সেটিং। (**env** = environment variable, `নাম=মান` আকারের সেটিং।)\n\n### Header\nওয়েব-অনুরোধের সাথে পাঠানো ছোট তথ্য, যেমন `Authorization: Bearer <চাবি>`। এটা খামের ওপরের পরিচয়-সিল।\n\n### Timeout\n\"এত সেকেন্ডের বেশি অপেক্ষা করব না।\" দোকান সাড়া না দিলে কতক্ষণ দাঁড়াবে।\n\n### Glob\n`*` চিহ্ন দিয়ে নামের ছাঁচ। যেমন `*_radar_*` মানে মাঝখানে `_radar_` আছে এমন সব নাম।\n\n### OAuth\nনিজের পাসওয়ার্ড না দিয়ে অন্য কোনো সেবায় ঢোকার অনুমতি দেওয়ার নিরাপদ পদ্ধতি। বাড়ির চাবি না দিয়ে অতিথিকে একটা সাময়িক পাস দেওয়া। **PKCE** তার একটা বাড়তি সুরক্ষা। **Token** হলো সেই পাস।\n\n### TLS, SSL, mTLS\nসংযোগকে এনক্রিপ্ট (তালাবদ্ধ) করার ব্যবস্থা, যাতে পথে কেউ আড়ি পাততে না পারে। `ssl_verify` সেই সনদ ঠিক আছে কি না যাচাই করে। **mTLS** মানে দুই পক্ষই সনদ দেখায়।\n\n### Resource ও Prompt (MCP-র ভাষায়)\nServer tool ছাড়াও দিতে পারে **resource** (পড়ার মতো তথ্য, যেমন ডকুমেন্ট) আর **prompt** (তৈরি প্রশ্নের ছাঁচ)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Root আকার\n\n```yaml\nmcp_servers:\n  <server_name>:\n    command: \"...\"        # stdio server\n    args: []\n    env: {}\n    # অথবা\n    url: \"...\"            # HTTP server\n    headers: {}\n    enabled: true\n    timeout: 120\n    connect_timeout: 60\n    tools:\n      include: []\n      exclude: []\n      resources: true\n      prompts: true\n```\n\n(**YAML** হলো `config.yaml` খাতার লেখার ধরন: `নাম: মান`, ভেতরে ঢোকাতে স্পেস। `#` দিয়ে শুরু লাইন হলো মন্তব্য, যা Hermes পড়ে না।)\n\n- **stdio** server: `command`, `args`, `env` (Hermes একটা subprocess চালায়)।\n- **HTTP** server: `url`, `headers` (দূরের endpoint, মানে ঠিকানা)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "stdio server লোকাল subprocess, HTTP server দূরের endpoint। দুটোই tool Hermes-কে দেয়।",
+        "nodes": [
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "cfg",
+            "kind": "database",
+            "label": "mcp_servers:",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "s1",
+            "kind": "external",
+            "label": "stdio (command)",
+            "x": 440,
+            "y": 20
+          },
+          {
+            "id": "s2",
+            "kind": "external",
+            "label": "HTTP (url)",
+            "x": 440,
+            "y": 180
+          }
+        ],
+        "edges": [
+          {
+            "from": "h",
+            "to": "cfg",
+            "label": "পড়ে"
+          },
+          {
+            "from": "cfg",
+            "to": "s1",
+            "label": "চালায়"
+          },
+          {
+            "from": "cfg",
+            "to": "s2",
+            "label": "সংযোগ"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## গুরুত্বপূর্ণ server key\n\n| Key | কোথায় | মানে | কখন লাগে |\n|---|---|---|---|\n| `command`, `args`, `env` | stdio | কী চালাবে, কোন argument, কোন environment | নিজের কম্পিউটারে চালানো server-এ |\n| `url`, `headers` | HTTP | endpoint ও header | দূরের server-এ |\n| `enabled` | দুটোই | `false` হলে server একেবারে বাদ (config থেকে যায়) | সাময়িক বন্ধ রাখতে, মুছে না ফেলে |\n| `timeout` | দুটোই | tool call timeout, default **৩০০**s | ধীর tool-এ বাড়াতে |\n| `connect_timeout` | দুটোই | প্রথম সংযোগ, default **৬০**s | সংযোগ ধীর হলে |\n| `transport` | HTTP | `sse` দিলে SSE (একমুখী খবরের ধারা), নইলে Streamable HTTP | server SSE চাইলে |\n| `auth: oauth` | HTTP | OAuth 2.1 + PKCE চালু | সেবা OAuth চাইলে |\n| `trust` | দুটোই | `full` (default) বা `untrusted` | কম বিশ্বাসী server-এ `untrusted` |\n| `lazy` | দুটোই | tool schema (তালিকা) ক্যাশ থেকে নিবন্ধিত, প্রথম call-এ সংযোগ (আগে একবার live connect লাগে) | শুরু দ্রুত করতে |\n| `keepalive_interval` | দুটোই | liveness ping সেকেন্ড (সংযোগ জীবিত কি না জিজ্ঞেস করা)। HTTP default ১৮০ | সংযোগ বারবার কেটে গেলে |\n| `supports_parallel_tool_calls` | দুটোই | default `false` | server একসাথে অনেক call সামলাতে পারলে |\n| `ssl_verify` | HTTP | `true` default। `false` **অনিরাপদ**। স্ট্রিং হলে CA bundle path | নিজের বানানো সনদে পরীক্ষায় (আসল সেবায় নয়) |\n| `client_cert` / `client_key` | HTTP | mTLS | সেবা তোমার সনদও চাইলে |\n\n## `tools:`: কোন tool আনবে?\n\n```yaml\ntools:\n  include: [list_issues, create_issue, update_issue, search_code]\n  resources: false\n  prompts: false\n```\n\n- `include` দিলে **শুধু** ওগুলো নিবন্ধিত হয়। glob চলে (যেমন `*_radar_*`)। **হলো সাদা-তালিকা।**\n- শুধু `exclude` দিলে বাকি সব আসে, ওগুলো বাদ। **হলো কালো-তালিকা।**\n- **দুটোই দিলে `include` জেতে, `exclude` উপেক্ষিত।**\n- ছাঁকনি **আসল** MCP tool-নামে চলে (হাইফেন/ডট সহ), পরিষ্কার-করা নামে না।\n- `resources`/`prompts` যথাক্রমে `list_resources`/`read_resource` আর `list_prompts`/`get_prompt` চালু করে। server সত্যি ওই capability না জানালে এরা নিবন্ধিত হয় না।\n- ছাঁকনিতে সব কিছু বাদ গেলে এবং utility tool-ও না থাকলে ওই server-এর কোনো toolset-ই তৈরি হয় না।\n\n### নামের নিয়ম\n\nNative tool: `mcp__<server>__<tool>`। নামের অক্ষর/সংখ্যা/underscore ছাড়া সব চিহ্ন `_` হয়ে যায়। উদাহরণ: server `my-api`, tool `list-items.v2` → `mcp__my_api__list_items_v2`।\n\n## সিক্রেট `${VAR}`\n\n```yaml\nmcp_servers:\n  github:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n    env:\n      GITHUB_PERSONAL_ACCESS_TOKEN: \"${env:GITHUB_TOKEN}\"\n```\n\n| লাইন | মানে |\n|---|---|\n| `github:` | server-এর নাম (তুমি দাও) |\n| `command: \"npx\"` | `npx` প্রোগ্রাম চালাও (Node.js-এর package-চালানোর টুল) |\n| `args: [\"-y\", \"@modelcontextprotocol/server-github\"]` | `-y` মানে \"হ্যাঁ বলে এগোও\", তারপর কোন package চালাবে তার নাম |\n| `env: GITHUB_PERSONAL_ACCESS_TOKEN: \"${env:GITHUB_TOKEN}\"` | server-কে GitHub-এর চাবি দাও। কিন্তু চাবিটা এখানে সরাসরি না লিখে `${...}` দিয়ে অন্য জায়গা থেকে আনো |\n\n**কেন এভাবে?** `config.yaml` কোথাও শেয়ার করলে তাতে চাবি থাকা উচিত না। চাবি থাকে `~/.hermes/.env`-এ, আর এখানে শুধু নাম।\n\n- `${VAR}` আর `${env:VAR}` একই। `env`, `headers`, `args`, `url` সব জায়গায় চলে।\n- খোঁজার ক্রম: active profile-এর secret scope, তারপর process environment। সিক্রেট রাখো `~/.hermes/.env`-এ।\n- **unset variable** (যার মান দেওয়া হয়নি): stdio `env`-এ পুরো মানটা একটা unset reference হলে ওই entry বাদ যায়। কিন্তু remote `url`/`headers`-এ unset হলে connect **fail closed**, মানে সংযোগই হয় না। (নইলে আক্ষরিক `${VAR}` লেখা চলে গিয়ে 401 হতো, যা ভুল credential-এর মতো দেখায়, বিভ্রান্তিকর।)\n- context variable: `${userHome}`, `${workspaceFolder}`, `${workspaceFolderBasename}`, `${pathSeparator}` (বা `${/}`)।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Config বদলালে reload করো",
+      "markdown": "MCP config বদলের পর chat-এ `/reload-mcp` চালাও। না চালালে পুরোনো সংযোগই থাকবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Trust: অচেনা দোকানে সাবধান\n\n- **`full`** (default): বাড়তি জিজ্ঞাসা নেই।\n- **`untrusted`**: যে tool `readOnlyHint: true` ঘোষণা করেনি (মানে \"আমি শুধু পড়ি, বদলাই না\" বলেনি), তার প্রতিটার আগে অনুমতি চায়: **Allow Once**, **Session** (এই chat-এ ওই tool), **Always** (`command_allowlist`-এ `mcp:<server>/<tool>` লেখে)।\n- অনুমতি একেক tool-এর জন্য আলাদা। YOLO (`/yolo`, `--yolo`) বা `approvals.mode: off` অনুমতি-চাওয়া এড়ায়।\n- `readOnlyHint` server নিজেই বলে। অসৎ server শুধু নিজেকে read-only দাবি করে অনুমতি এড়াতে পারে। তাই **যে server পুরো বিশ্বাস করো না তাকে `untrusted` করো**।\n\n## উদাহরণ\n\n**HTTP + blocklist (কালো-তালিকা):**\n\n```yaml\nmcp_servers:\n  stripe:\n    url: \"https://mcp.stripe.com\"\n    headers:\n      Authorization: \"Bearer ${env:STRIPE_TOKEN}\"\n    tools:\n      exclude: [delete_customer, refund_payment]\n```\n\nএখানে Stripe (পেমেন্ট-সেবা) থেকে সব tool আসবে, শুধু customer মোছা আর টাকা ফেরত দেওয়া বাদে। কখন লাগে: বিপজ্জনক tool আলাদা করে আটকাতে।\n\n**শুধু resource দেওয়া docs server:**\n\n```yaml\nmcp_servers:\n  docs:\n    url: \"https://mcp.docs.example.com\"\n    tools:\n      include: []\n      resources: true\n      prompts: false\n```\n\n`include: []` মানে কোনো tool নয়। শুধু পড়ার মতো তথ্য (resource) আসবে।\n\n## OAuth ও খরচ-সীমা (সংক্ষেপে)\n\n```yaml\nmcp_servers:\n  protected_api:\n    url: \"https://mcp.example.com/mcp\"\n    auth: oauth\n```\n\n- প্রথম connect-এ browser খোলে। token থাকে `~/.hermes/mcp-tokens/<server>.json` (profile হলে profile-এর নিচে)। refresh নিজে নিজে হয় (মেয়াদ ফুরোলে নতুন পাস নিজে নেয়)।\n- browser ছাড়া: `hermes mcp login protected_api --flow device`। এটা একটা URL আর code দেখায়, যেকোনো device-এ অনুমোদন করা যায়।\n- `tool_costs` + `spend_limit` (প্রতি chat) + `cost_unit` (default `credits`): সীমা পেরোবে এমন call আগে জিজ্ঞেস করে, এমনকি `trust: full`-এও। cron-এর মতো যেখানে উত্তর দেওয়ার কেউ নেই, সেখানে প্রত্যাখ্যান।\n\n## Add to Hermes link\n\n`hermes://mcp/install?name=NAME&config=BASE64`। `name` মিলতে হবে `^[A-Za-z0-9._-]{1,64}$` (অক্ষর, সংখ্যা, `.`, `_`, `-`, সর্বোচ্চ ৬৪)। config সর্বোচ্চ ৩২KB। লিংক খুললেই কিছু install হয় না। desktop app সম্পূর্ণ config দেখিয়ে নিশ্চিতকরণ চায়, আর বিদ্যমান নাম কখনো ওভাররাইট হয় না।\n\n## গোছানো গলদ-তালিকা\n\n1. `include` + `exclude` দুটোই দিলে `exclude` কাজ করে না।\n2. ছাঁকনিতে হাইফেনওয়ালা আসল নাম লাগে।\n3. `ssl_verify: false` আসল সেবায় নয়।\n4. `lazy: true` কাজ করতে আগে একবার live connect লাগে।\n5. Unannotated (লেখার সম্ভাবনাওয়ালা) tool session মাঝপথে expire হলে নিজে নিজে পুনরায় চলে না। `outcome_uncertain` আসে, আগে যাচাই করো।\n6. `trust` default `full`। অচেনা server-এ `untrusted`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`tools.include` আর `tools.exclude` দুটোই দিলে কী হয়?",
+      "options": [
+        "`exclude` জেতে",
+        "`include` জেতে, `exclude` উপেক্ষিত",
+        "দুটোই কাজ করে",
+        "error আসে"
+      ],
+      "answerIndex": 1,
+      "explanation": "include হলো সাদা-তালিকা, তাই সে জেতে।"
+    },
+    {
+      "question": "remote `url`/`headers`-এ `${TOKEN}` unset থাকলে কী হয়?",
+      "options": [
+        "আক্ষরিক `${TOKEN}` চলে যায়",
+        "connect fail closed, মানে সংযোগই হয় না",
+        "চুপচাপ পুরোনো মান বসে",
+        "Hermes মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "নইলে ভুল credential-এর মতো দেখাত এমন 401 পেত, বিভ্রান্তিকর।"
+    },
+    {
+      "question": "`timeout`-এর default কত?",
+      "options": ["৬০ সেকেন্ড", "১২০ সেকেন্ড", "৩০০ সেকেন্ড", "কোনো সীমা নেই"],
+      "answerIndex": 2,
+      "explanation": "`timeout` ৩০০s, আর `connect_timeout` ৬০s।"
+    },
+    {
+      "question": "`untrusted` server-এ কোন tool অনুমতি ছাড়া চলে?",
+      "options": [
+        "সবগুলো",
+        "যে tool `readOnlyHint: true` ঘোষণা করেছে",
+        "কোনোটাই না",
+        "শুধু প্রথমটা"
+      ],
+      "answerIndex": 1,
+      "explanation": "read-only দাবি করা tool-এর অনুমতি লাগে না। তাই অসৎ server-কে সত্যিই `untrusted` রাখতে হয়।"
+    },
+    {
+      "question": "server `my-api`-এর `list-items.v2` tool-এর Hermes-নাম কী?",
+      "options": [
+        "`my-api.list-items.v2`",
+        "`mcp__my_api__list_items_v2`",
+        "`list_items`",
+        "`mcp-my-api`"
+      ],
+      "answerIndex": 1,
+      "explanation": "অক্ষর/সংখ্যা/underscore ছাড়া সব চিহ্ন `_` হয়ে যায়।"
+    },
+    {
+      "question": "MCP config বদলের পর কী চালাবে?",
+      "options": ["`/new`", "`/reload-mcp`", "`/stop`", "কিছুই না"],
+      "answerIndex": 1,
+      "explanation": "না চালালে পুরোনো সংযোগই থাকে।"
+    },
+    {
+      "question": "`enabled: false` দিলে কী হয়?",
+      "options": [
+        "server config থেকে মুছে যায়",
+        "server একেবারে বাদ থাকে কিন্তু config থেকে যায়",
+        "server দ্রুত চলে",
+        "error আসে"
+      ],
+      "answerIndex": 1,
+      "explanation": "মুছে না ফেলে সাময়িক বন্ধ রাখার সহজ উপায়।"
+    },
+    {
+      "question": "OAuth token default profile-এ কোথায় সেভ হয়?",
+      "options": [
+        "`~/.hermes/mcp-tokens/<server>.json`",
+        "`/tmp`",
+        "chat-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 0,
+      "explanation": "profile থাকলে profile-এর নিচে। refresh নিজে নিজে হয়।"
+    }
+  ],
+  "recap": [
+    "`mcp_servers:` config বলে Hermes কোন দোকান (server) থেকে কোন tool আনবে।",
+    "stdio server নিজের কম্পিউটারে চলে, HTTP server দূরের `url`-এ।",
+    "`include` আর `exclude` একসাথে দিলে `include` জেতে।",
+    "সিক্রেট `${VAR}` দিয়ে আনো, `~/.hermes/.env`-এ রাখো, config-এ সরাসরি লিখো না।",
+    "অচেনা server-এ `trust: untrusted`, আর config বদলে `/reload-mcp`।"
+  ]
+}

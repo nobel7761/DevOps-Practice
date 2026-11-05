@@ -1,0 +1,173 @@
+{
+  "contentId": "hermes-doc-user-guide-features-code-execution",
+  "title": "Code Execution (execute_code)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/code-execution",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes কীভাবে একটা Python script দিয়ে অনেক tool call এক turn-এ সেরে token বাঁচায়, আর script, token, RPC, environment variable-এর মানে কী।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: দোকানে একশোটা জিনিসের দাম জানা\n\nধরো তুমি রবিনকে বললে, \"দোকানে গিয়ে একশোটা জিনিসের দাম দেখে আসো, আর কোনগুলো ১০০ টাকার কম তা বলো।\" রবিন প্রতিটা দাম দেখে তোমাকে ফোন করে একশোবার বলল। তুমি ক্লান্ত, ফোনের বিলও বিশাল!\n\nএবার অন্য উপায়: রবিনকে একটা **ছোট লেখা নির্দেশ-কাগজ (script)** দাও: \"একশোটা দেখো, ১০০-র কম গুলো লিখে রাখো, শেষে শুধু সেই তালিকা আমাকে বলো।\" রবিন একা একা সব করে ফিরে এসে **শুধু শেষ তালিকা** বলল।\n\nHermes-এর **`execute_code`** tool হলো সেই নির্দেশ-কাগজ। Agent একটা Python script লেখে; script Hermes-এর tool গুলো (search, read file...) নিজেই বারবার ডাকে। মাঝের সব ফল script-এর ভেতরেই থাকে; **শুধু `print()` করা শেষ লেখা** LLM-এর context-এ ফেরে। তাই এক turn-এ অনেক কাজ, কম token।\n\n**এটা না থাকলে কী সমস্যা হতো?** প্রতিটা ছোট কাজের জন্য AI-কে একবার করে ভাবতে হতো, আর প্রতিটার পুরো ফল তার \"খাতায়\" জমত। খাতা ভরে যেত, খরচ বাড়ত, আর কাজও ধীর হতো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) LLM\n**LLM** (Large Language Model) হলো যে বড় AI মস্তিষ্ক ভাষা বোঝে ও লেখে। Hermes-এর ভেতরে এই মস্তিষ্কই ভাবে। উপমা: দোকানের মালিক, যে সিদ্ধান্ত নেয়।\n\n### ২) Tool / Tool call\n**Tool** হলো Hermes-এর হাতের যন্ত্র (ফাইল পড়া, ওয়েবে খোঁজা)। যন্ত্র চালানোকে **tool call** বলে।\n\n### ৩) Script\nকয়েক লাইনের লেখা প্রোগ্রাম, যা একের পর এক ধাপ নিজে চালায়। উপমা: রবিনের নির্দেশ-কাগজ।\n\n### ৪) Python\nপ্রোগ্রাম লেখার একটা জনপ্রিয় ভাষা। Script এখানে Python-এ লেখা।\n\n### ৫) Context / Token\n**Context** হলো AI-র চোখের সামনের খোলা খাতা (সীমিত জায়গা)। **Token** হলো লেখার ছোট টুকরো, যা দিয়ে খাতার ভরা-খালি মাপা হয় আর খরচের হিসাবও হয়। কম token মানে সস্তা ও দ্রুত।\n\n### ৬) Child process\nএকটা প্রোগ্রাম থেকে চালু হওয়া আরেকটা আলাদা ছোট প্রোগ্রাম। উপমা: রবিন, যাকে তুমি দোকানে পাঠালে, সে আলাদা মানুষ।\n\n### ৭) RPC / Socket\n**RPC** মানে \"দূরের কাউকে বলা, তুমি এই কাজটা করে দাও।\" **Socket** হলো দুই প্রোগ্রামের মধ্যে কথা বলার একটা নল। উপমা: ফোনের লাইন।\n\n### ৮) Environment variable\nপ্রোগ্রামের পাশে রাখা নামধারী ছোট নোট (যেমন `HOME` = তোমার বাড়ির ফোল্ডারের ঠিকানা)। কিছু নোটে গোপন পাসওয়ার্ড থাকে।\n\n### ৯) Foreground / Background\n**Foreground** মানে সামনে চলা, কাজ শেষ হওয়া পর্যন্ত অপেক্ষা। **Background** মানে পেছনে চলতে থাকা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "sequence",
+        "caption": "Script Hermes-এর সঙ্গে Unix socket-এ কথা বলে; শুধু print() ফল LLM-এ ফেরে।",
+        "participants": [
+          {
+            "id": "llm",
+            "kind": "user",
+            "label": "LLM"
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes"
+          },
+          {
+            "id": "s",
+            "kind": "external",
+            "label": "Script"
+          }
+        ],
+        "messages": [
+          {
+            "from": "llm",
+            "to": "h",
+            "label": "execute_code(script)"
+          },
+          {
+            "from": "h",
+            "to": "s",
+            "label": "script চালু"
+          },
+          {
+            "from": "s",
+            "to": "h",
+            "label": "tool call (RPC)"
+          },
+          {
+            "from": "h",
+            "to": "s",
+            "label": "tool ফল"
+          },
+          {
+            "from": "s",
+            "to": "h",
+            "label": "print() output"
+          },
+          {
+            "from": "h",
+            "to": "llm",
+            "label": "শুধু শেষ output"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ভেতরে কী ঘটে\n\n১. Agent একটা Python script লেখে যা `hermes_tools` থেকে import করে (import মানে \"ওই যন্ত্রের বাক্সটা এনে হাতের কাছে রাখো\")।\n২. Hermes একটা স্বয়ংক্রিয় `hermes_tools.py` stub বানায় (stub মানে একটা \"ফোনবুক\": script যে নাম ধরে ডাকে, তা আসল tool-এর সাথে জুড়ে দেয়)।\n৩. Unix domain socket খুলে RPC listener thread চালায় (listener মানে কান পেতে শোনার লোক)।\n৪. Script একটা **child process**-এ চলে; তার tool call socket দিয়ে Hermes-এ আসে।\n৫. শুধু `print()` output LLM পায়।\n\n### Script-এর ভেতরে যে tool পাওয়া যায়\n\n| Tool | কী করে |\n|---|---|\n| `web_search` | ওয়েবে খোঁজে |\n| `web_extract` | ওয়েব-পাতা থেকে লেখা তোলে |\n| `read_file` | ফাইল পড়ে |\n| `write_file` | ফাইলে লেখে |\n| `search_files` | ফাইল খোঁজে |\n| `patch` | ফাইলের অংশ বদলায় |\n| `terminal` | কমান্ড চালায় (শুধু foreground) |\n\n### কখন agent এটা ব্যবহার করে\n\n- ৩টা বা তার বেশি tool call, মাঝে যুক্তি-প্রক্রিয়া থাকলে\n- অনেক data ছাঁকা, শর্ত-ভিত্তিক শাখা (\"যদি এমন হয় তবে...\"), ফলের উপর loop (বারবার ঘোরা)\n- মূল সুবিধা: **অনেক কম token**\n\n### উদাহরণ\n\n1. **Data pipeline:** `search_files` (`file_glob=\"*.yaml\"`, `limit=20`), প্রতিটা `read_file`, ২০০ অক্ষরের preview রেখে JSON print। (**JSON** হলো সাজানো তথ্য লেখার ধরন।)\n2. **Web research:** `web_search` (`limit=5`), প্রতিটা URL-এ `web_extract`, ৫০০ অক্ষরের excerpt, JSON print।\n3. **Bulk refactor:** `src/`-এ `old_api_call` আছে এমন `*.py` খোঁজা, `patch` (`replace_all=True`) দিয়ে `old_api_call(` -> `new_api_call(`, কয়টা ফাইল ঠিক হলো গোনা। (**refactor** মানে কোডের কাজ না বদলে নাম/গড়ন গুছিয়ে দেওয়া।)\n4. **Build ও test:** `terminal` (`timeout=120`) দিয়ে `pytest --tb=short -q`, passed/failed/error গোনা, `exit_code` ও শেষ ৫০০ অক্ষর print।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Execution mode: `code_execution.mode`\n\n**Mode** মানে চালানোর ধরন। দুটো:\n\n| Mode | কোথায় চলে | কোন Python | সহজ কথায় |\n|---|---|---|---|\n| `project` (default) | session-এর working directory (`terminal()`-এর মতো) | সক্রিয় `VIRTUAL_ENV`/`CONDA_PREFIX`-এর python, নইলে Hermes-এর নিজের | তোমার project-এর ঘরেই কাজ, project-এর যন্ত্রপাতি পায় |\n| `strict` | অস্থায়ী staging ডিরেক্টরি, project থেকে আলাদা | `sys.executable` (Hermes-এর python) | খালি ঘরে কাজ, সবসময় একই রকম ফল |\n\n(**Working directory** মানে এখন যে ফোল্ডারে আছো। **VIRTUAL_ENV** হলো project-এর নিজস্ব Python-এর বাক্স।) `project` দিলে `pandas`, `from my_project import foo`, বা `open(\".env\")`-এর মতো relative path `terminal()`-এর মতোই কাজ করে। `strict` দিলে সর্বোচ্চ পুনরুৎপাদনযোগ্যতা (প্রতিবার একই ফল)। দুই mode-এই নিরাপত্তা নিয়ম একই: environment পরিষ্কার, tool whitelist (মানে অনুমোদিত তালিকা; **`execute_code` নিজেকে ডাকতে পারে না, `delegate_task` বা MCP tool-ও না**), resource limit।\n\n## Persistent session kernel\n\nএকই session, mode, interpreter, working directory ও tool set-এর call গুলো **একই Python child** ব্যবহার করে। তাই import, variable, লোড করা data call-এর মাঝে থাকে। উপমা: একই খাতায় একটানা হিসাব করা, প্রতিবার নতুন খাতা না খুলে। `reset: true` দিলে state মুছে যায়; timeout বা interrupt-ও state হারাতে পারে। Kernel মরে idle timeout (`code_execution.kernel_idle_timeout`, default ১৮০০ সেকেন্ড), অথবা `code_execution.max_session_kernels` (default ৪) ছাড়ালে সবচেয়ে পুরনোটা সরানো হয়। Subagent-এর নিজের kernel থাকে; session-গুলো কখনো kernel ভাগ করে না।\n\n## সীমা (limits)\n\nসীমা কেন? Script ভুল করে অনন্তকাল চললে বা অসীম লিখলে যেন কম্পিউটার আটকে না যায়।\n\n| কী | সীমা | টীকা |\n|---|---|---|\n| Timeout | ৩০০ সেকেন্ড | SIGTERM (ভদ্র থামার অনুরোধ), ৫ সেকেন্ড পর SIGKILL (জোর করে বন্ধ) |\n| Stdout | ৫০ KB | মাথা ও লেজ দেখায়; পুরোটা `~/.hermes/cache/exec/`-এ |\n| Stderr | ১০ KB | non-zero exit-এ আসে |\n| Tool call | প্রতি execution-এ ৫০টা | শেষে error |\n\n(**Stdout** হলো script যা পর্দায় ছাপে; **stderr** হলো ভুলের বার্তা।)\n\n```yaml\ncode_execution:\n  mode: project\n  timeout: 300\n  max_tool_calls: 50\n  kernel_idle_timeout: 1800\n  max_session_kernels: 4\n```\n\n| লাইন | মানে |\n|---|---|\n| `mode: project` | project-এর ফোল্ডারে চালাও |\n| `timeout: 300` | ৩০০ সেকেন্ডের বেশি নয় |\n| `max_tool_calls: 50` | সর্বোচ্চ ৫০টা tool call |\n| `kernel_idle_timeout: 1800` | ৩০ মিনিট কেউ না ব্যবহার করলে kernel বন্ধ |\n| `max_session_kernels: 4` | সর্বোচ্চ ৪টা kernel একসাথে |\n\n(**YAML** হলো সেটিং-ফাইলের লেখার ধরন: `নাম: মান`।) প্রতিটা উত্তরে থাকে: `status` (`success`, `error`, `timeout`, `interrupted`), `output`, `tool_calls_made`, `duration_seconds`। ব্যবহারকারী মাঝপথে নতুন message পাঠালে script থামে (`[execution interrupted - user sent a new message]`)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা\n\nScript আসলে একটা প্রোগ্রাম, আর প্রোগ্রাম তোমার কম্পিউটারে কিছু করতে পারে। তাই সাবধানতা।\n\nChild process **ন্যূনতম environment** পায়। যে variable-এর নামে `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`, `PASSWD`, `AUTH` থাকে সেগুলো বাদ। `PATH`, `HOME`, `LANG`, `SHELL`, `PYTHONPATH`, `VIRTUAL_ENV` যায়। উপমা: রবিনকে দোকানে পাঠাতে খুচরো টাকা দিলে, কিন্তু ব্যাংকের চেকবই দিলে না।\n\n**Approval:** gateway session-এ (**gateway** হলো Telegram-এর মতো chat app-এর সাথে সেতু) পুরো script আগে অনুমোদন লাগে। Local CLI/TUI/Desktop/ACP-তে তুমি নিজে লেখা turn-এ পুরো-script prompt নেই, তবে `terminal()` call তখনও জিজ্ঞেস করে।\n\n### নিজের key পাঠাতে চাইলে\n\n- Skill-এর frontmatter-এ `required_environment_variables` ঘোষণা করলে skill লোডের পর সেগুলো `execute_code` ও `terminal`-এ যায়। (**Skill** মানে Hermes-কে শেখানো নির্দেশিকা-পাতা; **frontmatter** তার মাথার সেটিং-অংশ।)\n- অন্যথায় `config.yaml`-এ:\n\n```yaml\nterminal:\n  env_passthrough:\n    - MY_CUSTOM_KEY\n    - ANOTHER_TOKEN\n```\n\n`env_passthrough` মানে \"এই নামগুলো আটকিও না, ভেতরে যেতে দাও।\" শুধু যে key সত্যিই লাগবে তা-ই দিও।\n\n### `HERMES_*` variable\n\nChild শুধু `HERMES_HOME`, `HERMES_PROFILE`, `HERMES_CONFIG`, `HERMES_ENV` পায় (সঙ্গে RPC-র জন্য `HERMES_RPC_DIR`, `HERMES_RPC_SOCKET`, `TZ`, `HOME`)। আগে যেকোনো `HERMES_` দিয়ে শুরু variable যেত। config ফাঁসের ঝুঁকিতে তা তুলে নেওয়া হয়। কোনো script ভেঙে গেলে `hermes logs --level DEBUG` বা `~/.hermes/logs/agent.log`-এ `execute_code: dropped N non-allowlisted HERMES_* var(s)` খোঁজো। (**Log** মানে ঘটনার লিখিত খাতা।)\n\n## `execute_code` বনাম `terminal`\n\n| কাজ | `execute_code` | `terminal` |\n|---|---|---|\n| মাঝে tool call সহ বহু-ধাপ | হ্যাঁ | না |\n| সহজ shell command | না | হ্যাঁ |\n| বড় tool output ছাঁকা | হ্যাঁ | না |\n| build/test suite চালানো | না | হ্যাঁ |\n| interactive বা background process | না | হ্যাঁ |\n\n**নিয়ম:** মাঝে যুক্তি রেখে Hermes tool ডাকতে হলে `execute_code`; shell, build, process হলে `terminal`।\n\n**Platform:** Linux, macOS, Windows। Linux/macOS-এ Unix socket, Windows-এ loopback TCP (শুধু নিজের কম্পিউটারের ভেতরের নেটওয়ার্ক-নল)। Docker/SSH/Modal-এ (বন্ধ বাক্স বা দূরের কম্পিউটার) file-ভিত্তিক RPC, ভেতরে Python 3 লাগে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কখন চুপ করে থাকবে",
+      "markdown": "`terminal()` এখানে শুধু foreground-এ; `background` বা `pty` parameter নেই। তাই লম্বা server চালাতে হলে `execute_code` নয়, সাধারণ `terminal` ব্যবহার করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`execute_code` ব্যবহার করলে LLM-এর context-এ কী ফেরে?",
+      "options": [
+        "মাঝের প্রতিটা tool-এর পুরো ফল",
+        "শুধু script-এর `print()` করা শেষ লেখা",
+        "script-এর পুরো কোড",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "রবিন শুধু শেষ তালিকা বলে, একশো ফোন নয়। তাই context ভরে না, token বাঁচে।"
+    },
+    {
+      "question": "Script-এর ভেতরে কোন tool পাওয়া যায় না?",
+      "options": ["`delegate_task`", "`read_file`", "`web_search`", "`patch`"],
+      "answerIndex": 0,
+      "explanation": "`execute_code` নিজেকে, `delegate_task`-কে বা MCP tool-কে ডাকতে পারে না।"
+    },
+    {
+      "question": "প্রতি execution-এ সর্বোচ্চ কয়টা tool call চলে?",
+      "options": ["৫", "১০", "২০", "৫০"],
+      "answerIndex": 3,
+      "explanation": "`code_execution.max_tool_calls` default ৫০; ছাড়ালে শেষে error।"
+    },
+    {
+      "question": "Default execution mode কোনটা?",
+      "options": ["`strict`", "`safe`", "`project`", "`fast`"],
+      "answerIndex": 2,
+      "explanation": "`project` mode project-এর working directory-তে চলে, আর project-এর Python ব্যবহার করে।"
+    },
+    {
+      "question": "Script-এর environment-এ কোন নামের variable বাদ যায়?",
+      "options": [
+        "`PATH`",
+        "যে নামে `KEY`, `TOKEN`, `SECRET`, `PASSWORD` ইত্যাদি আছে",
+        "`HOME`",
+        "`LANG`"
+      ],
+      "answerIndex": 1,
+      "explanation": "গোপন পাসওয়ার্ড যেন script-এ না যায়। দরকারে `terminal.env_passthrough`।"
+    },
+    {
+      "question": "Timeout (৩০০ সেকেন্ড) হলে script-এর কী হয়?",
+      "options": [
+        "SIGTERM যায়, ৫ সেকেন্ড পর SIGKILL",
+        "চিরকাল চলে",
+        "নিজে আবার চলে",
+        "কিছুই হয় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "আগে ভদ্র থামার অনুরোধ, তারপর জোর করে বন্ধ।"
+    },
+    {
+      "question": "লম্বা-চলা background server চালানোর জন্য কোনটা ঠিক?",
+      "options": [
+        "`execute_code`",
+        "`delegate_task`",
+        "কোনোটাই নয়",
+        "সাধারণ `terminal`"
+      ],
+      "answerIndex": 3,
+      "explanation": "`execute_code`-এর ভেতরের `terminal()` শুধু foreground; background/pty নেই।"
+    },
+    {
+      "question": "Persistent kernel-এর state কখন মুছে যায়?",
+      "options": [
+        "কখনোই না",
+        "প্রতি call-এর পর",
+        "`reset: true` দিলে, idle timeout হলে বা সীমা ছাড়ালে",
+        "শুধু রাতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "নইলে import আর variable call-এর মাঝে থাকে, তাই বারবার লোড করতে হয় না।"
+    }
+  ],
+  "recap": [
+    "`execute_code` Python script দিয়ে অনেক tool call এক turn-এ করে; শুধু `print()` ফেরে।",
+    "Script-এর tool: `web_search`, `web_extract`, `read_file`, `write_file`, `search_files`, `patch`, foreground `terminal`।",
+    "সীমা: ৩০০ সেকেন্ড, ৫০ KB stdout, ৫০ tool call।",
+    "Environment থেকে key/token/secret সরিয়ে দেওয়া হয়; দরকারে `terminal.env_passthrough`।",
+    "`project` mode (default) vs `strict` mode।",
+    "বিচারবুদ্ধি লাগলে `delegate_task`, যান্ত্রিক pipeline হলে `execute_code`, shell হলে `terminal`।"
+  ]
+}

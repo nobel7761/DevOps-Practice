@@ -1,0 +1,172 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-telegram",
+  "title": "Telegram",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram",
+  "oneLiner": "এই lesson শেষে তুমি Telegram-এ Hermes-এর bot বানাতে, token ও allowlist ঠিক করতে এবং group, voice, webhook-এর কঠিন শব্দগুলো বুঝতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: পকেটের ভেতরের রোবট বন্ধু\n\nতোমার ফোনে Telegram আছে। ভাবো, রোবট বন্ধু Hermes সেখানে একটা **বন্ধু-অ্যাকাউন্ট** খুলে বসে আছে। তুমি যখন খুশি লেখো, ছবি পাঠাও, voice message দাও, সে উত্তর দেয়। তুমি ঘুমিয়ে থাকলেও তার ঠিকানা খোলা।\n\nকিন্তু এই বন্ধু-অ্যাকাউন্ট বানাতে হয় Telegram-এর **@BotFather** নামের দারোয়ানের কাছে গিয়ে। সে তোমাকে একটা **গোপন চাবি** দেয়, এর নাম **bot token**। এই চাবি আর তোমার নিজের নম্বর (user ID) Hermes-কে দিলেই বন্ধুত্ব শুরু।\n\nএটা `python-telegram-bot` নামের একটা প্রস্তুত library-র ওপর তৈরি। (**Library** মানে অন্য কারও লিখে রাখা তৈরি কোড, যা নিজে আবার না লিখে কাজে লাগানো যায়।) text, voice, ছবি, file, নির্দিষ্ট সময়ের কাজের ফল আর group chat সবই চলে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Bot (বট)\nএকটা স্বয়ংক্রিয় অ্যাকাউন্ট, মানুষ না, প্রোগ্রাম চালায়। Hermes তোমার Telegram-এ একটা bot হয়ে থাকে।\n\n### BotFather\nTelegram-এর নিজস্ব একটা bot, যার কাজ নতুন bot বানিয়ে দেওয়া। যেমন নতুন ফোন-নম্বর দেয় যে অফিস, সেই অফিস।\n\n### Token (টোকেন)\nএকটা লম্বা গোপন লেখা, bot-এর পাসওয়ার্ডের মতো। যার হাতে এই token আছে সে তোমার bot চালাতে পারে। তাই কাউকে দেখিও না।\n\n### User ID\nTelegram-এ প্রতিজন মানুষের একটা সংখ্যার পরিচয় (username নয়)। যেমন স্কুলের রোল নম্বর। নাম বদলালেও রোল নম্বর বদলায় না।\n\n### Allowlist (অ্যালাউলিস্ট)\nঅতিথি-তালিকা। এখানে যাদের user ID লেখা, শুধু তারাই bot-এর সাথে কথা বলতে পারবে।\n\n### `.env` ফাইল\nগোপন সেটিংসের ফাইল। `নাম=মান` আকারে এক লাইনে এক সেটিং। Hermes-এ এর জায়গা `~/.hermes/.env`। (`~` মানে তোমার নিজের home ফোল্ডার, আর নামের আগের `.` মানে ফোল্ডারটা লুকানো।)\n\n### Polling ও Webhook\nদুটো উপায়ে Hermes Telegram থেকে নতুন বার্তা পায়। **Polling:** Hermes বারবার গিয়ে জিজ্ঞেস করে \"নতুন চিঠি আছে?\" **Webhook:** Telegram নিজে এসে দরজায় ঘণ্টা বাজায়, \"চিঠি এসেছে!\" ডিফল্ট polling।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Telegram bot চালু করার ছোট পথ।",
+        "steps": [
+          {
+            "title": "১) @BotFather-এ `/newbot`",
+            "body": "নাম যা খুশি রাখো। username অনন্য হতে হবে আর `bot` দিয়ে শেষ হতে হবে। যে token পাবে তা গোপন রাখো। ফাঁস হলে `/revoke` দিয়ে বাতিল করো।"
+          },
+          {
+            "title": "২) নিজের user ID জানো",
+            "body": "@userinfobot বা @get_id_bot থেকে সংখ্যার ID নাও (username নয়)।"
+          },
+          {
+            "title": "৩) Hermes-কে বলো",
+            "body": "`hermes gateway setup` চালাও, অথবা `~/.hermes/.env`-এ `TELEGRAM_BOT_TOKEN` আর `TELEGRAM_ALLOWED_USERS` লেখো।"
+          },
+          {
+            "title": "৪) চালু করো",
+            "body": "`hermes gateway` চালাও, তারপর Telegram-এ bot-কে বার্তা পাঠাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবচেয়ে সহজ পথ ও হাতে লেখা config\n\n**Dashboard বা desktop app:** Messaging → Telegram → **Create with QR**। **Dashboard** হলো ব্রাউজারে খোলা Hermes-এর নিয়ন্ত্রণ-ফলক। **QR** হলো ছোট বর্গাকার ছবি যা ফোনের ক্যামেরায় স্ক্যান করা যায়। এতে Hermes নিজেই bot বানায়, তোমার user ID ধরে, profile-এর `.env`-এ `TELEGRAM_BOT_TOKEN` ও `TELEGRAM_ALLOWED_USERS` লিখে দেয় আর gateway restart করে।\n\n**হাতে লিখলে (`~/.hermes/.env`):**\n\n```bash\nTELEGRAM_BOT_TOKEN=১২৩৪:abcd...        # তোমার নিজের token; কোথাও share করো না\nTELEGRAM_ALLOWED_USERS=123456789       # comma দিয়ে একাধিক\n```\n\n| লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `TELEGRAM_BOT_TOKEN` | bot-এর গোপন চাবি | সবসময়, না থাকলে bot-ই চালু হয় না |\n| `TELEGRAM_ALLOWED_USERS` | যাদের অনুমতি, তাদের user ID, কমা দিয়ে | সবসময়, না দিলে ডিফল্টে **সবাইকে deny** করা হয় |\n\n> `TELEGRAM_ALLOWED_USERS`-এর বদলে চাইলে DM pairing (code দিয়ে অনুমতি) ব্যবহার করা যায়।\n\n**Hermes Cloud + Team Gateway:** নিজের bot-এর বদলে একটা শেয়ার করা bot। **Link Telegram** চাপলে `/link AB12CD` ধরনের এককালীন code আর QR পাওয়া যায়। gateway চালু থাকতে হয়।\n\n### BotFather-এর ঐচ্ছিক command\n\n`/setdescription`, `/setabouttext`, `/setuserpic`, `/setcommands` (প্রস্তাবিত: `help`, `new`, `sethome`), `/setprivacy`, `/setinline`। এগুলো bot-কে সাজানোর ছোট হুকুম: বর্ণনা, ছবি, কমান্ডের মেনু।\n\n### `gateway.platforms.telegram.extra`-এর কয়েকটা key\n\n(`config.yaml` হলো সেটিংসের খাতা। **YAML** হলো সেই খাতার লেখার ধরন, যেখানে `নাম: মান` আর স্পেস দিয়ে ভেতরে ঢোকানো।)\n\n| key | default | কী করে |\n|---|---|---|\n| `drop_pending_on_cold_boot` | `true` | নতুন করে চালু হলে জমে থাকা পুরোনো বার্তা ফেলে দেয়। `false` দিলে offline থাকার সময়ের বার্তাও পাবে |\n| `max_concurrent_updates` | `32` | ভিন্ন chat একসাথে চলে, তবে একই chat-এর বার্তা ক্রমানুসারে। `1` দিলে সবই ক্রমানুসারে |\n| `status_indicator: true` | বন্ধ | connect হলে bot-এর description-এ \"Online\", ঠিকমতো বন্ধ হলে \"Offline\" |\n| `command_menu` → `max_commands` | `60` (১ থেকে ১০০) | মেনুতে কয়টা command দেখাবে |\n| `command_menu` → `priority_mode` | | `prepend` / `append` / `replace`: Hermes-এর command আগে, পরে, নাকি আলাদা |\n\n- একই `update_id` (Telegram-এর প্রতি বার্তার নম্বর) দুবার এলে আটকানো হয়, শেষ ৪০৯৬টা মনে রেখে। এটা exactly-once (ঠিক একবারের নিশ্চয়তা) নয়।\n- **Inline picker:** যেকোনো chat-এ `@yourbotname` লিখে command ও skill খোঁজা যায়। আগে BotFather-এ `/setinline` দিতে হয়। শুধু allowlist-এর user ফল পায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Group chat\n\n**Group** মানে অনেক মানুষের একটা chat। এখানে bot সবার কথা শুনলে বিরক্তিকর হবে, তাই নিয়ম আছে।\n\n### Privacy mode (সবচেয়ে সাধারণ ফাঁদ)\n\nডিফল্টে এটা **চালু**। তখন bot শুধু এগুলো দেখে: `/` দিয়ে শুরু command, তার নিজের বার্তার reply, service message (কেউ যোগ দিল-ছাড়ল-ধরনের স্বয়ংক্রিয় খবর) আর admin-channel বার্তা। বাকি সাধারণ কথা তার কাছে পৌঁছায়ই না। **এটা না জানলে ভাববে bot নষ্ট।**\n\nবন্ধ করতে: `/mybots` → bot → **Bot Settings → Group Privacy → Turn off**। তারপর প্রতিটা group থেকে bot-কে **সরিয়ে আবার যোগ** করতে হয়, নইলে পুরোনো নিয়মই চলে। বিকল্প: bot-কে group admin বানাও।\n\n### কখন bot সাড়া দেয়? (`telegram.require_mention: true`)\n\n- bot-এর কোনো বার্তার reply দিলে\n- `@botusername` লিখে mention করলে\n- `/command@botusername` লিখলে\n- `mention_patterns`-এর regex মিলে গেলে। **Regex** মানে লেখার ছাঁচ, যেমন \"hey hermes দিয়ে শুরু যেকোনো লাইন\"। case-insensitive, মানে বড়-ছোট হাতের অক্ষর আলাদা ধরে না। ভুল ছাঁচ চুপচাপ বাদ পড়ে।\n\n`telegram.exclusive_bot_mentions` (default on): নির্দিষ্ট bot-কে mention করলে শুধু সে-ই প্রক্রিয়া করে। `telegram.ignored_threads`: যে forum topic-এ bot চুপ থাকবে।\n\n**Observe-only mode:** mention না করা বার্তাও context হিসেবে জমা হয় কিন্তু agent জেগে ওঠে না। যেন ক্লাসের পেছনে বসে শুনছে কিন্তু ডাক না পেলে কথা বলছে না:\n\n```yaml\ntelegram:\n  allowed_chats: [\"-1001234567890\"]\n  group_allowed_chats: [\"-1001234567890\"]\n  require_mention: true\n  observe_unmentioned_group_messages: true\n```\n\n### Access control: কে কোথায় অনুমতি পাবে\n\n| key | কোথায় খাটে |\n|---|---|\n| `allow_from` | DM ও group সব জায়গায় |\n| `group_allow_from` / `TELEGRAM_GROUP_ALLOWED_USERS` | শুধু group-এ |\n| `group_allowed_chats` / `TELEGRAM_GROUP_ALLOWED_CHATS` | ওই chat-এর **সব সদস্য** অনুমোদিত |\n| `*` | wildcard, মানে \"সবাই\" |\n| `guest_mode` (default false) | allowlist-এর বাইরের group শুধু সরাসরি @mention পেলে সাড়া দেয় |\n\nslash command-এর স্তরে: `allow_admin_from`, `group_allow_admin_from`, `user_allowed_commands`, `group_user_allowed_commands`। `/help` আর `/whoami` সবসময় চলে।\n\n### একাধিক bot ও লুপ ঠেকানো\n\nপ্রতি profile-এ একটা token আর একটা gateway। (**Profile** মানে Hermes-এর আলাদা আলাদা পরিচয়-সেট, যেমন \"কাজ\" আর \"বাড়ি\"।) দুই bot একে অপরকে উত্তর দিতে দিতে অনন্তকাল চললে সেটা লুপ। তা ঠেকাতে `telegram.bots_require_mention` আর `gateway.bot_loop_guard` (`max_events: 20`, `window_seconds: 300`, `cooldown_seconds: 600`) আছে। মানুষের বার্তা এই গোনায় ধরা হয় না।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Group-এ চুপ? এই পাঁচটা পরপর দেখো",
+      "markdown": "১) privacy mode কি চালু? ২) privacy বদলানোর পর bot-কে group থেকে সরিয়ে আবার যোগ করেছ? ৩) sender কি allowlist-এ আছে? ৪) mention filter কি আটকাচ্ছে? ৫) প্রতি profile-এ কি আলাদা token দিয়েছ?"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Voice, ফাইল আর topic\n\n### Voice\n\n- **ইনকামিং STT:** STT = Speech-To-Text, মানে কথা শুনে লেখায় বদলানো। তিন উপায়: `local` (faster-whisper, কোনো key লাগে না), `groq` (`GROQ_API_KEY`), `openai` (`VOICE_TOOLS_OPENAI_KEY`)।\n- `stt.enabled: false` হলে audio `~/.hermes/cache/audio/`-এ নামে কিন্তু লেখায় বদলায় না। agent শুধু ফাইলের পথের চিহ্ন পায়।\n- **আউটগোয়িং TTS:** TTS = Text-To-Speech, লেখাকে কণ্ঠে বদলানো। OpenAI ও ElevenLabs সরাসরি Opus ফরম্যাট দেয় (Telegram-এর voice বুদবুদের জন্য ঠিক)। Edge দেয় MP3। MP3 থেকে voice বুদবুদ পেতে **ffmpeg** (অডিও-ভিডিও বদলের টুল) লাগে, নইলে সাধারণ audio ফাইল হিসেবে আসে।\n\n### বড় ফাইল (২০ MB-এর বেশি)\n\npublic Bot API-এর `getFile` সীমা ২০ MB। বড় ফাইল চাইলে নিজের একটা `telegram-bot-api` server চালাতে হয়, তাহলে সীমা ২ GB। (**Server** মানে এমন প্রোগ্রাম যে অন্যদের অনুরোধের উত্তর দেয়।)\n\n- Docker image: `aiogram/telegram-bot-api`। (**Docker** একটা বন্ধ বাক্স, যার ভেতরে প্রোগ্রাম নিজের পরিবেশসহ চলে।)\n- env: `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_LOCAL: \"1\"`। api_id আর hash পাবে my.telegram.org/apps-এ।\n- Hermes-এর config যাবে **`platforms.telegram.extra`**-এ। `telegram.extra`-এ লিখো না, ওটা চুপচাপ বাদ পড়ে। মান: `base_url: \"http://127.0.0.1:8081/bot\"`, `base_file_url: \"http://127.0.0.1:8081/file/bot\"`, `local_mode: true`।\n- **পোর্ট ৮০৮১ কখনো public করো না।** Port মানে কম্পিউটারের একটা দরজা-নম্বর। URL-এ token থাকে, তাই বাইরে খুললে চাবি বিলিয়ে দেওয়া হয়।\n\n### Docker-terminal থেকে ফাইল পাঠানো\n\nফাইল পাঠায় host-এর gateway, container নয়। (**Host** মানে আসল কম্পিউটার, যার ভেতরে container চলে।) তাই host-এর একটা ফোল্ডার container-এ mount করো (জুড়ে দাও), container-এর ভেতরে `/output/...`-এ লেখো, কিন্তু `MEDIA:`-এ দাও **host-এর path**। `MEDIA:` হলো ফাইল পাঠানোর বিশেষ চিহ্ন। ছবি, audio, video, document, Office, archive, epub ইত্যাদি সমর্থিত।\n\n### Private chat topic\n\nBotFather → Bot Settings → Threads Settings → **Threaded Mode** চালু করতে হয়, নইলে `The chat is not a forum` লেখা log-এ আসে। `platforms.telegram.extra.dm_topics`-এ `chat_id` আর `topics` দাও (`name` বাধ্যতামূলক, `skill` ঐচ্ছিক)। ব্যবহারকারী নিজে topic বানাতে চাইলে **`/topic`** (`/topic help`, `/topic off`, `/topic <session-id>`)। topic-এর ভেতর `/new` শুধু ওই topic-এর session reset করে। Group forum topic-এ skill বাঁধতে `group_topics` (`chat_id` শুরু হয় `-100` দিয়ে, `thread_id` পাবে `t.me/c/<group>/<thread>` থেকে)।\n\n## Webhook, proxy আর home channel\n\n- ডিফল্ট **long polling** (Hermes বারবার জিজ্ঞেস করে)। **Webhook** নিলে cloud-এর মেশিন ঘুমাতে পারে, Telegram ডাকলে জাগে। লাগে: `TELEGRAM_WEBHOOK_URL` (public HTTPS ঠিকানা), **`TELEGRAM_WEBHOOK_SECRET` বাধ্যতামূলক** (`openssl rand -hex 32` দিয়ে বানাও, নইলে gateway শুরুই হয় না), `TELEGRAM_WEBHOOK_PORT` (default ৮৪৪৩)। Secret লাগে যাতে নকল কেউ Telegram সেজে বার্তা না পাঠায়।\n- **Proxy:** মাঝখানের একটা পথ-পাল্টানো মেশিন। `telegram.proxy_url` বা `TELEGRAM_PROXY` (`http://`, `https://`, `socks5://`)।\n- **Home channel:** chat-এ `/sethome` দিলে সেটাই cron-এর ফল পাঠানোর ডিফল্ট ঠিকানা হয়। `TELEGRAM_HOME_CHANNEL`, আর topic-এর জন্য `TELEGRAM_CRON_THREAD_ID`। group ID ঋণাত্মক সংখ্যা। DM chat ID = তোমার user ID। (**Cron** মানে সময় ঠিক করে দেওয়া কাজ, যেমন \"রোজ সকাল ৮টায় খবর দাও\"।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## বার্তা দেখানো ও আরও সুবিধা\n\n- **Streaming:** উত্তর লেখা হতে হতেই একটু একটু করে দেখানো। `gateway.streaming.transport`: `auto`, `draft`, `edit`, `off`। docs পাতায় default নিয়ে দুই রকম কথা আছে, কিন্তু Hermes-এর source code-এ মীমাংসা মেলে:\n  - **Source code (সঠিক):** `gateway/config.py`-এর `StreamingConfig`-এ `transport: str = \"auto\"` আর `enabled: bool = False`; `hermes_cli/config_defaults.py`-এর `streaming:` অংশেও `\"enabled\": False`, `\"transport\": \"auto\"`, `\"edit_interval\": 0.8`, `\"buffer_threshold\": 24`। অর্থাৎ **streaming নিজেই ডিফল্টে বন্ধ** (চালাতে `enabled: true` লাগে, তারপর gateway restart); চালু করলে ডিফল্ট transport হলো `auto`। (code-এর default তালিকায় key টা top-level `streaming:` হিসেবে আছে, docs লেখে `gateway.streaming.*`।)\n  - **`auto`-র মানে:** সমর্থিত chat-এ native draft (Telegram DM, Bot API 9.5+), নইলে `editMessageText`-ভিত্তিক edit (Telegram group, Discord, Slack...)। `draft` জোর করে draft চায় (group-এ edit-এ নামে); `edit` সব chat-এ শুধু edit; `off` streaming বন্ধ, শুধু চূড়ান্ত উত্তর।\n  - **docs পাতার কোন অংশ পুরনো:** Streaming table (`auto` default) code-এর সাথে মেলে। কিন্তু DM section-এর \"`edit` (default)\" আর Bot API 9.5 bullet-এর \"default remains the legacy `editMessageText` path\" কথা দুটো code-এর সাথে মেলে না, ওগুলো পুরনো।\n  - আরও: DM-এর draft preview-তে `rich_drafts` ডিফল্ট `false` (preview plain থাকে)। Telegram `sendMessageDraft` শুধু private chat (DM)-এ দেয়; অন্য chat-এ edit-ভিত্তিক পথ, আর draft মাঝপথে ব্যর্থ হলে ওই উত্তরের বাকি অংশ edit-এ যায়।\n- **লম্বা বার্তা:** ৪,০৯৬ অক্ষরের বেশি হলে `(1/3)`-এর মতো ভাগ হয়। Rich Message-এর সীমা ৩২,৭৬৮ (ঐচ্ছিক, ডিফল্টে বন্ধ)।\n- `disable_link_previews: true` দিলে link-এর ছোট ছবি-প্রিভিউ বন্ধ হয়।\n- **Model picker:** `/model` (কিছু না লিখে) inline button দেখায়। `/model <name>` সরাসরি। `--global` স্থায়ী।\n- **Reactions:** `telegram.reactions: true` দিলে 👀 মানে কাজ চলছে, 👍 সফল, 👎 ব্যর্থ। default বন্ধ।\n- **Exec approval:** বিপজ্জনক command চালানোর আগে \"yes/y\" বা \"no/n\" জিজ্ঞেস করে।\n- **Clarify:** Hermes কিছু বুঝতে না পারলে inline button সহ প্রশ্ন করে, সাথে \"Other\"। `agent.clarify_timeout` default ৩৬০০ সেকেন্ড। `skip` লিখলে বাদ।\n- **Notifications:** `display.platforms.telegram.notifications`: `important` (default) বা `all`।\n\n## সমস্যা-সমাধান ছক\n\n| লক্ষণ | কী দেখবে |\n|---|---|\n| সাড়া নেই | `TELEGRAM_BOT_TOKEN` আর gateway log |\n| \"Unauthorized\" | তোমার ID `TELEGRAM_ALLOWED_USERS`-এ নেই |\n| Group-এ চুপ | privacy mode; bot আবার যোগ করেছ? |\n| Voice লেখা হয় না | faster-whisper install, বা `GROQ_API_KEY` / `VOICE_TOOLS_OPENAI_KEY` |\n| Voice ফাইল হয়ে আসে, বুদবুদ নয় | ffmpeg install করো |\n| Token বাতিল | BotFather-এ `/revoke` বা `/token`, তারপর `.env` আপডেট |\n| Webhook-এ চুপ | public HTTPS URL, proxy routing, TLS (এনক্রিপশন সনদ) দেখো |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "নিরাপত্তা",
+      "markdown": "সবসময় `TELEGRAM_ALLOWED_USERS` দাও। bot token কারও সাথে share করো না। ফাঁস হলে সঙ্গে সঙ্গে revoke করো। allowlist-এর বদলে DM pairing-ও ব্যবহার করা যায়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Telegram bot-এর token কোথা থেকে পাওয়া যায়?",
+      "options": [
+        "@BotFather-কে `/newbot` বলে",
+        "Hermes নিজে বানায় না, ইন্টারনেট থেকে কিনতে হয়",
+        "user ID থেকে নিজে নিজে তৈরি হয়",
+        "Discord থেকে"
+      ],
+      "answerIndex": 0,
+      "explanation": "BotFather হলো Telegram-এর bot বানানোর দারোয়ান। সে-ই token দেয়।"
+    },
+    {
+      "question": "`TELEGRAM_ALLOWED_USERS`-এ কী লিখতে হয়?",
+      "options": [
+        "bot-এর নাম",
+        "যাদের অনুমতি দেবে তাদের সংখ্যার user ID, কমা দিয়ে",
+        "গোপন token",
+        "group-এর নাম"
+      ],
+      "answerIndex": 1,
+      "explanation": "সংখ্যার ID, username নয়। না দিলে ডিফল্টে সবাইকে deny করা হয়।"
+    },
+    {
+      "question": "Group-এ bot কিছুই দেখছে না। প্রথম সন্দেহ কী?",
+      "options": [
+        "internet বন্ধ",
+        "Privacy mode চালু আছে, তাই সাধারণ কথা bot-এর কাছে পৌঁছায় না",
+        "Hermes-এর license",
+        "ffmpeg নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "privacy mode ডিফল্টে চালু। বন্ধ করে bot-কে group থেকে সরিয়ে আবার যোগ করতে হয়।"
+    },
+    {
+      "question": "Webhook mode-এ `TELEGRAM_WEBHOOK_SECRET` না দিলে কী হয়?",
+      "options": [
+        "Webhook ধীর হয়",
+        "gateway শুরুই হয় না",
+        "Hermes নিজে বানিয়ে নেয়",
+        "Telegram রাগ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "secret বাধ্যতামূলক, যাতে নকল কেউ Telegram সেজে বার্তা পাঠাতে না পারে।"
+    },
+    {
+      "question": "২০ MB-এর বেশি ফাইল নিতে কী লাগে?",
+      "options": [
+        "কিছুই লাগে না",
+        "নিজের চালানো `telegram-bot-api` server (সীমা ২ GB)",
+        "ffmpeg",
+        "`/sethome`"
+      ],
+      "answerIndex": 1,
+      "explanation": "public Bot API-র সীমা ২০ MB। নিজের server চালালে ২ GB পর্যন্ত যায়।"
+    },
+    {
+      "question": "নিজের bot-api server-এর config কোথায় লিখতে হবে?",
+      "options": [
+        "`telegram.extra`-এ",
+        "`platforms.telegram.extra`-এ",
+        "`.bashrc`-এ",
+        "BotFather-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "`telegram.extra`-এ লিখলে চুপচাপ বাদ পড়ে। ঠিক জায়গা `platforms.telegram.extra`।"
+    },
+    {
+      "question": "`/sethome` কী করে?",
+      "options": [
+        "bot মুছে দেয়",
+        "ওই chat-কে cron-এর ফল পাঠানোর ডিফল্ট ঠিকানা করে",
+        "সব user-কে admin করে",
+        "token বদলায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "home channel হলো নির্দিষ্ট সময়ের কাজের ফল পাঠানোর জায়গা।"
+    },
+    {
+      "question": "Edge TTS-এর MP3 থেকে Telegram-এ voice বুদবুদ পেতে কী লাগে?",
+      "options": ["ffmpeg", "Docker", "OpenAI key", "BotFather"],
+      "answerIndex": 0,
+      "explanation": "ffmpeg না থাকলে সাধারণ audio ফাইল হিসেবে আসে, বুদবুদ হিসেবে নয়।"
+    },
+    {
+      "question": "Hermes-এর source code অনুযায়ী Telegram-সহ gateway streaming-এর ডিফল্ট কী?",
+      "options": [
+        "streaming ডিফল্টে বন্ধ (`enabled: false`); চালু করলে `transport: auto`",
+        "streaming সবসময় চালু, transport `edit`",
+        "streaming সবসময় চালু, transport `draft`",
+        "`transport: off`, কেউ বদলাতে পারে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "`StreamingConfig`-এ `enabled: False` আর `transport: \"auto\"`। `auto` মানে DM-এ native draft, অন্য chat-এ edit। docs-এর \"`edit` (default)\" কথাটা পুরনো।"
+    }
+  ],
+  "recap": [
+    "Telegram bot বানাতে BotFather থেকে token নিতে হয়, আর allowlist-এ নিজের user ID দিতে হয়।",
+    "`TELEGRAM_ALLOWED_USERS` না দিলে ডিফল্টে সবাইকে deny করা হয়।",
+    "Group-এ চুপ থাকার সবচেয়ে সাধারণ কারণ privacy mode।",
+    "Webhook নিলে `TELEGRAM_WEBHOOK_SECRET` বাধ্যতামূলক, আর ৮০৮১ পোর্ট কখনো public নয়।",
+    "`/sethome` দিয়ে cron-এর ফল পাঠানোর ঠিকানা ঠিক করা হয়।"
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "contentId": "hermes-doc-user-guide-features-image-generation",
+  "title": "Image Generation",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/image-generation",
+  "oneLiner": "এই lesson শেষে তুমি Hermes দিয়ে লেখা থেকে ছবি বানাতে পারবে এবং provider, model, prompt, API key, upscale, aspect ratio-র মতো শব্দগুলো কী ও কেন লাগে তা বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: ছবি-আঁকিয়ে বন্ধু\n\nতুমি Hermes-কে বললে, \"একটা ছবি এঁকে দাও, চেরি ফুলের পাহাড়।\" Hermes নিজে আঁকে না। সে একজন **স্টুডিওকে ফোন করে** (ডিফল্টে **FAL.ai**) বলে দেয় তুমি কী চাও। স্টুডিও ছবি বানিয়ে লিঙ্ক পাঠায়, Hermes সেটা তোমাকে দেখায়।\n\nস্টুডিওতে অনেক আঁকিয়ে (model) আছে। কেউ খুব দ্রুত, কেউ ধীর কিন্তু ফটোর মতো নিখুঁত, কেউ লেখা ভালো আঁকে। তুমি `hermes tools` দিয়ে বেছে নাও কাকে দিয়ে আঁকাবে। বর্তমানে FAL-এ **11টা model** আছে।\n\n**এটা কেন দরকার?** Hermes একটা লেখা-বোঝা মস্তিষ্ক। ছবি আঁকার আলাদা বিশেষ প্রোগ্রাম লাগে। এই feature না থাকলে সে ছবি চাইলে শুধু বর্ণনা লিখে দিত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Image generation ও prompt\n**Image generation** মানে লেখা থেকে ছবি বানানো। তুমি যে লেখা দিয়ে বলো কী আঁকবে, তার নাম **prompt**।\n\n### ২) Model\nএখানে \"আঁকিয়ে\" প্রোগ্রাম, একেকজনের একেক বিশেষত্ব। নামের মধ্যে যেমন `flux-2-pro` মানে ওই আঁকিয়ের নাম। প্রতিটা model-এর ID (পরিচয়-নাম) থাকে।\n\n### ৩) Provider ও backend\n**Provider** হলো যে কোম্পানি/সার্ভিস আঁকিয়েদের ভাড়া দেয় (FAL, OpenAI, Nous...)। **Backend** মানে পর্দার পেছনের সেই সার্ভিস।\n\n### ৪) API key\nসার্ভিসের কাছে নিজেকে চেনানোর গোপন চাবি, যেমন FAL-এর `FAL_KEY`। বিল তোমার নামে ওঠে। চাবি রাখা হয় `~/.hermes/.env` ফাইলে।\n\n### ৫) Config ও YAML\n**Config** মানে সেটিং, থাকে `~/.hermes/config.yaml` ফাইলে। **YAML** হলো `নাম: মান` ধাঁচে লেখা, আর ভেতরে ঢোকানো লাইন মানে \"উপরের অংশের ভেতরের সেটিং\"।\n\n### ৬) Environment variable (env var)\nকম্পিউটারের মনে-রাখা নাম-মানের জোড়া, যেমন `FAL_KEY=গোপন`। `.env` ফাইল এগুলো রাখে।\n\n### ৭) Tool ও Tool Gateway\n**Tool** হলো Hermes-এর হাতের যন্ত্র; ছবি আঁকার যন্ত্রের নাম `image_generate`। **Tool Gateway** হলো Nous subscription-এর একটা সুবিধা, যাতে আলাদা চাবি ছাড়া কিছু যন্ত্র পাওয়া যায়।\n\n### ৮) Megapixel (MP) ও দাম\nছবির আকারের মাপ (লক্ষ pixel)। \"$0.006/MP\" মানে প্রতি মেগাপিক্সেলে ০.০০৬ ডলার। বড় ছবি বেশি দামি।\n\n### ৯) Upscale ও aspect ratio\n**Upscale** মানে ছবিকে বড় ও স্পষ্ট করা। **Aspect ratio** মানে ছবির চওড়া-লম্বার অনুপাত (`landscape` শোয়ানো, `portrait` দাঁড়ানো, `square` বর্গ)।\n\n### ১০) Local cache\nনামিয়ে আনা ছবির কপি নিজের কম্পিউটারে রেখে দেওয়া, যাতে লিঙ্ক মরে গেলেও ছবি থাকে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes প্রতিবার তোমার বাছা provider-এ prompt পাঠায়, ফেরত আসা ছবি তোমার chat-এ পৌঁছে দেয়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "p",
+            "kind": "external",
+            "label": "FAL / OpenAI",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "c",
+            "kind": "cache",
+            "label": "Local cache",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "h",
+            "label": "prompt"
+          },
+          {
+            "from": "h",
+            "to": "p",
+            "label": "request"
+          },
+          {
+            "from": "p",
+            "to": "h",
+            "label": "ছবির URL"
+          },
+          {
+            "from": "h",
+            "to": "c",
+            "label": "কপি রাখে"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Model তালিকা (FAL catalog)\n\n**Catalog** মানে পণ্যের তালিকা। কোনটা কখন বাছবে সেটা ডান দিকের কলামে।\n\n| Model ID | গতি | বিশেষত্ব | দাম |\n|---|---|---|---|\n| `fal-ai/flux-2/klein/9b` (**default**) | <1s | দ্রুত, ভালো লেখা | $0.006/MP |\n| `fal-ai/flux-2-pro` | ~6s | studio-মানের ফটোর মতো | $0.03/MP |\n| `fal-ai/z-image/turbo` | ~2s | EN/CN দ্বিভাষিক | $0.005/MP |\n| `fal-ai/nano-banana-pro` | ~8s | Gemini 3 Pro; লেখা ভালো | $0.15/image (1K) |\n| `fal-ai/gpt-image-1.5` | ~15s | prompt মানে ভালো | $0.034/image |\n| `fal-ai/gpt-image-2` | ~20s | লেখা, CJK, ফটোরিয়ালিজম | $0.04–0.06/image |\n| `fal-ai/ideogram/v3` | ~5s | typography | $0.03–0.09/image |\n| `fal-ai/recraft/v4/pro/text-to-image` | ~8s | design, brand | $0.25/image |\n| `fal-ai/qwen-image` | ~12s | জটিল লেখা | $0.02/MP |\n| `fal-ai/krea/v2/medium/text-to-image` | ~15–25s | illustration, anime | $0.030–0.035/image |\n| `fal-ai/krea/v2/large/text-to-image` | ~25–60s | ফিল্মের মতো ফটো | $0.060–0.065/image |\n\nশব্দ: **typography** মানে সুন্দর করে অক্ষর সাজানো। **CJK** মানে চীনা, জাপানি, কোরিয়ান লেখা। **photorealism** মানে ফটোর মতো আসল দেখতে। দাম FAL-এর লেখার সময়ের। বর্তমান দাম fal.ai-তে দেখো।\n\n**সহজ নিয়ম:** তাড়াতাড়ি আর সস্তা চাইলে default। ফটোর মতো চাইলে `flux-2-pro`। ছবিতে লেখা দরকার হলে `ideogram/v3` বা `gpt-image-2`।\n\n## setup: দুই পথ\n\n**A) Nous Portal (FAL key ছাড়া):** paid subscription লাগে (Tool Gateway)। নতুন install: `hermes setup --portal`। পুরনো install: `hermes tools`-এ **Nous Subscription** বাছো। free tool-pool account শুধু FAL model দেখে। Krea ও Portal model-এ paid লাগে।\n\n**B) সরাসরি FAL:** fal.ai-তে sign up করে API key নাও, তারপর `hermes tools` → **🎨 Image Generation** → backend → model বাছো।\n\n```yaml\nimage_gen:\n  provider: fal          # nous | fal | openai | xai | krea | openrouter | meta-ai ...\n  model: fal-ai/flux-2/klein/9b\n  max_parallel_requests: 4\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `image_gen.provider` | কোন সার্ভিসে ছবি বানানো হবে | সার্ভিস বদলাতে (`hermes tools` দিয়ে) |\n| `image_gen.model` | কোন আঁকিয়ে | ফটোর মতো বা লেখা-সহ ছবি চাইলে |\n| `image_gen.max_parallel_requests` | একসাথে সর্বোচ্চ কয়টা অনুরোধ (default **4**, কমপক্ষে 1) | বেশি/কম ছবি একসাথে চাইলে |\n\n- `image_gen.provider` হলো **একমাত্র সত্য** (the single source of truth)। `provider: nous` থাকলে `.env`-এর `FAL_KEY` উপেক্ষা হয়।\n- `provider: fal` কিন্তু `FAL_KEY` নেই? error আসে। চুপচাপ provider বদলায় না।\n- provider বদলাতে `hermes tools` ব্যবহার করো, key যোগ-বিয়োগ নয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Provider বদলের সঠিক পথ",
+      "markdown": "পুরনো, ব্যবহার না হওয়া key `.env`-এ পড়ে থাকলে তা কিছুই বদলায় না। যদি `provider` অন্য backend-এ সেট থাকে, `.env`-এর key উপেক্ষিত। সবসময় `hermes tools` দিয়ে বদলাও। (ভাবো: ঘরে দুটো চাবি থাকলেও যে দরজা সত্যি খোলা, সেটাই `provider` ঠিক করে।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## অন্য provider-এর কথা\n\n- **OpenRouter:** `image_gen.provider: openrouter`। picker-এ (বাছাই-তালিকায়) OpenRouter-এর live image catalog (40+ ID) আসে। নতুন model Hermes update ছাড়াই যোগ হয়। উদাহরণ model: `bytedance-seed/seedream-4.5`। চাইলে `image_gen.openrouter`-এ `resolution` (1K/2K/4K), `quality`, `output_format`।\n- **Meta Muse Image:** `image_gen.provider: meta-ai`, model `muse-image-1.0` (~10s, $0.01/image), key `MODEL_API_KEY`। এখন শুধু text-to-image। ছবি `$HERMES_HOME/cache/images/`-এ। (`HERMES_HOME` হলো Hermes-এর data ফোল্ডার, সাধারণত `~/.hermes`।)\n- **GPT Image 2.5 (FAL):** `hermes config set image_gen.provider fal` এবং `hermes config set image_gen.model openai/gpt-image-2.5/flare/text-to-image`। ছবি দিলে `.../edit` endpoint (সার্ভিসের নির্দিষ্ট ঠিকানা), সর্বোচ্চ 16টা source ছবি।\n- **GPT Image 2.5 (OpenAI API):** `hermes config set image_gen.provider openai` ও `hermes config set image_gen.openai.model gpt-image-2.5-flare`। `-low/-medium/-high/-xhigh/-max` যোগ করলে নির্দিষ্ট quality। এটা ChatGPT/Codex subscription থেকে **আলাদা paid API**।\n- **GPT-Image quality নীতি:** `gpt-image-1.5` ও `gpt-image-2` `medium`-এ বাঁধা, Portal billing অনুমানযোগ্য রাখতে।\n- **নিজের OpenAI-compatible endpoint:** (OpenAI-র মতো একই ভাষায় কথা বলা নিজের সার্ভার)\n\n```yaml\nimage_gen:\n  provider: openai\n  openai:\n    model: gpt-image-2-medium\n    base_url: http://localhost:18081/v1   # env fallback: OPENAI_BASE_URL\n    key_env: IMAGE_GATEWAY_TOKEN          # key এই env var থেকে\n```\n\n| Key | মানে |\n|---|---|\n| `base_url` | সার্ভারের ঠিকানা। `localhost` মানে \"এই কম্পিউটারেই\", আর `18081` হলো দরজা-নম্বর (port) |\n| `key_env` | চাবির **নাম**, চাবি নিজে নয় |\n\n`config.yaml`-এ শুধু **variable-এর নাম** থাকে, secret থাকে `.env`-এ। কেন? `config.yaml` কারও সাথে ভাগ করলে চাবি ফাঁস না হওয়ার জন্য।\n\n## ব্যবহার: `image_generate`\n\ntool-এর schema (ইনপুটের ছাঁচ) খুব ছোট। model তুমি যা ঠিক করেছ সেটাই চলে। কিছু prompt:\n\n- \"Generate an image of a serene mountain landscape with cherry blossoms\"\n- \"Create a square portrait of a wise old owl — use the typography model\"\n- \"Make me a futuristic cityscape, landscape orientation\""
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ছবি সম্পাদনা (Image-to-Image)\n\nএকই tool ছবি edit করে, যদি model পারে। source ছবি দিলে backend নিজে edit endpoint-এ যায়। না দিলে text-to-image। input: `image_url` (public URL বা local path) এবং `reference_image_urls` (স্টাইলের রেফারেন্স)। (**Reference** মানে \"এই ছবির মতো করে আঁকো\" বলা নমুনা-ছবি।)\n\n| Backend | Edit | Reference সীমা |\n|---|---|---|\n| FAL (edit-সক্ষম) | হ্যাঁ | 16 |\n| OpenAI (GPT Image 2 / 2.5) | হ্যাঁ | 16 |\n| xAI (Grok Imagine) | হ্যাঁ | 1 |\n| Krea 3 | হ্যাঁ | 4 |\n| Krea 2 | হ্যাঁ | 10 |\n\ntext-only FAL model (`z-image/turbo`, `recraft`, `krea/*`) ছবি input দিলে পরিষ্কার error দেয়। **Codex auth** এ `model`, `quality`, `size` শুধু পরামর্শ। পোর্ট্রেট চাইলে বর্গাকার আসতে পারে। সঠিক নিয়ন্ত্রণ চাইলে OpenAI API key, FAL বা xAI।\n\n## Aspect ratio\n\nagent `landscape`, `square` বা `portrait` বলে। Hermes সেটা model-এর নিজস্ব ভাষায় বদলায়। যেমন FAL flux/ideogram-এ `landscape_16_9`, `square_hd`, `portrait_16_9`। `gpt-image-1.5`-এ `1536x1024`, `1024x1024`, `1024x1536`। `gpt-image-2`-এ 4:3 preset, কারণ ন্যূনতম 655,360 pixel লাগে।\n\n## Upscaling (ঐচ্ছিক)\n\nকোনো model ডিফল্টে upscale করে না। প্রতি call-এ `upscale: true` দিলে FAL-এ Clarity Upscaler (2×, +$0.03/MP), Krea-তে Krea Enhance (2×, 8K পর্যন্ত)। upscale ব্যর্থ হলে **আসল ছবি** ফেরত আসে আর `upscaled: false` থাকে। (ফেরত এলে ক্ষতি নেই, শুধু বড় হয়নি।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ভেতরে কী হয় (Internals)\n\n1. **Model বাছা:** `config.yaml`-এর `image_gen.model`, তারপর `FAL_IMAGE_MODEL` env var, তারপর default `fal-ai/flux-2/klein/9b`। (আগেরটা না থাকলে পরেরটা।)\n2. **Payload বানানো:** payload মানে সার্ভিসে পাঠানো প্যাকেট। aspect ratio বদলে নেওয়া, default মেশানো, `supports` whitelist (অনুমতি-তালিকা) দিয়ে ছেঁকে নেওয়া।\n3. **পাঠানো:** `image_gen.provider` দেখে সরাসরি FAL বা Nous gateway।\n4. **Upscale:** শুধু `upscale: true` হলে।\n5. **Delivery:** agent `MEDIA:<url>` tag দেয়। প্রতিটা platform adapter (chat app-এর সাথে কথা-বলা অংশ) সেটা নিজের মতো media বানায়।\n6. **Usage হিসাব:** token-billed model-এর (OpenRouter, OpenAI `gpt-image`) usage `image_generation` task নামে log হয়, `hermes insights`-এ দেখা যায়। per-image backend (FAL, xAI, Krea) token data দেয় না। (token মানে লেখার ছোট টুকরো, যা দিয়ে কিছু সার্ভিস বিল করে।)\n\ndebug: `export IMAGE_TOOLS_DEBUG=true` → `./logs/image_tools_debug_<session_id>.json`। (`export` মানে এই terminal-এ ওই সেটিং চালু করা; **log** মানে ঘটনার লেখা-খাতা।)\n\n## কোথায় ছবি কেমন দেখায়\n\n| Platform | আচরণ |\n|---|---|\n| CLI | markdown `![](url)` হিসেবে URL |\n| Telegram | photo message, prompt caption |\n| Discord | message-এ embed |\n| Slack | URL unfurl (লিঙ্ক খুলে ছবি দেখানো) |\n| WhatsApp | media message |\n| অন্যান্য | সাধারণ text URL |"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "গোপনে বাদ পড়া parameter",
+      "markdown": "`supports`/`edit_supports` ফিল্টার unsupported parameter (যেমন `seed`, `num_inference_steps`) **নিঃশব্দে বাদ** দেয়। এটা ইচ্ছাকৃত, যাতে model যা বোঝে না তার জন্য error না আসে। আর backend-এর ছবির URL কয়েক ঘণ্টা-দিনে মেয়াদ শেষ হয়, তাই Hermes ফাইল লোকালি cache করে রাখে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes ডিফল্টে কোন model দিয়ে ছবি বানায়?",
+      "options": [
+        "`fal-ai/recraft/v4/pro/text-to-image`",
+        "`fal-ai/flux-2-pro`",
+        "`fal-ai/flux-2/klein/9b`",
+        "`fal-ai/gpt-image-2`"
+      ],
+      "answerIndex": 2,
+      "explanation": "default হলো দ্রুত (<1s) ও সস্তা `fal-ai/flux-2/klein/9b`।"
+    },
+    {
+      "question": "`image_gen.provider: nous` থাকলে `.env`-এর `FAL_KEY` কী হয়?",
+      "options": [
+        "উপেক্ষা হয়, কারণ `image_gen.provider`-ই একমাত্র সত্য",
+        "মুছে যায়",
+        "Hermes বন্ধ হয়",
+        "ব্যবহার হয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "চাবি ঘরে থাকলেও কোন দরজা খোলা, সেটা `provider` ঠিক করে। বদলাতে `hermes tools` ব্যবহার করো।"
+    },
+    {
+      "question": "`provider: fal` কিন্তু `FAL_KEY` নেই। কী হয়?",
+      "options": [
+        "Hermes নিজে key বানায়",
+        "চুপচাপ অন্য provider-এ যায়",
+        "error আসে, চুপচাপ provider বদলায় না",
+        "ছবি আসে"
+      ],
+      "answerIndex": 2,
+      "explanation": "নিঃশব্দে বদলালে ভুল সার্ভিসে বিল উঠতে পারত, তাই স্পষ্ট error।"
+    },
+    {
+      "question": "`upscale` ব্যর্থ হলে কী ফেরত আসে?",
+      "options": [
+        "error",
+        "আসল (upscale-না-করা) ছবি আর `upscaled: false`",
+        "কালো ছবি",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ক্ষতি নেই: ছবি আসে, শুধু বড়-স্পষ্ট হয়নি, আর `upscaled: false` জানিয়ে দেয়।"
+    },
+    {
+      "question": "কোন FAL model ছবি edit করতে পারে না?",
+      "options": [
+        "সব পারে",
+        "`gpt-image-2`",
+        "edit-সক্ষম FAL model",
+        "text-only FAL model, যেমন `z-image/turbo`, `recraft`, `krea/*`"
+      ],
+      "answerIndex": 3,
+      "explanation": "এগুলোকে ছবি input দিলে পরিষ্কার error আসে।"
+    },
+    {
+      "question": "`gpt-image-2` কেন landscape-এ 4:3 preset ব্যবহার করে?",
+      "options": [
+        "ন্যূনতম 655,360 pixel লাগে",
+        "দাম কম বলে",
+        "ভুল",
+        "সুন্দর লাগে বলে"
+      ],
+      "answerIndex": 0,
+      "explanation": "16:9 হলে pixel কম পড়ত। 4:3 preset এই ন্যূনতম সীমা মেটায়।"
+    },
+    {
+      "question": "`config.yaml`-এ `key_env: IMAGE_GATEWAY_TOKEN` লেখা থাকলে সেখানে কী থাকে?",
+      "options": [
+        "মডেলের নাম",
+        "আসল চাবি",
+        "শুধু চাবির নাম; আসল চাবি `.env`-এ",
+        "একটা ছবি"
+      ],
+      "answerIndex": 2,
+      "explanation": "কারণ `config.yaml` ভাগ করলেও চাবি ফাঁস হবে না।"
+    }
+  ],
+  "recap": [
+    "Hermes নিজে আঁকে না; `image_generate` tool provider-এর (default FAL) model-এর কাছে prompt পাঠায়।",
+    "Default model `fal-ai/flux-2/klein/9b`; দ্রুত, সস্তা, ভালো লেখা। ফটোর জন্য `flux-2-pro`, লেখার জন্য `ideogram/v3`।",
+    "`image_gen.provider` একমাত্র সত্য; provider বদলাতে `hermes tools` ব্যবহার করো, key যোগ-বিয়োগ নয়।",
+    "কিছু model ছবি edit করতে পারে (reference সীমা আলাদা); text-only model ছবি input-এ error দেয়।",
+    "Upscale ব্যর্থ হলে আসল ছবি ফেরে; ছবির URL-এর মেয়াদ শেষ হয় বলে Hermes ফাইল cache করে।"
+  ]
+}

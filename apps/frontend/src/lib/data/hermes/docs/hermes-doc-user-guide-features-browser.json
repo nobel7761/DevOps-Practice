@@ -1,0 +1,196 @@
+{
+  "contentId": "hermes-doc-user-guide-features-browser",
+  "title": "Browser",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/browser",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes কীভাবে নিজে browser খুলে ওয়েবসাইটে ক্লিক-লেখা করে, আর Chromium, CDP, profile, cloud browser, vault-এর মতো শব্দগুলো কী ও কেন লাগে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: রোবট এবার নিজে ব্রাউজার খুলল\n\nএতদিন তোমার বন্ধু Hermes ইন্টারনেট থেকে শুধু **লেখা তুলে আনতে** পারত, যেমন লাইব্রেরি থেকে বইয়ের পাতার ফটোকপি। কিন্তু ধরো তুমি বললে, \"ওই ওয়েবসাইটে গিয়ে ফর্মটা ভরো, বোতামে চাপো।\" তখন ফটোকপি দিয়ে হয় না। **নিজে কম্পিউটারের সামনে বসে মাউস-কিবোর্ড চালাতে হয়।**\n\n`browser` toolset Hermes-কে ঠিক এটাই দেয়: একটা **আসল browser**, যেটা সে নিজে খুলে, পাতা দেখে, লেখে, ক্লিক করে। **এটা না থাকলে কী সমস্যা?** যে ওয়েবসাইটে লগইন, বোতাম, ফর্ম আছে, সেখানে Hermes কিছুই করতে পারত না।\n\n> সহজ কাজ (শুধু তথ্য আনা)? `web_search` বা `web_extract` ব্যবহার করো। দ্রুত ও সস্তা। যেখানে পাতার সাথে **interact** (ক্লিক, লেখা) করতে হবে, সেখানেই browser।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Browser\nChrome, Safari-র মতো প্রোগ্রাম, যা ওয়েবসাইট খুলে দেখায়।\n\n### ২) Chromium ও headless\n**Chromium** হলো Chrome-এর খোলা-সোর্স ভাই। **Headless** মানে \"মাথা-ছাড়া\": browser চলছে, কিন্তু পর্দায় জানালা দেখা যায় না। রোবট যেমন পর্দা ছাড়াই কাজ করতে পারে।\n\n### ৩) Toolset ও tool\n**Tool** হলো Hermes-এর হাতের একেকটা যন্ত্র। **Toolset** হলো সম্পর্কিত যন্ত্রের একটা বাক্স। `browser` toolset-এ ব্রাউজারের চারটা যন্ত্র আছে।\n\n### ৪) CDP (Chrome DevTools Protocol)\nBrowser-কে বাইরে থেকে হুকুম দেওয়ার একটা সরকারি ভাষা। যেমন রিমোট কন্ট্রোল দিয়ে টিভি চালানো। Hermes এই ভাষায় browser-কে বলে \"এই পাতায় যাও\", \"এখানে ক্লিক করো\"। **Endpoint** মানে সেই রিমোট-সংযোগের ঠিকানা।\n\n### ৪-ক) Profile\nBrowser-এর নিজস্ব ফোল্ডার, যেখানে তোমার login, cookie, সেটিং জমা থাকে। প্রত্যেকের নিজের ব্যাগ-এর মতো।\n\n### ৫) Cookie ও session\n**Cookie** হলো ওয়েবসাইটের দেওয়া ছোট টোকেন, যা মনে রাখে \"এই লোক লগইন করা\"। Browser-এর **session** হলো খোলা tab, cookie আর বর্তমান পাতার সম্মিলিত অবস্থা।\n\n### ৬) DOM, JavaScript, selector\n**JavaScript** হলো ওয়েবপাতার ভেতরে চলা ভাষা। **Selector** হলো পাতার কোনো অংশ (যেমন একটা input ঘর) চিহ্নিত করার ঠিকানা, যেমন \"ঘর নম্বর ৩\"।\n\n### ৭) Screenshot\nপর্দার ছবি তোলা। **Vision-সক্ষম** model ছবি সরাসরি বোঝে। **Text-only** model শুধু লেখা বোঝে।\n\n### ৮) API key ও credential\n**API key** হলো সার্ভিসের কাছে নিজের পরিচয় দেওয়ার গোপন চাবি। **Credential** হলো যেকোনো গোপন পরিচয়-জিনিস (চাবি, password)।\n\n### ৯) Cron ও sandbox\n**Cron** হলো ঘড়ির অ্যালার্ম: নির্দিষ্ট সময়ে নিজে নিজে কাজ চালানো। **Sandbox** হলো বন্ধ খেলার ঘর, যেখানে ভুল হলেও বাইরের ক্ষতি হয় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চারটা tool\n\n| Tool | কাজ | সহজ কথায় |\n|---|---|---|\n| **`browser_exec`** | মূল tool। model-এর লেখা **Python** কোড browser-এর উপর চালায় (CDP দিয়ে) | রোবটের হাত: লিখে দাও কী করবে |\n| `browser_cdp` | একটা raw CDP command পাঠায় (শুধু CDP endpoint থাকলে পাওয়া যায়) | সরাসরি রিমোটের বোতাম টেপা |\n| `browser_dialog` | alert/confirm/prompt-এর মতো native dialog accept/dismiss করে (শুধু CDP endpoint থাকলে) | হঠাৎ ভেসে ওঠা \"নিশ্চিত?\" বাক্সে উত্তর দেওয়া |\n| `browser_vault` | saved login, card, address, 2FA code ভরে দেয়, **secret কথোপকথনে না দেখিয়ে** | গোপন সিন্দুক: রোবট চাবি ব্যবহার করে, কিন্তু দেখে না |\n\n(**2FA** মানে দুই ধাপের নিরাপত্তা: password-এর পরে ফোনে আসা একটা কোড। **Dialog** হলো পাতার উপরে ভেসে ওঠা ছোট প্রশ্নবাক্স।)\n\n### `browser_exec` কীভাবে কাজ করে\n\n- প্রতিটা call-এ একটা Python `code` চলে। browser helper আগে থেকে import করা, মানে হাতের কাছে সাজানো। `print` করা জিনিস ফেরত আসে।\n- browser-এর session **টিকে থাকে** (tab, cookie, বর্তমান পাতা)। কিন্তু Python variable টিকে না, প্রতি call-এ নতুন interpreter। (যেন প্রতিবার নতুন খাতা, কিন্তু ব্রাউজার একই চলছে।)\n- `$BH_AGENT_WORKSPACE` (বা `workspace`) নামের ফোল্ডার call-এর মাঝে টিকে থাকে। বড় তথ্য ধাপে ধাপে জমাতে কাজে লাগে, যেমন নোট-ড্রয়ার।\n- parameter (ইনপুট): `code`, `timeout_s` (default 300, সর্বোচ্চ 1800, মানে কত সেকেন্ড অপেক্ষা), `session`, `local`।\n- **শর্ত:** এই tool শুধু সেই session-এ আসে যেখানে `terminal` toolset-ও আছে (কারণ এটা host কম্পিউটারে Python চালায়)।\n\n### Helper-গুলো\n\n| Helper | কাজ | কখন লাগে |\n|---|---|---|\n| `new_tab(url)` | প্রথম navigation, নতুন tab | শুরুতে পাতা খুলতে |\n| `goto_url(url)` | বর্তমান tab-এ যাওয়া | অন্য পাতায় যেতে |\n| `wait_for_load()` | load হওয়া পর্যন্ত অপেক্ষা | পাতা পুরো না আসতেই ক্লিক ঠেকাতে |\n| `page_info()` | পাতার অবস্থার সারাংশ | এখন কী দেখা যাচ্ছে জানতে |\n| `js(expr)` | JavaScript চালানো | পাতা থেকে তথ্য তুলতে বা বোতাম চাপতে |\n| `fill_input(selector, text)` | input-এ লেখা | ফর্ম ভরতে |\n| `click_at_xy(x, y)` | কোঅর্ডিনেটে ক্লিক | পর্দার নির্দিষ্ট বিন্দুতে চাপতে |\n| `capture_screenshot()` | screenshot সেভ করে path ছাপে | পাতার ছবি চাইলে |\n| `cdp('Domain.method', **kwargs)` | raw CDP call | বিশেষ নিচু-স্তরের কাজে |\n\nVision-সক্ষম model screenshot-এর ছবি সরাসরি পায়। text-only model লেখা-ভিত্তিক কাজ করে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "agent browser_exec-এ Python পাঠায়; সেটা CDP দিয়ে বেছে নেওয়া browser চালায়।",
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Hermes agent",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "t",
+            "kind": "gateway",
+            "label": "browser_exec",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "l",
+            "kind": "external",
+            "label": "Local Chromium",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "c",
+            "kind": "external",
+            "label": "Cloud browser",
+            "x": 440,
+            "y": 120
+          },
+          {
+            "id": "m",
+            "kind": "client",
+            "label": "তোমার browser",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "t",
+            "label": "Python code"
+          },
+          {
+            "from": "t",
+            "to": "l",
+            "label": "CDP"
+          },
+          {
+            "from": "t",
+            "to": "c",
+            "label": "CDP"
+          },
+          {
+            "from": "t",
+            "to": "m",
+            "label": "CDP"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Browser কোথা থেকে আসে? (পাঁচ উৎস)\n\n### ১. Local Chromium (default)\n\n- কোনো key বা setup লাগে না। Hermes নিজের প্যাকেজ করা headless Chromium চালায়, প্রতি session-এ একটা।\n- তোমার নিজের Chrome ছোঁয়া হয় না। server-এও চলে।\n- profile নতুন ও ফেলনা: session শেষে কিছু থাকে না।\n- নিষ্ক্রিয় browser `browser.inactivity_timeout` (default 120 সেকেন্ড) পর বন্ধ হয়।\n- cloud-metadata URL **সবসময়** ব্লক। (এগুলো cloud সার্ভারের ভেতরের গোপন ঠিকানা, যা অপব্যবহার হতে পারে।)\n- যদি skip করে install করো, পরে `hermes pm install chromium` দিয়ে যোগ করো।\n\n```yaml\nbrowser:\n  executable_path: \"\"\n  user_data_dir: \"\"        # ফাঁকা = প্রতি session-এ নতুন profile; path দিলে login টিকে থাকে\n  chromium_args: []        # যেমন [\"--lang=de-DE\"]\n  headed: false\n  command_timeout: 30\n  inactivity_timeout: 120\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `executable_path` | কোন Chromium প্রোগ্রাম চালাবে (ফাঁকা = নিজের) | নিজের browser ব্যবহার করতে |\n| `user_data_dir` | profile ফোল্ডার | login মনে রাখাতে চাইলে |\n| `chromium_args` | browser-কে বাড়তি নির্দেশ | ভাষা ইত্যাদি বদলাতে |\n| `headed` | `true` = জানালা দেখা যায় | নিজে sign-in বা CAPTCHA সামলাতে |\n| `command_timeout` | একটা কমান্ডে কত সেকেন্ড অপেক্ষা | ধীর পাতায় |\n| `inactivity_timeout` | কতক্ষণ কাজ না থাকলে বন্ধ | বন্ধ হয়ে যাওয়া ঠেকাতে |\n\n`browser.headed: true` দিলে জানালা দেখা যায়। তুমি নিজে sign-in বা CAPTCHA (আমি রোবট নই-পরীক্ষা) সামলাতে পারো।\n\n### ২. Cloud browser\n\nঅন্যের সার্ভারে চলা browser। `hermes tools` → Browser Automation থেকে বাছো: **Nous Portal subscription** (key ছাড়া), **Browser Use** (`BROWSER_USE_API_KEY`), **Browserbase** (`BROWSERBASE_API_KEY` + `BROWSERBASE_PROJECT_ID`), **Firecrawl** (`FIRECRAWL_API_KEY`)। cloud session-এ provider-এর credit (কেনা পয়েন্ট) খরচ হয়।\n\n> **গুরুত্বপূর্ণ:** `.env`-এর key শুধু credential দেয় (চাবি)। কোন provider চলবে তা ঠিক করে `browser.cloud_provider` (মান: `local`, `browserbase`, `browser-use`, `firecrawl`, `nous`)। key যোগ-বিয়োগে provider বদলায় না। বদলাতে `hermes tools` ব্যবহার করো।\n\n**Hybrid routing:** cloud provider থাকলেও private ঠিকানা (localhost, 192.168.x, `*.local` ইত্যাদি) একটা local Chromium sidecar-এ (পাশে চলা সহকারী) যায়, public URL cloud-এ। কারণ cloud সার্ভার তোমার ঘরের নেটওয়ার্ক দেখতে পায় না। (`localhost` মানে \"এই কম্পিউটারটাই\"।) বন্ধ করতে `browser.auto_local_for_private_urls: false`।\n\n### ৩. Real profile (তোমার আসল login সহ)\n\n`browser.use_real_profile: true`। Hermes তোমার browser-এর **active profile-এর snapshot** (ছবি-কপি) `~/.hermes/browser-profile/<browser>/`-এ কপি করে, সেটার উপর চালায়। তোমার live profile সরাসরি খোলে না। সমর্থিত: Chrome, Edge, Brave, Chromium। একটা নির্দিষ্ট profile চাইলে `browser.real_profile_pin: \"Profile 2\"`। **কেন দরকার?** নতুন ফাঁকা browser-এ তুমি লগইন করা নেই। আসল profile থাকলে Gmail, GitHub-এর মতো সাইটে সরাসরি ঢোকা যায়।\n\n### ৪. Lightpanda\n\nহালকা open-source headless browser, ছোট VM-এর (ভার্চুয়াল ছোট কম্পিউটার) জন্য ভালো। `browser.engine: lightpanda` (+ `browser.cloud_provider: local`)। **সীমা:** screenshot নেই, এক session-এ একটাই পাতা।\n\n### ৫. `/browser connect` (তোমার নিজের browser)\n\nশুধু interactive CLI-তে চলে (Telegram/Discord-এ নয়)। `/browser connect` → `http://127.0.0.1:9222`-এ জোড়ে (`127.0.0.1` হলো নিজের কম্পিউটারের ঠিকানা, `9222` হলো **port**, মানে দরজা-নম্বর)। `/browser connect ws://host:port` দিয়ে অন্য ঠিকানা। `/browser status`, `/browser disconnect`। স্থায়ী করতে `browser.cdp_url` বা `BROWSER_CDP_URL`।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Chrome 136+ এর ফাঁদ",
+      "markdown": "Chrome 136+ এ default data directory-র সাথে `--remote-debugging-port` চুপচাপ উপেক্ষা হয়। তাই manual launch-এ আলাদা `--user-data-dir=$HOME/.hermes/chrome-debug` দাও (সাথে `--remote-debugging-port=9222 --no-first-run --no-default-browser-check`)। ওই profile-এ শুরুতে login থাকে না। আগের login চাইলে `browser.use_real_profile` ব্যবহার করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Real profile = আসল login-এ কাজ",
+      "markdown": "Real profile একটা **সম্মতি-নির্ভর সুবিধা, isolation (আলাদা করে আটকে রাখা) নয়**। পাতা তোমার আসল login নিয়ে চলে। অচেনা পাতায় সতর্ক থাকো। snapshot কপি ব্যর্থ হলে agent signed-out নতুন browser পায় এবং প্রথম ফলাফলে `real_profile_unavailable` থাকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সঙ্গী tool-গুলো\n\n### `browser_dialog` ও dialog policy\n\nখোলা dialog পাতার JavaScript আটকে দেয় (যেমন \"নিশ্চিত?\" বাক্স না মুছলে পাতা এগোয় না)। `browser_dialog(action=\"accept\")` বা `\"dismiss\"` (prompt হলে `prompt_text`)। নিয়ম `browser.dialog_policy`:\n\n| মান | কী করে | কখন |\n|---|---|---|\n| `must_respond` (default) | স্পষ্ট উত্তরের অপেক্ষা; `browser.dialog_timeout_s` (default 300) পরে নিজে dismiss | সাবধানে কাজ করতে |\n| `auto_dismiss` | সঙ্গে সঙ্গে dismiss | বিরক্তিকর পপ-আপ বাদ দিতে |\n| `auto_accept` | সঙ্গে সঙ্গে accept | জেদি `beforeunload` (\"পাতা ছাড়বে?\") বাক্সের জন্য |\n\n### `browser_vault`\n\nactions: `list`, `fill`, `save_login` (তোমাকে masked ঘরে, মানে তারা-তারা দেখানো ঘরে, লিখতে বলে), `enter_code`, `unlock` (1Password/Bitwarden, এগুলো password-রাখার অ্যাপ)। পাতার origin (ওয়েবসাইটের আসল ঠিকানা) saved item-এর সাথে না মিললে fill **প্রত্যাখ্যাত**। তাই password agent নিজে টাইপ করে না, আর ভুয়া সাইটে চাবি ফাঁস হয় না।\n\n### `browser_cdp`\n\nএকবারের raw CDP কাজ: native dialog, iframe (পাতার ভেতরের পাতা), cookie, network। Browser-level method (`Target.*`, `Browser.*`) `target_id` ছাড়া। page-level (`Page.*`, `Runtime.*`, `DOM.*`) `target_id` লাগে (`Target.getTargets` থেকে)। প্রতিটা call stateless (আগের কিছু মনে রাখে না)।\n\n## নির্ধারিত কাজে (cron) browser\n\nনজরহীন কাজে (কেউ দেখছে না): (১) `browser.use_real_profile` চালু, (২) job-কে browser toolset দাও: `cronjob(action=\"create\", enabled_toolsets=[\"browser\", ...], ...)`, (৩) আগেই vault-এ credential রাখো (authenticator key সহ)। কারণ নজরহীন run-এ কাউকে জিজ্ঞেস করা যায় না।\n\n## browser বন্ধ করতে চাও?\n\nআলাদা switch নেই, toolset বন্ধ করো: `hermes tools disable browser`। শুধু এক platform-এর জন্য `hermes tools disable browser --platform telegram`।\n\n## সীমাবদ্ধতা\n\n- cloud session provider-এর plan অনুযায়ী মেয়াদ শেষ হয় ও credit খরচ করে। local Chromium ও `/browser connect` বিনামূল্যে।\n- Lightpanda-য় screenshot নেই।\n- `terminal` toolset ছাড়া `browser_exec` নেই।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## উদাহরণ: ফর্ম ভরা\n\nagent প্রথমে `new_tab` দিয়ে signup পাতা খোলে। তারপর `wait_for_load()`, `fill_input` দিয়ে email লেখে, `js(...)` দিয়ে submit চাপে, শেষে `page_info()` ছাপে। password দরকার হলে সে টাইপ না করে `browser_vault`-এর `save_login` ব্যবহার করে।\n\nআরেকটা: GitHub trending খুলে, load-এর অপেক্ষা করে, `js(...)` দিয়ে repo-র নামগুলো তুলে ছাপা।\n\n**ভাবো:** এই কাজগুলো `web_extract` দিয়ে হতো না, কারণ বোতাম চাপা বা পাতা-ফুটে-ওঠার অপেক্ষা লাগছে। সেখানেই browser।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "শুধু একটা পাতার লেখা তুলে আনতে হলে docs কী পরামর্শ দেয়?",
+      "options": [
+        "Docker চালানো",
+        "সবসময় browser_exec",
+        "`web_search` বা `web_extract`: দ্রুত ও সস্তা",
+        "কিছু না করা"
+      ],
+      "answerIndex": 2,
+      "explanation": "ফটোকপি দিয়েই হয়ে গেলে নিজে কম্পিউটারে বসার দরকার নেই। interact করতে হলেই browser।"
+    },
+    {
+      "question": "`browser_exec`-এ কোনটা call-এর মাঝে টিকে থাকে না?",
+      "options": [
+        "Python variable (প্রতি call-এ নতুন interpreter)",
+        "`$BH_AGENT_WORKSPACE` ফোল্ডার",
+        "বর্তমান পাতা",
+        "tab ও cookie"
+      ],
+      "answerIndex": 0,
+      "explanation": "browser-এর session টেকে, workspace ফোল্ডারও। কিন্তু Python-এর নাম-দেওয়া variable প্রতি call-এ হারিয়ে যায়।"
+    },
+    {
+      "question": "`browser_exec` কোন session-এ পাওয়া যায়?",
+      "options": [
+        "শুধু cloud-এ",
+        "যেকোনো",
+        "যেখানে `terminal` toolset-ও আছে",
+        "শুধু Telegram-এ"
+      ],
+      "answerIndex": 2,
+      "explanation": "এটা host কম্পিউটারে Python চালায়, তাই terminal toolset ছাড়া এটা আসে না।"
+    },
+    {
+      "question": "কোন provider আসলে চলবে তা কী ঠিক করে?",
+      "options": [
+        "`browser.cloud_provider`",
+        "কম্পিউটারের নাম",
+        "Chrome-এর সংস্করণ",
+        "`.env`-এ কোন key আছে"
+      ],
+      "answerIndex": 0,
+      "explanation": "key শুধু চাবি দেয়। প্রকৃত পছন্দ `browser.cloud_provider`-এ। বদলাতে `hermes tools`।"
+    },
+    {
+      "question": "Real profile চালু থাকলে Hermes কী করে?",
+      "options": [
+        "কিছুই করে না",
+        "তোমার live profile সরাসরি খোলে",
+        "active profile-এর snapshot কপি করে সেটার উপর চালায়",
+        "profile মুছে দেয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "কপি ব্যবহার হয়, তবে পাতা তোমার আসল login নিয়ে চলে। তাই এটা সুবিধা, isolation নয়, সতর্ক থাকো।"
+    },
+    {
+      "question": "`/browser connect` কোথায় চলে?",
+      "options": [
+        "Discord-এ",
+        "শুধু interactive CLI-তে",
+        "সব জায়গায়",
+        "Telegram-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "নিজের browser-এর সাথে জোড়ার এই কমান্ড শুধু interactive CLI-তে।"
+    },
+    {
+      "question": "`browser_vault` ব্যবহারের প্রধান সুবিধা কী?",
+      "options": [
+        "model বদলায়",
+        "password কথোপকথনে না দেখিয়ে ভরে দেয়, আর origin না মিললে প্রত্যাখ্যান করে",
+        "ছবি আঁকে",
+        "Docker বানায"
+      ],
+      "answerIndex": 1,
+      "explanation": "রোবট চাবি ব্যবহার করে, কিন্তু নিজে দেখে না। ভুয়া সাইটে চাবি ফাঁসও ঠেকায়।"
+    }
+  ],
+  "recap": [
+    "`browser` toolset Hermes-কে আসল browser দেয়: খোলা, ক্লিক, লেখা। শুধু তথ্য আনতে `web_search`/`web_extract` যথেষ্ট।",
+    "`browser_exec` মূল tool (Python + CDP); `browser_vault` গোপন জিনিস না দেখিয়ে ভরে।",
+    "Browser-এর পাঁচ উৎস: Local Chromium (default), Cloud, Real profile, Lightpanda, `/browser connect`।",
+    "কোন cloud provider চলবে তা `browser.cloud_provider` ঠিক করে, `.env`-এর key নয়।",
+    "Real profile আসল login নিয়ে চলে, isolation নয়, অচেনা পাতায় সতর্ক থাকো; বন্ধ করতে `hermes tools disable browser`।"
+  ]
+}

@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-automate-with-cron",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q01",
+      "difficulty": "easy",
+      "question": "Cron job কী?",
+      "options": [
+        "সময়-ঠিক-করা কাজ, যা নিজে নিজে চলে",
+        "একবার চালিয়ে মুছে-ফেলা একটা অস্থায়ী প্রোগ্রাম",
+        "Hermes-এর স্থায়ী স্মৃতি রাখার একটা ফাইল",
+        "Telegram-এর একটা আলাদা ঘর বা channel"
+      ],
+      "correctIndex": 0,
+      "explanation": "Cron job হলো অ্যালার্ম ঘড়ির মতো, কিন্তু ঘণ্টার বদলে কাজ করে। তুমি বলো কখন, কী কাজ আর ফল কোথায় যাবে।",
+      "whyWrong": {
+        "1": "এটা একবারের নয়, বারবার সময়মতো চলে।",
+        "2": "স্মৃতি `MEMORY.md`-এর বিষয়।",
+        "3": "Telegram হলো delivery-র গন্তব্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q02",
+      "difficulty": "easy",
+      "question": "প্রতিটা cron run-এ Hermes-এর অবস্থা কেমন থাকে?",
+      "options": [
+        "আগের run-এর সব কথা হুবহু মনে রাখে",
+        "ফাঁকা নতুন session, আগের কথা নেই",
+        "শুধু গতকালের run-এর ফলটুকু মনে রাখে",
+        "শুধু `[SILENT]` কথাটা মনে রাখে বলে চলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "তাই prompt-এ URL, repo, format, delivery সব লিখে দিতে হয় (self-contained)।",
+      "whyWrong": {
+        "0": "প্রতি run ফাঁকা session-এ চলে।",
+        "2": "কোনো দিনের ফল জমা থাকে না।",
+        "3": "এমন কোনো স্মৃতি নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q03",
+      "difficulty": "easy",
+      "question": "`[SILENT]` লিখলে কী হয়?",
+      "options": [
+        "job মুছে যায়, আর চলে না",
+        "ফলটা শুধু Telegram-এ যায়",
+        "delivery দমন হয়, মেসেজ যায় না",
+        "job-টা পরের সোমবার পর্যন্ত থেমে থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "কিছু না বদলালে agent শুধু `[SILENT]` লেখে; নাহলে প্রতি ঘণ্টায় 'কিছু বদলায়নি' মেসেজ আসত।",
+      "whyWrong": {
+        "0": "মুছে ফেলার কাজ `/cron remove`-এর।",
+        "1": "চুপ থাকা মানে কোথাও যাওয়া না।",
+        "3": "থামানোর কাজ `/cron pause`-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q04",
+      "difficulty": "easy",
+      "question": "`/cron run <job_id>` কী করে?",
+      "options": [
+        "job-টা চিরতরে মুছে ফেলে দেয়",
+        "job-এর schedule বদলে অন্য সময় দেয়",
+        "চালু job-গুলোর পুরো তালিকা দেখায়",
+        "সময়ের আগেই এখনই একবার চালায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "নতুন job ঠিকমতো চলছে কি না পরখ করতে এটা সময়ের অপেক্ষার আগে ব্যবহার হয়।",
+      "whyWrong": {
+        "0": "মোছে `/cron remove`।",
+        "1": "বদলায় `/cron edit --schedule`।",
+        "2": "তালিকা দেখায় `/cron list`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q05",
+      "difficulty": "easy",
+      "question": "`--deliver` flag কী ঠিক করে?",
+      "options": [
+        "কখন job চলবে সেই সময়সূচি",
+        "কোন script আগে চলবে সেই নাম",
+        "ফল কোথায় পাঠানো হবে",
+        "job-এর নাম কী হবে সেটা"
+      ],
+      "correctIndex": 2,
+      "explanation": "যেমন `--deliver telegram`, `local` (শুধু ফাইল), `discord`, `slack`।",
+      "whyWrong": {
+        "0": "সময় ঠিক করে schedule।",
+        "1": "script ঠিক করে `--script`।",
+        "3": "নাম ঠিক করে `--name`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q06",
+      "difficulty": "easy",
+      "question": "`--deliver`-এর default লক্ষ্য কোনটা?",
+      "options": [
+        "`origin`, মানে যে chat-এ job বানানো",
+        "`local`, মানে শুধু নিজের ফাইলে",
+        "`telegram`, মানে সবসময় Telegram-এ",
+        "`bot-chat`, মানে এই profile-এর Bot Chat-এ"
+      ],
+      "correctIndex": 0,
+      "explanation": "`origin` হলো default; `local` শুধু ফাইলে, আর `bot-chat` পুরো এক agent turn খরচ করে।",
+      "whyWrong": {
+        "1": "`local` তখনই, যখন তুমি চাও।",
+        "2": "Telegram-এর জন্য নাম দিতে হয়।",
+        "3": "`bot-chat` আলাদা লক্ষ্য, default নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q07",
+      "difficulty": "easy",
+      "question": "Hash (SHA-256) এই লেসনে কীসের কাজে লাগে?",
+      "options": [
+        "লেখার ভাষা বদলে দেওয়ার জন্য",
+        "job-এর নাম গোপন রাখার জন্য",
+        "পুরনো লেখা মুছে ফেলার জন্য",
+        "লেখা বদলেছে কি না ধরতে"
+      ],
+      "correctIndex": 3,
+      "explanation": "লেখা একটু বদলালে hash পুরো বদলে যায়, তাই তুলনা সহজ।",
+      "whyWrong": {
+        "0": "ভাষা বদলানোর কাজ নয়।",
+        "1": "নাম লুকানো নয়।",
+        "2": "মোছার কাজ নয়, আঙুলের ছাপ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q08",
+      "difficulty": "medium",
+      "question": "ওয়েবসাইট বদল ধরার কাজে script আর agent কীভাবে ভাগ হয়?",
+      "options": [
+        "agent আনে ও hash বানায়, script বিচার করে",
+        "script আনে ও তুলনা করে, agent বিচার করে",
+        "দুটোই একই কাজ দুবার করে",
+        "script কিছু করে না, শুধু agent চলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "HTTP, ফাইল, state script-এ; agent শুধু stdout দেখে বিচার করে। এতে সস্তা ও ভরসাযোগ্য।",
+      "whyWrong": {
+        "0": "উল্টো ভাগ হলে token খরচ আর ভুলের সুযোগ বাড়ে।",
+        "2": "একই কাজ দুবার করা অপচয়।",
+        "3": "`--script` দিলে script আগে চলে, তার stdout agent পায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q09",
+      "difficulty": "medium",
+      "question": "`daily at 9am`-এর মতো natural-language schedule নিয়ে lesson-এর মীমাংসা কী?",
+      "options": [
+        "কোনো অবস্থাতেই সমর্থিত নয়, শুধু cron expression চলে",
+        "সমর্থিত, তবে `croniter` ছাড়াই চলে",
+        "সমর্থিত, তবে `croniter` package লাগে",
+        "শুধু chat-এ সমর্থিত, terminal-এ নয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Source-এর `parse_schedule` natural day/time phrase cron expression-এ রূপান্তর করে, তাই guide পাতার \"সমর্থিত নয়\" কথাটা পুরনো। শর্ত: `croniter` লাগে। সবচেয়ে নিশ্চিত পথ তবু `0 9 * * *`।",
+      "whyWrong": {
+        "0": "Source code-এ এটা সমর্থিত, guide পাতার কথাটা পুরনো।",
+        "1": "`croniter` package না থাকলে চলে না।",
+        "3": "Chat বা terminal ভেদে আলাদা নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q10",
+      "difficulty": "medium",
+      "question": "`--script` দিলে ঠিক কী ঘটে?",
+      "options": [
+        "agent আগে চলে, পরে script তাকে পড়ে",
+        "script-টা agent-এর prompt মুছে বসে",
+        "script-এর ফল সরাসরি delivery-তে যায়, agent লাগে না",
+        "আগে script চলে, তার stdout agent-এর context হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Script যা ছাপে (stdout), Hermes সেটা পড়ে। সহকারী আগে খাতা খুলে দেখে।",
+      "whyWrong": {
+        "0": "ক্রম উল্টো।",
+        "1": "prompt মোছে না; দুটো মিলে কাজ করে।",
+        "2": "সরাসরি delivery হয় script-only job-এ (`no_agent=True`), এখানে নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q11",
+      "difficulty": "medium",
+      "question": "hard failure হলে (job-ই চলতে পারেনি) notice কোথায় যায়, আর কীভাবে বদলানো যায়?",
+      "options": [
+        "`--deliver`-এর জায়গায়; বদলানো যায়",
+        "সবসময় `local`-এ; কোনোভাবে বদলানো যায় না",
+        "সবসময় ops channel-এ; `--deliver` প্রভাব ফেলে না",
+        "কোথাও যায় না, নিজে নিজে ঠিক হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "`--failure-deliver local` দিলে শুধু ফাইলে যায়, `slack:C_OPS` দিলে ops channel-এ; flag না দিলে `--deliver`-এর জায়গায়।",
+      "whyWrong": {
+        "1": "বদলানোর flag আছে।",
+        "2": "ops channel বেছে নিতে হয়।",
+        "3": "hard failure-এ `Cron 'X' failed...` notice যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q12",
+      "difficulty": "medium",
+      "question": "`hermes send` কখন কাজে লাগে?",
+      "options": [
+        "প্রতি সোমবার সাপ্তাহিক রিপোর্ট বানাতে",
+        "job-এর schedule বদলে অন্য সময় দিতে",
+        "চলমান script থেকে সরাসরি পাঠাতে",
+        "নতুন skill হাব থেকে install করতে"
+      ],
+      "correctIndex": 2,
+      "explanation": "CI step, post-commit hook, deploy script-এর মতো একবারের কাজে, LLM ছাড়া (zero-token)।",
+      "whyWrong": {
+        "0": "সাপ্তাহিক রিপোর্ট cron job-এর কাজ।",
+        "1": "schedule বদলায় `/cron edit`।",
+        "3": "skill install আলাদা command।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q13",
+      "difficulty": "medium",
+      "question": "Pattern ৫-এ `--skill arxiv --skill obsidian` কী বোঝায়?",
+      "options": [
+        "দুটোর মধ্যে যেকোনো একটা লোড হবে",
+        "দুটো skill একসাথে মুছে ফেলা হবে",
+        "শুধু শেষেরটা, `obsidian`, কাজ করবে",
+        "দুটো skill ক্রমে আগে লোড হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`--skill` যতবার ইচ্ছা দেওয়া যায়, প্রতিবার একটা skill। `arxiv` paper খোঁজে, `obsidian` নোট লেখে।",
+      "whyWrong": {
+        "0": "দুটোই লোড হয়, একটা নয়।",
+        "1": "মোছার কথা নেই।",
+        "2": "দুটোই ক্রমে লোড হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q14",
+      "difficulty": "medium",
+      "question": "`/cron pause <job_id>` আর `/cron remove <job_id>`-এর পার্থক্য কী?",
+      "options": [
+        "`pause` চিরতরে মোছে, `remove` শুধু থামায়",
+        "দুটোই job মুছে দেয়, শুধু নাম আলাদা",
+        "`pause` না মুছে থামায়, `remove` চিরতরে মোছে",
+        "`pause` job-এর prompt বদলায়, `remove` schedule বদলায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "বিরতিতে `pause`, আর দরকার না থাকলে `remove`।",
+      "whyWrong": {
+        "0": "উল্টো হয়ে গেছে।",
+        "1": "দুটোর কাজ আলাদা।",
+        "3": "বদলানোর কাজ `/cron edit`-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q15",
+      "difficulty": "hard",
+      "question": "তুমি প্রতি ঘণ্টায় pricing পাতা দেখার job চাও, কিন্তু বদল না হলে বিরক্ত হতে চাও না। কোন সংমিশ্রণ ঠিক?",
+      "options": [
+        "প্রতি run-এ agent নিজে HTTP আনবে, `--deliver local` ছাড়া",
+        "`--script` + prompt-এ \"নইলে শুধু [SILENT] লেখো\"",
+        "`--deliver local` আর `[SILENT]` ছাড়া, শুধু schedule",
+        "একটা script যা প্রতি run-এ সবসময় বদল ছাপবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Script hash তুলনা করে `CHANGE DETECTED` বা `NO_CHANGE` ছাপে; agent গুরুত্ব বিচার করে, না হলে `[SILENT]`।",
+      "whyWrong": {
+        "0": "সবকিছু agent-এর হাতে দিলে খরচ ও ভুল বাড়ে, আর `[SILENT]`-ও নেই।",
+        "2": "`[SILENT]` ছাড়া প্রতি ঘণ্টায় মেসেজ আসবে।",
+        "3": "সবসময় বদল ছাপলে চুপ থাকার কিছু থাকে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q16",
+      "difficulty": "hard",
+      "question": "কোন job-এর prompt সবচেয়ে ভালো?",
+      "options": [
+        "\"example.com/pricing দেখে সারাংশ দাও\"",
+        "\"আগের মতো আবার সেই সাইটটা দেখে আমাকে জানাও\"",
+        "\"গতকাল যা বলেছিলে সেটা আজও আবার করে দাও\"",
+        "\"আমার প্রিয় repo-টা দেখে নতুন কিছু থাকলে বলো\""
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা run নতুন session, তাই URL, format ও দরকারি তথ্য prompt-এই থাকতে হয়।",
+      "whyWrong": {
+        "1": "'আগের মতো' বলার স্মৃতি নেই।",
+        "2": "গতকাল কী বলা হয়েছিল, মনে নেই।",
+        "3": "'প্রিয় repo' কোনটা, agent জানে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q17",
+      "difficulty": "hard",
+      "question": "GitHub repo পাহারাদার job কেন prompt-এ `gh issue list --repo ...` command হুবহু লিখে দেয়?",
+      "options": [
+        "কারণ `gh` ছাড়া Hermes কিছুই চালাতে পারে না",
+        "কারণ `[SILENT]` শুধু `gh`-এর সাথে চলে",
+        "কারণ cron agent-এর আগের context নেই",
+        "কারণ `--limit 10` না দিলে job চলে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Schedule `every 6h`, delivery `discord`, নতুন কিছু না থাকলে `[SILENT]`। প্রতি run ফাঁকা session বলে সঠিক command লিখে দিতে হয়।",
+      "whyWrong": {
+        "0": "Hermes নিজের tool-ও ব্যবহার করে; কারণ context-এর অভাব।",
+        "1": "`[SILENT]` সব job-এ চলে।",
+        "3": "`--limit` শুধু তালিকার সীমা ঠিক করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q18",
+      "difficulty": "hard",
+      "question": "একটা job `/cron add \"every 1h\" ...` দিয়ে বানানো হলো। চাও এখন সেটা প্রতি ৪ ঘণ্টায় চলুক, নতুন করে না বানিয়ে। কী করবে?",
+      "options": [
+        "`/cron edit <job_id> --schedule \"every 4h\"`",
+        "`/cron remove <job_id>` তারপর আবার `/cron add`",
+        "`/cron pause <job_id> --schedule \"every 4h\"`",
+        "`/cron run <job_id> --schedule \"every 4h\"`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`/cron edit` সময়, prompt বা skill বদলায়, নতুন করে না বানিয়ে।",
+      "whyWrong": {
+        "1": "মুছে ফেলা কাজের কথা নয়, আর নতুন করে বানানো হয়।",
+        "2": "`pause`-এ schedule flag নেই।",
+        "3": "`run` এখনই একবার চালায়, schedule বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q19",
+      "difficulty": "hard",
+      "question": "একই workflow-এ `--deliver bot-chat,telegram` দিলে কোনটা সত্যি?",
+      "options": [
+        "শুধু Telegram-এ যায়, `bot-chat` উপেক্ষিত হয়ে যায়",
+        "দুটোতেই যায়, Bot Chat-এ এক agent turn খরচ",
+        "দুটোতেই যায়, আর Bot Chat পুরোপুরি বিনামূল্যে",
+        "`all` লিখলেও বিনামূল্যে সব bot-chat-এ ছড়ায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Bot Chat-এ পাঠানো লেখা আসল message হয়ে bot পড়ে উত্তর দেয়; profile থাকতে হয়; `all` bot-chat-এ ছড়ায় না।",
+      "whyWrong": {
+        "0": "জোড়া দেওয়া যায়।",
+        "2": "Bot Chat-এ খরচ আছে।",
+        "3": "`all` bot-chat-এ ছড়ায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automate-with-cron-q20",
+      "difficulty": "hard",
+      "question": "ক্রিপ্টো দাম pipeline-এ agent কখন `[SILENT]` লেখে?",
+      "options": [
+        "যখন দাম ৫%-এর বেশি নড়েছে",
+        "যখন script-এ `bitcoin` লেখা নেই",
+        "যখন job প্রথমবার চালানো হচ্ছে",
+        "যখন দাম সমতল থাকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Agent বলে বর্তমান দাম, শেষ ৬ পয়েন্টের trend (up/down/flat), আর ৫%-এর বেশি নড়াচড়া; সমতলে `[SILENT]`।",
+      "whyWrong": {
+        "0": "বড় নড়াচড়ায় জানানো দরকার, চুপ নয়।",
+        "1": "`bitcoin` ও `ethereum` দুটোই আছে, এটা শর্ত নয়।",
+        "2": "প্রথমবার চলার কোনো বিশেষ নিয়ম নেই।"
+      }
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-whatsapp",
+  "title": "WhatsApp",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/whatsapp",
+  "oneLiner": "এই lesson শেষে তুমি WhatsApp-এ Hermes চালানোর পথ (QR, bridge, linked device), ban-ঝুঁকি আর allowlist বুঝে নিজে setup করতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: ফোনের \"Linked Devices\" কৌশল\n\nতুমি কি কখনো কম্পিউটারে WhatsApp Web খুলেছ? ফোন দিয়ে একটা QR code (বর্গাকার ছবি) scan করলেই কম্পিউটারে তোমার WhatsApp চলে। Hermes ঠিক সেই কাজটাই করে। সে একটা ছোট **Baileys bridge** চালায়, যেটা WhatsApp Web-এর মতো সেজে থাকে। তুমি QR scan করে বলো, \"এই Hermes-ও আমার আরেকটা linked device (সংযুক্ত যন্ত্র)।\"\n\nতবে সাবধান: এটা WhatsApp-এর **অফিশিয়াল Business API নয়**। Meta-র কোনো developer account লাগে না, কিন্তু WhatsApp কখনো রেগে গেলে তোমার নম্বর **ban** করতে পারে (বন্ধ করে দিতে পারে)। তাই বুদ্ধিমানের কাজ হলো নিজের আসল নম্বরের বদলে একটা **আলাদা (dedicated) নম্বর** ব্যবহার করা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Bridge (ব্রিজ)\nদুটো আলাদা জিনিসের মাঝের সেতু। Hermes আর WhatsApp একে অপরের ভাষা বোঝে না। **Baileys bridge** একটা ছোট প্রোগ্রাম যে মাঝখানে দাঁড়িয়ে অনুবাদ করে। (Baileys একটা library, মানে অন্যের লিখে রাখা কোড।)\n\n### Linked device\nতোমার WhatsApp অ্যাকাউন্টে জোড়া অতিরিক্ত যন্ত্র, যেমন কম্পিউটার। ফোনে Settings → Linked Devices-এ তালিকা দেখা যায়।\n\n### QR code ও Pairing\n**QR code** হলো বর্গাকার ছবি যা ফোনের ক্যামেরা পড়তে পারে। QR দিয়ে প্রথমবার জোড়া লাগানোকে **pairing** বলে। যেমন নতুন ব্লুটুথ হেডফোন প্রথমবার ফোনের সাথে জোড়া লাগানো।\n\n### Session (এখানে)\nজোড়া লাগার পর WhatsApp-এর দেওয়া গোপন \"আমি চিনি এই যন্ত্রকে\" তথ্য। এটা একটা ফোল্ডারে থাকে, তাই প্রতিবার QR scan করতে হয় না।\n\n### Node.js\nJavaScript ভাষার প্রোগ্রাম চালানোর যন্ত্র। Bridge এই ভাষায় লেখা, তাই Hermes-কে **Node.js v18 বা তার পরের** সংস্করণ লাগে। **npm** হলো Node.js-এর জিনিস-আনার প্যাকেজ-ম্যানেজার।\n\n### Allowlist, JID\nAllowlist হলো অতিথি-তালিকা। **JID** হলো WhatsApp-এর ভেতরের ঠিকানা-কোড, যেমন group-এর জন্য `...@g.us`।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "WhatsApp-এর বার্তা linked device হিসেবে Baileys bridge হয়ে Hermes-এ পৌঁছায়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "WhatsApp user",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "w",
+            "kind": "external",
+            "label": "WhatsApp",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "b",
+            "kind": "gateway",
+            "label": "Baileys bridge",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Hermes agent",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "w",
+            "label": "বার্তা"
+          },
+          {
+            "from": "w",
+            "to": "b",
+            "label": "Linked device"
+          },
+          {
+            "from": "b",
+            "to": "a",
+            "label": "allowlist পাস"
+          },
+          {
+            "from": "a",
+            "to": "u",
+            "label": "উত্তর"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## দুটো mode\n\n| Mode | কখন |\n|---|---|\n| **Separate bot number** (সুপারিশকৃত) | একাধিক user, পরিষ্কার অভিজ্ঞতা, ban-ঝুঁকি কম |\n| **Personal self-chat** | একজন user, দ্রুত setup, পরীক্ষার জন্য। নিজের নম্বরেই নিজেকে বার্তা দিয়ে |\n\n### Ban-ঝুঁকি কমাতে\n\n- আলাদা নম্বর ব্যবহার করো।\n- bulk বা spam বার্তা পাঠিও না। কথোপকথনের মতো রাখো।\n- যারা আগে বার্তা পাঠায়নি তাদের কাছে নিজে থেকে automated বার্তা পাঠিও না।\n- WhatsApp protocol (যোগাযোগের নিয়ম) বদলালে bridge ভেঙে যেতে পারে। তখন Hermes update করে **আবার pair** করো।\n\n### bot-এর নম্বর কোথায় পাবে\n\n- **Google Voice:** ফ্রি, শুধু US-এর জন্য।\n- **Prepaid SIM:** একবারের খরচ প্রায় $৫–১৫। নম্বর সচল রাখতে প্রতি **৯০ দিনে** একটা call লাগে।\n- **VoIP (TextNow, TextFree):** ফ্রি থেকে প্রায় $৫/মাস। কিছু নম্বর WhatsApp আটকে দেয়। (VoIP = ইন্টারনেটের মাধ্যমে ফোন নম্বর।)\n\n## Prerequisites ও Setup\n\n**Prerequisite** মানে শুরুর আগে যা থাকা দরকার: Node.js **v18+** ও npm, আর QR scan করার জন্য WhatsApp-ওয়ালা ফোন। Chromium বা Puppeteer লাগে না (এগুলো ব্রাউজার-সংক্রান্ত, এখানে দরকার নেই)।\n\n```bash\nhermes whatsapp\n```\n\nএই একটা command wizard চালু করে: mode জিজ্ঞেস করে, bridge-এর dependency install করে (**dependency** মানে যেসব অন্য প্রোগ্রাম আগে লাগে), আর QR দেখায়। ফোনে যাও: **WhatsApp → Settings → Linked Devices → Link a Device**। terminal কমপক্ষে **৬০ column** চওড়া আর Unicode-সমর্থক হতে হবে, নইলে QR ভেঙে যায়। QR প্রায় প্রতি ২০ সেকেন্ডে নতুন হয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "WhatsApp bot চালু করার ক্রম।",
+        "steps": [
+          {
+            "title": "নম্বর ঠিক করো",
+            "body": "আলাদা bot নম্বর নাও (Google Voice, SIM, VoIP)।"
+          },
+          {
+            "title": "`hermes whatsapp`",
+            "body": "mode বেছে QR scan করো (Linked Devices-এ)।"
+          },
+          {
+            "title": "Allowlist",
+            "body": "`.env`-এ `WHATSAPP_ENABLED=true` আর `WHATSAPP_ALLOWED_USERS` দাও।"
+          },
+          {
+            "title": "Gateway চালাও",
+            "body": "`hermes gateway` চালাও। bridge নিজে চালু হবে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Configuration\n\n`~/.hermes/.env` (গোপন সেটিংসের ফাইল, প্রতি লাইনে `নাম=মান`):\n\n```bash\nWHATSAPP_ENABLED=true               # আবশ্যক\nWHATSAPP_MODE=bot                   # bot | self-chat\nWHATSAPP_ALLOWED_USERS=8801XXXXXXXXX  # country code সহ, + ছাড়া\n```\n\n| লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `WHATSAPP_ENABLED` | WhatsApp চালু করার সুইচ | সবসময় |\n| `WHATSAPP_MODE` | `bot` (আলাদা নম্বর) না `self-chat` (নিজের নম্বর) | নিজের পছন্দমতো |\n| `WHATSAPP_ALLOWED_USERS` | যাদের অনুমতি, তাদের নম্বর (country code সহ, `+` ছাড়া) | সবসময়, না দিলে সব deny |\n\n- `WHATSAPP_ALLOWED_USERS=*` বা `WHATSAPP_ALLOW_ALL_USERS=true` দিলে সবাইকে অনুমতি দেওয়া হয়।\n- দুটোই সরিয়ে দিলে **DM pairing** চলে (অচেনা user একটা code পায়, তুমি অনুমতি দাও)।\n\n`~/.hermes/config.yaml` (সেটিংসের খাতা):\n\n```yaml\nunauthorized_dm_behavior: pair   # অচেনা পাঠকের কাছে pairing code যায়\nwhatsapp:\n  unauthorized_dm_behavior: ignore  # ব্যক্তিগত নম্বরে প্রায়ই ভালো, চুপ থাকে\n```\n\n### Group chat (bot mode)\n\nGroup-এর নিয়ম DM-এর allowlist থেকে আলাদা। `WHATSAPP_GROUP_POLICY` বা `whatsapp.group_policy`:\n\n| মান | মানে |\n|---|---|\n| `pairing` (default) | group থেকে কিছুই নেয় না |\n| `allowlist` | `WHATSAPP_GROUP_ALLOWED_USERS` বা `group_allow_from`-এ থাকা group (JID, যেমন `...@g.us`) |\n| `open` | bot যত group-এ আছে সবই |\n\n`require_mention: true` দিলে bot শুধু @mention, তার বার্তার reply, বা `/command`-এ উত্তর দেয়। `free_response_chats`-এ থাকা group-এ এই নিয়ম খাটে না।\n\n### চালানো\n\n```bash\nhermes gateway                           # foreground (সামনের জানালায়)\nhermes gateway install                   # user service (নিজে চালু থাকে)\nsudo hermes gateway install --system     # Linux boot-time\n```\n\nGateway সংরক্ষিত session নিয়ে bridge নিজেই চালু করে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Session ফোল্ডার মানে পাসওয়ার্ড",
+      "markdown": "`~/.hermes/platforms/whatsapp/session`-এ encryption key আর device credential থাকে। কাউকে দিও না। git-এ commit করো না। `chmod 700` দাও (শুধু তুমি পড়তে-লিখতে পারবে)। সন্দেহ হলে WhatsApp → Settings → Linked Devices থেকে device unlink করো। আর allow-সেটিং না দিলে gateway সব ঢোকা বার্তা deny করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Session, re-pairing আর একাধিক profile\n\nSession restart-এর পরও টিকে থাকে। ফোন reset হলে, protocol update হলে বা unlink করলে আবার `hermes whatsapp` চালিয়ে **re-pair** করো (আবার জোড়া লাগাও)। সাময়িক বিচ্ছিন্নতায় নিজে reconnect করে।\n\n**একাধিক profile:** (**Profile** মানে Hermes-এর আলাদা পরিচয়-সেট, যেমন \"কাজ\" আর \"বাড়ি\"।) `hermes -p work whatsapp` দিয়ে pair করো। `creds.json` না থাকলে ওই profile skip হয় (`whatsapp_unpaired`)।\n\n**Port** মানে কম্পিউটারের একটা দরজা-নম্বর। প্রতিটা bridge আলাদা port চায়:\n- স্পষ্ট `bridge_port` দিলে সেটা সবার আগে।\n- secondary profile **৩০০১–৩৯৯৯**-এর প্রথম খালি port পায় (`platforms/whatsapp/bridge_port`-এ সেভ হয়)।\n- launch profile (মূল যেটা চালু করেছ) পায় **৩০০০**।\n- আলাদা gateway চালালে প্রতিটার `config.yaml`-এ আলাদা `bridge_port` দাও।\n- ভুল হলে error: `whatsapp_bridge_foreign_session`, `whatsapp_bridge_unresponsive`।\n\n## উত্তর ও ফরম্যাট\n\n- `whatsapp.reply_prefix`: default-এ \"☤ **Hermes Agent**\" header থাকে। `\"\"` দিলে বন্ধ।\n- `send_read_receipts`: default `false`। `true` হলে গৃহীত বার্তায় blue tick পড়ে।\n- **Chunking:** উত্তর **৪,০৯৬ অক্ষরে** ভাগ হয়।\n- **Markdown রূপান্তর:** (Markdown = `**` দিয়ে লেখা সাজানোর সংকেত।) `**bold**` → `*bold*`, `~~strike~~` → `~strike~`, `# Heading` → bold, `[text](url)` → `text (url)`। code block থাকে।\n- **Streaming:** লেখা তৈরির সময় বার্তা edit হতে থাকে।\n- **Delivery status:** `gateway.log`-এ `server_ack`, `delivered`, `read`, `played` বা `error`।\n\n### Native feature (bot mode)\n\n- **Poll:** multiple-choice clarify প্রশ্ন single-select poll হয়ে যায়। Approval prompt কখনো poll হয় না।\n- **Location:** পাঠানো ও আসা (live সহ) দুটোই সমর্থিত।\n- **Voice:** আসা `.ogg` voice note লেখায় বদলায়। TTS (লেখা থেকে কণ্ঠ) উত্তর MP3 attachment হয়ে আসে।\n\n### Message batching (debounce)\n\nদ্রুত পরপর আসা লেখা একটা request-এ মিলে যায়। কেন? কেউ তিন লাইনে তিনটা বার্তা দিলে Hermes তিনবার উত্তর না দিয়ে একবারে সব পড়ে। quiet period (চুপ থাকার সময়) **০.৩ সেকেন্ড**, লম্বা টুকরোয় ১ সেকেন্ড। ওপরের সীমা ২ ও ৪ সেকেন্ড। key: `gateway.platforms.whatsapp.extra.text_batch_delay_seconds`। `0` দিলে batching বন্ধ।\n\n### Quoted reply\n\nকোনো বার্তা উদ্ধৃত করে reply দিলে উদ্ধৃত লেখা context হিসেবে যায়। উদ্ধৃত ছবি/voice/video/document-ও turn-এ জোড়া হয়। bot-এর শেষ **১,০০০** পাঠানোর index থেকে ফাইল মেলানো হয়। পুরোনো quote attachment ছাড়া আসে।\n\n## সমস্যা হলে\n\n| লক্ষণ | সমাধান |\n|---|---|\n| QR scan হয় না | terminal ৬০+ column করো, অন্য terminal চেষ্টা করো, bot account দিয়ে scan করো |\n| QR মেয়াদ শেষ | `hermes whatsapp` আবার চালাও |\n| Session টেকে না | `~/.hermes/platforms/whatsapp/session` আছে ও লেখা যায় কি দেখো। container-এ persistent volume (স্থায়ী ডিস্ক) |\n| Logged out | ফোন online রাখো, re-pair |\n| WhatsApp update-এর পর বন্ধ | Hermes update, তারপর re-pair |\n| macOS-এ \"Node.js not installed\" | launchd shell-এর PATH পায় না। `hermes gateway install` তারপর `hermes gateway start` |\n| বার্তা আসে না | `WHATSAPP_ALLOWED_USERS` দেখো। `WHATSAPP_DEBUG=true` দিয়ে `bridge.log` দেখো |\n| অচেনারা pairing code পায় | `whatsapp.unauthorized_dm_behavior: ignore` |"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এর WhatsApp integration কোন ধরনের?",
+      "options": [
+        "WhatsApp-এর অফিশিয়াল Business API",
+        "Baileys bridge দিয়ে WhatsApp Web-এর মতো linked device, অফিশিয়াল API নয়",
+        "SMS",
+        "Email"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটা অফিশিয়াল নয়। তাই WhatsApp কখনো নম্বর ban করতে পারে।"
+    },
+    {
+      "question": "সুপারিশকৃত mode কোনটা?",
+      "options": [
+        "Personal self-chat",
+        "Separate bot number",
+        "কোনোটাই না",
+        "দুটোই এক"
+      ],
+      "answerIndex": 1,
+      "explanation": "আলাদা bot নম্বরে ban-ঝুঁকি কম আর একাধিক user সামলানো যায়।"
+    },
+    {
+      "question": "Group policy-র default কী?",
+      "options": [
+        "`open`",
+        "`allowlist`",
+        "`pairing`, মানে group থেকে কিছুই নেয় না",
+        "`all`"
+      ],
+      "answerIndex": 2,
+      "explanation": "ডিফল্টে group থেকে কিছু নেয় না। `allowlist` বা `open` নিজে বাছতে হয়।"
+    },
+    {
+      "question": "WhatsApp-এ Hermes-এর উত্তর কত অক্ষরে ভাগ হয়?",
+      "options": ["১০০", "১,০০০", "২,০০০", "৪,০৯৬"],
+      "answerIndex": 3,
+      "explanation": "উত্তর ৪,০৯৬ অক্ষরের টুকরোয় ভাগ হয়।"
+    },
+    {
+      "question": "session ফোল্ডারটা কেন সুরক্ষিত রাখতে হয়?",
+      "options": [
+        "সুন্দর দেখানোর জন্য",
+        "এতে encryption key ও device credential আছে, পাসওয়ার্ডের মতো",
+        "এতে ছবি থাকে",
+        "এটা বড় বলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটা কেউ পেলে তোমার linked device সেজে বসতে পারে। তাই কাউকে দিও না, git-এ তুলো না।"
+    },
+    {
+      "question": "অচেনা পাঠকের কাছে pairing code যাওয়া আটকাতে কী করবে?",
+      "options": [
+        "`whatsapp.unauthorized_dm_behavior: ignore`",
+        "Node.js সরানো",
+        "ffmpeg install",
+        "port বদলানো"
+      ],
+      "answerIndex": 0,
+      "explanation": "`ignore` দিলে অচেনাদের বার্তায় Hermes চুপ থাকে।"
+    },
+    {
+      "question": "secondary profile-এর bridge default কোন port range-এ যায়?",
+      "options": ["১–১০০", "৩০০১–৩৯৯৯", "৮০০০–৯০০০", "কোনো port লাগে না"],
+      "answerIndex": 1,
+      "explanation": "launch profile পায় ৩০০০। secondary profile ৩০০১–৩৯৯৯-এর প্রথম খালি port পায়।"
+    }
+  ],
+  "recap": [
+    "WhatsApp integration অফিশিয়াল API নয়, Baileys bridge দিয়ে linked device হিসেবে চলে, তাই ban-ঝুঁকি আছে।",
+    "ঝুঁকি কমাতে আলাদা (dedicated) bot নম্বর ব্যবহার করো।",
+    "`hermes whatsapp` চালিয়ে QR scan করে pair করতে হয়।",
+    "`WHATSAPP_ALLOWED_USERS` না দিলে সব বার্তা deny হয়।",
+    "session ফোল্ডার পাসওয়ার্ডের মতো গোপন রাখো।"
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "contentId": "hermes-doc-guides-automation-blueprints",
+  "title": "Automation Blueprints",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/automation-blueprints",
+  "oneLiner": "এই lesson শেষে তুমি cron ও webhook দিয়ে তৈরি automation নকশাগুলো চিনে নিজের কাজে মানিয়ে নিতে পারবে এবং trigger, webhook, payload, delivery-র মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: রান্নাঘরের তিন রকম ঘণ্টা\n\nবাড়িতে তিন রকম ঘণ্টা বাজে।\n\n- দেয়াল-ঘড়ি প্রতি ঘণ্টায় বাজে (**সময় ধরে**)।\n- দরজার কলিং বেল কেউ এলে বাজে (**ঘটনা ঘটলে**)।\n- ফোন বাজে যখন কেউ ডাকে (**বাইরে থেকে call**)।\n\nতুমি যে কাজটা করো, তা এই তিন কারণের যেকোনো একটায় শুরু হতে পারে।\n\nHermes **Automation Blueprints** এই তিনটা ট্রিগার নিয়ে কপি-পেস্ট করার মতো তৈরি নকশা। (Blueprint মানে বাড়ি বানানোর নকশা, ছাঁচ।) এগুলো যেকোনো model-এ চলে, কোনো এক provider-এর ওপর নির্ভর করে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Automation (অটোমেশন):** মানুষের বদলে নিজে নিজে চলা কাজ।\n- **Trigger (ট্রিগার):** কাজ শুরু করার কারণ। ঘণ্টা বাজার কারণ।\n- **Cron / schedule:** সময় ধরে কাজ চালানো (`0 2 * * *` মানে প্রতিদিন রাত ২টায়)।\n- **Webhook:** একটা ঠিকানা, যেখানে অন্য সেবা (GitHub, Stripe) ঘটনা ঘটলে নিজে এসে খবর পৌঁছে দেয়। কলিং বেল। তুমি বারবার গিয়ে দেখো না, খবর নিজে আসে।\n- **Event (ইভেন্ট):** একটা ঘটনা, যেমন \"কেউ PR খুলল\"।\n- **Payload / JSON:** webhook-এ আসা তথ্যের প্যাকেট। JSON হলো কম্পিউটারের জন্য সাজানো লেখা, যেন একটা ফর্ম ভরা।\n- **POST:** ইন্টারনেটে তথ্য পাঠানোর একটা ধরন (চিঠি ডাকবাক্সে ফেলা)।\n- **Route:** webhook-এর নির্দিষ্ট ঠিকানা-পথ। \"এই পথে এলে এই কাজ করো\"।\n- **Secret ও HMAC signature:** Secret হলো দুই পক্ষের জানা গোপন শব্দ। HMAC signature হলো সেই গোপন শব্দ দিয়ে বানানো সীলমোহর, যা প্রমাণ করে \"চিঠিটা সত্যিই GitHub পাঠিয়েছে, কেউ নকল করেনি\"।\n- **Delivery:** ফল কোথায় পাঠাবে (Telegram, Slack, ফাইল ইত্যাদি)।\n- **Skill:** Hermes-এর রেসিপি-কার্ড (কাজের নির্দেশিকা)।\n- **Script (`--script`):** আগে চলা ছোট প্রোগ্রাম, যার ছাপা লেখা Hermes পড়ে।\n- **Placeholder:** নমুনা জায়গা-ধরা মান, যেমন `example.com`। নিজেরটা বসাতে হয়।\n- **CVE:** জানা নিরাপত্তা-ফাঁকের সরকারি নম্বর। **CVSS** হলো তার তীব্রতার নম্বর (১০ সবচেয়ে গুরুতর)।\n- **Dependency:** একটা প্রোগ্রাম চলতে অন্য যেসব প্রোগ্রাম লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## তিন ধরনের trigger\n\n| Trigger | সেটআপ | কখন | উপমা |\n|---|---|---|---|\n| **Schedule** | `cronjob_manage` tool বা `/cron` | সময় ধরে | দেয়াল-ঘড়ি |\n| **GitHub Event** | `hermes webhook subscribe` | PR, issue, deploy ইত্যাদি ঘটলে | কলিং বেল |\n| **API Call** | `config.yaml`-এর route বা `hermes webhook subscribe` | বাইরের সেবা JSON POST করলে | ফোন |\n\nতিনটাই ফল পাঠাতে পারে Telegram, Discord, Slack, SMS, email, GitHub comment বা local ফাইলে। আলাদা একটা \"Automation Blueprints Catalog\" আছে, যেখানে cron syntax-এর বদলে form দিয়ে parameterized blueprint সেটআপ করা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "যেকোনো blueprint-এর সাধারণ গড়ন।",
+        "steps": [
+          {
+            "title": "১. trigger বেছে নাও",
+            "body": "সময় হলে? cron। GitHub ঘটনা? webhook। বাইরের API? webhook route।"
+          },
+          {
+            "title": "২. prompt/skill ঠিক করো",
+            "body": "কাজ বোঝাও; দরকারে skill (`--skill ...`) বা `--script` জোড়ো।"
+          },
+          {
+            "title": "৩. delivery ঠিক করো",
+            "body": "`--deliver origin|local|telegram|slack|...`।"
+          },
+          {
+            "title": "৪. `[SILENT]` রাখো",
+            "body": "কিছু বলার না থাকলে agent `[SILENT]` লিখলে delivery দমন হয়। শুধু কাজের কথায় নোটিফিকেশন।"
+          },
+          {
+            "title": "৫. placeholder বদলাও",
+            "body": "URL, secret, endpoint, repo-র নাম নিজের দিয়ে বদলাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Development Workflow\n\n- **Nightly Backlog Triage:** প্রতিদিন `0 2 * * *`। `gh issue list` দিয়ে (gh = GitHub-এর কমান্ড-টুল) নতুন issue-তে label ও priority (P0-P3; bug/feature/docs/security) বসায়, Telegram-এ digest (সারাংশ)। Triage মানে কোনটা আগে দেখবে তা বাছাই।\n- **Automatic PR Code Review:** `pull_request` webhook। PR মানে কোড বদলের প্রস্তাব। diff (কোড-তফাত) দেখে security, performance, quality, test coverage। dynamic: `--skills github-code-review --deliver github_comment`। static: `config.yaml`-এ port `8644`, route-প্রতি secret, `deliver_extra`-তে `repo` ও `pr_number`।\n- **Docs Drift Detection:** সাপ্তাহিক `0 9 * * 1`। Merged PR-এ tool schema, CLI command, config option, environment variable বদলেছে কিন্তু docs বদলায়নি, এমন খোঁজে। (Drift মানে ধীরে ধীরে মিল হারানো।)\n- **Dependency Security Audit:** প্রতিদিন `0 6 * * *`। `uv.lock` স্ক্যান আর `website/`-এ `npm audit --json`। CVSS ≥ 7.0 CVE চিহ্নিত। prompt বলে Hermes-এর নিজস্ব dependency environment সক্রিয়/বদল না করতে বা সেখানে scanner install না করতে।\n\n## DevOps ও Monitoring\n\n- **Deploy Verification:** `deployment` webhook; health ও version check। (Deploy মানে নতুন সংস্করণ চালু করা।) curl উদাহরণে `X-Hub-Signature-256` HMAC header আছে। `curl` হলো ইন্টারনেটে অনুরোধ পাঠানোর টুল, আর header হলো অনুরোধের সঙ্গে যাওয়া অতিরিক্ত তথ্য।\n- **Alert Triage:** Datadog, PagerDuty, Grafana-র মতো alert webhook (এগুলো নজরদারির সেবা)। triage সারাংশ Slack-এ।\n- **Uptime Monitor:** `~/.hermes/scripts/check-uptime.py` প্রতি ৩০ মিনিটে তিন endpoint (placeholder) দেখে `OUTAGE DETECTED` (বিভ্রাট ধরা পড়েছে) বা `NO_ISSUES` ছাপে। `--script` দিয়ে চালাও।\n\n```bash\nhermes cron create \"every 30m\" \"script-এর আউটপুট দেখে বিপদ থাকলে জানাও, নইলে [SILENT]\" \\\n  --script ~/.hermes/scripts/check-uptime.py --name \"Uptime monitor\" --deliver telegram\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes cron create` | নতুন সময়-ঠিক-করা কাজ |\n| `\"every 30m\"` | প্রতি ৩০ মিনিটে |\n| `\"script-এর আউটপুট দেখে...\"` | prompt: বিপদ থাকলে জানাও, নইলে চুপ |\n| `--script ...` | আগে এই প্রোগ্রাম চালাও, তার ছাপা লেখা agent-কে দাও |\n| `--name`, `--deliver telegram` | নাম, আর ফল Telegram-এ |\n\n## Research ও Intelligence\n\n- **Competitive Repository Scout:** প্রতিদিন চার agent repo; `competitive-pr-scout` skill। (প্রতিদ্বন্দ্বীর কোড-ভাণ্ডারে নজর রাখা।)\n- **AI News Digest:** সাপ্তাহিক, সর্বোচ্চ ৬০০ শব্দ।\n- **Paper Digest with Notes:** প্রতিদিন arXiv (গবেষণা-paper-এর ওয়েবসাইট) স্ক্যান, Obsidian (নোট রাখার app) নোট: `--skill arxiv --skill obsidian --deliver local`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## GitHub Event Automations\n\n- **Issue Auto-Labeling:** `issues` webhook। Label (ট্যাগ) প্রস্তাব করে ও acknowledgement comment (\"পেয়েছি\" মন্তব্য) দেয়।\n- **CI Failure Analysis:** CI হলো কোড বদলালে নিজে চলা যাচাই-ব্যবস্থা। `config.yaml`-এ `check_run` route। ব্যর্থতা বিশ্লেষণ করে PR-এ পোস্ট। এখানে indexed template path ব্যবহার হয় (`pull_requests.0.number`, মানে তালিকার প্রথম আইটেমের নম্বর)।\n- **Auto-Port Changes Across Repos:** merged PR-এর পরিবর্তন Go SDK repo-তে port করে (এক ভাণ্ডারের বদল আরেকটায় তুলে দেওয়া)। delivery `log`, skill `github-pr-workflow`।\n\n## Business Operations\n\n- **Stripe Payment Monitoring:** Stripe হলো অনলাইন পেমেন্টের সেবা। webhook-এ `payment_intent.succeeded` (পেমেন্ট সফল), `payment_intent.payment_failed` (ব্যর্থ), `charge.dispute.created` (গ্রাহক আপত্তি তুলেছে)। পরিমাণ **cent-এ** আসে (১০০ cent = ১ ডলার)।\n- **Daily Revenue Summary:** প্রতিদিনের \"morning briefing\": BTC/ETH দাম, S&P 500-এর অবস্থা, tech/AI খবর।\n\n## Multi-Skill Workflows\n\n- **Security Audit Pipeline:** সাপ্তাহিক `0 3 * * 0`, `codebase-security-audit` skill: secret (কোডে ফাঁস হওয়া পাসওয়ার্ড), SQL injection (ডেটাবেসে লুকিয়ে হুকুম ঢোকানো), path traversal (ফোল্ডারের বাইরে ঢোকা), unsafe deserialization (অচেনা তথ্য খুলে বিপদ ডাকা)।\n- **Content Pipeline:** সাপ্তাহিক `0 10 * * 3`; blog outline সেভ হয় `~/drafts/blog-$(date +%Y%m%d).md`-এ। (`$(date +%Y%m%d)` মানে আজকের তারিখ ফাইলের নামে বসে।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তিন ট্রিগার এক agent-এ মিশে, ফল নানা জায়গায় যায়।",
+        "nodes": [
+          {
+            "id": "t1",
+            "kind": "server",
+            "label": "Cron schedule",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "t2",
+            "kind": "external",
+            "label": "GitHub webhook",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "t3",
+            "kind": "external",
+            "label": "API POST",
+            "x": 0,
+            "y": 200
+          },
+          {
+            "id": "ag",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 240,
+            "y": 100
+          },
+          {
+            "id": "o",
+            "kind": "external",
+            "label": "Delivery target",
+            "x": 480,
+            "y": 100
+          }
+        ],
+        "edges": [
+          {
+            "from": "t1",
+            "to": "ag",
+            "label": "সময় হলে"
+          },
+          {
+            "from": "t2",
+            "to": "ag",
+            "label": "event"
+          },
+          {
+            "from": "t3",
+            "to": "ag",
+            "label": "JSON"
+          },
+          {
+            "from": "ag",
+            "to": "o",
+            "label": "deliver"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick reference\n\n**Cron syntax:** `every 30m`, `every 2h`, `0 2 * * *`, `0 9 * * 1`, `0 9 * * 1-5`, `0 3 * * 0`, `0 */6 * * *`। (পাঁচ ঘর: মিনিট, ঘণ্টা, মাসের দিন, মাস, সপ্তাহের দিন।)\n\n**Delivery:** `--deliver origin` (default, যেখানে job বানিয়েছ), `local`, `telegram` বা `telegram:CHAT_ID`, `discord` বা `discord:CHANNEL_ID`, `slack`, `sms:+15551234567`, ফোরাম topic-এর জন্য `telegram:-100123:456`।\n\n**Webhook template variable** (payload থেকে মান বসানোর ফাঁকা জায়গা): `{pull_request.title}`, `{issue.number}`, `{repository.full_name}`, `{action}`, `{sender.login}`, আর `{__raw__}` (পুরো JSON, ৪০০০ অক্ষরে ছাঁটা)।\n\n**`[SILENT]`:** উত্তরে থাকলে delivery দমন। মানে agent-এর বলার মতো কিছু থাকলেই শুধু তুমি জানবে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Placeholder বদলাও",
+      "markdown": "উদাহরণের URL, secret ও endpoint সবই placeholder। আসল মান নিজের দাও, আর secret কখনো prompt বা কোডে খোলা রেখো না। `github_comment` delivery-তে `deliver_extra`-তে `repo` ও `pr_number` লাগে।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "একটা ছোট সতর্কতা",
+      "markdown": "Uptime script-এর উদাহরণ কোডে f-string-এর ভেতরে backslash-escape করা quote আছে, যা Python 3.12-এর আগে syntax error দেবে। (এটা এই lesson-লেখকের পর্যবেক্ষণ, official page-এ উল্লেখ নেই।) নিজের script-এ সাবধানে লেখো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "তিন ধরনের trigger কী কী?",
+      "options": [
+        "Chat, Voice, Email",
+        "Schedule, GitHub Event, API Call",
+        "Skill, Memory, Profile",
+        "Local, Cloud, Edge"
+      ],
+      "answerIndex": 1,
+      "explanation": "দেয়াল-ঘড়ি (সময়), কলিং বেল (ঘটনা), ফোন (বাইরের call)।"
+    },
+    {
+      "question": "Alert Triage blueprint কোন ধরনের trigger আর ফল কোথায় যায়?",
+      "options": [
+        "Schedule; email",
+        "GitHub issue; local ফাইল",
+        "কোনোটা নয়",
+        "Alert webhook (Datadog, PagerDuty, Grafana...); Slack"
+      ],
+      "answerIndex": 3,
+      "explanation": "বাইরের নজরদারি সেবা webhook-এ খবর পাঠায়, সারাংশ যায় Slack-এ।"
+    },
+    {
+      "question": "page-এর উদাহরণে `github_comment` delivery-তে `deliver_extra`-তে কী দেওয়া হয়?",
+      "options": [
+        "শুধু Telegram",
+        "`deliver_extra`-তে `repo` ও `pr_number`",
+        "SMS নম্বর",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "কোন repo-র কোন PR-এ মন্তব্য করবে, তা জানতে হয়।"
+    },
+    {
+      "question": "`{__raw__}` কী?",
+      "options": [
+        "শুধু PR title",
+        "লেখকের নাম",
+        "পুরো JSON payload, ৪০০০ অক্ষরে ছাঁটা",
+        "একটা secret"
+      ],
+      "answerIndex": 2,
+      "explanation": "পুরো খবরের প্যাকেট, তবে ৪০০০ অক্ষরের বেশি কাটা।"
+    },
+    {
+      "question": "Stripe blueprint-এ পরিমাণ কোন এককে আসে?",
+      "options": ["ডলার দশমিকে", "cent-এ", "টাকায়", "বাইনারি"],
+      "answerIndex": 1,
+      "explanation": "পরিমাণ cent-এ আসে, তাই ১০০ মানে ১ ডলার।"
+    },
+    {
+      "question": "`[SILENT]`-এর কাজ কী?",
+      "options": [
+        "job মুছে ফেলা",
+        "error বানানো",
+        "webhook বন্ধ",
+        "delivery দমন, যাতে শুধু কাজের কথায় নোটিফিকেশন আসে"
+      ],
+      "answerIndex": 3,
+      "explanation": "কিছু বলার না থাকলে চুপ থাকাই ভালো।"
+    },
+    {
+      "question": "Dependency Security Audit-এর prompt agent-কে কী করতে নিষেধ করে?",
+      "options": [
+        "Hermes-এর নিজের dependency environment সক্রিয়/বদল করতে বা সেখানে scanner install করতে",
+        "CVE খুঁজতে",
+        "Telegram-এ পাঠাতে",
+        "`npm audit` চালাতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "Hermes-এর নিজের চলার পরিবেশে হাত দেওয়া যাবে না।"
+    },
+    {
+      "question": "Webhook আর cron-এর মূল পার্থক্য কী?",
+      "options": [
+        "Cron ঘটনা ধরে, webhook সময় ধরে",
+        "দুটোই একই",
+        "Webhook বাইরের ঘটনা ঘটলে খবর পায়, cron সময় ধরে চলে",
+        "Webhook শুধু Telegram-এর জন্য"
+      ],
+      "answerIndex": 2,
+      "explanation": "কলিং বেল (webhook) কেউ এলে বাজে, দেয়াল-ঘড়ি (cron) সময় ধরে।"
+    }
+  ],
+  "recap": [
+    "তিন trigger: Schedule (cron), GitHub Event (webhook), API Call (webhook route)।",
+    "Blueprint হলো কপি-পেস্ট নকশা; placeholder URL, secret, repo নিজের দিয়ে বদলাতে হয়।",
+    "`[SILENT]` দিলে কিছু না বদলালে নোটিফিকেশন আসে না।",
+    "Script আনে ও যাচাই করে, agent বিচার করে; ফল `--deliver` দিয়ে নানা জায়গায় যায়।",
+    "Secret কখনো prompt বা কোডে খোলা রেখো না; webhook-এ HMAC signature যাচাই হয়।"
+  ]
+}

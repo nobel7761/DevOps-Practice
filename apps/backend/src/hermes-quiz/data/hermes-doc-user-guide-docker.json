@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-docker",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-docker-q01",
+      "difficulty": "easy",
+      "question": "Docker-এ **image** আর **container**-এর তফাত কী?",
+      "options": [
+        "image রেসিপি-প্যাকেট, container চালু বাক্স",
+        "image চালু করা বাক্স, container রেসিপি-প্যাকেট",
+        "দুটোই একই, শুধু নামটা আলাদা করে বলা হয়",
+        "image শুধু ডেটা রাখে, container শুধু key রাখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "একটা image থেকে অনেক container হতে পারে, কেকের ছাঁচ থেকে অনেক কেক।",
+      "whyWrong": {
+        "1": "উল্টো বলা হয়েছে।",
+        "2": "দুটো আলাদা জিনিস।",
+        "3": "এমন ভাগ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q02",
+      "difficulty": "easy",
+      "question": "**Host** বলতে কী বোঝায়?",
+      "options": [
+        "বাক্সের ভেতরের `/opt/data` ফোল্ডার",
+        "যে কম্পিউটারে Docker চলছে",
+        "Hermes-এর সঙ্গে আসা Chromium browser",
+        "গোপন চাবি রাখা `.env` ফাইল"
+      ],
+      "correctIndex": 1,
+      "explanation": "container-এর বাইরে আসল কম্পিউটারটাই host।",
+      "whyWrong": {
+        "0": "ওটা volume-এর ভেতরের দিক।",
+        "2": "Chromium image-এর ভেতরে থাকে।",
+        "3": "ওটা `.env`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q03",
+      "difficulty": "easy",
+      "question": "**Volume** কী কাজ করে?",
+      "options": [
+        "বাক্সের শব্দ কমিয়ে ভেতরটা শান্ত রাখে",
+        "বাক্সের CPU সংখ্যা ঠিক করে",
+        "ভেতরের ফোল্ডার বাইরেরটার সঙ্গে জোড়ে",
+        "বাক্স মুছলেই সব ডেটা সঙ্গে সঙ্গে মুছে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "বাক্স মুছে ফেললেও volume-এর ডেটা থেকে যায়।",
+      "whyWrong": {
+        "0": "শব্দের সঙ্গে সম্পর্ক নেই।",
+        "1": "CPU limit আলাদা সেটিং।",
+        "3": "ডেটা থেকে যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q04",
+      "difficulty": "easy",
+      "question": "container-এর `/opt/data` আসলে host-এর কোন ফোল্ডার?",
+      "options": [
+        "`~/.docker`",
+        "`/opt/hermes`",
+        "`~/.local/bin`",
+        "`~/.hermes`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`-v ~/.hermes:/opt/data` দিয়ে এই জোড়া লাগানো হয়।",
+      "whyWrong": {
+        "0": "`~/.docker` নয়।",
+        "1": "`/opt/hermes` হলো read-only install tree।",
+        "2": "`~/.local/bin`-এ alias থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q05",
+      "difficulty": "easy",
+      "question": "`docker run`-এর `--rm` flag কী করে?",
+      "options": [
+        "image-টা চিরতরে মুছে ফেলে",
+        "host-এর `~/.hermes` মুছে ফেলে",
+        "কাজ শেষে container মুছে ফেলে",
+        "পেছনে চালু রাখে, terminal আটকায় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "ডেটা যায় না, কারণ সব volume-এ (host-এ) লেখা হয়।",
+      "whyWrong": {
+        "0": "image থাকে।",
+        "1": "`~/.hermes` থাকে।",
+        "3": "ওটা `-d`-এর কাজ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q06",
+      "difficulty": "easy",
+      "question": "`-d` flag মানে কী?",
+      "options": [
+        "detached, পেছনে চলে",
+        "debug, ভেতরের খুঁটিনাটি দেখায়",
+        "delete, বাক্স মুছে ফেলে",
+        "download, নতুন image নামায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "সারাক্ষণ gateway চালাতে কাজে লাগে।",
+      "whyWrong": {
+        "1": "debug-এর flag এটা নয়।",
+        "2": "মোছে `--rm`।",
+        "3": "নামায় `docker pull`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q07",
+      "difficulty": "easy",
+      "question": "**Loopback** ঠিকানা `127.0.0.1`-এর বিশেষত্ব কী?",
+      "options": [
+        "সারা পৃথিবী থেকে ঢোকা যায়",
+        "শুধু SSH দিয়ে ঢোকা যায়",
+        "শুধু Docker Hub থেকে ঢোকা যায়",
+        "শুধু নিজের কম্পিউটার থেকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`0.0.0.0` মানে সব দিক থেকে ঢোকা যায়।",
+      "whyWrong": {
+        "0": "ওটা `0.0.0.0`।",
+        "1": "SSH-এর সঙ্গে সম্পর্ক নেই।",
+        "2": "Docker Hub-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q08",
+      "difficulty": "medium",
+      "question": "`-p 8642:8642` কী করে?",
+      "options": [
+        "ভেতরের ডেটা ৮৬৪২ বার করে কপি করে রাখে",
+        "বাইরের ৮৬৪২ port ভেতরেরটার সঙ্গে জোড়ে",
+        "৮৬৪২ সেকেন্ড পরে বাক্স নিজে বন্ধ করে দেয়",
+        "৮৬৪২ MB জায়গা বরাদ্দ করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "বাইরে থেকে API ধরতে এটা লাগে। public করলে ঝুঁকি, key ছাড়া `0.0.0.0`-এ খুলো না।",
+      "whyWrong": {
+        "0": "কপির সংখ্যা নয়।",
+        "2": "সময়ের সংখ্যা নয়।",
+        "3": "MB-র সংখ্যা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q09",
+      "difficulty": "medium",
+      "question": "`--restart unless-stopped` কেন দেওয়া হয়?",
+      "options": [
+        "পুরনো বাক্স মুছে নতুন image আনার জন্য",
+        "ক্র্যাশ বা reboot-এর পর নিজে চালু হতে",
+        "কোনোভাবেই বাক্স থামতে না দিতে",
+        "শুধু প্রথমবার চালু হওয়ার পর থামতে"
+      ],
+      "correctIndex": 1,
+      "explanation": "শুধু তুমি থামালে থামে। server-এ bot যাতে হঠাৎ না ঘুমায়।",
+      "whyWrong": {
+        "0": "image আনা `docker pull`।",
+        "2": "তুমি থামালে থামে।",
+        "3": "প্রথমবারের পরেও চালু হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q10",
+      "difficulty": "medium",
+      "question": "dashboard চালু করতে কোন variable আর port লাগে?",
+      "options": [
+        "`HERMES_DASHBOARD=0` আর `-p 8642:8642`",
+        "`HERMES_WEBAPP=1` আর `-p 9120:9120`",
+        "`HERMES_DASHBOARD_INSECURE=1` আর `-p 80:80`",
+        "`HERMES_DASHBOARD=1` আর `-p 9119:9119`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`HERMES_DASHBOARD` unset থাকলে service বন্ধ থাকে।",
+      "whyWrong": {
+        "0": "`0` চালু করে না, আর 8642 API-র port।",
+        "1": "webapp আলাদা, default port ৯১২০।",
+        "2": "`INSECURE` deprecated, এখন কিছুই করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q11",
+      "difficulty": "medium",
+      "question": "webapp-এর default port কত?",
+      "options": ["`9120`", "`9119`", "`8642`", "`10000`"],
+      "correctIndex": 0,
+      "explanation": "`config.yaml`-এর `webapp` অংশে `enabled`, `host`, `port`, `public_url`।",
+      "whyWrong": {
+        "1": "৯১১৯ dashboard-এর।",
+        "2": "৮৬৪২ API-র।",
+        "3": "`10000` UID, port নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q12",
+      "difficulty": "medium",
+      "question": "`/opt/hermes` কেন read-only রাখা?",
+      "options": [
+        "যাতে image-এর আকার ছোট থাকে আর দ্রুত নামে",
+        "যাতে `.env` ফাইল সবাই পড়তে পারে",
+        "যাতে agent নিজের মূল প্রোগ্রাম না ভাঙে",
+        "যাতে শুধু root-ই Hermes চালাতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "সব পরিবর্তনশীল ডেটা `/opt/data`-তে। core আপডেট আসে নতুন image দিয়ে।",
+      "whyWrong": {
+        "0": "আকারের সঙ্গে সম্পর্ক নেই।",
+        "1": "`.env` পড়ার সঙ্গে সম্পর্ক নেই।",
+        "3": "চালায় `hermes` user।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q13",
+      "difficulty": "medium",
+      "question": "Docker-এ Hermes upgrade-এর সঠিক পথ কোনটা?",
+      "options": [
+        "বাক্সের ভেতরে `hermes update` চালানো",
+        "`~/.hermes` মুছে নতুন করে শুরু করা",
+        "`/opt/hermes`-এ হাতে ফাইল বদলানো",
+        "নতুন image pull করে আবার চালানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "`hermes update` image-এর কোড বদলাতে অস্বীকার করে। ডেটা volume-এ, তাই নিরাপদ।",
+      "whyWrong": {
+        "0": "`hermes update` অস্বীকার করে।",
+        "1": "ডেটা মুছতে হয় না।",
+        "2": "`/opt/hermes` read-only।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q14",
+      "difficulty": "medium",
+      "question": "loopback ছাড়া অন্য address-এ dashboard চালালে কোনো auth provider না থাকলে কী হয়?",
+      "options": [
+        "চালু হয়, কিন্তু কোনো পাসওয়ার্ড লাগে না",
+        "চালু হয় আর `HERMES_DASHBOARD_INSECURE` খুলে দেয়",
+        "dashboard চালুই হয় না, fail closed",
+        "চালু হয় আর শুধু পড়ার অনুমতি পায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "auth তিনভাবে: Basic auth, Nous Portal OAuth বা নিজের OIDC। অনিরাপদ হওয়ার চেয়ে বন্ধ থাকা ভালো।",
+      "whyWrong": {
+        "0": "পাসওয়ার্ড ছাড়া চালু হয় না।",
+        "1": "`INSECURE` এখন কিছুই করে না।",
+        "3": "পড়ার মোড নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q15",
+      "difficulty": "hard",
+      "question": "একই `~/.hermes`-এ দুটো gateway container চালানো যায় কি?",
+      "options": [
+        "হ্যাঁ, Hermes নিজে দুটোকে মিলিয়ে নেয়",
+        "না, দুই বাক্স একই খাতায় লেখে",
+        "হ্যাঁ, যদি দুটোর port আলাদা হয়",
+        "হ্যাঁ, যদি একটা `-d` আর একটা `-it` হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "একাধিক bot চাইলে profile ব্যবহার করো।",
+      "whyWrong": {
+        "0": "মেলায় না।",
+        "2": "port আলাদা হলেও ডেটা এক।",
+        "3": "flag-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q16",
+      "difficulty": "hard",
+      "question": "Docker Desktop-এ (macOS) পুরনো WAL database-এ error আসছে। কী করবে?",
+      "options": [
+        "named volume ব্যবহার করো",
+        "`--rm` flag আবার যোগ করে চালাও",
+        "`/opt/hermes`-এ লেখার অনুমতি দিয়ে দাও",
+        "`--shm-size=1g` দিয়ে আবার চালাও"
+      ],
+      "correctIndex": 0,
+      "explanation": "অথবা `database.journal_mode: delete` সেট করো। virtiofs/9p-এ WAL mode নিরাপদ নয়।",
+      "whyWrong": {
+        "1": "`--rm` এর সঙ্গে সম্পর্ক নেই।",
+        "2": "`/opt/hermes` read-only থাকে।",
+        "3": "`--shm-size` browser ক্রাশের জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q17",
+      "difficulty": "hard",
+      "question": "Docker-এ Hermes-এর browser tool বারবার ক্রাশ করছে। কী দেবে?",
+      "options": [
+        "`--shm-size=1g`",
+        "`--restart unless-stopped`",
+        "`HERMES_UID=0`",
+        "`-p 9119:9119`"
+      ],
+      "correctIndex": 0,
+      "explanation": "browser tool-এ কমপক্ষে 2 GB RAM-ও লাগে।",
+      "whyWrong": {
+        "1": "restart ক্রাশ সারায় না।",
+        "2": "UID মেলানো permission error-এর জন্য।",
+        "3": "port dashboard-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q18",
+      "difficulty": "hard",
+      "question": "container-এ `/opt/data`-এ Permission error আসছে। কোথায় দেখবে?",
+      "options": [
+        "`/opt/hermes`-কে সবার জন্য খুলে দাও",
+        "data tree সবার জন্য খুলে দাও",
+        "`HERMES_UID`/`HERMES_GID` মেলাও",
+        "`docker rm -f hermes` চালিয়ে আবার শুরু করো"
+      ],
+      "correctIndex": 2,
+      "explanation": "data tree সবার জন্য খুলো না। `PUID`/`PGID`-ও কাজ করে।",
+      "whyWrong": {
+        "0": "ওটা read-only রাখার কথা।",
+        "1": "সবার জন্য খোলা ঠিক নয়।",
+        "3": "আবার শুরু করলে মালিক মেলে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q19",
+      "difficulty": "hard",
+      "question": "compose-এ Hermes ও vLLM একই `hermes-net`-এ। `base_url` কোনটা সঠিক?",
+      "options": [
+        "`http://vllm:8000/v1/`",
+        "`http://localhost:8000`",
+        "`vllm://hermes-net`",
+        "`http://vllm:8000/v1`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`base_url`-এর শেষে `/` নয়। container-এর নাম দিয়ে ডাকো।",
+      "whyWrong": {
+        "0": "শেষে `/` আছে, ভুল।",
+        "1": "localhost বাক্সের নিজের ঠিকানা।",
+        "2": "এমন scheme নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-docker-q20",
+      "difficulty": "hard",
+      "question": "তুমি Hermes নিজের laptop-এ চালাও কিন্তু বিপজ্জনক কমান্ড বাক্সে চালাতে চাও। কী করবে?",
+      "options": [
+        "পুরো Hermes `docker run` দিয়ে চালাবে",
+        "`terminal.backend: docker` সেট করবে",
+        "`HERMES_DASHBOARD=1` সেট করবে",
+        "`/opt/hermes`-এ লিখবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা \"Docker as terminal backend\"। agent host-এ, শুধু কমান্ড sandbox-এ।",
+      "whyWrong": {
+        "0": "ওটা \"Hermes inside Docker\", যেখানে agent নিজেই বাক্সে।",
+        "2": "dashboard আলাদা ব্যাপার।",
+        "3": "ওটা read-only।"
+      }
+    }
+  ]
+}

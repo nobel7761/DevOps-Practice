@@ -1,0 +1,162 @@
+{
+  "contentId": "hermes-doc-user-guide-features-skills",
+  "title": "Skills System",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/skills",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Skill কী ও কেন লাগে, কীভাবে চালাতে, বানাতে ও নিরাপদে hub থেকে নামাতে হয়, আর frontmatter, trust, profile-এর মতো শব্দগুলো।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: রেসিপি বইয়ের তাক\n\nসুমি নতুন রান্না শিখছে। ঘরে একটা তাকে অনেক রেসিপি-কার্ড আছে: \"বিরিয়ানি\", \"খিচুড়ি\", \"পায়েস\"। সুমি কি সব কার্ড একসাথে মুখস্থ করে রান্নাঘরে ঢোকে? না! সে আগে শুধু **কার্ডের নামের তালিকা** দেখে। \"আজ খিচুড়ি\" ঠিক করলে তখন শুধু ওই কার্ডটা নামায়। কার্ডে আরও সূক্ষ্ম নোট (যেমন \"মসলার মাপ\") থাকলে দরকারে সেটাও খোলে।\n\n**Hermes Skill ঠিক এভাবে কাজ করে।** Skill হলো একটা নথি (`SKILL.md`) যাতে লেখা থাকে \"এই ধরনের কাজ কীভাবে করতে হয়\"।\n\n**এটা না থাকলে কী সমস্যা?** সব নির্দেশ একবারে Hermes-এর মগজে ঢোকালে জায়গা ফুরিয়ে যেত, খরচও বাড়ত। তাই Hermes আগে শুধু তালিকা দেখে, দরকারে ধাপে ধাপে খোলে। একে বলে **progressive disclosure** (ধীরে ধীরে খুলে দেখানো)।\n\nSkill agentskills.io standard-এর সাথে সামঞ্জস্যপূর্ণ। (**Standard** মানে সবাই একই নিয়ম মানে, যেমন সব ফোনের চার্জারের একই plug।) প্রধান ঠিকানা: `~/.hermes/skills/`। bundled skill ইনস্টলের সময় এখানে কপি হয়, hub থেকে নামানো ও agent-এর বানানো skill-ও এখানেই যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Skill** | একটা কাজ কীভাবে করতে হয় তার নির্দেশিকা-ফাইল | রেসিপি কার্ড |\n| **`SKILL.md`** | Skill-এর মূল ফাইল। `.md` মানে Markdown, সাধারণ লেখা যাতে `#` দিয়ে শিরোনাম দেওয়া যায় | কার্ডের সামনের পাতা |\n| **Prompt / token** | **Prompt** হলো মগজকে পাঠানো লেখা। **Token** হলো লেখার ছোট টুকরো, যার হিসেবে খরচ আর জায়গা মাপা হয় | চিঠির শব্দ গোনা, শব্দ বেশি হলে ডাকমাশুল বেশি |\n| **Slash command** | `/` দিয়ে শুরু ছোট হুকুম, যেমন `/plan` | দরজার সামনের বোতাম |\n| **Frontmatter** | ফাইলের একদম মাথায় লেখা পরিচয়-তথ্য (নাম, বর্ণনা...), `---` দিয়ে ঘেরা | বইয়ের মলাটে নাম-লেখক |\n| **Hub** | Skill নামানোর অনলাইন দোকান (Skills Hub) | অ্যাপ স্টোর |\n| **Profile** | আলাদা আলাদা Hermes-পরিচয়, প্রতিটার নিজস্ব সেটিং ও skill | পরিবারের প্রতিজনের আলাদা আলমারি |\n| **Trust** | \"এই ফোল্ডারকে বিশ্বাস করছি\" বলে দেওয়া | অচেনা লোককে বাসায় ঢোকানোর অনুমতি |\n| **Scanner / quarantine** | **Scanner** বিপজ্জনক কিছু খোঁজে। **Quarantine** মানে সন্দেহজনক জিনিস আলাদা ঘরে আটকে রাখা | বিমানবন্দরের স্ক্যান আর আলাদা ঘর |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Progressive disclosure: তালিকা থেকে নির্দিষ্ট নথি, তারপর নির্দিষ্ট ফাইল, তিন স্তরে।",
+        "steps": [
+          {
+            "title": "Level 0: `skills_list()`",
+            "body": "সব skill-এর নাম ও সংক্ষিপ্ত বর্ণনার তালিকা, প্রায় **৩k token**। এটা কার্ডের নামের তালিকা দেখা।"
+          },
+          {
+            "title": "Level 1: `skill_view(name)`",
+            "body": "দরকারি একটা skill-এর পুরো `SKILL.md` খোলা হয়। এটা নির্দিষ্ট কার্ডটা নামানো।"
+          },
+          {
+            "title": "Level 2: `skill_view(name, path)`",
+            "body": "skill-এর ভেতরের নির্দিষ্ট ফাইল (যেমন `references/` বা `templates/`-এর কিছু) খোলা হয়। এটা কার্ডের সূক্ষ্ম নোট খোলা।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "skill-lifecycle"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Skill ব্যবহার\n\nপ্রতিটা skill একটা **slash command**:\n\n```text\n/excalidraw\n/github-pr-workflow <তোমার অনুরোধ>\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `/excalidraw` | ওই skill-এর নাম ধরে ডাকা, skill লোড হয়ে কাজ শুরু | যখন নির্দিষ্ট skill সরাসরি চালাতে চাও |\n| `/github-pr-workflow <তোমার অনুরোধ>` | skill-এর নামের পরে সাধারণ ভাষায় কী চাও লেখো | skill-কে নির্দিষ্ট কাজ দিতে |\n\n- এক message-এ শুরুতে সর্বোচ্চ **৫টা** `/skill` token একসাথে দেওয়া যায়। প্রথম অ-skill token-এ পার্সিং (পড়ে বোঝা) থামে।\n- `/plan` কাজটা না করে `.hermes/plans/`-এ একটা implementation plan (কীভাবে করা হবে তার লেখা পরিকল্পনা) লেখে।\n- স্বাভাবিক ভাষায় চালাতে: `hermes chat --toolsets skills -q \"...\"`। (`--toolsets skills` মানে skills ড্রয়ার চালু। `-q` মানে একটা প্রশ্ন দিয়ে সোজা উত্তর নাও।)\n- conversation চলাকালে skill যোগ/বাদ গেলে পরের message-এ একবার জানানো হয়। `/reload-skills` শুধু slash command রিফ্রেশ করে।\n\n### `/learn`: নতুন Skill শেখানো\n\n`/learn` একটা directory (ফোল্ডার), URL (ওয়েব ঠিকানা), workflow (কাজের ধাপ), পেস্ট করা নোট বা বড় বই/corpus থেকে skill বানায়। বড় উৎস হলে একটা হালকা `SKILL.md` আর বিষয়ভিত্তিক ফাইল `references/`-এ রাখা হয়, `skill_view` দিয়ে দরকারে লোড হয়। সংরক্ষণ `skill_manage`-এর মধ্য দিয়ে, তাই write-approval gate প্রযোজ্য (মানে তোমার অনুমতি চাওয়ার দরজা)। dashboard-এর Skills পাতায় \"Learn a skill\" panel আছে।\n\n### Website থেকে install\n\nSkills Hub-এর \"Install in Hermes\" বোতাম `hermes://skill/install?identifier=...` লিংকে Hermes Desktop খোলে। identifier source-সহ লেখা, যেমন `official/...` বা `clawhub/...`। Desktop নিশ্চিতকরণ চায়, স্বাভাবিক scan চালায়। পুরনো Desktop লিংক না বুঝলে কার্ডের CLI কমান্ড ব্যবহার করো।\n\n### ফাঁকা profile\n\nprofile-এ ডিফল্টে bundled skill থাকে (bundled মানে Hermes-এর সাথেই আসা)। না চাইলে:\n\n```bash\nhermes profile create research --no-skills\nhermes skills opt-out\nhermes skills opt-out --remove     # শুধু অপরিবর্তিত bundled skill মোছে\nhermes skills opt-in --sync\n```\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `hermes profile create research --no-skills` | `research` নামের নতুন profile বানায়, bundled skill ছাড়া | একদম ফাঁকা থেকে শুরু করতে |\n| `hermes skills opt-out` | \"bundled skill আর চাই না\" চিহ্ন বসায় | ডিফল্ট skill না চাইলে |\n| `... --remove` | অপরিবর্তিত bundled skill মুছেও দেয়। (তোমার বদলানো গুলো থাকে) | জায়গা সাফ করতে |\n| `hermes skills opt-in --sync` | আবার চালু করে ও sync করে | মত বদলালে |\n\nএগুলো `.no-bundled-skills` marker (চিহ্ন-ফাইল) লেখে। installer-এ `--no-skills` flag নেই।\n\n## SKILL.md-এর গঠন\n\nfrontmatter-এ থাকে: `name`, `description`, `version`, `platforms`, আর `metadata.hermes`-এর নিচে `tags`, `category`, `fallback_for_toolsets`, `requires_toolsets`, `config`।\n\nপ্রস্তাবিত body-র অংশ: **When to Use** (কখন), **Procedure** (ধাপ), **Pitfalls** (ফাঁদ), **Verification** (ঠিক হলো কিনা যাচাই)।\n\n`platforms` এর মান: `macos`, `linux`, `windows`; না দিলে সব platform।\n\n### Directory গঠন\n\n```text\n~/.hermes/skills/<skill>/\n  SKILL.md        # বাধ্যতামূলক\n  references/  templates/  scripts/  examples/  assets/\n~/.hermes/skills/.hub/lock.json   .hub/quarantine/   .hub/audit.log\n~/.hermes/skills/.bundled_manifest\n```\n\nতৃতীয় পক্ষের install-এর উৎস URL, content hash (ফাইলের আঙুলের ছাপ), scanner version, findings ও timestamp `lock.json`-এ লেখা হয়। কেন: পরে জানা যায় কোন জিনিস কোথা থেকে এসেছে।\n\n### শর্তসাপেক্ষ সক্রিয়তা\n\n- **থাকলে লুকাও:** `fallback_for_toolsets`, `fallback_for_tools`\n- **থাকলে দেখাও:** `requires_toolsets`, `requires_tools`\n\nউদাহরণ: `duckduckgo-search` skill-এ `fallback_for_toolsets: [web]` আছে। তাই শুধু তখনই দেখা যায় যখন web toolset নেই (যেমন `FIRECRAWL_API_KEY` নেই)। মানে \"আসল tool থাকলে বিকল্পটা দেখিয়ে লাভ নেই।\"\n\n### নিরাপদ setup ও config\n\n- secret ঘোষণা: `required_environment_variables` (`name`, `prompt`, `help`, `required_for`)। **Secret** মানে গোপন জিনিস (পাসওয়ার্ড, চাবি)। এগুলো শুধু **local CLI**-তে চাওয়া হয়, chat-এ কখনও না। ঘোষিত variable `execute_code` ও `terminal`-এ যায়; অন্যগুলোর জন্য `terminal.env_passthrough`।\n- secret না এমন setting যায় `metadata.hermes.config`-এ আর `config.yaml`-এর `skills.config`-এ জমা হয়। `hermes config migrate` ও `hermes config show` দিয়ে সামলানো।\n\n### Media delivery\n\nresponse-এ খালি absolute media path (পুরো ঠিকানাসহ ফাইলের নাম) নিজে নিজে native attachment হয় (মানে সংযুক্ত ফাইল)। `[[audio_as_voice]]` audio-কে voice bubble করে (Telegram, WhatsApp)। `[[as_document]]` পূর্ণ resolution-এ ফাইল পাঠায়। একই response-এর **সব** media path-এ খাটে।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Skill বনাম Memory",
+      "markdown": "বারবার লাগে এমন কাজের **পদ্ধতি** Memory-র ছোট জায়গায় না লিখে Skill বানাও। Skill দরকারে তবেই লোড হয়। Memory হলো ফ্রিজের গায়ের ছোট কাগজ, Skill হলো রেসিপির বই।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোথা থেকে skill লোড হয়?\n\n- `skills.external_dirs`: অতিরিক্ত, প্রায়-read-only folder (যেমন `~/.agents/skills`)। না থাকা path চুপচাপ বাদ।\n- `skills.create_dir`: agent-এর বানানো নতুন skill কোথায় লেখা হবে।\n- **অগ্রাধিকার:** project → local → `create_dir` → `external_dirs`।\n- নামের সংঘাতে উচ্চ-অগ্রাধিকারেরটা জেতে, অন্যটা \"shadowed\" (ছায়ায় ঢাকা) হিসেবে log হয়। একই directory-তে অস্পষ্ট নাম হলে exact path-সহ error।\n\n### Project-local skill\n\n**Project** মানে তোমার কাজের ফোল্ডার, যেমন একটা অ্যাপের কোড। `<project-root>/.hermes/skills/` ও `<project-root>/.agents/skills/` থেকে লোড হয় (project root = `.git` আছে এমন নিকটতম ancestor, মানে উপরের দিকে সবচেয়ে কাছের সেই ফোল্ডার যেখানে `.git` আছে। **git** হলো কোডের ইতিহাস রাখার প্রোগ্রাম)। কিন্তু এগুলোর জন্য **trust** লাগে। কারণ কেউ অচেনা project ডাউনলোড করলে তার ভেতরের skill যেন চুপচাপ Hermes-কে বিপথে না নেয়:\n\n```bash\nhermes skills trust\nhermes skills untrust\n```\n\n`skills.trusted_project_dirs`-এ জমা হয়; `skills.project_discovery: false` দিলে বন্ধ। বিপজ্জনক কিছু পেলে quarantine; scan cache `~/.hermes/cache/project_skill_scans/`। Cron, API ও ACP আগের trust সিদ্ধান্ত মেনে চলে, কখনও prompt করে না (কারণ সেখানে কেউ বসে নেই উত্তর দিতে)।\n\n### Skill bundle\n\nএকাধিক skill এক নামে জুড়ে নেওয়া। `~/.hermes/skill-bundles/<slug>.yaml`-এ `name`, `description`, `skills` (বাধ্যতামূলক), `instruction`। কমান্ড: `hermes bundles list | show | create | delete | reload`; chat-এ `/bundles` ও `/<bundle-name>`। একই নামে skill থাকলে bundle অগ্রাধিকার পায়; অনুপস্থিত skill বাদ যায়, ব্যর্থ হয় না।\n\n## Agent নিজে skill বানায়: `skill_manage`\n\nHermes কোনো কাজ ভালো করে শিখলে নিজেই নতুন skill লিখে রাখতে পারে। action: `create`, `patch` (পছন্দের), `patch` with `content` (পুরো পুনর্লিখন; `edit` পুরনো alias), `delete`, `write_file`, `remove_file`।\n\nadvisory linter (শুধু সতর্কতা, আটকায় না): `incident-log-shape`, `references-sprawl` (৬০টার বেশি reference ফাইল), `oversized-body` (body প্রায় ২৪k অক্ষরের বেশি)।\n\n**Write approval:** `skills.write_approval: true` দিলে লেখা `~/.hermes/pending/skills/`-এ জমে, তোমার অনুমতির অপেক্ষায়:\n\n```text\n/skills pending\n/skills diff <id>\n/skills approve <id|all>\n/skills reject <id|all>\n/skills approval on|off\n```\n\n| কমান্ড | মানে |\n|---|---|\n| `/skills pending` | অপেক্ষমাণ লেখার তালিকা |\n| `/skills diff <id>` | কী বদলাতে চায় তা পাশাপাশি দেখো (diff মানে আগের-পরের পার্থক্য) |\n| `/skills approve <id\\|all>` | অনুমতি দাও (একটা বা সব) |\n| `/skills reject <id\\|all>` | ফিরিয়ে দাও |\n| `/skills approval on\\|off` | এই অনুমতি-ব্যবস্থা চালু/বন্ধ |\n\n`hermes curator lock <skill>` একটা skill-কে agent-এর জন্য read-only করে (curator হলো skill গোছানোর সহকারী)। `skills.guard_agent_created` আলাদা। এটা content scanner, approval gate না।\n\n## Skills Hub\n\n```bash\nhermes skills browse | search | inspect | install | check | update | audit | uninstall\nhermes skills list --source hub\nhermes skills reset <name> [--restore] [--yes]\nhermes skills publish\nhermes skills snapshot export\nhermes skills tap add\n```\n\ninstall-এর উদাহরণ: `openai/skills/k8s`, `official/security/1password`, `skills-sh/...`, `well-known:https://...`, বা সরাসরি `https://.../SKILL.md` (`--name` দিয়ে নাম বদল)।\n\n**উৎস:** `official`, `skills-sh`, `well-known`, `url`, `github`, `clawhub`, `lobehub`, `browse-sh`।\n**Trust level:** `builtin`, `official`, `trusted` (যেমন `openai/skills`, `anthropics/skills`, `NVIDIA/skills`), `community` (বাকি সব)। `--force` অ-বিপজ্জনক policy block পার করে, কিন্তু `dangerous` রায় কখনও না।\n\n**Advisory SkillEvaluator scan:** hub install-এ NVIDIA SkillEvaluator Tier 1 (PII, unicode smuggling, script lint, license, SkillSpector security scan) চলে। শুধু পরামর্শ, আটকায় না। (PII মানে ব্যক্তিগত তথ্য, যেমন নাম-নম্বর। unicode smuggling মানে চোখে না পড়া অদ্ভুত অক্ষরে কিছু লুকানো।) বন্ধ করতে `skills.tier1_advisory: false`।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "অচেনা skill-এ সাবধান",
+      "markdown": "Skill আসলে নির্দেশ-ভরা নথি, যা agent মেনে চলে। community উৎসের skill ইনস্টলের আগে `hermes skills inspect` দিয়ে দেখো। scan-এর `dangerous` রায় জোর করে পার করা যায় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Update, rate limit, tap, reset\n\n- `hermes skills check` upstream (মূল উৎস) পরিবর্তন জানায়; `hermes skills update [name] [--force]` পুনরায় ইনস্টল করে। locally এডিট করা skill `--force` ছাড়া বাদ। `orphaned` (directory নেই) বা `invalid_install` (অনিরাপদ path) এন্ট্রি কখনও নিজে মোছা হয় না।\n- GitHub API সীমা: অনুমোদন ছাড়া **৬০ request/ঘণ্টা**; `GITHUB_TOKEN` দিলে **৫,০০০/ঘণ্টা**। প্রতি install-এ প্রায় ২টা call। (API হলো প্রোগ্রামের সাথে প্রোগ্রামের কথা বলার জানালা। Token এখানে পরিচয়-চাবি, যা দিলে সীমা বাড়ে।)\n- **নিজের tap প্রকাশ:** tap মানে তোমার নিজের skill-দোকান। repo-তে (repo = কোড রাখার অনলাইন ফোল্ডার) `skills/<name>/SKILL.md`; ডিফল্ট path `~/.hermes/skills/.hub/taps.json`-এ বদলানো যায়; `.` বা `_` দিয়ে শুরু folder উপেক্ষিত। ঐচ্ছিক `skills.sh.json`-এর `groupings` Skills Hub-এ category label দেয়। একক skill: `hermes skills install owner/repo/skills/my-workflow`।\n- **Bundled skill reset:** sync প্রতিটা local কপির hash `.bundled_manifest`-এর origin hash-এর সাথে মেলায়। অপরিবর্তিত হলে অটো আপডেট, এডিট করা হলে সংরক্ষিত। `hermes skills reset <name>` manifest নতুন করে baseline করে (তোমার কপি রাখে); `--restore` বান্ডিল কপি দিয়ে বদলায়। এটা প্রতি profile-এ আলাদা।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes কেন সব Skill একবারে prompt-এ না ঢুকিয়ে ধাপে ধাপে লোড করে?",
+      "options": [
+        "ছবি সুন্দর করতে",
+        "নিরাপত্তার কারণে নেটওয়ার্ক বন্ধ রাখতে",
+        "জায়গা ও token খরচ বাঁচাতে, দরকারটাই শুধু খোলা হয়",
+        "Skill-কে ধীর করতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "রেসিপি কার্ডের মতো: আগে শুধু তালিকা (প্রায় ৩k token), তারপর দরকারি কার্ড।"
+    },
+    {
+      "question": "`SKILL.md`-এর জন্য কোন অংশটা বাধ্যতামূলক?",
+      "options": [
+        "`SKILL.md` ফাইল নিজেই",
+        "templates/",
+        "references/",
+        "assets/"
+      ],
+      "answerIndex": 0,
+      "explanation": "directory-র ভেতরে শুধু `SKILL.md` বাধ্যতামূলক, বাকি ফোল্ডারগুলো ঐচ্ছিক।"
+    },
+    {
+      "question": "`duckduckgo-search` skill-এ `fallback_for_toolsets: [web]` থাকলে কখন দেখা যায়?",
+      "options": [
+        "সবসময়",
+        "কখনো না",
+        "যখন Docker চলছে",
+        "যখন web toolset নেই"
+      ],
+      "answerIndex": 3,
+      "explanation": "`fallback_for` মানে \"আসলটা থাকলে লুকাও\"। আসল web toolset না থাকলেই বিকল্পটা দেখা যায়।"
+    },
+    {
+      "question": "Project-local skill (`.hermes/skills/`) লোড হতে কী লাগে?",
+      "options": [
+        "কিছু না",
+        "trust (`hermes skills trust`)",
+        "Docker",
+        "GitHub token"
+      ],
+      "answerIndex": 1,
+      "explanation": "অচেনা project-এর skill চুপচাপ ঢুকে যেন না যায়, তাই trust লাগে।"
+    },
+    {
+      "question": "একই নামের skill একাধিক জায়গায় থাকলে কোনটা জেতে?",
+      "options": [
+        "সবচেয়ে নতুন",
+        "সবচেয়ে বড়",
+        "উচ্চ অগ্রাধিকারেরটা (project → local → create_dir → external_dirs)",
+        "যেটা আগে নামানো"
+      ],
+      "answerIndex": 2,
+      "explanation": "অন্যটা \"shadowed\" হিসেবে log হয়।"
+    },
+    {
+      "question": "agent-এর skill লেখা তোমার অনুমোদনের জন্য আটকে রাখতে কী করবে?",
+      "options": [
+        "`skills.write_approval: true`",
+        "`/plan` চালানো",
+        "`--no-skills` দেওয়া",
+        "কিছুই করা যায় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "লেখা `~/.hermes/pending/skills/`-এ জমে, তারপর `/skills approve` দিয়ে অনুমতি দিতে হয়।"
+    },
+    {
+      "question": "`--force` দিয়ে কোন ধরনের block পার করা যায় **না**?",
+      "options": [
+        "community skill",
+        "`dangerous` রায়",
+        "অ-বিপজ্জনক policy block",
+        "পুরনো skill"
+      ],
+      "answerIndex": 1,
+      "explanation": "`--force` অ-বিপজ্জনক block পার করে, কিন্তু `dangerous` রায় কখনও না।"
+    },
+    {
+      "question": "Unauthenticated GitHub API-র সীমা কত, আর `GITHUB_TOKEN` দিলে?",
+      "options": [
+        "১০০/ঘণ্টা; ২০০/ঘণ্টা",
+        "৫/ঘণ্টা; ১০/ঘণ্টা",
+        "কোনো সীমা নেই",
+        "৬০/ঘণ্টা; ৫,০০০/ঘণ্টা"
+      ],
+      "answerIndex": 3,
+      "explanation": "অনুমোদন ছাড়া ৬০ request/ঘণ্টা; token দিলে ৫,০০০/ঘণ্টা।"
+    }
+  ],
+  "recap": [
+    "Skill হলো `SKILL.md` নথি, যা দরকারে তবেই লোড হয় (progressive disclosure: তালিকা, তারপর নথি, তারপর ফাইল)।",
+    "প্রতিটা skill একটা slash command; `/learn` নতুন skill বানায়; `/plan` কাজ না করে পরিকল্পনা লেখে।",
+    "Project-local skill-এ trust লাগে, আর hub-এর community skill ইনস্টলের আগে `inspect` করা উচিত।",
+    "`skills.write_approval` দিয়ে agent-এর নিজে skill লেখাকে তোমার অনুমতির পেছনে রাখা যায়।",
+    "বারবার লাগে এমন কাজের পদ্ধতি Memory-তে নয়, Skill-এ রাখো।"
+  ]
+}

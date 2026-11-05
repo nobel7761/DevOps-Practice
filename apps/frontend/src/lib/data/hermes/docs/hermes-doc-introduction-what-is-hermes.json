@@ -1,0 +1,206 @@
+{
+  "contentId": "hermes-doc-introduction-what-is-hermes",
+  "title": "Hermes কী? কোথায় ব্যবহার হয়, সুবিধা ও কী কী করা যায়",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/",
+  "oneLiner": "এই lesson শেষে তুমি বলতে পারবে Hermes কী, কোথায় চলে, কী সুবিধা দেয় এবং কী কী কাজে লাগানো যায়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একজন নতুন সহকর্মীর গল্প\n\nধরো তোমার অফিসে দুই ধরনের সহকর্মী আছে।\n\n- **প্রথমজন** প্রতিদিন সকালে সব ভুলে আসে। রোজ তাকে নতুন করে বলতে হয়, \"আমরা কোন project-এ কাজ করছি, আমি কেমন করে কাজ পছন্দ করি।\" তুমি যা বলো সে শুধু ততটুকুই করে।\n- **দ্বিতীয়জন** প্রতিদিন একটু একটু শেখে। কাজ করতে করতে নিজের জন্য নোট বানায়, \"এই ধরনের কাজ এভাবে করলে ভালো হয়।\" তোমার পছন্দ মনে রাখে। রাতে তুমি ঘুমিয়ে গেলেও সে নির্দিষ্ট সময়ে রিপোর্ট বানিয়ে তোমার ফোনে পাঠিয়ে দেয়।\n\nবেশিরভাগ AI chatbot প্রথমজনের মতো। **Hermes Agent** বানানো হয়েছে দ্বিতীয়জনের মতো করে। docs-এর ভাষায় এটা একটা **self-improving, autonomous AI agent**: যত বেশি চলে, তত বেশি কাজের হয়ে ওঠে।\n\n## Hermes আসলে কী?\n\n- **Hermes Agent** বানিয়েছে **Nous Research**। এই lab-টাই Hermes, Nomos ও Psyche নামের model-এর পেছনে আছে।\n- এটা **open source**, license **MIT**।\n- docs নিজেই দাবি করে, এটা \"the only agent with a built-in learning loop\"। এটা তাদের নিজেদের দাবি, তাই কথাটা মাথায় রেখে পড়ো।\n- এটা শুধু IDE-র ভেতরের coding copilot না, আবার কোনো একটা API-র ছোট wrapper-ও না। এটা একটা **agent**: নিজে ভাবে, tool চালায়, ফল দেখে, আবার চেষ্টা করে।\n\n### Chatbot বনাম Agent\n\n| | সাধারণ chatbot | Hermes Agent |\n|---|---|---|\n| কাজ | প্রশ্নের উত্তর দেয় | নিজে tool চালিয়ে কাজ শেষ করে |\n| স্মৃতি | এক chat-এর পরে ভুলে যায় | session পেরিয়েও মনে রাখে (Memory) |\n| শেখা | শেখে না | অভিজ্ঞতা থেকে Skill বানায় ও উন্নত করে |\n| থাকে কোথায় | ওয়েবসাইটে | তোমার laptop, VPS, Docker, cloud, Telegram-এ |\n| তুমি না থাকলে | কিছুই করে না | cron দিয়ে নির্ধারিত সময়ে নিজে কাজ করে |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "সাধারণ chatbot আর Hermes Agent-এর মূল পার্থক্য।",
+        "beforeTitle": "সাধারণ chatbot",
+        "before": "- প্রতি chat-এ শুরু থেকে শুরু\n- শুধু কথা বলে\n- তুমি জিজ্ঞেস করলে তবেই উত্তর\n- শেখা জ্ঞান জমা থাকে না",
+        "afterTitle": "Hermes Agent",
+        "after": "- Memory আর Skill জমিয়ে রাখে\n- Tool চালিয়ে কাজ করে\n- cron দিয়ে নিজে থেকেও কাজ করে\n- যত চলে তত ভালো হয়"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hermes-এর ভেতরে কী কী আছে?\n\n### ১) Learning loop: Hermes-এর আসল বিশেষত্ব\n\n- কাজ করতে করতে অভিজ্ঞতা থেকে **Skill** বানায় এবং ব্যবহারের সময় সেটা উন্নত করে।\n- নিজেকে মাঝে মাঝে মনে করিয়ে দেয়, \"এই জিনিসটা সেভ করে রাখো।\"\n- ব্যবহারকারীর একটা ধীরে ধীরে গভীর হওয়া ছবি তৈরি করে। এতে আছে agent-নিজে-সাজানো memory, FTS5 দিয়ে আগের session খোঁজা (LLM summary সহ) এবং Honcho dialectic user modeling।\n\n**Skill** মানে হলো দরকারের সময় লোড হওয়া জ্ঞানের ফাইল। এটা open **agentskills.io** standard মেনে চলে। দরকার হলেই লোড হয় বলে token কম খরচ হয়।\n\n### ২) Tools: Hermes-এর হাত-পা\n\n- **৬০+ built-in tool**: web search, extract, browser, vision, image generation, TTS ইত্যাদি।\n- **MCP** support আছে, তাই যেকোনো MCP server জুড়ে দেওয়া যায়।\n- `execute_code` tool: agent নিজে Python লিখে Hermes tool ডাকে, ফলে অনেক ধাপের কাজ এক turn-এ হয়ে যায়।\n- **Subagent**: আলাদা আলাদা কাজ আলাদা (isolated) subagent-কে দিয়ে একসাথে চালানো যায়।\n- **Browser automation**: Browserbase, Browser Use cloud, অথবা local Chrome/Brave/Edge-কে CDP দিয়ে চালানো যায়।\n\n### ৩) Memory ও Context\n\n- `MEMORY.md` আর `USER.md` ফাইলে Hermes তোমার সম্পর্কে ও কাজ সম্পর্কে মনে রাখে।\n- Context file (যেমন `AGENTS.md`, `.cursorrules`, `SOUL.md`) আপনাআপনি পড়ে নেয়।\n- `@` দিয়ে ফাইল, ফোল্ডার, git diff বা URL সরাসরি message-এ ঢোকানো যায়।\n- `SOUL.md` ফাইলে Hermes-এর চরিত্র ও কথা বলার ধরন ঠিক করে দেওয়া যায়।\n\n### ৪) Automation: তুমি না থাকলেও কাজ চলে\n\n- **Cron**: \"প্রতি সকাল ৮টায় খবরের সারাংশ পাঠাও\", সাধারণ ভাষায় বললেই schedule হয়ে যায়। ফল যেকোনো supported platform-এ যেতে পারে।\n- **Delegation**: বড় কাজ ভাগ করে subagent-দের দেওয়া।\n- **Hooks**: নির্দিষ্ট ঘটনায় নিজের code চালানো।\n- **Batch processing**: অনেক prompt একসাথে চালিয়ে training-এর জন্য trajectory data বানানো।\n- **Checkpoints**: file বদলের আগে snapshot রাখে, তাই `/rollback` দিয়ে ফিরে যাওয়া যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hermes কোথায় চলে?\n\nএই জায়গাটাই Hermes-কে আলাদা করে। এটা তোমার laptop-এ আটকে থাকে না।\n\n**Terminal backend**: Hermes কোথায় তোমার command চালাবে, সেটা ঠিক করা যায়। ছয়টা built-in backend আছে:\n\n| Backend | কখন কাজে লাগে |\n|---|---|\n| **local** | নিজের কম্পিউটারেই সরাসরি |\n| **Docker** | আলাদা container-এ নিরাপদে |\n| **SSH** | দূরের কোনো server-এ |\n| **Daytona** | serverless, idle থাকলে প্রায় খরচ নেই |\n| **Modal** | serverless, idle থাকলে প্রায় খরচ নেই |\n| **Vercel Sandbox** | cloud sandbox |\n\nএছাড়া plugin দিয়ে Singularity-র মতো backend-ও আসে। docs বলছে, Hermes চলতে পারে **$৫ VPS**-এ, GPU cluster-এ, বা serverless infra-তে। আর তুমি cloud VM-এ চলা Hermes-এর সাথে **Telegram থেকেই** কথা বলতে পারো।\n\n**Install করার উপায়:**\n\n- Windows ও macOS: Hermes Desktop installer\n- Linux, macOS, WSL2: `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`\n- Windows PowerShell: `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`\n- Android (aarch64): Termux-এর আলাদা guide\n\ninstall-এর পর `hermes setup --portal` চালালে এক OAuth login-এ model আর চারটা Tool Gateway tool (web search, image generation, TTS, browser) set হয়ে যায়।\n\n## কোন AI model চালানো যায়?\n\nHermes নিজে \"মস্তিষ্ক\" না। মস্তিষ্ক হলো যে LLM তুমি জুড়ে দাও। Provider হতে পারে **Nous Portal**, **OpenRouter**, **OpenAI** বা যেকোনো compatible endpoint। Nous Portal subscription-এ একটা model-এর সাথে web search, image generation, TTS ও browser tool একসাথে আসে।\n\nআরও সুবিধা: Provider Routing (খরচ/গতি/মান অনুযায়ী provider বাছা), Fallback Providers (একটা fail করলে অন্যটা), Credential Pools (একাধিক API key ঘুরিয়ে ব্যবহার) এবং Prompt Caching।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes-এর চারপাশের জগৎ: তুমি, messaging platform, Hermes, model আর চালানোর জায়গা।",
+        "nodes": [
+          {
+            "id": "user",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "chat",
+            "kind": "client",
+            "label": "Chat (Telegram)",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "hermes",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 440,
+            "y": 120
+          },
+          {
+            "id": "model",
+            "kind": "external",
+            "label": "LLM Provider",
+            "x": 660,
+            "y": 0
+          },
+          {
+            "id": "mem",
+            "kind": "database",
+            "label": "Memory, Skill",
+            "x": 660,
+            "y": 120
+          },
+          {
+            "id": "env",
+            "kind": "server",
+            "label": "Docker / VPS",
+            "x": 660,
+            "y": 240
+          }
+        ],
+        "edges": [
+          {
+            "from": "user",
+            "to": "chat",
+            "label": "বার্তা"
+          },
+          {
+            "from": "chat",
+            "to": "hermes",
+            "label": "gateway"
+          },
+          {
+            "from": "hermes",
+            "to": "model",
+            "label": "চিন্তা"
+          },
+          {
+            "from": "hermes",
+            "to": "mem",
+            "label": "মনে রাখা"
+          },
+          {
+            "from": "hermes",
+            "to": "env",
+            "label": "command চালানো"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন কোন জায়গা থেকে Hermes-এর সাথে কথা বলা যায়?\n\ndocs বলছে, **২০+ platform** একটা gateway থেকে চলে:\n\nCLI, Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Mattermost, Email, SMS, DingTalk, Feishu, WeCom, Weixin, QQ Bot, Yuanbao, BlueBubbles, Home Assistant, Microsoft Teams, Google Chat।\n\n- **Voice mode** CLI, Telegram, Discord এবং Discord voice channel-এ চলে।\n- **API Server** দিয়ে Hermes-কে OpenAI-compatible endpoint বানিয়ে Open WebUI বা LobeChat-এর মতো frontend-এ জোড়া যায়।\n- **ACP** দিয়ে VS Code, Zed, JetBrains-এর মতো editor-এর ভেতরেও চালানো যায়।\n- **Python library** হিসেবে নিজের code-এ ব্যবহার করা যায়।\n- **Bot Mode**: নামওয়ালা আলাদা আলাদা Bot, প্রত্যেকের নিজস্ব model, memory, skill, routine ও chat। group chat-এ @mention দিয়ে বিশেষজ্ঞ Bot-রা একসাথে কাজ করে।\n\n## কী কী কাজে ব্যবহার করা যায়?\n\nনিচের উদাহরণগুলো docs-এর feature আর guide-এর ভিত্তিতে সাজানো:\n\n| কাজ | কোন feature লাগে |\n|---|---|\n| **Coding সহকারী**: code পড়া, বদলানো, চালানো | Context Files, Code Execution, Checkpoints |\n| **Daily briefing bot**: রোজ সকালে সারাংশ ফোনে | Cron, Messaging |\n| **Team Telegram assistant** | Messaging, Profiles, Security |\n| **GitHub PR review agent** | Skills, MCP/tool, Delegation |\n| **গবেষণা**: web ঘেঁটে তথ্য জোগাড় | Web Search & Extract, Browser |\n| **ছবি বানানো**: text থেকে image | Image Generation |\n| **Voice assistant** | Voice Mode, TTS |\n| **একাধিক বিশেষজ্ঞ Bot-এর দল** | Bot Mode, Profiles, Delegation |\n| **Research ও training data** | Batch Processing, trajectory export, Atropos RL |\n| **নিজের tool/skill বানানো** | Plugins, MCP, Creating Skills |\n\n## সুবিধাগুলো এক নজরে\n\n1. **শেখে ও মনে রাখে**: Skill আর Memory জমতে থাকে, তাই সময়ের সাথে ভালো হয়।\n2. **যেকোনো জায়গায় চলে**: $৫ VPS থেকে GPU cluster, serverless পর্যন্ত।\n3. **যেকোনো জায়গা থেকে পাওয়া যায়**: terminal, Telegram, Discord, editor, API।\n4. **Model-এ আটকে নেই**: provider বদলানো যায়, fallback রাখা যায়।\n5. **Open source (MIT)**: নিজের মতো বদলানো যায়, plugin দিয়ে বাড়ানো যায়।\n6. **Automation ready**: cron, hooks, subagent, batch।\n7. **নিরাপত্তার ব্যবস্থা আছে**: command approval, authorization, container isolation।\n\n## সীমাবদ্ধতা ও সতর্কতা\n\n- Hermes একটা LLM-এর উপর নির্ভর করে। model দুর্বল হলে agent-ও দুর্বল মনে হবে।\n- agent তোমার হয়ে command চালায়। তাই Security (command approval, Docker isolation) না বুঝে সব অনুমতি দিয়ে দিয়ো না।\n- \"একমাত্র learning-loop agent\" কথাটা Nous Research-এর নিজের দাবি।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "এরপর কোন পথে যাবে?",
+      "markdown": "এই lesson-এর পরে **Installation → Quickstart → Learning Path** এই ক্রমে যাও। আগে install করে প্রথম কথোপকথন চালাও, তারপর Memory, Skills, Cron একটা একটা করে শেখো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Agent মানে ক্ষমতা, আর ক্ষমতা মানে দায়িত্ব",
+      "markdown": "Hermes তোমার terminal-এ command চালাতে পারে, file বদলাতে পারে। শুরুতে Docker backend বা command approval চালু রেখে শেখো, আর `/rollback` checkpoint-এর কথা মনে রেখো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes Agent-কে সাধারণ chatbot থেকে আলাদা করে সবচেয়ে বড় বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "এটা শুধু ইংরেজিতে কথা বলে",
+        "এর built-in learning loop আছে: Skill বানায়, Memory রাখে, ব্যবহারে উন্নত হয়",
+        "এটা শুধু IDE-র ভেতরে চলে",
+        "এটা কোনো tool চালাতে পারে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "docs অনুযায়ী Hermes-এর মূল বিশেষত্ব হলো learning loop: অভিজ্ঞতা থেকে Skill বানানো, Memory জমানো এবং সময়ের সাথে ভালো হওয়া।"
+    },
+    {
+      "question": "Hermes Agent কে বানিয়েছে এবং এর license কী?",
+      "options": [
+        "OpenAI, proprietary",
+        "Nous Research, MIT",
+        "Google, Apache",
+        "Microsoft, GPL"
+      ],
+      "answerIndex": 1,
+      "explanation": "Hermes Agent বানিয়েছে Nous Research এবং এটা MIT licensed open source।"
+    },
+    {
+      "question": "Hermes চালানোর জায়গা সম্পর্কে কোনটা সঠিক?",
+      "options": [
+        "শুধু নিজের laptop-এ",
+        "শুধু Docker-এ",
+        "local, Docker, SSH, Daytona, Modal, Vercel Sandbox — ছয়টা built-in backend আছে",
+        "শুধু Telegram-এর ভেতরে"
+      ],
+      "answerIndex": 2,
+      "explanation": "ছয়টা built-in terminal backend আছে, আর $৫ VPS থেকে serverless পর্যন্ত চলে। Telegram শুধু কথা বলার মাধ্যম।"
+    },
+    {
+      "question": "তুমি ঘুমিয়ে আছো, কিন্তু রোজ সকাল ৮টায় খবরের সারাংশ চাই। কোন feature লাগবে?",
+      "options": ["Checkpoints", "Cron (scheduled tasks)", "SOUL.md", "Skins"],
+      "answerIndex": 1,
+      "explanation": "Cron সাধারণ ভাষায় বা cron expression দিয়ে schedule করে কাজ চালায় এবং ফল যেকোনো supported platform-এ পাঠাতে পারে।"
+    },
+    {
+      "question": "Hermes-এর মস্তিষ্ক অর্থাৎ AI model সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "Hermes-এ একটাই বাঁধা model আছে",
+        "provider বদলানো যায় (Nous Portal, OpenRouter, OpenAI বা যেকোনো endpoint) এবং fallback রাখা যায়",
+        "model ছাড়াই Hermes চলে",
+        "শুধু local model চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Hermes নিজে LLM না। তুমি provider জুড়ে দাও, আর Provider Routing, Fallback ও Credential Pools দিয়ে নিয়ন্ত্রণ করো।"
+    },
+    {
+      "question": "Skill কী?",
+      "options": [
+        "একটা hardware device",
+        "দরকার হলে লোড হওয়া জ্ঞানের ফাইল, যা agentskills.io standard মেনে চলে",
+        "একটা messaging platform",
+        "একটা terminal backend"
+      ],
+      "answerIndex": 1,
+      "explanation": "Skill হলো on-demand knowledge document। দরকারের সময়ই লোড হয়, তাই token কম লাগে।"
+    },
+    {
+      "question": "Hermes যদি তোমার terminal-এ command চালাতে পারে, তাহলে শুরুতে কোন সতর্কতা সবচেয়ে বুদ্ধিমানের?",
+      "options": [
+        "সব command-এ অটো-অনুমতি দিয়ে দেওয়া",
+        "Command approval ও Docker isolation চালু রেখে শেখা",
+        "internet বন্ধ করে দেওয়া",
+        "Security নিয়ে ভাবার দরকার নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "docs-এ command approval, authorization ও container isolation আছে। এগুলো না বুঝে বন্ধ করা ঝুঁকিপূর্ণ।"
+    }
+  ],
+  "recap": [
+    "Hermes হলো Nous Research-এর বানানো open source (MIT) self-improving AI agent।",
+    "এর মূল শক্তি learning loop: Skill, Memory ও user model সময়ের সাথে উন্নত হয়।",
+    "৬০+ built-in tool, MCP, subagent ও execute_code দিয়ে এটা শুধু কথা নয়, কাজ করে।",
+    "local, Docker, SSH, Daytona, Modal বা Vercel Sandbox-এ চলে এবং ২০+ platform থেকে পাওয়া যায়।",
+    "Cron, hooks ও batch দিয়ে তুমি না থাকলেও কাজ চলে, তবে security সতর্কতা মনে রাখতে হবে।"
+  ]
+}

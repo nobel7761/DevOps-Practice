@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-python-library",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-python-library-q01",
+      "difficulty": "easy",
+      "question": "Hermes-কে Python library হিসেবে ব্যবহার করতে কোন class import করা হয়?",
+      "options": [
+        "`from run_agent import AIAgent`",
+        "`from hermes import Agent`",
+        "`from run_agent import Runner`",
+        "`from agent_core import AIAgent`"
+      ],
+      "correctIndex": 0,
+      "explanation": "লেসনে `from run_agent import AIAgent` দিয়ে `AIAgent` class আনা হয়, যা Hermes-এর ছাঁচ।",
+      "whyWrong": {
+        "1": "এই নামে কোনো import লেসনে নেই।",
+        "2": "`run_agent` ঠিক, কিন্তু class-এর নাম `Runner` নয়।",
+        "3": "ফাইলের নাম `run_agent`, `agent_core` নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q02",
+      "difficulty": "easy",
+      "question": "`agent.chat(\"...\")` কী ফেরত দেয়?",
+      "options": [
+        "পুরো history-সহ একটা dict, যাতে `messages` থাকে",
+        "পুরো loop চালিয়ে শুধু final text উত্তর",
+        "শুধু প্রথম tool call-এর ফলাফল, উত্তর নয়",
+        "একটা `trajectory_samples.jsonl` ফাইলের নাম"
+      ],
+      "correctIndex": 1,
+      "explanation": "`chat()` ভেতরে tool call আর retry-র পুরো loop চালায়, কিন্তু তোমাকে শুধু শেষ লেখা দেয়।",
+      "whyWrong": {
+        "0": "dict ফেরত দেয় `run_conversation()`, `chat()` নয়।",
+        "2": "`chat()` loop শেষ করেই উত্তর দেয়, প্রথম tool call-এ থামে না।",
+        "3": "ফাইল সেভ হয় `save_trajectories=True` দিলে, আর `chat()` লেখা ফেরত দেয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q03",
+      "difficulty": "easy",
+      "question": "Embed করার সময় `quiet_mode=True` কেন দেওয়া হয়?",
+      "options": [
+        "যাতে agent কোনো tool ব্যবহার করতে না পারে, সবই বন্ধ হয়",
+        "যাতে agent আগের কথোপকথন নিজে নিজে মনে রাখে",
+        "spinner আর progress output ছাপা বন্ধ করতে",
+        "যাতে API key আর environment variable দরকার না হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`quiet_mode=True` spinner ও progress ছাপা বন্ধ করে, তাই নিজের app-এর output পরিষ্কার থাকে।",
+      "whyWrong": {
+        "0": "tool বন্ধ করতে `disabled_toolsets` লাগে, `quiet_mode` নয়।",
+        "1": "স্মৃতির সঙ্গে `quiet_mode`-এর সম্পর্ক নেই; সেটা `conversation_history`-র কাজ।",
+        "3": "API key সবসময়ই লাগে, `quiet_mode` তা বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q04",
+      "difficulty": "easy",
+      "question": "`enabled_toolsets=[\"web\"]` মানে কী?",
+      "options": [
+        "`web` বাদে বাকি সব toolset চলবে (blocklist)",
+        "`web` চালু হবে আর অন্য সব toolset-ও চালু থাকবে",
+        "`web` toolset শুধু পরের conversation থেকে চালু হবে",
+        "শুধু `web` চলবে, বাকি বন্ধ (allowlist)"
+      ],
+      "correctIndex": 3,
+      "explanation": "`enabled_toolsets` হলো allowlist: তালিকার জিনিসই চলবে, বাকি সব না।",
+      "whyWrong": {
+        "0": "এটা `disabled_toolsets`-এর অর্থ, উল্টো কাজ।",
+        "1": "এখানে শুধু `web` চলে; অন্য tool-এর কথা আলাদা করে বলার দরকার নেই, সব বাদ।",
+        "2": "এমন কোনো দেরি-করা নিয়ম নেই, সেটিং সঙ্গে সঙ্গে খাটে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q05",
+      "difficulty": "easy",
+      "question": "`save_trajectories=True` দিলে কী হয়?",
+      "options": [
+        "শুধু শেষ উত্তরটা `answers.txt` ফাইলে সেভ হয়, বাকি সব বাদ পড়ে যায়",
+        "agent-এর API key নিজে থেকে `.env` ফাইলে লেখা হয়",
+        "প্রতি conversation `trajectory_samples.jsonl`-এ এক লাইন",
+        "প্রতিটা কথোপকথন শেষ হলেই পুরোটা মুছে ফেলা হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Trajectory হলো কথোপকথনের ধাপ-তালিকা, যা dataset বানাতে কাজে লাগে।",
+      "whyWrong": {
+        "0": "ফাইল `.jsonl`, `.txt` নয়, আর পুরো ধাপ থাকে।",
+        "1": "API key সেভ করা এর কাজ নয়।",
+        "3": "মোছার কাজ করে না, উল্টো সেভ করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q06",
+      "difficulty": "easy",
+      "question": "Hermes-এর কোড কীভাবে পাওয়ার কথা বলা হয়েছে?",
+      "options": [
+        "`git clone` করে `source ./activate` চালিয়ে",
+        "`pip install hermes` দিয়ে তৈরি wheel নামিয়ে",
+        "`requirements.txt` দিয়ে সব প্যাকেজ install করে",
+        "`npm install hermes-agent` command চালিয়ে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hermes কোনো supported wheel বা sdist প্রকাশ করে না, তাই `git clone` ও `source ./activate` ব্যবহার হয়।",
+      "whyWrong": {
+        "1": "wheel প্রকাশ করা হয় না, তাই `pip install` এভাবে চলে না।",
+        "2": "`requirements.txt` দিয়ে install সমর্থিত নয় বলে লেসনে স্পষ্ট বলা আছে।",
+        "3": "`npm` প্যাকেজের কথা লেসনে নেই; এটা Python library।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q07",
+      "difficulty": "easy",
+      "question": "`task_id` কী কাজে রাখা হয়?",
+      "options": [
+        "উত্তরটা কোন ভাষায় আসবে তা ঠিক করে দিতে",
+        "কোন কাজে কত টাকা খরচ হলো তার হিসাব রাখতে",
+        "কোন model বেছে নেওয়া হবে তা নির্ধারণ করতে",
+        "VM isolation-এর জন্য, কাজ আলাদা ঘরে চলতে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`task_id` agent-এ VM isolation-এর জন্য রাখা হয়, আর এটা dict-এ ফেরত আসে না।",
+      "whyWrong": {
+        "0": "ভাষা ঠিক করার কাজ `task_id`-এর নেই।",
+        "1": "খরচের হিসাব এর কাজ নয়।",
+        "2": "model বাছাই হয় `model=` parameter দিয়ে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q08",
+      "difficulty": "medium",
+      "question": "কোন অবস্থায় `chat()`-এর বদলে `run_conversation()` ব্যবহার করবে?",
+      "options": [
+        "যখন শুধু এক লাইনের উত্তর দরকার, আর কিছু নয়",
+        "যখন পুরো `messages` ইতিহাসও দরকার",
+        "যখন agent-এর tool সবগুলো একসাথে বন্ধ করতে চাও",
+        "যখন `quiet_mode`-এর দরকার নেই বলে মনে হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "`run_conversation()` dict ফেরত দেয়, যাতে `final_response` ও পুরো `messages` থাকে।",
+      "whyWrong": {
+        "0": "শুধু উত্তর চাইলে সহজ `chat()`-ই ভালো।",
+        "2": "tool বন্ধ করে `disabled_toolsets`, এই method নয়।",
+        "3": "`quiet_mode` দুই method-এই আলাদা parameter হিসেবে চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q09",
+      "difficulty": "medium",
+      "question": "Multi-turn-এ দ্বিতীয় প্রশ্নে agent আগের কথা মনে রাখতে কী দিতে হয়?",
+      "options": [
+        "প্রথম প্রশ্নে ব্যবহার করা একই `task_id` আবার",
+        "আগের `messages` কে `conversation_history=` হিসেবে",
+        "`skip_memory=False` ও `quiet_mode=True` একসাথে",
+        "প্রথম উত্তরের `final_response` লেখা `model=`-এ বসিয়ে"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতি call নতুন, তাই আগের `messages` `conversation_history`-তে না দিলে সে নাম জানে না।",
+      "whyWrong": {
+        "0": "`task_id` isolation-এর জন্য, ইতিহাসের জন্য নয়।",
+        "2": "`skip_memory` persistent memory-র জিনিস, এক আলাপের ইতিহাসের নয়।",
+        "3": "`model=` মগজ বাছে, কথার ইতিহাস নেয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q10",
+      "difficulty": "medium",
+      "question": "`ephemeral_system_prompt` আর trajectory ফাইলের সম্পর্ক কী?",
+      "options": [
+        "আচরণ নির্দেশ করে এবং trajectory ফাইলে সবসময় সেভ হয়",
+        "শুধু trajectory ফাইলেই থাকে, agent তা কখনো পড়ে না",
+        "শুধু `max_iterations` শেষ হলে তবেই ফাইলে লেখা হয়",
+        "আচরণ বদলায়, কিন্তু ফাইলে সেভ হয় না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Ephemeral মানে ক্ষণস্থায়ী: prompt কাজ করে, কিন্তু dataset-এ ঢোকে না।",
+      "whyWrong": {
+        "0": "সেভ না হওয়াই এর বৈশিষ্ট্য, তাই 'সবসময় সেভ' ভুল।",
+        "1": "agent এটা পড়ে ও আচরণ বদলায়, ফাইল-সংক্রান্ত কিছু নয়।",
+        "2": "`max_iterations`-এর সঙ্গে এর কোনো যোগ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q11",
+      "difficulty": "medium",
+      "question": "Batch processing-এ অনেক prompt একসাথে চালাতে কোন command দেওয়া হয়?",
+      "options": [
+        "`python batch_runner.py --input prompts.jsonl --output results.jsonl`",
+        "`python batch_runner.py --prompts prompts.txt --save results.txt --threads 3`",
+        "`hermes batch --input prompts.jsonl --output results.jsonl --parallel`",
+        "`python run_agent.py --batch prompts.jsonl results.jsonl --workers 3`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`batch_runner.py` প্রশ্নের ফাইল `--input` ও উত্তরের ফাইল `--output` থেকে নেয়; প্রতি prompt আলাদা `task_id` পায়।",
+      "whyWrong": {
+        "1": "flag-এর নাম `--input`/`--output`, আর ফাইল `.jsonl`।",
+        "2": "লেসনে `hermes batch` নামে কোনো command নেই।",
+        "3": "এই ধাঁচের command লেসনে নেই; script হলো `batch_runner.py`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q12",
+      "difficulty": "medium",
+      "question": "নিজে thread pool বানালে প্রতি কাজে কেন নতুন `AIAgent` বানানো হয়?",
+      "options": [
+        "কারণ একটা `AIAgent` একটা প্রশ্নের উত্তর দিয়েই নিজে মরে যায়",
+        "কারণ প্রতিবার নতুন agent বানালে মোট খরচ কমে যায়",
+        "কারণ history ও tool session thread-safe নয়",
+        "কারণ একই API key একসাথে দুই thread-এ কখনোই চলে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "দুই কর্মী একই খাতায় লিখলে গোলমাল হয়, তাই প্রতি thread/task-এ আলাদা agent।",
+      "whyWrong": {
+        "0": "agent মরে যায় না; একই agent আবার ডাকা যায়, শুধু thread-এ নিরাপদ নয়।",
+        "1": "খরচ কমার কথা লেসনে নেই।",
+        "3": "key নিয়ে এমন সীমা লেসনে বলা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q13",
+      "difficulty": "medium",
+      "question": "stateless API endpoint-এ কোন parameter রাখার কথা বলা হয়েছে?",
+      "options": [
+        "`save_trajectories=True`",
+        "`quiet_mode=False`",
+        "`max_iterations=500`",
+        "`skip_memory=True`"
+      ],
+      "correctIndex": 3,
+      "explanation": "`skip_memory=True` persistent memory-র read/write বন্ধ করে, তাই API স্মৃতিহীন থাকে।",
+      "whyWrong": {
+        "0": "এটা dataset বানাতে; স্মৃতির সঙ্গে সম্পর্ক নেই।",
+        "1": "`quiet_mode=False` spinner চালু রাখে, যা endpoint-এ অবাঞ্ছিত।",
+        "2": "৫০০ হলো default সীমা, স্মৃতির নিয়ন্ত্রণ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q14",
+      "difficulty": "medium",
+      "question": "FastAPI উদাহরণে `skip_context_files=True` কী করে?",
+      "options": [
+        "agent-কে terminal ব্যবহার করতে নিষেধ করে দেয়",
+        "উত্তরটা ২০০০ অক্ষরের বেশি হলে কেটে দেয়",
+        "`AGENTS.md`-এর মতো ফাইল লোড বাদ দেয়",
+        "প্রতি call-এ আলাদা নতুন API key তৈরি করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Default `False`; web endpoint-এ project-এর context ফাইল লোড করার দরকার নেই বলে বাদ দেওয়া হয়।",
+      "whyWrong": {
+        "0": "terminal বন্ধ করে `disabled_toolsets`।",
+        "1": "২০০০ অক্ষরের কাটা Discord উদাহরণের `response[:2000]`।",
+        "3": "এমন কোনো কাজ এই parameter করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q15",
+      "difficulty": "hard",
+      "question": "তুমি একটা shared server-এ research bot বানাচ্ছ, যেটা শুধু ওয়েব ঘাঁটবে। কোন সেটিং সবচেয়ে সরাসরি মেলে?",
+      "options": [
+        "`disabled_toolsets=[\"web\"]`, তাই শুধু web বন্ধ থাকে",
+        "`enabled_toolsets=[\"web\"]`",
+        "`platform=\"web\"`, তাই terminal নিজে নিজে বাদ যায়",
+        "`skip_context_files=True`, তাই terminal নিজে বাদ যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Research bot-এর জন্য allowlist উপযুক্ত: শুধু `web` চলবে, terminal চলবে না।",
+      "whyWrong": {
+        "0": "এটা web-ই বন্ধ করবে, উল্টো ফল।",
+        "2": "`platform` শুধু formatting hint দেয়, tool বদলায় না।",
+        "3": "এটা context ফাইল বাদ দেয়, tool-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q16",
+      "difficulty": "hard",
+      "question": "একজন ঘুমানোর আগে ১০০টা prompt thread pool-এ চালাল। কোন সেটিং ছাড়া খরচ অনন্ত লুপে বেড়ে যেতে পারে?",
+      "options": [
+        "`max_iterations` default ৫০০-ই রয়ে গেছে",
+        "`quiet_mode=True` দেওয়া হয়েছে বলে ছাপা বন্ধ",
+        "`max_workers=3` রাখা হয়েছে বলে কর্মী কম",
+        "`skip_memory=True` দেওয়া হয়েছে বলে স্মৃতি বন্ধ"
+      ],
+      "correctIndex": 0,
+      "explanation": "Default ৫০০ উদার; সাধারণ Q&A-তে `max_iterations=10`-এর মতো মান runaway loop ও খরচ আটকায়।",
+      "whyWrong": {
+        "1": "`quiet_mode` শুধু output ছাপা বন্ধ করে, খরচ নয়।",
+        "2": "`max_workers` কর্মীর সংখ্যা, লুপ সীমা নয়।",
+        "3": "`skip_memory` স্মৃতি বন্ধ করে, লুপ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q17",
+      "difficulty": "hard",
+      "question": "CI/CD PR review-এর উদাহরণে `disabled_toolsets=[\"terminal\", \"browser\"]` কেন বুদ্ধিমানের কাজ?",
+      "options": [
+        "diff পড়তে terminal ও browser না থাকলে চলে না, তাই এগুলো বন্ধ করলে দ্রুত হয়",
+        "terminal বন্ধ করলে `git diff main...HEAD` আপনাআপনি agent নিজে চালায়",
+        "agent শুধু diff পড়বে, কমান্ড বা ব্রাউজ করা লাগবে না",
+        "এতে agent-এর `model=` বদলে একটা সস্তা model বাছা হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Review শুধু diff-এর লেখা পড়ে করা যায়; অপ্রয়োজনীয় হাতিয়ার বন্ধ রাখা নিরাপদ।",
+      "whyWrong": {
+        "0": "diff আগেই পড়ে agent-কে দেওয়া হয়; তাই tool লাগে না, কিন্তু 'দ্রুত হয়' কারণ নয়।",
+        "1": "`git diff` agent-এর হাতে নয়, বাইরের কোড চালায়।",
+        "3": "toolset বন্ধ করলে model বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q18",
+      "difficulty": "hard",
+      "question": "নিচের কোডে সমস্যা কী?\n`agent = AIAgent(model=\"anthropic/claude-sonnet-4.6\")`\n`print(agent.chat(\"Hi\"))` তোমার নিজের web app-এ বসানো হয়েছে।",
+      "options": [
+        "`quiet_mode=True` নেই, spinner output এলোমেলো করবে",
+        "`model=` দেওয়া যায় না, সেটা config থেকে আসতে হবে",
+        "`chat()` শুধু `run_conversation()`-এর পর চলে",
+        "`AIAgent` import করা হয়নি বলে এটা ধরা পড়বে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Embed করার সময় সবসময় `quiet_mode=True`; নাহলে agent spinner আর progress ছাপে।",
+      "whyWrong": {
+        "1": "`model` দেওয়া ঠিক; খালি রাখলে তবেই config থেকে আসে।",
+        "2": "`chat()` সরাসরি চলে, আগে কিছু লাগে না।",
+        "3": "সমস্যার কেন্দ্র import নয়, `quiet_mode`-এর অভাব।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q19",
+      "difficulty": "hard",
+      "question": "একটা Discord bot বানাচ্ছ। কোন সেটিং মেলে এবং কোন সীমা মনে রাখতে হবে?",
+      "options": [
+        "`platform=\"discord\"` দিয়ে আর উত্তর `response[:500]` পাঠানো",
+        "`platform=\"discord\"` ও `response[:2000]`",
+        "`skip_memory=True` দিয়ে আর উত্তর `response[:2000]` পাঠানো",
+        "`quiet_mode=False` দিয়ে আর উত্তর `response[:200]` পাঠানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "`platform` formatting hint দেয়, আর Discord-এর সীমা ২০০০ অক্ষর।",
+      "whyWrong": {
+        "0": "সীমা ২০০০, ৫০০ নয়।",
+        "2": "`skip_memory` ঠিক formatting hint নয়; উদাহরণে `platform` ব্যবহার হয়েছে।",
+        "3": "`quiet_mode=False` embed-এ ভালো নয়, আর সীমাও ২০০০।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-python-library-q20",
+      "difficulty": "hard",
+      "question": "নিচের কোন সংমিশ্রণ stateless, নিরাপদ, কম খরচের Q&A endpoint-এর সবচেয়ে কাছাকাছি?",
+      "options": [
+        "`skip_memory=False`, `save_trajectories=True`, `max_iterations=500`",
+        "`quiet_mode=False`, `skip_context_files=False`, `max_iterations=500`",
+        "`skip_memory=True`, `quiet_mode=False`, `max_iterations=500`",
+        "`skip_memory=True`, `skip_context_files=True`, `max_iterations=10`"
+      ],
+      "correctIndex": 3,
+      "explanation": "স্মৃতিহীন (`skip_memory`), context ফাইল ছাড়া, শান্ত output আর ছোট iteration সীমা মিলে নিরাপদ ও সস্তা endpoint হয়।",
+      "whyWrong": {
+        "0": "স্মৃতি চালু আর ৫০০ সীমা stateless ও খরচ-সচেতন নয়।",
+        "1": "spinner চালু আর বড় সীমা endpoint-এর জন্য ঠিক নয়।",
+        "2": "স্মৃতি বন্ধ ঠিক, কিন্তু spinner চালু ও ৫০০ সীমা খরচ ও output নষ্ট করে।"
+      }
+    }
+  ]
+}

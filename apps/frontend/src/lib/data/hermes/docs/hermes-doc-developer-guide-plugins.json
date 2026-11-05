@@ -1,0 +1,163 @@
+{
+  "contentId": "hermes-doc-developer-guide-plugins",
+  "title": "Build a Hermes Plugin",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/plugins",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে plugin কী, কেন লাগে, আর calculator উদাহরণের মাধ্যমে Hermes-এর core না ছুঁয়ে নিজের tool ও hook কীভাবে যোগ করতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## খেলনা-গাড়িতে নতুন যন্ত্র লাগানোর গল্প\n\nতোমার একটা রিমোট-গাড়ি আছে। ইঞ্জিন খুলে বদলাতে চাও না, কিন্তু একটা **বাড়তি হর্ন** আর একটা **ছোট ক্যালকুলেটর** লাগাতে চাও। তাই গাড়ির গায়ে একটা **সকেট** আছে। যন্ত্রে একটা ছোট কার্ড (`plugin.yaml`) আর একটা প্লাগ (`register(ctx)`) থাকলে সে নিজেকে গাড়ির সাথে জুড়ে দেয়।\n\nHermes **plugin** ঠিক এটাই: Hermes-এর মূল অংশ (core) না ছুঁয়ে tool, hook, CLI command, slash command যোগ করা।\n\n**Plugin না থাকলে কী সমস্যা হতো?** নতুন ক্ষমতা চাইলে Hermes-এর নিজের কোড বদলাতে হতো। প্রতিটা Hermes আপডেটে সেই বদল আবার মেলাতে হতো। Plugin আলাদা ফোল্ডারে থাকে, তাই আপডেটে কিছু ভাঙে না।\n\npage-এর উদাহরণ একটা **calculator plugin**: দুটো tool (`calculate`, `unit_convert`), একটা `post_tool_call` hook যা tool ব্যবহার log করে, আর একটা bundled skill।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Plugin\nHermes-এর অ্যাড-অন। ফোনে অ্যাপ নামানোর মতো: ফোনের মূল অংশ বদলায় না, নতুন ক্ষমতা আসে।\n\n### ২) Tool আর Handler আর Schema\n- **Tool** = AI-র হাতিয়ার (যেমন \"হিসাব করো\")। AI চাইলে Hermes চালায়।\n- **Handler** = tool-এর আসল কাজ করার ছোট ফাংশন।\n- **Schema** = tool-এর পরিচয়-কার্ড (নাম, বর্ণনা, কোন তথ্য লাগে)। **AI এই বর্ণনা পড়েই ঠিক করে কখন tool ডাকবে**, তাই বর্ণনা স্পষ্ট হতে হবে।\n\n### ৩) Hook\nকাজের আগে বা পরে ঢোকানো নিজের কোড। বাড়ির দরজার ঘণ্টার মতো: কেউ ঢুকলে/বেরোলে একটা কিছু ঘটে। যেমন `post_tool_call` = \"প্রতিটা tool চলার পরে\" চলা কোড।\n\n### ৪) Slash command আর CLI command\n- **Slash command** = chat-এ `/` দিয়ে লেখা হুকুম (যেমন `/plugins`)।\n- **CLI command** = terminal-এ `hermes <নাম>` ধরনের হুকুম।\n\n### ৫) Manifest (`plugin.yaml`)\nplugin-এর পরিচয়-পত্র: নাম, সংস্করণ, কী কী দেয়। **YAML** = `নাম: মান` আকারে সাজানো সোজা লেখা।\n\n### ৬) `register(ctx)` আর `ctx`\n- **`register`** = plugin-এর \"নিজেকে জুড়ে দাও\" ফাংশন। Hermes চালু হওয়ার সময় ডাকে।\n- **`ctx`** (context, প্রসঙ্গ) = Hermes যে হাতিয়ার-বাক্সটা তোমাকে ধরিয়ে দেয়: `ctx.register_tool(...)`, `ctx.register_hook(...)` ইত্যাদি।\n\n### ৭) JSON আর JSON string\n- **JSON** = `{ \"নাম\": \"মান\" }` ধরনের সাজানো তথ্য।\n- **JSON string** = সেই তথ্য একটা লেখা (string) হিসেবে। handler সবসময় এটাই ফেরত দেবে।\n\n### ৮) Exception আর Crash\n- **Exception** = কোডে অপ্রত্যাশিত ভুল (ছুঁড়ে দেওয়া সংকেত)।\n- **Crash** = প্রোগ্রাম ভেঙে বন্ধ হয়ে যাওয়া।\n\n### ৯) Capability, Consent, Sandbox\n- **Capability** = plugin-এর বিশেষ ক্ষমতার ঘোষণা (যেমন \"আমি built-in tool বদলাতে চাই\")।\n- **Consent screen** = \"এই plugin এসব চাইছে, দেবে?\" জিজ্ঞেসের পর্দা।\n- **Sandbox** = বালির বাক্স, যেখানে কোড বাইরে কিছু নষ্ট করতে পারে না। *Capabilities sandbox নয়*, নিচে দেখো।\n\n### ১০) MCP\nবাইরের tool জোড়ার সার্বজনীন সকেট।\n\n### ১১) pip, Python package, dependency\n- **Python** = Hermes যে ভাষায় লেখা। **pip** = Python-এর প্যাকেজ-ডেলিভারি লোক। **Dependency** = plugin চলার জন্য যে অন্য প্যাকেজগুলো লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন ধরনের plugin?\n\npage শুরুতেই বলে কোন লক্ষ্যে কোন গাইড পড়বে:\n\n| লক্ষ্য | গাইড |\n|---|---|\n| tool, hook, CLI command | এই page |\n| model provider | আলাদা গাইড |\n| gateway platform adapter (নতুন chat অ্যাপ) | আলাদা গাইড |\n| memory ও context-engine backend | আলাদা গাইড |\n| image / web-search / browser / terminal provider | আলাদা গাইড |\n| computer-use, TTS/STT | আলাদা গাইড |\n| MCP server, gateway event hook, shell hook, skill tap | আলাদা গাইড |\n\nতৃতীয়-পক্ষ product-এর pip plugin আলাদা repo-তে (কোডের আলাদা ভাণ্ডারে) থাকে।\n\n## হাতের কাছের সহায়ক\n\n- `hermes plugins validate <path> --install-deps`: catalog CI check (তালিকায় ওঠার আগের স্বয়ংক্রিয় পরীক্ষা) locally চালানো।\n- `hermes plugins doctor [path-or-id]`: অস্থায়ী `HERMES_HOME`-এ discovery ও registration পরীক্ষা; `--ci` দিলে error-এ non-zero exit (ব্যর্থতার সংকেত)।\n- `plugin_data_dir()` ও `plugin_db()`: update/remove পেরিয়ে টেকা স্থায়ী state।\n- `python_dependencies` (`plugin.yaml`-এ) বা `pyproject.toml` (এটা অগ্রাধিকার পায়)।\n- `ctx.register_skill()`: skill bundle; `capabilities:`: consent screen-এর জন্য privileged surface (বিশেষ ক্ষমতা) ঘোষণা; `ctx.llm`: host-এর credential দিয়ে LLM call।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Plugin ফোল্ডারের পাঁচটা ফাইল একসাথে কীভাবে কাজ করে।",
+        "steps": [
+          {
+            "title": "plugin.yaml",
+            "body": "নাম, version, `provides_tools`, `provides_hooks`। plugin-এর পরিচয়-কার্ড।"
+          },
+          {
+            "title": "schemas.py",
+            "body": "`CALCULATE`, `UNIT_CONVERT`। AI-কে বলে tool কী আর কখন ডাকতে হয়।"
+          },
+          {
+            "title": "tools.py",
+            "body": "handler `(args, **kwargs) -> str`; JSON string ফেরত, exception নয়।"
+          },
+          {
+            "title": "__init__.py",
+            "body": "`register(ctx)`: `ctx.register_tool(...)` ও `ctx.register_hook(...)` দিয়ে সব জোড়া লাগায়।"
+          },
+          {
+            "title": "hermes → /plugins",
+            "body": "Hermes চালু হলে plugin খুঁজে load করে; `✓ calculator v1.0.0 (2 tools, 1 hooks)`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ১-৬: calculator বানাও\n\n**১. ফোল্ডার বানাও**\n\n```bash\nmkdir -p ~/.hermes/plugins/calculator && cd ~/.hermes/plugins/calculator\n```\n\n| অংশ | মানে |\n|---|---|\n| `mkdir -p` | ফোল্ডার বানাও (`-p` = মাঝের ফোল্ডার না থাকলে সেগুলোও) |\n| `~/.hermes/plugins/calculator` | home-এর `.hermes/plugins`-এর ভেতর `calculator` ফোল্ডার |\n| `&&` | আগেরটা সফল হলে তবেই পরেরটা |\n| `cd` | ওই ফোল্ডারে ঢোকো |\n\n**২. `plugin.yaml`:** উদাহরণে আছে `name`, `version`, `description`, `provides_tools`, `provides_hooks`। ঐচ্ছিক বাড়তি fields: `author`, `requires_env`, `capabilities`।\n\n- `provides_tools` validation, catalog listing ও dashboard auth hint-এর জন্য। এটা load আটকায় না।\n- `requires_env` সাধারণ তালিকা বা rich entry (`name`, `description`, `url`, `secret`)।\n\n**৩. `schemas.py`:** `CALCULATE` ও `UNIT_CONVERT` নামের dict (নাম-মানের তালিকা): `name`, `description`, JSON-schema `parameters`। **Description-ই AI পড়ে ঠিক করে কখন tool ডাকবে।** তাই বর্ণনা স্পষ্ট লেখো।\n\n**৪. `tools.py`:** handler-এর signature `(args: dict, **kwargs) -> str`। সবসময় JSON string ফেরত, কখনো raise নয় (exception ছুঁড়ে দেওয়া নয়)। `calculate` whitelist-করা math function-সহ restricted `eval` ব্যবহার করে (`eval` = লেখা অঙ্ককে কোড হিসেবে চালানো, তাই শুধু অনুমোদিত ফাংশন দেওয়া হয়, যাতে ক্ষতিকর কিছু না চলে)। `unit_convert` তাপমাত্রা ও ratio-ভিত্তিক টেবিল (length, weight, data, time) সামলায়।\n\n**৫. `__init__.py`:** `register(ctx)`\n\n```python\ndef register(ctx):\n    ctx.register_tool(name=..., toolset=..., schema=..., handler=...)\n    ctx.register_hook(\"post_tool_call\", ...)\n```\n\n`register()` crash করলে শুধু ওই plugin বন্ধ হয়, Hermes চলতে থাকে।\n\n**৬. পরীক্ষা:** `hermes` চালাও, banner দেখো, অঙ্কের prompt দাও, `/plugins` লেখো। **আশা করা ফল:** `✓ calculator v1.0.0 (2 tools, 1 hooks)`।\n\n## `ctx`-এর হাতিয়ার\n\n`register_tool`, `register_hook`, `register_cli_command`, `register_command`, `dispatch_tool`, `get_config`, `set_config`, `state`, `has_capability`, `register_skill`, `register_locale`, `register_locale_dir`, `register_middleware`, `has_plugin`।\n\n| কাজ | কীভাবে | মন্তব্য |\n|---|---|---|\n| **CLI subcommand** | `ctx.register_cli_command(name, help, setup_fn, handler_fn)` | `hermes <plugin>` tree। (Memory provider-এর বদলে `cli.py`-এ `register_cli(subparser)`) |\n| **Slash command** | `ctx.register_command(name, handler, description, args_hint)` | CLI ও gateway-তে চলে, autocomplete ও `/help`-এ আসে। Handler gateway process-এ চলে, তাই `print()` না করে text ফেরত দাও |\n| **Tool ডাকা** | `ctx.dispatch_tool(name, args, *, parent_agent=None)` | `ctx._cli_ref` ছুঁয়ো না, gateway ও `hermes chat -q`-তে এটা `None` |\n| **Cron context** | `ctx.current_cron_execution()` | cron-এর বাইরে `None` |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hook\n\n| Hook | ধরন |\n|---|---|\n| `pre_tool_call` | `{\"action\": \"block\"\\|\"approve\", \"message\": ...}` ফেরত দিয়ে আটকাতে পারে |\n| `pre_llm_call` | `{\"context\": ...}` বা string ফেরত দিলে current user message-এ ঢোকে; `{\"action\": \"block\", ...}` দিলে turn বাতিল (`blocked_by_plugin_pre_llm_call`) |\n| `post_tool_call`, `post_llm_call`, `pre/post_api_request`, `api_request_error`, `pre/post_auxiliary_call`, `on_session_start/end/finalize/reset/delete`, `post_compaction`, `gateway_platform_event`, `kanban_task_claimed/completed/blocked` | **observer**: শুধু দেখে, return value উপেক্ষিত |\n\n**কেন দুই ধরন?** কিছু hook পাহারাদার (আটকাতে পারে: `pre_tool_call`, `pre_llm_call`), বাকিগুলো শুধু দর্শক (দেখে, কিছু বদলায় না)। (**Observer** = দর্শক।)\n\nHook timeout default `plugins.hook_callback_timeout` = ৩০ সেকেন্ড; error log হয়ে skip। বড় context spill হয় (উপচে ফাইলে যায়) `$HERMES_HOME/hook_outputs/<session_id>/`-এ (`hooks.output_spill`: `enabled`, `max_chars` ১০০০০, `preview_head` ৫০০, `preview_tail` ৫০০; directory default `$HERMES_HOME/hook_outputs`)।\n\n**Middleware:** `ctx.register_middleware(kind, callback)`। `tool_request`/`llm_request` payload (পাঠানো তথ্য) বদলায়; `tool_execution`/`llm_execution` call-কে `next_call` দিয়ে মোড়ে। Schema `hermes.middleware.v1`।\n\n- `tool_request` ফেরত দেয় `{\"args\": {...}}`, `llm_request` ফেরত দেয় `{\"request\": {...}}`; `None` মানে বদলাবে না। Request middleware শৃঙ্খলে চলে (আগেরটার বদলানো payload পরেরটা দেখে), আর `original_args`/`original_request`-এ আসল কপি থাকে।\n- `next_call` **একবারই** ডাকা যায় (দুবার ডাকলে error); না ডাকলে downstream চলে না (short-circuit)।\n- Middleware callback exception ছুঁড়লে log হয়ে বাদ পড়ে, শৃঙ্খল চলতে থাকে। অচেনা kind warning দিয়ে register হয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Capabilities sandbox নয়",
+      "markdown": "Known ID: `tools.override`, `llm.provider_override`, `llm.model_override`, `llm.agent_id_override`, `llm.profile_override`, `llm.task_override`, `llm.side_question`, `gateway.platform_actions`। এগুলো **consent ও audit-এর জন্য, sandbox নয়**, মানে plugin কী চায় তা তোমাকে জানায়, কিন্তু জোর করে আটকায় না। `ctx.has_capability()` দিয়ে দেখে নাও, না থাকলে নরমভাবে পিছিয়ে যাও। Built-in tool override করতে (`override=True`) non-bundled plugin-এর জন্য `plugins.entries.<id>.allow_tool_override: true` লাগে, নইলে `PluginToolOverrideError`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Config, state, secret\n\n- `ctx.get_config(\"key\", default=...)` / `ctx.set_config()`: `plugins.entries.<id>.settings`-এ; dotted key (`retry.attempts`) চলে।\n- `ctx.state.get()/set()`: profile-scoped (এক profile-এর স্মৃতি অন্যটা দেখে না), atomic (আধখানা লেখা হয় না), সর্বোচ্চ ১০ MiB।\n- `config_schema` type: `str`, `int`, `float`, `bool`, `list`, `dict`, `secret`। **Secret** যায় `.env`-এ, `config.yaml`-এ কখনো না।\n- স্থায়ী ডেটা: `from plugins.plugin_storage import plugin_data_dir, plugin_db`। plugin ফোল্ডারে কখনো লিখো না (update-এ মুছে যেতে পারে)। Data file পড়ো `Path(__file__).parent` থেকে।\n- Singleton (এক-ই-বস্তু): `@lazy_singleton` বা `SingletonSlot` (`plugins/plugin_utils.py`)।\n- শর্তাধীন tool: `check_fn=` `False` হলে tool লুকায়।\n\n## Portable Agent Plugin v1 ও install\n\n**Portable** = বহনযোগ্য, অন্য agent-এও চলে এমন ধরন। Directory package: `plugin.json`, `skills/*/SKILL.md`, `mcp.json`।\n\n```bash\nhermes plugins install owner/repository --no-enable\nhermes plugins list\nhermes plugins enable <name>\n```\n\n| কমান্ড | মানে |\n|---|---|\n| `hermes plugins install owner/repository --no-enable` | GitHub-এর `owner/repository` থেকে নামাও, কিন্তু চালু কোরো না |\n| `hermes plugins list` | কী কী plugin আছে দেখো |\n| `hermes plugins enable <name>` | নাম ধরে চালু করো |\n\nInstall-এর পর default-এ **disabled** (নিরাপত্তার জন্য: না দেখে চালু নয়)। Skill-এর নাম `<plugin-name>:<skill>`, read-only, `skill_view(\"plugin:skill\")` দিয়ে load। MCP entry-তে stdio ও Streamable HTTP চলে (legacy `sse` বাদ); user env পাঠাতে `\"NAME\": \"${NAME}\"`; **`mcp.json`-এ credential রাখবে না**। `plugin.json`-এর `extensions.\"com.nousresearch.hermes\"`-এ `trust: \"untrusted\"` দিলে non-read-only MCP call-এ approval লাগে।\n\n## Python dependency\n\n`pyproject.toml`-এর `[project] dependencies` জেতে `python_dependencies`-এর ওপর। `--no-deps` আর `--yes-deps` (headless, মানে স্ক্রিন-ছাড়া) একসাথে চলে না। Lazy install-এ (দরকার পড়লে তখন নামানো) `pm.ensure_import(\"<extra>\")` ও `InstallError`।\n\n## Compatibility প্রতিশ্রুতি\n\n- Documented `PluginContext` method মুছে বা নাম বদলে যাবে না।\n- নতুন parameter ঐচ্ছিক ও keyword-only।\n- hook payload keyword-ভিত্তিক (`**kwargs` নিলে সব পাবে)।\n- অচেনা manifest field উপেক্ষিত।\n- deprecation-এ (পুরোনো জিনিস সরানোর আগে) অন্তত দুটো minor release সময়।\n- Core internal monkeypatch (কোর-এর ভেতরের জিনিস লুকিয়ে বদলানো) অসমর্থিত; catalog validation `no core override` বলে আটকায়।\n- এই প্রতিশ্রুতি শুধু documented surface-এর জন্য। Internal import path কখনো এর অংশ ছিল না: Sep 2026-এ Hermes-এর internal module ভাগ হয়েছে, আর পুরোনো import path-এর সাময়িক সহায়ক স্তর সরে গেছে। এখনো পুরোনো path import করা plugin `ImportError`-এ load হয় না (কারণ `hermes plugins list`-এ দেখা যায়)। সমাধান: `ctx` ও documented ABC ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## অন্য ধরন (সংক্ষেপে)\n\n| ধরন | কোথায়/কীভাবে |\n|---|---|\n| **Model provider** | `plugins/model-providers/<name>/`: `register_provider(ProviderProfile(...))` |\n| **Platform** (নতুন chat অ্যাপ) | `plugins/platforms/<name>/`: `BasePlatformAdapter` subclass (`connect`, `send`, `disconnect`) + `ctx.register_platform`; `irc` reference; `kind: platform` লাগে |\n| **Memory provider** | `MemoryProvider` subclass, `memory.provider` দিয়ে একটা বাছা |\n| **Context engine** | `ContextEngine` (`update_from_response`, `should_compress`, `compress`), `context.engine` |\n| **Image gen** | `plugins/image_gen/<name>/`: `ImageGenProvider.generate`, `kind: backend` |\n| **Computer-use** | `register_computer_use_provider`, `computer_use.backend: <name>` |\n| **Non-Python** | `mcp_servers` (config.yaml), gateway hook (`~/.hermes/hooks/<name>/` — `HOOK.yaml` + `handler.py`), shell hook (`hooks:` in config.yaml), `hermes skills tap add <owner/repo>`, TTS command template |\n| **Distribution** | pip entry point `hermes_agent.plugins` বা directory plugin + `hermes plugins install/enable` |\n\n## Debug\n\n```bash\nHERMES_PLUGINS_DEBUG=1 hermes plugins list\nhermes logs --level WARNING | grep -i plugin\n```\n\n| অংশ | মানে |\n|---|---|\n| `HERMES_PLUGINS_DEBUG=1` | এই একবারের জন্য debug মোড চালু (বাড়তি তথ্য দেখাবে) |\n| `hermes logs --level WARNING` | সতর্কতা-স্তরের log দেখাও |\n| `\\| grep -i plugin` | `\\|` (পাইপ) দিয়ে ফল পাঠাও, আর `grep -i plugin` শুধু \"plugin\" শব্দওয়ালা লাইন (বড়-ছোট হাত নির্বিশেষে) রাখে |\n\nLog থাকে `~/.hermes/logs/agent.log`-এ। (**Log** = কী কী ঘটল তার লেখা খাতা।)\n\n**Plugin না এলে সম্ভাব্য কারণ:**\n- enable করা হয়নি;\n- ফোল্ডারের গভীরতা ভুল;\n- native plugin-এ `__init__.py` নেই;\n- gateway adapter-এ `kind: platform` নেই;\n- memory provider `plugins.enabled`-এর বদলে `memory.provider` config দিয়ে চলে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "সাধারণ ভুল (page থেকে)",
+      "markdown": "(১) handler থেকে dict ফেরত দেওয়া, JSON string নয়। (২) handler signature-এ `**kwargs` ভুলে যাওয়া। (৩) exception বাইরে বেরোতে দেওয়া, ধরে error JSON ফেরত দাও। (৪) tool description অস্পষ্ট রাখা, AI জানে না কখন ডাকবে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Plugin কেন লাগে?",
+      "options": [
+        "Hermes দ্রুত করতে",
+        "ছবি আঁকতে",
+        "Hermes-এর মূল কোড না ছুঁয়ে নতুন tool, hook, command যোগ করতে",
+        "key মুছতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "core না ছুঁয়ে অ্যাড-অনের মতো যোগ হয়, তাই Hermes আপডেটে ভাঙে না।"
+    },
+    {
+      "question": "Plugin-এর `register(ctx)` ফাংশন কখন চলে আর কী করে?",
+      "options": [
+        "Hermes চালু হওয়ার সময় ডাকে; `ctx.register_tool(...)`, `ctx.register_hook(...)` দিয়ে plugin-কে জুড়ে দেয়",
+        "কখনো না",
+        "শুধু বন্ধ করার সময়",
+        "ছবি বানায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "`ctx` হলো হাতিয়ার-বাক্স যা Hermes ধরিয়ে দেয়।"
+    },
+    {
+      "question": "Tool-এর `description` স্পষ্ট হওয়া কেন জরুরি?",
+      "options": [
+        "দেখতে সুন্দর বলে",
+        "log লেখার জন্য",
+        "কারণ নেই",
+        "AI ওই বর্ণনা পড়েই ঠিক করে কখন tool ডাকবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "অস্পষ্ট বর্ণনা হলে AI জানে না কখন tool ডাকতে হবে।"
+    },
+    {
+      "question": "Handler থেকে কী ফেরত দেবে আর error হলে কী করবে?",
+      "options": [
+        "raw dict ফেরত, error হলে raise",
+        "JSON string ফেরত; error হলে exception না ছুঁড়ে error JSON ফেরত",
+        "কিছুই না",
+        "ছবি"
+      ],
+      "answerIndex": 1,
+      "explanation": "সবসময় JSON string। exception বাইরে বেরোলে সমস্যা, তাই ধরে error JSON ফেরত দাও।"
+    },
+    {
+      "question": "কোন hook কোনো tool call আটকাতে পারে?",
+      "options": [
+        "`post_tool_call`",
+        "`on_session_start`",
+        "`pre_tool_call` (`{\"action\": \"block\"}` ফেরত দিয়ে)",
+        "`post_compaction`"
+      ],
+      "answerIndex": 2,
+      "explanation": "pre_tool_call পাহারাদার; post_tool_call-এর মতো observer শুধু দেখে, return value উপেক্ষিত।"
+    },
+    {
+      "question": "Capabilities সম্পর্কে কোনটা সত্য?",
+      "options": [
+        "consent ও audit-এর জন্য, sandbox নয়",
+        "পুরোপুরি sandbox",
+        "কখনো দেখা যায় না",
+        "Hermes বন্ধ করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "plugin কী চায় তা জানায়, জোর করে আটকায় না। `ctx.has_capability()` দিয়ে দেখে নাও।"
+    },
+    {
+      "question": "Portable Agent Plugin package `hermes plugins install` করার পর default-এ কী অবস্থায় থাকে?",
+      "options": [
+        "আপনি চালু",
+        "মুছে যায়",
+        "শুধু রাতে চালু",
+        "disabled; `hermes plugins enable <name>` দিয়ে চালু করতে হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "নিরাপত্তার জন্য: না দেখে চালু নয়। `--no-enable` দিলে স্পষ্টভাবেও বলা যায়।"
+    }
+  ],
+  "recap": [
+    "Plugin হলো Hermes-এর অ্যাড-অন: core না ছুঁয়ে tool, hook, CLI/slash command যোগ করে; ফোল্ডার `~/.hermes/plugins/<name>/`।",
+    "পাঁচ ফাইল: `plugin.yaml` (পরিচয়), `schemas.py` (tool-এর বর্ণনা), `tools.py` (handler), `__init__.py` (`register(ctx)`), তারপর `/plugins` দিয়ে পরীক্ষা।",
+    "Handler সবসময় JSON string ফেরত দেয়, exception ছুঁড়ে না; tool-এর description স্পষ্ট রাখো।",
+    "Hook দুই ধরন: `pre_tool_call`/`pre_llm_call` আটকাতে পারে, বাকিগুলো observer; capabilities consent-এর জন্য, sandbox নয়।",
+    "Secret `.env`-এ, স্থায়ী ডেটা `plugin_data_dir()`-এ; install করা plugin default-এ disabled; সমস্যায় `HERMES_PLUGINS_DEBUG=1` ও `agent.log`।"
+  ]
+}

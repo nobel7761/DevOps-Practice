@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-features-fallback-providers",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q01",
+      "difficulty": "easy",
+      "question": "Hermes-এর টিকে-থাকার তিন স্তরের মধ্যে সবার আগে কোনটা চেষ্টা হয়?",
+      "options": [
+        "Primary model fallback, অন্য `provider:model`-এ যাওয়া",
+        "Auxiliary task fallback, পাশের কাজের জন্য provider",
+        "Credential pools, একই provider-এর key ঘোরানো",
+        "Capacity-error fallback, জায়গা শেষ হলে অন্য পথ"
+      ],
+      "correctIndex": 2,
+      "explanation": "বাসের উপমা: আগে একই রুটের পরের বাস (pool), তারপর রিকশা (fallback)।",
+      "whyWrong": {
+        "0": "এটা দ্বিতীয় স্তর।",
+        "1": "এটা তৃতীয় স্তর।",
+        "3": "এটা আলাদা অংশ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q02",
+      "difficulty": "easy",
+      "question": "**Primary** আর **Fallback** কী?",
+      "options": [
+        "Primary মূল পছন্দ, Fallback ব্যাকআপ",
+        "Primary ব্যাকআপ, Fallback হলো মূল পছন্দ",
+        "দুটোই একই provider-এর দুটো আলাদা key",
+        "দুটোই শুধু সাহায্যকারী পাশের ছোট কাজের জন্য"
+      ],
+      "correctIndex": 0,
+      "explanation": "Primary প্রথমবার চেষ্টা হয়; Fallback-এ ফেরা হয় ব্যর্থ হলে।",
+      "whyWrong": {
+        "1": "উল্টো বলা হয়েছে।",
+        "2": "key ঘোরানো pool-এর কাজ।",
+        "3": "পাশের কাজ auxiliary।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q03",
+      "difficulty": "easy",
+      "question": "HTTP **429** মানে কী?",
+      "options": [
+        "টাকা বা quota সব শেষ হয়ে গেছে",
+        "যা চাইছ সেটা আমি খুঁজে পাচ্ছি না",
+        "তোমার পরিচয় ভুল বা ঢোকার অনুমতি নেই",
+        "খুব বেশি অনুরোধ, একটু থামো"
+      ],
+      "correctIndex": 3,
+      "explanation": "429 = rate limit; 402 = টাকা/quota শেষ; 404 = পাচ্ছি না; 401/403 = পরিচয়/অনুমতি।",
+      "whyWrong": {
+        "0": "ওটা 402।",
+        "1": "ওটা 404।",
+        "2": "ওটা 401/403।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q04",
+      "difficulty": "easy",
+      "question": "**Exponential backoff** মানে কী?",
+      "options": [
+        "প্রতিবার অপেক্ষা অর্ধেক করা",
+        "প্রতিবার অপেক্ষা দ্বিগুণ করা",
+        "প্রতিবার একই সময় অপেক্ষা করা",
+        "একবারও অপেক্ষা না করে চেষ্টা করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "১ মিনিট, ২ মিনিট, ৪ মিনিট... দরজায় ধাক্কা দিয়ে না খুললে বেশি সময় দিয়ে আবার।",
+      "whyWrong": {
+        "0": "অর্ধেক নয়, দ্বিগুণ।",
+        "2": "একই সময় নয়।",
+        "3": "অপেক্ষা করা হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q05",
+      "difficulty": "easy",
+      "question": "`hermes fallback`-এর কোন subcommand সব fallback সরায়?",
+      "options": ["`remove`", "`clear`", "`list`", "`add`"],
+      "correctIndex": 1,
+      "explanation": "`add` যোগ, `list` তালিকা, `remove` একটা সরানো, `clear` সব সরানো।",
+      "whyWrong": {
+        "0": "`remove` একটা সরায়।",
+        "2": "`list` শুধু দেখায়।",
+        "3": "`add` যোগ করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q06",
+      "difficulty": "easy",
+      "question": "Primary chain-এর জন্য কোনো environment variable আছে কি?",
+      "options": [
+        "আছে, নাম `FALLBACK_PROVIDERS` আর সেটাই সব কিছু",
+        "আছে, তবে শুধু Docker-এর ভেতরে চালালেই চলে",
+        "আছে, নাম `HERMES_FALLBACK_MODEL` ও থাকে `.env`-এ",
+        "নেই; শুধু `config.yaml` বা `hermes fallback`"
+      ],
+      "correctIndex": 3,
+      "explanation": "Primary chain `config.yaml`-এর `fallback_providers` অথবা `hermes fallback` দিয়ে।",
+      "whyWrong": {
+        "0": "এমন variable নেই।",
+        "1": "Docker-এর সাথে সম্পর্ক নেই।",
+        "2": "এমন variable lesson-এ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q07",
+      "difficulty": "easy",
+      "question": "`fallback_providers`-এর প্রতি entry-তে কী কী লাগবে?",
+      "options": [
+        "`provider` আর `model` দুটোই",
+        "শুধু `provider`",
+        "শুধু `model`",
+        "`provider` আর `timeout` দুটোই"
+      ],
+      "correctIndex": 0,
+      "explanation": "দুটোর একটা না থাকলে entry বাদ পড়ে।",
+      "whyWrong": {
+        "1": "`model`-ও লাগে।",
+        "2": "`provider`-ও লাগে।",
+        "3": "`timeout` ঐচ্ছিক।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q08",
+      "difficulty": "medium",
+      "question": "কোন error-এ fallback সঙ্গে সঙ্গে চালু হয়, retry ছাড়াই?",
+      "options": [
+        "429, 500, 502, 503",
+        "শুধু ভাঙা বা খালি response একবার হলে",
+        "401, 403, 404",
+        "402 আর connection failure ছাড়া অন্য কোনোটা"
+      ],
+      "correctIndex": 2,
+      "explanation": "আবার চেষ্টায় লাভ নেই, কারণ পরিচয় বা ঠিকানাই ভুল।",
+      "whyWrong": {
+        "0": "এগুলোতে আগে retry হয়।",
+        "1": "একবার হলে সাময়িক ভুল ধরা হয়।",
+        "3": "এমন নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q09",
+      "difficulty": "medium",
+      "question": "429-এ reset সময় না থাকলে primary কতক্ষণ বিশ্রামে থাকে?",
+      "options": [
+        "সবসময় ঠিক ৫ মিনিট করে",
+        "সবসময় ঠিক ১ ঘণ্টা করে",
+        "একটুও বিশ্রাম নয়, সঙ্গে সঙ্গে ফেরে",
+        "backoff, ৬০ সেকেন্ড থেকে ৪ ঘণ্টা"
+      ],
+      "correctIndex": 3,
+      "explanation": "reset সময় দেওয়া থাকলে সেই সময় পর্যন্ত।",
+      "whyWrong": {
+        "0": "স্থির নয়।",
+        "1": "স্থির নয়।",
+        "2": "বিশ্রাম আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q10",
+      "difficulty": "medium",
+      "question": "`fallback.min_switch_reset_seconds` default `0` মানে কী?",
+      "options": [
+        "কখনোই switch করবে না",
+        "সবসময় switch করবে",
+        "শুধু ০ সেকেন্ড অপেক্ষা করে retry",
+        "শুধু ১ ঘণ্টার বেশি reset হলে switch"
+      ],
+      "correctIndex": 1,
+      "explanation": "primary-র reset এর চেয়ে কম সময়ে হলে Hermes switch না করে অপেক্ষা করে (সীমা বসালে)।",
+      "whyWrong": {
+        "0": "সবসময় switch।",
+        "2": "এটা retry-র সেটিং নয়।",
+        "3": "default-এ সীমা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q11",
+      "difficulty": "medium",
+      "question": "প্রতি turn-এ fallback নিয়ে কোনটা সত্য?",
+      "options": [
+        "fallback একবার চালু হলে পুরো session-এ আটকে থাকে, ফেরে না",
+        "এক turn-এ fallback যত খুশি বার চালু হতে পারে, কোনো সীমা নেই",
+        "নতুন message-এ primary ফেরে; fallback এক turn-এ একবার",
+        "primary শুধু `/new`-এর পর ফেরে"
+      ],
+      "correctIndex": 2,
+      "explanation": "fallback-ও ব্যর্থ হলে সাধারণ error handling।",
+      "whyWrong": {
+        "0": "প্রতি message-এ primary ফেরে।",
+        "1": "একবারই হয়।",
+        "3": "নতুন message-এই ফেরে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q12",
+      "difficulty": "medium",
+      "question": "Switch-এর পর খরচ বাড়ে কেন?",
+      "options": [
+        "নতুন model-এর cache খালি, তাই history পুরো দামে",
+        "fallback model সবসময়ই primary-র চেয়ে বেশি দামি",
+        "fallback চালু হলে provider প্রতিটা বিল দ্বিগুণ করে দেয়",
+        "history মুছে ফেলা হয়, তাই আবার নতুন করে লিখতে হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "primary ফিরলেও একই। তাই যে session বারবার provider বদলায় তার খরচ বাড়ে।",
+      "whyWrong": {
+        "1": "দাম model-এর উপর নির্ভর।",
+        "2": "এমন নিয়ম নেই।",
+        "3": "history মোছা হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q13",
+      "difficulty": "medium",
+      "question": "`auxiliary` কাজের `provider: auto` হলে প্রথম কোন চেষ্টা?",
+      "options": [
+        "main provider + main model",
+        "`auxiliary.<task>.fallback_chain`",
+        "top-level `fallback_providers`",
+        "সরাসরি task বাদ দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "ক্রম: main → `fallback_chain` → `fallback_providers` → warning দিয়ে task বাদ।",
+      "whyWrong": {
+        "1": "এটা দ্বিতীয়।",
+        "2": "এটা তৃতীয়।",
+        "3": "এটা শেষ ধাপ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q14",
+      "difficulty": "medium",
+      "question": "Cron job নিজের `provider` ও `model` দিয়ে pinned। কী ঘটে?",
+      "options": [
+        "fallback করে, তবে credential rotation খাটে না একেবারেই",
+        "fallback ও rotation দুটোই একসাথে খাটে",
+        "fallback করে না, তবে একই provider-এর key ঘোরে",
+        "fallback ও rotation কোনোটাই খাটে না, job থেমে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "fallback রাখতে job unpinned রেখে `cron.model` ও `cron.model_provider` দাও।",
+      "whyWrong": {
+        "0": "pinned job fallback করে না।",
+        "1": "fallback খাটে না।",
+        "3": "rotation খাটে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q15",
+      "difficulty": "hard",
+      "question": "Subagent delegation-এ fallback কীভাবে চলে?",
+      "options": [
+        "সব child সবসময়ই parent-এর chain পায়, pinned হলেও, আলাদা কিছু লাগে না",
+        "`delegation.fallback_providers`, নয়তো unpinned child-এ parent-এরটা",
+        "child কখনো কোনো fallback chain পায় না, কোনো অবস্থাতেই",
+        "শুধু pinned child-ই parent-এর chain পায়, unpinned পায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "`[]` দিলে বন্ধ। Pinned মানে নিজের provider/model বেঁধে দেওয়া।",
+      "whyWrong": {
+        "0": "pinned child পায় না।",
+        "2": "পেতে পারে।",
+        "3": "unpinned child পায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q16",
+      "difficulty": "hard",
+      "question": "Capacity error কোনগুলো?",
+      "options": [
+        "সাধারণ `Retry-After` সহ 429 ত্রুটি, যেটা একটু পরে আসতে বলে",
+        "HTTP 404 আর 403 ত্রুটি দুটো, পরিচয়ের সমস্যা",
+        "HTTP 500 আর ভাঙা JSON response, দুটোই একসাথে",
+        "HTTP 402, দৈনিক-quota 429, connection failure"
+      ],
+      "correctIndex": 3,
+      "explanation": "সাধারণ `Retry-After` সহ 429 এই ধাপে যায় না।",
+      "whyWrong": {
+        "0": "ওটা এই ধাপে যায় না।",
+        "1": "এগুলো সঙ্গে সঙ্গে fallback।",
+        "2": "এগুলো retry-র ঘটনা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q17",
+      "difficulty": "hard",
+      "question": "`api_key` ছাড়া `base_url` দিলে auxiliary কাজ কোন key নেয়?",
+      "options": [
+        "`OPENROUTER_API_KEY`, কিন্তু `OPENAI_API_KEY` নয়",
+        "`OPENAI_API_KEY`, কিন্তু `OPENROUTER_API_KEY` নয়",
+        "`ANTHROPIC_API_KEY` সবসময়",
+        "কোনো key নেয় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "`base_url` দিলে provider খোঁজা এড়িয়ে সরাসরি ওই endpoint ব্যবহার হয়।",
+      "whyWrong": {
+        "0": "উল্টো বলা হয়েছে।",
+        "2": "এমন নিয়ম নেই।",
+        "3": "key লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q18",
+      "difficulty": "hard",
+      "question": "`provider: custom` fallback-এ `key_env: MY_LOCAL_KEY` কী বোঝায়?",
+      "options": [
+        "key যে env var-এ আছে তার নাম",
+        "key-র আসল মান সরাসরি লেখা",
+        "server-এর port নম্বর, যেমন 8000",
+        "model-এর নাম, যেমন `my-local-model`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`base_url` ঠিকানা ঠিক করে, `key_env` শুধু নাম।",
+      "whyWrong": {
+        "1": "আসল মান লেখা হয় না।",
+        "2": "port `base_url`-এ।",
+        "3": "model আলাদা key-তে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q19",
+      "difficulty": "hard",
+      "question": "রাত ২টায় লম্বা কাজ, provider-এর server পড়ে গেল, কিন্তু fallback সাজানো। কী হবে?",
+      "options": [
+        "কাজ মাঝপথে থেমে যায়, সকালে শুধু error দেখায়",
+        "fallback চালু হয় না যতক্ষণ না তুমি জেগে ওঠো",
+        "Hermes সব key মুছে নিজে নিজে নতুন করে লগইন করে",
+        "retry শেষ হলে fallback চালু হয়, কাজ চলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "fallback না থাকলে কাজ থেমে যেত।",
+      "whyWrong": {
+        "0": "fallback না থাকলে এমন হতো।",
+        "1": "জাগার দরকার নেই।",
+        "2": "এমন কিছু হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-fallback-providers-q20",
+      "difficulty": "hard",
+      "question": "Streamed **refusal** (model কাজ করতে অস্বীকার) হলে কী হয়?",
+      "options": [
+        "সঙ্গে সঙ্গে fallback চালু হয়ে যায় অন্য provider-এ",
+        "দ্বিগুণ অপেক্ষা করে বারবার retry হয়",
+        "terminal `content_filter`; retry হয় না",
+        "session আপনাআপনি মুছে যায়, সব হারিয়ে"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা ব্যর্থতা নয়, model-এর সিদ্ধান্ত।",
+      "whyWrong": {
+        "0": "fallback হয় না।",
+        "1": "retry হয় না।",
+        "3": "session মোছে না।"
+      }
+    }
+  ]
+}

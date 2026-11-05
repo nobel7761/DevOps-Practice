@@ -8,12 +8,14 @@ export function SdQuizAttempt({
   attempt,
   answers,
   submitting,
+  bankSize,
   onAnswer,
   onSubmit,
 }: {
   attempt: SdAttempt;
   answers: Record<string, number>;
   submitting: boolean;
+  bankSize: number;
   onAnswer: (questionId: string, optionIndex: number) => void;
   onSubmit: () => void;
 }) {
@@ -24,9 +26,9 @@ export function SdQuizAttempt({
 
   return (
     <div className="flex flex-col gap-4">
-      {attempt.newCycle && (
+      {attempt.newCycle && bankSize > 20 && (
         <p className="rounded-lg bg-muted/50 p-3 text-sm">
-          60টা প্রশ্নই একবার করে দেখা হয়ে গেছে। নতুন চক্র শুরু হলো।
+          {bankSize}টা প্রশ্নই একবার করে দেখা হয়ে গেছে। নতুন চক্র শুরু হলো।
         </p>
       )}
       <ol className="flex flex-col gap-3">

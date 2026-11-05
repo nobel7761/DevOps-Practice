@@ -1,0 +1,141 @@
+{
+  "contentId": "hermes-doc-developer-guide-prompt-assembly",
+  "title": "Prompt Assembly",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/prompt-assembly",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর system prompt কীভাবে তিন স্তরে সাজানো হয়, prompt cache কী, আর কেন বদলানো জিনিস সবসময় শেষে রাখা হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## স্কুল-ব্যাগ গোছানোর গল্প\n\nরোজ সকালে তুমি স্কুল-ব্যাগ গোছাও। কিছু জিনিস **সবসময় একই**: পেনসিল-বক্স, জলের বোতল। কিছু জিনিস **আজকের জন্য**: আজকের বই, আজকের খাবার। আর কিছু জিনিস স্কুলে গিয়ে **হাতে হাতে** পাও, যেমন টিচার একটা কাগজ দিলেন।\n\nযদি প্রতিদিন পুরো ব্যাগ উল্টে-পাল্টে নতুন করে গোছাও, অনেক সময় যায়। বুদ্ধিমান উপায়: যে অংশ বদলায় না সেটা **আগে** রাখো, যেটা বদলায় সেটা **শেষে**।\n\nHermes-ও তাই করে। তার **system prompt** (AI-কে শুরুতে দেওয়া \"তুমি কে, কী করবে\" নির্দেশ) **তিন স্তরে** সাজানো: **স্থির (stable)**, **প্রসঙ্গ (context)**, আর **ক্ষণস্থায়ী (volatile)**। উদ্দেশ্য একটাই: provider-এর **prompt cache** কাজে লাগানো, যাতে token আর সময় বাঁচে।\n\nমূল ভাবনা: **cache-করা system prompt** আর **API-call-এর সময়ে যোগ হওয়া layer** আলাদা রাখা।\n\n**এটা না থাকলে কী সমস্যা হতো?** প্রতি turn-এ prompt-এর শুরুর দিকে কিছু বদলালে provider-এর cache নষ্ট হতো, প্রতিবার পুরো আলাপ পুরো দামে পড়তে হতো। খরচ আর অপেক্ষা দুটোই বাড়ত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Prompt আর System prompt\n- **Prompt** = AI-কে দেওয়া যেকোনো লেখা।\n- **System prompt** = আলাপের শুরুতে AI-কে দেওয়া স্থায়ী নির্দেশ: \"তুমি এই ধরনের সহকারী, এভাবে কাজ করবে।\" (বাড়ির নিয়মকানুনের কাগজ।)\n\n### ২) Prompt cache (প্রম্পট ক্যাশ)\nAI-র provider যদি দেখে তোমার লেখার **শুরুর অংশটা** আগের বারের মতোই, সে ওটা আবার প্রথম থেকে \"পড়ে\" না, মনে-রাখা অংশ থেকে নেয়। ফল: **সস্তা আর দ্রুত**। কিন্তু শর্ত: শুরুর অংশ **হুবহু এক** থাকতে হবে। এক অক্ষর বদলালেও পরের অংশের cache নষ্ট।\n\n### ৩) Token\nAI-র লেখা পড়ার ছোট টুকরো (মোটামুটি শব্দের অংশ)। খরচ ও সীমা token হিসেবে গোনা হয়।\n\n### ৪) `SOUL.md`\nHermes-এর **ব্যক্তিত্বের ফাইল**: \"আমি কে, কেমন আচরণ করব।\" থাকে `~/.hermes/SOUL.md`-তে। (`~` মানে তোমার home ফোল্ডার, `.hermes` লুকানো ফোল্ডার।)\n\n### ৫) Project context ফাইল\nতোমার প্রজেক্টের ফোল্ডারে রাখা নির্দেশ-ফাইল, যেমন `AGENTS.md`, `CLAUDE.md`, `.hermes.md`। এতে লেখা থাকে \"এই প্রজেক্টে কোড কীভাবে লিখবে।\" Hermes এগুলো পড়ে নেয়।\n\n### ৬) Memory: `MEMORY.md` আর `USER.md`\nHermes-এর স্মৃতির খাতা। `MEMORY.md` = সে নিজে কী শিখল, `USER.md` = তোমার সম্পর্কে কী জানে।\n\n### ৭) Skill\nএকটা রেসিপি-কার্ড (`SKILL.md`), যা Hermes-কে নির্দিষ্ট কাজ শেখায়। **Skills index** = সব skill-এর সূচি।\n\n### ৮) Ephemeral\nক্ষণস্থায়ী, মানে শুধু এই একটা call-এর জন্য, স্থায়ী prompt-এ ঢোকে না। চিঠির সাথে আটকানো স্টিকি-নোট।\n\n### ৯) Plugin, Hook\n- **Plugin** = Hermes-এর অ্যাড-অন। **Hook** = কাজের আগে বা পরে ঢোকানো কোড। `pre_llm_call` হলো \"AI-কে ডাকার ঠিক আগে\" চলা hook।\n\n### ১০) Worktree, git, snapshot\n- **git** = কোডের ইতিহাস রাখার টুল। **Worktree** = একই কোডের আলাদা ফোল্ডারে আরেক শাখার কাজ। **Snapshot** = একটা মুহূর্তের ছবি/অবস্থা।\n\n### ১১) Truncation\nবেশি লম্বা হলে কেটে ছোট করা। **Head/tail** = শুরু আর শেষের অংশ।\n\n### ১২) CI\nকোড জমা দিলে যে স্বয়ংক্রিয় পরীক্ষা-যন্ত্র নিজে চলে। (**Continuous Integration**)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "cache-করা system prompt-এর তিন স্তর, এই ক্রমে জোড়া হয়।",
+        "steps": [
+          {
+            "title": "১. Stable (স্থির)",
+            "body": "identity (`SOUL.md` বা fallback), tool ও model-এর নির্দেশনা, coding brief। এগুলো প্রায় বদলায় না, তাই সবার আগে।"
+          },
+          {
+            "title": "২. Context (প্রসঙ্গ)",
+            "body": "caller-এর system message, project context ফাইল, git workspace snapshot, operator-এর নির্দেশ, platform hint। শেয়ার্ড project ফাইল আগে, worktree-নির্দিষ্ট লাইন পরে, যাতে ভিন্ন worktree-এর session লম্বা cache prefix ভাগ করে নিতে পারে।"
+          },
+          {
+            "title": "৩. Volatile (ক্ষণস্থায়ী)",
+            "body": "skills index, `MEMORY.md` ও `USER.md` snapshot, external memory provider block, সময়/session/model/provider লাইন, runtime environment hint (host, home, বর্তমান directory)। Runtime hint **সবসময় সবার শেষে**।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "**ক্রমটা কেন এমন?** cache কাজ করে \"শুরু থেকে যতটুকু হুবহু মেলে, ততটুকু\"। তাই যা সবচেয়ে কম বদলায় তা সবার আগে (বদলালে পরের সবটার cache নষ্ট)। সময়ের মতো প্রতিবার-বদলানো জিনিস শেষে। বই-এর পাতা কাটলে যেমন শেষের পাতাগুলো কাটাই নিরাপদ।\n\n**Platform hint** = \"তুমি এখন Telegram-এ আছ\" জাতীয় ছোট সংকেত। **Operator** = যে Hermes চালাচ্ছে সেই মানুষ।\n\n## মূল ফাইলগুলো\n\n`run_agent.py`, `agent/prompt_builder.py`, `agent/system_prompt.py`, `agent/conversation_loop.py`, `agent/surface_switch.py`, `agent/skills_index_delta.py`, `agent/subdirectory_hints.py`, `tools/memory_tool.py`, আর review-এর জন্য `scripts/ci/prompt_surface.py`, `tests/ci/test_prompt_surface.py`, `tests/fixtures/prompt_surface/`।\n\n## নকশার ভেতরের ভেতর\n\n| বিষয় | কী হয় | কেন |\n|---|---|---|\n| **Stored-prompt যাচাই** | `_stored_prompt_matches_runtime()` runtime block মিলিয়ে দেখে। পুরোনো prompt তাদের পুরোনো layout ধরে রাখে যাতে যাচাই পাস করে | পুরোনো আলাপের cache যেন নষ্ট না হয় |\n| **Surface বদল** (desktop ↔ TUI) | `Platform:` identity field নয়, তাই cached prefix অক্ষত থাকে। নতুন surface-এর নির্দেশ আসে user-message channel-এ একবারের (one-shot) নোট হয়ে | prefix অপরিবর্তিত থাকে |\n| **Skills index** | প্রতি turn-এ বর্তমান index আর session-এর index তুলনা হয়; তফাত একবারের নোট হিসেবে যায়, আর পরের rebuild-এ (compaction-এর সময়) index মিলে যায় | নতুন skill যোগ হলেও prefix নষ্ট হয় না |\n| **Memory snapshot** | session-এর মাঝে লেখা disk-এ যায়, কিন্তু cached prompt বদলায় না, rebuild না হওয়া পর্যন্ত (নতুন session বা compression-এর মতো invalidation) | cache বাঁচে |\n\n(**Surface** = Hermes যে চেহারায় চলছে: desktop app, TUI (terminal-ভিত্তিক অ্যাপ), Telegram ইত্যাদি। **Compaction** = আলাপ ছোট করা। **Invalidation** = cache বাতিল হওয়া।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## SOUL.md আর context ফাইল\n\n### `SOUL.md`\nথাকে `~/.hermes/SOUL.md`-তে এবং prompt-এর **প্রথম** অংশ। `load_soul_md()` এটা পড়ে: আগে security scan (সতর্ক করে কিন্তু আটকায় না), তারপর truncation (বেশি লম্বা হলে কাটা)। এটা hardcoded (কোডে বসানো) `DEFAULT_AGENT_IDENTITY`-র জায়গা নেয়। Context building তখন `skip_soul=True` দিয়ে চলে যাতে দুবার না আসে। `skip_context_files` সেট থাকলে (যেমন subagent delegation-এ) SOUL.md বাদ, default identity ব্যবহার।\n\n### Project context ফাইল: প্রথম যেটা মেলে, শুধু সেটা\n\n`build_context_files_prompt()` এই ক্রমে খোঁজে:\n\n| ক্রম | ফাইল | কোথায় খোঁজে |\n|---|---|---|\n| ১ | `.hermes.md` / `HERMES.md` | git root পর্যন্ত খোঁজে |\n| ২ | `AGENTS.md` | শুধু CWD (বর্তমান ফোল্ডার); subdirectory-র ফাইল session-এর মধ্যে `subdirectory_hints.py` দিয়ে আবিষ্কার |\n| ৩ | `CLAUDE.md` | শুধু CWD |\n| ৪ | `.cursorrules` / `.cursor/rules/*.mdc` | শুধু CWD |\n\n\"প্রথম যেটা মেলে\" মানে একটা পেলে বাকিগুলো আর দেখে না। (**CWD** = Current Working Directory, মানে এখন যে ফোল্ডারে আছ।)\n\nপ্রতিটা ফাইল security-scan হয় (project ফাইলে সমস্যা পেলে `[BLOCKED: …]` marker হয়ে যায়), ৭০/২০ head/tail ভাগে truncate হয় (শুরুর ৭০% আর শেষের ২০%), আর `.hermes.md`-এর frontmatter (ফাইলের মাথার মেটা-তথ্য) ছাঁটা হয়। অক্ষর-সীমা context window-এর সঙ্গে বাড়ে-কমে: নিচে ২০,০০০, ওপরে ৫০০K; `context_file_max_chars` config দিয়ে বদলানো যায়।\n\n**Security scan কেন?** কেউ প্রজেক্ট-ফাইলে \"AI-কে ভুল পথে চালাও\" ধরনের লুকানো নির্দেশ (prompt injection) রাখতে পারে। তাই স্ক্যান।\n\n### `platform_hints`\nPlatform-ভিত্তিক key: `append` (যোগ), `replace` (বদলে দাও), বা শুধু string (= `append`)। `replace` জেতে `append`-এর ওপর। ভুল entry হলে default-এ ফেরে। Cron job পায় তার delivery channel-এর hint, `Delivery destination` লাইনের নিচে। এটা prompt build-এর সময় (session শুরু ও compaction) ঠিক হয়, তাই cache-stable।\n\n## যা cache-করা prompt-এ **নেই**: API call-এর সময় যোগ হয়\n\n- `ephemeral_system_prompt` ও `HERMES_EPHEMERAL_SYSTEM_PROMPT` env var\n- prefill message (AI-র উত্তরের শুরুটা আগে থেকে বসিয়ে দেওয়া)\n- gateway session overlay (chat অ্যাপ-সংক্রান্ত ওপরের স্তর)\n- Honcho/external recall (বাইরের স্মৃতি থেকে মনে-করানো, বর্তমান user message-এ জোড়া)\n- `pre_llm_call` plugin context (user message-এর শেষে; একাধিক plugin হলে block জোড়া লাগে)\n\nএগুলো চিঠির সঙ্গে স্টিকি-নোটের মতো: সেই call-এর জন্য, কিন্তু স্থায়ী prompt-এর অংশ নয়। **কেন আলাদা?** এগুলো প্রায়ই বদলায়। স্থায়ী prompt-এ ঢুকলে বারবার cache নষ্ট হতো।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কেন এত ঝামেলা?",
+      "markdown": "page-এর কারণ: provider prompt cache বাঁচানো, history অকারণে না বদলানো, memory-র অর্থ পরিষ্কার রাখা, আর gateway/ACP/CLI যেন persistent prompt না ছুঁয়ে অতিরিক্ত context দিতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিজের মতো করতে চাইলে\n\n**আগে input বদলাও, কোড নয়।** এগুলো বদলালেই প্রায় সব হয়: `SOUL.md`, `MEMORY.md`/`USER.md`, project context ফাইল, skill, system prompt config বা API override, ephemeral overlay। `agent/prompt_builder.py` শুধু তখন বদলাও যখন fork করছ (কোডের নিজস্ব কপি নিচ্ছ) বা upstream-এ (মূল প্রজেক্টে) অবদান রাখছ, কারণ সেখানকার বদল সবার জন্য global।\n\n## Prompt-surface review (CI)\n\n`scripts/ci/prompt_surface.py render` ৯টা surface-এর snapshot বানায়: চার model family-র CLI, code workspace-এর CLI, desktop, Telegram, Discord, cron। এগুলো `tests/fixtures/prompt_surface/`-এ রাখা হয়। `tests/ci/test_prompt_surface.py` পুরোনো snapshot ধরে ফেলে। একটা CI job PR-এ (বদলের প্রস্তাবে) token ও tool-এর তফাত মন্তব্য করে; snapshot বদলাতে hermes-agent-core-এর অনুমোদন লাগে। তোমার নিজের customization snapshot-কে ছোঁয় না।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Prompt cache কী সুবিধা দেয়?",
+      "options": [
+        "উত্তর আরও এলোমেলো করে",
+        "key সংরক্ষণ করে",
+        "শুরুর অংশ হুবহু একই থাকলে provider আবার পড়ে না, তাই সস্তা ও দ্রুত হয়",
+        "ছবি তৈরি করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "শর্ত: শুরুর অংশ হুবহু এক থাকতে হবে। একটা অক্ষর বদলালে পরের অংশের cache নষ্ট।"
+    },
+    {
+      "question": "System prompt-এর তিন স্তর কোন ক্রমে জোড়া হয়?",
+      "options": [
+        "Stable, Context, Volatile",
+        "Volatile, Context, Stable",
+        "Context, Volatile, Stable",
+        "সব এলোমেলো"
+      ],
+      "answerIndex": 0,
+      "explanation": "যা সবচেয়ে কম বদলায় (Stable) আগে, প্রতিবার বদলায় এমন (Volatile) শেষে। তাহলে cache বাঁচে।"
+    },
+    {
+      "question": "`SOUL.md` কোথায় থাকে আর কী করে?",
+      "options": [
+        "প্রতিটা প্রজেক্টে ফাইল মুছতে",
+        "কেবল Docker-এ",
+        "কিছুই করে না",
+        "`~/.hermes/SOUL.md`-তে, prompt-এর প্রথম অংশে Hermes-এর ব্যক্তিত্ব/identity দেয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "এটা hardcoded `DEFAULT_AGENT_IDENTITY`-র জায়গা নেয়।"
+    },
+    {
+      "question": "Project context ফাইল (`.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `.cursorrules`)-এর মধ্যে কোনটা ব্যবহার হয়?",
+      "options": [
+        "সবগুলো একসাথে",
+        "ক্রম অনুযায়ী প্রথম যেটা মেলে, শুধু সেটা",
+        "শেষটা",
+        "কোনটাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "`.hermes.md` আগে, তারপর `AGENTS.md`, `CLAUDE.md`, `.cursorrules`। একটা পেলে বাকিগুলো দেখে না।"
+    },
+    {
+      "question": "`ephemeral_system_prompt` আর `pre_llm_call` plugin context cache-করা prompt-এ কেন নেই?",
+      "options": [
+        "ভুলে যাওয়া হয়েছে",
+        "এগুলো অকেজো",
+        "এগুলো প্রায়ই বদলায়, তাই API call-এর সময় যোগ হয় যাতে স্থায়ী prompt ও cache নষ্ট না হয়",
+        "এগুলো আলাদা ফাইলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "স্টিকি-নোটের মতো: সেই call-এর জন্য, স্থায়ী prompt-এর অংশ নয়।"
+    },
+    {
+      "question": "Memory-তে session-এর মাঝে কিছু লিখলে cache-করা prompt কেন বদলায় না?",
+      "options": [
+        "লেখা disk-এ যায়, কিন্তু cached prompt rebuild না হওয়া পর্যন্ত (নতুন session বা compression) একই থাকে",
+        "লেখা যায় না",
+        "memory বন্ধ",
+        "সবসময় বদলে যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "এতে সেশনের মাঝে cache নষ্ট হয় না। নতুন তথ্য পরের rebuild-এ ঢোকে।"
+    },
+    {
+      "question": "নিজের মতো করতে চাইলে প্রথমে কী বদলাবে?",
+      "options": [
+        "`agent/prompt_builder.py`",
+        "Python",
+        "operating system",
+        "input: `SOUL.md`, `MEMORY.md`/`USER.md`, project context ফাইল, skill ইত্যাদি"
+      ],
+      "answerIndex": 3,
+      "explanation": "prompt_builder.py বদলালে সবার জন্য global বদল হয়। শুধু fork বা অবদানের সময় ছোঁও।"
+    }
+  ],
+  "recap": [
+    "System prompt তিন স্তরে সাজানো: Stable (স্থির) → Context (প্রসঙ্গ) → Volatile (ক্ষণস্থায়ী), যাতে prompt cache কাজে লাগে।",
+    "প্রতিবার-বদলায় এমন জিনিস (সময়, runtime hint) সবার শেষে; Runtime hint সবসময় শেষে।",
+    "`SOUL.md` Hermes-এর identity, প্রথম অংশে; project context ফাইলের মধ্যে ক্রমে প্রথম যেটা মেলে শুধু সেটা ব্যবহার হয়।",
+    "ephemeral prompt, prefill, external recall ও `pre_llm_call` context cache-করা prompt-এ নেই, API call-এর সময় যোগ হয়।",
+    "নিজের মতো করতে আগে input (SOUL.md, memory, context ফাইল, skill) বদলাও; `prompt_builder.py` শুধু fork/অবদানের সময়।"
+  ]
+}

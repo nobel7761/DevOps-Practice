@@ -1,0 +1,202 @@
+{
+  "contentId": "hermes-doc-user-guide-features-tools",
+  "title": "Tools & Toolsets",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/tools",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে tool আর toolset কী, কমান্ড কোথায় চলে (terminal backend), আর background process, Docker, SSH, sudo-র মতো কঠিন শব্দগুলো।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: রান্নাঘরের যন্ত্রপাতি\n\nভাবো Hermes একজন **বাবুর্চি**। শুধু মাথায় রেসিপি থাকলে রান্না হয় না। তার লাগে **যন্ত্রপাতি**: ছুরি, চুলা, হাঁড়ি, ফ্রিজ।\n\nএকটা বড় রান্নাঘরে সব যন্ত্র সবার জন্য খোলা থাকে না। বাচ্চাদের রান্নাঘরে (ধরো Telegram bot) হয়তো ছুরি লুকানো থাকে। আর বড়দের রান্নাঘরে (তোমার laptop) সব খোলা। আবার যন্ত্রগুলো **ড্রয়ারে ভাগ করা**: \"কাটার ড্রয়ার\", \"গরমের ড্রয়ার\"।\n\nHermes-এ **যন্ত্র = tool** (একটা ছোট কাজ করার function), আর **ড্রয়ার = toolset** (কিছু tool-এর দল)। প্রতিটা platform-এর জন্য আলাদা করে ড্রয়ার চালু বা বন্ধ করা যায়।\n\n**এটা না থাকলে কী সমস্যা?** Hermes-এর মগজ (LLM) শুধু লেখা তৈরি করতে পারে। ফাইল খুলতে, ওয়েবে খুঁজতে বা কমান্ড চালাতে পারে না। Tool-ই তার হাত-পা। আর toolset ছাড়া সব হাত-পা সবখানে খোলা থাকত, যেটা বিপজ্জনক।\n\n> docs বলছে: Hermes-এ বড় একটা built-in tool registry (তৈরি-করা tool-এর তালিকা-খাতা) আছে, আর plugin আরও tool যোগ করে (যেমন Home Assistant নিয়ন্ত্রণ `homeassistant` plugin দিয়ে)। Honcho cross-session memory কোনো built-in toolset না, এটা memory provider plugin: `hermes plugins install honcho`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Tool** | Hermes যা করতে পারে এমন একটা ছোট কাজ (ফাইল পড়া, ওয়েবে খোঁজা) | একটা যন্ত্র |\n| **Toolset** | কয়েকটা tool-এর দল, একসাথে চালু/বন্ধ করা যায় | যন্ত্রের ড্রয়ার |\n| **Terminal** | কালো জানালা যেখানে লিখে কম্পিউটারকে হুকুম (command) দেওয়া যায় | কম্পিউটারের সাথে চিঠিতে কথা বলা |\n| **Backend** | কাজটা আসলে \"কোথায়\" চলবে সেই জায়গা। এখানে: তোমার কম্পিউটারে, নাকি আলাদা বাক্সে, নাকি দূরের কম্পিউটারে | তুমি বাসায় রাঁধবে নাকি হোটেলের রান্নাঘরে |\n| **Docker / container** | একটা বন্ধ বাক্স যার ভেতরে আলাদা ছোট কম্পিউটারের মতো পরিবেশ চলে। বাক্সের ভেতরে ভুল হলে বাইরের কিছু নষ্ট হয় না | কাচের ঘরে খেলা |\n| **SSH** | দূরের অন্য কম্পিউটারে নিরাপদে ঢুকে সেখানে কমান্ড চালানোর উপায় | ফোনে দূরের বাসার রোবটকে হুকুম দেওয়া |\n| **Config / YAML** | **Config** হলো সেটিংসের ফাইল। **YAML** তার লেখার একটা ধরন: `নাম: মান`, নিচে ঢুকিয়ে লিখে ভাগ করা | ফর্মের ঘর পূরণ করা |\n| **Env variable / `.env`** | কম্পিউটারের গোপন নোট। নাম আর মান থাকে, যেমন পাসওয়ার্ড। `.env` ফাইলে সেগুলো রাখা হয় | তালা-দেওয়া ডায়েরি |\n| **Process** | কম্পিউটারে চলতে থাকা একটা প্রোগ্রাম | চুলায় বসানো একটা হাঁড়ি |\n| **Sudo** | সাধারণ ব্যবহারকারীর বদলে \"অ্যাডমিন\"-এর ক্ষমতায় কমান্ড চালানো, তাই পাসওয়ার্ড চায় | স্কুলের অফিস-ঘরের চাবি |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Tool-এর ধরন (category)\n\n| Category | Tool | সহজ ব্যাখ্যা |\n|---|---|---|\n| **Web** | `web_search`, `web_extract` | ওয়েবে খোঁজা ও পাতা থেকে লেখা তোলা |\n| **X Search** | `x_search` | X (Twitter)-এ খোঁজা। xAI credential (SuperGrok OAuth বা `XAI_API_KEY`) লাগে, ডিফল্টে বন্ধ। `hermes tools` → X (Twitter) Search থেকে চালু |\n| **Terminal & Files** | `terminal`, `process`, `read_file`, `patch` | কমান্ড চালানো, চলমান প্রোগ্রাম দেখা, ফাইল পড়া, ফাইলের একটু অংশ বদলানো (patch) |\n| **Browser** | `browser_exec` (CDP দিয়ে Chromium, screenshot সহ), `browser_cdp`, `browser_dialog`, `browser_vault`। Camofox আলাদা plugin: `hermes plugins install camofox` | ওয়েব browser নিজে চালানো। CDP মানে browser-কে দূর থেকে চালানোর নিয়ম |\n| **Media** | `vision_analyze`, `image_generate`, `text_to_speech` | ছবি দেখা, ছবি আঁকা, লেখা পড়ে শোনানো |\n| **Agent orchestration** | `todo`, `clarify`, `execute_code`, `delegate_task` | কাজের তালিকা, প্রশ্ন করে জেনে নেওয়া, code চালানো, অন্যকে কাজ ভাগ দেওয়া |\n| **Memory & recall** | `memory`, `session_search` | মনে রাখা ও পুরোনো কথা খুঁজে আনা |\n| **Automation** | `cronjob`: create, list, update, pause, resume, run, remove | ঘড়ি ধরে কাজ (cron মানে অ্যালার্ম-ঘড়ির মতো সময়-ঠিক-করা কাজ) |\n| **Integrations** | MCP server tool, plugin tool (যেমন `ha_*`) | বাইরে থেকে আনা tool। **MCP** মানে AI-র জন্য \"সবার একই plug\" নিয়ম |\n\nপূর্ণ তালিকার জন্য docs-এর *Built-in Tools Reference* আর *Toolsets Reference* দেখো। সেগুলোই চূড়ান্ত উৎস।\n\n### Nous Tool Gateway\n\nNous Portal-এর paid subscriber হলে web search, image generation, TTS আর browser automation **আলাদা API key ছাড়াই** পাওয়া যায়। (**API key** মানে একটা গোপন চাবি। কোনো সেবা ব্যবহার করতে গেলে সেটা দেখাতে হয়।) চালু করো `hermes model` দিয়ে, অথবা tool-ভিত্তিক `hermes tools` দিয়ে। না থাকলে প্রতিটা সেবার জন্য আলাদা চাবি জোগাড় করতে হতো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Toolset ব্যবহার\n\n```bash\nhermes chat --toolsets \"web,terminal\"\nhermes tools            # tool-এর তালিকা; flag ছাড়া চালালে platform-ভিত্তিক interactive setup\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `hermes chat` | Hermes-এর সাথে কথোপকথন শুরু | সবসময় |\n| `--toolsets \"web,terminal\"` | **flag** (বাড়তি পছন্দ)। শুধু `web` আর `terminal` ড্রয়ার খোলা থাকবে | যখন বাকি ক্ষমতা বন্ধ রাখতে চাও, নিরাপত্তার জন্য |\n| `hermes tools` | tool-এর তালিকা দেখায়। flag ছাড়া চালালে প্রশ্ন করে করে platform-ভিত্তিক সেটিং করায় (interactive setup) | কোন platform-এ কোন tool চালু থাকবে ঠিক করতে |\n\nপ্রচলিত toolset-এর নাম: `web`, `search`, `terminal`, `file`, `browser`, `vision`, `image_gen`, `skills`, `tts`, `todo`, `memory`, `session_search`, `cronjob`, `code_execution`, `delegation`, `clarify`, `messaging`, `discord`, `discord_admin`, `debugging`, `safe`।\n\nএছাড়াও platform preset (`hermes-cli`, `hermes-telegram`) এবং গতিশীল `mcp-<server>` toolset আছে। **Preset** মানে আগে থেকে সাজানো দল, যেমন \"Telegram-এর জন্য ঠিক করা ড্রয়ার\"।\n\n## Tool result-এ সহজ ব্যাখ্যা\n\nকম্পিউটার যখন কোনো কাজ ব্যর্থ হয়, সে কঠিন সংকেত (exit code) দেয়। Hermes সেই সংকেতের পাশে সহজ ভাষায় লিখে দেয়:\n\n- exit code `-9` বা `137` মানে SIGKILL। প্রায়ই OOM killer (OOM মানে Out Of Memory, মেমরি শেষ; তখন কম্পিউটার জোর করে প্রোগ্রাম বন্ধ করে দেয়)।\n- segfault, abort, SIGTERM, broken pipe, CPU/file-size limit-ও চিনিয়ে দেয়। shell-এর `128+signum` নিয়মটা \"usually\" বলে হালকাভাবে বলা হয়। (**Signal** মানে প্রোগ্রামকে পাঠানো ছোট বার্তা, যেমন \"থামো\"।)\n- `read_file` UTF-16 ফাইলকে UTF-8-এ বদলে পড়ে (সাথে একটা hint দেয়)। UTF-8, UTF-16 হলো লেখা কম্পিউটারে সাজানোর দুই নিয়ম। `patch` ও `write_file` UTF-8-এ লেখে। **১০ MB-এর বেশি** ফাইল আর আসল binary ফাইল (যা মানুষ পড়তে পারে না, যেমন ছবি বা প্রোগ্রাম) এখনও প্রত্যাখ্যাত।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "agent তার tool-এর মাধ্যমে terminal চালায়, আর terminal backend ঠিক করে কাজটা কোথায় চলবে।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "l",
+            "kind": "client",
+            "label": "local (default)",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "d",
+            "kind": "external",
+            "label": "Docker, আরও",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "r",
+            "kind": "external",
+            "label": "ssh/modal/...",
+            "x": 440,
+            "y": 200
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "a",
+            "label": "অনুরোধ"
+          },
+          {
+            "from": "a",
+            "to": "l",
+            "label": "terminal.backend"
+          },
+          {
+            "from": "a",
+            "to": "d",
+            "label": "terminal.backend"
+          },
+          {
+            "from": "a",
+            "to": "r",
+            "label": "terminal.backend"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Terminal backend: কমান্ড কোথায় চলবে?\n\n**কেন লাগে?** agent যে কমান্ড চালায় তা তো আসল কম্পিউটারে ফাইল মুছতেও পারে। তাই বেছে নেওয়া যায় কাজটা কোন \"ঘরে\" হবে। নিরাপদ বাক্সে চালালে ভুল হলেও তোমার আসল কম্পিউটার বাঁচে।\n\nআট রকম: `local` (ডিফল্ট, মানে তোমার নিজের কম্পিউটারেই), `docker`, `ssh`, `singularity` (plugin), `sprites` (plugin), `modal`, `daytona`, `vercel_sandbox`।\n\n`~/.hermes/config.yaml`-এ লেখো। (`~` মানে তোমার নিজের হোম ফোল্ডার। `.hermes` তার ভেতরে Hermes-এর গোপন ফোল্ডার।)\n\n```yaml\nterminal:\n  backend: local\n  cwd: \".\"\n  timeout: 180   # সেকেন্ড\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `terminal:` | \"terminal-এর সেটিং শুরু\" শিরোনাম | ফর্মের একটা অংশ |\n| `  backend: local` | কাজ কোথায় চলবে। `local` মানে এই কম্পিউটারে | কোন রান্নাঘরে রাঁধবে |\n| `  cwd: \".\"` | cwd = current working directory, মানে কোন ফোল্ডারে কাজ শুরু। `\".\"` মানে এই ফোল্ডার | বই খুলে কোন পাতায় শুরু |\n| `  timeout: 180` | একটা কমান্ড সর্বোচ্চ ১৮০ সেকেন্ড চলতে পারবে, তারপর থামবে | রান্নার টাইমার |\n\n### Docker\n\n```yaml\nterminal:\n  backend: docker\n  docker_image: python:3.11-slim\n```\n\n`docker_image` হলো বাক্সটা কিসের নকশা থেকে বানানো হবে। (**Image** মানে প্রোগ্রাম আর তার দরকারি সব জিনিসের প্যাক-করা ছাঁচ, যেমন কেক বানানোর ছাঁচ। `python:3.11-slim` মানে Python ৩.১১ সহ ছোট ছাঁচ।)\n\n- **একটাই দীর্ঘস্থায়ী container** (`docker run -d ... sleep infinity`) চলে। এতে `-d` মানে পেছনে চালাও, `sleep infinity` মানে বাক্সটাকে ঘুমিয়ে জাগিয়ে রাখো। terminal, file, `execute_code` সব `docker exec` দিয়ে সেখানে যায় (`docker exec` মানে চলমান বাক্সের ভেতরে একটা কমান্ড চালানো)।\n- cwd, ইনস্টল করা package, `/workspace`-এর ফাইল, সব `/new`, `/reset`, `delegate_task` পেরিয়েও Hermes process চলা পর্যন্ত টিকে থাকে। বন্ধ হলে container থামে ও মুছে যায়।\n- `/workspace` আর `/root` restart-এর পরেও থাকবে কিনা ঠিক করে `container_persistent`।\n\n### SSH (নিরাপত্তার জন্য প্রস্তাবিত)\n\nagent নিজের code বদলাতে পারে না, তাই নিরাপদ। মানে কাজটা চলে দূরের একটা আলাদা কম্পিউটারে, যেখানে Hermes-এর নিজের ফাইল নেই। `~/.hermes/.env`-এ:\n\n```bash\nTERMINAL_SSH_HOST=...\nTERMINAL_SSH_USER=...\nTERMINAL_SSH_KEY=~/.ssh/id_rsa\n```\n\n| নাম | মানে | উপমা |\n|---|---|---|\n| `TERMINAL_SSH_HOST` | দূরের কম্পিউটারের ঠিকানা | বাসার ঠিকানা |\n| `TERMINAL_SSH_USER` | সেখানে কোন ব্যবহারকারী নামে ঢুকবে | কার নামে ঢুকছ |\n| `TERMINAL_SSH_KEY` | ঢোকার চাবি-ফাইলের জায়গা (কখনো এটা কাউকে দিও না) | বাসার ডুপ্লিকেট চাবি |\n\n### Singularity/Apptainer\n\nSingularity হলো Docker-এর মতো আরেকটা বাক্স-ব্যবস্থা (সাধারণত বড় সরকারি বা গবেষণা কম্পিউটারে)।\n\n```bash\nhermes plugins install singularity\napptainer build ~/python.sif docker://python:3.11-slim\nhermes config set terminal.backend singularity\nhermes config set terminal.singularity_image ~/python.sif\n```\n\nপ্রথম লাইন plugin বসায়। দ্বিতীয় লাইন একটা image-ফাইল (`python.sif`) বানায়। শেষ দুই লাইন config-এ বলে দেয় \"singularity ব্যবহার করো, এই image দিয়ে\"।\n\n### Modal ও Vercel Sandbox\n\nModal ও Vercel হলো ইন্টারনেটের ভাড়া-করা বালির-বাক্স (cloud sandbox)।\n\n- Modal: `python -c \"import pm; pm.sync_venv(['modal'], explicit=True)\"`, তারপর `modal setup`, তারপর `hermes config set terminal.backend modal`।\n- Vercel: `pm.sync_venv(['vercel'], explicit=True)`, তারপর `hermes config set terminal.backend vercel_sandbox`। image `terminal.vercel_image` (ডিফল্ট `vercel/sandbox/universal:latest`), workspace `/vercel/sandbox`। auth-এ (পরিচয় যাচাইয়ে) তিনটাই লাগে: `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`। `container_persistent: true` snapshot দিয়ে filesystem রাখে, চলমান process না। `container_disk` ডিফল্ট `51200`-এই রাখো; কাস্টম মান কাজ করে না।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Shell startup file-এর ফাঁদ",
+      "markdown": "**Shell** হলো terminal-এর ভেতরের দোভাষী, যে তোমার লেখা কমান্ড বুঝে চালায় (যেমন bash, zsh)। শুরুতে সে কিছু সেটআপ-ফাইল পড়ে, যেমন `~/.bashrc`। agent-এর কমান্ড non-interactive, TTY ছাড়া চলে (**TTY** মানে মানুষ বসে টাইপ করার সত্যিকারের terminal)। তাই `~/.bashrc`-এ ধীর init (যেমন `nvm`), TTY চায় এমন prompt বা শর্তহীন echo থাকলে কমান্ড আটকে বা নোংরা হতে পারে।\n\nসমাধান: `~/.bashrc`-এর একদম শুরুতে guard দাও: `case $- in *i*) ;; *) return;; esac`। মানে: \"যদি মানুষ বসে না থাকে, এখানেই থামো।\" ভারী init তার নিচে রাখো। Zsh-এ login setup `.zprofile`-এ, interactive `.zshrc`-এ, `.zshenv` ন্যূনতম। PATH লাগলে guard-এর উপরে export করো বা `~/.local/bin`-এ symlink দাও। (**PATH** মানে কম্পিউটারের ঠিকানা-তালিকা, যেখানে সে প্রোগ্রাম খোঁজে।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Container-এর সম্পদ ও নিরাপত্তা\n\n```yaml\ncontainer_cpu: 1\ncontainer_memory: 5120    # MB\ncontainer_disk: 51200     # MB (50 GB)\ncontainer_persistent: true\n```\n\n| key | মানে | উপমা |\n|---|---|---|\n| `container_cpu` | কয়টা CPU core (প্রসেসরের মগজ-অংশ) পাবে | কয়জন বাবুর্চি |\n| `container_memory` | RAM (কাজের টেবিলের জায়গা), MB-তে | টেবিল কতটা বড় |\n| `container_disk` | স্থায়ী জায়গা, MB-তে (৫১২০০ = ৫০ GB) | ফ্রিজ কতটা বড় |\n| `container_persistent` | restart-এর পরেও ফাইল থাকবে কিনা | খাতা কি রেখে যাবে নাকি ছিঁড়ে ফেলবে |\n\nনিরাপত্তা (Docker): read-only root filesystem (মূল ফাইল বদলানো যায় না), সব Linux capability বাদ (বিশেষ ক্ষমতা কাটা), privilege escalation নেই (নিজে নিজে বড় ক্ষমতা পাওয়া যায় না), **২৫৬ process**-এর PID সীমা, পূর্ণ namespace isolation (বাক্সের ভেতর থেকে বাইরের কিছু দেখা যায় না), workspace volume-এ। `terminal.docker_forward_env` দিয়ে নির্দিষ্ট env variable ভেতরে পাঠানো যায়। মনে রেখো সেগুলো container-এর ভেতরে **দেখা যাবে**।\n\n## Background process\n\nকিছু কাজ অনেক সময় নেয়, যেমন বড় test চালানো। **Background** মানে পেছনে চলুক, তুমি ততক্ষণে অন্য কাজ করো।\n\n```text\nterminal(command=\"pytest -v tests/\", background=true)\n```\n\nএটা `session_id` আর `pid` ফেরত দেয়। (`pid` মানে process id, প্রতিটা চলমান প্রোগ্রামের নম্বর।) `process` tool-এর action: `list`, `poll`, `wait`, `log`, `kill`, `write` (`data` সহ)।\n\n| action | কাজ | কখন লাগে |\n|---|---|---|\n| `list` | চলমান process-এর তালিকা | কী কী চলছে দেখতে |\n| `poll` | এখন কী অবস্থা একবার দেখা | তাড়া নেই, উঁকি দিতে |\n| `wait` | শেষ না হওয়া পর্যন্ত অপেক্ষা | ফলটা না পেলে এগোনো যাবে না |\n| `log` | এ পর্যন্ত যা লিখেছে তা দেখা | কী হচ্ছে বুঝতে |\n| `kill` | জোর করে থামানো | আটকে গেলে |\n| `write` | চলমান প্রোগ্রামে লেখা পাঠানো (`data` দিয়ে) | প্রোগ্রাম প্রশ্ন করলে উত্তর দিতে |\n\n`pty=true` দিলে Codex বা Claude Code-এর মতো interactive CLI চলে (যেগুলো মানুষের মতো টাইপ করা কথোপকথন চায়)।\n\n- কমান্ডের শেষে `&` দিলে সেটা `background=true`-তে রূপান্তরিত হয় আর `auto_backgrounded` note আসে। মিশ্র আকার, `nohup`/`disown`/`setsid`, command substitution, এগুলো প্রত্যাখ্যাত হয়, সাথে নির্দেশনা।\n\n### বারবার অপেক্ষা করলে\n\nশান্ত চলমান process-এ পরপর দুবার `wait`/`poll` করলে `notify_on_complete` নিজে চালু হয় এবং agent-কে বলা হয় আর না দেখতে। ফল পরে message হয়ে আসে। এটা ঠিক \"বারবার জিজ্ঞেস না করে শেষ হলে ডেকো\" বলে দেওয়ার মতো। এটা interactive CLI, TUI, desktop app ও messaging chat-এ খাটে। `hermes chat -q`, `hermes -z`, cron, Kanban worker, stateless API, delegated subagent বা `display.background_process_notifications: off` profile-এ নয়। সব জায়গায় বন্ধ করতে: `terminal.process_wait_auto_notify: false`।\n\n### ফল জমা থাকে\n\nশেষ হওয়া ফল profile-এর Hermes home-এর `logs/process-results/`-এ থাকে। সর্বশেষ **৬৪টা**, সর্বোচ্চ **৭ দিন**। (**Profile** মানে আলাদা আলাদা Hermes-পরিচয়, প্রতিটার নিজস্ব সেটিং ও ফাইল। **Log** মানে কী ঘটল তার লেখা খাতা।) প্রতিটায় সর্বোচ্চ ২,০০,০০০ অক্ষরের output-এর শেষ অংশ, secret সবসময় ঢেকে দেওয়া। কথোপকথন resume করে আগের `session_id` দিয়ে `process(action=\"log\")` বা `poll` চালাও; কমান্ড আবার চলে না।\n\n## Sudo\n\n- interactive session-এ sudo একটা **ঢাকা, session-cached** password prompt দেয় (লেখা দেখা যায় না, আর একবার দিলে session-এ মনে রাখে)। passwordless sudo-তে prompt লাগে না।\n- বিকল্প: profile-এর `.env`-এ `SUDO_PASSWORD`।\n- চেনে: quoted/absolute path আর `env` prefix (যেমন `env -u UNUSED /usr/bin/sudo id`)। চেনে না: `bash -c 'sudo id'`, `env -S`, গতিশীল path, অজানা `env` option।\n- delegated subagent prompt করতে পারে না। messaging session-এ নিরাপদ password channel নেই। **chat-এ password কখনও পাঠিও না।**"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Messaging-এ sudo",
+      "markdown": "messaging platform-এ sudo ব্যর্থ হলে output-এ `~/.hermes/.env`-এ `SUDO_PASSWORD` যোগ করার পরামর্শ আসে। chat-এ password না দিয়ে বরং যাচাই করো এই ঝুঁকি তুমি নিতে চাও কিনা।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Tool আর toolset-এর সম্পর্ক কী?",
+      "options": [
+        "Tool হলো দল, toolset হলো একটা কাজ",
+        "দুটো একই জিনিস",
+        "Tool হলো একটা ছোট কাজ (যন্ত্র), toolset হলো কিছু tool-এর দল (ড্রয়ার)",
+        "Toolset শুধু ছবির জন্য"
+      ],
+      "answerIndex": 2,
+      "explanation": "যন্ত্র = tool, ড্রয়ার = toolset। ড্রয়ার চালু বা বন্ধ করে platform-ভিত্তিক ক্ষমতা ঠিক হয়।"
+    },
+    {
+      "question": "Terminal backend-এর ডিফল্ট কোনটা?",
+      "options": ["local", "ssh", "docker", "modal"],
+      "answerIndex": 0,
+      "explanation": "ডিফল্ট `local`, মানে তোমার নিজের কম্পিউটারেই কমান্ড চলে।"
+    },
+    {
+      "question": "docs কেন SSH backend নিরাপত্তার জন্য প্রস্তাব করে?",
+      "options": [
+        "এটা সবচেয়ে সস্তা",
+        "এতে password লাগে না",
+        "এটা ছবি আঁকে",
+        "agent নিজের code বদলাতে পারে না, কাজ দূরের আলাদা কম্পিউটারে চলে"
+      ],
+      "answerIndex": 3,
+      "explanation": "কাজটা Hermes-এর ফাইল থেকে আলাদা জায়গায় চলে, তাই agent নিজের code নষ্ট করতে পারে না।"
+    },
+    {
+      "question": "একটা কমান্ড exit code `137`-এ শেষ হলো। Hermes সাধারণত কী ব্যাখ্যা দেয়?",
+      "options": [
+        "সফল হয়েছে",
+        "SIGKILL, প্রায়ই OOM killer (মেমরি শেষ)",
+        "ইন্টারনেট নেই",
+        "ফাইল ছোট"
+      ],
+      "answerIndex": 1,
+      "explanation": "`-9` বা `137` মানে SIGKILL, আর তার সাধারণ কারণ মেমরি শেষ হয়ে যাওয়া।"
+    },
+    {
+      "question": "`~/.bashrc`-এ `nvm` init ধীর হওয়ায় agent-এর কমান্ড আটকাচ্ছে। সমাধান কী?",
+      "options": [
+        "Hermes মুছে ফেলা",
+        "কম্পিউটার বদলানো",
+        "`~/.bashrc`-এর শুরুতে `case $- in *i*) ;; *) return;; esac` guard দেওয়া",
+        "Docker বন্ধ করা"
+      ],
+      "answerIndex": 2,
+      "explanation": "guard বলে দেয়: মানুষ বসে না থাকলে (non-interactive) এখানেই থামো, ভারী init নিচে থাকে।"
+    },
+    {
+      "question": "`terminal(..., background=true)` চালালে কী ফেরত আসে এবং পরে কী দিয়ে ফল দেখা যায়?",
+      "options": [
+        "`session_id` ও `pid`; `process` tool (poll/log/wait)",
+        "কিছুই না",
+        "শুধু ছবি",
+        "`config.yaml`"
+      ],
+      "answerIndex": 0,
+      "explanation": "background কাজের নম্বর পাওয়া যায়, তারপর `process` tool-এর action দিয়ে দেখা যায়।"
+    },
+    {
+      "question": "পরপর দুবার `wait`/`poll` করলে কী হয়?",
+      "options": [
+        "Hermes বন্ধ হয়",
+        "`notify_on_complete` নিজে চালু হয়, ফল পরে message হয়ে আসে",
+        "process মুছে যায়",
+        "কিছুই হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "বারবার জিজ্ঞেস না করে শেষ হলে খবর দেওয়ার ব্যবস্থা নিজে চালু হয়।"
+    },
+    {
+      "question": "Docker container-এ কোনটা সত্য?",
+      "options": [
+        "একাধিক container প্রতি কমান্ডে বানানো হয়",
+        "এতে নিরাপত্তা নেই",
+        "container কখনো মুছে না",
+        "একটাই দীর্ঘস্থায়ী container চলে, Hermes process থামলে থামে ও মুছে যায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "একটাই container `sleep infinity` দিয়ে জাগিয়ে রাখা হয় এবং সব কাজ `docker exec` দিয়ে সেখানে যায়।"
+    }
+  ],
+  "recap": [
+    "Tool হলো Hermes-এর যন্ত্র, toolset হলো যন্ত্রের ড্রয়ার; `hermes tools` ও `--toolsets` দিয়ে চালু/বন্ধ করা যায়।",
+    "Terminal backend ঠিক করে কমান্ড কোথায় চলবে: local, docker, ssh, singularity, sprites, modal, daytona, vercel_sandbox।",
+    "SSH ও Docker নিরাপদ, কারণ কাজ আলাদা জায়গায় চলে; ভেতরে পাঠানো env variable সেখানে দেখা যায়।",
+    "দীর্ঘ কাজ `background=true` দিয়ে পেছনে চলে, `process` tool দিয়ে দেখা যায়।",
+    "Sudo-র password chat-এ কখনো পাঠিও না।"
+  ]
+}

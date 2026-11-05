@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-developer-guide-architecture",
+  "questions": [
+    {
+      "id": "hermes-doc-developer-guide-architecture-q01",
+      "difficulty": "easy",
+      "question": "`AIAgent` class-টা কোন ফাইলে থাকে?",
+      "options": [
+        "`run_agent.py`",
+        "`cli.py`",
+        "`model_tools.py`",
+        "`hermes_state.py`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`AIAgent` হলো সেই একজন মিস্ত্রি, আর সে থাকে `run_agent.py` ফাইলে।",
+      "whyWrong": {
+        "1": "`cli.py` হলো terminal দিয়ে ঢোকার দরজা, মিস্ত্রি নয়।",
+        "2": "`model_tools.py` tool call কোথায় যাবে তা ঠিক করে।",
+        "3": "`hermes_state.py` session জমা রাখার কাজে লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q02",
+      "difficulty": "easy",
+      "question": "Gateway বলতে কী বোঝায়?",
+      "options": [
+        "Hermes-এর ভেতরে থাকা ছোট একটা ডাটাবেস ফাইল",
+        "chat অ্যাপ আর Hermes-এর মাঝের ডাকঘর",
+        "সব tool-এর নাম লিখে রাখা একটা তালিকা-খাতা",
+        "কোড-এডিটরের সাথে কথা বলার একটা সাধারণ ভাষা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Gateway chat অ্যাপ থেকে আসা বার্তা Hermes-এ পৌঁছে দেয় এবং উত্তর ফিরিয়ে নেয়, ডাকঘরের মতো।",
+      "whyWrong": {
+        "0": "ডাটাবেস ফাইল হলো SQLite।",
+        "2": "তালিকা-খাতার নাম registry।",
+        "3": "এডিটরের সাধারণ ভাষা হলো ACP।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q03",
+      "difficulty": "easy",
+      "question": "Adapter-এর কাজ কী?",
+      "options": [
+        "AI-র জন্য শুরুর system prompt বানিয়ে দেওয়া",
+        "আলাপ বেশি লম্বা হলে মাঝের অংশের সারাংশ করা",
+        "বার্তাকে `MessageEvent` ধরনে অনুবাদ করা",
+        "সময়মতো কাজ চালানোর জন্য ঘড়ি ঠিক রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতি platform-এর বার্তার ধরন আলাদা। Adapter অনুবাদক হয়ে সেটাকে Hermes-এর নিজের ধরনে আনে।",
+      "whyWrong": {
+        "0": "system prompt বানায় Prompt Builder।",
+        "1": "সারাংশ বানানো compression-এর কাজ।",
+        "3": "ঘড়ির কাজ cron-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q04",
+      "difficulty": "easy",
+      "question": "Registry কী?",
+      "options": [
+        "সব আলাপ জমা রাখার একটা ডাটাবেস-ফাইল",
+        "প্রতিটা provider-এর API key রাখার ফাইল",
+        "সব Hermes profile-এর নামের একটা সূচি",
+        "সব tool-এর নামের তালিকা-খাতা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Registry-তে সব tool নাম ধরে খুঁজে পাওয়া যায়। Dispatch এই খাতা দেখেই tool-কে সঠিক জায়গায় পাঠায়।",
+      "whyWrong": {
+        "0": "আলাপ জমা থাকে SQLite-এ।",
+        "1": "API key-এর সাথে registry-র সম্পর্ক নেই।",
+        "2": "Profile আলাদা জিনিস, registry নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q05",
+      "difficulty": "easy",
+      "question": "FTS5 কী কাজে লাগে?",
+      "options": [
+        "tool call-এর নকল (synthetic) ফল বানানোর কাজে",
+        "AI-র উত্তর ছোট করে সারাংশ বানানোর কাজে",
+        "পুরোনো আলাপে শব্দ খোঁজার কাজে",
+        "Telegram-এর বার্তা Hermes-এর ভাষায় অনুবাদের কাজে"
+      ],
+      "correctIndex": 2,
+      "explanation": "FTS5 হলো full-text search। এর সাহায্যে Hermes পুরোনো session-এর ভেতর শব্দ দিয়ে খুঁজতে পারে।",
+      "whyWrong": {
+        "0": "tool ফল নকল করা agent-level tool-এর কাজ।",
+        "1": "সারাংশ বানায় compression।",
+        "3": "অনুবাদ করে adapter।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q06",
+      "difficulty": "easy",
+      "question": "Cron কী?",
+      "options": [
+        "AI-কে আলাপের শুরুতে দেওয়া স্থায়ী নির্দেশ",
+        "বাইরে থেকে নতুন tool যোগ করার একটা ব্যবস্থা",
+        "এক আলাপের আগের সব বার্তার সম্পূর্ণ তালিকা",
+        "সময়মতো কাজ চালানোর ঘড়ি"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cron সময় হলে Hermes-কে জাগিয়ে কাজ দেয়, যেমন রোজ সকালে একটা কাজ।",
+      "whyWrong": {
+        "0": "শুরুর নির্দেশ হলো system prompt।",
+        "1": "বাইরে থেকে যোগ করার ব্যবস্থা plugin।",
+        "2": "আগের বার্তা হলো history।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q07",
+      "difficulty": "easy",
+      "question": "Profile কাকে বলে?",
+      "options": [
+        "নিজস্ব সেটিং ও স্মৃতি সহ আলাদা পরিচয়",
+        "একটা লম্বা আলাপের ছোট করা সারাংশ-ফাইল",
+        "একই ধরনের tool-কে একটা বাক্সে ভরে রাখা",
+        "provider-এর সাথে কথা বলার একটা ভাষার ধরন"
+      ],
+      "correctIndex": 0,
+      "explanation": "`hermes -p <name>` দিলে সেই profile-এর নিজের config, memory, session আলাদা থাকে।",
+      "whyWrong": {
+        "1": "আলাপের সারাংশ compression-এর ফল।",
+        "2": "tool-দের বাক্সকে toolset বলে।",
+        "3": "ভাষার ধরন হলো API mode।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q08",
+      "difficulty": "medium",
+      "question": "page অনুযায়ী তিনটা API mode কোনগুলো?",
+      "options": [
+        "`chat_completions`, `gemini_native`, `anthropic`",
+        "`chat_completions`, `codex_responses`, `anthropic`",
+        "`openai_chat`, `codex_responses`, `anthropic`",
+        "`chat_completions`, `codex_responses`, `mistral_api`"
+      ],
+      "correctIndex": 1,
+      "explanation": "তিনটা mode হলো সবচেয়ে সাধারণ `chat_completions`, OpenAI Codex-এর `codex_responses` আর Anthropic-এর `anthropic`।",
+      "whyWrong": {
+        "0": "`gemini_native` নামে কোনো mode নেই।",
+        "2": "প্রথমটার নাম `openai_chat` নয়, `chat_completions`।",
+        "3": "`mistral_api` নামে mode নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q09",
+      "difficulty": "medium",
+      "question": "Session কোথায় জমা থাকে?",
+      "options": [
+        "শুধু `cron/` ফোল্ডারের ভেতরের JSON ফাইলে",
+        "SQLite + FTS5-এ (`hermes_state.py`)",
+        "`plugins/` ফোল্ডারের ভেতরের একটা নোট-ফাইলে",
+        "শুধু `SOUL.md` নামের ব্যক্তিত্বের ফাইলের ভেতরে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Session জমা থাকে SQLite ডাটাবেসে আর FTS5 দিয়ে খোঁজা যায়।",
+      "whyWrong": {
+        "0": "cron-এর job জমা থাকে JSON-এ, session নয়।",
+        "2": "plugins ফোল্ডার অ্যাড-অনের জায়গা।",
+        "3": "`SOUL.md` ব্যক্তিত্বের ফাইল।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q10",
+      "difficulty": "medium",
+      "question": "প্রায় ২৫,০০০টা test কেন রাখা হয়েছে?",
+      "options": [
+        "এক জায়গার বদলে অন্য জায়গার ভাঙা ধরতে",
+        "Hermes-কে আরও অনেক দ্রুত চালানোর জন্য",
+        "প্রতিটা প্রশ্নের উত্তর cache করে রাখার জন্য",
+        "নতুন provider আপনা-আপনি যোগ করার জন্য"
+      ],
+      "correctIndex": 0,
+      "explanation": "বড় কারখানায় এক জায়গা বদলালে অন্য জায়গা ভাঙতে পারে। Test সেই ভুল সঙ্গে সঙ্গে ধরে।",
+      "whyWrong": {
+        "1": "Test কোডের গতি বাড়ায় না।",
+        "2": "Cache করা test-এর কাজ নয়।",
+        "3": "Provider যোগ test করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q11",
+      "difficulty": "medium",
+      "question": "Cron job-এ প্রতিবার নতুন `AIAgent` বানানো হয়, history নেওয়া হয় না। কেন?",
+      "options": [
+        "cron-এর ভেতরে কোনো tool-ই চালানো যায় না",
+        "নতুন agent সবসময় অনেক বেশি সস্তা পড়ে",
+        "history শুধু terminal-এ জমা থাকতে পারে",
+        "cron-এর কাজগুলো আলাদা আলাদা, যোগ নেই"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cron-এর প্রতিটা কাজ স্বাধীন, তাই পুরোনো history বয়ে আনার দরকার নেই। Gateway-তে উল্টো, history সহ agent আসে।",
+      "whyWrong": {
+        "0": "Cron-এও tool চলে, skill ও inject হয়।",
+        "1": "সস্তা হওয়ার কথা lesson-এ নেই।",
+        "2": "History SQLite-এ থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q12",
+      "difficulty": "medium",
+      "question": "Prompt stability নীতি কী বলে?",
+      "options": [
+        "প্রতি turn-এ system prompt নতুন করে লেখা হয়",
+        "শুধু Telegram-এ system prompt স্থির থাকে",
+        "মাঝপথে system prompt বদলায় না, cache বাঁচে",
+        "system prompt কখনোই cache করা যায় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "মাঝপথে prompt বদলালে provider-এর cache নষ্ট হয়, খরচ বাড়ে। তাই শুধু `/model`-এর মতো স্পষ্ট user action-এ বদলায়।",
+      "whyWrong": {
+        "0": "এটা নীতির উল্টো কথা।",
+        "1": "এই নিয়ম সব platform-এর জন্য।",
+        "3": "Cache করা যায় বলেই নিয়মটা দরকার।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q13",
+      "difficulty": "medium",
+      "question": "একটা Gateway message ভেতরে কোন ক্রমে এগোয়?",
+      "options": [
+        "`MessageEvent` → adapter → authorize → `AIAgent` তৈরি → session key",
+        "authorize → adapter → session key → `MessageEvent` → `AIAgent` তৈরি",
+        "`GatewayRunner._handle_message()` → adapter → `MessageEvent` → authorize",
+        "adapter → `MessageEvent` → `GatewayRunner._handle_message()` → authorize"
+      ],
+      "correctIndex": 3,
+      "explanation": "আগে adapter বার্তা অনুবাদ করে `MessageEvent` বানায়, তারপর `GatewayRunner` authorize ও session key করে, শেষে history সহ `AIAgent` তৈরি হয়।",
+      "whyWrong": {
+        "0": "`MessageEvent` বানায় adapter, তাই adapter আগে।",
+        "1": "authorize আগে হতে পারে না, বার্তা তখনও অনুবাদ হয়নি।",
+        "2": "`GatewayRunner` শুরুতে নয়, adapter-এর পরে আসে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q14",
+      "difficulty": "medium",
+      "question": "নতুন tool বানালে আলাদা তালিকায় নাম লেখা লাগে না কেন?",
+      "options": [
+        "`cli.py` সব ফাইল ঘুরে নিজে তালিকা লিখে রাখে",
+        "tool-এর নাম `config.py`-তে আগেই ঠিক করা থাকে",
+        "top-level `registry.register()` call থাকায়",
+        "AI নিজেই tool-এর নাম বানিয়ে নেয় চলার সময়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`tools/*.py` import হলে top-level `registry.register()` চলে, ফলে tool আপনা-আপনি registry-তে ঢোকে।",
+      "whyWrong": {
+        "0": "`cli.py` এই কাজ করে না।",
+        "1": "নাম আগে থেকে ঠিক করা থাকে না।",
+        "3": "AI নাম বানায় না, registry থেকে জানে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q15",
+      "difficulty": "hard",
+      "question": "নতুন একটা chat অ্যাপ যোগ করতে হবে। Platform-এর পার্থক্য কোথায় সামলানো উচিত?",
+      "options": [
+        "`AIAgent`-এর ভেতরে প্রতি platform-এর জন্য আলাদা শাখায়",
+        "দরজায় (adapter), `AIAgent`-এর ভেতরে নয়",
+        "`tools/registry.py`-র ভেতরে প্রতিটা tool-এর সাথে",
+        "`SOUL.md` ফাইলের ভেতরে ব্যক্তিত্বের অংশ হিসেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটাই platform-agnostic core। পার্থক্য থাকে দরজায়, তাই নতুন app যোগ করলে মিস্ত্রি বদলাতে হয় না।",
+      "whyWrong": {
+        "0": "তাহলে প্রতি platform-এর আলাদা কোড ও ভুল বাড়ত।",
+        "2": "registry শুধু tool-এর তালিকা।",
+        "3": "`SOUL.md` ব্যক্তিত্বের ফাইল, platform সামলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q16",
+      "difficulty": "hard",
+      "question": "দুটো profile-এর স্মৃতি যেন না মেশে, কোন নীতি এটা নিশ্চিত করে?",
+      "options": [
+        "Profile isolation (`hermes -p <name>`)",
+        "Loose coupling, যেখানে optional অংশ `check_fn` দিয়ে জোড়া",
+        "Interruptible, যেখানে API call মাঝপথে থামানো যায়",
+        "Observable execution, যেখানে tool call callback দিয়ে দেখা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Profile isolation প্রতিটা profile-কে নিজের HERMES_HOME, memory, session দেয়, তাই স্মৃতি মেশে না।",
+      "whyWrong": {
+        "1": "Loose coupling tool ভাঙা আটকায়, স্মৃতি আলাদা করে না।",
+        "2": "Interruptible থামানোর নীতি।",
+        "3": "Observable execution দেখার নীতি।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q17",
+      "difficulty": "hard",
+      "question": "একটা optional tool ভেঙে গেলেও বাকি সব চলে। কোন নীতির কারণে?",
+      "options": [
+        "Loose coupling",
+        "Prompt stability: system prompt মাঝপথে বদলায় না",
+        "Platform-agnostic core: সব দরজার জন্য একটাই `AIAgent`",
+        "Profile isolation: প্রতি profile-এর নিজস্ব config থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Registry আর `check_fn` দিয়ে জোড়া হওয়ায় একটা অংশ ভাঙলে বাকিগুলো চলতে থাকে।",
+      "whyWrong": {
+        "1": "Prompt stability cache বাঁচায়।",
+        "2": "Platform-agnostic core দরজার পার্থক্য সামলায়।",
+        "3": "Profile isolation স্মৃতি আলাদা রাখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q18",
+      "difficulty": "hard",
+      "question": "API call চলছে আর agent ভুল পথে যাচ্ছে। তুমি থামাতে চাও। কোন নীতি এটা সম্ভব করে?",
+      "options": [
+        "Prompt stability: system prompt না বদলানো",
+        "Observable execution: callback দিয়ে tool call দেখা",
+        "Interruptible",
+        "Loose coupling: tool আলগাভাবে জোড়া থাকা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Interruptible নীতিতে API call আর tool চলার মাঝখানেও থামানো যায়।",
+      "whyWrong": {
+        "0": "Prompt stability খরচ বাঁচায়, থামায় না।",
+        "1": "Observable execution শুধু দেখায়, থামায় না।",
+        "3": "Loose coupling ভাঙা আটকায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q19",
+      "difficulty": "hard",
+      "question": "ফাইলের নির্ভরতার শিকলে সবার নিচে, মানে সবার ভিত্তি কোন ফাইল?",
+      "options": [
+        "`run_agent.py`, যেটা `AIAgent` ধরে",
+        "`tools/registry.py`",
+        "`model_tools.py`, যেটা tool dispatch করে",
+        "`batch_runner.py`, যেটা অনেক কাজ চালায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "`tools/*.py` registry-তে নিজেকে register করে, `model_tools.py` সেটা ব্যবহার করে, আর তার ওপর `run_agent.py` ইত্যাদি। তাই registry সবার নিচে।",
+      "whyWrong": {
+        "0": "`run_agent.py` একেবারে ওপরে, অন্যের ওপর নির্ভর করে।",
+        "2": "`model_tools.py` registry-র ওপরে, মাঝখানে।",
+        "3": "`batch_runner.py` ওপরের স্তরে।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-architecture-q20",
+      "difficulty": "hard",
+      "question": "অচেনা একজন Telegram-এ বার্তা পাঠাল। Gateway-র কোন ধাপে তাকে আটকানো যায়?",
+      "options": [
+        "Cron-এর scheduler tick ধাপে, job লোড হওয়ার সময়",
+        "`AIAgent` উত্তর দেওয়ার পর SessionDB-তে save ধাপে",
+        "Adapter-এর অনুবাদের আগে ACP-র মাধ্যমে",
+        "authorize ধাপে, `AIAgent` তৈরির আগে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Authorize ধাপে যাচাই হয় এই মানুষকে ঢুকতে দেওয়া যাবে কি না। সেটা পাস না করলে agent তৈরিই হয় না।",
+      "whyWrong": {
+        "0": "Cron আলাদা পথ, Gateway message-এর সাথে যোগ নেই।",
+        "1": "Save ধাপ খুব দেরি, agent তখন কাজ করে ফেলেছে।",
+        "2": "ACP কোড-এডিটরের জন্য, Telegram-এর জন্য নয়।"
+      }
+    }
+  ]
+}

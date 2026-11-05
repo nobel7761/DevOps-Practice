@@ -1,0 +1,315 @@
+{
+  "contentId": "hermes-doc-user-guide-features-kanban",
+  "title": "Kanban Multi-Agent",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর Kanban বোর্ডে অনেক agent কীভাবে task ভাগ করে কাজ করে, আর task, profile, dispatcher, worker-এর মানে কী।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলের ক্যান্টিনের অর্ডার বোর্ড\n\nক্যান্টিনের দেয়ালে একটা বড় বোর্ড। তাতে রঙিন কাগজ সাঁটা: \"সিঙারা বানাও\", \"চা বানাও\", \"টেবিল মোছো\"। বোর্ডের কয়েকটা কলাম: **করতে হবে**, **চলছে**, **আটকে আছে**, **শেষ**। রাঁধুনি, চা-ওয়ালা, ঝাড়ুদার প্রত্যেকে নিজের কাগজ তুলে কাজ করে, শেষ হলে \"শেষ\" কলামে সরিয়ে দেয়। কেউ কারো সঙ্গে সরাসরি কথা না বললেও কাজ চলে, কারণ **বোর্ডই সবার যোগাযোগ**। আর কাগজে \"সিঙারা না হলে চা বানিয়ো না\" লেখা থাকলে ক্রম মানা হয়।\n\nHermes **Kanban** হলো এমন বোর্ড, তবে কর্মীরা AI agent (profile)। এটা একটা টেকসই **SQLite** বোর্ড (SQLite হলো একটা ফাইলের ভেতরে রাখা ছোট ডেটাবেস), যেখানে task জমা থাকে। একজন **dispatcher** (কাজ-বণ্টনকারী) সময়মতো কর্মীকে কাজ ধরিয়ে দেয়।\n\n**এটা না থাকলে কী সমস্যা হতো?** একজন agent সব কাজ একা করলে ধীর হতো, আর কম্পিউটার বন্ধ হলে কোন কাজ কতদূর এগিয়েছিল তা হারিয়ে যেত। বোর্ডে সব লেখা থাকে, তাই কেউ থেমে গেলেও কাজ ফিরে পাওয়া যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Kanban\nজাপানি শব্দ, মানে \"কার্ডের বোর্ড\"। কাজগুলো কার্ড, আর কলাম হলো কাজের অবস্থা। উপমা: ক্যান্টিনের দেয়ালবোর্ড।\n\n### ২) Task\nএকটা কাজের কার্ড। তাতে নাম, বিবরণ, কে করবে লেখা থাকে।\n\n### ৩) Profile\nHermes-এর একটা আলাদা \"চরিত্র\", যার নিজের নাম, সেটিং, স্মৃতি ও skill আছে। উপমা: ক্যান্টিনের রাঁধুনি বা চা-ওয়ালা। প্রত্যেকে আলাদা মানুষ।\n\n### ৪) Assignee\nযাকে কাজটা দেওয়া হলো। এখানে একটা profile-এর নাম।\n\n### ৫) Dispatcher\nযে বোর্ড দেখে \"ready\" কার্ড খুঁজে কর্মী জাগায়। উপমা: ক্যান্টিনের ম্যানেজার।\n\n### ৬) Worker\ndispatcher-এর চালানো একটা agent, যে একটা কার্ডের কাজ করে।\n\n### ৭) Gateway\nHermes-এর সারাক্ষণ-চালু অংশ, যে chat app-এর সাথে সেতু আর ঘড়ির কাজ করে। Dispatcher সাধারণত এর ভেতরেই থাকে।\n\n### ৮) Database / DB\nতথ্য সাজিয়ে রাখার ফাইল। উপমা: দোকানের খাতা, কিন্তু খুঁজে পাওয়া সহজ।\n\n### ৯) Tool\nHermes-এর হাতের যন্ত্র। `kanban_*` নামের যন্ত্রগুলো দিয়ে সে বোর্ডে লেখে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তুমি/orchestrator task বানাও; dispatcher worker চালায়; সবাই একই SQLite বোর্ডে লেখে।",
+        "nodes": [
+          {
+            "id": "you",
+            "kind": "user",
+            "label": "তুমি / Planner",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "db",
+            "kind": "database",
+            "label": "kanban.db",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "disp",
+            "kind": "server",
+            "label": "Dispatcher",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "w1",
+            "kind": "server",
+            "label": "Worker",
+            "x": 660,
+            "y": 0
+          },
+          {
+            "id": "dash",
+            "kind": "client",
+            "label": "Dashboard",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "you",
+            "to": "db",
+            "label": "কার্ড বানাও"
+          },
+          {
+            "from": "db",
+            "to": "disp",
+            "label": "ready কাজ"
+          },
+          {
+            "from": "disp",
+            "to": "w1",
+            "label": "চালু করে"
+          },
+          {
+            "from": "w1",
+            "to": "db",
+            "label": "শেষ/মন্তব্য"
+          },
+          {
+            "from": "dash",
+            "to": "db",
+            "label": "দেখা"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "kanban-board"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## দুটো দরজা, একই ঘর\n\n- **Agent-রা** `kanban_*` tool ব্যবহার করে: `kanban_show`, `kanban_list`, `kanban_complete`, `kanban_request_review`, `kanban_request_changes`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_attach`, `kanban_create`, `kanban_link`, `kanban_unblock` ইত্যাদি। মডেল সরাসরি tool call করে, CLI নয়।\n- **মানুষ, script, cron** ব্যবহার করে `hermes kanban ...`, `/kanban ...`, বা dashboard। (**CLI** মানে terminal-এ লিখে চালানো কমান্ড; **dashboard** হলো ব্রাউজারে ছবির মতো পর্দা; **cron** হলো সময় ধরে নিজে নিজে কাজ চালানোর ঘড়ি।)\n\nদুটোই একই `kanban_db` লেয়ার আর একই `~/.hermes/kanban.db`-তে লেখে। উপমা: ক্যান্টিনে ঢোকার সামনের দরজা আর পেছনের দরজা, কিন্তু ঘর একটাই।\n\n### Kanban বনাম `delegate_task`\n\n`delegate_task` হলো আগের lesson-এর \"বড় আপা তিন ছাত্রকে পাঠান\" ব্যবস্থা। দুটোর তফাত:\n\n| | `delegate_task` | Kanban |\n|---|---|---|\n| ধরন | RPC fork-join, parent আটকে থাকে (**RPC** মানে অন্যের কাছে প্রশ্ন পাঠিয়ে উত্তরের অপেক্ষা) | টেকসই queue + state machine, `create` করেই ভুলে যাও (**queue** মানে লাইন) |\n| পরিচয় | নামহীন child | নামওয়ালা profile (memory সহ) |\n| পুনরুদ্ধার | নেই | block/unblock/reclaim |\n| মানুষ | নেই | comment দিয়ে আসা যায় |\n| রেকর্ড | নেই | SQLite row-তে স্থায়ী |\n\n**সহজ নিয়ম:** `delegate_task` একটা function call; Kanban একটা work queue।\n\n## মূল ধারণা\n\n| ধারণা | মানে | উপমা |\n|---|---|---|\n| **Board** | আলাদা DB, workspace ও log। Default বোর্ডের নাম `default`, থাকে `~/.hermes/kanban.db`-তে | আলাদা আলাদা দেয়ালবোর্ড (ক্যান্টিন, লাইব্রেরি) |\n| **Task** | title, body, একজন assignee, status (`triage \\| todo \\| ready \\| running \\| blocked \\| review \\| done \\| archived`), ঐচ্ছিক tenant ও idempotency key | একটা কার্ড |\n| **Link** | parent -> child সম্পর্ক। সব parent `done` হলে dispatcher child-কে `todo` থেকে `ready`-তে তোলে | \"সিঙারা হলে তবে চা\" |\n| **Comment** | agent-দের মধ্যে যোগাযোগের নিয়ম; spawn-এর সময় পুরো thread পড়া হয় | কার্ডে লেখা চিরকুট |\n| **Tenant** | বোর্ডের ভেতরে নরম namespace; কঠিন বিচ্ছিন্নতার সীমা হলো board | বোর্ডের ভেতর রঙিন ট্যাগ |\n| **Dispatcher** | default-এ প্রতি ৬০ সেকেন্ডে চলে; আটকে যাওয়া claim ও crash করা worker (PID নেই) ফেরত নেয়, ready task আণবিকভাবে claim করে ও worker চালায় | ম্যানেজার |\n\nStatus-গুলোর সহজ মানে: `triage` (এখনো অগোছালো আইডিয়া), `todo` (অপেক্ষায়), `ready` (এখনই করা যায়), `running` (চলছে), `blocked` (আটকে আছে), `review` (দেখার অপেক্ষা), `done` (শেষ), `archived` (তুলে রাখা)।\n\n**Idempotency key** মানে \"একই কাজ দুবার বানিয়ো না\" চিহ্ন। **PID** হলো চলতে থাকা প্রোগ্রামের নম্বর, নম্বর না থাকা মানে প্রোগ্রাম মরে গেছে। **আণবিকভাবে claim** মানে \"দুজন একসাথে একই কার্ড তুলতে পারবে না।\"\n\n### Workspace-এর তিন রকম\n\n**Workspace** হলো ফোল্ডার, যেখানে worker কাজ করে। উপমা: রাঁধুনির রান্নার টেবিল।\n\n| ধরন | কোথায় | পরিণতি |\n|---|---|---|\n| `scratch` (default) | `~/.hermes/kanban/workspaces/<id>/` | কাজ শেষে মুছে যায় (`artifacts=[...]` ফাইল আগে attachment storage-এ কপি হয়) |\n| `dir:<path>` | absolute path, মানে পুরো ঠিকানা (relative গ্রহণযোগ্য নয়) | থেকে যায় |\n| `worktree` / `worktree:<path>` | `.worktrees/<id>/` git worktree (git-এর আলাদা কপি-ফোল্ডার) | থেকে যায় |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## শুরু করার ৫ মিনিট\n\n```bash\nhermes kanban init                      # DB বানাও\nhermes gateway start                    # embedded dispatcher চালায়\nhermes kanban create \"research AI funding landscape\" --assignee researcher\nhermes kanban watch                     # live ঘটনা\nhermes kanban list\nhermes kanban stats\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes kanban init` | ডেটাবেস-ফাইল বানায় | একদম প্রথমবার |\n| `hermes gateway start` | gateway চালু করে; ভেতরে dispatcher চলে | কাজ নিজে নিজে ধরানোর জন্য, এটা না চললে কার্ড পড়ে থাকবে |\n| `hermes kanban create \"...\" --assignee researcher` | কার্ড বানায় ও `researcher` profile-কে দেয় | নতুন কাজ দিতে |\n| `hermes kanban watch` | ঘটনা লাইভ দেখায় | কী চলছে দেখতে |\n| `hermes kanban list` | সব কার্ডের তালিকা | অবস্থা দেখতে |\n| `hermes kanban stats` | সংখ্যার হিসাব | কয়টা কাজ কোন অবস্থায় |\n\nWorker-এর প্রথম call হয় `kanban_show()`, CLI নয়। Chat profile-এ kanban tool চালু করতে:\n\n```bash\nhermes -p planner tools enable kanban\nhermes -p planner tools enable kanban --platform telegram\n```\n\n`-p planner` মানে \"planner নামের profile দিয়ে।\" `tools enable kanban` মানে \"kanban যন্ত্রের বাক্স চালু করো।\" `--platform telegram` মানে শুধু Telegram-এর জন্য। এরপর নতুন chat শুরু করতে হয়। Dispatcher-এর worker আপনাআপনি tool পায়; `delegate_task`-এর child বোর্ডে লিখতে পারে না।\n\n### Dispatcher-এর config (`kanban:` in `config.yaml`)\n\n**Config** হলো সেটিং-ফাইল, আর **YAML** তার লেখার ধরন (`নাম: মান`)।\n\n```yaml\nkanban:\n  dispatch_in_gateway: true\n  dispatch_interval_seconds: 60\n  review_dispatch: true\n  auto_decompose: true\n  max_in_progress: ...            # না দিলে সীমাহীন\n```\n\n| লাইন | মানে |\n|---|---|\n| `dispatch_in_gateway` | gateway-র ভেতরেই dispatcher চালাও |\n| `dispatch_interval_seconds` | কত সেকেন্ড পরপর বোর্ড দেখবে |\n| `review_dispatch` | review-র জন্য আলাদা reviewer agent চালাবে কি না |\n| `auto_decompose` | triage কার্ড নিজে ভেঙে ছোট task করবে কি না |\n| `max_in_progress` | একসাথে কয়টা চলবে (না দিলে সীমাহীন) |\n\n- `review_dispatch: true` হলে bundled `sdlc-review` skill দিয়ে reviewer চলে; শুধু মানুষ review করলে `false`। (**Skill** মানে Hermes-কে শেখানো নির্দেশিকা-পাতা।)\n- আলাদা `hermes kanban daemon` deprecated (পুরোনো, ব্যবহার না করাই ভালো); একই DB-তে দুটো চালানো সমর্থিত নয়।\n- Profile-এর নাম প্রতিটি home-এ আলাদা; shared বোর্ডে `default` assign কোরো না।\n\n## Worker-এর কাজের ধারা\n\nএকটা সাধারণ turn: `kanban_show()` (কার্ড পড়ো) -> কাজ -> `kanban_heartbeat(note=...)` (\"আমি বেঁচে আছি\" সংকেত) -> `kanban_complete(summary=..., metadata={...})` (শেষ করো)।\n\n- `kanban_complete`-এ `summary` বা `result` লাগে। `kanban_block`-এ `reason` লাগে, আর `kind`: `dependency` (অন্য কাজের অপেক্ষা), `needs_input` (মানুষের উত্তর দরকার), `capability` (ক্ষমতা নেই), `transient` (সাময়িক সমস্যা)।\n- কমপক্ষে ঘণ্টায় একবার heartbeat দাও; `kanban.dispatch_stale_timeout_seconds` default ৪ ঘণ্টা। না দিলে dispatcher ভাবে worker মরে গেছে।\n- **Exit code** হলো প্রোগ্রাম শেষ হওয়ার সময় বলা সংখ্যা (\"কেমন গেল\"):\n\n| Code | মানে |\n|---|---|\n| `0` কিন্তু task শেষ হয়নি | `protocol_violation` (নিয়ম ভাঙা) |\n| `1` | সাধারণ ব্যর্থতা |\n| `75` (`EX_TEMPFAIL`) | সাময়িক সমস্যা (rate limit, ৫xx, quota); ব্যর্থতা গোনা হয় না |\n| `78` (`EX_CONFIG`) | চূড়ান্ত provider সমস্যা (৪০১/৪০৩, ৪০৪ model); প্রথমবারেই block |\n\n- `kanban.failure_limit` default ২: পরপর ২ বার spawn ব্যর্থ হলে auto-block।\n- `hermes kanban unblock <id>` দিয়ে আবার ছাড়ো। Unblock কখনো `triage`-এ পাঠায় না।\n\n**Handoff metadata (ঐচ্ছিক key):** `changed_files`, `verification`, `dependencies`, `blocked_reason`, `retry_notes`, `residual_risk`। Handoff মানে পরের জনের হাতে কাজ তুলে দেওয়ার নোট। Secret (গোপন পাসওয়ার্ড) বা কাঁচা log রেখো না, pointer (কোথায় আছে তার ঠিকানা) রাখো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা task-এর পথ।",
+        "steps": [
+          {
+            "title": "create",
+            "body": "`hermes kanban create ... --assignee X`। Parent না থাকলে `ready`, থাকলে `todo`।"
+          },
+          {
+            "title": "dispatch",
+            "body": "Dispatcher প্রতি ৬০ সেকেন্ডে ready task claim করে worker চালায়।"
+          },
+          {
+            "title": "কাজ ও heartbeat",
+            "body": "Worker `kanban_show()` পড়ে, কাজ করে, মাঝে heartbeat/comment দেয়।"
+          },
+          {
+            "title": "complete/review/block",
+            "body": "`kanban_complete` -> `done`; `kanban_request_review` -> `review`; আটকালে `kanban_block`।"
+          },
+          {
+            "title": "promote",
+            "body": "সব parent `done` হলে child গুলো `ready` হয়। আবার একই চক্র।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## একাধিক বোর্ড\n\nএকটা project-এর কাজ আরেকটার সাথে মেশাতে চাও না? আলাদা বোর্ড বানাও।\n\n```bash\nhermes kanban boards list\nhermes kanban boards create <slug> --name \"...\" --description \"...\" --icon ... --switch\nhermes kanban boards switch <slug>\nhermes kanban boards rm <slug>          # archive; --delete হলে স্থায়ী মুছে ফেলা\nhermes kanban create ... --board <slug>\n```\n\n(**slug** মানে বোর্ডের ছোট ইংরেজি ডাকনাম, যেমন `my-shop`।) নামকরণ: ছোট হাতের অক্ষর-সংখ্যা, `-`, `_`; ১-৬৪ অক্ষর। কোন বোর্ড? ক্রম: `--board`, তারপর `HERMES_KANBAN_BOARD` (**env variable**: কম্পিউটারে রাখা নামধারী নোট), তারপর `~/.hermes/kanban/current`, তারপর `default`। বোর্ডের মধ্যে cross-board link চলে না।\n\n## ফাইল attachment\n\nDashboard drawer থেকে আপলোড, সর্বোচ্চ ২৫ MB প্রতি ফাইল; জমা হয় `<hermes-home>/kanban/attachments/<task_id>/`-এ। Worker পায় absolute path। Docker/Modal backend-এ (**Docker** হলো বন্ধ বাক্সে প্রোগ্রাম চালানোর ব্যবস্থা, **Modal** একটা ক্লাউড সেবা) এই ডিরেক্টরি mount করতে হবে, মানে বাক্সের ভেতরে দেখা যাবে এমনভাবে জুড়ে দিতে হবে। মুছতে `hermes kanban attach-rm ATTACHMENT_ID`।\n\n## Dashboard\n\n`hermes dashboard` চালালে বোর্ড দেখা যায়: কলাম `triage`, `todo`, `ready`, `running`, `blocked`, `done` (`archived` চাইলে)। কার্ড drag-drop করা যায়; `done`, `archived`, `blocked`-এ নিশ্চিতকরণ চায়। Triage কার্ডে দুটো কাজ: **Decompose** (একটা আইডিয়া থেকে অনেক task) আর **Specify** (একটা task ভালো spec-এ লেখা, মানে পরিষ্কার বিবরণ)। CLI-তে `hermes kanban decompose <id>` / `specify <id>`।\n\n> নিরাপত্তা: plugin route গুলো dashboard auth এড়িয়ে চলে (WebSocket-এ `?token=` লাগে)। shared host-এ `0.0.0.0`-তে bind কোরো না। (`0.0.0.0` মানে \"নেটওয়ার্কের সবাই ঢুকতে পারবে।\" অচেনা লোক যেখানে আছে, সেখানে এটা বিপজ্জনক।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "সাহায্যকারী কার্ড দিয়ে parent আটকিও না",
+      "markdown": "যে support card নিজের parent-কে unblock করবে, তাকে `kanban_link(t_parent, t_support)` দিয়ো না। Link করলে support কার্ড child হয়ে যায় আর কখনো চলে না। কারণ child চলে parent শেষ হলে, কিন্তু parent তো সাহায্যের অপেক্ষায় আটকে। বরং body-তে parent-এর id লিখে দাও। (`gated: true` ও `dependency_wait` ঘটনা এটা ধরিয়ে দেয়; ছাড়াতে `hermes kanban unlink <parent> <child>`।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও দরকারি জিনিস\n\n**Skill ও model pin:** `--skill <name>` (একাধিকবার), `--model <m> --provider <p>`, বা `hermes kanban set-model t_abcd <model> --provider <p>`। মুছতে `set-model t_abcd none`। **Pin** মানে \"এই কার্ডে ঠিক এই মস্তিষ্কই ব্যবহার করো\" বেঁধে দেওয়া। **Model** হলো AI মস্তিষ্ক, **provider** হলো যে কোম্পানি তা চালায়।\n\n**খরচ কৌশল:** orchestrator-কে frontier model (সবচেয়ে শক্তিশালী) দাও (`~/.hermes/config.yaml`), worker-দের সস্তা model (`~/.hermes/profiles/<name>/config.yaml`-এর `model.default`)। কেন? পরিকল্পনায় বুদ্ধি বেশি লাগে, সাধারণ কাজে কম।\n\n**Goal-mode card:** `--goal` দিলে worker একটা goal loop-এ চলে, প্রতি turn-এ judge (বিচারক AI) দেখে লক্ষ্য পূরণ হলো কি না। `--goal-max-turns N` default ২০; সীমা পেলে card block হয়। (`/goal` slash command-এর state-এর সঙ্গে সম্পর্ক নেই।)\n\n**Scheduled start:** `--scheduled-at \"2026-06-01T03:00:00Z\"` (নির্দিষ্ট সময়ে শুরু)।\n\n**Swarm helper:**\n\n```bash\nhermes kanban swarm \"<goal>\" --workers a,b,c --verifier <p> --synthesizer <p>\n```\n\n| অংশ | মানে |\n|---|---|\n| `\"<goal>\"` | বড় লক্ষ্য |\n| `--workers a,b,c` | কাজ করবে এই তিন profile |\n| `--verifier <p>` | যাচাই করবে যে |\n| `--synthesizer <p>` | সবার ফল একত্র করবে যে |\n\nএতে একটা root blackboard card, N জন worker, সবার শেষে verifier, তার পরে synthesizer তৈরি হয়।\n\n**Collaboration pattern (সহযোগিতার ছক):** Fan-out (N ভাই-task), Pipeline (scout -> editor -> writer), Voting (N + aggregator), Long-running journal, Human-in-the-loop (block -> comment -> unblock), `@mention`, Thread-scoped workspace (`/kanban here`), Fleet farming (এক profile, বহু বিষয়), Triage specifier।\n\n**Orchestrator-এর নিয়ম:** সে ভাগ করে ও assign করে, নিজে বানায় না। আগে profile আছে কি না দেখো (না থাকলে dispatcher নীরবে ব্যর্থ হয়)। ভাগ করার আগে ভাগ-হওয়া সিদ্ধান্ত (schema, ফাইল format) প্রতি child-এর body-তে দাও, কারণ ভাই-worker একে অপরকে দেখতে পায় না।\n\n**Respawn guard:** quota/auth সমস্যা (`blocker_auth`), সাম্প্রতিক সফলতা (`recent_success`) বা চলমান PR (`active_pr`) থাকলে ready কার্ড সাময়িক আটকে রাখা হয়। (**PR** মানে pull request: কোড বদলের প্রস্তাব।) যাচাই: `hermes kanban dispatch --dry-run`।\n\n**PR completion contract:** `--completion-contract OWNER/REPO` দিলে PR-এর required check পাস না হলে task `done` হতে পারে না।\n\n`/kanban` slash command chat ও সব gateway platform-এ চলে। Gateway-তে `create` করলে ওই chat নিজে থেকে subscribe হয় ও completed/blocked/crashed ইত্যাদিতে notification পায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Collaboration pattern-এর শেষ কথা: আগের কাজের তথ্য পরের কার্ডে পৌঁছানো\n\nক্যান্টিনের গল্পে ফিরি। রাঁধুনি সিঙারা বানিয়ে শেষ করল। দুই ঘণ্টা পর কেউ বলল, \"সিঙারায় নুন কম!\" এখন কী করবে? পুরোনো \"শেষ\" কার্ড ছিঁড়ে আবার \"চলছে\"-তে ফেরাবে? না। Hermes বলে: **নতুন একটা কার্ড বানাও, আর পুরোনোটাকে তার parent করো।**\n\n### Parent link শুধু ক্রম ঠিক করে না, তথ্যও পৌঁছে দেয়\n`--parent <done-card-id>` দিলে দুটো জিনিস হয়:\n\n- **সঙ্গে সঙ্গে eligible:** সব parent `done` থাকলে child তৈরির সময়ই `ready` হয়। parent খোলা থাকলে child `todo`-তে বসে থাকে, পরে `recompute_ready` তাকে তোলে।\n- **Handoff:** worker যখন `kanban_show()` ডাকে, তার context-এ `## Parent task results` নামে একটা অংশ থাকে। সেখানে প্রতিটি parent-এর `summary` ও `metadata` হুবহু দেওয়া থাকে।\n\nনিয়মগুলো:\n\n- শেষ হয়ে যাওয়া কার্ড আবার খুলো না, নতুন child কার্ড বানাও। একই কার্ডের নতুন চেষ্টা হলে সেটা ওই কার্ডের \"prior attempts\" হিসেবে দেখা যায়।\n- Git worktree বা branch handoff-এর বিকল্প নয়। Git দেখায় *কী বদলেছে*; কেন বদলেছে, কোন test চলেছে, কোন ফাইল ছোঁয়া হয়েছে, এসব থাকে structured handoff-এ।\n- Parent শেষ হওয়ার পরে আসা প্রমাণ (যেমন পরের CI log) নতুন কার্ডের **body**-তে দাও।\n\nউদাহরণ: `t_impl` শেষ হওয়ার দুই ঘণ্টা পর CI ভাঙল।\n\n```bash\nhermes kanban create \"Fix CI failure from t_impl: test_retry flakes on 3.11\" \\\n  --assignee coder \\\n  --parent t_impl \\\n  --body \"...\"\n```\n\nDocs-এর উদাহরণে body-তে log-এর অংশ, গ্রহণযোগ্যতার শর্ত (3.11 ও 3.12-তে green) আর \"নতুন worktree/branch নাও, force-push কোরো না\" নির্দেশ ছিল। (**CI** হলো কোড বদলালে নিজে নিজে test চালানোর ব্যবস্থা; **force-push** মানে অন্যের লেখা ইতিহাস জোর করে মুছে দেওয়া push।)\n\n## দুই worker-এর branch ধাক্কা খেলে\n\nদুই রাঁধুনি একই রেসিপি-খাতায় ভিন্ন ভিন্ন জিনিস লিখে ফেললে নিজেরা ঝগড়া মেটাবে না। Docs বলে:\n\n1. একটা **reconciliation card** বানাও, assignee হবে তৃতীয়, নিরপেক্ষ একটা profile।\n2. দুটো conflict-হওয়া কার্ডকেই তার **parent** করো, যাতে সে দুটো diff ও দুই পক্ষের উদ্দেশ্যই পায়।\n3. ঐচ্ছিক `agent-merge-conflict-arbiter` skill-এর পদ্ধতি: প্রতিটি conflict-এর অংশ শ্রেণিবদ্ধ করো, নিরপেক্ষভাবে মেটাও, যাচাই করো, আর প্রতিটি সিদ্ধান্তের নাম দিয়ে summary ফেরত দাও।\n\n### Collision hotspot\nযে ফাইল অনেক worker একসঙ্গে বদলায় এবং বারবার conflict হয়, তাকে বলে **hotspot**। নিয়ম:\n\n- বারবার ধাক্কা দেখলে worker নিজের কার্ডে `hotspot:` দিয়ে শুরু করা comment লেখে (যেমন `hotspot: hermes_cli/kanban_db.py — ...`) এবং completion `metadata`-তেও একই চিহ্ন দেয়।\n- একই path-এ দুই বা বেশি `hotspot:` comment জমলে orchestrator বা মানুষ ওই ফাইলে আরও কাজ ঢোকানোর **আগে** refactor/decomposition কার্ড বানাবে।\n- যে conflict ইতিমধ্যে ঘটে গেছে, তার জন্য উপরের reconciliation পদ্ধতি।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Multi-tenant ব্যবহার\n\nএকটা বোর্ডে একাধিক ব্যবসার কাজ চালাতে `--tenant` দিয়ে ট্যাগ করো, চাইলে `--workspace dir:` দিয়ে আলাদা ফোল্ডারও:\n\n```bash\nhermes kanban create \"monthly report\" --assignee researcher --tenant business-a --workspace dir:~/tenants/business-a/data/\n```\n\nWorker `$HERMES_TENANT` পায় এবং memory-তে লেখার সময় prefix দিয়ে নাম-জায়গা আলাদা রাখে। কিন্তু মনে রাখো: board, dispatcher ও profile সবাই **শেয়ার করা**; শুধু ডেটা scoped।\n\n## Notification: কাজ শেষ হলে কীভাবে জানবে?\n\n### Desktop notification\nDesktop Kanban plugin `completed`, `blocked`, `gave_up`, `crashed`, `timed_out` ও `block_loop_detected` (এটা triage-এ যায়) ঘটনায় অ্যাপের ভেতরে একটা toast দেখায়, তাতে \"Open Kanban\" বোতাম থাকে। অ্যাপ focus-এ না থাকলে native OS notification আসে, যা **Settings ▸ Notifications ▸ Plugin notifications** দিয়ে নিয়ন্ত্রিত। সতর্কতা: এগুলো শুধু অ্যাপ plugin-সহ চালু থাকলেই বাজে; বন্ধ থাকার সময়ের ঘটনা পরে আর শোনানো হয় না। নিশ্চিত পৌঁছানো চাইলে gateway subscription ব্যবহার করো।\n\n### Gateway notification\nTelegram, Discord, Slack ইত্যাদি chat থেকে `/kanban create` করলে ওই chat আপনাআপনি subscribe হয়। Notifier প্রতি কয়েক সেকেন্ডে `task_events` দেখে এবং প্রতিটি terminal ঘটনায় (`completed`, `blocked`, `gave_up`, `crashed`, `timed_out`) একটা করে মেসেজ পাঠায়। `completed` মেসেজে `--result`-এর প্রথম লাইন থাকে।\n\nCLI থেকে নিজে সামলাতে:\n\n```bash\nhermes kanban notify-subscribe <id> --platform ... --chat-id ... --thread-id ... --chat-type ... --delivery-mode notify+wake\nhermes kanban notify-list\nhermes kanban notify-unsubscribe <id> --platform ... --chat-id ... --thread-id ...\n```\n\nTask `done` বা `archived` হলে subscription নিজে থেকে মুছে যায়। Discord thread আর `profile_routes` একসঙ্গে থাকলে `--parent-chat-id <channel id>` ও `--guild-id <guild id>` দিতে হয়; না দিলে notifier subscription এড়িয়ে যায় এবং একবার WARNING log করে।\n\n### Delivery mode: তিন রকম ঘণ্টা\n\n| Mode | সাধারণ মেসেজ | Agent-কে জাগায় | কখন |\n|---|---|---|---|\n| `notify` (default) | হ্যাঁ | না | শুধু খবর দেওয়া |\n| `notify+wake` | হ্যাঁ | হ্যাঁ | agent একটা turn নেয়; chat থেকে আসা subscription এটা ব্যবহার করে |\n| `wake` | না | হ্যাঁ | আলাদা ping ছাড়াই agent কাজে নামে |\n\n- `notify+wake`-এ delivery সম্পূর্ণ ধরা হয় তখনই, যখন wake adapter-এর turn queue-তে ঢোকে এবং ping যায়। handler না থাকলে, route প্রত্যাখ্যাত হলে বা queue ভরা থাকলে পরের tick-এ আবার চেষ্টা হয়। Ping আলাদাভাবে SQLite-এ checkpoint করা হয়।\n- Queue-তে ঢোকা মানে model যে সত্যিই চলবে তার নিশ্চয়তা নয়। আর এটা **exactly-once নয়**: পাঠানো ও checkpoint-এর মাঝখানে crash হলে একই ping দুবার যেতে পারে।\n- Wake কেবল চালু gateway process-এর ভেতরে ঘটে। নইলে `notify+wake` শুধু সাধারণ মেসেজ পাঠায়, আর শুধু `wake` কিছুই করে না।\n- Wake করায় যে ঘটনা: `completed`, `blocked`, `gave_up`, `crashed`, `timed_out`, `review_requested` (`kanban_request_review` থেকে), `block_loop_detected`। `status`, `archived`, `unblocked` কখনো জাগায় না।\n- `--chat-type`-এর মান: `dm`, `group`, `channel`, `thread`; নতুন subscription-এর default `dm`। ভুল দিলে wake আলাদা session-এ চলে যায়। না দিলে আগের subscription অপরিবর্তিত থাকে।\n\n### একাধিক profile থাকলে\n- **Dispatch single-owner:** একটা gateway-তে `kanban.dispatch_in_gateway: true`, বাকিগুলোতে `false`।\n- **Delivery profile-owned:** প্রতিটি gateway নিজের notifier চালায় এবং শুধু নিজের profile-এর stamp-করা subscription দেখে।\n- `gateway.profile_routes` দিয়ে primary adapter pinned multiplexed profile-এর হয়ে পাঠাতে পারে। মেলে না, reassign হয়েছে, disabled বা অস্পষ্ট route পৌঁছায় না, তবে পরে আবার চেষ্টা চলে।\n- Stateless `api_server` subscription কেবল তখনই profile-কে অনুমোদন দেয় যখন session ওই profile-এর `state.db`-তে থাকে।\n- পুরোনো subscription (`notifier_profile` নেই) শুধু সেই gateway পৌঁছায় যার হাতে dispatcher singleton lock।\n- বোর্ড DB-র atomic per-event claim ডুপ্লিকেট আটকায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Notification 'ঠিক একবার' নয়",
+      "markdown": "Wake ping পাঠানো আর checkpoint করার মাঝখানে crash হলে একই ping আবার যেতে পারে। তাই agent-কে এমনভাবে বানাও যাতে একই খবর দুবার পেলেও ক্ষতি না হয়। আর desktop toast-কে নিশ্চিত ডেলিভারি ভেবো না; নিশ্চয়তা চাইলে gateway subscription।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Run: প্রতিটি চেষ্টার আলাদা সারি\n\nTask হলো **কাজটা** (যুক্তিগত একক), আর **run** হলো তার একটা **চেষ্টা**। উপমা: একই সিঙারা বানানোর তিনবার চেষ্টা, খাতায় তিন লাইন।\n\n- Claim করলে `task_runs`-এ একটা সারি তৈরি হয় এবং `tasks.current_run_id` সেট হয়। চেষ্টা শেষ হলে একটা `outcome` বসে ও pointer খালি হয়।\n- Outcome-এর ধরন: completed, blocked, crashed, timed out, spawn-failed, reclaimed। তিন চেষ্টা মানে তিন সারি।\n- Run history দিয়ে postmortem (ব্যর্থতার পরে কী ঘটেছিল তার বিশ্লেষণ) করা যায়; প্রতি চেষ্টার metadata (বদলানো ফাইল, চালানো test, reviewer-এর মন্তব্য) এখানে থাকে।\n\n### Structured handoff-এর তিন ক্ষেত্র\n\n| ক্ষেত্র (tool / CLI) | কী |\n|---|---|\n| `summary` / `--summary` | মানুষ-পাঠযোগ্য handoff; child-রা এটা দেখে |\n| `metadata` / `--metadata` | run-এ রাখা JSON dict |\n| `result` / `--result` | task সারিতে একটা ছোট পুরোনো-ধাঁচের log লাইন |\n\n```text\nkanban_complete(summary=..., metadata={\"changed_files\": [...], \"tests_run\": 14}, result=...)\n```\n\n```bash\nhermes kanban complete t_abcd --result ... --summary ... --metadata '{...}'\nhermes kanban runs t_abcd        # চেষ্টার ইতিহাস: outcome, profile, সময়\n```\n\nDashboard-এ drawer-এর **Run History** অংশ; REST-এ `GET /api/plugins/kanban/tasks/:id` উত্তরে `runs[]` দেয়, আর `PATCH`-এ `{status: \"done\", summary, metadata}` পাঠালে CLI-র সমান কাজ হয়। `task_events`-এ `run_id` থাকে; `completed` ঘটনার summary সর্বোচ্চ **৪০০ অক্ষরে** কাটা হয়।\n\n### Complete করার নিয়ম ও রক্ষাকবচ\n\n- **Bulk close:** `hermes kanban complete a b c --summary X` প্রত্যাখ্যাত। `--summary`/`--metadata` ছাড়া bulk close চলে।\n- **Dependency refusal:** যে কার্ডের সরাসরি parent `done`/`archived` নয়, তাকে complete করতে গেলে `unsatisfied parent dependencies: t_… (todo)` ত্রুটি আসে। `kanban_show` তখন `unsatisfied_parents` দেখায়; `running_with_open_parents` সতর্কতা show, diagnostics ও dashboard-এ আসে। সমাধান: parent শেষ করো, বা `hermes kanban unlink <parent> <child>`। জোর করার পথ নেই।\n- **Live-claim guard:** যে `running` task-এর live claim আছে তাকে শুধু তার worker অথবা `hermes kanban complete <id> --force` (বা dashboard-এর \"mark done\") শেষ করতে পারে। `ready`, `blocked`, `review` কার্ডে এই বাধা নেই।\n- `running` কার্ড টেনে সরালে বা archive করলে run বন্ধ হয় `outcome='reclaimed'` দিয়ে। নিয়ম (invariant): `current_run_id` খালি হলে `task_runs` terminal, এবং উল্টোটাও।\n- **Synthetic run:** কখনো claim না-হওয়া task complete বা block করলে শূন্য-সময়ের একটা run ঢোকে (`started_at == ended_at`), যাতে handoff হারিয়ে না যায়।\n- দেখা task-এর ঘটনায় dashboard drawer WebSocket দিয়ে নিজে রিফ্রেশ হয়।\n- ভবিষ্যতের জন্য `tasks`-এ `workflow_template_id` ও `current_step_key` নামে দুটো nullable column রাখা আছে (v2 routing); v1 এগুলো উপেক্ষা করে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা task-এর কয়েকটা run: প্রতি চেষ্টায় একটা সারি, শেষে handoff child-এর কাছে।",
+        "steps": [
+          {
+            "title": "Run 1: claim",
+            "body": "Dispatcher task claim করে। `task_runs`-এ নতুন সারি, `current_run_id` সেট।"
+          },
+          {
+            "title": "Run 1: crashed",
+            "body": "Worker মরে গেল। Outcome `crashed`, pointer খালি। Task আবার চেষ্টার যোগ্য।"
+          },
+          {
+            "title": "Run 2: claim ও complete",
+            "body": "নতুন সারি। Worker `summary` + `metadata` দিয়ে `kanban_complete` করে; outcome `completed`।"
+          },
+          {
+            "title": "Child-এ handoff",
+            "body": "Child কার্ডে `kanban_show()` দিলে `## Parent task results`-এ ওই summary/metadata হুবহু আসে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Event reference: বোর্ডের রোজনামচা\n\nপ্রতিটি অবস্থা-বদল `task_events`-এ একটা লাইন যোগ করে। ফিল্টার করে দেখতে:\n\n```bash\nhermes kanban watch --kinds completed,gave_up,timed_out\nhermes kanban tail <id>      # একটা task-এর ঘটনা\nhermes kanban watch          # পুরো বোর্ডের স্ট্রিম\n```\n\n| গ্রুপ | ঘটনা |\n|---|---|\n| Lifecycle | `created`, `promoted`, `claimed`, `completed`, `blocked` (kind: `needs_input`, `capability`, `transient` বা null; `recurrences` গণনা), `dependency_wait` (`todo`-তে পাঠায়), `block_loop_detected` (`BLOCK_RECURRENCE_LIMIT` default ২ পেরোলে `triage`-এ), `unblocked` (`block_recurrences` ধরে রাখে), `archived` |\n| Edits | `assigned`, `edited`, `reprioritized`, `status` |\n| Worker telemetry | `spawned`, `worker_registered`, `heartbeat`, `reclaimed`, `crashed`, `timed_out`, `stale`, `reconciled`, `respawn_guarded`, `spawn_failed`, `skipped_nonspawnable`, `protocol_violation`, `gave_up` |\n\nTelemetry-র খুঁটিনাটি:\n\n- `heartbeat`: `hermes kanban heartbeat $TASK`।\n- `crashed`: `worker_output` থাকে, সর্বোচ্চ ৪০০ অক্ষর।\n- `timed_out`: `max_runtime_seconds` পেরোলে; প্রথমে SIGTERM, ৫ সেকেন্ড পরে SIGKILL। (**SIGTERM** মানে \"ভদ্রভাবে থামো\", **SIGKILL** মানে \"জোর করে থামানো\"।)\n- `stale`: default `kanban.dispatch_stale_timeout_seconds` ৪ ঘণ্টা, শেষ ১ ঘণ্টায় heartbeat নেই; এটা ব্যর্থতার গণনায় ওঠে না।\n- `reconciled`: `kanban.reconcile_orphans` (default `true`) দ্বারা নিয়ন্ত্রিত।\n- `respawn_guarded`-এর কারণ: `infrastructure_cooldown`, `rate_limit_cooldown`, `blocker_auth`, `recent_success` (১ ঘণ্টা), `active_pr`।\n- `skipped_nonspawnable`: `kanban.dispatch_profiles` সংক্রান্ত।\n- `protocol_violation`: সীমা `_PROTOCOL_VIOLATION_FAILURE_LIMIT`, default ৩।\n- `gave_up`: সীমা এভাবে ঠিক হয়: task-এর `max_retries`, তারপর `failure_limit` / `kanban.failure_limit`, তারপর default। Exit code ৭৮ হলে `terminal_provider`।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Kanban এক মেশিনের জন্য",
+      "markdown": "`~/.hermes/kanban.db` একটা লোকাল SQLite ফাইল, worker-রা একই মেশিনে চালু হয়, আর crash ধরা হয় ওই মেশিনের PID দিয়ে। তাই Kanban **single-host**। একাধিক মেশিন লাগলে প্রতি মেশিনে একটা করে বোর্ড চালাও এবং তাদের জুড়তে `delegate_task` বা message queue ব্যবহার করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Kanban-এ agent-দের মধ্যে প্রধান যোগাযোগের জায়গা কোনটা?",
+      "options": [
+        "সরাসরি মুখোমুখি কথা",
+        "শেয়ার করা বোর্ড (SQLite) আর কার্ডের comment",
+        "ইমেইল",
+        "কোনো যোগাযোগ নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "ক্যান্টিনের বোর্ডের মতোই, বোর্ডই সবার যোগাযোগের জায়গা।"
+    },
+    {
+      "question": "`delegate_task` আর Kanban-এর মূল পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "Kanban শুধু ছবির জন্য",
+        "`delegate_task` টেকসই queue",
+        "`delegate_task` একটা function call (parent আটকে থাকে); Kanban একটা টেকসই work queue"
+      ],
+      "answerIndex": 3,
+      "explanation": "Kanban-এ `create` করেই ভুলে যাওয়া যায়, আর কাজ SQLite-এ স্থায়ী থাকে।"
+    },
+    {
+      "question": "Default `scratch` workspace-এর কী হয় কাজ শেষে?",
+      "options": [
+        "চিরকাল থাকে",
+        "কাজ শেষে মুছে যায় (`artifacts` আগে কপি হয়)",
+        "git-এ push হয়",
+        "মানুষকে ইমেইল হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "`scratch` হলো অস্থায়ী টেবিল। স্থায়ী চাইলে `dir:` বা `worktree`।"
+    },
+    {
+      "question": "Worker exit code `78` (EX_CONFIG) মানে কী?",
+      "options": [
+        "চূড়ান্ত provider সমস্যা (যেমন ৪০১/৪০৩); প্রথমবারেই block",
+        "সাময়িক সমস্যা",
+        "সফল",
+        "নিয়ম ভাঙা"
+      ],
+      "answerIndex": 0,
+      "explanation": "`75` সাময়িক (ব্যর্থতা গোনা হয় না); `78` চূড়ান্ত, তাই সঙ্গে সঙ্গে block।"
+    },
+    {
+      "question": "Support card-কে নিজের parent-এর child হিসেবে `kanban_link` করলে কী সমস্যা?",
+      "options": [
+        "কোনো সমস্যা নেই",
+        "খরচ বাড়ে",
+        "সেটা কখনো চলে না, কারণ child চলে parent শেষ হলে, অথচ parent তো সাহায্যের অপেক্ষায়",
+        "parent মুছে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "এটা একটা ঘূর্ণি (deadlock)। তাই body-তে parent-এর id লিখে দিতে বলা হয়েছে।"
+    },
+    {
+      "question": "শেষ হয়ে যাওয়া একটা কার্ডের পরে CI ভেঙে গেলে Hermes-এর সুপারিশ কী?",
+      "options": [
+        "পুরোনো `done` কার্ড আবার খোলা",
+        "নতুন child কার্ড বানিয়ে `--parent` দিয়ে পুরোনোটার সঙ্গে জোড়া, আর নতুন প্রমাণ body-তে",
+        "বোর্ড মুছে নতুন করা",
+        "কিছুই না করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "Parent link handoff পৌঁছে দেয় (`## Parent task results`), আর পরে আসা প্রমাণ নতুন কার্ডের body-তে যায়।"
+    },
+    {
+      "question": "দুই worker-এর branch conflict হলে কী করতে বলা হয়েছে?",
+      "options": [
+        "যে আগে শেষ করেছে সে জিতবে",
+        "দুজন নিজেরাই মেটাবে",
+        "তৃতীয় নিরপেক্ষ profile-কে reconciliation card দাও, দুটো conflict-কার্ডই তার parent",
+        "সব branch মুছে দাও"
+      ],
+      "answerIndex": 2,
+      "explanation": "Reconciler দুই diff ও দুই উদ্দেশ্যই পায় বলে নিরপেক্ষভাবে মেটাতে পারে।"
+    },
+    {
+      "question": "Delivery mode `wake` কেমন আচরণ করে?",
+      "options": [
+        "শুধু সাধারণ মেসেজ পাঠায়",
+        "সাধারণ মেসেজ পাঠায় এবং agent-কে জাগায়",
+        "আলাদা ping পাঠায় না, শুধু agent-কে জাগায়",
+        "কিছুই করে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "`notify` শুধু মেসেজ, `notify+wake` দুটোই, `wake` শুধু জাগানো।"
+    },
+    {
+      "question": "`hermes kanban complete a b c --summary X` চালালে কী হয়?",
+      "options": [
+        "তিনটাই শেষ হয়",
+        "প্রত্যাখ্যাত হয়; bulk close শুধু `--summary`/`--metadata` ছাড়া চলে",
+        "শুধু প্রথমটা শেষ হয়",
+        "parent মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Summary প্রতিটি task-এর নিজস্ব handoff, তাই bulk-এ দেওয়া যায় না।"
+    },
+    {
+      "question": "একটা Kanban বোর্ড একাধিক মেশিনে ছড়িয়ে চালানো যায় কি?",
+      "options": [
+        "হ্যাঁ, SQLite নিজে sync করে",
+        "না, এটা single-host; মেশিনপ্রতি একটা board আর bridge হিসেবে `delegate_task` বা message queue",
+        "শুধু Docker-এ",
+        "শুধু dashboard দিয়ে"
+      ],
+      "answerIndex": 1,
+      "explanation": "DB লোকাল, worker একই মেশিনে, crash-detection লোকাল PID-ভিত্তিক।"
+    }
+  ],
+  "recap": [
+    "Kanban হলো টেকসই SQLite বোর্ড; task, link, comment আর dispatcher তার অংশ।",
+    "Dispatcher প্রতি ৬০ সেকেন্ডে ready task-এ worker চালায়; parent শেষ হলে child ready হয়।",
+    "`kanban_block`, heartbeat, exit code ও `failure_limit` ব্যর্থতা সামলায়।",
+    "Follow-up কাজ হবে নতুন child কার্ড; parent-এর `summary`/`metadata` তার context-এ হুবহু পৌঁছায়।",
+    "Notification-এর mode তিনটা: `notify`, `notify+wake`, `wake`; ডেলিভারি exactly-once নয়।",
+    "Kanban single-host; একাধিক মেশিনে board আলাদা রেখে `delegate_task` বা queue দিয়ে জোড়ো।"
+  ]
+}

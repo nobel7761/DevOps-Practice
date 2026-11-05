@@ -1,0 +1,188 @@
+{
+  "contentId": "hermes-doc-user-guide-features-mcp",
+  "title": "MCP (Model Context Protocol)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে MCP কী, কেন লাগে, কীভাবে `config.yaml`-এ বাইরের tool server জুড়তে হয়, filter করতে হয় আর নিরাপদে রাখতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## সার্বজনীন সকেটের গল্প\n\nHermes-এর হাতে কিছু নিজস্ব যন্ত্র আছে (ফাইল পড়া, ইন্টারনেটে খোঁজা...)। কিন্তু তোমার দরকার আরও অনেক কিছু: GitHub, ডাটাবেস, ফাইল-সিস্টেম, Stripe-এর পেমেন্ট। প্রতিটার জন্য Hermes-কে নতুন করে বানানো সম্ভব না।\n\nতাই কী করা হলো? দেয়ালে একটা **সার্বজনীন সকেট** লাগানো হলো। যেকোনো কোম্পানি ওই সকেটের মাপে একটা প্লাগ বানালে Hermes সেটা লাগিয়েই নতুন যন্ত্র পেয়ে যায়। এই সার্বজনীন সকেটের নাম **MCP**, মানে **Model Context Protocol**।\n\n- **Protocol** (প্রোটোকল) = কথা বলার সবার-মানা নিয়ম, যেমন ফোনে \"হ্যালো\" দিয়ে শুরু করা।\n- **Model Context Protocol** = AI model-কে বাইরের জিনিসের (context) সাথে জোড়ার নিয়ম।\n\n**MCP না থাকলে কী সমস্যা হতো?** প্রতিটা নতুন tool-এর জন্য Hermes-এর ভেতরের কোড বদলাতে হতো। MCP আছে বলে শুধু একটা সেটিং-লাইন লিখলেই নতুন tool চলে আসে।\n\nTool শুরুতেই আবিষ্কৃত (discovered) হয়ে নিবন্ধিত (registered) হয়। আর stdio (তোমার কম্পিউটারের ভেতরের process) আর HTTP (ইন্টারনেটের ওপারের server) দুই ধরনই একসাথে মেশানো যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Tool আর MCP server\n- **Tool** (টুল) = Hermes-এর হাতিয়ার, যেমন \"ফাইল পড়ো\" বা \"issue তৈরি করো\"। AI এটা চাইলে Hermes চালিয়ে দেয়।\n- **MCP server** = যে ছোট প্রোগ্রাম এক গুচ্ছ tool দেয়। যেমন \"GitHub server\" GitHub-এর tool দেয়। (এখানে \"server\" মানে কোনো বিশাল যন্ত্র না, শুধু সেবা-দেওয়া প্রোগ্রাম।)\n\n### ২) stdio আর HTTP: দুই ধরনের server\n- **stdio** = তোমার কম্পিউটারেই Hermes একটা ছোট প্রোগ্রাম **চালু করে** আর সরাসরি তার সাথে কথা বলে। পাশের ঘরের সহকারীর সাথে মুখোমুখি কথা। এটা **local process** (তোমার কম্পিউটারেই চলা কাজ)।\n- **HTTP / SSE** = ইন্টারনেটের ওপারে অন্য কোথাও চলা server-এর সাথে কথা, ফোন-কলের মতো। এটা **remote**। SSE হলো পুরোনো ধরনের এক রকম অবিরাম-সংযোগ।\n\n### ৩) Command, args, env\n- **Command** = চালানোর হুকুম (যেমন `npx`)। **args** (arguments) = ওই হুকুমের সাথে দেওয়া ছোট নির্দেশ-তালিকা। **env** = প্রোগ্রামকে দেওয়া গোপন সেটিং (যেমন key)।\n- **`npx`** = Node.js-এর একটা টুল, যেটা কোনো প্রোগ্রাম নামিয়ে সঙ্গে সঙ্গে চালিয়ে দেয়। (**Node.js** = JavaScript ভাষার প্রোগ্রাম চালানোর যন্ত্র।)\n\n### ৪) Token আর Bearer\n- **Token** = সাময়িক প্রবেশপত্র। **Bearer token** = \"এই কার্ড যার হাতে আছে, সে ঢুকতে পারবে\" ধরনের পরিচয়, `Authorization` লেবেলে পাঠানো হয়।\n\n### ৫) OAuth, PKCE\n- **OAuth** = পাসওয়ার্ড না দিয়ে অনুমতির ভিত্তিতে login। **PKCE** = ওই login-কে আরও নিরাপদ করার একটা কৌশল। Hermes এসব নিজে সামলায়।\n\n### ৬) Timeout\n**Timeout** = \"এত সেকেন্ডে উত্তর না এলে হাল ছাড়ো।\" ফোন ধরে বসে না থেকে কেটে দেওয়া।\n\n### ৭) Toolset\nএকই ধরনের কয়েকটা tool-এর বাক্স। প্রতিটা MCP server-এর নিজস্ব toolset হয়, নাম `mcp-<server>`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick start: প্রথম MCP server জোড়ো\n\nMCP standard install-এর সাথেই আসে, আলাদা কিছু নামাতে হয় না। `~/.hermes/config.yaml` (Hermes-এর সেটিং-খাতা) ফাইলে লেখো:\n\n```yaml\nmcp_servers:\n  filesystem:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/projects\"]\n```\n\n**লাইনগুলো ভেঙে বুঝি:**\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `mcp_servers:` | \"এখানে আমার MCP server-এর তালিকা\" | যন্ত্রের তালিকার শিরোনাম |\n| `filesystem:` | এই server-এর একটা নাম, যা তুমি ঠিক করো | যন্ত্রের লেবেল |\n| `command: \"npx\"` | server চালু করার হুকুম | যন্ত্র চালুর সুইচ |\n| `args: [...]` | হুকুমের সাথে নির্দেশ | সুইচের পাশের সেটিং |\n| `\"-y\"` | সব প্রশ্নে \"হ্যাঁ\" ধরে নাও | বারবার \"ঠিক আছে?\" না জিজ্ঞেস করা |\n| `@modelcontextprotocol/server-filesystem` | কোন প্রোগ্রাম নামাবে (ফাইল-সিস্টেম server) | কোন যন্ত্র |\n| `\"/home/user/projects\"` | server শুধু এই ফোল্ডারে কাজ করবে | যন্ত্রকে একটা ঘরে বন্দি রাখা |\n\nতারপর `hermes chat` চালিয়ে বলো সেই কাজটা করতে (যেমন \"ওই ফোল্ডারের ফাইলগুলোর তালিকা দাও\")। **`hermes chat`** মানে Hermes-এর সাথে কথা শুরু।\n\n**Claude Code থেকে এলে:** `hermes import-agent claude-code` কমান্ড `~/.claude.json`-এর `mcpServers` কে Hermes-এর `mcp_servers`-এ এনে দেয়।\n\n### Tool-এর নাম কীভাবে হয়\n\nনিয়ম: `mcp_<server>_<tool>`। যেমন `mcp_filesystem_read_file`। নামের `.` হয়ে যায় `_`। **কেন?** অনেক server-এর tool-এর নাম একই হতে পারে (যেমন দুটোতেই `search`)। নামের আগে server-এর নাম বসালে গুলিয়ে যায় না।\n\nServer সমর্থন করলে অতিরিক্ত utility tool আসে: `list_resources`, `read_resource`, `list_prompts`, `get_prompt`। (**Resource** = server-এর কাছে থাকা তথ্য। **Prompt** = server-এর দেওয়া তৈরি-করা নির্দেশ-টেমপ্লেট।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes দুই ধরনের MCP server-এর সাথে কথা বলে।",
+        "nodes": [
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "c",
+            "kind": "gateway",
+            "label": "mcp_servers",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "s",
+            "kind": "external",
+            "label": "stdio (local)",
+            "x": 440,
+            "y": 20
+          },
+          {
+            "id": "r",
+            "kind": "external",
+            "label": "HTTP (remote)",
+            "x": 440,
+            "y": 180
+          }
+        ],
+        "edges": [
+          {
+            "from": "h",
+            "to": "c",
+            "label": "পড়ে"
+          },
+          {
+            "from": "c",
+            "to": "s",
+            "label": "command + args"
+          },
+          {
+            "from": "c",
+            "to": "r",
+            "label": "url + headers"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Server-এর ধরন, প্রতিটার config\n\n### stdio (তোমার কম্পিউটারে চলা)\n\n```yaml\nmcp_servers:\n  github:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n    env:\n      GITHUB_PERSONAL_ACCESS_TOKEN: \"***\"\n```\n\n`env` হলো server-কে দেওয়া গোপন key (এখানে `***` দিয়ে লুকানো)। **নিরাপত্তার ব্যাপার:** শুধু তোমার দেওয়া `env` ও একটা নিরাপদ baseline (ন্যূনতম দরকারি সেটিং) পাঠানো হয়। পুরো shell environment নয়। **কেন?** নইলে তোমার কম্পিউটারের সব গোপন key অজানা server-এর হাতে চলে যেত।\n\n### HTTP / SSE (ইন্টারনেটের ওপারে)\n\n```yaml\nmcp_servers:\n  remote_api:\n    url: \"https://mcp.example.com/mcp\"\n    headers:\n      Authorization: \"Bearer ***\"\n```\n\nএখানে `command` নেই, কারণ Hermes কিছু চালু করছে না, শুধু `url` (ঠিকানা) এ ডাকছে। `headers` হলো সাথে পাঠানো লেবেল, `Authorization` হলো পরিচয়-লেবেল।\n\n### OAuth (login করে)\n\n```yaml\nmcp_servers:\n  linear:\n    url: \"https://mcp.linear.app/mcp\"\n    auth: oauth\n```\n\n`auth: oauth` বললে Hermes login-এর ধাপগুলো (discovery, PKCE, token exchange, refresh) নিজে সামলায়। token থাকে `~/.hermes/mcp-tokens/<server>.json`-এ, ফাইল-অনুমতি `0o600` (মানে শুধু তুমি পড়তে-লিখতে পারো)।\n\n**Headless মেশিনে** (যেখানে স্ক্রিন বা ব্রাউজার নেই, যেমন দূরের server): `hermes mcp login <server> --flow device`, বা SSH port forward। **দ্রুত যাচাই:** `hermes mcp test <name>`।\n\nআরও দুটো: mTLS-এর জন্য `client_cert`/`client_key` (দুই পক্ষই একে অপরের সার্টিফিকেট দেখে), আর প্রতি-user আলাদা header-এর জন্য `identity_header`।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "Catalog: Nous-approved server",
+      "markdown": "`hermes mcp` (interactive picker), `hermes mcp catalog`, `hermes mcp install <name>`, `hermes mcp configure <name>`, `hermes mcp login <name>`। Catalog entry ডিফল্টে **disabled** থাকে। ইন্সটলে `git clone` ও bootstrap চলে, তাই আগে manifest (পরিচয়-ফাইল) পড়ে নাও। MCP কখনো নিজে নিজে update হয় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Filtering: কোন tool দেখবে তা বেছে দাও\n\n**কেন লাগে?** একটা server-এ ৫০টা tool থাকতে পারে, কিন্তু তোমার লাগে ৩টা। বাকিগুলো খোলা রাখলে AI গুলিয়ে ফেলে, আর বিপজ্জনক tool (যেমন \"customer মুছো\") ভুলে চলে যেতে পারে।\n\n```yaml\nmcp_servers:\n  github:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n    tools:\n      include: [list_issues, create_issue, search_code]\n      prompts: false\n  stripe:\n    url: \"https://mcp.stripe.com\"\n    tools:\n      exclude: [delete_customer]\n      resources: false\n  legacy:\n    url: \"https://mcp.legacy.internal\"\n    enabled: false\n```\n\n| key | মানে | কখন লাগে |\n|---|---|---|\n| `include` | শুধু এই tool-গুলো দেখাও (সাদা-তালিকা) | অল্প কয়েকটা tool-ই লাগলে |\n| `exclude` | এই tool-গুলো বাদে বাকি সব (কালো-তালিকা) | কয়েকটা বিপজ্জনক tool লুকাতে |\n| `prompts: false` | prompt-ওয়ালা utility বন্ধ | প্রয়োজন না থাকলে |\n| `resources: false` | resource-ওয়ালা utility বন্ধ | প্রয়োজন না থাকলে |\n| `enabled: false` | পুরো server বাদ | কিছুদিন ব্যবহার করবে না |\n\n- `include` আর `exclude` দুটোই দিলে **`include` জেতে**।\n- **Glob** (গ্লব, মানে প্যাটার্ন) চলে: `*` (যেকোনো কিছু), `?` (একটা অক্ষর), `[...]`। বড়-ছোট হাতের অক্ষর আলাদা ধরা হয় (case-sensitive)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## গুরুত্বপূর্ণ config key\n\n| Key | মানে | কখন লাগে |\n|---|---|---|\n| `timeout` | tool call-এর timeout | ধীর tool-এর জন্য বাড়াতে |\n| `connect_timeout` | সংযোগ ও `initialize` (শুরুর পরিচয়-বিনিময়)-এর timeout | ধীর শুরু হলে |\n| `lazy` | cache থেকে নিবন্ধন, প্রথম ব্যবহারে চালু (default false) | অনেক server থাকলে শুরু দ্রুত করতে |\n| `idle_timeout_seconds`, `max_lifetime_seconds` | stdio process কতক্ষণ বেকার বা কত লম্বা চলবে, তারপর নতুন করে চালু (0 = কখনো না) | process ফুলে গেলে |\n| `supports_parallel_tool_calls` | একসাথে একাধিক call | tool নিরাপদ হলে |\n| `trust` | `full` বা `untrusted` | অচেনা server-এ `untrusted` |\n| `spend_limit`, `tool_costs`, `cost_unit` | খরচ-সীমা | টাকা-লাগা tool-এ |\n\n## Runtime আচরণ (চলার সময় কী ঘটে)\n\n- **Discovery** (কোন server-এ কী কী tool আছে তা খুঁজে আনা) চলে startup-এ, `/reload-mcp` কমান্ডে আর config watcher-এ (সেটিং-ফাইল বদলালে যে নজরদার জানায়)। ডিফল্টে সর্বোচ্চ ৪টা একসাথে (`mcp.discovery_concurrency`)।\n- প্রতি wave-এ (একসাথে চালানো একদলে) ১২০ সেকেন্ড, পুরো pass-এ ৩০০ সেকেন্ডের সীমা।\n- `/reload-mcp` না দিলে tool-এর তালিকা `/new` (নতুন আলাপ) বা compaction (আলাপ ছোট করা) পর্যন্ত আগের মতোই থাকে।\n- **Gateway**-তে (chat অ্যাপের সাথে সংযোগকারী অংশ) failed server ৩০ সেকেন্ড থেকে শুরু করে দ্বিগুণ করে সর্বোচ্চ ১০ মিনিট পর্যন্ত আবার চেষ্টা করে।\n- Log পাওয়া যায় `agent.log`-এ। (**Log** = কী কী ঘটল তার লেখা খাতা।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Sampling, খরচ-সীমা, Elicitation\n\nতিনটা অচেনা শব্দ, সোজা ভাষায়:\n\n- **Sampling** (default চালু): MCP server নিজে Hermes-এর মডেলকে একটা প্রশ্ন করতে চাইতে পারে (`sampling/createMessage`)। মানে server-ও মডেলের সাহায্য নেয়। সীমা বাঁধা যায়: `max_tokens_cap`, `timeout`, `max_rpm` (মিনিটে কয়টা), `max_tool_rounds`। বন্ধ করতে: `sampling: { enabled: false }`।\n- **Spend limit:** কিছু tool-এর খরচ আছে। `tool_costs`-এ প্রতি tool-এর খরচ, `spend_limit` প্রতি chat-এ সর্বোচ্চ কত। সীমা ছাড়ালে `trust: full` হলেও Hermes তোমাকে জিজ্ঞেস করে। উত্তর দেওয়ার কেউ না থাকলে call বাতিল।\n- **Elicitation:** server তোমার কাছে একটা ফর্ম চাইতে পারে। উত্তর শুধু **Allow Once** বা **Deny**। URL mode সমর্থিত নয়।\n- **Events (experimental, মানে পরীক্ষামূলক):** শুধু webhook mode (বাইরের সেবা ঘটনা ঘটলে ডাক দেয়); `events: true` ও public HTTPS `public_url` লাগে।\n\n## Hermes নিজেই MCP server হতে পারে\n\nউল্টো দিকটাও সম্ভব: অন্য কোনো app (MCP client) Hermes-কেই tool হিসেবে ব্যবহার করতে পারে। `hermes plugins install mcp-serve` করে অন্য client-এর config-এ বসাও:\n\n```json\n{ \"mcpServers\": { \"hermes\": { \"command\": \"hermes\", \"args\": [\"mcp-serve\"] } } }\n```\n\n(**JSON** = তথ্য সাজানোর আরেকটা ধরন, `{ \"নাম\": \"মান\" }` আকারে। এটা YAML-এর কাছের ভাই।)\n\n## সমস্যা হলে\n\n| লক্ষণ | কী করবে |\n|---|---|\n| সংযোগ হচ্ছে না | `node --version`, `npx --version` চালিয়ে দেখো Node.js আছে কি না; `agent.log` পড়ো |\n| HTTP server প্রত্যাখ্যান করছে | `hermes mcp test <name>`; 400/405 এলে server SSE-only হতে পারে (`transport: sse` দাও); 401/403 মানে ভুল credential (পরিচয়-তথ্য) |\n| উত্তর কাটা পড়ছে | সীমা: HTTP-তে ১০ MiB; legacy SSE-তে প্রতি event ১ MiB |\n| কারণ খুঁজছ | `hermes logs --level debug` |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Filtering একটা নিরাপত্তা বাঁধ",
+      "markdown": "বিপজ্জনক tool (যেমন `delete_customer`) `exclude` করে দাও। Parallel call (একসাথে একাধিক) শুধু তখনই চালু করো যখন নিশ্চিত যে একটা পড়ছে আর আরেকটা একই জিনিস লিখছে এমন গোলমাল (race) নেই।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "MCP কেন লাগে? এটা না থাকলে কী সমস্যা হতো?",
+      "options": [
+        "MCP না থাকলে Hermes চালুই হতো না",
+        "MCP না থাকলে ইন্টারনেট চলত না",
+        "প্রতিটা নতুন tool-এর জন্য Hermes-এর ভেতরের কোড বদলাতে হতো",
+        "MCP শুধু ছবি আঁকে"
+      ],
+      "answerIndex": 2,
+      "explanation": "MCP সার্বজনীন সকেট। যেকোনো কোম্পানি প্লাগ বানালে Hermes কোড না বদলেই নতুন tool পেয়ে যায়।"
+    },
+    {
+      "question": "stdio আর HTTP server-এর পার্থক্য কী?",
+      "options": [
+        "stdio তোমার কম্পিউটারে Hermes নিজে চালু করে (local); HTTP ইন্টারনেটের ওপারে (remote)",
+        "stdio ইন্টারনেটের ওপারে, HTTP local",
+        "দুটো একই",
+        "stdio শুধু ছবির জন্য"
+      ],
+      "answerIndex": 0,
+      "explanation": "stdio = পাশের ঘরের সহকারী (command + args দিয়ে চালু), HTTP = ফোন-কল (url + headers)।"
+    },
+    {
+      "question": "`mcp_servers`-এর stdio config-এ `env` দিলে কী পাঠানো হয়?",
+      "options": [
+        "পুরো shell environment",
+        "তোমার সব গোপন key",
+        "কিছুই না",
+        "শুধু তোমার দেওয়া `env` ও একটা নিরাপদ baseline"
+      ],
+      "answerIndex": 3,
+      "explanation": "নিরাপত্তার জন্য পুরো environment পাঠানো হয় না, নইলে সব গোপন key অচেনা server-এর হাতে চলে যেত।"
+    },
+    {
+      "question": "`include` আর `exclude` দুটোই দিলে কী হয়?",
+      "options": [
+        "`exclude` জেতে",
+        "`include` জেতে",
+        "দুটোই বাতিল",
+        "error হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "docs বলছে দুটো দিলে `include` জেতে। glob চলে, আর case-sensitive।"
+    },
+    {
+      "question": "Filtering কেন গুরুত্বপূর্ণ?",
+      "options": [
+        "server দ্রুত চলে বলে শুধু",
+        "filtering ছাড়া tool চলেই না",
+        "অপ্রয়োজনীয় ও বিপজ্জনক tool (যেমন `delete_customer`) AI-র নাগালের বাইরে রাখা যায়",
+        "এটা শুধু log সাজায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "৫০টা tool-এর মধ্যে ৩টা লাগলে বাকিগুলো লুকালে AI গুলিয়ে ফেলে না, আর বিপজ্জনক tool ভুলে চলে না।"
+    },
+    {
+      "question": "`mcp_filesystem_read_file` নামটা কীভাবে তৈরি হয়েছে?",
+      "options": [
+        "`mcp_<server>_<tool>` নিয়মে, server `filesystem` আর tool `read_file`",
+        "এলোমেলো",
+        "শুধু tool-এর নাম",
+        "server-এর নামের উল্টো"
+      ],
+      "answerIndex": 0,
+      "explanation": "নিয়ম `mcp_<server>_<tool>`। এতে দুই server-এর একই নামের tool গুলিয়ে যায় না।"
+    },
+    {
+      "question": "Spend limit পেরোলে `trust: full` হলেও কী হয়?",
+      "options": [
+        "Hermes চুপচাপ চালিয়ে যায়",
+        "Hermes বন্ধ হয়ে যায়",
+        "তোমার key মুছে যায়",
+        "Hermes জিজ্ঞেস করে; উত্তর দেওয়ার কেউ না থাকলে call বাতিল"
+      ],
+      "answerIndex": 3,
+      "explanation": "খরচ-সীমা ছাড়ালে full-trust server-ও জিজ্ঞেস করে। কেউ উত্তর না দিলে call বাতিল।"
+    }
+  ],
+  "recap": [
+    "MCP হলো বাইরের tool জোড়ার সার্বজনীন সকেট; `config.yaml`-এর `mcp_servers`-এ সেটিং লিখলেই নতুন tool আসে।",
+    "stdio server Hermes নিজের কম্পিউটারে চালু করে (`command` + `args`); HTTP server ইন্টারনেটের ওপারে (`url` + `headers`)।",
+    "Tool-এর নাম `mcp_<server>_<tool>` ধরনের; `include`/`exclude` দিয়ে কোন tool দেখবে বেছে নাও (দুটো দিলে include জেতে)।",
+    "Spend limit, `trust` আর filtering নিরাপত্তার বাঁধ; বিপজ্জনক tool `exclude` করে দাও।",
+    "সমস্যা হলে `hermes mcp test <name>`, `agent.log` আর `hermes logs --level debug` দেখো।"
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "contentId": "hermes-doc-reference-faq",
+  "title": "FAQ & Troubleshooting",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/faq",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর সাধারণ প্রশ্নের উত্তর জানবে আর install, provider, messaging, MCP-র সমস্যায় লক্ষণ দেখে কারণ ও সমাধান খুঁজে পেতে শিখবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: স্কুলের হেল্প-ডেস্ক\n\nস্কুলে একটা হেল্প-ডেস্ক আছে। কেউ এসে বলে \"আমার ছাতা হারিয়ে গেছে\", দিদিমণি জানেন ঠিক কোন তাকে খুঁজতে হবে। FAQ পাতাটা Hermes-এর হেল্প-ডেস্ক। (**FAQ** = Frequently Asked Questions, মানে বারবার জিজ্ঞেস করা প্রশ্ন।) আগে সাধারণ প্রশ্ন, তারপর সমস্যা ধরে ধরে (Installation, Provider ও Model, Terminal, Messaging, Performance, MCP), শেষে Profiles আর Workflows।\n\n**এটা কেন লাগে?** কিছু আটকে গেলে অন্ধকারে হাতড়ানোর বদলে \"লক্ষণ → কারণ → সমাধান\" ছক ধরে এগোনো যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Provider, Model, LLM\n**Provider** হলো যে কোম্পানি AI চালায়। **Model** হলো তাদের নির্দিষ্ট AI। **LLM** (বড় ভাষা-মডেল) হলো সেই AI যে লেখা বোঝে ও লেখে। Hermes নিজে ভাবে না, provider-এর model ভাবে। **API key** হলো provider-এর কাছে তোমার গোপন পরিচয়পত্র।\n\n### Context length / context window\nAI একসাথে কতটা কথা সামনে রাখতে পারে, তার সীমা। ছোট টেবিলের মতো, ভরে গেলে আর জায়গা থাকে না। `/compress` পুরোনো কথা সংক্ষেপ করে জায়গা বানায়।\n\n### Rate limit (429)\n\"অল্প সময়ে অনেক বেশি অনুরোধ করেছ, একটু থামো।\" HTTP error কোড `429`। যেমন দোকানদার বললেন \"লাইনে দাঁড়াও\"।\n\n### PATH\nকম্পিউটারের একটা তালিকা: \"কোন কোন ফোল্ডারে command খুঁজব।\" `hermes` ঠিকঠাক না চললে PATH-এ নেই হতে পারে।\n\n### Shell, `~/.bashrc`, `~/.zshrc`\n**Shell** হলো যে প্রোগ্রাম টার্মিনালে তোমার লেখা হুকুম বোঝে। `~/.bashrc` বা `~/.zshrc` হলো shell-এর শুরুর সময় পড়া একটা নোট-ফাইল।\n\n### Docker, Container\n**Docker** হলো প্রোগ্রামকে একটা বন্ধ বাক্সে (**container**) ভরে চালানো, যাতে আসল কম্পিউটারে ক্ষতি না হয়।\n\n### Gateway, Webhook\n**Gateway** হলো পিওন, যে chat app জোড়ে। **Webhook** হলো বাইরের সেবা নিজে থেকে খবর পাঠানোর ঘণ্টা।\n\n### MCP\nবাইরের সেবার tool Hermes-এ আনার একটা সাধারণ নিয়ম। **MCP server** হলো সেই বাইরের দোকান।\n\n### Profile ও `HERMES_HOME`\n**Profile** হলো Hermes-এর আলাদা আলাদা পরিচয়-সেট (কাজ, বাড়ি)। **`HERMES_HOME`** হলো Hermes-এর নিজের ঘর (ফোল্ডার), যেখানে স্মৃতি আর সেটিং থাকে (default `~/.hermes`)।\n\n### Memory ও Skill\n**Memory** হলো তথ্য (তুমি কে, প্রজেক্ট, পছন্দ)। **Skill** হলো পদ্ধতি (ধাপে ধাপে কীভাবে করতে হয়)।\n\n### Cache\nআগে একবার হিসাব করা জিনিস সামনে রেখে দেওয়া, যাতে আবার হিসাব করতে না হয়। মাঝপথে model বদলালে এই জমানো জিনিস ফেলে দিতে হয়, তাই খরচ বাড়ে।\n\n### Telemetry\nব্যবহার সম্পর্কে নিজে থেকে তথ্য পাঠিয়ে দেওয়া। Hermes এটা **করে না**।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "সমস্যা হলে পথ: লক্ষণ দেখো, ঠিক ভাগে যাও, log দেখো।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "faq",
+            "kind": "server",
+            "label": "FAQ পাতা",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "fix",
+            "kind": "gateway",
+            "label": "ঠিক ভাগ",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "log",
+            "kind": "database",
+            "label": "logs / doctor",
+            "x": 660,
+            "y": 100
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "faq",
+            "label": "লক্ষণ"
+          },
+          {
+            "from": "faq",
+            "to": "fix",
+            "label": "ভাগ বাছো"
+          },
+          {
+            "from": "fix",
+            "to": "log",
+            "label": "যাচাই"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সাধারণ প্রশ্ন\n\n- **কোন LLM চলে?** যেকোনো OpenAI-compatible API (মানে OpenAI-র মতো একই ভাষায় কথা বলে এমন সেবা): OpenRouter, Nous Portal, OpenAI, Anthropic, Google (Gemini), z.ai, Kimi, MiniMax, আর লোকাল (Ollama, vLLM, llama.cpp, SGLang)। provider ঠিক করো `hermes model` দিয়ে বা `~/.hermes/.env`-এ।\n- **ডেটা কোথাও যায়?** শুধু তোমার ঠিক করা provider-এর কাছে API call। **কোনো telemetry/analytics নেই।** কথোপকথন, memory, skill থাকে `~/.hermes/`-এ।\n- **খরচ?** Hermes বিনামূল্যে, MIT license (যে কেউ বিনা পয়সায় ব্যবহার, বদল ও শেয়ার করতে পারে)। শুধু provider-এর API ব্যবহার বিল হয়। লোকাল model ফ্রি।\n- **Memory বনাম Skill?** Memory হলো তথ্য (তুমি, প্রজেক্ট, পছন্দ), Skill হলো পদ্ধতি (ধাপে ধাপে)। দুটোই session জুড়ে থাকে।\n- **একাধিক ব্যবহারকারী?** Messaging gateway (Telegram, Discord, Slack, WhatsApp, Home Assistant)। প্রবেশের তিন পথ: allowlist (শুধু তালিকার user ID), DM pairing (প্রথম যে DM করে সে-ই একচেটিয়া), বা open (production-এ নয়, মানে আসল ব্যবহারে নয়)।\n- **Python-এ?** Hermes-কে নিজের Python প্রোগ্রামের ভেতর থেকেও ডাকা যায়:\n\n```python\nfrom run_agent import AIAgent\nagent = AIAgent(model=\"anthropic/claude-opus-4.7\")\nresponse = agent.chat(\"Explain quantum computing briefly\")\n```\n\n| লাইন | মানে |\n|---|---|\n| `from run_agent import AIAgent` | Hermes-এর agent-ক্লাস (agent তৈরির নকশা) আনো |\n| `AIAgent(model=...)` | নির্দিষ্ট model দিয়ে একটা agent বানাও |\n| `agent.chat(\"...\")` | প্রশ্ন করো, উত্তর `response`-এ আসে |\n\n### Offline / লোকাল model\n\n**Offline** মানে ইন্টারনেট ছাড়া নিজের কম্পিউটারে AI চালানো। তখন কোনো key বা বিল লাগে না। `hermes model` → Custom endpoint: Base URL `http://localhost:11434/v1`, API key `ollama`, model `qwen3.5:27b`, context length `64000` (Hermes-এর ন্যূনতম)। অথবা:\n\n```yaml\nmodel:\n  default: qwen3.5:27b\n  provider: custom\n  base_url: http://localhost:11434/v1\n```\n\n(**localhost** মানে \"এই নিজের কম্পিউটার\"। `11434` হলো Ollama-র দরজা-নম্বর (port)।) Ollama-য় নিজে `num_ctx` দিলে Hermes-এও একই context length দাও। Hermes লোকাল endpoint চিনে streaming timeout শিথিল করে। খুব বড় context-এ তবুও timeout হলে `.env`-এ `HERMES_STREAM_READ_TIMEOUT=1800` দিতে পারো।\n\n## Installation সমস্যা\n\n| লক্ষণ | কারণ ও সমাধান |\n|---|---|\n| `hermes: command not found` | shell এখনো নতুন command চেনে না। shell রিলোড (`source ~/.bashrc` / `~/.zshrc`) বা নতুন terminal। `which hermes` দিয়ে দেখো। দরকারে `export PATH=\"$HOME/.local/bin:$PATH\"` |\n| `node`/`nvm`/`pyenv` terminal-এ পাওয়া যায় না | Hermes `bash -l` দিয়ে snapshot নেয়, `~/.bashrc` পড়ে না। `terminal.shell_init_files` তালিকায় ফাইল দাও (যেমন `~/.zshrc`, `~/.nvm/nvm.sh`) |\n| `uv: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \\| sh` (`uv` হলো Python-এর জিনিস দ্রুত বসানোর টুল) |\n| Permission denied | installer-এ `sudo` **নয়**। এটা `~/.local/bin`-এ বসে |\n| Python সংস্করণ | first-party install-এ Python 3.14। `hermes doctor` চালাও |\n\n```yaml\nterminal:\n  shell_init_files:\n    - ~/.zshrc\n    - ~/.nvm/nvm.sh\n```\n\nতালিকা দিলে default `~/.bashrc` auto-source বন্ধ হয়, মানে নিজে নিজে পড়া হয় না। দরকার হলে `~/.bashrc` নিজে যোগ করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Provider ও Model সমস্যা\n\n- **`/model` শুধু একটা provider দেখায়** → `/model` কেবল আগে-সেট-করা provider-এর মধ্যে বদলায়। নতুন provider/key যোগ করতে session ছেড়ে `hermes model` চালাও।\n- **API key কাজ করছে না** → `hermes config show`, `hermes model`, বা `hermes config set OPENROUTER_API_KEY ...`। `~/.hermes/.env`-এ পরস্পরবিরোধী entry দেখো।\n- **Model not found** → `hermes config set model.default anthropic/claude-opus-4.7` বা `hermes chat --model ...`।\n- **429 rate limit** → অপেক্ষা করো, plan বাড়াও, model বদলাও, বা `hermes chat --provider <অন্য>`।\n- **Context length exceeded** → `/compress`, নতুন session, বা বড় context-এর model। আকার দেখো `/usage`-তে। স্পষ্ট করে দাও:\n\n```yaml\nmodel:\n  default: your-model-name\n  context_length: 131072\n```\n\n  লোকাল server চুপ করে ছাঁটলে `context_length` মেলাও server-এর `-c`/`--ctx-size`-এর সাথে।\n- **\"Could not open a stream...\"** → কোনো stream শুরুই হয়নি, তাই বিল হয়নি। বড় request হলে `/compress` বা proxy-র body limit দেখো। ছোট হলে `base_url` দেখে `/retry`। বিস্তারিত `logs/agent.log`-এ।\n- **\"Hermes policy refused\" বললে** → model নিজের প্রত্যাখ্যান ঠিকমতো ব্যাখ্যা করতে পারে না। আসল Hermes block-এ tool error বা approval prompt আসে। `/status` চালাও, আসল error আছে কি না দেখো।\n- **HTTP 400 প্রথম run-এ** → প্রায়ই model-নাম ভুল বা key-র অধিকার নেই। `hermes config show`, `hermes model` দেখো। OpenRouter হলে credits (জমা টাকা) দেখো।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "প্রথমে `hermes doctor` ও `hermes logs`",
+      "markdown": "সংযোগ-ঘটিত বেশির ভাগ সমস্যায় (\"not running or unreachable\", \"could not reach\") আগে `/retry` করো। না মিটলে `hermes doctor` (ডাক্তার, সমস্যা খোঁজে) চালাও। আর কাঁচা exception দেখতে `hermes logs` (ঘটনার দিনলিপি)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Terminal, Messaging, Performance\n\n### Terminal\n\n- **\"Command blocked as dangerous\"**: এটা ইচ্ছাকৃত। approval prompt পড়ে `y` দাও বা নিরাপদ বিকল্প চাও।\n- **gateway-তে `sudo` ব্যর্থ**: gateway-র interactive TTY নেই (মানে পাসওয়ার্ড লিখে দেওয়ার জানালা নেই)। sudo এড়াও, নির্দিষ্ট command-এ passwordless sudo দাও, বা `hermes chat` ব্যবহার করো।\n- **Docker backend**: `docker info` দিয়ে দেখো। `sudo usermod -aG docker $USER` তারপর `newgrp docker` (নিজেকে docker-দলে যোগ করা)।\n\n### Messaging\n\n- **Bot সাড়া দেয় না** → `hermes gateway status`, `hermes gateway start`, log `~/.hermes/logs/gateway.log`, আর allowlist-এ user আছে কি না।\n- **Message পৌঁছায় না** → `hermes gateway setup` দিয়ে token আবার যাচাই করো। Slack/WhatsApp-এর মতো webhook-platform-এ publicly reachable server (ইন্টারনেট থেকে পৌঁছানো যায় এমন) লাগে।\n- **WSL-এ gateway বারবার পড়ে** → WSL হলো Windows-এর ভেতরে Linux চালানোর সুবিধা। সেখানে systemd অনির্ভরযোগ্য। foreground-এ চালাও: `hermes gateway run` (বা `tmux new -s hermes 'hermes gateway run'`)। (**tmux** হলো টার্মিনালের এমন জানালা যা বন্ধ করলেও ভেতরের কাজ চলতে থাকে।)\n- **macOS-এ node/ffmpeg পায় না** → launchd-র (macOS-এর চালু-রাখার ম্যানেজার) PATH ছোট। `hermes gateway install` তারপর `hermes gateway start`।\n\n### Performance\n\n- ধীর → ছোট model, কম toolset (`hermes chat -t \"terminal\"`)।\n- বেশি token (**token** মানে AI যে লেখার টুকরোর হিসাবে বিল করে) → `hermes prompt-size` (offline, block ধরে ভাগ), `hermes tools` ও `hermes skills` দিয়ে অপ্রয়োজনীয় বন্ধ, নিয়মিত `/compress`, `/usage`।\n- লম্বা session → `/compress`। নতুন শুরু `hermes chat`। আগেরটা আবার `hermes chat --continue`।\n\n## MCP সমস্যা\n\n- **Server সংযুক্ত হয় না** → MCP dependency আছে কি না দেখো। npm server হলে `node --version`, `npx --version`। হাতে চালিয়ে দেখো: `npx -y @modelcontextprotocol/server-filesystem /path/to/dir`।\n- **Tool দেখা যায় না** → লগে MCP error দেখো। server `tools/list`-এ উত্তর দেয় কি না। `tools.include/exclude/resources/prompts` ও `enabled` দেখো। config বদলে `/reload-mcp` দাও। যাচাই: `hermes config show | grep -A 12 mcp_servers`।\n- **Timeout** → timeout বাড়াও, server প্রসেস বেঁচে আছে কি না দেখো। server crash হলেও সেটা timeout-এর মতো দেখায়, তাই server-এর নিজের লগ দেখো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Profiles ও Workflow\n\n- **Profile আর `HERMES_HOME`**: profile directory, alias (`hermes-work`), active-profile ট্র্যাকিং, skill sync স্বয়ংক্রিয় করে।\n- প্রতি platform token-এর জন্য আলাদা bot। **একই token দুই profile-এ নয়**।\n- Profile-এর মধ্যে memory/session **ভাগ হয় না**। নতুন profile-এ বীজ দিতে `hermes profile create newname --clone-all` বা `--clone-from <profile>`।\n- **একই Hermes home-এ দুটো agent নয়**: দুজনেই memory লেখে ও পরস্পরেরটা পড়ে, গোলমাল হয়।\n- **এক WhatsApp নম্বরে একাধিক agent**: সমর্থিত নয়। প্রতি profile-এ আলাদা নম্বর।\n\n### সাবটাস্কে সস্তা model\n\n**Subtask** মানে বড় কাজের ছোট অংশ, যা সহকারী agent-কে দেওয়া হয়। এতে দামি model-এর দরকার নেই:\n\n```yaml\ndelegation:\n  model: \"google/gemini-3-flash-preview\"\n  provider: \"openrouter\"\n```\n\nসতর্কতা: মাঝপথে `/model` বদলালে prompt cache রিসেট হয়। পরের message পুরো কথোপকথন পূর্ণ দামে আবার পড়ে। লম্বা chat-এ delegation বা নতুন session ভালো।\n\n### Telegram-এ গোলমাল কমানো\n\n```yaml\ndisplay:\n  tool_progress: \"off\"   # off | new | all | verbose\n```\n\nTelegram-এর slash-command সীমা ১০০। `hermes skills config` দিয়ে platform ধরে skill বন্ধ করো, তারপর `hermes gateway restart`।\n\n### অন্য মেশিনে সরানো\n\n```bash\nhermes backup                          # ~/hermes-backup-<timestamp>.zip\nhermes import ~/hermes-backup-<timestamp>.zip\nhermes setup                           # key/provider যাচাই\nhermes profile export work ./work-backup.tar.gz\nhermes profile import ./work-backup.tar.gz work\n```\n\n| | `hermes backup` | `hermes profile export` |\n|---|---|---|\n| ব্যবহার | পুরো মেশিন স্থানান্তর | একটা profile শেয়ার |\n| Credential | থাকে (`.env`, `auth.json`) | থাকে না |\n| ফরম্যাট | `.zip` | `.tar.gz` |\n\n**কেন credential থাকে না?** profile অন্যকে শেয়ার করার জন্য, তাই চাবি ফাঁস না করে শুধু সাজসজ্জা যায়। backup নিজের জিনিস নিজের নতুন কম্পিউটারে নেওয়ার জন্য, তাই সবকিছু যায়।\n\n## আটকে গেলে\n\nGitHub Issues খোঁজো, Nous Research Discord-এ জিজ্ঞেস করো, আর bug জানাতে দাও: OS, `python3 --version`, `hermes --version`, পুরো error বার্তা।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes তোমার কথোপকথন কোথায় পাঠায়?",
+      "options": [
+        "Nous Research-এর সার্ভারে",
+        "শুধু তোমার ঠিক করা provider-এর কাছে API call হিসেবে, কোনো telemetry নেই",
+        "সব সোশ্যাল মিডিয়ায়",
+        "কোথাও না, কিন্তু কিছু করতেও পারে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "কথোপকথন, memory, skill `~/.hermes/`-এ থাকে। শুধু provider-এ API call যায়।"
+    },
+    {
+      "question": "`nvm` বা `pyenv` terminal-এ পাওয়া যাচ্ছে না। কারণ ও সমাধান কী?",
+      "options": [
+        "Hermes মুছে গেছে",
+        "Hermes `bash -l` snapshot নেয়, `~/.bashrc` পড়ে না। `terminal.shell_init_files`-এ ফাইল দাও",
+        "কম্পিউটার পুরোনো",
+        "internet নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "`terminal.shell_init_files` তালিকায় `~/.zshrc`, `~/.nvm/nvm.sh` ইত্যাদি দিলে ঠিক হয়।"
+    },
+    {
+      "question": "`/model` শুধু একটা provider দেখাচ্ছে। নতুন provider যোগ করতে কী করবে?",
+      "options": [
+        "`/new` চালাবে",
+        "session ছেড়ে টার্মিনালে `hermes model` চালাবে",
+        "Hermes মুছে ফেলবে",
+        "কিছুই করার নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "`/model` কেবল আগে-সেট-করা provider-এর মধ্যে বদলায়। নতুন যোগ হয় `hermes model`-এ।"
+    },
+    {
+      "question": "মাঝপথে `/model` বদলালে কী খরচ হয়?",
+      "options": [
+        "কিছুই না",
+        "prompt cache রিসেট হয়, পরের message পুরো কথোপকথন পূর্ণ দামে আবার পড়ে",
+        "খরচ কমে",
+        "Hermes বন্ধ হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "তাই লম্বা chat-এ delegation বা নতুন session ভালো।"
+    },
+    {
+      "question": "দুজন agent একই Hermes home-এ চালালে কী সমস্যা?",
+      "options": [
+        "দুজনেই memory লেখে ও পরস্পরেরটা পড়ে, গোলমাল হয়",
+        "কোনো সমস্যা নেই",
+        "দ্রুত চলে",
+        "বিল কমে"
+      ],
+      "answerIndex": 0,
+      "explanation": "প্রতি agent-এর জন্য আলাদা profile বা home রাখো।"
+    },
+    {
+      "question": "`hermes backup` আর `hermes profile export`-এর মূল পার্থক্য?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "backup পুরো মেশিন স্থানান্তরের (credential সহ, .zip), export শুধু একটা profile শেয়ারের (credential ছাড়া, .tar.gz)",
+        "export বড়",
+        "backup শুধু Windows-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "credential থাকে কি না আর ব্যবহারের উদ্দেশ্য আলাদা।"
+    },
+    {
+      "question": "MCP tool দেখা যাচ্ছে না। প্রথমে কী দেখবে?",
+      "options": [
+        "কম্পিউটারের রং",
+        "লগে MCP error, server `tools/list`-এ উত্তর দেয় কি না, `include/exclude/enabled`, আর config বদলে `/reload-mcp`",
+        "শুধু Hermes reinstall",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ধাপে ধাপে: লগ, server, ছাঁকনি, তারপর reload।"
+    },
+    {
+      "question": "\"Could not open a stream to <host> after N attempts\" এসেছে। বিল সম্পর্কে কী সত্য?",
+      "options": [
+        "পুরো দাম কাটা হয়েছে",
+        "কোনো stream শুরুই হয়নি, তাই বিল হয়নি",
+        "দ্বিগুণ বিল",
+        "অর্ধেক বিল"
+      ],
+      "answerIndex": 1,
+      "explanation": "stream শুরুই হয়নি বলে provider কোনো কাজ করেনি।"
+    }
+  ],
+  "recap": [
+    "FAQ পাতা লক্ষণ ধরে ধরে সমস্যার ছক দেয়: Installation, Provider, Terminal, Messaging, Performance, MCP।",
+    "Hermes-এর কোনো telemetry নেই। শুধু তোমার provider-এ API call যায়।",
+    "`/model` শুধু আগে-সেট-করা provider বদলায়। নতুন provider-এ `hermes model`।",
+    "আটকে গেলে `hermes doctor` আর `hermes logs` প্রথম হাতিয়ার।",
+    "`hermes backup` পুরো মেশিনের, `profile export` একটা profile-এর (credential ছাড়া)।"
+  ]
+}

@@ -1,0 +1,215 @@
+{
+  "contentId": "hermes-doc-user-guide-docker",
+  "title": "Docker",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/docker",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে Docker container-এ চালানো, volume, port, gateway আর upgrade বুঝবে এবং image, container, volume, port, loopback-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: কাচের বাক্সে রোবট বন্ধু\n\nধরো তোমার একটা ছোট্ট রোবট বন্ধু আছে, **Hermes**। তুমি তাকে একটা **কাচের বাক্সে** (container) রেখে দিলে। বাক্সের ভেতরে তার নিজের ঘর, নিজের টেবিল, সব আছে। বাইরের বাড়ির আসবাব সে ছুঁতে পারে না। কিছু ভাঙলেও বাক্সের ভেতরেই ভাঙবে।\n\nকিন্তু একটা জিনিস দরকার: রোবট যা শেখে, যা লেখে, সেই খাতাগুলো যেন বাক্স ভেঙে গেলেও না হারায়। তাই বাক্সের গায়ে একটা **জানালা** (volume) রাখা হলো। বাক্সের ভেতরের `/opt/data` ফোল্ডারটা আসলে তোমার বাড়ির `~/.hermes` ফোল্ডার।\n\nএটাই **Hermes on Docker**: agent চলে container-এ, কিন্তু তার সব স্মৃতি ও সেটিং থাকে তোমার host-এ (মানে তোমার নিজের কম্পিউটারে)।\n\n**কেন Docker?** নিজের কম্পিউটারে সরাসরি Hermes চালালে সে তোমার ফাইলপত্র ছুঁতে পারে, আর install-এ নানা প্রোগ্রাম লাগে। Docker-এ সব তৈরি অবস্থায় একটা বাক্সে আসে (Python, browser, সব), আর server-এ সারাক্ষণ চালু রাখাও সহজ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Docker, image, container\n**Image** হলো একটা সিল-করা রেসিপি-প্যাকেট (সব প্রোগ্রাম আগে থেকে ভরা)। **Container** হলো সেই প্যাকেট খুলে চালু করা একটা বাক্স। একটা image থেকে অনেক container হতে পারে, যেমন একটা কেকের ছাঁচ থেকে অনেক কেক। **Docker** হলো এই বাক্স বানানো ও চালানোর টুল।\n\n### ২) Host\nযে কম্পিউটারে Docker চলছে। বাক্সের বাইরের বাড়ি।\n\n### ৩) Volume ও mount\nবাক্সের ভেতরের একটা ফোল্ডারকে বাইরের একটা ফোল্ডারের সঙ্গে জুড়ে দেওয়া, যেন একই ফোল্ডার দুই ঘর থেকে দেখা যায়। বাক্স মুছে ফেললেও volume-এর ডেটা থেকে যায়।\n\n### ৪) Port\nকম্পিউটারের অনেকগুলো \"জানালার নম্বর\"। যেমন `8642`। কেউ বাইরে থেকে ওই নম্বরে টোকা দিলে ভেতরের নির্দিষ্ট প্রোগ্রাম সাড়া দেয়। `-p 8642:8642` মানে \"বাইরের ৮৬৪২ নম্বর জানালা ভেতরের ৮৬৪২-এর সঙ্গে জুড়ে দাও।\"\n\n### ৫) Gateway\nHermes-কে Telegram/Discord-এর মতো chat app-এর সঙ্গে জোড়া লাগানো পোস্ট অফিস। এটা সারাক্ষণ চালু থাকে।\n\n### ৬) Dashboard ও webapp\n**Dashboard** = browser-এ খোলা Hermes-এর নিয়ন্ত্রণ-পাতা (সেটিং, খরচ দেখা)। **Webapp** = browser-এ Hermes Desktop।\n\n### ৭) Loopback (`127.0.0.1`)\nকম্পিউটারের নিজের সঙ্গে নিজে কথা বলার ঠিকানা। এতে শুধু তুমি নিজে ঢুকতে পারো, বাইরের কেউ না। `0.0.0.0` মানে সব দিক থেকে ঢোকা যায়।\n\n### ৮) Auth, Basic auth, OAuth, OIDC\n**Auth** (authentication) = \"তুমি কে\" প্রমাণ করা। **Basic auth** = username আর password। **OAuth/OIDC** = \"Google দিয়ে login\"-এর মতো অন্য কারো মাধ্যমে পরিচয় প্রমাণ।\n\n### ৯) SSH\nদূরের কম্পিউটারে নিরাপদে ঢোকার দরজা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Docker-এর দুটো আলাদা ভূমিকা\n\n| ভূমিকা | কী হয় | কখন লাগে |\n|---|---|---|\n| **Hermes inside Docker** | agent নিজেই container-এ চলে। এই lesson-এর মূল বিষয়। | server-এ বা নিরাপদ বাক্সে Hermes চালাতে |\n| **Docker as terminal backend** | agent চলে host-এ, কিন্তু তার command-গুলো একটা স্থায়ী sandbox container-এ চলে (`terminal.backend: docker`)। | Hermes নিজের কম্পিউটারে, কিন্তু বিপজ্জনক কমান্ড বাক্সে |\n\n**Sandbox** মানে বালির বাক্স: ভেতরে যা ঘটুক বাইরে ছড়ায় না।\n\n## Image tag\n\n**Tag** হলো image-এর সংস্করণ-লেবেল।\n\n| tag | মানে |\n|---|---|\n| `latest` / `stable` | পুরো release পরীক্ষা পেরোনোর পরেই এগুলো দেওয়া হয় |\n| `main` | main branch-এর development build (এখনও তৈরি হচ্ছে এমন সংস্করণ) |\n| `X.Y.Z` | নির্দিষ্ট stable version। ঠিক এক জিনিস চাইলে digest (অনন্য ছাপ) দিয়ে pin করো |\n\nimage দুই ধরনের CPU-র জন্য: **amd64** (সাধারণ Intel/AMD) ও **arm64** (যেমন Apple M-সিরিজ)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রথম চালানো (Quick start)\n\nপ্রথমে host-এ `~/.hermes` ফোল্ডার বানাও, তারপর setup চালাও:\n\n```bash\nmkdir -p ~/.hermes\ndocker run -it --rm -v ~/.hermes:/opt/data nousresearch/hermes-agent setup\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `mkdir -p ~/.hermes` | ফোল্ডার বানাও (আগে থাকলে ঠিক আছে) | জানালার বাইরের ঘরটা তৈরি করা |\n| `docker run` | একটা container চালু করো | বাক্স খুলে চালু |\n| `-it` | interactive: তুমি লিখতে পারবে, সে দেখাবে | বাক্সের সঙ্গে কথা বলা |\n| `--rm` | কাজ শেষে বাক্স মুছে ফেলো | ব্যবহারের পর কাগজের গ্লাস ফেলা |\n| `-v ~/.hermes:/opt/data` | volume: বাইরের `~/.hermes` = ভেতরের `/opt/data` | বাক্সের জানালা |\n| `nousresearch/hermes-agent` | কোন image (রেসিপি-প্যাকেট) | |\n| `setup` | Hermes-এর সেটআপ কমান্ড | |\n\nsetup তোমার key-গুলো `~/.hermes/.env`-এ লিখে রাখে। (`.env` = গোপন চাবির খাতা।) Nous Portal-এর refresh token রাখতে container-এর ভেতরে `hermes setup --portal` চালাতে হয়। `--rm` থাকলেও ডেটা যায় না, কারণ সব volume-এ (host-এ) লেখা হয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Browser-ভিত্তিক VPS console এড়াও",
+      "markdown": "কিছু browser console `:`, `@`, `=`, `/` অক্ষর নষ্ট করে ফেলে, key বা URL ভুল হয়ে যায়। (**VPS** = ভাড়া করা দূরের কম্পিউটার।) তাই **SSH** ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Gateway mode: সারাক্ষণ চালু রাখা\n\nTelegram/Discord-এর মতো messaging bot চালাতে gateway চালু রাখতে হয়:\n\n```bash\ndocker run -d --name hermes --restart unless-stopped \\\n  -v ~/.hermes:/opt/data -p 8642:8642 \\\n  nousresearch/hermes-agent gateway run\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `-d` | detached: পেছনে চলুক, terminal আটকে না থাকুক | সারাক্ষণ চালাতে |\n| `--name hermes` | বাক্সের নাম | পরে `docker logs hermes` লিখে খুঁজতে |\n| `--restart unless-stopped` | ক্র্যাশ বা reboot হলেও নিজে আবার চালু; শুধু তুমি থামালে থামে | server-এ যাতে bot হঠাৎ না ঘুমায় |\n| `-p 8642:8642` | port জুড়ে দেওয়া | বাইরে থেকে API ধরতে |\n| `gateway run` | gateway চালাও | chat bot চালাতে |\n\n- Port **8642** দিয়ে OpenAI-compatible API (অন্য app যে ভাষায় AI-র সঙ্গে কথা বলতে শেখে) ও health endpoint (প্রোগ্রাম বেঁচে আছে কি না জিজ্ঞাসার জানালা) চলে। শুধু chat-এর জন্য এটা না খুললেও চলে।\n- **s6-overlay supervision:** s6 একটা ছোট তদারকি-প্রোগ্রাম, বাক্সের ভেতরে পাহারাদারের মতো। gateway crash করলে কয়েক সেকেন্ডে আবার উঠে আসে, আর `docker stop` ঠিকই কাজ করে। বন্ধ করতে `--no-supervise` বা `HERMES_GATEWAY_NO_SUPERVISE=1`।\n- Log (ঘটনার লেখা খাতা) যায় `docker logs` আর `logs/gateways/<profile>/current`-এ।\n- API server চালু করতে `API_SERVER_ENABLED=true`। বাইরে খুলতে চাইলে `API_SERVER_HOST=0.0.0.0` এবং কমপক্ষে ৮ অক্ষরের `API_SERVER_KEY` (যেমন `openssl rand -hex 32`, যা এলোমেলো ৬৪ অক্ষরের চাবি বানায়) দিতে হয়।\n- মানুষ ছাড়া চলা gateway/cron session-এ tool-loop (একই কাজ ঘুরে ঘুরে করা) থামানোর সুরক্ষা default চালু (`non_interactive_hard_stop_enabled`)। বন্ধ করতে `config.yaml`-এ `tool_loop_guardrails.non_interactive_hard_stop_enabled: false`।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Port বাইরে খোলা ঝুঁকির",
+      "markdown": "port public করলে যে কেউ চেষ্টা করতে পারে। key ছাড়া কখনো `0.0.0.0`-এ API খুলো না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "container-এর ভেতরে Hermes চলে, কিন্তু সব স্থায়ী ডেটা host-এর ~/.hermes ফোল্ডারে থাকে।",
+        "nodes": [
+          {
+            "id": "user",
+            "kind": "user",
+            "label": "তুমি / Telegram",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "c",
+            "kind": "server",
+            "label": "Hermes box",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "v",
+            "kind": "database",
+            "label": "/opt/data",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "h",
+            "kind": "database",
+            "label": "~/.hermes (host)",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "user",
+            "to": "c",
+            "label": "8642 / gateway"
+          },
+          {
+            "from": "c",
+            "to": "v",
+            "label": "পড়ে-লেখে"
+          },
+          {
+            "from": "v",
+            "to": "h",
+            "label": "volume mount"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Dashboard ও Webapp\n\n**Dashboard** চালু করতে `HERMES_DASHBOARD=1` দাও আর `-p 9119:9119` খোলো।\n\n| Variable | Default | মানে |\n|---|---|---|\n| `HERMES_DASHBOARD` | unset (service বন্ধ) | চালু করার সুইচ |\n| `HERMES_DASHBOARD_HOST` | `0.0.0.0` (শুধু নিজের জন্য চাইলে `127.0.0.1`) | কোথা থেকে ঢোকা যাবে |\n| `HERMES_DASHBOARD_PORT` | `9119` | কোন জানালা-নম্বরে |\n| `HERMES_DASHBOARD_INSECURE` | deprecated, এখন কিছুই করে না | অচল, উপেক্ষা করো |\n\nloopback ছাড়া অন্য address-এ চালালে **auth** লাগে। তিনটা উপায়: Basic auth (`HERMES_DASHBOARD_BASIC_AUTH_USERNAME` / `..._PASSWORD`), Nous Portal OAuth (`HERMES_DASHBOARD_OAUTH_CLIENT_ID`), অথবা নিজের OIDC (`HERMES_DASHBOARD_OIDC_ISSUER` + `..._CLIENT_ID`)। কোনো provider না থাকলে dashboard **চালুই হয় না** (fail closed, মানে অনিরাপদ হওয়ার চেয়ে বন্ধ থাকা ভালো)। Reverse proxy-র পেছনে থাকলে (proxy = মাঝখানের দারোয়ান যে বাইরের অনুরোধ ভেতরে পাঠায়) `config.yaml`-এ `dashboard.public_url` ও `dashboard.trusted_proxies` দাও, নির্দিষ্ট IP বা সীমাবদ্ধ CIDR (IP-র একটা পরিসর); `*`, `0.0.0.0/0` গ্রহণযোগ্য নয়।\n\n**Webapp** হলো browser-এ Hermes Desktop। `config.yaml`-এর `webapp` অংশে `enabled`, `host`, `port` (default `9120`), `public_url`। `-p 9120:9120` খুলতে হয় এবং loopback-এর বাইরে sign-in provider ছাড়া চালু হয় না।\n\n## Interactive CLI\n\n```bash\ndocker run -it --rm -v ~/.hermes:/opt/data nousresearch/hermes-agent\n# বা চলমান container-এর ভেতরে:\n/opt/hermes/.venv/bin/hermes\n```\n\nপ্রথমটায় নতুন বাক্সে সরাসরি chat শুরু; দ্বিতীয়টায় যে বাক্স আগে থেকে চলছে তার ভেতরে `hermes` প্রোগ্রাম খোলা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## স্থায়ী volume: `/opt/data`\n\nhost-এর `~/.hermes` ↔ container-এর `/opt/data`। এখানে থাকে: `.env`, `config.yaml`, `SOUL.md`, `sessions/`, `memories/`, `skills/`, `home/`, `cron/`, `hooks/`, `logs/`, `skins/`। `home/` হলো `git`, `ssh`, `gh`, `npm`-এর মতো tool-এর HOME (তাদের \"নিজের ঘর\")।\n\n**Immutable install tree:** (immutable = অপরিবর্তনীয়।) `/opt/hermes` শুধু পড়ার জন্য (root-এর মালিকানা); `hermes` user (UID 10000) সেখানে লিখতে পারে না। **কেন?** যাতে agent ভুল করে নিজের মূল প্রোগ্রামই নষ্ট করতে না পারে। সব পরিবর্তনশীল ডেটা `/opt/data`-তে। core আপডেট আসে নতুন image দিয়ে।\n\n### `state.db` ও virtiofs/9p সমস্যা\n\n`state.db` হলো Hermes-এর আলাপ-জমানোর ডেটার আলমারি (SQLite)। এটা **WAL mode** নামের লেখার পদ্ধতি ব্যবহার করে, যা কিছু ফাইল-ভাগাভাগির ব্যবস্থায় (virtiofs/9p, যেমন Docker Desktop-এর ফোল্ডার-জোড়া) ঠিকমতো চলে না। Docker Desktop (macOS/Windows), Podman on macOS, OrbStack-এ WAL mode নিরাপদ নয়। নতুন database আপনা-আপনি rollback (`DELETE`) mode-এ যায়; পুরনো WAL database-এ error আসে ও `hermes doctor` ধরিয়ে দেয়। সমাধান: সব process বন্ধ করে `PRAGMA journal_mode=DELETE` চালাও এবং `database.journal_mode: delete` সেট করো, অথবা named volume ব্যবহার করো: `-v hermes-data:/opt/data` (Docker নিজের ভেতরে জায়গা সামলায়)। NFS/SMB/FUSE (নেটওয়ার্ক-ফোল্ডারের ধরন) নিজে থেকে ধরা পড়ে না, হাতে `database.journal_mode: delete` দিতে হয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "এক data directory-তে দুটো gateway নয়",
+      "markdown": "একই `~/.hermes` ফোল্ডারে কখনো দুটো gateway container চালিও না। দুই বাক্স একই খাতায় একসঙ্গে লিখে গোলমাল বাধাবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Multi-profile\n\n**Profile** = Hermes-এর আলাদা আলাদা ঘর (নিজের সেটিং, স্মৃতি, key)। একই বাক্সে একাধিক চালানো যায়।\n\n- `hermes profile create <name>`: প্রতিটা profile পায় নিজস্ব s6 slot (তদারকির আলাদা জায়গা)।\n- জীবনচক্র: `hermes -p <name> gateway start|stop|restart|status`, আর `hermes profile delete`।\n- boot-এর সময় (কম্পিউটার বা বাক্স চালু হওয়ার সময়) `gateway_state.json` দেখে শুধু আগে `running` থাকা profile আবার চালু হয়; আপনি `hermes gateway stop` করলে সেটা বন্ধই থাকে।\n- OpenAI-compatible client-এ প্রতিটা profile-এর আলাদা `API_SERVER_PORT` লাগে (যেমন `8643`)।\n- ডিফল্টে এক container-এ অনেক profile। আলাদা container তখনই, যখন resource limit (`--memory`, `--cpus`), image pin, network ভাগ বা compliance (নিয়মকানুন মানার শর্ত) দরকার।\n\n## Resource ও Compose\n\nন্যূনতম: 1 GB RAM, 1 CPU, 500 MB disk। সুপারিশ: 2–4 GB RAM, 2 CPU, 2+ GB disk। browser tool-এ কমপক্ষে 2 GB। (RAM = কম্পিউটারের কাজের টেবিল, CPU = মস্তিষ্ক, disk = আলমারি।)\n\n**Docker Compose** হলো একটা ফাইলে বাক্সের সব সেটিং লিখে রাখার ব্যবস্থা, যাতে লম্বা `docker run` প্রতিবার না লিখতে হয়:\n\n```yaml\nservices:\n  hermes:\n    image: nousresearch/hermes-agent:latest\n    restart: unless-stopped\n    command: gateway run\n    ports: [\"8642:8642\", \"9119:9119\"]\n    volumes: [\"~/.hermes:/opt/data\"]\n    environment:\n      - HERMES_DASHBOARD=1\n```\n\ndocs-এর উদাহরণে limit-ও আছে: `memory: 4G`, `cpus: \"2.0\"`। কমান্ড: `docker compose up -d` (চালু), `docker compose logs -f` (log লাইভ দেখা), `docker compose pull` (নতুন image আনা)।\n\n## Environment variable ও upgrade\n\nkey লোড হয় `/opt/data/.env` থেকে; `-e` flag তা override করে (CI বা secrets manager-এর জন্য ভালো)। (**Override** = আগের মান বাতিল করে নতুনটা বসানো।)\n\n```bash\ndocker pull nousresearch/hermes-agent:latest\ndocker rm -f hermes\n# আগের docker run আবার চালাও\n```\n\n| লাইন | মানে |\n|---|---|\n| `docker pull ...` | নতুন image নামাও |\n| `docker rm -f hermes` | পুরনো বাক্স জোর করে সরাও (ডেটা volume-এ, তাই নিরাপদ) |\n| আগের `docker run` | একই volume দিয়ে নতুন বাক্স চালু |\n\nboot-এ config migration চলে (পুরনো সেটিং নতুন নিয়মে বদলানো) এবং `config.yaml`/`.env`-এর timestamp-সহ backup হয়। `HERMES_SKIP_CONFIG_MIGRATION=1` দিলে এড়ানো যায়। `hermes update` image-এর কোড বদলাতে অস্বীকার করে; আপডেট মানে নতুন image।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নতুন tool যোগ করার পাঁচ উপায় (সহজ থেকে টেকসই)\n\n**সমস্যা:** বাক্সের ভেতরে এমন কিছু নেই যা তোমার দরকার (যেমন একটা বিশেষ প্রোগ্রাম)। কীভাবে যোগ করবে?\n\n1. `npx` / `uvx` দিয়ে npm বা PyPI tool চালাও (এগুলো \"নামিয়ে সঙ্গে সঙ্গে চালানোর\" কমান্ড), config রাখো `/opt/data`-তে।\n2. `docker exec -u root` দিয়ে হাতে install। container নতুন করে বানালে হারিয়ে যায়।\n3. **Derived image**: `FROM nousresearch/hermes-agent:latest`, `USER root`, apt install, তারপর `docker build -t my-hermes:latest .`। (নিজের রেসিপি-প্যাকেট বানানো, মূলটার ওপর কিছু যোগ করে।)\n4. **Sidecar container**: পাশে আরেকটা বাক্স, একই bridge network (`hermes-net`, বাক্সদের ভেতরের ফোনলাইন)-এ, নাম ধরে ডাকো।\n5. upstream-এ GitHub-এ contribute করো।\n\n## Local model server (vLLM/Ollama)\n\n**Local model server** মানে নিজের কম্পিউটারে চালানো AI (যেমন vLLM বা Ollama), অনলাইন কোম্পানির বদলে। Compose-এ Hermes ও model server একই `hermes-net`-এ রাখো এবং container-এর নাম `base_url`-এ দাও (`http://vllm:8000/v1`, `http://ollama:11434/v1`):\n\n```yaml\nmodel:\n  provider: custom\n  model: <served-model-name>\n  base_url: http://vllm:8000/v1\n  api_key: \"none\"\n```\n\nনিয়ম: `base_url`-এর শেষে `/` নয়; model-এর নাম `--served-model-name`-এর সাথে মিলতে হবে; server-কে `0.0.0.0`-এ শুনতে হবে। একা container হলে macOS/Windows-এ `host.docker.internal` (বাক্স থেকে বাইরের বাড়ির ঠিকানা), Linux-এ `--network host` + `127.0.0.1`। পরীক্ষা: `docker exec hermes curl -s http://vllm:8000/v1/models`।\n\n## Troubleshooting\n\n| সমস্যা | কী দেখবে |\n|---|---|\n| সঙ্গে সঙ্গে exit | `docker logs hermes`; প্রায়ই `.env` নেই বা port দ্বন্দ্ব |\n| Permission error | `HERMES_UID`/`HERMES_GID` (বা `PUID`/`PGID`) host-এর মালিকের সাথে মেলাও; data tree সবার জন্য খুলো না |\n| Browser tool ক্রাশ | `--shm-size=1g` |\n| Zombie process (মরেও না-মরা প্রোগ্রাম) | entrypoint override করলে `init: true` বা `--init` |\n| Gateway আটকে | `docker restart hermes` |\n| Health | `docker logs --tail 50 hermes`, `docker stats hermes` |\n\n`HERMES_HOME_MODE` (যেমন `0755`) দিয়ে default `0700` লক বদলানো যায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Image-এর ভেতরে কী আছে",
+      "markdown": "Debian 13.4, Python 3.14, Node.js 26, full Chromium, FFmpeg, ripgrep, uv, Git, OpenSSH, Docker CLI ও s6-overlay। optional backend ইনস্টল হয় `/opt/data/installs`-এ; `security.allow_lazy_installs: false` দিলে তা আটকানো যায়। root হিসেবে gateway চালাতে চাইলে `HERMES_ALLOW_ROOT_GATEWAY=1` লাগে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Container-এর `/opt/data` host-এর কোন ফোল্ডারের সাথে যুক্ত থাকে (quick start অনুযায়ী)?",
+      "options": ["`~/.hermes`", "`/tmp`", "`/etc`", "`~/Downloads`"],
+      "answerIndex": 0,
+      "explanation": "`-v ~/.hermes:/opt/data` মানে বাইরের `~/.hermes` ভেতরে `/opt/data` হিসেবে দেখা যায়।"
+    },
+    {
+      "question": "Gateway container-এ port 8642 কী কাজে লাগে?",
+      "options": [
+        "SSH-এর জন্য",
+        "dashboard",
+        "OpenAI-compatible API ও health endpoint",
+        "database"
+      ],
+      "answerIndex": 2,
+      "explanation": "শুধু chat-এর জন্য এটা না খুললেও চলে।"
+    },
+    {
+      "question": "Dashboard-কে loopback ছাড়া অন্য address-এ চালালে auth provider না থাকলে কী হয়?",
+      "options": [
+        "চালু হয়, কিন্তু ধীর",
+        "dashboard চালুই হয় না (fail closed)",
+        "সবার জন্য খুলে যায়",
+        "নিজে password বানায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "অনিরাপদ হওয়ার চেয়ে বন্ধ থাকাই ভালো।"
+    },
+    {
+      "question": "Docker Desktop (macOS)-এ `state.db`-তে সমস্যা হলে কোনটা সমাধান?",
+      "options": [
+        "Hermes মুছে ফেলা",
+        "port বদলানো",
+        "`--rm` বাদ দেওয়া",
+        "`database.journal_mode: delete` বা named volume"
+      ],
+      "answerIndex": 3,
+      "explanation": "virtiofs-এ WAL নিরাপদ নয়; DELETE mode বা named volume দরকার।"
+    },
+    {
+      "question": "কোন উপায়ে যোগ করা tool container নতুন করে বানালেও টিকে থাকে?",
+      "options": [
+        "`docker exec -u root` দিয়ে হাতে install",
+        "শুধু কমান্ড লিখে রাখা",
+        "Derived image",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Derived image-এ tool image-এর অংশ হয়ে যায়।"
+    },
+    {
+      "question": "`/opt/hermes` সম্পর্কে কোনটা সঠিক?",
+      "options": [
+        "শুধু পড়ার জন্য (immutable); ডেটা `/opt/data`-তে",
+        "agent লিখতে পারে",
+        "এখানে .env থাকে",
+        "host-এর `~/.hermes`"
+      ],
+      "answerIndex": 0,
+      "explanation": "মূল প্রোগ্রাম যাতে নষ্ট না হয়; আপডেট আসে নতুন image-এ।"
+    },
+    {
+      "question": "Permission error এলে প্রথমে কী মেলাতে বলা হয়েছে?",
+      "options": [
+        "Docker-এর ভার্সন",
+        "port নম্বর",
+        "image-এর tag",
+        "`HERMES_UID`/`HERMES_GID` host-এর মালিকের সাথে"
+      ],
+      "answerIndex": 3,
+      "explanation": "বাক্সের user আর host-এর ফোল্ডারের মালিক মিলতে হবে।"
+    },
+    {
+      "question": "`--restart unless-stopped`-এর কাজ কী?",
+      "options": [
+        "বাক্স একবার চালায়",
+        "ক্র্যাশ বা reboot-এর পর নিজে আবার চালু করে, তুমি থামালে থামে",
+        "image আপডেট করে",
+        "port খোলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "server-এ bot যেন হঠাৎ ঘুমিয়ে না পড়ে।"
+    }
+  ],
+  "recap": [
+    "Hermes container-এ চলে, কিন্তু স্থায়ী ডেটা `/opt/data` = host-এর `~/.hermes`-এ থাকে।",
+    "Gateway চালাতে `gateway run`; s6 supervision crash হলে আবার চালু করে; port 8642 API, 9119 dashboard, 9120 webapp।",
+    "non-loopback dashboard/webapp-এ auth provider লাগে, নইলে চালুই হয় না।",
+    "`/opt/hermes` read-only; upgrade মানে নতুন image pull করে একই volume-এ আবার চালানো।",
+    "এক data directory-তে একটাই gateway; একাধিক bot চাইলে profile ব্যবহার করো।",
+    "vLLM/Ollama-র মতো local server-কে `hermes-net`-এ রেখে container নাম দিয়ে `base_url` দাও।"
+  ]
+}

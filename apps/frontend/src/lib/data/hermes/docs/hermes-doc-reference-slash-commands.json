@@ -1,0 +1,134 @@
+{
+  "contentId": "hermes-doc-reference-slash-commands",
+  "title": "Slash Commands",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/slash-commands",
+  "oneLiner": "এই lesson শেষে তুমি slash command কী, CLI আর messaging-এ কোন হুকুম কখন লাগে এবং admin, alias, context-এর মতো শব্দগুলো সহজে বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: দুটো দরজা, একই রিমোট\n\nরাহুলের বাসায় দুটো ঘর। একটা **টার্মিনাল ঘর** (CLI), আরেকটা **মেসেজিং ঘর** (Telegram, Discord, Slack...)। দুই ঘরেই সে Hermes-কে ছোট ছোট হুকুম দিতে পারে, যেমন `/new` (নতুন আলাপ) আর `/model` (AI বদল)। হুকুমগুলো **`/` দিয়ে শুরু**। বেশিরভাগ হুকুম দুই ঘরেই চলে, কিন্তু কিছু শুধু একটা ঘরে। যেমন `/skin` (রং বদল) টার্মিনালে অর্থবহ, আর `/sethome` শুধু মেসেজিং-এ।\n\nএই **Slash Commands reference** পেজ সেই হুকুমের তালিকা। অনেকগুলো entry আছে। আমরা কাঠামো আর দরকারি হুকুম শিখব।\n\n**এটা না থাকলে কী সমস্যা হতো?** Hermes-এর সাথে আলাপ চলাকালীন কিছু বদলাতে চাইলে তোমাকে আলাপ ছেড়ে বেরিয়ে সেটিং বদলে আবার ঢুকতে হতো। Slash command থাকায় আলাপের মাঝেই \"মডেল বদলাও\", \"নতুন খাতা খোলো\" বলা যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Slash command\n`/` দিয়ে শুরু ছোট হুকুম, chat-এর ভেতরে লেখা হয়। আর `hermes ...` হলো **CLI command**, যা টার্মিনালে আলাদাভাবে লেখা হয় আলাপের বাইরে। Slash command আলাপের **ভেতরের** রিমোট।\n\n### CLI ও Messaging\n**CLI** হলো টার্মিনালের কালো জানালা। **Messaging** মানে Telegram, Discord, Slack-এর মতো chat app। দুই জায়গায় হুকুমের তালিকা কিছুটা আলাদা।\n\n### Session\nএকটা কথোপকথনের খাতা। `/new` নতুন খাতা খোলে।\n\n### Context ও Compress\n**Context** হলো Hermes-এর সামনে এখন যে আলাপ খোলা আছে, মানে তার \"মনে রাখার টেবিল\"। টেবিল ছোট, ভরে গেলে আর জায়গা থাকে না। **`/compress`** পুরোনো কথা সংক্ষেপ করে টেবিলে জায়গা বানায়।\n\n### Provider, Model, Reasoning\n**Provider** = যে কোম্পানি AI চালায়। **Model** = সেই কোম্পানির নির্দিষ্ট AI। **Reasoning** = AI কতটা গভীরভাবে ভাববে।\n\n### Tool, Toolset, Skill\n**Tool** হলো Hermes-এর হাতিয়ার (ফাইল পড়া, ওয়েব খোঁজা)। **Toolset** হলো হাতিয়ারের দল। **Skill** হলো তাকে শেখানো একটা পদ্ধতি।\n\n### Admin ও সাধারণ user\nMessaging-এ **admin** সব হুকুম চালাতে পারে। সাধারণ user শুধু অনুমোদিত কয়েকটা (স্কুলে প্রধান শিক্ষক আর ছাত্রের অধিকার আলাদা)।\n\n### Alias\nএকই হুকুমের ছোট বা বিকল্প নাম। যেমন `/reset` হলো `/new`-এর alias।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কে এই হুকুম পড়ে?\n\n- **CLI:** ভেতরের `cli.py` ফাইল হুকুম ধরে। Built-in command-এর নাম **case-insensitive**, মানে বড়-ছোট হাতের অক্ষরে ফারাক হয় না।\n- **Messaging:** `gateway/run.py` ধরে।\n- **Prefix matching:** `/h` লিখলে `/help` হয়ে যায়। তবে পুরো নাম আর alias আগে অগ্রাধিকার পায়।\n- **Skill-এর নাম built-in-এর সাথে মিলে গেলে** সেই skill `/<name>` পায় না। তাকে `/skill <name>` দিয়ে লোড করতে হয়।\n- **Admin/user ভাগ:** platform-এর `extra:` block-এ `allow_admin_from` আর `user_allowed_commands` দিলে সাধারণ ব্যবহারকারী কেবল অনুমোদিত হুকুম পায় (`/help` ও `/whoami` সবসময় পায়)। `allow_admin_from` না দিলে **সবাই সব হুকুম** চালাতে পারে।\n\n## CLI-র গুরুত্বপূর্ণ হুকুম (দল ধরে)\n\n### Session\n\n| হুকুম | কাজ | কখন লাগে |\n|---|---|---|\n| `/new [name]` (alias `/reset`) | নতুন session। `now`, `--yes` বা `-y` দিলে confirmation (আরেকবার জিজ্ঞাসা) এড়ায় | নতুন বিষয়ে কথা শুরু করতে |\n| `/compress [here [N] \\| focus topic]` | context ছোট করা। `here N` শেষ N টা আসা-যাওয়া অক্ষত রাখে (default ২) | আলাপ লম্বা হয়ে ধীর বা ভরে গেলে |\n| `/resume [name]` | নামের session চালু। নাম না দিলে তালিকা | পুরোনো আলাপে ফিরতে |\n| `/title <name>` | session-এর নাম দেওয়া | পরে খুঁজে পেতে |\n| `/retry`, `/undo` | আবার চেষ্টা / শেষটা ফেরানো | উত্তর পছন্দ না হলে |\n| `/stop` | background process বন্ধ | চলতে থাকা কাজ থামাতে |\n| `/queue <prompt>` (`/q`) | পরের কাজ সারিতে রাখা | এখনকার কাজ থামাতে চাও না |\n| `/steer <prompt>` | পরের tool call-এর পর একটা নোট ঢোকানো | কাজ থামিয়ো না, শুধু দিক বদলাও |\n| `/bg <prompt>` | background session | আলাদা কাজ চালিয়ে নিজে অন্য কথা বলতে |\n| `/btw <question>` | পাশের প্রশ্ন (চলতি কাজ না থামিয়ে, transcript নিয়ে) | \"বাই দ্য ওয়ে\" প্রশ্ন |\n| `/goal <text>` | স্থায়ী লক্ষ্য। auto-continue judge (একটা বিচারক যে ঠিক করে কাজ শেষ হলো কি না)। default budget ২০ turn | বড় লক্ষ্য নিজে নিজে এগোতে দিতে |\n| `/rollback [number]` | checkpoint (সংরক্ষিত বিন্দু) দেখা/ফেরানো | ভুল বদল ফেরাতে |\n\n### Configuration\n\n- `/model [name]` — `provider:model`, `custom:model`, `@preset/<slug>` ইত্যাদি নেয়। Flag: `--global` (স্থায়ী), `--session` (এই খাতা), `--once` (একবার), `--refresh`, `--provider <name>`, `--reasoning <level>`। `/model reset` session-এর বাছাই ফেলে দেয়।\n- `/reasoning [level|show|hide|...] [--global]`, `/fast`, `/verbose` (off → new → all → verbose ঘুরে ঘুরে, কতটা খবর দেখাবে), `/personality [name]` (স্বভাব), `/approvals [manual|smart|off]` (অনুমতি-চাওয়ার ধরন), `/yolo` (অনুমতি-চাওয়া বন্ধ), `/busy [queue|steer|interrupt|status]` (ব্যস্ত থাকার সময় নতুন বার্তা এলে কী হবে)।\n\n### Tool ও Skill\n\n- `/tools [list|disable|enable] [name...]` — disable করলে session reset হয়।\n- `/toolsets`, `/skills`, `/memory [pending|approve|reject|approval]`, `/cron` (সময় ঠিক করা কাজ), `/kanban <action>` (কাজের বোর্ড)।\n- `/reload-mcp` (alias `/reload_mcp`) আর `/reload-skills`: config বদলের পর নতুন করে লোড। MCP হলো বাইরের হাতিয়ার জোড়ার নিয়ম।\n\n### Info ও বের হওয়া\n\n`/help`, `/version`, `/whoami`, `/usage` (কত খরচ), `/status`, `/context`, `/insights`, `/update`। বের হতে `/quit` (alias `/exit`)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "CLI আর messaging-এ হুকুমের আচরণের পার্থক্য।",
+        "beforeTitle": "শুধু CLI",
+        "before": "`/skin`, `/snapshot`, `/export`, `/import`, `/reload`, `/tools`, `/toolsets`, `/browser`, `/config`, `/cron`, `/clear`, `/history`, `/save`, `/copy`, `/handoff`, `/prompt`, `/quit`...",
+        "afterTitle": "শুধু messaging",
+        "after": "`/sethome`, `/restart`, `/approve`, `/deny`, `/topic` (Telegram DM), `/platform`, `/pause`, `/discard`, `/commands`"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Messaging-এর বিশেষ ব্যাপার\n\n- **ঝুঁকিপূর্ণ কাজের অনুমতি:** `/approve [session|always]` আর `/deny`। Hermes কোনো বিপজ্জনক কাজের আগে chat-এ জিজ্ঞেস করে, তুমি এই হুকুমে \"হ্যাঁ\" বা \"না\" বলো।\n- **বাড়ি ঠিক করা:** `/sethome` দিলে ওই chat-ই cron-এর (সময়-ঠিক-করা কাজের) ফল পাঠানোর \"home channel\" হয়।\n- **`/verbose` default বন্ধ।** চালু করতে `display.tool_progress_command: true`।\n- **`/goal` নতুন করে দিতে হলে** আগে `/stop`।\n- **`/sessions all`** শুধু admin-এর জন্য।\n- **Slack-এ thread-এর ভেতরে** native slash command চলে না। `!` prefix দাও: `!stop`, `!new`, `!status`। কিছু হুকুম `/hermes <subcommand>` আকারেও।\n- দুই জায়গাতেই চলে: `/status`, `/bg`, `/btw`, `/queue`, `/steer`, `/reload-mcp`, `/rollback`, `/diff`, `/approvals`, `/sessions`, `/loop`, `/yolo` ইত্যাদি।\n\n## নিজের হুকুম বানানো: Quick commands ও Model aliases\n\n`config.yaml`-এ `quick_commands:` লিখলে নিজের slash command পাওয়া যায়। দুই ধরনের:\n\n| `type` | কী করে | কখন লাগে |\n|---|---|---|\n| `exec` | shell command (কম্পিউটারের হুকুম) চালায় | যেমন `/deploy` লিখলেই একটা script চালাতে |\n| `alias` | অন্য slash command-কে ডাকে | লম্বা হুকুমের ছোট নাম বানাতে |\n\n**শুধু prompt-এর shortcut** (সাধারণ লেখা-বদল) সমর্থিত না।\n\nModel alias: `model_aliases:` (পূর্ণ রূপ) অথবা ছোট রূপে\n\n```bash\nhermes config set model.aliases.<name> provider/model\n```\n\nUser-র alias built-in ছোট নামকে ছাপিয়ে যায়। alias-এর নাম case-insensitive। **কখন লাগে:** `provider/model`-এর লম্বা নাম বারবার না লিখে একটা ছোট নাম ব্যবহার করতে।\n\n## ধ্বংসাত্মক হুকুমে নিশ্চিতকরণ\n\n`/clear`, `/new` (`/reset`), `/undo`, আর `/exit --delete` / `/quit --delete` তিন বিকল্পের modal (ভেসে ওঠা প্রশ্নের বাক্স) দেখায়: **Approve Once, Always Approve, Cancel**। একবারের জন্য এড়াতে `now`, `--yes` বা `-y` যোগ করো। সবসময়ের জন্য বন্ধ করতে `approvals.destructive_slash_confirm: false`। **কেন আছে?** ভুল করে আলাপ মুছে ফেলা ঠেকাতে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "`allow_admin_from` না দিলে সবাই admin",
+      "markdown": "একটা শেয়ার করা group bot-এ এই key না দিলে যে কেউ `/yolo`, `/tools disable` বা অন্য শক্তিশালী হুকুম চালাতে পারে। `allow_admin_from` ও `user_allowed_commands` সেট করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "হুকুম মনে না পড়লে",
+      "markdown": "CLI-তে `/help` দাও। `/palette` (বা Ctrl+P) দিয়েও খোঁজা যায়। Messaging-এ `/commands [page]` আছে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Slash command লিখতে `/h` দিলে কী হয়?",
+      "options": [
+        "error আসে",
+        "prefix matching-এ `/help` হয়ে যায় (পুরো নাম ও alias আগে পায়)",
+        "Hermes বন্ধ হয়",
+        "কিছুই হয় না"
+      ],
+      "answerIndex": 1,
+      "explanation": "prefix matching আছে। তবে পুরো নাম আর alias আগে অগ্রাধিকার পায়।"
+    },
+    {
+      "question": "কোন হুকুম শুধু messaging-এ চলে?",
+      "options": ["`/sethome`", "`/skin`", "`/tools`", "`/quit`"],
+      "answerIndex": 0,
+      "explanation": "`/sethome` মেসেজিং-এ cron ফলের ঠিকানা ঠিক করে। বাকিগুলো CLI-তে।"
+    },
+    {
+      "question": "Slack thread-এর ভেতরে `/stop` কাজ না করলে কী করবে?",
+      "options": [
+        "অপেক্ষা",
+        "Slack বদলাও",
+        "`!stop` লেখো",
+        "কম্পিউটার বন্ধ করো"
+      ],
+      "answerIndex": 2,
+      "explanation": "Slack thread-এর ভেতরে native slash command চলে না, তাই `!` prefix দাও।"
+    },
+    {
+      "question": "`/new`-এর confirmation modal এড়াতে কী যোগ করবে?",
+      "options": ["`please`", "`now`, `--yes` বা `-y`", "`/skip`", "কিছুই না"],
+      "answerIndex": 1,
+      "explanation": "একবারের জন্য এড়াতে এই শব্দগুলো যোগ হয়। স্থায়ীভাবে বন্ধ: `approvals.destructive_slash_confirm: false`।"
+    },
+    {
+      "question": "`quick_commands:`-এ কোন দুই `type` সমর্থিত?",
+      "options": [
+        "`exec` আর `alias`",
+        "`prompt` আর `text`",
+        "`shell` আর `copy`",
+        "`macro` আর `script`"
+      ],
+      "answerIndex": 0,
+      "explanation": "`exec` shell command চালায়, `alias` অন্য slash command ডাকে। শুধু prompt-shortcut সমর্থিত না।"
+    },
+    {
+      "question": "`allow_admin_from` সেট না থাকলে কী হয়?",
+      "options": [
+        "কেউ কিছু পারে না",
+        "সবাই সব হুকুম চালাতে পারে",
+        "শুধু একজন পারে",
+        "Hermes নিজে বন্ধ হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটাই বিপজ্জনক ফাঁদ। শেয়ার করা bot-এ সবসময় সেট করো।"
+    },
+    {
+      "question": "কোনো skill-এর নাম built-in হুকুমের সাথে মিলে গেলে skill-টা কীভাবে চালাবে?",
+      "options": [
+        "`/<name>` দিয়েই",
+        "`/skill <name>` দিয়ে",
+        "চালানো যায় না",
+        "`!<name>` দিয়ে"
+      ],
+      "answerIndex": 1,
+      "explanation": "built-in জিতে যায়, তাই skill লোড করতে `/skill <name>` লাগে।"
+    },
+    {
+      "question": "`/compress` কী কাজে লাগে?",
+      "options": [
+        "আলাপ ছোট করে context-এ জায়গা বানাতে",
+        "ফাইল ZIP করতে",
+        "ছবি ছোট করতে",
+        "internet দ্রুত করতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "context (মনে রাখার টেবিল) ভরে গেলে `/compress` পুরোনো কথা সংক্ষেপ করে।"
+    }
+  ],
+  "recap": [
+    "Slash command (`/...`) হলো আলাপের ভেতরের রিমোট, CLI command (`hermes ...`) আলাপের বাইরের।",
+    "কিছু হুকুম শুধু CLI-তে, কিছু শুধু messaging-এ, বেশিরভাগ দুই জায়গাতেই চলে।",
+    "`allow_admin_from` না দিলে সবাই admin হয়ে যায়।",
+    "`quick_commands` দিয়ে নিজের হুকুম বানানো যায় (`exec` বা `alias`)।",
+    "`/new`, `/clear`, `/undo`-এর মতো ধ্বংসাত্মক হুকুমে নিশ্চিতকরণ আসে।"
+  ]
+}

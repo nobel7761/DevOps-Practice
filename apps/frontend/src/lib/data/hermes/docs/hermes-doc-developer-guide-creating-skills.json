@@ -1,0 +1,124 @@
+{
+  "contentId": "hermes-doc-developer-guide-creating-skills",
+  "title": "Creating Skills",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/developer-guide/creating-skills",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে skill কী, `SKILL.md`-এর frontmatter-এর প্রতিটা field কেন লাগে, আর নিজের skill কীভাবে বানিয়ে নিরাপদে শেয়ার করতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## রান্নার রেসিপি-কার্ডের গল্প\n\nদিদার রান্নাঘরে একটা রেসিপি-কার্ড থাকে: কখন বানাবে, কী কী লাগবে, ধাপগুলো, কোথায় ভুল হয়। নতুন রাঁধুনিকে নতুন কিছু **শেখাতে** হয় না (নতুন যন্ত্র বা নতুন দক্ষতা), কার্ডটা পড়েই কাজ হয়ে যায়।\n\n**Skill** হলো Hermes-এর রেসিপি-কার্ড: একটা `SKILL.md` ফাইল, যাতে নির্দেশ লেখা, আর কাজ চলে shell command (terminal-এর হুকুম) ও আগে থেকে থাকা tool দিয়ে। Agent-এর কোড বদলাতে হয় না, আর কার্ড সহজে অন্যকে শেয়ার করা যায়।\n\n**Skill না থাকলে কী সমস্যা হতো?** প্রতিটা নতুন কৌশলের জন্য Hermes-এর কোড বদলাতে হতো, আর বদলাতে প্রোগ্রামার লাগত। Skill-এ শুধু একটা লেখার ফাইল লিখলেই হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Skill আর `SKILL.md`\n- **Skill** = Hermes-কে একটা নির্দিষ্ট কাজ শেখানোর রেসিপি-কার্ড।\n- **`SKILL.md`** = সেই কার্ডের ফাইল। ভেতরে \"মাথার তথ্য\" (frontmatter) আর নির্দেশের লেখা থাকে।\n\n### ২) Frontmatter\nফাইলের একদম মাথায় `---` চিহ্নের মাঝে লেখা ছোট তথ্য-তালিকা (নাম, বর্ণনা, কী কী লাগবে)। রেসিপি-কার্ডের ওপরের শিরোনাম-ঘর। সাধারণত YAML ধরনে লেখা, মানে `নাম: মান`।\n\n### ৩) Tool আর Toolset\n- **Tool** = Hermes-এর হাতিয়ার (ফাইল পড়া, ওয়েব search)।\n- **Toolset** = কয়েকটা tool-এর বাক্স।\n\n### ৪) Shell command, CLI, API\n- **Shell command** = terminal-এ লেখা হুকুম।\n- **CLI** = terminal-এ চালানো প্রোগ্রাম।\n- **API** = এক প্রোগ্রামের সাথে আরেকটার কথা বলার নিয়ম।\n- skill একটা CLI বা API-কে \"মুড়ে\" (wrap) দিতে পারে, মানে কীভাবে ব্যবহার করতে হয় তার নির্দেশ লিখে দেয়।\n\n### ৫) Environment variable (env var) আর `.env`\n- **env var** = কম্পিউটারের নামওয়ালা সেটিং, যেমন API key।\n- **`.env`** = সেই গোপন সেটিংগুলোর ফাইল (`~/.hermes/.env`)। `~` মানে home ফোল্ডার।\n\n### ৬) Secret আর Credential\n- **Secret** = গোপন জিনিস (key, পাসওয়ার্ড)।\n- **Credential** = পরিচয়ের তথ্য, যেমন OAuth token বা client secret ফাইল।\n\n### ৭) Sandbox, Docker, Modal\n- **Sandbox** = বালির বাক্স, ভেতরে চালানো কোড বাইরের কিছু নষ্ট করতে পারে না।\n- **Docker, Modal** = দুটো আলাদা সীমাবদ্ধ জায়গা যেখানে Hermes কমান্ড চালাতে পারে।\n\n### ৮) Cron আর Blueprint\n- **Cron** = সময়মতো কাজ চালানোর ঘড়ি (যেমন রোজ সকাল ৮টায়)।\n- **Blueprint** = ঘড়ি-সহ skill, মানে \"এই কাজ এই সময়ে চালাও\" লেখা skill।\n\n### ৯) Hub, Tap, Publish\n- **Skills Hub** = skill-এর সাধারণ হাট (দোকান)।\n- **Tap** = আলাদা একটা skill-ভাণ্ডার (যেমন GitHub repo) যোগ করা।\n- **Publish** = নিজের skill অন্যদের জন্য তুলে দেওয়া।\n\n### ১০) Progressive disclosure\n\"ধাপে ধাপে দেখানো\": আগে ছোট সহজ অংশ, জটিল জিনিস পরে বা আলাদা ফাইলে। প্রথম পাতায় রান্নার সারমর্ম, পেছনে বিস্তারিত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Skill নাকি Tool?\n\n| | কখন বাছবে | উপমা |\n|---|---|---|\n| **Skill** | নির্দেশ + shell command + existing tool-এ কাজ হয়, বা কোনো external CLI/API মুড়ে দিতে চাও | রেসিপি-কার্ড, নতুন যন্ত্র নয় |\n| **Tool** | API key/auth-সহ end-to-end integration, নিখুঁত custom logic, binary data, streaming বা real-time event লাগে (browser automation, TTS, vision) | নতুন যন্ত্র বানানো |\n\nনিয়ম: আগে skill ভাবো। সহজ, কোড বদলাতে হয় না। tool শুধু তখনই, যখন skill-এ কুলায় না।\n\n## ফোল্ডারের গড়ন\n\nSkill থাকে `<category>/<skill-name>/`-এ, যেমন `research/arxiv/`, `productivity/ocr-and-documents/`।\n\n```text\n<category>/<skill-name>/\n├── SKILL.md        # আবশ্যক\n├── scripts/        # ঐচ্ছিক: helper script\n└── references/     # ঐচ্ছিক: সহায়ক doc\n```\n\n| অংশ | কী |\n|---|---|\n| `SKILL.md` | মূল কার্ড (আবশ্যক) |\n| `scripts/` | সাহায্যকারী ছোট প্রোগ্রাম (ঐচ্ছিক) |\n| `references/` | বাড়তি পড়ার নথি (ঐচ্ছিক) |\n\nBundled skill (Hermes-এর সাথে আসা) থাকে দুই জায়গায়: `skills/` (category অনুযায়ী) আর `optional-skills/` (official কিন্তু ঐচ্ছিক, একই গড়ন)।\n\n## `SKILL.md` frontmatter\n\n| Field | কাজ | কখন লাগে |\n|---|---|---|\n| `name`, `description`, `version`, `author`, `license` | পরিচয়; `description` search result-এ দেখা যায় | সবসময় |\n| `platforms` | `macos`, `linux`, `windows`; ফাঁকা বা বাদ দিলে সর্বত্র load হয় | শুধু নির্দিষ্ট OS-এ চললে |\n| `metadata.hermes.tags`, `metadata.hermes.related_skills` | খোঁজা ও সম্পর্কিত skill | খোঁজা সহজ করতে |\n| `requires_toolsets`, `requires_tools` | তালিকার কোনোটা **না** থাকলে skill লুকায় | skill ওই tool ছাড়া অর্থহীন হলে |\n| `fallback_for_toolsets`, `fallback_for_tools` | তালিকার কোনোটা **থাকলে** skill লুকায় | আসল tool থাকলে বিকল্প skill দরকার নেই |\n| `metadata.hermes.config` | non-secret সেটিং: `key`, `description`, `default`, `prompt` | skill-কে কনফিগার করতে |\n| `metadata.hermes.blueprint` | skill-কে চালানোর-যোগ্য automation বানায়: `schedule`, `deliver` (default `origin`), `prompt`, `no_agent` | সময়মতো কাজ চালাতে |\n| `required_environment_variables` | `name`, `prompt`, `help`, `required_for` | API key লাগলে |\n| `required_credential_files` | `path` (`~/.hermes/`-এর সাপেক্ষে), `description` | OAuth ফাইল ইত্যাদি লাগলে |\n\n**Body-তে (frontmatter-এর পরের লেখায়) সুপারিশ করা অংশ:** When to Use (কখন লাগে), Quick Reference (দ্রুত সারসংক্ষেপ), Procedure (ধাপগুলো), Pitfalls (সাধারণ ভুল), Verification (ঠিক হলো কি না যাচাই)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Conditional activation: `requires_*` না থাকলে লুকায়, `fallback_for_*` থাকলে লুকায়।",
+        "before": "### `requires_toolsets` / `requires_tools`\n\nতালিকার কোনো একটা **অনুপস্থিত** হলে skill **লুকিয়ে** যায়।\n\nভাবনা: skill-টা ওই tool ছাড়া অর্থহীন।",
+        "after": "### `fallback_for_toolsets` / `fallback_for_tools`\n\nতালিকার কোনো একটা **উপস্থিত** থাকলে skill **লুকিয়ে** যায়।\n\nভাবনা: আসল tool থাকলে বিকল্প skill দরকার নেই।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Secret, config, credential\n\n### Environment variable (secret)\n\nথাকে `~/.hermes/.env`-এ, মডেলকে কখনো দেখানো হয় না। মান না থাকলেও skill লুকায় না: local CLI-তে Hermes জিজ্ঞেস করে (skip করা যায়); gateway/messaging session-এ (chat অ্যাপে) setup guidance দেখায়। ঘোষিত ও সেট করা variable নিজে থেকে `execute_code` ও `terminal` sandbox-এ (Docker, Modal-সহ) পৌঁছায়। হাতে দিতে চাইলে `config.yaml`-এর `terminal.env_passthrough`। পুরোনো `prerequisites.env_vars` এখনো চলে।\n\n### Config (non-secret, মানে গোপন নয় এমন সেটিং)\n\nথাকে `config.yaml`-এর `skills.config.<key>`-এ; skill message-এ `[Skill config (...)]` লাইন হিসেবে ঢোকে।\n\n```bash\nhermes config set skills.config.<key> <value>\nhermes config migrate   # config খুঁজে বের করে\nhermes config show      # দেখো\n```\n\n| কমান্ড | মানে |\n|---|---|\n| `hermes config set skills.config.<key> <value>` | একটা সেটিং লিখে দাও (`<key>` আর `<value>` তুমি বসাবে) |\n| `hermes config migrate` | নতুন config key খুঁজে এনে যোগ করে |\n| `hermes config show` | বর্তমান সেটিং দেখাও |\n\n### Credential file (OAuth token, client secret)\n\nDocker-এ read-only mount হয় (শুধু পড়া যায়), Modal-এ প্রতি command-এর আগে sync হয়, local-এ সরাসরি পাওয়া যায়। ফাইল না থাকলে `setup_needed`।\n\n## Template token ও inline shell\n\n- `${HERMES_SKILL_DIR}`: skill ফোল্ডারের absolute path (পুরো ঠিকানা)।\n- `${HERMES_SESSION_ID}`: session ID (session না থাকলে যেমন ছিল তেমন থাকে)।\n- বন্ধ করতে: `skills.template_vars: false`।\n- **Inline shell** (`` !`cmd` ``): লেখার ভেতরেই একটা কমান্ড চালিয়ে তার ফল বসিয়ে দেওয়া। **default-এ বন্ধ**। চালু করতে `skills.inline_shell: true`, সময়সীমা `skills.inline_shell_timeout` (যেমন ১০ সেকেন্ড)। snippet চলে skill ফোল্ডারে, output সর্বোচ্চ ৪০০০ অক্ষর, error দেখায় `[inline-shell error: ...]` রূপে। **Community hub থেকে install করা skill-এর snippet কখনো auto-execute হয় না।** (কারণ অচেনা কেউ লুকিয়ে কিছু ক্ষতিকর কমান্ড রাখতে পারে।)\n\n## লেখার পরামর্শ\n\n- বাইরের dependency এড়াও: stdlib Python (Python-এর সাথে আসা), curl, আর Hermes tool (`web_extract`, `terminal`, `read_file`) ব্যবহার করো।\n- সাধারণ workflow আগে রাখো (progressive disclosure); parsing logic (বিশ্লেষণের জটিল অংশ) `scripts/`-এ।\n- Response-এ `[[as_document]]` দিলে media inline preview-র বদলে file attachment হয় (high-resolution ছবির জন্য ভালো)।\n- পরীক্ষা: `hermes chat --toolsets skills -q \"...\"`"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Secret frontmatter-এ নয়",
+      "markdown": "API key `required_environment_variables` দিয়ে **ঘোষণা** করো; মান থাকবে `~/.hermes/.env`-এ। `config.yaml` বা `SKILL.md`-তে key লিখো না। কারণ skill শেয়ার করলে key-ও সবাই পেয়ে যাবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোথায় রাখবে?\n\n| জায়গা | কখন |\n|---|---|\n| `skills/` | বেশিরভাগ user-এর কাজে লাগে এমন |\n| `optional-skills/` | official কিন্তু niche (বিশেষ) বা ভারী; `hermes skills browse`-এ পাওয়া যায়, \"official\" লেবেল থাকে |\n| **Skills Hub** | বিশেষায়িত বা community-র |\n\n## Blueprint ও Suggested cron job\n\n**Blueprint** = `metadata.hermes.blueprint` ব্লক-ওয়ালা skill। Install করলে একটা **suggestion** নথিভুক্ত হয়, **নিজে থেকে schedule হয় না**। **কেন?** তোমার অনুমতি ছাড়া কেউ যেন তোমার কম্পিউটারে সময়মতো কাজ বসিয়ে না দেয়।\n\n```text\n/suggestions                 # অপেক্ষমাণ তালিকা\n/suggestions catalog         # curated starter যোগ করে\n/suggestions accept N\n/suggestions dismiss N       # স্থায়ী\n```\n\n| কমান্ড | মানে |\n|---|---|\n| `/suggestions` | অপেক্ষমাণ পরামর্শের তালিকা |\n| `/suggestions catalog` | বাছাই-করা শুরুর পরামর্শ যোগ করে |\n| `/suggestions accept N` | N নম্বরটা গ্রহণ করো (তখন cron job তৈরি হয়) |\n| `/suggestions dismiss N` | N নম্বরটা স্থায়ীভাবে বাদ |\n\nSuggestion-এর উৎস: `catalog`, `blueprint`, `usage`, `integration`। Accept করলে `cron.jobs.create_job` ডাকা হয়। \"important-mail monitor\" `config.yaml`-এর `auxiliary.monitor` দিয়ে classify করে (মেইল ভাগ করে), শুধু urgency threshold (জরুরির সীমা) পেরোলে জানায়। Cron-এ load হওয়া blueprint export ও publish করা যায় (`hermes cron create --skill <name> ...`)।\n\n## Publish\n\n```bash\nhermes skills publish skills/my-skill --to github --repo owner/repo\nhermes skills tap add owner/repo     # custom repo\n```\n\n| অংশ | মানে |\n|---|---|\n| `publish skills/my-skill` | `skills/my-skill` ফোল্ডার তুলে দাও |\n| `--to github --repo owner/repo` | GitHub-এর `owner/repo` ঠিকানায় |\n| `tap add owner/repo` | ওই repo-কে নিজের skill-ভাণ্ডার হিসেবে যোগ করো |\n\nGitHub identifier, `skills.sh` identifier আর `/.well-known/skills/index.json` endpoint-ও সমর্থিত।\n\n## Security trust level\n\nঅচেনা skill ঝুঁকিপূর্ণ হতে পারে, তাই বিশ্বাসের স্তর আছে:\n\n| Level | মানে |\n|---|---|\n| `builtin` | সবসময় বিশ্বস্ত |\n| `official` | `optional-skills/` থেকে |\n| `trusted` | openai/skills, anthropics/skills, huggingface/skills |\n| `community` | ছোট findings `--force` দিয়ে পার; `dangerous` verdict সবসময় আটকায় |\n\nScanner দেখে: exfiltration (গোপন তথ্য বাইরে পাঠানো), prompt injection (AI-কে ভুল নির্দেশ), destructive command (ধ্বংসাত্মক হুকুম), shell injection।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Skill আর Tool-এর মধ্যে কোনটা আগে ভাববে?",
+      "options": [
+        "Tool, সবসময়",
+        "দুটোই একই",
+        "Skill: নির্দেশ + shell command + existing tool দিয়ে কাজ হলে কোড বদলানো লাগে না",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "Tool তখনই, যখন API key/auth-সহ পুরো integration, binary data বা streaming লাগে।"
+    },
+    {
+      "question": "একটা skill-এর আবশ্যক ফাইল কোনটা?",
+      "options": ["`SKILL.md`", "`scripts/`", "`references/`", "`config.yaml`"],
+      "answerIndex": 0,
+      "explanation": "`SKILL.md` আবশ্যক। `scripts/` আর `references/` ঐচ্ছিক।"
+    },
+    {
+      "question": "`requires_tools` আর `fallback_for_tools`-এর পার্থক্য কী?",
+      "options": [
+        "কোনো পার্থক্য নেই",
+        "দুটোই সবসময় লুকায়",
+        "দুটোই কখনো লুকায় না",
+        "`requires_*` কোনোটা না থাকলে skill লুকায়; `fallback_for_*` কোনোটা থাকলে skill লুকায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "যেমন আসল tool থাকলে বিকল্প (fallback) skill-এর দরকার নেই।"
+    },
+    {
+      "question": "API key skill-এ কোথায় রাখবে?",
+      "options": [
+        "`SKILL.md`-এর frontmatter-এ",
+        "`required_environment_variables` দিয়ে ঘোষণা করে মান `~/.hermes/.env`-এ",
+        "`config.yaml`-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 1,
+      "explanation": "কারণ skill শেয়ার করলে key-ও সবাই পেয়ে যেত। মান থাকে `.env`-এ, মডেলকে কখনো দেখানো হয় না।"
+    },
+    {
+      "question": "Blueprint skill install করলে কী হয়?",
+      "options": [
+        "নিজে নিজে schedule হয়ে যায়",
+        "skill মুছে যায়",
+        "একটা suggestion নথিভুক্ত হয়, নিজে schedule হয় না; `/suggestions accept N` করলে cron job তৈরি হয়",
+        "কিছুই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "তোমার অনুমতি ছাড়া কেউ যেন সময়মতো কাজ বসিয়ে না দেয়।"
+    },
+    {
+      "question": "Inline shell (`` !`cmd` ``) সম্পর্কে কোনটা সত্য?",
+      "options": [
+        "default-এ বন্ধ; community hub-এর skill-এর snippet কখনো auto-execute হয় না",
+        "সবসময় চালু",
+        "শুধু Windows-এ",
+        "কোনো সীমা নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "চালু করতে `skills.inline_shell: true`। অচেনা skill-এর লুকানো কমান্ড ঠেকাতে community skill auto-run হয় না।"
+    },
+    {
+      "question": "`community` trust level-এ `dangerous` verdict হলে কী হয়?",
+      "options": [
+        "পার হয়ে যায়",
+        "শুধু warning",
+        "কিছুই না",
+        "`--force` দিলেও সবসময় আটকায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "ছোট findings `--force` দিয়ে পার করা যায়, কিন্তু `dangerous` নয়।"
+    }
+  ],
+  "recap": [
+    "Skill হলো Hermes-এর রেসিপি-কার্ড: একটা `SKILL.md` (frontmatter + নির্দেশ), যা shell command ও existing tool দিয়ে কাজ করায়; কোড বদলাতে হয় না।",
+    "আগে skill ভাবো; API key/auth-সহ পুরো integration, binary data বা streaming লাগলে তবেই tool।",
+    "`requires_*` কোনোটা না থাকলে skill লুকায়; `fallback_for_*` কোনোটা থাকলে লুকায়।",
+    "Secret `.env`-এ, non-secret সেটিং `skills.config.<key>`-এ; frontmatter-এ আসল key কখনো নয়।",
+    "Blueprint নিজে schedule হয় না (`/suggestions accept`); skill-এর trust level আছে (`builtin`, `official`, `trusted`, `community`) আর scanner বিপজ্জনক skill আটকায়।"
+  ]
+}

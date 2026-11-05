@@ -13,6 +13,7 @@ const CONTENT_LABELS: Record<CourseContentType, string> = {
   project_submission: "Project",
   udemy_lecture: "Lecture",
   sd_lesson: "Lesson",
+  doc_lesson: "Doc",
 };
 
 export default function ModuleContentBadges({

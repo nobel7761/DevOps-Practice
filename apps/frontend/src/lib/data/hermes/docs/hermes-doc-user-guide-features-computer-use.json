@@ -1,0 +1,217 @@
+{
+  "contentId": "hermes-doc-user-guide-features-computer-use",
+  "title": "Computer Use",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/computer-use",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Computer Use কী (Hermes নিজে পর্দা দেখে click-type করে), কীভাবে চালু ও নিরাপদ রাখতে হয়, আর driver, accessibility, SOM, YOLO, manifest-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nধরো তোমার একজন **অদৃশ্য সহকারী** আছে। তুমি অন্য একটা কাজ করছো, আর সহকারী পাশের ঘরে বসে তোমার কম্পিউটারের মতো আরেকটা কম্পিউটারে ক্লিক করছে, টাইপ করছে। কিন্তু তোমার মাউস নড়ছে না, তোমার কিবোর্ড বা জানালাও বদলাচ্ছে না। তুমি নিজের কাজ করেই যাচ্ছো।\n\nএটাই **Computer Use**: Hermes ডেস্কটপ অ্যাপে **background-এ** click, type, scroll আর drag করতে পারে, তোমার cursor না সরিয়ে, keyboard focus না কেড়ে, virtual desktop (Space) না বদলে। macOS, Windows আর Linux তিনটাতেই।\n\nBuilt-in `computer_use` toolset যেকোনো tool-capable মডেলের সাথে কাজ করে: Claude, GPT, Gemini, অথবা local OpenAI-compatible endpoint-এ চলা open মডেল।\n\n**এটা না থাকলে কী সমস্যা?** অনেক অ্যাপে (যেমন Mail, Figma, পুরনো software) কোনো সহজ 'দরজা' (API) নেই। Hermes শুধু লিখে কাজ করতে পারত না। Computer Use থাকলে সে মানুষের মতো পর্দা দেখে বোতাম টিপে সেই অ্যাপগুলোও চালাতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Computer Use** | AI নিজে পর্দা দেখে মাউস-কিবোর্ডের মতো click, type, scroll করে অ্যাপ চালানো | অদৃশ্য সহকারী |\n| **Background** | পেছনে চলা। তোমার কাজ ব্যাহত হয় না | রান্নাঘরের পেছনে অন্য কেউ রাঁধছে |\n| **Cursor / focus** | **Cursor** হলো পর্দার মাউস-তীর। **Focus** মানে এখন কোন জানালায় টাইপ হবে | তোমার হাতের আঙুল ও কলম |\n| **Virtual desktop (Space)** | একই কম্পিউটারে একাধিক আলাদা 'ডেস্কটপ-ঘর' | বাসার আলাদা ঘর |\n| **Toolset / tool** | **Tool** = Hermes-এর ছোট কাজ। **Toolset** = tool-এর দল (এখানে `computer_use`) | যন্ত্র ও ড্রয়ার |\n| **Driver** | কম্পিউটারের সাথে সরাসরি কথা বলার ছোট প্রোগ্রাম (`cua-driver`) | অনুবাদক |\n| **MCP / stdio** | **MCP** = AI-র জন্য 'সবার একই plug' নিয়ম। **stdio** = দুই প্রোগ্রামের সরাসরি লেখা-আদানপ্রদান পাইপ | বিশ্বজনীন চার্জার-plug, আর দুজনের মাঝের নল |\n| **Accessibility API (AX / UIA / AT-SPI)** | অন্ধ বা বিকলাঙ্গ মানুষের জন্য OS যে 'অ্যাপের বোতাম-তালিকা' দেয়। Hermes সেটা দিয়ে অ্যাপ বোঝে। নাম OS অনুযায়ী আলাদা | ঘরের মানচিত্র যাতে লেখা কোথায় কোন দরজা |\n| **Screenshot / capture** | পর্দার ছবি তোলা | ক্যামেরা ক্লিক |\n| **SOM (Set-of-Marks)** | ছবির প্রতিটা বোতামে নম্বর বসানো, যাতে AI বলতে পারে 'নম্বর ১৪ টেপো' | রেস্টুরেন্টের মেনুর নম্বর |\n| **Token** | AI যে লেখার টুকরো গুনে পড়ে (ছবিও token খায়) | ডাকের শব্দ-গোনা |\n| **Approval / YOLO** | **Approval** = বিপজ্জনক কাজের আগে তোমার অনুমতি চাওয়া। **YOLO** = অনুমতি না চেয়ে সব করা (You Only Live Once) | অতিথি ঢোকার অনুমতি / দরজা খোলা রাখা |\n| **Prompt injection** | স্ক্রিনের লেখায় লুকানো ক্ষতিকর নির্দেশ, যা AI-কে ভুল পথে নেয় | জাল চিঠি |\n| **Manifest / fail closed** | **Manifest** = অনুমোদিত কাজের তালিকা। **Fail closed** = সন্দেহ হলে কিছু না করে বন্ধ | অতিথি-তালিকার বাইরে কেউ ঢুকবে না |\n| **Headless** | যে কম্পিউটারে পর্দা নেই (সার্ভার) | আলো-ছাড়া ঘর |\n| **Sandbox / VM / Docker** | আলাদা বন্ধ বাক্সে চালানো (VM = কম্পিউটারের ভেতরে ভার্চুয়াল কম্পিউটার)। ভুল হলে বাইরে ক্ষতি নেই | কাচের ঘরে খেলা |\n| **Daemon** | পেছনে অবিরাম চলা সেবা-প্রোগ্রাম | রাত-প্রহরী |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "computer_use toolset MCP দিয়ে cua-driver-এর সাথে কথা বলে, আর driver OS-এর accessibility API দিয়ে অ্যাপ চালায়।",
+        "nodes": [
+          {
+            "id": "m",
+            "kind": "server",
+            "label": "computer_use",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "d",
+            "kind": "server",
+            "label": "cua-driver",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "os",
+            "kind": "external",
+            "label": "OS Accessibility",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "app",
+            "kind": "client",
+            "label": "Desktop App",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "m",
+            "to": "d",
+            "label": "MCP"
+          },
+          {
+            "from": "d",
+            "to": "os",
+            "label": "AX / UIA / AT-SPI"
+          },
+          {
+            "from": "os",
+            "to": "app",
+            "label": "input"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ভেতরে কীভাবে চলে\n\nToolset **MCP over stdio** দিয়ে `cua-driver`-এর সাথে কথা বলে। এটা একটা open-source background computer-use driver। প্ল্যাটফর্ম অনুযায়ী:\n\n| OS | দেখার উপায় | input পাঠানোর উপায় |\n|---|---|---|\n| macOS | Accessibility (AX), private SkyLight SPI | `SLPSPostEventRecordTo` (process ID ধরে), cursor warp নেই |\n| Windows | UIAutomation | `SendInput` আর `PostMessage`, focus steal নেই |\n| Linux | AT-SPI | XTest (X11) বা virtual keyboard (Wayland) |\n\n(**OS** = Operating System, যেমন macOS, Windows, Linux। **Input** = মাউস-কিবোর্ডের সংকেত। **X11 / Wayland** = Linux-এ পর্দা দেখানোর দুই ব্যবস্থা। **Open-source** মানে কোড সবার দেখার জন্য খোলা।)\n\n### কোন মেশিন চালানো হয়?\nBot-এর screen যে মেশিনে আছে সেটাই, Hermes Desktop যে মেশিনে চলছে সেটা নয়।\n\n- `terminal.backend: local` মানে gateway host (gateway = Hermes ও মেসেজ app-এর মাঝের দরজা; host = যে কম্পিউটারে সেটা চলে)।\n- `docker`, `ssh` বা `supports_streams` আছে এমন plugin backend (যেমন `singularity`) হলে driver sandbox-এর ভেতরে নিজের display-তে চলে। Sandbox image-এ `cua-driver` থাকতে হয়; `nousresearch/hermes-sandbox:desktop`-এ আছে।\n- **display** মানে পর্দা। Modal, Daytona, Vercel এখনো display চালাতে পারে না। `bot_desktop.placement: gateway` সেট না থাকলে `computer_use` এখানে অস্বীকার করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চালু করার উপায়\n\n`cua-driver` `pm/lock.json`-এ pin করা এবং installer, `hermes pm install` আর `hermes update` ডিফল্ট package হিসেবে নামায়। সমর্থিত: macOS, Windows, glibc Linux (musl বা Android build নেই)।\n\n```bash\nhermes tools                      # \"Computer Use\" বেছে নাও\nhermes computer-use install       # হাতে install\nhermes computer-use status        # যাচাই\nhermes -t computer_use chat       # computer_use toolset সহ session\n```\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `hermes tools` | মেনু খোলে, 'Computer Use' বাছো | সবচেয়ে সহজ পথ |\n| `hermes computer-use install` | driver হাতে বসায় | স্বয়ংক্রিয় install না হলে |\n| `hermes computer-use status` | ঠিক আছে কিনা দেখায় | যাচাই করতে |\n| `hermes -t computer_use chat` | `-t` মানে toolset। এই ক্ষমতাসহ session শুরু | সরাসরি ব্যবহারে |\n\n(**Pin করা** মানে নির্দিষ্ট সংস্করণে আটকানো। **glibc/musl** মানে Linux-এর দুই ধরনের মূল লাইব্রেরি। **POSIX** মানে macOS/Linux-এর terminal-পরিবার।)\n\nOpt-out: `--skip-computer-use` (POSIX), `-SkipComputerUse` (Windows), বা `hermes pm install --without cua-driver`। ফেরাতে `hermes pm install cua-driver`। বিকল্প: `config.yaml`-এর enabled toolsets-এ `computer_use` যোগ করা, অথবা dashboard/desktop app-এ toggle।\n\n### আগে থেকে যা লাগে\n\nOS তোমার অনুমতি ছাড়া কোনো প্রোগ্রামকে পর্দা দেখতে বা মাউস চালাতে দেয় না। তাই আগে অনুমতি দিতে হয়।\n- **macOS:** System Settings, Privacy & Security-এ `CuaDriver` (`com.trycua.driver`)-কে **Accessibility** আর **Screen Recording** দাও।\n- **Windows:** install-এ কিছু না। SSH দিয়ে চালাতে Session 0 ও Session 1+ এর জন্য autostart pattern লাগে।\n- **Linux:** `DISPLAY` (X11) বা `XDG_SESSION_TYPE=wayland`। Wayland-এ capture-এর জন্য XWayland bridge লাগে। AT-SPI চালু থাকতে হয় (GNOME, KDE, Xfce-এ default)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Stripe-এর শেষ email সারসংক্ষেপ করার উদাহরণ, ধাপে ধাপে।",
+        "steps": [
+          {
+            "title": "১. capture",
+            "body": "`computer_use(action=\"capture\", mode=\"som\", app=\"Mail\")` অ্যাপের নম্বর-দেওয়া screenshot দেয়।"
+          },
+          {
+            "title": "২. click",
+            "body": "`computer_use(action=\"click\", element=14)` search field-এ click।"
+          },
+          {
+            "title": "৩. type",
+            "body": "`computer_use(action=\"type\", text=\"from:stripe\")`।"
+          },
+          {
+            "title": "৪. key",
+            "body": "`computer_use(action=\"key\", keys=\"return\", capture_after=True)`।"
+          },
+          {
+            "title": "৫. পড়ে সারসংক্ষেপ",
+            "body": "উপরের ফলে click করে পড়ে summarize। Cursor যেখানে ছিল সেখানেই, অ্যাপ সামনেও আসেনি।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Permission mode: কতটা স্বাধীনতা?\n\n**Permission mode** মানে Hermes-কে কতটা স্বাধীনতা দেওয়া হবে। (**Launch setting** মানে শুরুর সময় ঠিক করা সেটিং। **Boundary** মানে সীমারেখা।) Mode একবার চালু হয়ে গেলে **বদলানো যায় না** (launch setting)।\n\n| Hermes session | cua-driver mode | মানুষের ভূমিকা |\n|---|---|---|\n| Manual বা smart approval (default) | `standard` | সাধারণ Hermes approval; Cua নিজের protected boundary-তে থামে |\n| `computer_use.permission_mode: bounded` + reviewed manifest | private `bounded` daemon | Launch-এ capability manifest একবার approve |\n| `--yolo`, `/yolo` বা `approvals.mode: off` | private `unrestricted` daemon | একবার ঝুঁকি মেনে নেওয়া; runtime-এ Cua prompt নেই |\n\nব্রাউজারের কাজ (signed-in profile সহ) যায় `browser` toolset (`browser_exec`) দিয়ে, `computer_use` দিয়ে নয়। `computer_use.grant_existing_profile` সরিয়ে ফেলা হয়েছে; config-এ থাকলে উপেক্ষিত।\n\n### Bounded mode\n\n**Bounded** মানে সীমাবদ্ধ: আগে লিখে দেওয়া তালিকার ভেতরেই কাজ। **Cron** হলো অ্যালার্ম-ঘড়ির মতো সময়-ঠিক-করা কাজ।\nবারবার চলা automation-এর জন্য (cron, authenticated অ্যাপে নির্ধারিত গবেষণা)।\n\n```yaml\ncomputer_use:\n  permission_mode: bounded\n  capability_manifest: ~/.hermes/cua-manifest.yaml\n```\n\nManifest-এ থাকে অ্যাপ, browser profile-এর ধরন, অনুমোদিত origin আর typed tool। Manifest-এর বাইরের সবকিছু **fail closed**। Manifest না থাকলে বা পড়া না গেলে session শুরুতেই fail করে, চুপচাপ নিচু mode-এ নামে না। Session YOLO থাকলে সেটা bounded-কে ছাপিয়ে যায়। `smart` approval `standard`-এ মেলে, কারণ LLM-এর শ্রেণিবিন্যাস reviewed manifest-এর বিকল্প হতে পারে না।\n\n| config লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `permission_mode: bounded` | সীমাবদ্ধ mode চালু | নির্ধারিত বারবার-চলা কাজে |\n| `capability_manifest: ~/.hermes/cua-manifest.yaml` | অনুমোদিত অ্যাপ ও কাজের তালিকা-ফাইল (`~` মানে হোম ফোল্ডার) | bounded হলে বাধ্যতামূলক |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "YOLO মানে prompt injection থেকে সুরক্ষা নয়",
+      "markdown": "Unrestricted mode prompt injection ঠেকায় না। এটা ব্যবহার করো শুধু disposable VM-এ, অথবা এমন data নিয়ে যার পুরো compromise তুমি মেনে নিতে পারো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা ব্যবস্থা\n\n**কেন এত নিয়ম?** Hermes পর্দার সব কিছু ছুঁতে পারে, তাই ভুল বা প্রতারণায় ক্ষতি বড় হতে পারে। (**Gate** মানে দরজা, যেখানে থেমে অনুমতি লাগে।)\n\n- ধ্বংসাত্মক কাজ (click, type, drag, scroll, key, focus_app) dangerous-command gate দিয়ে **approval** চায়: CLI dialog বা messaging button-এ।\n- Grant (once, session, always)-এর key এই ধাঁচের: `cua:<action>:<background|foreground>`। Background grant foreground-কে ঢাকে না।\n- Headless বা unattended run (কেউ বসে নেই এমন, যেমন cron, single-query ইত্যাদি) auto-approve না করে **অস্বীকার** করে। `--yolo` বা `/yolo` এটা পার করে।\n- **Hard-blocked key:** empty trash, force delete, lock screen, log out, force log out।\n- **Hard-blocked type pattern:** (fork bomb মানে এমন কমান্ড যা কম্পিউটারকে নিজের কপিতে ভরিয়ে অচল করে দেয়; `sudo rm -rf /` মানে সব মুছে ফেলার কমান্ড) `curl | bash`, `sudo rm -rf /`, fork bomb ইত্যাদি।\n- System prompt মানা করে: permission dialog-এ click করা, password টাইপ করা, screenshot-এর ভেতরের নির্দেশ মানা।\n- প্রতিটা কাজে নিজে নিশ্চিত করতে চাইলে `approvals.mode: manual`।\n\n## `hermes computer-use doctor`\n\n**Doctor** মানে ডাক্তার, যে সব পরীক্ষা করে কোথায় সমস্যা বলে। **Exit code** হলো প্রোগ্রাম শেষে দেওয়া সংখ্যা-সংকেত (0 = ভালো)। **JSON** হলো যন্ত্রের পড়ার উপযোগী তথ্য-ফরম্যাট। **TCC** হলো macOS-এর অনুমতি-ব্যবস্থা।\n\nকিছু ভুল হলে প্রথমে এটা চালাও। এটা cua-driver-এর `health_report` চালিয়ে প্রতিটা check-এর ছক ছাপে (`binary_version`, `platform_supported`, `session_active`, `bundle_identity`, `tcc_accessibility`, `tcc_screen_recording`, `ax_capability`, `screen_capture_capability`)।\n\n- Exit code: `0` সব ok; `1` degraded বা failed; `2` cua-driver binary পাওয়া যায়নি।\n- Flag: `--include CHECK` (পুনরাবৃত্তি করা যায়), `--skip CHECK` (`--include`-কে ছাপায়), `--json`।\n- Windows ও Linux-এ `bundle_identity` আর `tcc_*` বাদ যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Agent cursor আর screenshot\n\n- Action কোথায় লাগছে দেখাতে একটা রঙিন **overlay cursor** আছে। আসল OS cursor নড়ে না। প্রতিটা run-এর নিজস্ব public session name থাকে (যেমন `hermes-3a7b9c14d2e8`), তাই একসাথে অনেক run বা subagent মিশে যায় না।\n- Overlay শুধু সাজসজ্জা, না থাকলেও কাজ চলে। macOS, headless Linux, WSL2, container আর Linux X11 desktop-এ এটা নিজে বন্ধ থাকে; Linux Wayland আর Windows-এ চালু। জোর করতে `computer_use.no_overlay: false` (চালু) বা `true` (বন্ধ)।\n- Screenshot চাইলে প্রতিটা capture-এর একটা সীমিত কপি image cache-এ থাকে। Telegram, Discord, Desktop-এ native attachment হিসেবে আসে; CLI-তে file path। শুধু **সবচেয়ে সাম্প্রতিক ২০টা** capture ফাইল থাকে।\n- \"Screen\" মানে সবকিছু (PrtScn-এর মতো), এতে click-করার মতো element নেই। কাজ করতে নির্দিষ্ট অ্যাপ আবার capture করো। \"Desktop\" মানে wallpaper, icon, taskbar (এতে element আছে, যেমন \"Recycle Bin খোলো\")।\n\n(**Overlay** মানে ওপরে ভাসানো সাজ। **Cache** মানে সাময়িক জমানো কপি। **Native attachment** মানে app-এর নিজস্ব সংযুক্তি। **Subagent** মানে ছোট সহকারী agent।)\n\n### কোন মডেলে চলে\nAnthropic (Claude), OpenRouter-এর vision মডেল, OpenAI (GPT-4+, GPT-5), Google Gemini 2+ সবই কাজ করে। Local (নিজের কম্পিউটারে চালানো) vLLM, LM Studio, Ollama চলে যদি vision মডেল আর multi-part tool content সমর্থিত হয়। **Text-only মডেলে** (যে মগজ ছবি দেখতে পায় না) কাজ কমজোর; `mode=\"ax\"` (শুধু accessibility tree, মানে অ্যাপের বোতামের লিখিত তালিকা) ব্যবহার করো।\n\n## Token বাঁচানো\n\n- Screenshot একটা সীমা পর্যন্ত থাকে, তারপর সবচেয়ে পুরনো ব্যাচ `[screenshot removed to save context]` হয়ে যায়। সীমা: সব ছবি ২০০০ px বা কম হলে ১০০টা (Hermes ১৫৬৮ px বা কম রাখে), কোনোটা বড় হলে ২০টা। image-data budget ২৪ MB।\n- সীমার নিচে কিছু বদলানো হয় না, যাতে prompt-cache prefix নষ্ট না হয়।\n- প্রতিটা ছবি প্রায় ১৫০০ token ধরা হয়। ১৫৬৮×৯০০ আকারে ২০ ধাপের session খরচ প্রায় ৩০K token, ৬০০K নয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সীমাবদ্ধতা আর সমস্যা সমাধান\n\n### সীমাবদ্ধতা\n(নতুন শব্দ: **ms** = মিলিসেকেন্ড, সেকেন্ডের হাজার ভাগের এক ভাগ। **Payload** = পাঠানো লেখা। **Autofill** = পাসওয়ার্ড ম্যানেজারের নিজে ভরে দেওয়া। **Electron** = ওয়েব দিয়ে বানানো desktop app। **UIPI** = Windows-এর নিয়ম, যাতে কম-ক্ষমতার প্রোগ্রাম উচ্চ-ক্ষমতার জানালা ছুঁতে না পারে। **SSH** = দূর থেকে কম্পিউটারে ঢোকা। **TigerVNC / Xfce** = দূরের পর্দা ও হালকা ডেস্কটপ।)\n\n- **গতি:** background event প্রায় 5-20 ms (macOS), 3-10 ms (Windows), 5-15 ms (Linux)। Agent-এর জন্য যথেষ্ট, speed-run-এর জন্য নয়।\n- **Password:** `type` command-shell payload আটকায়। autofill (Keychain, Credential Manager, GNOME Keyring, KWallet) ব্যবহার করো।\n- **ফাঁকা accessibility tree:** আধুনিক UWP অ্যাপ, Linux-এ Electron 28-এর নিচে, কিছু custom-drawn macOS অ্যাপ (Logic, Final Cut, game)। তখন pixel coordinate বা বাদ দাও।\n- **Windows UIPI:** Medium-integrity agent elevated (High) window-তে পৌঁছাতে পারে না (`capture(mode='som')` 0 element, click নিঃশব্দে ব্যর্থ)। সমাধান: elevated terminal থেকে Hermes চালাও।\n- **Windows SSH:** Session 0-এ desktop নেই। RDP/console বা autostart Scheduled Task ব্যবহার করো।\n- **Linux headless server:** Bot Screen (প্রতি profile-এ Xfce over TigerVNC) ব্যবহার করো: `hermes computer-use screen start`, অথবা `bot_desktop.auto_start: true` (default বন্ধ)।\n- শুধু web-র কাজ হলে `browser` toolset (headless Chromium) সহজ।\n\n### Config\n\n| key | মানে |\n|---|---|\n| `permission_mode` | `standard` (ডিফল্ট, সাধারণ অনুমোদন) বা `bounded` |\n| `capability_manifest` | bounded হলে অনুমোদিত-কাজের ফাইল |\n\n```yaml\ncomputer_use:\n  permission_mode: standard      # standard (default) | bounded\n  capability_manifest: \"\"        # bounded হলে লাগে\n```\nআরও: `computer_use.native_wayland: true` (Linux Wayland, gateway restart লাগে), `computer_use.autostart: true` (Windows, default `false`), `computer_use.backend` (default `cua`), `computer_use.cua_telemetry: true` (Hermes ডিফল্টে telemetry বন্ধ রাখে `CUA_DRIVER_RS_TELEMETRY_ENABLED=0` দিয়ে), আর driver path বদলাতে `HERMES_CUA_DRIVER_CMD=/path/to/cua-driver`।\n\n### সাধারণ সমস্যা\n| লক্ষণ | করণীয় |\n|---|---|\n| \"cua-driver is not installed\" | `hermes computer-use install` বা `hermes tools` |\n| Click-এ কাজ হয় না | লুকানো modal আটকাচ্ছে; `escape` বা close |\n| macOS-এ toggle ON কিন্তু doctor \"not granted\" | `tccutil reset Accessibility com.trycua.driver`, `tccutil reset ScreenCapture com.trycua.driver`, তারপর `hermes computer-use permissions grant` |\n| Element index পুরনো | পরের `capture`-এর পর SOM index মেয়াদ হারায়; অবস্থা বদলালে আবার capture |\n| \"blocked pattern in type text\" | লেখাটা dangerous-shell তালিকায় মিলেছে; ভাগ করো বা নতুন করে ভাবো |\n| Linux-এ খালি capture | `DISPLAY` সেট নেই, বা Wayland-এ XWayland bridge নেই |\n| SSH-এ Windows-এ খালি capture | Session 0; RDP/console বা autostart |"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Computer Use-এর মূল বিশেষত্ব কোনটা?",
+      "options": [
+        "শুধু screenshot নেয়",
+        "শুধু browser চালায়",
+        "তোমার cursor, focus বা Space না বদলিয়ে background-এ click ও type করে",
+        "শুধু macOS-এ চলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Hermes background-এ কাজ করে, cursor না সরিয়ে, focus না কেড়ে।"
+    },
+    {
+      "question": "`computer_use` toolset কোন driver-এর সাথে MCP stdio-তে কথা বলে?",
+      "options": ["cua-driver", "playwright", "selenium", "xdotool"],
+      "answerIndex": 0,
+      "explanation": "`cua-driver` একটি open-source background computer-use driver।"
+    },
+    {
+      "question": "Default permission mode কোনটা?",
+      "options": ["bounded", "unrestricted", "manual-only", "standard"],
+      "answerIndex": 3,
+      "explanation": "Manual বা smart approval-এ cua-driver `standard` mode-এ চলে।"
+    },
+    {
+      "question": "Bounded mode-এ manifest ফাইল না পাওয়া গেলে কী হয়?",
+      "options": [
+        "চুপচাপ standard-এ নামে",
+        "Session শুরুতেই fail করে",
+        "সব অ্যাপ অনুমোদিত হয়",
+        "YOLO চালু হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Silent downgrade হয় না; session start-এই fail করে।"
+    },
+    {
+      "question": "কোনটা hard-blocked, অর্থাৎ approval দিয়েও হয় না?",
+      "options": [
+        "Screenshot নেওয়া",
+        "Scroll করা",
+        "`curl | bash` ধরনের type pattern",
+        "App capture করা"
+      ],
+      "answerIndex": 2,
+      "explanation": "`curl | bash`, `sudo rm -rf /`, fork bomb ইত্যাদি type pattern hard-block।"
+    },
+    {
+      "question": "Screenshot-এর সংখ্যা সীমা ছাড়ালে কী হয়?",
+      "options": [
+        "সবচেয়ে পুরনো ব্যাচ `[screenshot removed to save context]` হয়ে যায়",
+        "Session বন্ধ",
+        "সব ছবি আবার পাঠানো হয়",
+        "Hermes নতুন ছবি নেয় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "পুরনো ব্যাচ context বাঁচাতে সরানো হয়; সীমার নিচে কিছু বদলায় না।"
+    },
+    {
+      "question": "কোন কমান্ড দিয়ে setup-এর সমস্যা প্রথমে খোঁজা উচিত?",
+      "options": [
+        "hermes sessions list",
+        "hermes computer-use doctor",
+        "hermes memory status",
+        "hermes journey"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতার troubleshooting-এর প্রথম ধাপ doctor চালানো।"
+    },
+    {
+      "question": "Windows-এ elevated (High-integrity) window-এ কাজ না হলে সমাধান কী?",
+      "options": [
+        "Overlay বন্ধ করা",
+        "Telemetry চালু করা",
+        "`mode=\"ax\"` ব্যবহার",
+        "Hermes elevated terminal থেকে চালানো"
+      ],
+      "answerIndex": 3,
+      "explanation": "UIPI-র কারণে Medium-integrity agent High-integrity window ধরতে পারে না।"
+    }
+  ],
+  "recap": [
+    "Computer Use Hermes-কে background-এ ডেস্কটপ অ্যাপ চালাতে দেয়, তোমার cursor ও focus না ছুঁয়ে।",
+    "ভেতরে `cua-driver` MCP stdio দিয়ে চলে; OS ভেদে AX, UIAutomation বা AT-SPI ব্যবহার করে।",
+    "Mode তিনটা: standard (default), bounded (manifest সহ), unrestricted (YOLO); YOLO prompt injection থেকে বাঁচায় না।",
+    "Destructive কাজে approval লাগে, আর কিছু key/type pattern একেবারেই blocked।",
+    "Screenshot-এর সীমা আর পুরনো ছবি ছেঁটে ফেলার ব্যবস্থায় token খরচ কম থাকে।",
+    "গোলমালে প্রথমে `hermes computer-use doctor` চালাও।"
+  ]
+}

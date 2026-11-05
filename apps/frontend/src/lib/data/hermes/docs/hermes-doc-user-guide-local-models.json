@@ -1,0 +1,137 @@
+{
+  "contentId": "hermes-doc-user-guide-local-models",
+  "title": "Local Models",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/local-models",
+  "oneLiner": "এই lesson শেষে তুমি নিজের কম্পিউটারে Hermes দিয়ে open model চালানো বুঝবে এবং inference engine, GPU, quantization, token/sec-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: নিজের বাড়িতে রান্নাঘর\n\nএতদিন Hermes-এর \"মস্তিষ্ক\" ছিল দূরের এক বড় রেস্তোরাঁয় (cloud provider, মানে ইন্টারনেটের ওপারের কোম্পানি)। প্রতিবার খাবার চাইতে ফোন করতে হতো, আর প্রতিবার বিল আসত।\n\n**Local models** মানে নিজের বাড়িতেই রান্নাঘর বানানো। মস্তিষ্ক (একটা open model) চলে **তোমার নিজের কম্পিউটারে**। একবার model নামিয়ে নিলে কোনো account, API key বা ইন্টারনেট লাগে না।\n\n**কেন দরকার?** তিনটা কারণ: (১) বিল নেই, (২) তোমার কথা বাইরের কোম্পানির কাছে যায় না (গোপনীয়তা), (৩) ইন্টারনেট না থাকলেও চলে।\n\nHermes তোমার জন্য সব ঝামেলা সামলায়:\n\n- inference engine (**llama.cpp**) নিজে নামায় ও চালায়;\n- তোমার hardware-এ যে build ধরে সেটাই বেছে নেয়;\n- context size, GPU layer, quantization নিজে ঠিক করে।\n\n## কোথায় পাওয়া যায়?\n\nDesktop app-এ macOS, Windows ও Linux (x64, arm64) সব release channel-এ default-এ চালু। অন্য platform-এ app চালাও `--local` flag দিয়ে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Model ও open model\n**Model** = AI-র \"মস্তিষ্ক\" (একটা বড় ফাইল)। **Open model** = যার ফাইল যে কেউ বিনামূল্যে নামিয়ে নিজের কম্পিউটারে চালাতে পারে (যেমন Llama, Qwen)। বিপরীতে কিছু model শুধু কোম্পানির server-এ চলে।\n\n### ২) Inference engine ও llama.cpp\nModel ফাইলটা শুধু বইয়ের মতো; সেটা পড়ে উত্তর বানানোর যন্ত্রের নাম **inference engine**। **llama.cpp** তেমন একটা জনপ্রিয় engine। বই হলো model, পাঠক হলো engine।\n\n### ৩) GPU, VRAM, RAM\n**GPU** = ছবির কাজের জন্য বানানো শক্তিশালী চিপ, যা AI-র হিসাবেও খুব দ্রুত। **VRAM/GPU memory** = GPU-র নিজস্ব কাজের টেবিল। **RAM** = কম্পিউটারের সাধারণ কাজের টেবিল। model যত বড়, তত বড় টেবিল লাগে। GPU-র টেবিলে ধরলে দ্রুত; না ধরলে RAM-এ উপচে পড়ে, ধীর।\n\n### ৪) Quantization\nModel-কে ছোট করার কৌশল: প্রতিটা সংখ্যা কম নির্ভুলতায় (কম \"bit\"-এ) লেখা। যেমন ছবি ছোট করলে সামান্য ঝাপসা হয় কিন্তু জায়গা কম লাগে। **৪-bit** এক ধরনের মাপ।\n\n### ৫) Context window\nModel একসঙ্গে যতটা কথা মনে রাখতে পারে (মনে রাখার টেবিল)।\n\n### ৬) Token ও token/sec\nAI যে ছোট লেখার টুকরো গোনে। **token/sec** = প্রতি সেকেন্ডে কতটা টুকরো উত্তর লেখে, মানে গতি।\n\n### ৭) Endpoint, port ও OpenAI-compatible\n**Endpoint** = যে ঠিকানায় অনুরোধ পাঠাতে হয়। **Port** = কম্পিউটারের একটা \"জানালার নম্বর\" (যেমন `8080`)। **OpenAI-compatible** = এমন একটা জনপ্রিয় ভাষায় কথা বলে যা অনেক প্রোগ্রাম বোঝে।\n\n### ৮) Hugging Face ও GGUF\n**Hugging Face** = model-এর বিশাল লাইব্রেরি, যেখান থেকে model নামানো যায়। **GGUF** = llama.cpp যে ধরনের model ফাইল পড়ে, তার ফরম্যাট (ফাইলের ধরন)।\n\n### ৯) Backend (CUDA, Metal, Vulkan...)\nGPU-র সঙ্গে কথা বলার পদ্ধতি। NVIDIA-র জন্য CUDA, Apple-এর জন্য Metal ইত্যাদি। **CPU** = কম্পিউটারের সাধারণ মস্তিষ্ক, GPU না থাকলে ধীরে কাজ চালায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## শুরু করা (Desktop)\n\n1. **Settings → Providers → Local Models** খোলো (বা onboarding-এ **Run models locally**)।\n2. **Install runtime**: তোমার hardware-এর জন্য অফিসিয়াল llama.cpp build নামে (কয়েকশো MB), যাচাই হয় ও আপডেট থাকে।\n3. catalog (model-এর তালিকা) থেকে model বেছে **Download**।\n4. **Use**: নতুন chat এখন local model-এ চলে।\n\nserver Hermes-এর সাথে চালু-বন্ধ হয়, app restart-এও টিকে থাকে। cloud-এ ফিরতে model picker-এ এক click।\n\n## Terminal-এ\n\n```bash\nhermes model    # তারপর \"Local models\" বেছে নাও\n```\n\nতোমার মেশিনের উপযোগী catalog model-এর তালিকা আসে, **★** মানে সুপারিশ। এটা pinned engine install করে (নির্দিষ্ট ভার্সনে আটকানো engine), live progress-সহ model নামায়, server চালায় ও model-টাকে default করে। আগে থেকে disk-এ থাকা model-ও দেখায়। **Ctrl+C** দিলে download pause হয়; একই model আবার বাছলে resume।\n\n## Model বাছাই: মনে-মনে মাপা\n\nপ্রতিটা সারিতে ট্রাফিক-লাইটের মতো রং থাকে:\n\n| রং | মানে | তুমি কী করবে |\n|---|---|---|\n| সবুজ, \"Fits your GPU\" | পুরোটা GPU memory-তে চলে | নিশ্চিন্তে বাছো |\n| হলুদ, \"Uses system RAM\" | চলে, কিন্তু ধীরে | চলবে, তবে অপেক্ষা সইতে হবে |\n| লাল, \"Too big for this machine\" | এই মেশিনে ধরবে না | এড়াও (বা আপগ্রেডের স্বপ্ন দেখো) |\n\nসাথে দেখায় starting context window, সর্বোচ্চ কতদূর বাড়তে পারে, আর download size।\n\n**Quantization নিয়ম**: GPU-তে পুরো ধরে এমন সবচেয়ে ভালো মানের build বাছা হয়; কম memory-তে একই model-এর আরও সংকুচিত build। **৪-bit-এর নিচে কখনো দেওয়া হয় না** (এর চেয়ে ছোট করলে উত্তর অতিরিক্ত খারাপ হয়ে যায়)। যে model ধরে না সেটাও কারণসহ দেখা যায়, যেন বোঝো আপগ্রেডে কী খুলত।\n\n**সুপারিশ নিয়ম**: GPU বা unified memory-তে পুরোটা ধরে (**unified memory** = Apple-এর মতো মেশিনে CPU-GPU একই টেবিল ভাগ করে) এবং অনুমানিক **২০ token/sec বা বেশি** গতি দেয়, এমন সবচেয়ে ভালো model। কোনোটাই এই সীমা না ছুঁলে কোনো সুপারিশ থাকে না, তবু যেটা ধরে সেটা বাছা যায়।\n\n**Hardware ধারণা**: ৮ GB+ GPU-তে ছোট catalog model আরামে; ১৬ GB+ GPU-তে ২৭–৩৫B model উঁচু মানে (B = billion, মানে শত কোটি পরামিতি, model-এর \"মস্তিষ্কের আকার\")।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Local model চালু করার সহজ পথ: runtime নামাও, model নামাও, Use চাপো।",
+        "steps": [
+          {
+            "title": "১. Install runtime",
+            "body": "অফিসিয়াল llama.cpp build নামে, SHA-256 দিয়ে যাচাই হয়।"
+          },
+          {
+            "title": "২. Model বাছো",
+            "body": "সবুজ/হলুদ/লাল fit দেখে, ★ সুপারিশ ধরে।"
+          },
+          {
+            "title": "৩. Download",
+            "body": "pause/resume করা যায়; আংশিক ফাইল `cache/partials`-এ থাকে।"
+          },
+          {
+            "title": "৪. Use",
+            "body": "নতুন chat local model-এ চলে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Memory ব্যবস্থাপনা\n\n- **Starting context**: GPU-তে পুরো ধরে এমন সবচেয়ে বড় window; দরকার মতো native সর্বোচ্চের (model-এর নিজস্ব সীমা) দিকে বাড়ে। **\"Context window grown\"** মানে window বেড়েছে, এটা error নয়।\n- প্রতিটা সুপারিশকৃত model অন্তত **64K** context পায়।\n- model GPU-র চেয়ে বড় হলে overflow যায় system RAM-এ: আগে expert weight (বিশেষজ্ঞ-অংশ); **attention cache কখনো spill করে না** (এটা সবসময় GPU-তে, কারণ এটা ধীর হলে সব ধীর)।\n- fit-এর হিসাবে launch configuration-ও ধরা হয়: context state, runtime buffer, vision projector (ছবি বোঝার অংশ), MTP buffer।\n- বড় window না ধরলে, generation বেশি ধীর হলে বা native সর্বোচ্চে পৌঁছালে Hermes window-র ভান না করে conversation **compress** করে (পুরনো কথা ছোট সারসংক্ষেপে বদলায়)।\n- **Idle unload**: ১৫ মিনিট ব্যবহার না হলে model unload হয়ে GPU memory ফাঁকা হয়; পরের message-এ আবার লোড। (যেমন কেউ না থাকলে ঘরের বাতি নিভিয়ে দেওয়া।)\n\nStatus bar-এ right-click করে **System resources** চালু করলে live GPU use, GPU memory ও RAM দেখা যায়; context meter দেখায় model আসলে কত window নিয়ে চলছে।\n\n## আরও model খোঁজা\n\n**Find more models** পুরো Hugging Face খোঁজে, download সংখ্যা ও তোমার মেশিনে প্রতিটা ফাইলের fit-সহ। নামানো model catalog model-এর মতোই; Hermes GGUF ফাইল পড়ে context ও memory placement (কোন অংশ কোথায় বসবে) ঠিক করে। community model-এ **\"validated\"** ব্যাজ থাকে না (মানে Hermes পরীক্ষা করে দেখেনি)। **Add model file** একটা বিদ্যমান `.gguf` কপি না করে লিংক করে।\n\n## নিজের llama-server ব্যবহার\n\n**llama-server** = llama.cpp-র একটা চালু-থাকা server (ছোট পরিষেবা-প্রোগ্রাম)। চলমান llama-server থাকলে Hermes সেটা শনাক্ত করে নিজেরটা চালায় না। Custom endpoint যেকোনো OpenAI-compatible server; URL হতে পারে root (`http://127.0.0.1:8080`) বা পুরো `/v1`। (`127.0.0.1` = নিজের কম্পিউটারের নিজস্ব ঠিকানা, loopback।) endpoint test দুটোই চেষ্টা করে, যেটায় `/models` সাড়া দেয় সেটা সংরক্ষণ করে। Ollama বা Mac-এর জন্য আলাদা guide: \"Run Hermes Locally with Ollama\", \"Run Local LLMs on Mac\"।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Configuration\n\nDesktop UI এই মান লেখে; CLI/headless-এর জন্য নথিভুক্ত (headless = পর্দা-হীন, শুধু কমান্ড লাইন):\n\n```yaml\nlocal_runtime:\n  enabled: false        # true = Hermes-এর সাথে managed server চালু\n  backend: auto         # auto | cuda | metal | vulkan | hip | cpu\n  detect_ports: [8081]  # নিজের llama-server খোঁজার বাড়তি port (default শুধু :8080)\n```\n\n| key | মানে | কখন বদলাবে |\n|---|---|---|\n| `enabled` | true হলে Hermes-এর সঙ্গে server নিজে চালু হয় | local model ব্যবহার করতে |\n| `backend` | কোন \"GPU ভাষা\" (`auto` = Hermes নিজে বেছে নেয়) | নির্দিষ্ট একটায় জোর করতে |\n| `detect_ports` | নিজের llama-server খোঁজার অতিরিক্ত port | নিজের server অন্য port-এ চালালে |\n\nনিজের llama-server স্থির port-এ চালাতে `model.provider: llamacpp` ব্যবহার করো এবং হয় port `detect_ports`-এ দাও, নয়তো স্পষ্ট endpoint দাও (এটা server-detection-এর চেয়ে অগ্রাধিকার পায়):\n\n```yaml\nproviders:\n  llamacpp:\n    base_url: http://127.0.0.1:8081/v1\n    model: my-model\n```\n\nকোনো server না পেলে error হয় \"the local model server isn't running\", unknown-provider বা API-key-missing নয়। engine-এর version আসে শুধু PM lockfile (`pm/lock.json`) থেকে (PM = package manager, প্রোগ্রাম আনা-রাখার ম্যানেজার); `local_runtime.tag` নামে কোনো override নেই। নতুন engine pin নিতে desktop-এর update button।\n\n**Storage**: `models/` (মেশিন-ব্যাপী model), PM store (engine binary), `runtimes/llamacpp/` (preset ও server state)।\n\n## Backend ও platform\n\n| Platform | Backend |\n|---|---|\n| Windows | CUDA, Vulkan (x64), CPU |\n| Linux | CUDA (CUDA 13 driver), Vulkan, CPU |\n| macOS | Metal, CPU |\n| HIP/ROCm | শুধু স্পষ্ট বাছাইয়ে, supported x64-এ |\n\n`backend: auto`-তে NVIDIA হলে CUDA; AMD ও Intel-এ Vulkan; GPU না পেলে CPU। discrete GPU (আলাদা কার্ড) নিজের memory অনুযায়ী মাপা হয় (system RAM spill-এর জায়গা, অন্য program-এর দখল বাদ); integrated GPU (CPU-র সঙ্গে জোড়া) system RAM ভাগ করে। অসমর্থিত জুটি download শুরুর আগেই ব্যর্থ হয়।\n\n## Download ও অখণ্ডতা\n\n**অখণ্ডতা** (integrity) মানে ফাইলটা ঠিকঠাক, অর্ধেক-ভাঙা বা বদলানো নয়।\n\n- **Pause/Resume** চলে engine install/update, catalog model, Hugging Face download ও quickstart-এ। pause হয় chunk-সীমায় (ছোট টুকরোর শেষে); unpack, verify, server activation আলাদা ধাপ।\n- Range-সমর্থী host-এ বাকি byte থেকে resume; নইলে বর্তমান ফাইল নতুন করে। শেষ হওয়া ফাইল পুনর্ব্যবহৃত হয়।\n- আংশিক ফাইল `cache/partials`-এ; অসম্পূর্ণ ফাইল কখনো publish হয় না (ব্যবহারযোগ্য জায়গায় আসে না)। engine archive ব্যবহারের আগে SHA-256 যাচাই (একটা ছাপ-মেলানো যা প্রমাণ করে ফাইল বদলায়নি)।\n- model মুছলে তার সব staged ফাইল (vision adapter, speculative-decoding সঙ্গীসহ) মুছে যায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কম RAM-এ কী করবে?",
+      "markdown": "হলুদ ও লাল চিহ্নকে ভয় পেও না, তারা দেখায় আপগ্রেড করলে কী মিলত। সবুজ model বাছো, নইলে Hermes আপনা-আপনি ছোট build বা compression দিয়ে সামলাবে।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Docker-এ local model",
+      "markdown": "Hermes Docker-এ থাকলে vLLM/Ollama-র মতো server container নাম ধরে ডাকা হয়, বিস্তারিত Docker lesson-এ।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Local model চালাতে Hermes কোন inference engine নিজে নামায়?",
+      "options": ["llama.cpp", "TensorFlow", "Excel", "Docker"],
+      "answerIndex": 0,
+      "explanation": "inference engine হলো model-ফাইল পড়ে উত্তর বানানোর যন্ত্র; Hermes llama.cpp নামায়।"
+    },
+    {
+      "question": "Model-এর সারিতে \"Uses system RAM\" (হলুদ) মানে কী?",
+      "options": [
+        "চলে না",
+        "সবচেয়ে দ্রুত",
+        "চলে, কিন্তু GPU-তে পুরো ধরে না বলে ধীরে",
+        "খরচ বেশি"
+      ],
+      "answerIndex": 2,
+      "explanation": "GPU-র টেবিলে পুরো ধরে না, তাই কিছু অংশ সাধারণ RAM-এ উপচে যায়।"
+    },
+    {
+      "question": "Quantization নিয়মে Hermes কখনো কী দেয় না?",
+      "options": ["৮-bit", "৪-bit-এর নিচে", "১৬-bit", "GPU build"],
+      "answerIndex": 1,
+      "explanation": "এর চেয়ে ছোট করলে মান অনেক খারাপ হয়ে যায়।"
+    },
+    {
+      "question": "সুপারিশকৃত (★) model-এর জন্য অনুমানিক গতির সীমা কত?",
+      "options": [
+        "১ token/sec",
+        "১০০ token/sec",
+        "কোনো সীমা নেই",
+        "২০ token/sec বা বেশি"
+      ],
+      "answerIndex": 3,
+      "explanation": "পুরোটা GPU/unified memory-তে ধরতে হবে এবং ~২০ token/sec ছুঁতে হবে।"
+    },
+    {
+      "question": "Model ১৫ মিনিট ব্যবহার না হলে কী হয়?",
+      "options": [
+        "মুছে যায়",
+        "আপডেট হয়",
+        "unload হয়ে GPU memory ফাঁকা হয়; পরের message-এ আবার লোড",
+        "internet-এ যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "idle unload: কেউ না থাকলে বাতি নেভানো।"
+    },
+    {
+      "question": "নিজের llama-server স্থির port-এ চালাতে কোন provider নাম?",
+      "options": ["`llamacpp`", "`openai`", "`ollama`", "`custom_local`"],
+      "answerIndex": 0,
+      "explanation": "`model.provider: llamacpp` আর `detect_ports` বা স্পষ্ট `base_url`।"
+    },
+    {
+      "question": "\"Context window grown\" বার্তার মানে কী?",
+      "options": [
+        "error হয়েছে",
+        "model মুছে গেছে",
+        "compress হয়েছে",
+        "window বেড়েছে, এটা error নয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "Starting context থেকে native সর্বোচ্চের দিকে বাড়ার ঘোষণা।"
+    }
+  ],
+  "recap": [
+    "Local models মানে নিজের মেশিনে open model চালানো; download-এর পরে account, key বা ইন্টারনেট লাগে না।",
+    "Hermes llama.cpp নামায় ও hardware অনুযায়ী build, context ও GPU placement ঠিক করে।",
+    "সবুজ/হলুদ/লাল fit আর ★ সুপারিশ (২০ tok/s+) দেখে model বাছো।",
+    "`hermes model` → Local models, বা Desktop-এ Settings → Providers → Local Models।",
+    "Config: `local_runtime` (enabled, backend, detect_ports) ও `model.provider: llamacpp`।",
+    "Model ১৫ মিনিট নিষ্ক্রিয় থাকলে unload হয়; download pause/resume ও SHA-256 যাচাই আছে।"
+  ]
+}

@@ -1,8 +1,6 @@
 import { Badge, Button } from "@/components/shared/shadcn";
 import type { SdQuizStatus } from "./sd-quiz.types";
 
-const QUESTION_BANK_SIZE = 60;
-
 function AttemptHistory({ attempts }: { attempts: SdQuizStatus["attempts"] }) {
   if (attempts.length === 0) return null;
   return (
@@ -20,9 +18,11 @@ function AttemptHistory({ attempts }: { attempts: SdQuizStatus["attempts"] }) {
 
 export function SdQuizIntro({
   status,
+  bankSize,
   onStart,
 }: {
   status: SdQuizStatus | null;
+  bankSize: number;
   onStart: () => void;
 }) {
   const attempted = (status?.attempts.length ?? 0) > 0;
@@ -30,12 +30,14 @@ export function SdQuizIntro({
     <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
       {status?.passed && <Badge className="w-fit">Quiz Passed ✅</Badge>}
       <p className="text-sm text-muted-foreground">
-        60টা প্রশ্নের bank থেকে প্রতিবার 20টা। Pass করতে 95% (20-এ অন্তত 19)
-        লাগবে। আগে না দেখা প্রশ্ন আগে আসবে।
+        {bankSize > 20
+          ? `${bankSize}টা প্রশ্নের bank থেকে প্রতিবার 20টা। আগে না দেখা প্রশ্ন আগে আসবে।`
+          : "প্রতিবার 20টা প্রশ্ন আসবে; প্রশ্ন আর option-এর ক্রম প্রতিবার বদলায়।"}{" "}
+        Pass করতে 95% (20-এ অন্তত 19) লাগবে।
       </p>
-      {status && (
+      {status && bankSize > 20 && (
         <p className="text-xs text-muted-foreground">
-          এই চক্রে দেখা হয়েছে {status.seenCount}/{QUESTION_BANK_SIZE}টা প্রশ্ন
+          এই চক্রে দেখা হয়েছে {status.seenCount}/{bankSize}টা প্রশ্ন
         </p>
       )}
       <AttemptHistory attempts={status?.attempts ?? []} />

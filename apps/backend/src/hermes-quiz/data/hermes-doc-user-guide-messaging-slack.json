@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-slack",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q01",
+      "difficulty": "easy",
+      "question": "Slack-এর সাথে Hermes-এর **Socket Mode** মানে কী?",
+      "options": [
+        "Hermes নিজেই Slack-এ একটা WebSocket সংযোগ খুলে রাখে",
+        "Slack প্রতিটা ঘটনায় তোমার খোলা public URL-এ ডাক দেয়",
+        "Hermes শুধু Slack-এর DM বার্তাগুলো পড়তে পারে",
+        "Hermes প্রতি মিনিটে Slack-কে নতুন বার্তার জন্য জিজ্ঞেস করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Socket Mode-এ Hermes নিজেই Slack-এর সাথে চালু-থাকা WebSocket সংযোগ রাখে, তাই বাইরে কোনো দরজা (public URL) খুলতে হয় না।",
+      "whyWrong": {
+        "1": "এটা উল্টো পদ্ধতি: public URL লাগে Socket Mode ছাড়া সাধারণ event পদ্ধতিতে।",
+        "2": "Socket Mode DM আর channel দুটোতেই কাজ করে, শুধু DM-এ সীমাবদ্ধ নয়।",
+        "3": "এটা polling নয়; সংযোগ একবার খোলা থাকে আর ঘটনা সেখানেই আসে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q02",
+      "difficulty": "easy",
+      "question": "`xoxb-` দিয়ে শুরু হওয়া token কী কাজে লাগে?",
+      "options": [
+        "Socket Mode-এ Slack-এর সাথে সরাসরি সংযোগ খোলার কাজে",
+        "Bot-এর পরিচয় হয়ে বার্তা পড়া-পাঠানোর কাজে",
+        "Slack-এর manifest ফাইল তৈরি করার কাজে",
+        "কোন user অনুমোদিত তা ঠিক করে দেওয়ার কাজে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`xoxb-` হলো Bot User OAuth Token, এটাই `SLACK_BOT_TOKEN`। বার্তা পড়া-লেখা এটা দিয়ে হয়।",
+      "whyWrong": {
+        "0": "সংযোগ খোলার কাজ `xapp-` app-level token-এর।",
+        "2": "Manifest `hermes slack manifest` কমান্ড বানায়, token নয়।",
+        "3": "অনুমোদিত user ঠিক হয় `SLACK_ALLOWED_USERS`-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q03",
+      "difficulty": "easy",
+      "question": "`xapp-` দিয়ে শুরু হওয়া app-level token কোন env variable-এ বসে?",
+      "options": [
+        "`SLACK_BOT_TOKEN`",
+        "`SLACK_HOME_CHANNEL`",
+        "`SLACK_APP_TOKEN`",
+        "`SLACK_ALLOWED_USERS`"
+      ],
+      "correctIndex": 2,
+      "explanation": "`xapp-` token `connections:write` scope-সহ বানানো হয় আর `SLACK_APP_TOKEN`-এ রাখা হয়।",
+      "whyWrong": {
+        "0": "`SLACK_BOT_TOKEN`-এ যায় `xoxb-` token।",
+        "1": "`SLACK_HOME_CHANNEL`-এ channel ID থাকে, token নয়।",
+        "3": "`SLACK_ALLOWED_USERS`-এ Member ID থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q04",
+      "difficulty": "easy",
+      "question": "Slack-এ **Member ID** বলতে কী বোঝায়?",
+      "options": [
+        "মানুষটির profile-এ দেখানো নাম বা username",
+        "একটা private channel-এর গোপন ঠিকানা-কোড",
+        "bot-কে দেওয়া scope-এর তালিকার নাম",
+        "প্রতিজনের পরিচয়-কোড, যেমন `U01ABC2DEF3`"
+      ],
+      "correctIndex": 3,
+      "explanation": "Hermes username দিয়ে নয়, Member ID দিয়ে মানুষ চেনে। profile → ⋮ → Copy member ID থেকে পাওয়া যায়।",
+      "whyWrong": {
+        "0": "username দিয়ে চেনা হয় না, এটাই সাধারণ ভুল ধারণা।",
+        "1": "Channel ID আলাদা জিনিস; সেটা `C...` দিয়ে শুরু হয়।",
+        "2": "Scope হলো অনুমতি, Member ID নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q05",
+      "difficulty": "easy",
+      "question": "**Manifest** কী?",
+      "options": [
+        "কোন কোন মানুষ Slack channel-এ ঢুকতে পারবে তার তালিকা",
+        "Slack app-এর সব সেটিং এক JSON ফাইলে লেখা",
+        "bot-এর পাঠানো সব বার্তার লগ ফাইল",
+        "দুটো token একসাথে রাখার গোপন ফাইল"
+      ],
+      "correctIndex": 1,
+      "explanation": "Manifest paste করলে scope, event সব এক ধাক্কায় ঠিক হয়ে যায়, যেন তৈরি ফর্ম।",
+      "whyWrong": {
+        "0": "অনুমোদিত user-এর তালিকা থাকে `SLACK_ALLOWED_USERS`-এ।",
+        "2": "Manifest-এ বার্তার লগ থাকে না, শুধু app-এর সেটিং থাকে।",
+        "3": "Token থাকে `~/.hermes/.env`-এ, manifest-এ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q06",
+      "difficulty": "easy",
+      "question": "**Scope** মানে কী?",
+      "options": [
+        "Slack-এ ঘটা কোনো ঘটনার খবর, যেমন নতুন DM আসা",
+        "bot চালানোর জন্য বানানো একটা service",
+        "কোনো channel-এর ভেতরের একটা কথোপকথন",
+        "Slack app-কে দেওয়া অনুমতি, যেমন বার্তা লেখা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Scope হলো অনুমতি (`chat:write` বার্তা লেখার, `files:read` ফাইল পড়ার)।",
+      "whyWrong": {
+        "0": "ঘটনার খবরকে বলে Event, Scope নয়।",
+        "1": "Service বানায় `hermes gateway install`, এর সাথে scope-এর সম্পর্ক নেই।",
+        "2": "কথোপকথনকে বলে thread।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q07",
+      "difficulty": "easy",
+      "question": "Scope-এর নামে `groups` শব্দটা কোন ধরনের জায়গা বোঝায়?",
+      "options": [
+        "Private channel (গোপন ঘর)",
+        "সবার জন্য খোলা public channel",
+        "দুজনের DM",
+        "কয়েকজনের group DM"
+      ],
+      "correctIndex": 0,
+      "explanation": "নিয়ম: `channels` = খোলা channel, `groups` = private channel, `im` = দুজনের DM, `mpim` = কয়েকজনের group DM।",
+      "whyWrong": {
+        "1": "খোলা channel বোঝায় `channels`।",
+        "2": "দুজনের DM বোঝায় `im`।",
+        "3": "Group DM বোঝায় `mpim`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q08",
+      "difficulty": "medium",
+      "question": "পুরো Slack app-এর সেটিং ফাইল বানাতে, `~/.hermes/slack-manifest.json`-এ লিখে রেখে, কোন কমান্ড চালাবে?",
+      "options": [
+        "`hermes gateway setup --write`",
+        "`hermes slack install --agent-view`",
+        "`hermes slack manifest --agent-view --write`",
+        "`hermes gateway manifest --long-description-file`"
+      ],
+      "correctIndex": 2,
+      "explanation": "`hermes slack manifest` ফাইল বানায়, `--agent-view` নতুন agent-দৃশ্য নেয়, আর `--write` ফাইলে লিখে রাখে।",
+      "whyWrong": {
+        "0": "`hermes gateway setup` interactive সেটআপ করে, manifest লেখে না।",
+        "1": "`hermes slack install` নামে এমন কমান্ড লেসনে নেই।",
+        "3": "`hermes gateway manifest` নয়, সঠিক কমান্ড `hermes slack manifest`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q09",
+      "difficulty": "medium",
+      "question": "`hermes slack manifest`-এর `--long-description-file <path>` ফ্ল্যাগ কী করে?",
+      "options": [
+        "Manifest-এর পুরো ফাইলটা অন্য জায়গায় সরিয়ে দেয়",
+        "Gateway-র লগ একটা লম্বা ফাইলে জমা করে",
+        "Slack-এ পাঠানো লম্বা বার্তা কেটে ছোট করে",
+        "App-এর লম্বা বর্ণনা একটা ফাইল থেকে নেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Slack লম্বা বর্ণনায় ১৭৫ থেকে ৪,০০০ অক্ষর নেয়। ফাইল থেকে পড়ে এই ফ্ল্যাগ সেটা বসায়।",
+      "whyWrong": {
+        "0": "ফাইল কোথায় লেখা হবে তা `--write` ঠিক করে, এই ফ্ল্যাগ নয়।",
+        "1": "এই ফ্ল্যাগের সাথে gateway-র লগের সম্পর্ক নেই।",
+        "2": "বার্তা কাটার কাজ এই ফ্ল্যাগের নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q10",
+      "difficulty": "medium",
+      "question": "`SLACK_ALLOWED_USERS` একদম না দিলে কী হয়?",
+      "options": [
+        "সবাই Hermes ব্যবহার করতে পারে",
+        "সব বার্তা deny হয়ে যায়",
+        "শুধু app-এর মালিক ব্যবহার করতে পারে",
+        "শুধু DM-এর বার্তা deny হয়, channel-এ চলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "লেসন অনুযায়ী এই variable আবশ্যক। না দিলে সব বার্তা deny হয়, তাই কমা দিয়ে Member ID দিতে হয়।",
+      "whyWrong": {
+        "0": "ফাঁকা থাকলে খোলা নয়, উল্টো সব বন্ধ।",
+        "2": "মালিকের জন্য আলাদা ছাড় লেসনে বলা নেই।",
+        "3": "DM আর channel দুটোতেই deny হয়, আলাদা করা হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q11",
+      "difficulty": "medium",
+      "question": "Channel-এ Hermes-কে উত্তর দেওয়াতে হলে কী করতে হয়?",
+      "options": [
+        "শুধু বার্তা লিখলেই হয়, উত্তর আসে আলাদা DM-এ",
+        "`/invite` ছাড়া আর কিছুই লাগে না, mention-ও না",
+        "`@Hermes` mention করতে হয়, উত্তর আসে thread-এ",
+        "বার্তার শুরুতে `!` দিতে হয়, উত্তর channel-এ আসে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Channel-এ শুধু @mention করলে উত্তর দেয়, আর উত্তর যায় thread-এ। DM-এ mention লাগে না। আগে অবশ্যই `/invite @Hermes Agent` করতে হয়।",
+      "whyWrong": {
+        "0": "DM-এ mention ছাড়া চলে, channel-এ চলে না।",
+        "1": "`/invite` করা লাগেই, আর mention-ও লাগে।",
+        "3": "`!` prefix শুধু thread-এর ভেতরে slash command-এর বদলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q12",
+      "difficulty": "medium",
+      "question": "Scope বা event subscription বদলালে কেন app **reinstall** করতে হয়?",
+      "options": [
+        "না করলে বদলটা কাজ করে না",
+        "Token-গুলো পুরোনো হয়ে মুছে যায়",
+        "Slack নতুন manifest ফাইল বানিয়ে দেয়",
+        "Gateway নিজে থেকে বন্ধ হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "reinstall না করলে বদলানো scope বা event চালু হয় না। এটাই সবচেয়ে সাধারণ ভুল।",
+      "whyWrong": {
+        "1": "Token এমনিতেই মুছে যায় না।",
+        "2": "Manifest বানায় `hermes slack manifest`।",
+        "3": "Gateway বন্ধ হওয়ার সাথে reinstall-এর সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q13",
+      "difficulty": "medium",
+      "question": "Hermes gateway নিজে থেকে চালু থাকা user service হিসেবে বসাতে কোন কমান্ড?",
+      "options": [
+        "`hermes gateway`",
+        "`hermes gateway install`",
+        "`hermes gateway setup`",
+        "`sudo hermes gateway install --system`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`hermes gateway install` user service বসায়, তাই নিজে চালু থাকে।",
+      "whyWrong": {
+        "0": "`hermes gateway` শুধু foreground-এ চালায়, বন্ধ করলে থামে।",
+        "2": "`hermes gateway setup` interactive সেটআপ, service বসায় না।",
+        "3": "`--system` দিলে Linux boot-time service হয়, user service নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q14",
+      "difficulty": "medium",
+      "question": "Thread-এর ভেতরে Slack native slash command আটকে দিলে, `/stop`-এর বদলে কী লিখবে?",
+      "options": ["`@stop`", "`#stop`", "`stop/`", "`!stop`"],
+      "correctIndex": 3,
+      "explanation": "Thread-এ `!` prefix ব্যবহার করো: `!queue`, `!stop`, `!model`।",
+      "whyWrong": {
+        "0": "`@` mention-এর চিহ্ন, command-এর নয়।",
+        "1": "`#` channel-এর নামে ব্যবহার হয়।",
+        "2": "এমন লেখার নিয়ম লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q15",
+      "difficulty": "hard",
+      "question": "Hermes DM-এ ঠিকঠাক চলে কিন্তু public channel-এ চুপ। কোন সমাধান ঠিক?",
+      "options": [
+        "`SLACK_APP_TOKEN` মুছে দাও আর অন্য নতুন DM scope বসিয়ে দাও",
+        "`reply_to_mode` বদলে `all` করো আর gateway আবার নতুন করে চালাও",
+        "`message.channels` যোগ, `channels:history` যোগ, reinstall",
+        "`SLACK_ALLOWED_USERS` ফাঁকা রাখো যাতে সবাই বার্তা লিখতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "DM কাজ করা মানে token ঠিক। Channel-এর জন্য `message.channels` event, `channels:history` scope, reinstall আর `/invite @Hermes Agent` লাগে।",
+      "whyWrong": {
+        "0": "`SLACK_APP_TOKEN` মুছলে সংযোগই ভেঙে যায়।",
+        "1": "`reply_to_mode` শুধু উত্তরের ধরন ঠিক করে, শোনা নয়।",
+        "3": "ফাঁকা করলে সব deny হয়, উল্টো ফল।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q16",
+      "difficulty": "hard",
+      "question": "Slack বলছে \"Sending messages to this app has been turned off\"। কোথায় ঠিক করবে?",
+      "options": [
+        "App Home-এ Messages Tab চালু করে বার্তা পাঠানোর অপশন টিক দাও",
+        "`SLACK_HOME_CHANNEL`-এ একটা নতুন channel ID বসিয়ে দাও",
+        "Event Subscriptions থেকে `app_mention` event মুছে দাও",
+        "`hermes slack manifest` থেকে `--agent-view` ফ্ল্যাগ বাদ দিয়ে লেখো"
+      ],
+      "correctIndex": 0,
+      "explanation": "লেসনের ধাপ ৪: App Home-এ Messages Tab চালু করো আর বার্তা পাঠাতে দেওয়ার অপশন টিক দাও।",
+      "whyWrong": {
+        "1": "Home channel cron বার্তার ঠিকানা, DM-এর অনুমতি নয়।",
+        "2": "`app_mention` মুছলে উল্টো mention শোনা বন্ধ হবে।",
+        "3": "`--agent-view` বাদ দেওয়ার কথা শুধু পুরোনো Assistant view-এর ক্ষেত্রে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q17",
+      "difficulty": "hard",
+      "question": "Thread-এ কেউ `!nice work` লিখল। Hermes কী করবে?",
+      "options": [
+        "`nice` নামের command চালাবে",
+        "অজানা command বলে error দেখিয়ে দেবে",
+        "বার্তাটা চুপচাপ উপেক্ষা করবে",
+        "সাধারণ বার্তা ধরে agent-কে পাঠাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "শুধু প্রথম শব্দ command তালিকায় মেলানো হয়। `nice` command নয়, তাই বার্তাটা সাধারণ বার্তা হয়ে agent-এ যায়।",
+      "whyWrong": {
+        "0": "`nice` command তালিকায় নেই।",
+        "1": "লেসনে এমন error আচরণের কথা নেই।",
+        "2": "উপেক্ষা হয় শুধু Hermes-এর নিজের বার্তা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q18",
+      "difficulty": "hard",
+      "question": "`group_sessions_per_user: false` করা আছে। channel-এ একজন `/reset` দিলে কী হবে?",
+      "options": [
+        "সবার জন্য একই session মুছে যাবে",
+        "শুধু ওই একজনের session মুছবে",
+        "কিছুই মুছবে না, শুধু thread নতুন হবে",
+        "`/reset` ভুল command বলে বাতিল হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "`false` মানে channel-এ একটাই session, তাই একজনের `/reset` সবার জন্য মুছে দেয়। default `true`-তে প্রতিজনের আলাদা থাকে।",
+      "whyWrong": {
+        "1": "আলাদা session হতো `true` থাকলে।",
+        "2": "Session-ই মুছে যায়, শুধু thread নয়।",
+        "3": "`/reset` Hermes-এর বৈধ command।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q19",
+      "difficulty": "hard",
+      "question": "Log-এ `not_authed` বা `invalid_auth` এল। সঠিক পদক্ষেপ কোনটা?",
+      "options": [
+        "শুধু app reinstall করো, token ছুঁয়ো না",
+        "`message.channels` event যোগ করে দাও",
+        "দুটো token নতুন করে বানিয়ে `.env` ঠিক করো",
+        "`SLACK_ALLOWED_USERS`-এ তোমার Member ID বসাও"
+      ],
+      "correctIndex": 2,
+      "explanation": "এই error মানে \"পরিচয় মিলছে না\", তাই token ঠিক করতে হয়। সমাধান: দুটো token নতুন বানিয়ে `.env` ঠিক করা।",
+      "whyWrong": {
+        "0": "`missing_scope` হলে scope যোগ করে reinstall লাগে, এখানে সেটা নয়।",
+        "1": "Event যোগ করা চুপ থাকার সমস্যার সমাধান, auth-এর নয়।",
+        "3": "Allowed user অনুমতির ব্যাপার, পরিচয় যাচাই নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-slack-q20",
+      "difficulty": "hard",
+      "question": "দুটো bot-এর মধ্যে কথোপকথন চলবে কিন্তু অন্তহীন লুপের ঝুঁকি কম রাখতে চাও। `allow_bots` কোনটা?",
+      "options": [
+        "`all` (সব bot-এর বার্তায় সাড়া)",
+        "`mentions` (mention থাকলে)",
+        "`none` (কোনো bot-এ সাড়া নয়)",
+        "`first` (শুধু প্রথম বার্তায়)"
+      ],
+      "correctIndex": 1,
+      "explanation": "`mentions` সুপারিশকৃত: বার্তাতেই নিজেকে mention থাকলে তবেই সাড়া দেয়। `all` লুপের ঝুঁকি বাড়ায়।",
+      "whyWrong": {
+        "0": "`all` সব bot-এর বার্তায় সাড়া দেয়, লুপের ঝুঁকি।",
+        "2": "`none` bot-to-bot একদম বন্ধ, কথোপকথনই হবে না।",
+        "3": "`first` হলো `reply_to_mode`-এর মান, `allow_bots`-এর নয়।"
+      }
+    }
+  ]
+}

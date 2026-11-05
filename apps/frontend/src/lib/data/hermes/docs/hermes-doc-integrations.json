@@ -1,0 +1,192 @@
+{
+  "contentId": "hermes-doc-integrations",
+  "title": "Integrations Overview",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/integrations",
+  "oneLiner": "এই lesson শেষে তুমি জানবে Hermes-কে বাইরের কোন কোন জিনিসের সাথে জোড়া যায়, প্রতিটা কঠিন শব্দ (provider, API, MCP, TTS, gateway...) মানে কী, আর কোনটার জন্য কোন page-এ যেতে হবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা রান্নাঘরের গল্প\n\nধরো Hermes একজন চালাক রাঁধুনি। কিন্তু শুধু রাঁধুনি একা থাকলে রান্না হয় না। তার লাগে:\n\n- 🔥 **গ্যাসের চুলা**: যেটা রান্নার আসল শক্তি দেয়। (Hermes-এ এটা **AI model**, মানে \"ভাবার মস্তিষ্ক\"।)\n- 🧊 **ফ্রিজ**: আগের জিনিস মনে রাখার জায়গা। (এটা **memory**।)\n- 📱 **ফোন**: বাইরের মানুষের সাথে কথা বলার উপায়। (এটা **messaging platform**, যেমন Telegram।)\n- 🔔 **দরজার ঘণ্টা**: বাইরের কেউ এসে ডাকলে যেন শুনতে পায়। (এটা **API Server**।)\n- 🛍️ **বাজারের থলে**: বাইরে থেকে জিনিস আনা। (এটা **web search**, **browser** ইত্যাদি।)\n\nরাঁধুনির নিজের ভেতরে এসব তৈরি করা নেই। এসব **বাইরে থেকে এনে জোড়া লাগাতে হয়**। এই \"জোড়া লাগানো\" জিনিসগুলোকেই Hermes-এ বলে **Integration** (ইন্টিগ্রেশন)। Integration মানে \"অন্য কোনো জিনিসের সাথে মিলিয়ে কাজ করা।\"\n\nএই page-টা নিজে গভীর ব্যাখ্যা দেয় না। এটা একটা **সূচিপত্র (index)**, মানে বইয়ের শুরুর পাতার মতো: \"কোন জিনিস কোন পাতায় পাবে।\" তাই এই lesson-ও মানচিত্র দেখাবে, আর প্রতিটা কঠিন শব্দ সোজা করে বুঝিয়ে দেবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\nএই শব্দগুলো না জানলে নিচের টেবিল ঝাপসা লাগবে। তাই আগে এগুলো।\n\n### ১) Provider (প্রোভাইডার) আর Model (মডেল)\n- **Model** = AI-র \"মস্তিষ্ক\", যে প্রশ্নের উত্তর ভেবে বের করে। এর অন্য নাম **LLM** (Large Language Model, মানে অনেক বড় ভাষার-মডেল)।\n- **Provider** = যে কোম্পানি ওই মস্তিষ্কটা ভাড়া দেয়। যেমন গ্যাস কোম্পানি চুলার গ্যাস দেয়।\n- Hermes নিজে \"ভাবে\" না। ভাবার কাজটা provider-এর model করে। তাই provider ছাড়া Hermes চলে না।\n\n### ২) API আর API key\n- **API** = এক প্রোগ্রামের সাথে আরেক প্রোগ্রামের কথা বলার নিয়ম। যেমন রেস্টুরেন্টে মেনু দেখে ওয়েটারকে অর্ডার দেওয়া: তুমি রান্নাঘরে ঢোকো না, শুধু নিয়ম মেনে অর্ডার দাও।\n- **API key** = সেই রেস্টুরেন্টে তোমার পরিচয়পত্র। একটা লম্বা গোপন পাসওয়ার্ড। এটা কাউকে দেখাতে নেই।\n- **Env var (environment variable)** = কম্পিউটারের একটা নামওয়ালা সেটিং, যেমন `FIRECRAWL_API_KEY`। key গুলো সাধারণত এভাবে রাখা হয়।\n\n### ৩) OAuth login\nপাসওয়ার্ড কপি-পেস্ট না করে \"Google দিয়ে login\"-এর মতো করে অনুমতি দেওয়ার পদ্ধতি। Nous Portal এভাবে কাজ করে।\n\n### ৪) MCP (Model Context Protocol)\nদেয়ালের সার্বজনীন **সকেট**। যেকোনো কোম্পানি এই সকেটের মাপে প্লাগ বানালে Hermes সেটা লাগিয়ে নতুন tool (হাতিয়ার) পেয়ে যায়। বিস্তারিত পরের MCP lesson-এ।\n\n### ৫) Backend (ব্যাকএন্ড)\nপর্দার পেছনের কর্মী। যেমন \"web search\" একটা কাজ, আর Firecrawl বা Brave হলো সেই কাজ যারা আসলে করে তারা, মানে backend। একটা কাজের জন্য অনেক backend থাকতে পারে, তুমি একটা বাছো।\n\n### ৬) TTS ও STT\n- **TTS** (Text-To-Speech) = লেখা পড়ে শোনানো।\n- **STT** (Speech-To-Text) = কথা শুনে লিখে ফেলা।\n\n### ৭) Plugin (প্লাগইন)\nএকটা ছোট অ্যাড-অন, যা Hermes-এর মূল অংশ না ছুঁয়ে নতুন ক্ষমতা জোড়ে। যেমন ফোনে নতুন app নামানো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes-কে ঘিরে থাকা integration-এর মোটামুটি ছবি।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি / Client",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "p",
+            "kind": "external",
+            "label": "AI Providers",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "m",
+            "kind": "external",
+            "label": "MCP servers",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "t",
+            "kind": "external",
+            "label": "Web / Voice",
+            "x": 440,
+            "y": 200
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "h",
+            "label": "কথা / API / IDE"
+          },
+          {
+            "from": "h",
+            "to": "p",
+            "label": "মডেল"
+          },
+          {
+            "from": "h",
+            "to": "m",
+            "label": "বাইরের tool"
+          },
+          {
+            "from": "h",
+            "to": "t",
+            "label": "search, browser, TTS"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## page-এর বিভাগগুলো এক নজরে (মানচিত্র)\n\nআগের ঘরের উপমা মাথায় রেখে প্রতিটা বিভাগ পড়ো। \"কেন লাগে\" কলামে লেখা আছে এটা না থাকলে কী সমস্যা।\n\n| বিভাগ | সংক্ষেপে কী | কেন লাগে (না থাকলে কী হতো) |\n|---|---|---|\n| **Nous Portal** | একটা OAuth login-এ ৩০০+ মডেল আর চারটা Tool Gateway tool (web search, image generation, TTS, browser automation) | নইলে মডেল, search, ছবি, browser প্রতিটার জন্য আলাদা দোকান, আলাদা key, আলাদা বিল |\n| **AI Providers ও Routing** | `hermes model` বা `config.yaml` দিয়ে provider ঠিক করা: OpenRouter, Anthropic, OpenAI, Google, বা যেকোনো OpenAI-compatible endpoint | নইলে Hermes-এর \"মস্তিষ্ক\" থাকত না |\n| **Provider Routing** | OpenRouter-এর পেছনের কোন কোম্পানি কাজ করবে তা ঠিক করা | সস্তা/দ্রুত বা গোপনীয়তার পছন্দ জানানো যেত না |\n| **Fallback Providers** | ব্যাকআপ LLM | মূল provider পড়ে গেলে কাজ থেমে যেত |\n| **Tool Servers (MCP)** | stdio বা SSE-তে Model Context Protocol server জোড়া, প্রতি server-এ tool filtering | নইলে বাইরের tool জুড়তে প্রতিবার Hermes বদলাতে হতো |\n| **Web Search Backend** | `web.backend` বা `hermes tools` দিয়ে বাছা | নইলে ইন্টারনেটে খুঁজতে পারত না |\n| **Browser Automation** | `browser_exec` tool, CDP-র ওপর Python | নইলে ওয়েবসাইটে ক্লিক করে কাজ করা যেত না |\n| **Voice ও TTS** | TTS ও STT provider | নইলে শুধু লেখায় কথা হতো, গলায় না |\n| **IDE ও Editor (ACP)** | VS Code, Zed, JetBrains-এর ভেতরে Hermes | নইলে কোড লেখার জানালা ছেড়ে অন্য জানালায় যেতে হতো |\n| **API Server** | OpenAI-compatible HTTP endpoint | নইলে বাইরের chat অ্যাপ Hermes-কে ডাকতে পারত না |\n| **Memory** | built-in `MEMORY.md`/`USER.md` + বাইরের provider | নইলে প্রতিবার সব ভুলে যেত |\n| **Messaging Platforms** | ২৭+ platform-এ gateway bot | নইলে শুধু কম্পিউটারের সামনে বসেই কথা বলা যেত |\n| **Buzz** | Nostr-ভিত্তিক human+agent workspace | মানুষ আর agent একই জায়গায় কাজ করার জন্য |\n| **Home Automation** | চারটা Home Assistant tool | বাড়ির আলো-পাখা Hermes দিয়ে চালানোর জন্য |\n| **Plugins** | নতুন tool, hook, CLI command | নিজের মতো ক্ষমতা বাড়ানোর জন্য |\n| **Training ও Evaluation** | batch processing, ShareGPT-format trajectory data | Hermes-কে আরও ভালো শেখানোর ডেটা বানাতে |\n\n**কয়েকটা অচেনা শব্দ:**\n- **Endpoint** = একটা ঠিকানা, যেখানে অন্য প্রোগ্রাম অনুরোধ পাঠায়।\n- **OpenAI-compatible** = OpenAI-র কথা বলার ভাষা বোঝে এমন। প্রায় সব chat অ্যাপ এই ভাষা জানে, তাই এই ভাষায় কথা বললে সবার সাথে মিলে যায়।\n- **HTTP** = ওয়েবে এক জায়গা থেকে আরেক জায়গায় তথ্য পাঠানোর নিয়ম (ব্রাউজার যেটা দিয়ে সাইট খোলে)।\n- **Gateway bot** = Telegram-এর মতো chat অ্যাপে বসে থাকা Hermes, যে মেসেজ পেলে উত্তর দেয়।\n- **CDP** = Chrome-কে দূর থেকে চালানোর ভাষা। **Browser automation** মানে ব্রাউজার নিজে নিজে ক্লিক-টাইপ করা।\n- **Nostr** = একটা বিকেন্দ্রীভূত (কারও একার নিয়ন্ত্রণে নয়) মেসেজিং নেটওয়ার্ক।\n- **ShareGPT format / trajectory** = agent কীভাবে ধাপে ধাপে কাজ করল তার রেকর্ড, যা AI শেখানোর কাজে লাগে।\n- **Batch processing** = অনেক কাজ একসাথে এক লাইনে চালিয়ে ফেলা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Web Search Backend: ইন্টারনেটে খোঁজার কর্মী বাছা\n\n**কেন লাগে?** AI model শুধু নিজের শেখা জিনিস জানে। আজকের খবর বা নতুন ওয়েবসাইটের তথ্য জানতে হলে ইন্টারনেটে খুঁজতে হয়। সেই খোঁজার কাজটা করে একটা **web search backend**।\n\nবাছার দুটো পথ: `config.yaml` ফাইলে `web.backend` লিখে, অথবা `hermes tools` কমান্ড দিয়ে। (**config.yaml** = Hermes-এর সেটিং-খাতা, একটা সাধারণ লেখার ফাইল। **YAML** হলো সেটিং লেখার সোজা একটা ধরন, `নাম: মান` আকারে।)\n\n| Backend | Env var (key-র নাম) | কী পারে |\n|---|---|---|\n| Firecrawl (default) | `FIRECRAWL_API_KEY` | search, extract, crawl |\n| SearXNG | `SEARXNG_URL` | search |\n| Brave (free tier) | `BRAVE_SEARCH_API_KEY` | search |\n| DuckDuckGo (ddgs) | কিছু লাগে না | search |\n| Exa | `EXA_API_KEY` | search, extract |\n| Parallel | `PARALLEL_API_KEY` | search, extract |\n| xAI | `XAI_API_KEY` | search |\n\n**search, extract, crawl মানে কী?**\n- **search** = খোঁজা (Google-এ লেখার মতো)।\n- **extract** = একটা পাতা থেকে দরকারি লেখা তুলে আনা।\n- **crawl** = এক পাতা থেকে লিংক ধরে ধরে আরও অনেক পাতা ঘুরে আসা।\n\n**Env var ছাড়া DuckDuckGo কেন?** ওটা বিনা key-তে চলে, তাই একদম নতুনদের জন্য সবচেয়ে সোজা।\n\n`web.backend` ঠিক না করলে Hermes নিজেই দেখে নেয় তোমার কাছে কোন key আছে, আর সেটা দিয়ে backend বেছে নেয়। নিজের server-এ Firecrawl চালালে `FIRECRAWL_API_URL` দাও (সেই server-এর ঠিকানা)।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "পাতার একটা ছোট্ট অসঙ্গতি",
+      "markdown": "page-এ লেখা আছে \"eight\" web backend, কিন্তু টেবিলে সাতটা দেখানো। config উদাহরণে tavily, perplexity, keenable-ও আছে যা টেবিলে নেই। তাই সঠিক তালিকার জন্য `hermes tools` দেখে নিও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Browser, Voice আর Memory\n\n- **Browser:** `browser_exec` নামের tool CDP-র ওপর Python চালিয়ে ব্রাউজার চালায়। তুমি কোন ব্রাউজার চাও তার অপশন: Browser Use Cloud, Browserbase (দুটোই ইন্টারনেটের ওপর ভাড়া-ব্রাউজার), নিজের Chromium-এ `/browser connect`, বা তোমার কম্পিউটারে **headless** Chromium (default)। **Headless** মানে জানালা না দেখিয়ে পেছনে চুপচাপ চলা ব্রাউজার। **Camofox** একটা anti-detection (সাইট যেন রোবট বলে না ধরে) browser: `hermes plugins install camofox`।\n- **TTS (লেখা থেকে কথা):** Edge TTS (default, বিনামূল্যে, key লাগে না), ElevenLabs, OpenAI TTS, MiniMax, xAI TTS, NeuTTS।\n- **STT (কথা থেকে লেখা):** আটটা provider, যেমন local faster-whisper (নিজের কম্পিউটারেই চলে), Groq, OpenAI Whisper API।\n- **Memory provider:** built-in ফাইলের (`MEMORY.md` আর `USER.md`, মানে Hermes-এর নিজের স্মৃতির খাতা) পাশে Honcho, Hindsight, Supermemory, Mem0 ইত্যাদি বাইরের স্মৃতি-সেবাও জোড়া যায়: `hermes plugins install <name>` দিয়ে।\n\n**এই কমান্ডটা ভেঙে বুঝি:**\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `hermes` | Hermes-কে ডাকা | রাঁধুনিকে ডাকা |\n| `plugins` | \"প্লাগইন-সংক্রান্ত কাজ\" | অ্যাড-অনের কাউন্টারে যাওয়া |\n| `install` | নামিয়ে বসাও | অ্যাপ ইনস্টল করা |\n| `<name>` | কোন plugin (তুমি নাম বসাবে, যেমন `camofox`) | কোন অ্যাপ |\n\n## Messaging, Home Assistant, Plugins আর Buzz\n\n- **Messaging:** Hermes **gateway** হয়ে ২৭+ platform-এ চলে (Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email, SMS ইত্যাদি)। **Gateway** = ডাকঘরের মতো: এক দিকে chat অ্যাপ, অন্য দিকে Hermes, মাঝখানে মেসেজ আনা-নেওয়া করে। Telegram-এ বট বানাতে BotFather-কে `/newbot` পাঠাও। Slack-এর জন্য `hermes slack manifest --agent-view` দিয়ে একটা manifest (অ্যাপের পরিচয়-ফর্ম) বানাও।\n- **Home Assistant:** বাড়ির স্মার্ট জিনিস চালানোর software। চারটা tool: `ha_list_entities`, `ha_get_state`, `ha_list_services`, `ha_call_service`। ইনস্টল: `hermes plugins install homeassistant`। `HASS_TOKEN` (বাড়ির software-এর চাবি) সেট থাকলে toolset চালু হয়। **Toolset** = একই ধরনের কয়েকটা tool-এর বাক্স।\n- **Plugins:** `~/.hermes/plugins/` ফোল্ডারে, project-এর `.hermes/plugins/` ফোল্ডারে আর **pip entry point** (Python-এর প্যাকেজ-ব্যবস্থা) থেকে খুঁজে পায়। `~` মানে তোমার home ফোল্ডার, আর নামের শুরুতে `.` মানে লুকানো ফোল্ডার।\n- **Buzz:** তিনটা পথ: Buzz Desktop (managed ACP runtime), `buzz-acp` relay bridge, বা native gateway platform।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "এই lesson কীভাবে কাজে লাগবে",
+      "markdown": "এটাকে বইয়ের সূচিপত্র ভাবো। কোনো কিছু জোড়ার দরকার হলে এখানে এসে দেখো সেটার জন্য কোন page-এ যেতে হবে। যেমন chat অ্যাপ থেকে Hermes ডাকতে চাইলে **API Server** lesson, ব্যাকআপ চাইলে **Fallback Providers** lesson।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এ \"Integration\" বলতে কী বোঝায়?",
+      "options": [
+        "Hermes-এর নিজের ভেতরের কোড",
+        "কম্পিউটারের ডিস্ক পরিষ্কার করা",
+        "Hermes-কে বাইরের জিনিসের (মডেল, search, messaging ইত্যাদি) সাথে জোড়া লাগানো",
+        "Hermes মুছে ফেলা"
+      ],
+      "answerIndex": 2,
+      "explanation": "Integration মানে অন্য কোনো জিনিসের সাথে মিলিয়ে কাজ করা। রাঁধুনির চুলা, ফ্রিজ, ফোন বাইরে থেকে জোড়ার মতো।"
+    },
+    {
+      "question": "Provider আর Model-এর সম্পর্ক কী?",
+      "options": [
+        "Provider হলো যে কোম্পানি মডেল ভাড়া দেয়, Model হলো ভাবার মস্তিষ্ক",
+        "দুটো একই জিনিস",
+        "Provider মানে Hermes-এর ফাইল",
+        "Model মানে chat অ্যাপ"
+      ],
+      "answerIndex": 0,
+      "explanation": "গ্যাস কোম্পানি (provider) চুলায় গ্যাস দেয়, চুলা (model) রান্নার শক্তি দেয়। Hermes নিজে ভাবে না।"
+    },
+    {
+      "question": "কেন একটা web search backend বাছা দরকার?",
+      "options": [
+        "Hermes বন্ধ করার জন্য",
+        "ছবি আঁকার জন্য",
+        "Memory মোছার জন্য",
+        "Model শুধু নিজের শেখা জিনিস জানে, ইন্টারনেটে খুঁজতে backend লাগে"
+      ],
+      "answerIndex": 3,
+      "explanation": "আজকের খবর বা নতুন সাইটের তথ্য জানতে ইন্টারনেটে খুঁজতে হয়। সেই কাজ করে Firecrawl, Brave ইত্যাদি backend।"
+    },
+    {
+      "question": "`web.backend` ঠিক না করলে Hermes কী করে?",
+      "options": [
+        "কিছুই খুঁজতে পারে না",
+        "তোমার কাছে যে key আছে তা দেখে নিজে backend বেছে নেয়",
+        "সবসময় error দেয়",
+        "কম্পিউটার বন্ধ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "docs বলছে না ঠিক করলে Hermes যে key পায় সেটা দেখে নিজেই বেছে নেয়।"
+    },
+    {
+      "question": "TTS আর STT-র পার্থক্য কী?",
+      "options": [
+        "দুটো একই",
+        "TTS কথা থেকে লেখা, STT লেখা থেকে কথা",
+        "TTS লেখা থেকে কথা, STT কথা থেকে লেখা",
+        "দুটোই ছবির কাজ"
+      ],
+      "answerIndex": 2,
+      "explanation": "TTS = Text-To-Speech (লেখা পড়ে শোনানো), STT = Speech-To-Text (কথা শুনে লেখা)।"
+    },
+    {
+      "question": "এই page-টা আসলে কী ধরনের page?",
+      "options": [
+        "একটা সূচিপত্র (index), কোন integration কোথায় পাবে তার মানচিত্র",
+        "একটা গভীর কোডিং tutorial",
+        "শুধু Nous Portal-এর বিজ্ঞাপন",
+        "একটা error-এর তালিকা"
+      ],
+      "answerIndex": 0,
+      "explanation": "page নিজে গভীর ব্যাখ্যা দেয় না। এটা বিভাগগুলোর মানচিত্র, বিস্তারিত অন্য page-এ।"
+    },
+    {
+      "question": "বাইরের chat অ্যাপ (যেমন Open WebUI) থেকে Hermes-কে ডাকতে কোন integration লাগে?",
+      "options": [
+        "Home Automation",
+        "Training ও Evaluation",
+        "Web Search Backend",
+        "API Server (OpenAI-compatible endpoint)"
+      ],
+      "answerIndex": 3,
+      "explanation": "API Server Hermes-এর দরজার ঘণ্টার মতো: বাইরের অ্যাপ OpenAI-র ভাষায় ডাকলে Hermes উত্তর দেয়।"
+    }
+  ],
+  "recap": [
+    "Integration মানে Hermes-কে বাইরের জিনিসের সাথে জোড়া: মডেল, search, voice, memory, messaging, editor ইত্যাদি।",
+    "Provider হলো মডেল-ভাড়া-দেওয়া কোম্পানি; Hermes নিজে ভাবে না, provider-এর model ভাবে।",
+    "Web search-এর জন্য backend বাছতে হয় (`web.backend` বা `hermes tools`); না বাছলে Hermes নিজে বেছে নেয়।",
+    "MCP হলো বাইরের tool জোড়ার সার্বজনীন সকেট, আর ACP হলো editor-এর ভেতরে Hermes চালানোর ভাষা।",
+    "এই page একটা মানচিত্র; বিস্তারিত জানতে প্রতিটা বিভাগের নিজস্ব lesson দেখো।"
+  ]
+}

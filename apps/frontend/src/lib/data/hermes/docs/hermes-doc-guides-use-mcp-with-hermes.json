@@ -1,0 +1,162 @@
+{
+  "contentId": "hermes-doc-guides-use-mcp-with-hermes",
+  "title": "Use MCP with Hermes",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/use-mcp-with-hermes",
+  "oneLiner": "এই lesson শেষে তুমি নিরাপদে একটা একটা করে MCP server যোগ করা, test করা আর tool filter করা শিখবে এবং MCP, server, allowlist, YAML-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: যন্ত্রপাতির বাক্স\n\nHermes একজন কারিগর। তার নিজের কিছু যন্ত্র আছে।\n\n**MCP server** হলো বাইরে থেকে আনা আলাদা আলাদা যন্ত্রের বাক্স। একটাতে ফাইলের যন্ত্র, একটাতে GitHub-এর, একটাতে তোমার কোম্পানির API-র। কারিগর বদলায় না (Hermes-ই agent থাকে), শুধু যন্ত্র বাড়ে।\n\nবুদ্ধিমান মালিক সব বাক্স একসাথে কারিগরের হাতে দেয় না। **ঠিক যেটুকু দরকার** সেটুকুই দেয়। এই guide-এর মূল কথা: *ছোটতম কিন্তু কাজের surface সংযুক্ত করো।* (Surface মানে কতটা জায়গা বাইরে খোলা, অর্থাৎ কতগুলো কাজ করার সুযোগ।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **MCP (Model Context Protocol):** AI-কে বাইরের যন্ত্রের সঙ্গে জোড়ার একটা সর্বজনীন নিয়ম। উপমা: সব চার্জার মোবাইলে লাগানোর জন্য একই USB পোর্ট। একই নিয়মে চললে যেকোনো যন্ত্র যেকোনো agent-এ লাগে।\n- **MCP server:** একটা ছোট প্রোগ্রাম, যে এই নিয়মে কিছু যন্ত্র (tool) দেয়। যেমন \"ফাইল পড়ো\", \"issue বানাও\"। **MCP client** হলো যে এগুলো ব্যবহার করে, এখানে Hermes।\n- **Tool (টুল):** Hermes-এর একটা হাতিয়ার, যেমন \"ফাইল খোলো\"। Model চাইলে সেটা ডাকে।\n- **Allowlist ও blocklist:** Allowlist = \"শুধু এগুলো চলবে\" তালিকা (`include`)। Blocklist = \"এগুলো চলবে না\" তালিকা (`exclude`)। অতিথি-তালিকা আর নিষিদ্ধ-তালিকার মতো।\n- **Filter:** কোন tool দেখা যাবে, তা ছেঁকে নেওয়া।\n- **YAML ও config:** Config হলো সেটিংসের নথি (`~/.hermes/config.yaml`)। YAML তার লেখার ধরন: `নাম: মান` আর ভেতরে ঢোকানো লাইন (indentation) দিয়ে সাজানো।\n- **`npx`, `uvx`:** দুটো টুল যা অন্যের লেখা প্রোগ্রাম নামিয়ে সঙ্গে সঙ্গে চালায় (`npx` Node.js-এর জন্য, `uvx` Python-এর জন্য)। দোকান থেকে এনে সঙ্গে সঙ্গে খাওয়ার মতো।\n- **Environment variable (`env`):** নামওয়ালা সেটিং, যেমন গোপন token। প্রোগ্রামকে চাবি দেওয়ার উপায়।\n- **Token (এখানে):** একটা গোপন পাসওয়ার্ড যা প্রমাণ করে \"আমি অনুমতিপ্রাপ্ত\"। যেমন GitHub-এর personal access token।\n- **Exit code:** প্রোগ্রাম শেষ হওয়ার পর একটা ছোট সংখ্যা, যা বলে সফল না ব্যর্থ। `0` মানে সফল।\n- **stdio:** একই কম্পিউটারে দুই প্রোগ্রাম লেখা-পড়ার সোজা নল দিয়ে কথা বলা। **HTTP endpoint** হলো ইন্টারনেট ঠিকানা (URL) ধরে কথা বলা।\n- **WSL2:** Windows-এর ভেতরে চালানো একটা ছোট Linux।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন MCP, কখন না\n\n- **MCP নাও:** tool আগে থেকেই MCP-তে আছে; local/remote system-এর সাথে পরিষ্কার RPC স্তর চাও (RPC = দূরের প্রোগ্রামকে ডেকে কাজ করানো); server ধরে exposure (কতটা খোলা) নিয়ন্ত্রণ চাও; Hermes core না বদলে internal system ধরতে চাও।\n- **MCP বাদ দাও:** built-in Hermes tool-ই কাজ করে; server-এর বিপজ্জনক surface তুমি filter করবে না; একটা সংকীর্ণ integration-এ native tool সহজ ও নিরাপদ।\n\nHermes startup বা reload-এ tool খুঁজে নেয়, model সেগুলো সাধারণ tool-এর মতো ব্যবহার করে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "প্রথম MCP server যোগের নিরাপদ ধাপ।",
+        "steps": [
+          {
+            "title": "১. MCP support install",
+            "body": "standard install script-এ আছে। আলাদাভাবে: `cd ~/.hermes/hermes-agent` তারপর `python -c \"import pm; pm.sync_venv(['mcp'], explicit=True)\"`। npm server-এ Node.js ও `npx`, অনেক Python server-এ `uvx`।"
+          },
+          {
+            "title": "২. একটা server যোগ",
+            "body": "নিরাপদ ও সীমিত একটা দিয়ে শুরু, যেমন একটা project-এর filesystem।"
+          },
+          {
+            "title": "৩. যাচাই",
+            "body": "`hermes chat`, `/reload-mcp`, `hermes mcp test <server>`।"
+          },
+          {
+            "title": "৪. সঙ্গে সঙ্গে filter",
+            "body": "সংবেদনশীল system-এ `tools.include` দিয়ে allowlist।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ২: প্রথম server\n\n```yaml\nmcp_servers:\n  project_fs:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/my-project\"]\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `mcp_servers:` | এখানে MCP server-দের তালিকা শুরু | যন্ত্র-বাক্সের তালিকা |\n| `project_fs:` | এই server-এর নিজের দেওয়া নাম | বাক্সের গায়ে লেবেল |\n| `command: \"npx\"` | server চালু করার প্রোগ্রাম | বাক্স খোলার চাবি |\n| `args: [...]` | তার সঙ্গে দেওয়া অতিরিক্ত তথ্য: `-y` (জিজ্ঞেস না করে হ্যাঁ), server-এর নাম, আর কোন ফোল্ডার দেখতে দেবে | চাবির সঙ্গে নির্দেশ: \"শুধু এই ঘরটা খোলো\" |\n\nশেষ তথ্যটা গুরুত্বপূর্ণ: filesystem server শুধু ওই ফোল্ডারই দেখতে পায়, বাকি কম্পিউটার নয়।\n\nতারপর `hermes chat` চালিয়ে বলো: `Inspect this project and summarize the repo layout.`\n\n## ধাপ ৩: লোড হয়েছে কিনা দেখো\n\n- Hermes banner/status-এ MCP integration দেখায়\n- Hermes-কে জিজ্ঞেস করো: `Tell me which MCP-backed tools are available right now.`\n- config বদলের পর `/reload-mcp` (সেটিং আবার পড়ে নাও)\n- server সংযুক্ত না হলে log দেখো (log = প্রোগ্রামের ডায়েরি)\n- `hermes mcp test <server>`। exit code: `0` সংযুক্ত ও tool তালিকা পাওয়া, `1` সংযোগ ব্যর্থ, `3` config-এ server নেই, `2` argparse usage error (কমান্ড ভুলভাবে লেখা)\n\n## ধাপ ৪: filter\n\n**কেন লাগে?** একটা server হয়তো ৩০টা যন্ত্র দেয়, যার মধ্যে কিছু বিপজ্জনক (মুছে ফেলা)। সব Hermes-কে দিলে ভুলে ক্ষতি হতে পারে।\n\n```yaml\nmcp_servers:\n  github:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n    env:\n      GITHUB_PERSONAL_ACCESS_TOKEN: \"***\"\n    tools:\n      include: [list_issues, create_issue, search_code]\n```\n\nএখানে `env` দিয়ে GitHub-এর token দেওয়া হয় (`***` জায়গায় নিজের আসল token বসবে, কখনো প্রকাশ কোরো না)। `tools.include` বলছে: শুধু এই তিনটা যন্ত্রই চলবে।\n\n### Filter কী কী ধরে\n\n- **Server-native tool:** server-এর নিজের দেওয়া যন্ত্র। `tools.include` ও `tools.exclude` এগুলো ধরে।\n- **Hermes utility wrapper:** Hermes নিজে যোগ করা সহায়ক। `tools.resources` (`list_resources`, `read_resource`: server-এর দেওয়া তথ্য-সম্পদ পড়া) ও `tools.prompts` (`list_prompts`, `get_prompt`: তৈরি prompt-এর তালিকা)।\n- wrapper তখনই আসে যখন config অনুমতি দেয় ও server সেই capability (ক্ষমতা) সাপোর্ট করে।\n\n```yaml\n# blacklist\nmcp_servers:\n  stripe:\n    url: \"https://mcp.stripe.com\"\n    headers:\n      Authorization: \"Bearer ***\"\n    tools:\n      exclude: [delete_customer, refund_payment]\n```\n\nএখানে `url` দিয়ে ইন্টারনেট ঠিকানায় server (HTTP), `headers` দিয়ে পরিচয়পত্র পাঠানো, আর `exclude` দিয়ে দুটো বিপজ্জনক কাজ নিষিদ্ধ।\n\n```yaml\n# wrapper বন্ধ\nmcp_servers:\n  docs:\n    url: \"https://mcp.docs.example.com\"\n    tools:\n      prompts: false\n      resources: false\n```"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "টাকা/গ্রাহক/ধ্বংসাত্মক system-এ allowlist",
+      "markdown": "`exclude` তালিকায় কিছু ভুলে গেলে বিপদ; `include` দিয়ে ছোট থেকে শুরু করা নিরাপদ। অব্যবহৃত `resources`/`prompts` বন্ধ রাখো। include/exclude, enabled flag, resources/prompts toggle, auth header/env বদলালে `/reload-mcp` চালাও।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Blocklist বনাম allowlist: কোনটা নিরাপদ।",
+        "beforeTitle": "`exclude` (blocklist)",
+        "before": "\"এই কয়টা চলবে না, বাকি সব চলবে।\" একটা বিপজ্জনক tool ভুলে গেলে সেটাও খোলা থাকে।",
+        "afterTitle": "`include` (allowlist)",
+        "after": "\"শুধু এই কয়টা চলবে, বাকি সব বন্ধ।\" ভুলে গেলেও tool বন্ধই থাকে। টাকা-গ্রাহকের system-এ এটাই ভালো।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সাধারণ pattern\n\n**১. Local project assistant (filesystem + git)**\n\n```yaml\nmcp_servers:\n  fs:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/project\"]\n  git:\n    command: \"uvx\"\n    args: [\"mcp-server-git\", \"--repository\", \"/home/user/project\"]\n```\n\nGit হলো কোডের পরিবর্তনের ইতিহাস রাখার টুল। এই দুই server মিলে Hermes ফাইলও দেখতে পারে, ইতিহাসও দেখতে পারে। প্রম্পট: `Check the local git state and summarize what changed recently.`\n\n**২. Open Scaffold** (repo-native কাজের রেকর্ড) এক repo-র জন্য (repo = কোডের ভাণ্ডার):\n\n```bash\nhermes mcp add open_scaffold --command npx --args -y open-scaffold@latest mcp serve --repo /absolute/path/to/repo\nhermes mcp test open_scaffold\n```\n\nডিফল্টভাবে read-only (শুধু পড়া যায়); লেখার tool-এর জন্য `--allow-write` লাগে (না চাইলে দিও না)। reproducible schema-র জন্য (প্রতিবার একই ফল পেতে) `@latest`-এর বদলে `open-scaffold@<version>` pin করো, মানে নির্দিষ্ট সংস্করণ আটকে দাও।\n\n**৩. GitHub triage** (triage = কোন issue আগে দেখবে তা বাছাই)\n\n```yaml\nmcp_servers:\n  github:\n    command: \"npx\"\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n    env:\n      GITHUB_PERSONAL_ACCESS_TOKEN: \"***\"\n    tools:\n      include: [list_issues, create_issue, update_issue, search_code]\n      prompts: false\n      resources: false\n```\n\n**৪. Internal API:** strict `include` (যেমন `list_customers, get_customer, list_invoices`) + `resources: false`, `prompts: false`। exclude তালিকার চেয়ে ভালো। **Docs/knowledge server:** `prompts: true`, `resources: true`।\n\n## তিন ধাপে শেখা\n\n- **Phase 1:** GitHub, ছোট include তালিকা, `prompts: false`, `resources: false`।\n- **Phase 2:** দরকার হলে `update_issue` যোগ, তারপর `/reload-mcp`।\n- **Phase 3:** দ্বিতীয় server (filesystem) নিজস্ব policy সহ; Hermes দুটো মিলিয়ে কাজ করতে পারে (ফাইল দেখে GitHub issue বানানো)।\n\n## WSL2 থেকে Windows Chrome\n\nHermes (WSL) → MCP stdio bridge → Windows Chrome। recommended: `chrome-devtools-mcp`। আগে `chrome://inspect/#remote-debugging` চালু করো:\n\n```bash\nhermes mcp add chrome-devtools-win --command cmd.exe --args /c npx -y chrome-devtools-mcp@latest --autoConnect --no-usage-statistics\nhermes mcp test chrome-devtools-win\n```\n\nতারপর নতুন session বা `/reload-mcp`। `/browser connect` WSL থেকে ব্যর্থ হতে পারে (সেটা শুধু একই environment-এর জন্য)। Hermes `/mnt/c/Users/<you>` থেকে চালাও (UNC warning এড়াতে); `--autoConnect` timeout হলে background/frozen tab কমাও।\n\n## সমস্যা সমাধান\n\n- **server সংযুক্ত কিন্তু tool নেই:** `tools.include/exclude`, `resources: false`/`prompts: false`, server-এর capability দেখো।\n- **কিছুই লোড হয় না:** `enabled: false` আছে কিনা, `npx`/`uvx` আছে কিনা, HTTP endpoint পৌঁছানো যায় কিনা, auth env/header ঠিক কিনা।\n- **server যত বলে তার চেয়ে কম tool:** স্বাভাবিক। Hermes তোমার per-server policy প্রয়োগ করে।\n- config না মুছে server সরাতে: `enabled: false`।\n\nভালো শুরু: filesystem, git, GitHub, fetch/docs server, একটা সংকীর্ণ internal API। খারাপ শুরু: অনেক ধ্বংসাত্মক action ও filter ছাড়া বড় business system।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "এই guide-এর মূল নীতি কী?",
+      "options": [
+        "সব MCP server একসাথে যোগ করো",
+        "ছোটতম দরকারি surface সংযুক্ত করো",
+        "MCP সবসময় built-in tool-এর চেয়ে ভালো",
+        "filter শেষে করো"
+      ],
+      "answerIndex": 1,
+      "explanation": "বুদ্ধিমান মালিক শুধু দরকারি যন্ত্রের বাক্সই কারিগরের হাতে দেয়।"
+    },
+    {
+      "question": "`hermes mcp test <server>`-এ exit code `3` মানে?",
+      "options": [
+        "সংযুক্ত",
+        "সংযোগ ব্যর্থ",
+        "usage error",
+        "config-এ server নেই"
+      ],
+      "answerIndex": 3,
+      "explanation": "`0` সফল, `1` সংযোগ ব্যর্থ, `2` usage error, `3` config-এ ওই নামের server নেই।"
+    },
+    {
+      "question": "config বদলের পর server-এর পরিবর্তন সক্রিয় করতে কী চালাবে?",
+      "options": ["`/new`", "`hermes update`", "`/reload-mcp`", "কিছুই না"],
+      "answerIndex": 2,
+      "explanation": "`/reload-mcp` সেটিং আবার পড়িয়ে নেয়।"
+    },
+    {
+      "question": "`tools.include` আর `tools.exclude`-এর মধ্যে financial/customer system-এ কোনটা নিরাপদ?",
+      "options": [
+        "`exclude`",
+        "কোনোটাই না",
+        "দুটোই সমান",
+        "`include` allowlist"
+      ],
+      "answerIndex": 3,
+      "explanation": "Allowlist-এ ভুলে গেলেও tool বন্ধ থাকে, blocklist-এ ভুলে গেলে খোলা থাকে।"
+    },
+    {
+      "question": "`tools.resources: false` কী বন্ধ করে?",
+      "options": [
+        "server-native tool",
+        "পুরো server",
+        "`list_resources`/`read_resource` wrapper",
+        "auth"
+      ],
+      "answerIndex": 2,
+      "explanation": "এটা Hermes-এর utility wrapper বন্ধ করে, server-এর নিজের tool নয়।"
+    },
+    {
+      "question": "Server লোড হয় না, প্রথমে কী দেখবে?",
+      "options": [
+        "model বদল",
+        "`enabled: false`, `npx`/`uvx` আছে কিনা, endpoint ও auth",
+        "Discord token",
+        "trajectory"
+      ],
+      "answerIndex": 1,
+      "explanation": "বাক্স বন্ধ করা আছে কি না, চাবি (`npx`/`uvx`) আছে কি না, ঠিকানা ও পাসওয়ার্ড ঠিক কি না, এগুলোই সাধারণ কারণ।"
+    },
+    {
+      "question": "Open Scaffold server লেখার অনুমতি পেতে কী লাগে?",
+      "options": [
+        "ডিফল্টেই লেখে",
+        "`@latest`",
+        "`prompts: true`",
+        "`--allow-write` flag"
+      ],
+      "answerIndex": 3,
+      "explanation": "ডিফল্টে read-only। লেখার অনুমতি আলাদা করে দিতে হয়।"
+    },
+    {
+      "question": "config না মুছে একটা server সাময়িক সরাতে কী করবে?",
+      "options": [
+        "`enabled: false`",
+        "`include: []`",
+        "পুরো ফাইল মুছবে",
+        "`@latest` বসাবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "`enabled: false` দিলে লেখা থাকে কিন্তু চালু হয় না।"
+    }
+  ],
+  "recap": [
+    "MCP server হলো বাইরের যন্ত্রের বাক্স; Hermes সেগুলো সাধারণ tool-এর মতো ব্যবহার করে।",
+    "একটা একটা করে যোগ করো; `hermes mcp test` ও `/reload-mcp` দিয়ে যাচাই করো।",
+    "সংবেদনশীল system-এ `exclude`-এর বদলে `include` allowlist ব্যবহার করো।",
+    "অব্যবহৃত `resources`/`prompts` বন্ধ রাখো; config বদলালে `/reload-mcp`।",
+    "`enabled: false` দিয়ে config না মুছে server সাময়িক বন্ধ করা যায়।"
+  ]
+}

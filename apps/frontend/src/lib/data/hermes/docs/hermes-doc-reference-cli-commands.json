@@ -1,0 +1,161 @@
+{
+  "contentId": "hermes-doc-reference-cli-commands",
+  "title": "CLI Commands",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/cli-commands",
+  "oneLiner": "এই lesson শেষে তুমি `hermes ...` command-এর কাঠামো বুঝবে, কোন কাজে কোন command লাগে জানবে আর flag, exit code, `.env` বনাম `config.yaml`-এর মতো কঠিন শব্দগুলো সহজে চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: বিশাল যন্ত্রঘরের নামফলক\n\nমিতু একটা বিশাল যন্ত্রঘরে ঢুকেছে। দেয়ালে শত শত ড্রয়ার, প্রতিটার গায়ে নাম লেখা: `chat`, `model`, `gateway`, `cron`, `sessions`... সব ড্রয়ার একসাথে মুখস্থ করা অসম্ভব। কিন্তু মিতু বুদ্ধিমান। সে বুঝল ড্রয়ারগুলো **কাজ অনুযায়ী দলে সাজানো**: \"কথা বলার\" দল, \"বার্তা পাঠানোর\" দল, \"সেটআপের\" দল।\n\nHermes-এর **CLI Commands reference** পেজ ঠিক এই যন্ত্রঘরের নামফলক। এখানে প্রায় সব `hermes ...` command আছে। পেজটা **অনেক বড়** (প্রায় দেড় লাখ অক্ষর)। আমাদের কাজ সব মুখস্থ করা নয়। কাজ **কাঠামো বোঝা** আর **দরকারি কয়েকটা command হাতে রাখা**।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### CLI ও Terminal\n**Terminal** হলো একটা জানালা যেখানে ছবি-বোতামের বদলে তুমি লিখে কম্পিউটারকে হুকুম দাও। **CLI** (Command Line Interface) মানে এই লিখে হুকুম-দেওয়ার ধরন। Hermes-কে ছবি-বোতামের app হিসেবেও ব্যবহার করা যায়, কিন্তু CLI-তে সবকিছু পাওয়া যায়।\n\n### Command, Subcommand, Flag/Option\n**Command** একটা হুকুম, যেমন `hermes gateway`। **Subcommand** হলো ভেতরের ছোট হুকুম, যেমন `hermes gateway status` (এখানে `status`)। **Flag** বা **option** হলো হুকুমের সাথে জুড়ে দেওয়া ছোট নির্দেশ, যেমন `--quiet` (\"চুপচাপ করো\")। দোকানে অর্ডার: \"চা (command), চিনি ছাড়া (flag)।\"\n\n### Profile\nHermes-এর আলাদা আলাদা পরিচয়-সেট। যেমন \"কাজ\" profile-এর সেটিং আলাদা, \"বাড়ি\" profile-এর আলাদা। একজনের দুটো স্কুল-ব্যাগ।\n\n### Session\nএকটা কথোপকথনের খাতা। `--resume` দিয়ে পুরোনো খাতায় ফেরা যায়।\n\n### Provider ও Model\n**Provider** মানে যে কোম্পানি AI চালায় (OpenRouter, OpenAI...)। **Model** মানে তাদের নির্দিষ্ট AI। Hermes নিজে \"ভাবে\" না, provider-এর model ভাবে।\n\n### Gateway ও Messaging\nGateway হলো পিওন: সে Telegram, Slack-এর মতো chat app-কে Hermes-এর সাথে জোড়ে।\n\n### Exit code\nকোনো command শেষ হলে সে একটা ছোট সংখ্যা ফেরত দেয়। `0` মানে \"সব ঠিক\"। অন্য সংখ্যা মানে \"কিছু একটা হয়েছে\"। **কেন লাগে?** স্বয়ংক্রিয় প্রোগ্রাম (script) এই সংখ্যা দেখে বুঝে নেয় কাজ হলো কি না। যেমন পরীক্ষার ফল-পত্রে \"পাশ\"/\"ফেল\"।\n\n### `.env` আর `config.yaml`\nদুটো সেটিংসের ফাইল। **`.env`** গোপন জিনিস (API key) রাখার জন্য: `নাম=মান`। **`config.yaml`** সাধারণ আচরণের সেটিং রাখে: `নাম: মান`। **API key** হলো provider-এর কাছে তোমার পরিচয়পত্র, লম্বা গোপন পাসওয়ার্ডের মতো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সব command-এর একটাই আকার\n\n```text\nhermes [global-options] <command> [subcommand/options]\n```\n\nপ্রথমে global option (পুরো প্রোগ্রামের জন্য), তারপর command, তারপর তার subcommand ও option। যেমন বাক্য: কর্তা, ক্রিয়া, বিশেষণ।\n\n### Global option-গুলোর মধ্যে সবচেয়ে কাজের\n\n| Option | কী করে | কখন লাগে |\n|---|---|---|\n| `--version` / `-V` | version দেখায় | bug জানানোর সময়, বা কী সংস্করণ চলছে দেখতে |\n| `--profile <name>` / `-p` | নির্দিষ্ট profile-এ চালায় | একাধিক profile থাকলে, \"কাজের\" পরিচয়ে চালাতে |\n| `--resume <session>` / `-r` | নির্দিষ্ট session আবার শুরু করে | আগের আলাপের খাতা খুলতে |\n| `--continue [name]` / `-c` | সর্বশেষ (বা নামের) session চালিয়ে যায় | কাল যেখানে থেমেছিলে সেখান থেকে |\n| `--worktree` / `-w` | git worktree-তে চালায় (git হলো কোডের সংস্করণ রাখার টুল, worktree তার আলাদা কাজের ফোল্ডার) | কোডের কাজ আলাদা জায়গায় করাতে |\n| `--yolo` | approval এড়িয়ে চলে (সাবধান!) | খুব বিশ্বাসী পরিবেশে, না ভেবে চালালে বিপদ |\n| `--tui` / `--cli` | কোন interface হবে | চেহারা বাছতে |\n| `--ignore-user-config`, `--ignore-rules` | ব্যবহারকারীর config / rules উপেক্ষা | পরিষ্কার অবস্থায় পরীক্ষা করতে |\n\n**Approval** মানে বিপজ্জনক কাজের আগে Hermes তোমার অনুমতি চায়। `--yolo` (\"You Only Live Once\") সেই অনুমতি-চাওয়া বন্ধ করে।\n\n### Top-level command-এর দল (page-এ একটাই সমতল table; দলগুলো বোঝার সুবিধার জন্য সাজানো)\n\n| দল | command | সোজা কথায় |\n|---|---|---|\n| **Chat ও model** | `chat`, `model`, `moa`, `fallback`, `proxy`, `portal` | কথা বলা, AI বাছা |\n| **Gateway ও messaging** | `gateway`, `whatsapp`, `slack`, `send`, `peer` | chat app জোড়া, বার্তা পাঠানো |\n| **Setup ও auth** | `setup`, `auth`, `secrets`, `migrate`, `usage`, `status` | শুরুর ঠিকঠাক, পরিচয়, খরচ |\n| **Automation** | `cron`, `kanban`, `project`, `webhook`, `hooks` | নিজে নিজে চলা কাজ |\n| **Tool ও integration** | `tools`, `mcp`, `plugins`, `memory`, `acp`, `egress` | হাতিয়ার আর বাইরের জোড়া |\n| **Skill ও session** | `skills`, `bundles`, `curator`, `journey`, `sessions`, `insights` | শেখা পদ্ধতি আর পুরোনো আলাপ |\n| **Diagnostics ও maintenance** | `doctor`, `dump`, `prompt-size`, `debug`, `backup`, `import`, `logs`, `config`, `pairing` | ডাক্তার, যত্ন, গোলমাল খোঁজা |\n| **Server ও app** | `dashboard`, `serve`, `webapp`, `desktop` | ব্রাউজারে বা app-এ Hermes |\n| **অন্যান্য** | `profile`, `completion`, `update`, `uninstall` | পরিচয়, হালনাগাদ, সরানো |\n\n`login`/`logout` এখন deprecated (পুরোনো, ব্যবহার না করাই ভালো)। আর `hermes-agent` হলো পুরোনো একক-প্রশ্নের runner।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "এই বিশাল পেজ থেকে দরকারি command খোঁজার পথ।",
+        "steps": [
+          {
+            "title": "১. কাজটা কোন দলের?",
+            "body": "\"বার্তা পাঠাতে চাই\" মানে Gateway/messaging দল। \"ঠিকঠাক চলছে কি না দেখতে চাই\" মানে Diagnostics দল।"
+          },
+          {
+            "title": "২. Top-level command বাছাই",
+            "body": "দলের ভেতর থেকে command-এর নাম নাও, যেমন `send` বা `doctor`।"
+          },
+          {
+            "title": "৩. পেজে সেই command-এর section-এ যাও",
+            "body": "সেখানে subcommand আর flag-এর তালিকা আছে। যেমন `hermes gateway`-এ `run`, `start`, `stop`, `status`..."
+          },
+          {
+            "title": "৪. Exit code আর gotcha দেখো",
+            "body": "script-এ চালালে exit code জরুরি (নিচে দেখো)।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবচেয়ে দরকারি command, আসল syntax সহ\n\n### `hermes chat`: কথা বলা\n\n```bash\nhermes chat -q \"hello\" -m anthropic/claude-opus-4.7   # এক প্রশ্ন\nhermes chat -t web,file,terminal                      # কোন toolset থাকবে\nhermes chat --provider custom --base-url <url> --api-key <key>\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `-q` / `--query` | এক প্রশ্ন সরাসরি লিখে দেওয়া | চট করে একটা প্রশ্নের উত্তর চাই |\n| `--query-file` | প্রশ্ন ফাইল থেকে পড়ো | প্রশ্ন বড় হলে |\n| `--oneshot` | এক প্রশ্ন, এক উত্তর, তারপর শেষ | script-এ |\n| `-m` / `--model` | কোন model ব্যবহার হবে | নির্দিষ্ট AI চাইলে |\n| `-t` / `--toolsets` | কোন হাতিয়ার-দল থাকবে (**toolset** = হাতিয়ারের দল, যেমন file, web, terminal) | কম হাতিয়ারে নিরাপদ ও দ্রুত চালাতে |\n| `--provider` | কোন কোম্পানির AI | provider বদলাতে |\n| `--base-url`, `--api-key` | নিজের বানানো/আলাদা server-এর ঠিকানা আর চাবি | `--provider custom` দিলে |\n| `-s` / `--skills` | কোন Skill (শেখানো পদ্ধতি) লোড হবে | নির্দিষ্ট পদ্ধতিতে কাজ করাতে |\n| `-Q` / `--quiet` | চুপচাপ, বাড়তি কিছু দেখাবে না | script-এ |\n| `--image` | ছবি জুড়ে দেওয়া | ছবি দেখিয়ে প্রশ্ন করতে |\n| `--max-turns` (default **৫০০**) | সর্বোচ্চ কয়বার আসা-যাওয়া চলবে (turn = একবার তুমি বললে আর সে উত্তর দিলে) | অসীম লুপ ঠেকাতে |\n\n- `--safe-mode` সব customization (নিজের সাজানো সেটিং) বন্ধ করে। তখন `--model` **দিতেই হবে**।\n- **Exit code:** `0` সম্পূর্ণ, `1` ব্যর্থ/আংশিক/budget (বরাদ্দ) শেষ, `130` interrupt (মাঝপথে থামিয়েছ)।\n\n### `hermes -z <prompt>`: script-এর জন্য one-shot\n\nশুধু **চূড়ান্ত লেখাটা** print করে। এতে অন্য প্রোগ্রাম সহজে ফলটা কাজে লাগাতে পারে। Exit code: `0` সম্পূর্ণ, `2` ব্যর্থ/আংশিক, `130` interrupt, `1` সম্পূর্ণ কিন্তু কোনো লেখা নেই। `--usage-file <path>` দিলে JSON আকারে খরচের রিপোর্ট পাবে।\n\n### `hermes model` বনাম `/model`\n\n`hermes model` টার্মিনালে পূর্ণ provider আর OAuth setup wizard। (**OAuth** হলো \"নিজের পাসওয়ার্ড না দিয়েও কোনো সেবায় ঢোকার অনুমতি দেওয়ার\" নিরাপদ পদ্ধতি। **Wizard** হলো প্রশ্ন করে করে সব ঠিক করিয়ে দেওয়া গাইড।) অন্যদিকে session-এর ভেতরের `/model` শুধু **আগে থেকে configure করা** provider-দের মধ্যে বদলায়। `--global` দিলে পছন্দ স্থায়ী হয়।\n\n### `hermes gateway`: messaging bot চালানো\n\nSubcommand: `run`, `ensure`, `start`, `stop`, `restart`, `status`, `list`, `install`, `uninstall`, `setup`, `migrate`, `enroll`। Flag: `--all`, `-y`, `--detach`, `--no-supervise`, `--external-supervisor`। শেষেরটা restart-এ exit `75` দেয়, তাই supervisor-কে (যে প্রোগ্রাম অন্য প্রোগ্রামকে পাহারা দেয় আর বন্ধ হলে আবার চালায়) আবার চালাতে হবে।\n\n### `hermes send`: বার্তা পাঠানো\n\n```bash\nhermes send --to telegram:12345 \"build শেষ\"\n```\n\ntarget হতে পারে `platform`, `platform:chat_id`, `platform:chat_id:thread_id`, `platform:#channel`। Flag: `--file`, `--subject`, `--list`, `--quiet`, `--json`। attachment-এর জন্য `MEDIA:<path>`। recompression (ছবি আবার ছোট করে চেপে ফেলা) এড়াতে `[[as_document]]`। Exit: `0` ঠিক, `1` delivery ব্যর্থ, `2` ব্যবহারে ভুল। **কখন লাগে:** কোনো লম্বা কাজ শেষে নিজের Telegram-এ খবর পাঠাতে।\n\n### `hermes config`\n\n```bash\nhermes config show\nhermes config get <key> [--json] [--raw]\nhermes config set <key> <value>\nhermes config path        # config.yaml কোথায়\nhermes config env-path    # .env কোথায়\nhermes config check\n```\n\n`UPPER_SNAKE` নামের key (যেমন API key) যায় `.env`-এ। আর dotted key (যেমন `model.default`) যায় `config.yaml`-এ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## রক্ষণাবেক্ষণ ও ডায়াগনস্টিক command\n\n| command | কাজ | কখন লাগে |\n|---|---|---|\n| `hermes doctor [--fix]` | সমস্যা খোঁজে। সমস্যা বাকি থাকলে exit `1` | কিছু ভাঙলে প্রথমে এটাই |\n| `hermes status [--full\\|--all] [--deep]` | অবস্থা দেখায় | এখন কী চলছে জানতে |\n| `hermes dump [--show-keys]` | support-এর জন্য সাদামাটা লেখায় সারাংশ | সাহায্য চাওয়ার সময় |\n| `hermes logs [name] [-n] [-f] [--level] [--since]` | log (ঘটনার দিনলিপি) দেখো। নাম: `agent` (default), `errors`, `gateway`, `mcp`... | কেন ভাঙল বুঝতে |\n| `hermes prompt-size [--json]` | system prompt আর tool schema কত বড়, offline হিসাব | খরচ বা ধীর-গতির কারণ খুঁজতে |\n| `hermes debug share` | debug তথ্য শেয়ার (`--lines` default ২০০, `--expire` default ৭ দিন) | bug-রিপোর্টে |\n| `hermes backup [-o] [-q] [-k]` | backup zip (`--keep` default ৩) | নতুন কম্পিউটারে যাওয়ার আগে |\n| `hermes import <zip> [-f]` | backup ফিরিয়ে আনে। আগে **gateway বন্ধ করো** | backup থেকে restore |\n| `hermes pairing list/approve/revoke` | messaging-এ নতুন ব্যবহারকারীর অনুমতি | অচেনা কেউ code পাঠালে |\n\n### Session, profile, update, MCP, dashboard\n\n```bash\nhermes sessions list\nhermes sessions prune --dry-run      # কোনো filter না দিলে default: ৯০ দিনের পুরোনো (filter দিলে সব বয়সের match)\nhermes profile create work --clone   # config, .env, SOUL.md, skills, memory কপি\nhermes profile list\nhermes update --check                # শুধু দেখো, apply না\nhermes mcp add <name> --url <URL> --auth oauth\nhermes mcp list\nhermes mcp test <name>\nhermes dashboard --port 9119         # default port ৯১১৯, host 127.0.0.1\n```\n\n| command | কাজ |\n|---|---|\n| `sessions prune --dry-run` | পুরোনো খাতা মোছার আগে **শুধু দেখাও** কী মুছবে (`--dry-run` মানে মহড়া, আসলে কিছু মোছে না) |\n| `profile create work --clone` | \"work\" নামে নতুন profile বানায়, পুরোনোটা থেকে config, `.env`, SOUL.md (Hermes-এর স্বভাবের নোট), skills আর memory (স্মৃতি) কপি করে |\n| `update --check` | নতুন সংস্করণ আছে কি না শুধু দেখো, বসিয়ো না |\n| `mcp add/list/test` | **MCP** হলো বাইরের সেবার হাতিয়ার Hermes-এ জোড়ার একটা নিয়ম। যোগ, তালিকা আর পরীক্ষা |\n| `dashboard --port 9119` | ব্রাউজারে খোলা নিয়ন্ত্রণ-ফলক চালায়। default port ৯১১৯ (দরজা-নম্বর), host `127.0.0.1` (শুধু নিজের কম্পিউটার) |\n\n`hermes update`-এর exit code: `0` সফল, `1` ব্যর্থতা (যেমন git repository নয়, pull/install ভুল)। `2` হলো Hermes-এর source code অনুযায়ী `hermes update --check` যখন in-place update করতে **অস্বীকার** করে — যেমন install image-managed (Docker image) বা commit build হলে, তখন image pull করে update করতে হয়। (docs-এ লেখা \"working-tree-র কারণে `git pull` আটকেছে\" ব্যাখ্যাটা source code-এ মেলেনি, তাই সেটা ধরা হয়নি।) `hermes mcp add`-এ `--args` সবার **শেষে** দিতে হয়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "বিপজ্জনক ও সাবধানের জায়গা",
+      "markdown": "`--yolo` approval এড়ায়। `hermes import` চালানোর আগে gateway বন্ধ করো, কারণ database সরাসরি live ফাইলে লেখা হয়। `hermes sessions prune` চালানোর আগে `--dry-run` দিয়ে দেখে নাও কী মুছবে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "এই পেজ মুখস্থ করার জিনিস না",
+      "markdown": "দরকারে খোঁজার reference হিসেবে ব্যবহার করো। আগে command-এর দল, তারপর command, তারপর flag। বেশিরভাগ রোজকার কাজ চলে `chat`, `model`, `gateway`, `config`, `doctor`, `sessions`, `logs` দিয়ে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সাধারণ ভুল\n\n1. **`.env` আর `config.yaml` গুলিয়ে ফেলা।** `hermes config set OPENROUTER_API_KEY ...` যায় `.env`-এ। `hermes config set model.default ...` যায় `config.yaml`-এ।\n2. **`/model` দিয়ে নতুন provider যোগ করতে চাওয়া।** পারবে না। টার্মিনালে `hermes model` চালাও।\n3. **`--safe-mode` দিয়ে `--model` না দেওয়া।**\n4. **`hermes -z`-এর exit code `1` পেয়ে ভাবা ব্যর্থ।** এর মানে সম্পূর্ণ হয়েছে কিন্তু কোনো লেখা আসেনি। ব্যর্থ হলে `2`।\n5. **ভুল profile-এ কাজ করা।** `-p <name>` দিতে ভুলে গেলে default profile-এ কাজ হয়।\n\n**পড়া হয়েছে কতটুকু?** পেজটা অনেক বড়, তাই skills/curator/plugins-এর মতো নিচের অংশের খুঁটিনাটি এখানে বিস্তারে নেই। সেগুলোর জন্য আসল পেজ দেখো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`hermes` command-এর সাধারণ আকার কোনটা?",
+      "options": [
+        "`<command> hermes [options]`",
+        "`hermes <command> [global-options]` সবসময় শেষে",
+        "`hermes [global-options] <command> [subcommand/options]`",
+        "`hermes -- --command`"
+      ],
+      "answerIndex": 2,
+      "explanation": "আগে global option, তারপর command, তারপর subcommand/option।"
+    },
+    {
+      "question": "`hermes -z \"prompt\"` কী print করে?",
+      "options": [
+        "চূড়ান্ত লেখাটা শুধু (script-এর জন্য)",
+        "পুরো ভেতরের হিসাব",
+        "শুধু version",
+        "কিছুই না"
+      ],
+      "answerIndex": 0,
+      "explanation": "-z one-shot: শুধু চূড়ান্ত লেখা print করে, যাতে অন্য প্রোগ্রাম সহজে ব্যবহার করতে পারে।"
+    },
+    {
+      "question": "session-এর ভেতরে `/model` দিয়ে কী করা যায়, `hermes model`-এর সাথে তুলনায়?",
+      "options": [
+        "নতুন provider ও OAuth যোগ করা",
+        "শুধু আগে থেকে configure করা provider-দের মধ্যে বদলানো",
+        "Hermes মুছে ফেলা",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "নতুন provider/key যোগ করতে terminal-এ `hermes model` wizard লাগে।"
+    },
+    {
+      "question": "`hermes config set OPENROUTER_API_KEY xyz` কোথায় লেখা হয়?",
+      "options": [
+        "`config.yaml`-এ",
+        "`.env`-এ, কারণ নামটা UPPER_SNAKE (API key)",
+        "কোথাও না",
+        "টার্মিনালের ইতিহাসে"
+      ],
+      "answerIndex": 1,
+      "explanation": "UPPER_SNAKE নাম `.env`-এ যায়। dotted নাম (`model.default`) যায় `config.yaml`-এ।"
+    },
+    {
+      "question": "`hermes doctor` সমস্যা বাকি রেখে শেষ হলে exit code কত?",
+      "options": ["`0`", "`1`", "`2`", "`130`"],
+      "answerIndex": 1,
+      "explanation": "সমস্যা বাকি থাকলে exit `1`। `0` মানে সব ঠিক।"
+    },
+    {
+      "question": "`hermes import <zip>` চালানোর আগে কী করা উচিত?",
+      "options": [
+        "gateway বন্ধ করা",
+        "কিছু না",
+        "API key মুছে ফেলা",
+        "কম্পিউটার restart"
+      ],
+      "answerIndex": 0,
+      "explanation": "database সরাসরি live ফাইলে লেখা হয়, তাই gateway বন্ধ রাখতে হয়।"
+    },
+    {
+      "question": "`hermes sessions prune --dry-run` কেন চালাবে?",
+      "options": [
+        "সত্যিই মুছতে",
+        "আসলে না মুছে আগে দেখে নিতে কী মুছবে",
+        "session বানাতে",
+        "backup নিতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "`--dry-run` মহড়া: কী মুছত তা দেখায়, কিছু মোছে না। default ৯০ দিনের পুরোনো।"
+    },
+    {
+      "question": "`--yolo` কী করে?",
+      "options": [
+        "approval (অনুমতি-চাওয়া) এড়িয়ে চলে, তাই সাবধান",
+        "আরও ধীর করে",
+        "উত্তর সুন্দর করে",
+        "গান বাজায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "বিপজ্জনক কাজের আগেও জিজ্ঞেস করবে না। ঝুঁকি বাড়ে।"
+    }
+  ],
+  "recap": [
+    "`hermes [global-options] <command> [subcommand/options]` সব command-এর আকার।",
+    "command গুলো কাজের দলে সাজানো। আগে দল, তারপর command, তারপর flag।",
+    "`.env` গোপন key রাখে, `config.yaml` আচরণের সেটিং।",
+    "`hermes doctor` আর `hermes logs` গোলমাল খোঁজার প্রথম হাতিয়ার।",
+    "`--yolo`, `import`, `sessions prune` চালানোর আগে সাবধান হও।"
+  ]
+}

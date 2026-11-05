@@ -1,0 +1,227 @@
+{
+  "contentId": "hermes-doc-getting-started-installation",
+  "title": "Installation",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/getting-started/installation",
+  "oneLiner": "এই lesson শেষে তুমি নিজের কম্পিউটারে Hermes install করতে পারবে এবং install-এর প্রতিটা কঠিন শব্দ (terminal, PATH, channel, POSIX, log...) বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা খেলনার গল্প দিয়ে শুরু\n\nধরো তুমি একটা নতুন খেলনা রোবট কিনতে দোকানে গেছো। দোকানে তিনরকম বাক্স আছে:\n\n- 🎁 **তৈরি বাক্স**: খুললেই খেলা যায়, ভেতরে ব্যাটারিসহ সব আছে। (এটা **Desktop package**, মানে একটা সাধারণ app, যেমন তুমি ফোনে app নামাও।)\n- 🧩 **জোড়া লাগানোর কিট**: দোকানদারকে একটা লাইনে বললে সে নিজে সব জোড়া লাগিয়ে দেয়। (এটা **install script**।)\n- 📦 **সিল করা কনটেইনার**: বাক্সের ভেতরেই সব, কিন্তু নতুন সংস্করণ চাইলে পুরো বাক্স ফেলে নতুন বাক্স আনতে হয়। (এটা **Docker**।)\n\nHermes Agent install করাও ঠিক এমন। docs বলছে সব ঠিক থাকলে **দুই মিনিটেই** চালু হয়ে যায়।\n\nযদি install করতে গিয়ে কিছু না বুঝে থাকো, চিন্তা নেই। এই lesson-এ **প্রতিটা কঠিন শব্দ** ধরে ধরে বুঝিয়ে দেওয়া হবে: শব্দটা কী, কী কাজ করে, আর কেন লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে ৬টা শব্দ চিনে নিই\n\nএই শব্দগুলো না জানলে বাকি সব ঝাপসা লাগবে। তাই আগে এগুলো।\n\n### ১) Terminal (টার্মিনাল)\nএকটা কালো (বা সাদা) জানালা, যেখানে ছবি আর বোতামের বদলে তুমি **লিখে** কম্পিউটারকে হুকুম দাও। যেমন ফোনে বোতাম টিপে গান চালাও, আর terminal-এ লিখে বলো \"গান চালাও\"।\n- Mac-এ নাম **Terminal**।\n- Windows-এ **PowerShell** বা **Windows Terminal**।\n- Linux-এ **Terminal**।\n\n### ২) Command (কমান্ড)\nTerminal-এ লেখা একটা হুকুম। যেমন `hermes` লিখে Enter দিলে Hermes চালু হয়।\n\n### ৩) Install script (ইনস্টল স্ক্রিপ্ট)\nএকটা ছোট প্রোগ্রাম, যেটা কিছু ধাপ নিজে নিজে করে দেয়। তুমি নিজে ২০টা কাজ করার বদলে script-কে বললে সে ২০টাই করে ফেলে। ঠিক একটা রান্নার রেসিপি-র মতো, কিন্তু যে নিজেই রান্না করে দেয়।\n\n### ৪) Package (প্যাকেজ) ও Package Manager (PM)\n- **Package** = সব একসাথে বাঁধা প্রোগ্রাম, যেমন একটা পার্সেল।\n- **Package manager** = পার্সেল-ডেলিভারির লোক। তুমি বলো \"ওই জিনিসটা আনো\", সে খুঁজে এনে ঠিক জায়গায় রেখে দেয়।\n\n### ৫) Dependency (ডিপেন্ডেন্সি)\nকোনো প্রোগ্রাম চলার জন্য যে **অন্য প্রোগ্রামগুলো আগে থেকে লাগে**। কেক বানাতে ডিম লাগে, তাই ডিম হলো কেকের dependency। Hermes চলতে Python লাগে, তাই Python হলো Hermes-এর dependency।\n\n### ৬) Source code ও Clone\n- **Source code** = প্রোগ্রামটা যে লেখা দিয়ে বানানো, অর্থাৎ রেসিপির মূল খাতা।\n- **Clone** = ওই খাতার একটা কপি নিজের কম্পিউটারে নামিয়ে আনা। এই কাজটা করে **Git** নামের টুল।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "তিনটা-চারটা প্রশ্নে বেছে নাও কোন install পথ তোমার জন্য।",
+        "steps": [
+          {
+            "title": "Mac বা Windows-এ সাধারণ app চাও?",
+            "body": "**Desktop package** নামাও। এটা সবচেয়ে সহজ, কালো জানালায় কিছু লিখতে হয় না। Windows-এ `.appinstaller` ফাইল, Mac-এ **DMG** ফাইল।"
+          },
+          {
+            "title": "Terminal-এ লিখে চালাতে চাও (CLI)?",
+            "body": "Linux, Mac বা WSL2-তে `install.sh`। Windows-এ `install.ps1`। দুটোই এক লাইনের কমান্ড।"
+          },
+          {
+            "title": "Android ফোনে চালাতে চাও?",
+            "body": "**Termux APT** package। এটা আলাদা পথ, ওপরের কমান্ডগুলো এখানে চলে না।"
+          },
+          {
+            "title": "Server-এ আলাদা বন্ধ বাক্সে চালাতে চাও?",
+            "body": "**Docker** image। নতুন সংস্করণ চাইলে নতুন image নামিয়ে বাক্সটা আবার বানাতে হয়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "install-picker"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick Install: কোন কমান্ড, কোথায়\n\n### পথ ১: Terminal দিয়ে (CLI-only)\n\n**Linux / Mac / WSL2-তে:**\n\n```bash\ncurl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash\n```\n\n**Windows-এ (PowerShell):**\n\n```powershell\niex (irm https://hermes-agent.nousresearch.com/install.ps1)\n```\n\n#### এই লম্বা লাইনটার মানে কী? (টুকরো টুকরো করে)\n\n| অংশ | মানে | ছোট্ট উপমা |\n|---|---|---|\n| `curl` | ইন্টারনেট থেকে কিছু **নামিয়ে আনার** টুল | দোকানে গিয়ে জিনিস নিয়ে আসা |\n| `-fsSL` | curl-কে চারটা ছোট নির্দেশ: ভুল হলে জানাও, চুপচাপ কাজ করো, ভুল হলে দেখাও, redirect হলে অনুসরণ করো | \"সাবধানে আনো আর ভুল হলে বোলো\" |\n| `https://.../install.sh` | কোথা থেকে আনবে, মানে Hermes-এর নিজের install script | দোকানের ঠিকানা |\n| `\\|` (পাইপ) | বাঁ দিকের **ফলটা** ডান দিকে পাঠিয়ে দাও | এক হাত থেকে আরেক হাতে জিনিস দেওয়া |\n| `bash` | script-টা **চালিয়ে দাও** | রেসিপি পড়ে রান্না শুরু করা |\n\nপুরো লাইন বলছে: \"install script-টা নামিয়ে আনো আর সঙ্গে সঙ্গে চালিয়ে দাও।\"\n\nWindows-এর লাইনেও একই কাজ। `irm` মানে নামিয়ে আনো (curl-এর মতো), আর `iex` মানে চালিয়ে দাও (bash-এর মতো)।\n\n**Linux/Mac/WSL2 মানে কী?**\n- **Linux** আর **Mac** দুটোই Unix-ধাঁচের system, তাই একই কমান্ড চলে।\n- **WSL2** = Windows-এর ভেতরে একটা ছোট Linux চালানোর সুবিধা। Windows-ও চায় অথচ Linux-এর কমান্ড চালাতে চাও, তাহলে এটা।\n\nপরে Desktop app-ও চাইলে, CLI install-এর পর চালাও: `hermes desktop`।\n\n### পথ ২: Desktop package (Mac / Windows)\n\n- **Windows:** `.appinstaller` ফাইলটা **Windows App Installer** দিয়ে খোলো। ভেতরে **MSIX** নামে একটা সই-করা (signed) বান্ডিল আছে। *Signed* মানে \"আসল প্রকাশক বানিয়েছে, মাঝপথে কেউ বদলায়নি\" এই প্রমাণ।\n- **Mac:** **DMG** ফাইল খোলো, তারপর `Hermes.app` টেনে **Applications** ফোল্ডারে ফেলো। (যেমন সব Mac app নামানো হয়।) ZIP-এও আসে, সেটাতে সই-করা app থাকে আর নিজে নিজে update হয়।\n- Bundle-এ agent, Python আর দরকারি সবকিছু **ভেতরেই** দেওয়া থাকে। তাই আলাদা করে কিছু আনার ঝামেলা নেই। (শুধু AI provider-এ যেতে ইন্টারনেট লাগবে।)\n- আলাদা \"শুধু-দূরের-সাথে-যুক্ত\" Desktop download নেই। অন্য কম্পিউটারের Hermes-এর সাথে জুড়তে চাইলে app নামিয়ে **Settings → Gateways** ব্যবহার করো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Mac নিয়ে সাবধান",
+      "markdown": "Mac-এর installer শুধু **Apple Silicon** Mac-এর জন্য (M1, M2, M3... চিপওয়ালা)। পুরোনো **Intel** Mac-এ এটা চলবে না। নিজের Mac কোনটা দেখতে: উপরের বাঁ কোণে Apple লোগো → **About This Mac**।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Install script পর্দার পেছনে কী কী করে?\n\nধরো script একজন **বাবুর্চি**। তুমি বললে \"Hermes রান্না করো\", সে এই কাজগুলো করে:\n\n| বাবুর্চির কাজ | প্রযুক্তির নাম | সোজা মানে |\n|---|---|---|\n| রেসিপির খাতা আনে | source code **clone** | Hermes-এর code তোমার কম্পিউটারে নামায় |\n| একজন সহকারী ডাকে | **`uv`** | খুব দ্রুত Python-এর জিনিস বসানোর টুল |\n| সহকারী বাজার করে | **PM (package manager)** | বাকি সব জিনিস এনে দেয় |\n| মূল মশলা: Python | **Python** | Hermes যে ভাষায় লেখা, সেই ভাষা চালানোর যন্ত্র |\n| আরেক মশলা: Node.js | **Node.js, npm** | JavaScript ভাষার জিনিস চালানোর যন্ত্র |\n| খোঁজার যন্ত্র | **ripgrep** | হাজার হাজার ফাইলের ভেতর থেকে চোখের পলকে লেখা খুঁজে বের করে |\n| ভিডিও/অডিও যন্ত্র | **FFmpeg** | শব্দ ও ভিডিও বদলানোর টুল (voice-এর কাজে লাগে) |\n| ওয়েব দেখার চোখ | **Chromium** | Chrome-এর খোলা-সোর্স ভাইয়ের মতো একটা browser, যা Hermes নিজে চালিয়ে ওয়েবসাইট দেখে |\n| কম্পিউটার চালানোর হাত | **`cua-driver`** (computer-use) | Hermes-কে মাউস নাড়ানো আর বোতাম টেপার ক্ষমতা দেয় |\n\nআরও দুটো কাজ:\n- **Launcher বানায়:** `hermes` লিখলেই চালু হওয়ার জন্য একটা শর্টকাট।\n- **Data directory বানায়:** তোমার সব সেটিং আর স্মৃতি রাখার একটা ফোল্ডার।\n\n**Pinned** মানে কী? \"একটা নির্দিষ্ট সংস্করণে আটকে রাখা।\" যেমন \"Python-এর ঠিক এই সংস্করণই আনো, অন্যটা না।\" এতে সবার কম্পিউটারেই একই জিনিস বসে, আর গোলমাল কম হয়।\n\nChromium বা cua-driver ডাউনলোড ব্যর্থ হলেও install থেমে যায় না। শেষে আবার চেষ্টা করার কমান্ড দেখিয়ে দেয়।\n\n### Channel: stable নাকি main?\n\n**Channel** মানে \"কোন লাইন থেকে সংস্করণ নেবে।\" সোজা উপমা: একটা রেস্তোরাঁর দুটো রান্নাঘর।\n\n| Channel | মানে | কার জন্য |\n|---|---|---|\n| **stable** (ডিফল্ট) | বারবার পরীক্ষা করা, শেষ **পাকা** সংস্করণ | প্রায় সবাই। নিরাপদ |\n| **main** | এখনই লেখা হচ্ছে এমন একদম **কাঁচা, নতুন** অবস্থা | যে সবার আগে নতুন জিনিস দেখতে চায় আর একটু ভাঙাচোরা মেনে নিতে পারে |\n\nতুমি কিছু না বললে **stable** আসে, আর পরে `hermes update` দিলেও সেই stable ধরেই এগোয়। **নতুনদের জন্য stable-ই ঠিক।**\n\n`main` চাইলে:\n- Linux/Mac: `--channel main`\n- Windows: `-Channel main`\n- অথবা কমান্ডের আগে `HERMES_INSTALL_CHANNEL=main` লিখে।\n\n### POSIX আবার কী?\n\n**POSIX** (পজিক্স) একটা পুরোনো নিয়মের সেট, যেটা Linux, Mac আর এদের মতো system-গুলো মেনে চলে। docs-এ \"POSIX script\" মানে **`install.sh` (Linux/Mac/WSL2-র জন্য)**। আর \"Windows script\" মানে `install.ps1`। শুধু এইটুকু মনে রাখো: **POSIX = Linux/Mac-ধাঁচের system।** তাই কোনো নির্দেশে \"POSIX\" দেখলে বোঝো সেটা Windows-এর জন্য না।\n\n### Flag কী? কিছু বাদ দিতে চাইলে?\n\n**Flag** (ফ্ল্যাগ) হলো কমান্ডের শেষে জুড়ে দেওয়া ছোট একটা **সুইচ**। যেমন `--skip-browser` লিখলে বলে দিলে \"browser-টা আর বসিয়ো না।\"\n\n| Flag (Linux/Mac / Windows) | কী করে | কখন লাগে |\n|---|---|---|\n| `--skip-browser` / `-SkipBrowser` | Chromium বসাবে না | browser tool লাগবে না, ডিস্ক বাঁচাতে চাও |\n| `--skip-computer-use` / `-SkipComputerUse` | cua-driver বসাবে না | Hermes-কে মাউস চালাতে দেবে না |\n| `--non-interactive` / `-NonInteractive` | **কোনো প্রশ্ন করবে না** | নিজে নিজে চলুক, তুমি বসে থাকতে পারবে না |\n| `--include-desktop` / `-IncludeDesktop` | Desktop app-ও বানিয়ে দেয় | CLI আর Desktop দুটোই চাও |\n| `--verbose` / `-Verbose` | সব লেখা দেখায় | কী হচ্ছে চোখে দেখতে চাও |\n\n**Interactive / non-interactive কী?** Interactive মানে script মাঝে মাঝে তোমাকে প্রশ্ন করে (\"এটা করব?\")। Non-interactive মানে প্রশ্নই করবে না, নিজে নিজে ডিফল্ট ধরে এগোবে।\n\nHermes তোমার skip-করা পছন্দ **মনে রাখে**। পরে `hermes update` দিলে ওই জিনিস নিজে থেকে বসাবে না। পরে মত বদলালে: `hermes pm install chromium` বা `hermes pm install cua-driver`।\n\n### Log কোথায়?\n\n**Log** মানে কী হয়েছে তার লিখিত খাতা। যেমন ক্লাসের হাজিরা-খাতা, কখন কী ঘটল লেখা থাকে।\n\n- Terminal-এ প্রতিটা ধাপে **এক লাইনের** ছোট খবর আসে, যেন screen ভরে না যায়।\n- আসল লম্বা সব লেখা (git, uv, build-এর) জমা হয় data directory-র **`logs/install.log`** ফাইলে।\n- install **ব্যর্থ হলে** শেষের কয়েক লাইন আর log ফাইলের পথ স্ক্রিনেই দেখায়, তাই কী গোলমাল তা ধরতে পারবে।\n- কিছু ক্ষেত্রে (যেমন `CI` সেট থাকলে, বা `HERMES_INSTALL_VERBOSE=1` দিলে) পুরো লেখাই স্ক্রিনে আসে। **CI** মানে একটা স্বয়ংক্রিয় যন্ত্র, যেখানে code নিজে নিজে পরীক্ষা হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Install-এর পর ফাইল কোথায় থাকে?\n\nএকটা বাড়ির কথা ভাবো। **Hermes-এর code** হলো বাড়ির দালান, আর **তোমার data** হলো বাড়ির ভেতরের তোমার জিনিসপত্র (জামা, বই, ছবি)। দালান ভাঙলে নতুন বানানো যায়, কিন্তু জিনিসপত্র গেলে ফেরত পাওয়া কঠিন। তাই এ দুটো **আলাদা জায়গায়** রাখা হয়।\n\n| পদ্ধতি | Code কোথায় | `hermes` কমান্ড কোথায় | তোমার data কোথায় |\n|---|---|---|---|\n| Linux/Mac script | `~/.hermes/hermes-agent/` | `~/.local/bin/hermes` | `~/.hermes/` |\n| Windows script | `%LOCALAPPDATA%\\hermes\\hermes-agent\\` | `%LOCALAPPDATA%\\hermes\\bin\\` | `%LOCALAPPDATA%\\hermes\\` |\n| Desktop app | app-এর ভেতরে | app-এর launcher | সিস্টেমের ডিফল্ট Hermes data ফোল্ডার |\n| Docker | `/opt/hermes/` | image-এর ভেতরে | বাইরে থেকে জোড়া `/opt/data/` |\n| Termux (Android) | `$PREFIX/lib/hermes-agent/` | `$PREFIX/bin/` | `~/.hermes/` |\n\n**`~` চিহ্নটা কী?** এটা তোমার নিজের **home ফোল্ডার** বোঝায়। যেমন Mac-এ `/Users/তোমার-নাম/`। তাই `~/.hermes` মানে তোমার home-এর ভেতরে `.hermes` নামের ফোল্ডার। নামের আগের `.` মানে ফোল্ডারটা **লুকানো** (সাধারণভাবে চোখে পড়ে না)।\n\n**Launcher / wrapper কী?** `~/.local/bin/hermes` একটা **ছোট শর্টকাট**। তুমি `hermes` লিখলে এই শর্টকাট আসল code-কে ডেকে আনে। এ কারণেই code যেখানেই থাকুক, `hermes` লিখলে কাজ হয়।\n\n**`HERMES_HOME` কী?** একটা সেটিং, যা বলে দেয় \"আমার data কোন ফোল্ডারে রাখব।\" ডিফল্টে `~/.hermes`। চাইলে বদলাতে পারো।\n\n**`--dir` flag:** code ঠিক কোন ফোল্ডারে বসবে সেটা ঠিক করে (এটা data-র জায়গা থেকে আলাদা বিষয়)। Windows-এ নাম `-HermesHome` আর `-InstallDir`।\n\n**Root হিসেবে চালালে:** root মানে কম্পিউটারের সর্বক্ষমতার মালিক user। root হিসেবে script চালালেও আলাদা জটিল জায়গায় যায় না (এটাকে **FHS layout** বলে, Linux-এর একটা বিশেষ ফোল্ডার-সাজানো রীতি)। root-এর নিজের home-ই ব্যবহার হয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Code আর তোমার data আলাদা জায়গায় থাকে।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "w",
+            "kind": "gateway",
+            "label": "hermes শর্টকাট",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "c",
+            "kind": "server",
+            "label": "Hermes code",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "d",
+            "kind": "database",
+            "label": "তোমার data",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "w",
+            "label": "hermes লেখো"
+          },
+          {
+            "from": "w",
+            "to": "c",
+            "label": "code চালায়"
+          },
+          {
+            "from": "c",
+            "to": "d",
+            "label": "config, স্মৃতি"
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "এই ভুলটা কখনো কোরো না",
+      "markdown": "Hermes ঠিকঠাক না চললে **`~/.hermes` ফোল্ডার মুছে ফেলো না।** ওখানে তোমার config আর Hermes-এর স্মৃতি আছে। docs স্পষ্ট বলছে, application মেরামত করতে data ফোল্ডার delete করা চলবে না। দালান মেরামত করো, জিনিসপত্র ফেলো না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Install-এর পর প্রথম কাজ\n\n### ১) Shell reload\n\n**Shell** হলো terminal-এর ভেতরের যে প্রোগ্রাম তোমার লেখা কমান্ড বোঝে (যেমন bash বা zsh)। install-এর পর `hermes` নামটা তোমার shell এখনো **চেনে না**, কারণ সে পুরোনো তালিকা নিয়ে বসে আছে। তাই তালিকাটা নতুন করে পড়াতে হয়, এটাই **reload**:\n\n```bash\nsource ~/.zshrc     # Mac-এ সাধারণত zsh\nsource ~/.bashrc    # Linux-এ সাধারণত bash\n```\n\nঅথবা terminal বন্ধ করে নতুন করে খুললেও হয়। তারপর:\n\n```bash\nhermes\n```\n\n**PATH কী?** PATH হলো তোমার কম্পিউটারের একটা তালিকা: \"কমান্ড খুঁজতে কোন কোন ফোল্ডারে দেখব।\" `hermes` লিখলে কম্পিউটার ওই তালিকার ফোল্ডারগুলোতে `hermes` খোঁজে। শর্টকাট `~/.local/bin`-এ থাকে, তাই ওই ফোল্ডার PATH-এ থাকতে হয়। এ কারণেই কখনো `command not found` আসে।\n\n### ২) সেটআপের কমান্ডগুলো\n\n| কমান্ড | কী করে |\n|---|---|\n| `hermes model` | কোন AI মস্তিষ্ক (LLM provider + model) ব্যবহার করবে তা বাছো |\n| `hermes tools` | কোন tool (হাত-পা) চালু বা বন্ধ থাকবে |\n| `hermes gateway setup` | Telegram, Discord-এর মতো chat app জোড়ো |\n| `hermes config set` / `get` | একটা একটা সেটিং লেখো বা পড়ো |\n| `hermes setup` | পুরো গাইড-করা সেটআপ (wizard) |\n\n**Provider, model, API key কী?**\n- **Provider** = যে কোম্পানি AI-টা চালায় (OpenRouter, OpenAI ইত্যাদি)। Hermes নিজে \"ভাবে\" না, ভাবার কাজটা provider-এর মডেল করে।\n- **Model** = সেই কোম্পানির নির্দিষ্ট AI (যেমন GPT-এর কোনো একটা সংস্করণ)।\n- **API key** = provider-এর কাছে তোমার পরিচয়পত্র, একটা লম্বা গোপন পাসওয়ার্ডের মতো। এটা কাউকে দেখিও না।\n\n### ৩) সবচেয়ে সহজ পথ: Nous Portal\n\n**Nous Portal** একটা সাবস্ক্রিপশন সেবা। একটা অ্যাকাউন্টে ৩০০+ model আর **Tool Gateway** (web search, ছবি বানানো, কথা বলা, cloud browser) একসাথে পাওয়া যায়। আলাদা আলাদা কোম্পানির আলাদা API key জোগাড় করতে হয় না।\n\n```bash\nhermes setup --portal\n```\n\nএটা login করায়, Nous-কে provider বানায় আর Tool Gateway চালু করে। নতুনদের জন্য এটাই সবচেয়ে কম ঝামেলার।\n\n### ৪) অন্য কম্পিউটার থেকে আনছো?\n\n- `hermes import`: পুরো backup ফিরিয়ে আনে।\n- `hermes profile import`: একটা agent (profile) আনে।\n\nমনে রেখো, profile export-এ গোপন তথ্য (credential) **ইচ্ছে করেই বাদ দেওয়া হয়**, যাতে ভুল করে কাউকে চাবি দিয়ে না ফেলো। তাই সেটা পুরো backup না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে থেকে কী লাগে? (Prerequisite)\n\n**Prerequisite** মানে \"শুরুর আগেই যা তৈরি থাকতে হবে।\" সব কিছু script নিজেই আনে, তবু কয়েকটা জিনিস থাকা দরকার:\n\n| জিনিস | কেন লাগে | সোজা উপমা |\n|---|---|---|\n| **Git** | Hermes-এর code নামাতে | রেসিপির খাতা আনার গাড়ি |\n| **curl** | script-টা ইন্টারনেট থেকে আনতে | বাজারের থলে |\n| **tar** | ZIP-এর মতো প্যাক-করা ফাইল খুলতে | পার্সেল খোলার ছুরি |\n| **SHA-256 utility** | ডাউনলোড করা জিনিস **আসল কিনা** যাচাই করতে | ডিম ভালো না পচা, তা চেনার ঠিকঠাক পরীক্ষা |\n\nWindows-এ Git না থাকলে script নিজেই একটা Git এনে নেয়।\n\n- script সবসময় **নিজের যাচাই-করা `uv`** নামায়। তোমার কম্পিউটারে আগে থেকে `uv` থাকলেও সেটা ব্যবহার করে না।\n- **Python:** এখনকার install **Python 3.14** দিয়ে চলে। `pyproject.toml`-এ `>=3.11,<3.15` লেখা থাকলেও তার মানে এই না যে ৩.১১ থেকে ৩.১৩-এ সম্পূর্ণ চলবে।\n- source থেকে বানাতে কখনো **compiler** (code-কে কম্পিউটারের বোধগম্য ভাষায় বদলানোর যন্ত্র) আর কিছু library লাগে। Linux-এ Chromium চালাতেও system-এর কিছু library লাগে।\n- **libatomic:** Linux-এর কিছু ছোট (minimal) image-এ `libatomic.so.1` থাকে না, অথচ Node.js এটা চায়। না থাকলে installer আর `hermes update` নিজে distro-র package manager দিয়ে বসায় (apt/zypper-এ `libatomic1`, dnf/yum/apk-তে `libatomic`, pacman-এ `gcc-libs`)। `--non-interactive` থাকলে সে **কখনো password চায় না**। তাই না পারলে error-এ ঠিক কোন কমান্ড লাগবে তা বলে দেয়।\n- **Nix** (একটা ভিন্ন ধরনের package system) এখন শুধু **best-effort**, মানে ঠিকমতো চলার কোনো গ্যারান্টি নেই।\n\n### Sudo ছাড়া, বা আলাদা service user হিসেবে চালাতে চাইলে\n\n- **sudo** = সাময়িকভাবে admin-এর ক্ষমতা নেওয়ার কমান্ড।\n- **Service user** = একটা আলাদা, সীমিত ক্ষমতার অ্যাকাউন্ট, যেটা শুধু একটা কাজের জন্য (এখানে Hermes চালানোর জন্য) বানানো।\n\nধাপগুলো:\n1. admin আগে দরকারি system library বসিয়ে দেয়।\n2. service user সাধারণভাবে `install.sh` চালায়।\n3. PATH-এ যোগ করে: `export PATH=\"$HOME/.local/bin:$PATH\"`।\n4. ওই account-এ `hermes doctor` চালায়।\n5. logout করলেও service যেন বেঁচে থাকে, তাই admin চালায়: `sudo loginctl enable-linger SERVICE_USER`। (**linger** = \"ঘুমিয়ে পড়লেও বাতি জ্বালিয়ে রাখো।\")\n\ninstaller Playwright-এর `--with-deps` ধাপ চালায় না, আর Node.js-এর `libatomic` ছাড়া অন্য কোনো system package বসায় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ঝামেলা হলে (Troubleshooting)\n\n| তুমি যা দেখলে | মানে কী | সমাধান |\n|---|---|---|\n| `hermes: command not found` | তোমার shell এখনো `hermes` শর্টকাট চেনে না | shell reload (`source ~/.zshrc` বা `~/.bashrc`), নইলে PATH দেখো |\n| `API key not set` | AI provider-এর পরিচয়পত্র দাওনি | `hermes model` চালাও, অথবা `hermes config set OPENROUTER_API_KEY তোমার_key` |\n| update-এর পর config missing | নতুন সংস্করণে সেটিংয়ের ধরন বদলে গেছে | `hermes config check`, তারপর `hermes config migrate` |\n\nআসল ডাক্তার: **`hermes doctor`**। এটা নিজে পরীক্ষা করে বলে দেয় কী নেই আর কীভাবে ঠিক হবে। কিছু ভাঙলে প্রথমে এটাই চালাও।\n\n### Symlink-করা home বা বাইরের ডিস্ক\n\n**Symlink** হলো একটা \"শর্টকাট-ফোল্ডার\", যেটা আসলে অন্য কোথাও রাখা ফোল্ডারের দিকে আঙুল তুলে আছে। `HERMES_HOME` আর তার ভেতরের `hooks`, `skills`, `sessions`, `logs` symlink হতে পারে।\n\nযদি আঙুলের দেখানো জায়গাটা না থাকে (যেমন বাইরের hard drive বা NAS খুলে রাখা হয়েছে), Hermes **থেমে যায়** আর পথসহ storage error দেয়। সে নিজে থেকে জায়গাটা বানিয়ে ফেলে না। কারণ ভুল করে তোমার ল্যাপটপের ডিস্কেই data লিখে ফেললে পরে সবকিছু এলোমেলো হতো। ডিস্ক আবার জুড়ে চেষ্টা করো। `hermes doctor` এটাকে storage সমস্যা বলে, YAML ভুল না।\n\n### Hermes জানে সে কীভাবে install হয়েছে\n\nকোন পথে install করেছো তার ওপর নির্ভর করে update কীভাবে হবে:\n- source checkout: Git দিয়ে নিজে update।\n- Desktop app, Docker, Nix, Termux: প্রতিটার নিজস্ব update পদ্ধতি।\n\n`hermes doctor` বলে দেয় তোমারটা কোন ধরন।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "পরবর্তী ধাপ",
+      "markdown": "Install হয়ে গেলে পরের lesson **Quickstart**-এ গিয়ে প্রথমবার Hermes-এর সাথে কথা বলো। আটকে গেলে এই lesson-এর শব্দগুলো আবার দেখো, বা **Ask AI** ট্যাবে প্রশ্ন করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`curl -fsSL .../install.sh | bash` লাইনটা মোটামুটি কী করে?",
+      "options": [
+        "Hermes মুছে ফেলে",
+        "install script ইন্টারনেট থেকে নামিয়ে সঙ্গে সঙ্গে চালায়",
+        "শুধু Hermes-এর নাম দেখায়",
+        "কম্পিউটার বন্ধ করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "`curl` script-টা নামায়, `|` (পাইপ) সেটা ডান দিকে পাঠায়, আর `bash` সেটা চালায়।"
+    },
+    {
+      "question": "Channel হিসেবে stable আর main-এর পার্থক্য কী?",
+      "options": [
+        "stable কাঁচা নতুন অবস্থা, main পুরোনো",
+        "দুটোই একই",
+        "main শুধু Windows-এর জন্য",
+        "stable হলো বারবার পরীক্ষা-করা পাকা সংস্করণ (ডিফল্ট), main হলো একদম নতুন কিন্তু কাঁচা"
+      ],
+      "answerIndex": 3,
+      "explanation": "stable নিরাপদ ও ডিফল্ট। main সবার আগে নতুন জিনিস দেয়, তবে একটু ভাঙতে পারে। নতুনদের জন্য stable।"
+    },
+    {
+      "question": "docs-এ 'POSIX script' বলতে কী বোঝায়?",
+      "options": [
+        "Linux/Mac/WSL2-র জন্য install.sh",
+        "Windows-এর install.ps1",
+        "শুধু Docker",
+        "Android-এর Termux"
+      ],
+      "answerIndex": 0,
+      "explanation": "POSIX হলো Linux/Mac-ধাঁচের system-এর নিয়মের নাম। তাই POSIX script মানে install.sh।"
+    },
+    {
+      "question": "`~/.hermes` ফোল্ডারে কী থাকে, আর সেটা মুছলে কী সমস্যা?",
+      "options": [
+        "শুধু অস্থায়ী ফাইল, মুছলে ক্ষতি নেই",
+        "Hermes-এর বিজ্ঞাপন",
+        "তোমার config আর Hermes-এর স্মৃতি, তাই মুছলে সব হারায়",
+        "কিছুই থাকে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "data ফোল্ডারে তোমার config, session আর স্মৃতি থাকে। application মেরামত করতে এটা মুছতে নেই।"
+    },
+    {
+      "question": "install-এর পর `hermes: command not found` এলে প্রথমে কী করবে?",
+      "options": [
+        "কম্পিউটার বদলাবে",
+        "Hermes-কে আবার install করবে না, শুধু অপেক্ষা করবে",
+        "`~/.hermes` মুছবে",
+        "shell reload করবে (`source ~/.zshrc` বা `~/.bashrc`) বা PATH দেখবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "shell পুরোনো তালিকা নিয়ে বসে আছে। reload করলে নতুন `hermes` শর্টকাট চিনতে পারে। PATH-এ `~/.local/bin` থাকাও দরকার।"
+    },
+    {
+      "question": "`--non-interactive` flag দিলে কী হয়?",
+      "options": [
+        "script কোনো প্রশ্ন করে না, নিজে নিজে ডিফল্ট ধরে চলে",
+        "install আরও ধীর হয়",
+        "Hermes ইন্টারনেট ছাড়া চলে",
+        "সব tool বাদ যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Non-interactive মানে কোনো input চাইবে না। তাই এটা এমন জায়গায় কাজে লাগে যেখানে কেউ বসে উত্তর দেবে না।"
+    },
+    {
+      "question": "নতুন কেউ সবচেয়ে কম ঝামেলায় model আর tool একসাথে পেতে কোন কমান্ড চালাবে?",
+      "options": [
+        "hermes doctor",
+        "hermes import",
+        "hermes setup --portal",
+        "hermes desktop"
+      ],
+      "answerIndex": 2,
+      "explanation": "`hermes setup --portal` Nous Portal-এ login করিয়ে একসাথে model আর Tool Gateway চালু করে দেয়।"
+    }
+  ],
+  "recap": [
+    "Terminal-এ লেখা হুকুমকে command বলে, আর install script অনেকগুলো ধাপ নিজে করে দেয়।",
+    "Mac/Windows-এ সবচেয়ে সহজ হলো Desktop app; terminal চাইলে install.sh বা install.ps1।",
+    "Channel: stable = পাকা ও নিরাপদ (ডিফল্ট), main = কাঁচা ও নতুন।",
+    "Code আর তোমার data আলাদা জায়গায় থাকে; `~/.hermes` data কখনো মুছবে না।",
+    "আটকে গেলে shell reload করো আর `hermes doctor` চালাও।"
+  ]
+}

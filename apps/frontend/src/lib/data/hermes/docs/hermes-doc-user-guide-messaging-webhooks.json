@@ -1,0 +1,175 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-webhooks",
+  "title": "Webhooks",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks",
+  "oneLiner": "এই lesson শেষে তুমি Webhook কী, কেন লাগে, HMAC signature কীভাবে জাল খবর ঠেকায় আর GitHub PR review-এর মতো route নিজে বানাতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: দরজার ঘণ্টা\n\nধরো Hermes একটা বাড়ির ভেতরে থাকে। বাইরের সেবা (GitHub, Stripe...) কিছু ঘটলেই **দরজার ঘণ্টা** বাজায়, সাথে একটা **চিরকুট** দেয়। চিরকুটে লেখা থাকে কী ঘটেছে। Hermes ঘণ্টা শুনে আগে দেখে চিরকুটে সঠিক **গোপন সিল** আছে কি না। সিল ঠিক হলে চিরকুট পড়ে, সেটাকে একটা **প্রশ্নে** (prompt) বদলে agent-কে কাজ দেয়। উত্তর যায় GitHub comment-এ, Telegram-এ, Discord-এ বা শুধু log-এ।\n\nএটাই **Webhook adapter**: একটা HTTP server যা POST নেয়, signature যাচাই করে, payload-কে prompt বানায় আর উত্তর যথাস্থানে পাঠায়।\n\n**এটা না থাকলে কী সমস্যা হতো?** তোমাকে নিজে প্রতিবার GitHub-এ গিয়ে দেখতে হতো \"নতুন PR এসেছে কি?\" Webhook থাকলে ঘটনা ঘটার সাথে সাথে Hermes নিজেই জেনে যায় আর কাজ শুরু করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Webhook (ওয়েবহুক)\nএকটা ওয়েব-ঠিকানা, যেখানে অন্য সেবা নিজে থেকে খবর পাঠায়। সাধারণ উপায়ে তুমি বারবার গিয়ে জিজ্ঞেস করো। Webhook-এ উল্টো: ঘটনা ঘটলে অন্যপক্ষ তোমার দরজার ঘণ্টা বাজায়।\n\n### HTTP server ও POST\n**HTTP** হলো ওয়েবের কথা বলার নিয়ম। **Server** হলো যে প্রোগ্রাম অনুরোধের উত্তর দেয়। **POST** হলো এক ধরনের অনুরোধ, যাতে চিঠির সাথে তথ্য পাঠানো হয় (যেমন \"এই নাও PR-এর খবর\")।\n\n### Payload ও JSON\n**Payload** হলো সেই চিরকুট, মানে পাঠানো তথ্য। প্রায়ই **JSON** আকারে আসে: `{\"নাম\": \"মান\"}` ধরনের গোছানো লেখা। কম্পিউটার সহজে পড়তে পারে।\n\n### HMAC signature ও secret\nচিরকুট সত্যিই GitHub পাঠিয়েছে কি না তা কীভাবে জানবে? তুমি আর GitHub একটা **secret** (গোপন শব্দ) ভাগ করে রাখো। GitHub চিরকুট আর secret মিলিয়ে একটা ছোট সিল বানায়, এটাই **HMAC signature**। Hermes একই হিসাব করে নিজের সিল বানায়। দুটো মিললে চিরকুট আসল।\n\n### Route\nকোন ঠিকানায় কী কাজ হবে তার নিয়ম। যেমন `/webhooks/github-pr` এ এলে \"PR review করো\"। একটা বাড়িতে একাধিক দরজা-ঘণ্টা, প্রতিটার আলাদা কাজ।\n\n### Prompt template\nচিরকুট থেকে নির্দিষ্ট জায়গা তুলে একটা বাক্য বানানোর ছাঁচ। যেমন \"PR #{number}-এর শিরোনাম {pull_request.title}\"। `{...}`-এর জায়গায় আসল মান বসে।\n\n### Idempotency ও Replay\n**Replay** মানে কেউ পুরোনো আসল চিরকুট আবার পাঠিয়ে দেওয়া। **Idempotency** মানে একই খবর দুবার এলেও কাজ একবারই হওয়া।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "বাইরের সার্ভিস POST পাঠায়, Hermes যাচাই করে agent চালায় আর উত্তর গন্তব্যে পৌঁছায়।",
+        "nodes": [
+          {
+            "id": "e",
+            "kind": "external",
+            "label": "GitHub/GitLab",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "w",
+            "kind": "gateway",
+            "label": "Webhook :8644",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Agent",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "t",
+            "kind": "external",
+            "label": "PR/Telegram/log",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "e",
+            "to": "w",
+            "label": "POST + HMAC"
+          },
+          {
+            "from": "w",
+            "to": "a",
+            "label": "prompt"
+          },
+          {
+            "from": "a",
+            "to": "t",
+            "label": "deliver"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick start (৩ ধাপ)\n\n1. `hermes gateway setup` চালাও, অথবা env var দিয়ে চালু করো।\n2. `config.yaml`-এ route লেখো, বা `hermes webhook subscribe` দিয়ে বানাও।\n3. সেবাকে `http://your-server:8644/webhooks/<route-name>` ঠিকানা দেখিয়ে দাও।\n\n`~/.hermes/.env`:\n\n```bash\nWEBHOOK_ENABLED=true     # default false\nWEBHOOK_PORT=8644        # default\nWEBHOOK_SECRET=your-global-secret\n```\n\n| লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `WEBHOOK_ENABLED` | webhook server চালু করার সুইচ | default বন্ধ, তাই চালু করতেই হয় |\n| `WEBHOOK_PORT` | দরজা-নম্বর | `8644`। সেবাকে এই port-এ পাঠাতে বলো |\n| `WEBHOOK_SECRET` | সবার জন্য সাধারণ গোপন শব্দ | route-এ আলাদা secret না থাকলে এটা কাজে লাগে |\n\nপরীক্ষা: `curl http://localhost:8644/health` চালালে আসে `{\"status\": \"ok\", \"platform\": \"webhook\"}`। (`curl` হলো টার্মিনাল থেকে কোনো ওয়েব-ঠিকানায় অনুরোধ পাঠানোর টুল। `localhost` মানে তোমার নিজের কম্পিউটার।)\n\nRoute থাকে `platforms.webhook.extra.routes`-এর নিচে। `port`, `host`, `secret`, `routes` সরাসরি `platforms.webhook:`-এর নিচেও দেওয়া যায়। দুই জায়গায় থাকলে `extra:` জেতে। আরও চাবি: `rate_limit` (প্রতি মিনিটে কত), `max_body_bytes`।\n\n## Route-এর বৈশিষ্ট্য\n\n| চাবি | কাজ | কখন লাগে |\n|---|---|---|\n| `events` | কোন event নেবে (`[\"pull_request\"]`)। খালি মানে সব। `X-GitHub-Event`, `X-GitLab-Event` বা payload-এর `event_type` থেকে পড়ে | শুধু PR-এর খবরে সাড়া দিতে |\n| `secret` | **আবশ্যক** (বা global থেকে নেয়)। `\"INSECURE_NO_AUTH\"` মানে যাচাই বাদ (শুধু পরীক্ষা) | সবসময় |\n| `prompt` | dot-notation template। না দিলে পুরো JSON | agent-কে পরিষ্কার প্রশ্ন দিতে |\n| `filters` | নিয়ম-ভিত্তিক ছাঁকনি। না মিললে HTTP 200 `{\"status\":\"ignored\",\"reason\":\"filter\"}` | অপ্রয়োজনীয় ঘটনা বাদ দিতে |\n| `script` | `~/.hermes/scripts/`-এর ছোট filter বা বদলানোর প্রোগ্রাম | জটিল বদলের জন্য |\n| `skills` | agent run-এ Skill লোড | কাজের পদ্ধতি শেখানো থাকলে |\n| `toolsets` | এই route-এর tool-দল (শুধু হাতে config edit) | tool সীমিত বা বাড়াতে |\n| `deliver` | `github_comment`, `telegram`, `discord`, `slack`, `signal`, `sms`, `whatsapp`, `matrix`, `email`… বা `log` (default) | উত্তর কোথায় যাবে |\n| `deliver_extra` | `repo`, `pr_number`, `chat_id`, `message_thread_id`… (template চলে) | ঠিক কোন PR/chat-এ যাবে |\n| `deliver_only` | agent বাদ, rendered prompt-ই সরাসরি যায় | সহজ alert পাঠাতে |\n| `cron_job` | event-এ বিদ্যমান cron job (নির্ধারিত কাজ) চালায় | তৈরি কাজ চালু করতে |\n| `coalesce` | দ্রুত একই-বিষয়ের event জমিয়ে একবার চালায় | একই PR-এ পরপর অনেক খবর এলে |\n| `mirror_to_session` | default `false`। `true` হলে পাঠানো লেখা chat-এর session-এও যায় | chat-এ ফলো-আপ প্রশ্নের জন্য |\n| `profile` | multiplex_profiles চালু থাকলে route-কে এক profile-এ বাঁধে | আলাদা পরিচয়ে কাজ করাতে |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## উদাহরণ: GitHub PR review\n\n**PR** মানে Pull Request: কেউ কোডে বদল প্রস্তাব করেছে, অন্যরা দেখে মত দেবে। এই route PR এলে Hermes-কে দিয়ে review করায়।\n\n```yaml\nplatforms:\n  webhook:\n    extra:\n      routes:\n        github-pr:\n          events: [\"pull_request\"]\n          secret: \"your-github-secret\"\n          prompt: |\n            Review PR #{number} in {repository.full_name}\n            Title: {pull_request.title}\n            Author: {pull_request.user.login}\n            URL: {pull_request.html_url}\n          skills: [\"github-code-review\"]\n          deliver: \"github_comment\"\n          deliver_extra:\n            repo: \"{repository.full_name}\"\n            pr_number: \"{number}\"\n```\n\n| অংশ | মানে |\n|---|---|\n| `github-pr` | route-এর নাম, তাই ঠিকানা `/webhooks/github-pr` |\n| `events: [\"pull_request\"]` | শুধু PR-এর খবর নাও |\n| `secret` | GitHub-এর সাথে ভাগ করা গোপন শব্দ |\n| `prompt` | Hermes-কে দেওয়া প্রশ্নের ছাঁচ |\n| `skills` | `github-code-review` পদ্ধতি লোড করো |\n| `deliver: \"github_comment\"` | উত্তর PR-এর comment হিসেবে দাও |\n| `deliver_extra` | কোন repo আর কোন PR নম্বরে comment হবে |\n\n**ধাপ:** GitHub repo → Settings → Webhooks → Add webhook। Payload URL `http://your-server:8644/webhooks/github-pr`, content type `application/json`, secret route-এর সাথে এক, event = Pull requests। gateway যে মেশিনে চলে সেখানে `gh auth login` লাগে (`github_comment`-এর জন্য আবশ্যক)। (`gh` হলো GitHub-এর terminal-টুল।)\n\n**GitLab:** secret আসে `X-Gitlab-Token` header-এ (সরাসরি মেলানো, HMAC নয়)। URL `.../webhooks/gitlab-mr`, event \"Merge request events\"।\n\n### Prompt template-এর নিয়ম\n\n- `{pull_request.title}` মানে `payload[\"pull_request\"][\"title\"]`। ডট দিয়ে ভেতরে ঢোকা যায়।\n- `{__raw__}` মানে পুরো payload (৪০০০ অক্ষরে ছাঁটা)।\n- নেই এমন key literal `{key}` হয়েই থাকে (error নয়)।\n- nested (ভেতরে ভেতরে সাজানো) dict/list JSON হয়ে ২০০০ অক্ষরে ছাঁটা হয়।\n- `prompt` না দিলে পুরো payload dump হয় (৪০০০ অক্ষর সীমা)।\n\n## Filter, script, coalesce\n\n**Payload filter:** signature, body parse আর `events`-এর পরে, prompt-এর আগে চলে। Operator: `exists`, `missing`, `equals`/`not_equals`, `contains`, `in`, `in_file`, `regex`। group: `all`, `any`, `not`। Field path dot-notation: `payload.foo`, `headers.<Name>`।\n\n**Script:** অবশ্যই `~/.hermes/scripts/`-এ থাকতে হবে (বাইরের পথে ঢোকা বন্ধ, নিরাপত্তার জন্য)। `.sh/.bash` bash-এ, বাকিগুলো Python-এ চলে। Payload stdin-এ JSON হয়ে আসে। stdout-এ JSON object দিলে payload বদলে যায়। খালি stdout, `[SILENT]`, `{\"__hermes_ignore__\": true}`, timeout বা nonzero exit হলে HTTP 200 `ignored`।\n\n**Coalesce:** একই বিষয়ের দ্রুত event একটায় মেশায়। `key` (যেমন `{repository.full_name}#{pull_request.number}`), `window_seconds` (default ৩০), `max_wait_seconds` (default ৩০০)। শেষ payload-এ একটাই agent run হয়। HTTP 202 `coalesced`। শুধু agent-mode route-এ চলে। `deliver_only` বা `cron_job`-এর সাথে মেশালে চালুর সময়ই reject।\n\n## `deliver_only`: agent ছাড়া সরাসরি পাঠানো\n\nLLM-এর (বড় ভাষা-মডেলের) খরচ শূন্য, কারণ কোনো LLM call হয় না। rendered `prompt`-ই বার্তা। কাজে লাগে monitoring alert বা background job শেষের খবরে। আসল `deliver` target লাগে (`log` বা না-দেওয়া হলে চালুর সময়ই reject)। `skills` উপেক্ষিত।\n\n| Status | মানে |\n|---|---|\n| 200 | পাঠানো হয়েছে |\n| 200 `duplicate` | ১ ঘণ্টার মধ্যে একই delivery ID |\n| 401 | HMAC নেই বা ভুল |\n| 400 | ভাঙা JSON |\n| 404 | অচেনা route |\n| 413 | body বড় |\n| 429 | rate limit পার (অনেক বেশি অনুরোধ) |\n| 502 | target প্রত্যাখ্যান করেছে |\n\n## `cron_job` ও CLI\n\n`cron_job: \"pr-review-sweeper\"` দিলে প্রতি event-এ বিদ্যমান cron job চলে। response `202 Accepted`। `deliver_only`-এর সাথে একসাথে নয়। Paused বা disabled job চলে না।\n\n```bash\nhermes webhook subscribe <name> --events \"...\" --prompt \"...\" --deliver telegram --deliver-chat-id \"123\"\nhermes webhook list\nhermes webhook remove <name>\nhermes webhook test <name> --payload '<json>'\n```\n\n| command | কাজ |\n|---|---|\n| `subscribe` | নতুন route বানায়। URL আর auto-generated HMAC secret ফেরত দেয় |\n| `list` | সব route দেখায় |\n| `remove` | route মুছে দেয় |\n| `test` | নমুনা payload পাঠিয়ে পরীক্ষা করে |\n\nSubscribe করলে route `~/.hermes/webhook_subscriptions.json`-এ থাকে আর restart ছাড়াই নিজে হালনাগাদ (hot-reload) হয়। একই নামের static `config.yaml` route জেতে। `--route-profile` দিলে secret ঘুরে যায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Authenticated মানেই trusted নয়",
+      "markdown": "HMAC প্রমাণ করে **কে** পাঠিয়েছে, **কী** পাঠিয়েছে তা নয়। PR title, commit message সবই তৃতীয় পক্ষের লেখা, ভেতরে দুষ্টু নির্দেশ লুকানো থাকতে পারে। তাই default webhook toolset ইচ্ছা করেই ছোট: `web_search`, `web_extract`, `vision_analyze`, `clarify`। `terminal`/`file` শুধু সেই route-এ দাও যেখানে sender তুমি নিজে নিয়ন্ত্রণ করো। Sandbox (Docker/SSH/VM-এর মতো বন্ধ বাক্স) ব্যবহার করো, বিপজ্জনক কাজে approval রাখো, আর `{__raw__}`-এর বদলে নির্দিষ্ট field দিয়ে template লেখো। `hermes webhook subscribe`-এ toolsets flag নেই, যাতে agent নিজে `terminal` নিতে না পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা বিস্তারিত\n\n**Signature-এর ধরন:**\n\n| ধরন | header | টীকা |\n|---|---|---|\n| GitHub | `X-Hub-Signature-256` (`sha256=`) | |\n| GitLab | `X-Gitlab-Token` | সরাসরি মেলানো |\n| Standard Webhooks | `webhook-id`, `webhook-timestamp`, `webhook-signature` | |\n| **Generic V2** (সুপারিশকৃত) | `X-Webhook-Signature-V2` + `X-Webhook-Timestamp` | timestamp সার্ভার সময়ের **±৩০০ সেকেন্ডের** মধ্যে, তাই replay (পুরোনো চিরকুট আবার পাঠানো) ঠেকায় |\n| Generic V1 (legacy) | | replay-সুরক্ষা নেই, একবার deprecation warning |\n\n- প্রতি route-এর secret আবশ্যক। না থাকলে চালুই হয় না। `INSECURE_NO_AUTH` শুধু loopback (`127.0.0.1`, `localhost`, `::1`) ঠিকানায়, মানে শুধু নিজের কম্পিউটার থেকে।\n- **Rate limit:** default প্রতি route-এ ৩০/মিনিট (`rate_limit` দিয়ে বদলায়)।\n- **Idempotency:** delivery ID (`X-GitHub-Delivery`, `svix-id`, `webhook-id`, `X-Request-ID`) ১ ঘণ্টা মনে রাখে, তাই একই খবর দুবার এলে একবারই কাজ হয়।\n- **Body সীমা:** default ১ MB (`max_body_bytes`)।\n\n## সমস্যা সমাধান\n\n- Webhook আসে না → port ৮৬৪৪ খোলা? URL `/webhooks/<route>`? `/health` দেখো।\n- Signature ভুল → secret হুবহু মেলাও। log-এ `Invalid signature` খোঁজো।\n- Event উপেক্ষিত → `events` তালিকা মেলাও (`pull_request`, `push`, `merge_request`)।\n- Agent চুপ → `hermes gateway run` দিয়ে foreground-এ log দেখো।\n- দ্বিগুণ উত্তর → source delivery-ID header পাঠায় কি না দেখো।\n- `gh` error → `gh auth login`, repo-তে write access, PATH-এ `gh`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Webhook adapter default কোন port-এ চলে?",
+      "options": ["80", "3000", "8644", "22"],
+      "answerIndex": 2,
+      "explanation": "`WEBHOOK_PORT` default ৮৬৪৪।"
+    },
+    {
+      "question": "HMAC signature কেন আছে?",
+      "options": [
+        "উত্তর সুন্দর করতে",
+        "চিরকুট সত্যিই ঠিক সেবা পাঠিয়েছে কি না যাচাই করতে",
+        "খরচ কমাতে",
+        "ছবি পাঠাতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "secret ভাগ করা থাকে বলে সিল মিললে বোঝা যায় চিরকুট আসল।"
+    },
+    {
+      "question": "`deliver_only: true` হলে কী ঘটে?",
+      "options": [
+        "agent চালু হয়ে গভীরভাবে ভাবে",
+        "agent বাদ, rendered prompt-ই সরাসরি পাঠানো হয় (LLM খরচ শূন্য)",
+        "কিছুই পাঠানো হয় না",
+        "route মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "এটা alert-জাতীয় সহজ বার্তার জন্য দ্রুত ও সস্তা পথ।"
+    },
+    {
+      "question": "default webhook toolset-এ নেই কোনটা?",
+      "options": [
+        "`web_search`",
+        "`vision_analyze`",
+        "`terminal`",
+        "`clarify`"
+      ],
+      "answerIndex": 2,
+      "explanation": "বাইরের লোকের লেখা ডেটায় চলে বলে terminal ইচ্ছা করে বাদ।"
+    },
+    {
+      "question": "Generic V2 signature-এ timestamp কত সেকেন্ডের মধ্যে থাকতে হয়?",
+      "options": ["±৫", "±৩০০", "±৩৬০০", "কোনো সীমা নেই"],
+      "answerIndex": 1,
+      "explanation": "এতে পুরোনো চিরকুট আবার পাঠানো (replay) ঠেকানো যায়।"
+    },
+    {
+      "question": "একই delivery ID ১ ঘণ্টার মধ্যে আবার এলে কী হয়?",
+      "options": [
+        "আবার কাজ হয়",
+        "HTTP 200 `duplicate` ফেরত আসে, দ্বিতীয়বার কাজ হয় না",
+        "server বন্ধ হয়",
+        "user ban হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "idempotency: একই খবর দুবার এলেও কাজ একবার।"
+    },
+    {
+      "question": "`coalesce` কোন route-এর সাথে চলে না?",
+      "options": [
+        "agent-mode route",
+        "`deliver_only` বা `cron_job` route",
+        "GitHub route",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "agent-mode route-এই কেবল চলে। অন্যগুলোর সাথে মেশালে চালুর সময়ই reject।"
+    },
+    {
+      "question": "GitLab-এর secret যাচাই কেমন?",
+      "options": [
+        "HMAC দিয়ে",
+        "`X-Gitlab-Token` header সরাসরি মেলানো হয়",
+        "যাচাই হয় না",
+        "ফোন করে"
+      ],
+      "answerIndex": 1,
+      "explanation": "GitLab-এ HMAC নেই, header-এর token সরাসরি তুলনা করা হয়।"
+    }
+  ],
+  "recap": [
+    "Webhook হলো দরজার ঘণ্টা: ঘটনা ঘটলে বাইরের সেবা নিজে Hermes-কে খবর পাঠায়।",
+    "HMAC signature দিয়ে যাচাই হয় চিরকুট আসল কি না, কিন্তু আসল মানেই বিশ্বাসযোগ্য নয়।",
+    "route-এ `events`, `prompt`, `deliver` ঠিক করে কাজ ও উত্তরের গন্তব্য বলা হয়।",
+    "`deliver_only` agent ছাড়া সরাসরি বার্তা পাঠায়, খরচ শূন্য।",
+    "default webhook toolset ছোট রাখা হয়েছে নিরাপত্তার জন্য।"
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "contentId": "hermes-doc-reference-toolsets-reference",
+  "title": "Toolsets Reference",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/toolsets-reference",
+  "oneLiner": "এই lesson শেষে তুমি toolset কী, কেন লাগে, Core/Composite/Platform-এর পার্থক্য এবং কীভাবে নিজের কাজের জন্য সঠিক tool-ব্যাগ বেছে নিতে হয় তা বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: স্কুল ব্যাগের আলাদা আলাদা কিট\n\nতোমার তিনটা ব্যাগ: **স্কুল ব্যাগ** (খাতা, কলম), **খেলার ব্যাগ** (ব্যাট, বল), **ছবি-আঁকার ব্যাগ** (রং, তুলি)। প্রতিদিন সব জিনিস নেওয়া ভারী আর বোকামি। তাই কাজ অনুযায়ী ব্যাগ বেছে নাও!\n\nHermes-এ এই \"ব্যাগ\" হলো **toolset**: একটা নামওয়ালা tool-এর গুচ্ছ, যা ঠিক করে agent কী করতে পারবে। **কম tool মানে কম ঝুঁকি, কম prompt খরচ।**\n\n**Toolset না থাকলে কী সমস্যা হতো?** প্রতিবার ৮০টারও বেশি tool সব সময় সাথে বইতে হতো। তাতে AI-র \"মনে রাখার টেবিল\" ভরে যেত (খরচ বাড়ত), আর ভুল tool ধরার সুযোগও বাড়ত। আর অচেনা পরিবেশে বিপজ্জনক tool (যেমন terminal) থাকাও ঠিক না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Tool ও Toolset\n**Tool** একটা নির্দিষ্ট ক্ষমতা (ফাইল পড়া, ওয়েব খোঁজা)। **Toolset** কয়েকটা tool-এর দল। যেমন ব্যাগ আর ব্যাগের ভেতরের জিনিস।\n\n### Core, Composite, Platform\nতিন স্তরের দল। **Core** একটা কাজের দল (file, web)। **Composite** কয়েকটা core মিলিয়ে একটা পরিস্থিতির ব্যাগ। **Platform** একটা পরিবেশের পুরো সাজ (Telegram, টার্মিনাল)।\n\n### Platform\nযেখানে Hermes চলছে: টার্মিনাল (CLI), Telegram, Slack, webhook ইত্যাদি। প্রতি জায়গার আলাদা tool-তালিকা থাকতে পারে।\n\n### MCP\nবাইরের কোনো সেবার tool Hermes-এর সাথে জোড়ার নিয়ম। **MCP server** হলো সেই বাইরের দোকান, যেখান থেকে Hermes নতুন tool আনে।\n\n### Config ও `config.yaml`\nHermes-এর সেটিংসের খাতা। **YAML** হলো সেই খাতার লেখার ধরন (`নাম: মান`, আর ভেতরে ঢোকানোর জন্য স্পেস)।\n\n### Gated (গেটেড)\nদরজায় শর্ত আছে। শর্ত ঠিক থাকলে tool আসে, নইলে আসে না। **Capability-gated**: ক্ষমতার শর্ত (যেমন browser দরকারি জিনিস থাকলে)। **Workflow-gated**: কাজের ধরনের শর্ত।\n\n### Kanban\nকাজের বোর্ড (কাজ: করণীয়, চলছে, শেষ)। Hermes-এর `kanban` toolset-এ এ ধরনের ১৪টা tool আছে।\n\n### Subagent\nHermes-এর বানানো সহকারী, যে ছোট একটা কাজ ভাগ করে নেয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তিন স্তর: Core দল মিলে Composite, আর সব মিলে Platform toolset।",
+        "nodes": [
+          {
+            "id": "core",
+            "kind": "external",
+            "label": "Core (file,web)",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "comp",
+            "kind": "gateway",
+            "label": "Composite",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "plat",
+            "kind": "server",
+            "label": "Platform",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "cfg",
+            "kind": "database",
+            "label": "config.yaml",
+            "x": 660,
+            "y": 100
+          }
+        ],
+        "edges": [
+          {
+            "from": "core",
+            "to": "comp",
+            "label": "মেলানো"
+          },
+          {
+            "from": "comp",
+            "to": "plat",
+            "label": "অন্তর্ভুক্ত"
+          },
+          {
+            "from": "plat",
+            "to": "cfg",
+            "label": "toolsets: [...]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "toolset-picker"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## তিন ধরনের toolset\n\n| ধরন | মানে | উদাহরণ | কখন লাগে |\n|---|---|---|---|\n| **Core** | একটা যৌক্তিক দল | `file`, `terminal`, `web`, `memory` | একটাই কাজের হাতিয়ার চাইলে |\n| **Composite** | কয়েকটা core মিলিয়ে একটা পরিস্থিতির জন্য | `debugging` = file + terminal + web | একটা পরিস্থিতির জন্য তৈরি ব্যাগ চাইলে |\n| **Platform** | একটা পরিবেশের পুরো সাজ | `hermes-cli`, `hermes-telegram` | কোন জায়গা থেকে Hermes চলছে তার ডিফল্ট |\n\nCore ও Composite মিলিয়ে ৩৪টা entry, Platform toolset ২৩টা (পাতা অনুযায়ী)।\n\n## কীভাবে চালু/বন্ধ করবে? (তিন উপায়)\n\n### ১. এক session-এর জন্য (CLI)\n\n```bash\nhermes chat --toolsets web,file,terminal\nhermes chat --toolsets debugging     # composite: file + terminal + web\nhermes chat --toolsets all\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes chat` | Hermes-এর সাথে আলাপ শুরু |\n| `--toolsets web,file,terminal` | শুধু এই তিন দল চালু (কমা দিয়ে, স্পেস ছাড়া) |\n| `--toolsets debugging` | তৈরি composite ব্যাগ |\n| `--toolsets all` | সব নিবন্ধিত দল (নিচে শর্ত দেখো) |\n\n**কখন লাগে:** শুধু এই একবারের কাজের জন্য বাছাই। আলাপ শেষ হলে সেটিং আর থাকে না।\n\n### ২. platform অনুযায়ী `config.yaml`-এ (স্থায়ী)\n\n```yaml\ntoolsets:\n  - hermes-cli        # default\n```\n\nTelegram-এর জন্য যেমন `hermes-telegram` দেওয়া যায়।\n\n### ৩. interactive\n\n```bash\nhermes tools            # curses UI, platform ধরে চালু/বন্ধ\n```\n\n(**curses UI** মানে টার্মিনালের ভেতরেই তীর-চাবি দিয়ে বাছাই করার মেনু।) session-এর ভেতরে:\n\n```text\n/tools list\n/tools disable browser\n/tools enable discord\n```\n\n| হুকুম | কাজ |\n|---|---|\n| `/tools list` | কোন tool চালু আছে দেখো |\n| `/tools disable browser` | `browser` বন্ধ করো (session reset হয়) |\n| `/tools enable discord` | `discord` চালু করো |\n\n## গুরুত্বপূর্ণ কিছু core toolset\n\n- `file` → `patch`, `read_file`, `search_files`, `write_file`\n- `terminal` → `process_manage`, `terminal`\n- `web` → `web_extract`, `web_search`। `search` → শুধু `web_search`\n- `browser` → ৪টা tool। **`browser_exec` চালাতে `terminal` লাগে**। `web_search` browser-এর সদস্য নয়\n- `memory`, `session_search`, `skills`, `todo`, `vision`, `clarify`, `delegation`, `cronjob`, `code_execution`\n- `kanban` → ১৪টা tool, opt-in (ডিফল্টে বন্ধ, নিজে চালু করতে হয়)\n- `x_search`, `video`, `video_gen` — default-এ নেই বা opt-in\n\n## Composite: `debugging`, `coding` আর `safe`\n\n- **`safe`** (page-এর table-এ এটা Core হিসেবে লেখা, তবে `includes` দিয়ে কয়েকটা tool জুড়ে বানানো): `image_generate`, `vision_analyze`, `web_extract`, `web_search`। শুধু পড়া-গবেষণা-ছবি, **কোনো লেখা, terminal বা code নেই**। অচেনা পরিবেশের জন্য ভালো।\n- **`debugging`**: file + terminal + web। (**Debugging** মানে প্রোগ্রামের ভুল খুঁজে ঠিক করা।)\n- **`coding`**: file, terminal, search, web, skills, browser, todo, memory, session_search, clarify, code_execution, delegation, vision।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Platform toolset: কোথায় কী পাওয়া যায়\n\n- **`hermes-cli`**: interactive CLI-র default। প্রায় সবকিছু (file, terminal, web, browser, memory, skills, vision, image_gen, todo, tts, delegation, code_execution, cronjob, session_search, clarify, computer_use, kanban)। কিছু tool runtime-এ `check_fn` দিয়ে আটকানো (চালানোর সময় শর্ত না মিললে বাদ)।\n- **একই রকম**: `hermes-cron`, `hermes-telegram`, `hermes-slack`, `hermes-whatsapp`, `hermes-signal`, `hermes-matrix`, `hermes-email`, `hermes-sms` ইত্যাদি।\n- **ছাঁটা (reduced)**:\n  - `hermes-acp`: clarify, cronjob, image_generate, text_to_speech, computer_use, kanban বাদ।\n  - `hermes-api-server`: clarify, text_to_speech, computer_use, kanban বাদ।\n  - `hermes-webhook`: শুধু `web_search`, `web_extract`, `vision_analyze`, `clarify`। **terminal, file, browser নেই**।\n- **বাড়তি**: `hermes-discord` (+`discord`, `discord_admin`), `hermes-feishu`, `hermes-yuanbao`।\n- `hermes-gateway`: সব `hermes-<platform>`-এর অভ্যন্তরীণ union (সবার মিলিত রূপ)।\n\n(**Webhook** হলো বাইরের সেবার পাঠানো স্বয়ংক্রিয় খবর। **ACP** আর **API server** হলো Hermes-কে অন্য প্রোগ্রামের মধ্য দিয়ে চালানোর পথ।)"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কেন webhook এত ছোট?",
+      "markdown": "Webhook বাইরের লোকের পাঠানো ডেটায় চলে। সেই ডেটায় দুষ্টু নির্দেশ লুকানো থাকতে পারে। তাই `hermes-webhook` ইচ্ছা করেই terminal/file দেয় না। বাইরের ইনপুট যেখানে, সেখানে ছোট toolset দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Dynamic toolset\n\n\"Dynamic\" মানে আগে থেকে ঠিক করা নেই, চালানোর সময় তৈরি হয়।\n\n### MCP server থেকে\n\nপ্রতিটা MCP server একটা `mcp-<server>` toolset বানায়:\n\n```yaml\nmcp_servers:\n  github:\n    command: npx\n    args: [\"-y\", \"@modelcontextprotocol/server-github\"]\n```\n\n`github` নামটাও alias হিসেবে চলে। সাবধান: server-এর নাম যদি built-in toolset-এর নামের সমান হয় (যেমন `browser`, `web`), সেই নাম built-in tool **এবং** server-এর `mcp__<server>__*` tool দুটোই বোঝায়।\n\n### Custom toolset\n\n`config.yaml`-এর `custom_toolsets:`-এ নিজের দল বানাও। পাতার উদাহরণ `data-science`: file, terminal, code_execution, web, vision। **কখন লাগে:** তোমার কাজের জন্য নিজের মাপের ব্যাগ চাইলে।\n\n### Wildcard `all` / `*`\n\nসব নিবন্ধিত toolset খোলে। কিন্তু:\n\n- **Capability-gated**: browser, computer_use, code_execution, Feishu, cronjob। পূর্বশর্ত ঠিক থাকলেই আসে।\n- **Workflow-gated**: `kanban` `all`-এ **নেই**। নাম ধরে দিতে হয়, বা worker-এ `HERMES_KANBAN_TASK` সেট, বা `hermes tools enable kanban --platform <p>`।\n- `delegate_task`-এর সন্তান subagent-এ kanban কেটে ফেলা হয়।\n\n## `hermes tools` আর toolset-এর সম্পর্ক\n\n`hermes tools` কাজ করে **আলাদা আলাদা tool**-এর স্তরে (toolset-এর চেয়ে সূক্ষ্ম), আর `config.yaml`-এ সেভ হয়। একটা tool বন্ধ করা থাকলে তার toolset চালু থাকলেও সে **ছাঁকা পড়ে**। যেন ব্যাগে ঢোকানো আছে, কিন্তু ছাঁকনিতে আটকে গেছে।\n\n## সাধারণ ভুল\n\n1. `all` দিলে kanban আসবে ভাবা: আসে না।\n2. `browser` চালু করে `terminal` বন্ধ রাখা: `browser_exec` কাজ করবে না।\n3. Tool বন্ধ করে ভাবা toolset চালু থাকলেই চলবে: tool-স্তরের বন্ধ জিতে যায়।\n4. `catalog` দূর করতে চাইলে: `agent.disabled_toolsets: [catalog]`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`debugging` কোন ধরনের toolset?",
+      "options": [
+        "Core",
+        "Composite (file + terminal + web)",
+        "Platform",
+        "Dynamic"
+      ],
+      "answerIndex": 1,
+      "explanation": "debugging কয়েকটা core মিলিয়ে বানানো, তাই composite।"
+    },
+    {
+      "question": "`kanban` সম্পর্কে ঠিক কোনটা?",
+      "options": [
+        "`all` দিলে সবসময় আসে",
+        "`all`-এ নেই, নাম ধরে বা `HERMES_KANBAN_TASK` দিয়ে চালু করতে হয়",
+        "কখনোই চালু করা যায় না",
+        "শুধু Windows-এ চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "kanban workflow-gated, তাই `all`-এ আসে না।"
+    },
+    {
+      "question": "`hermes-webhook`-এ কোন tool গুলো আছে?",
+      "options": [
+        "terminal, file, browser",
+        "`web_search`, `web_extract`, `vision_analyze`, `clarify`",
+        "শুধু terminal",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "বাইরের ইনপুটে চলে বলে ইচ্ছা করেই ছোট।"
+    },
+    {
+      "question": "`browser_exec` চালাতে আর কোন toolset লাগে?",
+      "options": ["`web`", "`file`", "`terminal`", "`memory`"],
+      "answerIndex": 2,
+      "explanation": "`browser_exec`-এর জন্য `terminal` লাগে, না থাকলে কাজ করবে না।"
+    },
+    {
+      "question": "কোনটা `safe` composite-এ নেই?",
+      "options": [
+        "`web_search`",
+        "`image_generate`",
+        "`terminal`",
+        "`vision_analyze`"
+      ],
+      "answerIndex": 2,
+      "explanation": "`safe`-এ কোনো লেখা, terminal বা code নেই।"
+    },
+    {
+      "question": "একটা tool `hermes tools` দিয়ে বন্ধ, কিন্তু তার toolset চালু। ফল কী?",
+      "options": [
+        "tool চলে",
+        "tool ছাঁকা পড়ে, মানে বন্ধ থাকে",
+        "Hermes crash করে",
+        "toolset মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "tool-স্তরের বন্ধ জিতে যায়।"
+    },
+    {
+      "question": "নিজের কাস্টম দল কোথায় বানাবে?",
+      "options": [
+        "`config.yaml`-এর `custom_toolsets:`-এ",
+        "`.env`-এ",
+        "BotFather-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 0,
+      "explanation": "পাতার উদাহরণ `data-science`।"
+    },
+    {
+      "question": "কেন কম tool চালু রাখা ভালো?",
+      "options": [
+        "কম ঝুঁকি আর কম prompt খরচ",
+        "কম্পিউটার ঠান্ডা থাকে",
+        "কোনো কারণ নেই",
+        "Hermes দ্রুত ঘুমায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "toolset-এর মূল কথাই এটা: যতটা দরকার ততটাই দাও।"
+    }
+  ],
+  "recap": [
+    "Toolset হলো tool-এর ব্যাগ। তিন ধরন: Core, Composite, Platform।",
+    "চালু/বন্ধ করা যায় `--toolsets`, `config.yaml`, বা `hermes tools` দিয়ে।",
+    "`safe` composite-এ লেখা, terminal বা code নেই।",
+    "`hermes-webhook` ইচ্ছা করেই ছোট, কারণ বাইরের ইনপুট বিপজ্জনক হতে পারে।",
+    "`all` দিলেও `kanban` আসে না, আর tool-স্তরের বন্ধ toolset-এর চালুর চেয়ে শক্তিশালী।"
+  ]
+}

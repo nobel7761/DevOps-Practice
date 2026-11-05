@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-use-soul-with-hermes",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q01",
+      "difficulty": "easy",
+      "question": "`SOUL.md` কী?",
+      "options": [
+        "Hermes-এর স্বভাব লেখার ফাইল",
+        "একটা project-এর কোডিং নিয়মের ফাইল",
+        "Hermes-এর API key রাখার গোপন ফাইল",
+        "প্রতিটা আলাপের log জমানোর ফাইল"
+      ],
+      "correctIndex": 0,
+      "explanation": "`SOUL.md` হলো Hermes-এর স্বভাবের খাতা: সে কে, কীভাবে কথা বলে, কী এড়ায়।",
+      "whyWrong": {
+        "1": "project-এর নিয়ম `AGENTS.md`-এর কাজ।",
+        "2": "key রাখার কথা লেসনে নেই।",
+        "3": "log জমানো `SOUL.md`-এর কাজ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q02",
+      "difficulty": "easy",
+      "question": "`SOUL.md` system prompt-এর কোন জায়গায় বসে?",
+      "options": [
+        "একদম শেষ অংশ, শেষ slot-এ",
+        "একদম প্রথম অংশ, slot #1",
+        "মাঝের অংশ, tool তালিকার পরে",
+        "কোথাও না, এটা আলাদা ফাইল থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`SOUL.md` slot #1-এ বসে এবং built-in default identity-র জায়গা নেয়।",
+      "whyWrong": {
+        "0": "শেষে নয়, একদম শুরুতে বসে।",
+        "2": "মাঝে নয়, প্রথম slot।",
+        "3": "এটা prompt-এর অংশ হয়ে যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q03",
+      "difficulty": "easy",
+      "question": "`SOUL.md` ফাইলটা ডিফল্টে কোথায় থাকে?",
+      "options": [
+        "`./SOUL.md`, repo-র ভেতরে",
+        "`~/.hermes/config/AGENTS.md`",
+        "`~/.hermes/SOUL.md`",
+        "`/etc/hermes/soul.txt`"
+      ],
+      "correctIndex": 2,
+      "explanation": "Custom home হলে `$HERMES_HOME/SOUL.md`; ডিফল্ট `HERMES_HOME` হলো `~/.hermes`।",
+      "whyWrong": {
+        "0": "repo-local ফাইল edit করলে কাজ হয় না; home-directory ফাইল লাগে।",
+        "1": "`AGENTS.md` অন্য ফাইল, আর path-ও এমন নয়।",
+        "3": "এই path লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q04",
+      "difficulty": "easy",
+      "question": "`AGENTS.md`-এ কী যায়?",
+      "options": [
+        "কথার ধরন ও tone, যেমন কতটা direct হবে তা",
+        "কী ধরনের স্টাইল সব জায়গায় এড়াতে হবে",
+        "সব জায়গায় খাটা Hermes-এর পরিচয়",
+        "project-এর port ও test tool-এর নিয়ম"
+      ],
+      "correctIndex": 3,
+      "explanation": "সহজ নিয়ম: সব জায়গায় খাটলে `SOUL.md`, একটা project-এর জন্য হলে `AGENTS.md`।",
+      "whyWrong": {
+        "0": "tone ও কথার ধরন `SOUL.md`-এর।",
+        "1": "এড়ানোর স্টাইল `SOUL.md`-এর।",
+        "2": "পরিচয় `SOUL.md`-এ থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q05",
+      "difficulty": "easy",
+      "question": "`/personality` কী করে?",
+      "options": [
+        "`SOUL.md` ফাইলটা স্থায়ীভাবে বদলে দেয়, আর কোনো ফল নেই",
+        "`SOUL.md` আর `AGENTS.md` জোড়া লাগায়",
+        "অস্থায়ী স্বভাব-mode",
+        "injection scanner বন্ধ করে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`SOUL.md` স্থায়ী ভিত্তি, `/personality` অস্থায়ী mode; মূল ফাইল না ছুঁয়েই session-এর জন্য বদলানো যায়।",
+      "whyWrong": {
+        "0": "মূল ফাইল না ছুঁয়েই কাজ করে।",
+        "1": "এমন কাজ করে না।",
+        "3": "scanner-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q06",
+      "difficulty": "easy",
+      "question": "Prompt injection কী?",
+      "options": [
+        "কেউ লুকিয়ে AI-কে আগের নির্দেশ ভুলতে বলে",
+        "system prompt-এর একদম প্রথম অংশ, যেখানে identity বসে",
+        "ফাইল বেশি বড় হলে তার শেষ অংশ কেটে ফেলা",
+        "নতুন session শুরু করার জন্য একটা slash command"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hermes এমন ধাঁচের লেখা খুঁজে সতর্ক করে; নিজের `SOUL.md`-এ ধরা পড়লেও লোড আটকায় না।",
+      "whyWrong": {
+        "1": "এটা slot #1, injection নয়।",
+        "2": "এটা truncate।",
+        "3": "injection আক্রমণ-চেষ্টা, command নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q07",
+      "difficulty": "easy",
+      "question": "`SOUL.md` কখন পড়া হয়?",
+      "options": [
+        "শুধু Hermes প্রথমবার install করার সময়",
+        "প্রতিটা শব্দ লেখার সময় আলাদা করে",
+        "শুধু `/personality` চালালে",
+        "প্রতিটা session শুরুতে"
+      ],
+      "correctIndex": 3,
+      "explanation": "ফাইল পড়া হয় session শুরুতে, তাই বদলালে Hermes restart করো বা নতুন session শুরু করো।",
+      "whyWrong": {
+        "0": "প্রতি নতুন session-এই আবার পড়ে।",
+        "1": "শব্দ ধরে পড়ে না।",
+        "2": "`/personality` আলাদা overlay।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q08",
+      "difficulty": "medium",
+      "question": "কেন `SOUL.md` ও `AGENTS.md` আলাদা রাখা হয়?",
+      "options": [
+        "`AGENTS.md` ছোট ফাইল, তাই একসাথে রাখলে বেশি জায়গা লাগে না",
+        "স্বভাব সবখানে এক, project-নিয়ম বদলায়",
+        "দুটো ফাইল আলাদা হলে Hermes অনেক দ্রুত চলে",
+        "একটা ফাইলে `.md` এক্সটেনশন দুবার দেওয়া যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "মিশিয়ে ফেললে নতুন project-এ গিয়ে স্বভাবের খাতায় ভুল project-এর নিয়ম থেকে যায়।",
+      "whyWrong": {
+        "0": "ফাইলের আকারের কারণ নয়।",
+        "2": "গতি এর কারণ নয়।",
+        "3": "এমন কোনো ফাইল-নিয়ম লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q09",
+      "difficulty": "medium",
+      "question": "`~/.hermes/SOUL.md` না থাকলে Hermes কী করে?",
+      "options": [
+        "Hermes কাজ করে না, শুরুতেই error দেয়",
+        "starter ফাইল বানায়, overwrite করে না",
+        "আগের ফাইল মুছে নতুন starter বসিয়ে দেয়",
+        "repo থেকে `AGENTS.md` কপি করে বসিয়ে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ফাইল না থাকলে, খালি হলে বা লোড না হলে built-in default identity ব্যবহার হয়; খালি ফাইল prompt-এ কিছু যোগ করে না।",
+      "whyWrong": {
+        "0": "error নয়, default দিয়ে চলে।",
+        "2": "overwrite করে না।",
+        "3": "`AGENTS.md` কপি করা লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q10",
+      "difficulty": "medium",
+      "question": "নিচের কোনটা ভালো `SOUL.md`-এর লক্ষণ?",
+      "options": [
+        "project-এর খুঁটিনাটিতে ভরা, যেমন port ও folder",
+        "উত্তরের আকার লাইন ধরে micro-manage করে",
+        "\"helpful হও\", \"clear হও\"-র মতো সাধারণ কথা",
+        "স্থায়ী, সব জায়গায় খাটে, voice-এ নির্দিষ্ট"
+      ],
+      "correctIndex": 3,
+      "explanation": "ভালো `SOUL.md` ছোট ও স্থায়ী; সাময়িক বা project-এর কথা অন্য জায়গায় যায়।",
+      "whyWrong": {
+        "0": "এটা `AGENTS.md`-এর জন্য, তাই দুর্বল।",
+        "1": "micro-manage দুর্বল লক্ষণ।",
+        "2": "Hermes আগে থেকেই এগুলো করে, তাই বাড়তি।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q11",
+      "difficulty": "medium",
+      "question": "প্রস্তাবিত `SOUL.md` কাঠামোর heading কোনগুলো?",
+      "options": [
+        "Identity, Style, Avoid, Defaults",
+        "Setup, Install, Run, Test, Deploy",
+        "Name, Port, Model, Token, Region",
+        "Start, Middle, End, Notes, Todo"
+      ],
+      "correctIndex": 0,
+      "explanation": "Identity (কে), Style (কেমন শোনায়), Avoid (কী এড়াবে), Defaults (অস্পষ্টতায় কী করবে); heading ঐচ্ছিক।",
+      "whyWrong": {
+        "1": "এগুলো project-এর কাজের ধাপ, স্বভাবের নয়।",
+        "2": "এগুলো সেটিংসের মতো, স্বভাবের নয়।",
+        "3": "লেসনে এমন heading নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q12",
+      "difficulty": "medium",
+      "question": "`SOUL.md` বদলানোর পর আগের মতোই শোনাচ্ছে। কোনটা লেসনের তালিকার কারণ নয়?",
+      "options": [
+        "repo-local ফাইল edit করা, home-directory নয়",
+        "session restart করা হয়নি বলে",
+        "`AGENTS.md`-এ tone-এর লাইন বেশি থাকা",
+        "`/personality` overlay দাপট করছে বলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "লেসনের কারণ: ভুল ফাইল edit, ফাইল খালি, session restart না করা, `/personality` overlay।",
+      "whyWrong": {
+        "0": "এটা লেসনের তালিকাভুক্ত কারণ।",
+        "1": "এটাও তালিকাভুক্ত কারণ।",
+        "3": "এটাও তালিকাভুক্ত কারণ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q13",
+      "difficulty": "medium",
+      "question": "`SOUL.md`-এর কিছু অংশ উপেক্ষিত হচ্ছে। কোন কারণ লেসনে নেই?",
+      "options": [
+        "ফাইল বেশি বড় হয়ে truncate হচ্ছে",
+        "নির্দেশগুলো পরস্পরবিরোধী হয়ে গেছে",
+        "উচ্চতর priority নির্দেশ override করছে",
+        "ফাইলটা ভুলে `.txt` নামে সেভ হয়েছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "আরও কারণ: লেখা injection pattern-এর সাথে মিলে গেছে; `/context` ও log দেখো।",
+      "whyWrong": {
+        "0": "এটা লেসনে নেই।",
+        "1": "এটা লেসনের কারণ (বিরোধ)।",
+        "2": "এটা লেসনের কারণ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q14",
+      "difficulty": "medium",
+      "question": "`nano`-তে `SOUL.md` লিখে সেভ করে বেরোতে কোন key লাগে?",
+      "options": [
+        "Ctrl+X দিয়ে সেভ, Ctrl+O দিয়ে বের",
+        "Ctrl+S দিয়ে সেভ, Ctrl+Q দিয়ে বের",
+        "Ctrl+O দিয়ে সেভ, Ctrl+X দিয়ে বের",
+        "Ctrl+C দিয়ে সেভ, Ctrl+V দিয়ে বের"
+      ],
+      "correctIndex": 2,
+      "explanation": "`nano` ও `vim` terminal-এর ভেতরের editor; সেভের পর Hermes restart বা নতুন session দরকার, কারণ ফাইল পড়া হয় session শুরুতে।",
+      "whyWrong": {
+        "0": "দুটো key উল্টে গেছে।",
+        "1": "`nano`-তে এই key-গুলো এভাবে চলে না।",
+        "3": "এগুলো copy/paste-এর key, সেভের নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q15",
+      "difficulty": "hard",
+      "question": "তুমি `SOUL.md`-এ লিখেছ \"আমাদের API port 8000, pytest ব্যবহার করো\"। সমস্যা কী?",
+      "options": [
+        "এগুলো কথার ধরন, তাই `SOUL.md`-ই ঠিক জায়গা",
+        "project-এর নিয়ম, `AGENTS.md`-এর জায়গা",
+        "`SOUL.md`-এ ইংরেজি লেখা যায় না বলে",
+        "`SOUL.md` একটা লাইনের বেশি রাখা যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Port ও test tool project-ভেদে বদলায়; `SOUL.md` সব জায়গায় একই স্বভাব। 'বেশি project-specific' হলে অংশ `AGENTS.md`-এ সরাও।",
+      "whyWrong": {
+        "0": "tone নয়, project-এর খুঁটিনাটি।",
+        "2": "ইংরেজি লেখা যায়, লেসনের নমুনাও ইংরেজি।",
+        "3": "লাইনের এমন সীমা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q16",
+      "difficulty": "hard",
+      "question": "তুমি pragmatic `SOUL.md` রেখে এক session-এ teacher-এর মতো ব্যাখ্যা চাও, পরে আগের অবস্থায় ফিরতে চাও। কী করবে?",
+      "options": [
+        "`/personality teacher`, ফাইল না ছুঁয়ে",
+        "`SOUL.md` মুছে নতুন teacher ফাইল লিখবে",
+        "`AGENTS.md`-এ teacher নির্দেশ বসাবে",
+        "`HERMES_HOME` বদলে অন্য folder দেবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "`SOUL.md` স্থায়ী ভিত্তি, `/personality` অস্থায়ী mode: রোজকার পোশাক আর একদিনের সাজ।",
+      "whyWrong": {
+        "1": "স্থায়ী ফাইল মুছে ফিরে আসা কঠিন, আর দরকার নেই।",
+        "2": "`AGENTS.md` project-এর নিয়ম, স্বভাব নয়।",
+        "3": "`HERMES_HOME` ডিরেক্টরির নাম, mode নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q17",
+      "difficulty": "hard",
+      "question": "Hermes log-এ injection pattern-এর warning এসেছে তোমার নিজের `SOUL.md` নিয়ে। কী হয়?",
+      "options": [
+        "ফাইল লোড আটকে যায়, default identity ব্যবহার হয়",
+        "Hermes ফাইলটা নিজে মুছে ফেলে নতুন বানায়",
+        "লোড আটকায় না, শুধু warning আসে",
+        "Hermes নিজে লেখা বদলে নিরাপদ করে নেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা তোমার নিজের ফাইল, তাই scanner-এ ধরা পড়লেও লোড আটকায় না; log-এ pattern-সহ warning আর `/context`-এ 'review the file' চিহ্ন দেখায়।",
+      "whyWrong": {
+        "0": "আটকায় না।",
+        "1": "মোছা হয় না।",
+        "3": "Hermes লেখা বদলায় না; শুধু সতর্ক করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q18",
+      "difficulty": "hard",
+      "question": "তোমার `SOUL.md` ৩০০ লাইনের, নানা project-এর কথা আর পরস্পরবিরোধী নির্দেশে ভরা। সবচেয়ে ভালো পদক্ষেপ কোনটা?",
+      "options": [
+        "ছাঁটো, ৪–৮ লাইন রাখো, project-কথা `AGENTS.md`-এ দাও",
+        "আরও লাইন যোগ করো যাতে সব কিছু ঢাকা পড়ে যায়",
+        "`SOUL.md` খালি রেখে সব `/personality`-এ সরিয়ে দাও",
+        "ফাইল বন্ধ করে Hermes-এর default identity-ই রেখে দাও"
+      ],
+      "correctIndex": 0,
+      "explanation": "`SOUL.md` প্রতিটা আলাপে পড়া হয়; ছোট আর স্থায়ী রাখলে truncate ও বিরোধ এড়ানো যায়।",
+      "whyWrong": {
+        "1": "আরও বড় হলে truncate ও বিরোধ বাড়বে।",
+        "2": "`/personality` অস্থায়ী; স্থায়ী ভিত্তি এভাবে সরে না।",
+        "3": "স্বভাব বানানোর সুযোগ হারাবে; লেসনের ধাপ ছাঁটা আর যোগ করা।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q19",
+      "difficulty": "hard",
+      "question": "৫ ধাপের কাজের পদ্ধতিতে তৃতীয় ধাপ কোনটা?",
+      "options": [
+        "seed-করা ফাইল দিয়ে শুরু করা হয়",
+        "৪–৮ লাইন যোগ করা",
+        "কিছুদিন ব্যবহার করে দেখা হয়",
+        "যা এখনো ঠিক লাগে না তা সামলানো হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ক্রম: seed ফাইল → voice-এ না মেলা অংশ ছাঁটা → ৪–৮ লাইন যোগ → কিছুদিন ব্যবহার → বাকি সমস্যা সামলানো।",
+      "whyWrong": {
+        "0": "এটা প্রথম ধাপ।",
+        "2": "এটা চতুর্থ ধাপ।",
+        "3": "এটা পঞ্চম ধাপ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-soul-with-hermes-q20",
+      "difficulty": "hard",
+      "question": "নিচের কোনটা `SOUL.md`-এ থাকা উচিত নয়?",
+      "options": [
+        "\"সরাসরি ও সংক্ষিপ্ত উত্তর দাও\"",
+        "\"দুর্বল idea-তে আপত্তি জানাও\"",
+        "\"অনিশ্চিত হলে সেটা সৎভাবে বলো\"",
+        "\"frontend `frontend/`-এ আছে\""
+      ],
+      "correctIndex": 3,
+      "explanation": "Folder-এর জায়গা project-এর নিয়ম; বাকিগুলো tone, personality ও অনিশ্চয়তা সামলানোর রীতি, যা `SOUL.md`-এ যায়।",
+      "whyWrong": {
+        "0": "এটা tone, `SOUL.md`-এর জিনিস।",
+        "1": "এটাও স্বভাব, `SOUL.md`-এর জিনিস।",
+        "2": "এটা অনিশ্চয়তা সামলানো, `SOUL.md`-এর জিনিস।"
+      }
+    }
+  ]
+}

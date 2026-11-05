@@ -2,6 +2,10 @@
 // poridhi.io's course roadmap API for the logged-in user's enrolled course.
 
 import { forwardDeployedEngineeringCourse } from "./courses/forward-deployed-engineering";
+import {
+  HERMES_COURSE_ID,
+  hermesAgentMasteryCourse,
+} from "./courses/hermes-agent-mastery";
 
 export type CourseContentType =
   | "lab"
@@ -11,7 +15,8 @@ export type CourseContentType =
   | "ai_exam"
   | "project_submission"
   | "udemy_lecture"
-  | "sd_lesson";
+  | "sd_lesson"
+  | "doc_lesson";
 
 export interface CourseContentItem {
   type: CourseContentType;
@@ -85,6 +90,7 @@ function getSearchableCourses(): { courseId: string; course: CourseSummary }[] {
       courseId: FORWARD_DEPLOYED_ENGINEERING_COURSE_ID,
       course: forwardDeployedEngineeringCourse,
     },
+    { courseId: HERMES_COURSE_ID, course: hermesAgentMasteryCourse },
   ];
 }
 

@@ -1,0 +1,190 @@
+{
+  "contentId": "hermes-doc-user-guide-features-tts",
+  "title": "Text-to-Speech",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/tts",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes কীভাবে লেখা উত্তর গলায় শোনায় (TTS) ও voice message লেখায় বদলায় (STT), আর provider, voice, ffmpeg, audio format-এর মতো শব্দগুলো কী ও কেন লাগে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বই-পড়া দাদু আর টাইপ-করা দিদি\n\nকল্পনা করো দুজন মানুষ। **দাদু** শুধু বই পড়ে শোনাতে পারেন (লেখা → গলা)। **দিদি** তোমার বলা কথা খাতায় লিখে দেন (গলা → লেখা)।\n\nHermes-এর **Voice & TTS** পাতায় এই দুজনই আছেন:\n\n- 🗣️ **TTS (Text-to-Speech)** = দাদু। Hermes-এর লেখা উত্তর গলায় বদলে শোনায়।\n- ✍️ **STT (Speech-to-Text)** = দিদি। তুমি Telegram/Discord/WhatsApp/Slack/Signal-এ voice message পাঠালে সেটা লেখা করে Hermes-কে দেয়।\n\nদাদুর জন্য **11 জন** আলাদা গলা-শিল্পী (provider) আছে, দিদির জন্যও অনেক। কাকে নেবে সেটা `config.yaml` ঠিক করে।\n\n**এটা কেন দরকার?** Hermes ভাবে লেখায়। কিন্তু ফোনে চলতে চলতে তুমি লিখতে চাও না, শুনতে চাও। আবার তুমি কথা বললে Hermes কান পাতে। TTS-STT না থাকলে এই দুই দিকের সংযোগ থাকত না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) TTS ও STT\n**TTS** = লেখা থেকে গলা (Hermes বলে)। **STT** = গলা থেকে লেখা (Hermes শোনে)। দুটো আলাদা কাজ।\n\n### ২) Provider\nযে কোম্পানি বা প্রোগ্রাম গলা বানিয়ে দেয় (বা কথা শুনে লেখে)। যেমন একই বই বিভিন্ন শিল্পীকে দিয়ে পড়ানো যায়। এখানে Edge, ElevenLabs, OpenAI ইত্যাদি।\n\n### ৩) Voice\nএকজন নির্দিষ্ট গলা-শিল্পী। যেমন `en-US-AriaNeural` একটা নির্দিষ্ট গলার নাম। (`en-US` মানে মার্কিন ইংরেজি।)\n\n### ৪) API key ও env var\n**API key** হলো সার্ভিসের কাছে পরিচয় দেওয়ার গোপন চাবি। চাবির নাম হলো **environment variable**, যেমন `ELEVENLABS_API_KEY`। এগুলো থাকে `~/.hermes/.env` ফাইলে। (`~` মানে তোমার home ফোল্ডার।)\n\n### ৫) Config ও YAML\n**Config** মানে সেটিং। Hermes-এর সেটিং-ফাইল `~/.hermes/config.yaml`। **YAML** হলো `নাম: মান` ধাঁচে লেখা, ভেতরে ঢোকানো লাইন মানে \"উপরের অংশের ভেতরের সেটিং\"।\n\n### ৬) Free, paid, local\n**Free** = বিনা খরচে। **Paid** = টাকা লাগে। **Local** = নিজের কম্পিউটারেই চলে, ইন্টারনেট বা চাবি লাগে না।\n\n### ৭) Audio format: MP3, WAV, Opus/OGG, PCM\nশব্দকে ফাইলে রাখার ভিন্ন ভিন্ন ভাষা। **MP3** সবচেয়ে পরিচিত। **WAV** বড় ও খাঁটি। **Opus/OGG** ছোট ও chat app-এর জন্য ভালো। **PCM** হলো কাঁচা শব্দ-তরঙ্গ, কোনো মোড়ক ছাড়া।\n\n### ৮) ffmpeg\nএক audio format থেকে আরেকটায় বদলানোর টুল, শব্দের অনুবাদকের মতো।\n\n### ৯) Voice bubble\nTelegram-এ শব্দ-বুদবুদ: chat-এ সোজা বাজানো যায়। না হলে শুধু আয়তাকার ফাইল-player দেখায়।\n\n### ১০) Hugging Face ও model\n**Model** হলো শিখে-ফেলা প্রোগ্রাম। huggingface.co হলো model রাখার বিশাল দোকান, যেখান থেকে local STT model নামে।\n\n### ১১) Plugin ও shell command\n**Plugin** হলো পরে জুড়ে দেওয়া অংশ। **Shell command** হলো terminal-এ চালানো লেখা-হুকুম।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তোমার voice message STT দিয়ে লেখা হয়; Hermes-এর উত্তর TTS দিয়ে গলা হয়ে ফেরে।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "stt",
+            "kind": "external",
+            "label": "STT",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "tts",
+            "kind": "external",
+            "label": "TTS",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "o",
+            "kind": "client",
+            "label": "Chat app",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "stt",
+            "label": "voice message"
+          },
+          {
+            "from": "stt",
+            "to": "h",
+            "label": "লেখা"
+          },
+          {
+            "from": "h",
+            "to": "tts",
+            "label": "উত্তরের লেখা"
+          },
+          {
+            "from": "tts",
+            "to": "o",
+            "label": "audio"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ১১টা TTS provider\n\n| Provider | মান | খরচ | Key | কখন বাছবে |\n|---|---|---|---|---|\n| **Edge TTS** (default) | ভালো | Free | নেই | কিছু না বদলিয়ে শুরু করতে |\n| ElevenLabs | চমৎকার | Paid | `ELEVENLABS_API_KEY` | সবচেয়ে প্রাণবন্ত গলা চাইলে |\n| OpenAI | ভালো | Paid | `VOICE_TOOLS_OPENAI_KEY` | OpenAI-র সাথে আগে থেকেই কাজ করলে |\n| MiniMax | চমৎকার | Paid | `MINIMAX_API_KEY` / `MINIMAX_CN_API_KEY` | চীনা/বহুভাষী কাজে |\n| Mistral (Voxtral) | চমৎকার | Paid | `MISTRAL_API_KEY` | Mistral ব্যবহারকারীদের |\n| Google Gemini | চমৎকার | Free tier | `GEMINI_API_KEY` | সীমিত বিনামূল্যে ভালো মান |\n| xAI | চমৎকার | Paid | `XAI_API_KEY` | xAI ব্যবহারকারীদের |\n| DeepInfra | ভালো | Paid | `DEEPINFRA_API_KEY` | DeepInfra ব্যবহারকারীদের |\n| NeuTTS | ভালো | Free, local | নেই | ইন্টারনেট/খরচ ছাড়া |\n| KittenTTS | ভালো | Free, local | নেই | ছোট (25MB) local model |\n| Piper | ভালো | Free, local | নেই | দ্রুত CPU-তে চলা local |\n\nNous Portal subscription থাকলে OpenAI TTS বিনা OpenAI key-তে: `hermes setup --portal` বা `hermes model`/`hermes tools`-এ **Nous Subscription** বাছো (এটা `tts.provider: \"nous\"` লেখে)।\n\n> **KittenTTS** Intel Mac ও Windows ARM64-এ নেই (মানানসই `onnxruntime`/PyTorch wheel নেই, মানে ওই প্রসেসরের জন্য তৈরি প্যাকেজ নেই)।\n\n### কোথায় পৌঁছায় (Platform delivery)\n\n- **Telegram:** Opus `.ogg` voice bubble (সরাসরি বাজানো যায়)\n- **Discord:** voice bubble (Opus/OGG); ব্যর্থ হলে file attachment\n- **WhatsApp:** MP3 file\n- **CLI:** `~/.hermes/audio_cache/`-এ MP3\n\n## মূল configuration (`~/.hermes/config.yaml` → `tts:`)\n\n```yaml\ntts:\n  provider: edge          # edge | elevenlabs | openai | minimax | mistral | gemini | xai | deepinfra | neutts | kittentts | piper | nous\n  speed: 1.0              # global; provider-এর নিজের speed এটাকে ছাপিয়ে যায়\n  keep_warm_seconds: 60\n  edge:\n    voice: en-US-AriaNeural   # 322 voice, 74 ভাষা\n  elevenlabs:\n    voice_id: pNInz6obpgDQGcFmaJgB   # \"Adam\"\n    model_id: eleven_multilingual_v2\n  openai:\n    model: gpt-4o-mini-tts\n    voice: alloy\n    base_url: https://api.openai.com/v1\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `provider` | কোন গলা-শিল্পী সার্ভিস | সার্ভিস বদলাতে |\n| `speed` | বলার গতি (1.0 = স্বাভাবিক) | ধীর/দ্রুত শুনতে চাইলে |\n| `keep_warm_seconds` | local model কতক্ষণ প্রস্তুত অবস্থায় রাখবে | নিচে Piper অংশে |\n| `edge.voice` | Edge-এর কোন গলা | অন্য গলা বা ভাষা চাইলে |\n| `elevenlabs.voice_id` | ElevenLabs-এর গলার ID | অন্য গলা চাইলে |\n| `elevenlabs.model_id` | কোন ElevenLabs model | গতি বা মান বদলাতে |\n| `openai.base_url` | OpenAI-র ঠিকানা (URL) | নিজের সার্ভারে পাঠাতে চাইলে |\n\nকয়েকটা provider-এর ডিফল্ট: MiniMax `speech-02-hd` / `English_expressive_narrator`; Mistral `voxtral-mini-tts-2603`; Gemini `gemini-2.5-flash-preview-tts` / voice `Kore` (30টা আছে); xAI voice `eve`; KittenTTS `KittenML/kitten-tts-nano-0.8-int8` (25MB) / `Jasper`; Piper `en_US-lessac-medium`।\n\n**MiniMax region:** (region মানে সার্ভারের অঞ্চল) `global` → `https://api.minimax.io/v1/t2a_v2` + `MINIMAX_API_KEY`। `cn` → `https://api.minimaxi.com/v1/t2a_v2` + `MINIMAX_CN_API_KEY`। স্পষ্ট region দিলে তার নিজের key-ই লাগে। Hermes অন্য region-এর key কখনো বসায় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ffmpeg আর Telegram voice bubble\n\nTelegram-এ বুদবুদ (bubble) পেতে **Opus/OGG** দরকার।\n\n- **সরাসরি Opus (setup ছাড়া):** OpenAI, ElevenLabs, Mistral।\n- **ffmpeg লাগে:** Edge, MiniMax, xAI, NeuTTS, KittenTTS, Piper (এরা MP3/WAV বানায়, ffmpeg Opus-এ বদলে দেয়)।\n- Gemini raw PCM দেয়, ffmpeg দিয়ে সরাসরি Opus encode হয়।\n- ffmpeg না থাকলে ফাইল **বাজে**, কিন্তু bubble-এর বদলে আয়তাকার player হিসেবে দেখা যায়।\n\ninstall: `sudo apt install ffmpeg` / `brew install ffmpeg` / `sudo dnf install ffmpeg`।\n\n| অংশ | মানে |\n|---|---|\n| `sudo` | \"অ্যাডমিন-অনুমতি নিয়ে\" (Linux) |\n| `apt` / `dnf` / `brew` | package manager: প্রোগ্রাম এনে বসানোর ডেলিভারি-লোক (Ubuntu/Fedora/Mac) |\n| `install ffmpeg` | ffmpeg বসাও |\n\n## লম্বা উত্তর: কেটে যায় না, ভাগ হয়\n\nপ্রতিটা provider একবারে সীমিত অক্ষর নিতে পারে। লম্বা উত্তর বাক্য ধরে ধরে ভাগ হয়, ছেঁটে ফেলা হয় না। ডিফল্ট সীমা (অক্ষর):\n\n| Provider | সীমা |\n|---|---|\n| Edge | 5000 |\n| OpenAI | 4096 |\n| xAI | 15000 |\n| MiniMax | 10000 |\n| Mistral | 4000 |\n| Gemini | 32000 |\n| NeuTTS / KittenTTS | 2000 |\n| Piper | 5000 |\n\nElevenLabs model অনুযায়ী: `eleven_flash_v2_5` 40000, `eleven_multilingual_v2` (default) 10000, `eleven_v3` 5000। নিজের সীমা দিতে provider section-এ `max_text_length:` (শুধু ধনাত্মক পূর্ণসংখ্যা মানা হয়)।\n\n## বিশেষ সুবিধা\n\n- **Gemini persona prompt:** `tts.gemini.persona_prompt_file`। একটা Markdown ফাইল যেখানে গলার চরিত্র লেখা (`AUDIO PROFILE`, `SCENE`, `DIRECTOR'S NOTES`...)। `{transcript}` জায়গায় আসল লেখা বসে। চ্যাটে এটা দেখা যায় না।\n- **Audio tags (Gemini 3.1, xAI):** `tts.gemini.audio_tags` / `tts.xai.auto_speech_tags` চালু করলে একটা লুকোনো LLM rewrite (লেখা নতুন করে সাজানো) TTS-এর লেখায় `[whispers]` জাতীয় tag ঢোকায়, যাতে ফিসফিসানোর মতো ভাব আসে। চ্যাটে দেখানো উত্তর বদলায় না।\n- **ElevenLabs-এ agent নিজে গলা বাছে:** `text_to_speech` call-এ `voice_id` দিলে সেই call-এর গলা বদলায় (config বদলায় না)। `find_voices` দিয়ে খোঁজা যায় (default প্রতি পাতায় 20, সর্বোচ্চ 100)। agent গলা **শুনতে পারে না**। সে label ও বর্ণনা দেখে বাছে, `preview_url` তুমি শুনতে পারো।\n- **xAI custom voice:** xAI Console-এ বানিয়ে `tts.xai.voice_id`-এ ID বসাও।\n\n### OpenAI-compatible endpoint-এর খুঁটিনাটি\n\n(OpenAI-compatible মানে OpenAI-র মতো একই ভাষায় কথা বলা অন্য সার্ভার।) stream করা audio headerless raw PCM, মানে মোড়কহীন কাঁচা শব্দ। official OpenAI 24 kHz। অন্য server-এ sample rate (প্রতি সেকেন্ডে শব্দের নমুনা-সংখ্যা) মেলাতে `pcm_sample_rate` (যেমন Piper-ভিত্তিক server-এ `22050`)। নাহলে গলা ভুল গতি-পিচে বাজে। `language` শুধু compatible endpoint-এ। official OpenAI এটা প্রত্যাখ্যান করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Piper: স্থানীয় ও বিনা key\n\nOpen Home Foundation-এর দ্রুত CPU engine (কম্পিউটারের সাধারণ প্রসেসরেই চলে, বিশেষ গ্রাফিক্স-কার্ড লাগে না), ৪৪ ভাষা। `hermes tools` → Voice & TTS → Piper দিয়ে install। অজানা voice প্রথমবার ব্যবহারে `~/.hermes/cache/piper-voices/`-এ নামে (প্রায় 20–90MB)। মানের স্তর: `x_low`, `low`, `medium`, `high`। আগেই নামানো থাকলে `voice`-এ `.onnx`-এর absolute path (পুরো ঠিকানা) দাও।\n\n### Warm-up ও unload\n\nPiper ও KittenTTS **lazily load** হয়, মানে দরকার হলে তবেই মেমরিতে ঢোকে। তাই প্রথম উত্তর নীরব থাকতে পারে (যেন ইঞ্জিন গরম হতে সময় নিচ্ছে)। speech toggle (`/voice tts`) চালালে engine আগে থেকে preload (আগেই তৈরি) হয়। প্রতিটা toggle একটা **lease** ধরে (ভাড়ার মতো \"আমি এখনো ব্যবহার করছি\" চিহ্ন)। শেষ lease ছাড়ার `tts.keep_warm_seconds` (default 60) পর model unload (মেমরি থেকে সরানো) হয়। `0` = সঙ্গে সঙ্গে।\n\n## নিজের TTS command বসানো\n\nযেকোনো CLI engine Python ছাড়াই যোগ করা যায়:\n\n```yaml\ntts:\n  provider: mytts\n  providers:\n    mytts:\n      type: command\n      command: \"doubao-speech say --text-file {input_path} --out {output_path}\"\n      output_format: mp3\n      max_text_length: 1024\n      timeout: 30\n      voice_compatible: false\n```\n\n| Key | মানে | কখন লাগে |\n|---|---|---|\n| `type: command` | এটা একটা shell command দিয়ে চলা provider | নিজের engine জুড়তে |\n| `command` | যে কমান্ড চলবে; `{input_path}` ইত্যাদি ফাঁকা-ঘর Hermes ভরে দেয় | engine-এর কমান্ড লিখতে |\n| `output_format` | কোন audio format বের হবে | engine যা বানায় সেটা |\n| `max_text_length` | একবারে সর্বোচ্চ কত অক্ষর | engine-এর সীমা থাকলে |\n| `timeout` | কত সেকেন্ডে না হলে হাল ছাড়বে | ধীর engine-এ বাড়াও |\n| `voice_compatible` | `true` হলে ffmpeg দিয়ে Telegram bubble হয় | Telegram-এ bubble চাইলে |\n\n- placeholder (ফাঁকা-ঘর): `{input_path}`, `{output_path}`, `{format}`, `{voice}`, `{model}`, `{speed}` (shell-quote নিজে হয়, মানে বিশেষ চিহ্নে গোলমাল হয় না; literal brace-এ `{{ }}`)।\n- `output_format`: `mp3` (default), `wav`, `ogg`, `flac`, `m4a`, `aac`, `amr`, `opus`।\n- `voice_compatible: true` হলে ffmpeg দিয়ে Telegram bubble হয়।\n- Hermes-এর secret (bot token, LLM key) child process (Hermes-এর চালানো ছোট প্রোগ্রাম) থেকে **মুছে ফেলা হয়**। অর্থাৎ তোমার engine চাবি দেখতে পায় না।\n- built-in নাম সবসময় জেতে। শেডো করা যায় না, মানে `edge` নামের নিজের provider বানিয়ে আসলটাকে ঢেকে দেওয়া যায় না।\n\nPython plugin চাইলে `~/.hermes/plugins/my-tts/`-এ `plugin.yaml` ও `__init__.py`, `TTSProvider` subclass-এ `synthesize(...)`। তারপর `hermes plugins enable my-tts` ও `tts.provider: my-tts`।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Command provider = তোমার অনুমতিতে চলা কোড",
+      "markdown": "command provider তোমার user-এর অনুমতি নিয়ে চলে। template-কে PATH-এ রাখা shell script-এর মতো সতর্কভাবে দেখো। (**PATH** হলো কম্পিউটারের কমান্ড-খোঁজার ফোল্ডার-তালিকা; সেখানকার script তুমি নিজে চালালে যা করত, এটাও তাই করে।) STT-র `stt.providers.<name>`-এর ক্ষেত্রেও একই। শুধু বিশ্বস্ত provider ঘোষণা করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## STT: voice message থেকে লেখা\n\nTelegram, Discord, WhatsApp, Slack, Signal-এর voice message লেখা হয়ে ঢোকে। (এটা না থাকলে Hermes তোমার voice message শুনতেই পেত না।)\n\n| Provider | মান | খরচ | Key |\n|---|---|---|---|\n| **Local Whisper** (default) | ভালো | Free | নেই |\n| Groq Whisper | ভালো–সেরা | Free tier | `GROQ_API_KEY` |\n| OpenAI Whisper | ভালো–সেরা | Paid | `VOICE_TOOLS_OPENAI_KEY` / `OPENAI_API_KEY` |\n| Mistral (Voxtral) | — | Paid | `MISTRAL_API_KEY` |\n| xAI Grok STT | — | Paid | `XAI_API_KEY` |\n| ElevenLabs, DeepInfra | — | Paid | built-in |\n\n```yaml\nstt:\n  provider: local          # local | groq | openai | mistral | xai | elevenlabs | deepinfra | local_command\n  language: \"en\"           # \"\" = auto-detect\n  local:\n    model: base            # tiny ~75MB, base ~150MB, small ~500MB, medium ~1.5GB, large-v3 ~3GB\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `provider` | কোন \"দিদি\" কথা লিখবে | সার্ভিস বদলাতে |\n| `language` | কথার ভাষা। `\"\"` = নিজে চিনে নেবে (auto-detect) | ভাষা জানা থাকলে বললে দ্রুত ও নিখুঁত |\n| `local.model` | local Whisper-এর আকার | বড় = নিখুঁত কিন্তু ধীর ও ভারী |\n\nপ্রথম run-এ model huggingface.co থেকে নামে। আটকালে `HF_ENDPOINT` mirror (বিকল্প ঠিকানা) ও `HF_HUB_DISABLE_XET=1` দাও। Groq-তে ভাষা সেট করলে auto-detect-এর দেরি কমে।\n\n### Fallback নিয়ম\n\n**Fallback** মানে একটা না চললে পরেরটা চেষ্টা। কিন্তু সবসময় নয়:\n\n- **স্পষ্ট `stt.provider` (এমনকি `local`ও) কড়া:** ব্যর্থ হলে engine বদলায় না, `hermes tools` চালাতে বলে error দেয়। (তুমি যাকে বেছেছ, তাকেই মানা হয়।)\n- **কখনো provider না বাছা থাকলে** স্বয়ংক্রিয় ক্রম: local faster-whisper → local `whisper` CLI/`HERMES_LOCAL_STT_COMMAND` → Groq → OpenAI → Mistral → xAI। (key না থাকলে ধাপ বাদ।)\n- কিছুই না মিললে voice message লেখা ছাড়াই ঢোকে, সাথে user-কে নোট।\n\n`HERMES_LOCAL_STT_COMMAND` shell ছাড়া argv-তে ভাগ হয় (argv মানে কমান্ডের আলাদা আলাদা শব্দের তালিকা)। `|`, `>`, `&&`, `;` আক্ষরিক (বিশেষ অর্থ ছাড়া সাধারণ অক্ষর)। shell লাগলে `sh -c` স্পষ্ট করে দাও।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Hermes-এ TTS আর STT-র তফাত কী?",
+      "options": [
+        "STT ছবি বানায়",
+        "TTS লেখা থেকে গলা (Hermes বলে), STT গলা থেকে লেখা (Hermes শোনে)",
+        "দুটোই একই",
+        "TTS শুধু Windows-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "দাদু বই পড়ে শোনান (TTS), দিদি কথা লিখে দেন (STT)।"
+    },
+    {
+      "question": "ডিফল্ট TTS provider কোনটা?",
+      "options": [
+        "OpenAI",
+        "Edge TTS (free, key লাগে না)",
+        "Piper",
+        "ElevenLabs"
+      ],
+      "answerIndex": 1,
+      "explanation": "Edge TTS ডিফল্ট: ভালো মান, বিনামূল্যে, চাবি লাগে না।"
+    },
+    {
+      "question": "ffmpeg না থাকলে Edge TTS-এর উত্তর Telegram-এ কেমন দেখায়?",
+      "options": [
+        "error হয়",
+        "একদম আসে না",
+        "বাজে, কিন্তু voice bubble-এর বদলে আয়তাকার player হিসেবে",
+        "ছবি হিসেবে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Edge MP3 বানায়। Telegram-এর bubble-এর জন্য Opus/OGG দরকার, যা ffmpeg বদলে দেয়।"
+    },
+    {
+      "question": "কোন তিনটা provider ffmpeg ছাড়াই native Opus দেয়?",
+      "options": [
+        "OpenAI, ElevenLabs, Mistral",
+        "Gemini, xAI, MiniMax",
+        "NeuTTS, Edge, OpenAI",
+        "Edge, Piper, KittenTTS"
+      ],
+      "answerIndex": 0,
+      "explanation": "এই তিনজন সরাসরি Opus বানায়। বাকিরা MP3/WAV বানায় আর ffmpeg বদলে দেয়।"
+    },
+    {
+      "question": "স্পষ্টভাবে `stt.provider: groq` দেওয়া আছে কিন্তু Groq ব্যর্থ হলো। কী হয়?",
+      "options": [
+        "Local-এ ফেরে",
+        "নিজে OpenAI-তে যায়",
+        "engine বদলায় না, `hermes tools` চালাতে বলে error দেয়",
+        "কম্পিউটার বন্ধ হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "স্পষ্ট পছন্দ কড়া। স্বয়ংক্রিয় ক্রম শুধু তখন, যখন তুমি কখনো provider বাছোনি।"
+    },
+    {
+      "question": "লম্বা উত্তর TTS-এ কীভাবে সামলানো হয়?",
+      "options": [
+        "বাক্য ধরে ধরে ভাগ হয়",
+        "বাদ দেওয়া হয়",
+        "শুধু প্রথম বাক্য",
+        "ছেঁটে ফেলা হয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "প্রতি provider-এর অক্ষর-সীমা আলাদা (যেমন Edge 5000)। সীমা পেরোলে ভাগ করে বলে, ছাঁটে না।"
+    },
+    {
+      "question": "custom TTS command provider-এ Hermes-এর secret (bot token, LLM key)-এর কী হয়?",
+      "options": [
+        "ইমেইল হয়",
+        "engine-কে দেওয়া হয়",
+        "child process থেকে মুছে ফেলা হয়",
+        "মুদ্রণ হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "তোমার engine চাবি দেখতে পায় না। তবু command provider তোমার অনুমতিতে চলে, তাই শুধু বিশ্বস্ত কমান্ড দাও।"
+    }
+  ],
+  "recap": [
+    "TTS = লেখা থেকে গলা; STT = গলা থেকে লেখা; Hermes-এ ১১টা TTS provider আছে, default Edge (free)।",
+    "গোপন চাবি `.env`-এ, সেটিং `config.yaml`-এর `tts:` ও `stt:` অংশে।",
+    "Telegram-এর voice bubble-এর জন্য Opus/OGG লাগে; OpenAI/ElevenLabs/Mistral সরাসরি দেয়, বাকিদের জন্য ffmpeg।",
+    "লম্বা উত্তর বাক্য ধরে ভাগ হয়; প্রতি provider-এর নিজস্ব সীমা আছে।",
+    "STT-তে স্পষ্ট provider কড়া (fallback নেই); provider না বাছলে স্বয়ংক্রিয় ক্রমে local → Groq → OpenAI…"
+  ]
+}

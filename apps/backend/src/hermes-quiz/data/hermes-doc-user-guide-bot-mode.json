@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-user-guide-bot-mode",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q01",
+      "difficulty": "easy",
+      "question": "Bot Mode-এ একটা Bot আসলে কী?",
+      "options": [
+        "একটা Hermes profile",
+        "একটা আলাদা background daemon",
+        "একটা আলাদা install করা app",
+        "একটা বাড়তি database ফাইল"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা Bot একটা Hermes profile (`~/.hermes/profiles/<name>/`); Bot Mode শুধু তার ওপরের UI স্তর।",
+      "whyWrong": {
+        "1": "Bot Mode-এ কোনো background daemon নেই।",
+        "2": "আলাদা install লাগে না, desktop app-এর ভেতরেই আছে।",
+        "3": "বাড়তি storage নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q02",
+      "difficulty": "easy",
+      "question": "Routine কী?",
+      "options": [
+        "Bot-এর একবারের জন্য চালানো কাজ, ভেতরে একটা skill",
+        "Bot-এর নিয়মিত কাজ, ভেতরে একটা cron job",
+        "Bot-এর avatar বদলানোর একটা বিশেষ menu",
+        "দুই Bot-এর মধ্যে চলা একটা সাময়িক group room"
+      ],
+      "correctIndex": 1,
+      "explanation": "Routine হলো cron job-এর Bot Mode নাম, যেমন রোজ সকাল ৯টায় কাজ। নাম থাকে `[bot:<name>] <routine>`।",
+      "whyWrong": {
+        "0": "Routine নিয়মিত চলে, একবারের নয়, আর এটা cron job।",
+        "2": "Avatar-এর সাথে সম্পর্ক নেই।",
+        "3": "Group room আলাদা জিনিস।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q03",
+      "difficulty": "easy",
+      "question": "`@all` বা `@everyone` লিখলে কী হয়?",
+      "options": [
+        "শুধু primary Bot-কে ডাকা হয়",
+        "শুধু তোমাকে escalate করা হয়",
+        "সবাইকে ডাকা হয়",
+        "সব Bot মুছে ফেলা হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`@all`/`@everyone` সবাইকে ঠিকানা করে; `@hermes` primary Bot, `@user` তোমার কাছে escalate।",
+      "whyWrong": {
+        "0": "Primary Bot-এর ঠিকানা `@hermes`।",
+        "1": "তোমার কাছে escalate হলো `@user`।",
+        "3": "Mention কিছু মোছে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q04",
+      "difficulty": "easy",
+      "question": "Fire-and-forget মানে কী?",
+      "options": [
+        "বার্তা পাঠানোর পর উত্তর না এলে নিজে মুছে যাওয়া",
+        "বার্তা পাঠিয়ে উত্তর না আসা পর্যন্ত ঠায় বসে থাকা",
+        "বার্তা পাঠানোর আগেই আগের chat ইতিহাস মুছে ফেলা",
+        "বার্তা পাঠিয়ে উত্তরের অপেক্ষা না করে চলে যাওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "যেমন চিঠি ডাকবাক্সে ফেলা: ফেলেই চলে যাও। `message_agent` এভাবে চলে, ফল আসে পরে।",
+      "whyWrong": {
+        "0": "বার্তা নিজে মুছে যাওয়ার কিছু বলা হয়নি।",
+        "1": "অপেক্ষা না করাই এর মানে।",
+        "2": "ইতিহাস মোছার সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q05",
+      "difficulty": "easy",
+      "question": "NAT কী?",
+      "options": [
+        "দুই মেশিনের মধ্যে একটা গোপন সুড়ঙ্গ, যা দেয়াল পার করায়",
+        "বাড়ির রাউটারের দেয়াল, বাইরে থেকে ঢোকা বন্ধ",
+        "দূরের কম্পিউটারে নিরাপদে ঢোকার একটা দরজা বা রাস্তা",
+        "পর্দা ছাড়াই চালানোর একটা ধরন"
+      ],
+      "correctIndex": 1,
+      "explanation": "NAT ভেতর থেকে বাইরে যেতে দেয় কিন্তু বাইরে থেকে সরাসরি ঢুকতে দেয় না। পার হতে VPN/Tailscale লাগে।",
+      "whyWrong": {
+        "0": "সুড়ঙ্গ হলো VPN/Tailscale।",
+        "2": "দরজা হলো SSH।",
+        "3": "পর্দা ছাড়া চলা হলো headless।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q06",
+      "difficulty": "easy",
+      "question": "Canonical Bot Chat কেমন?",
+      "options": [
+        "প্রতিদিন নতুন তৈরি হওয়া একটা অস্থায়ী chat",
+        "কয়েকটা Bot-এর মিলিত একটা group room, যেখানে সবাই কথা বলে",
+        "প্রতি Bot-এর একটাই মূল, স্থায়ী, pin করা chat",
+        "Archive করলেই চিরতরে মুছে যাওয়া একটা chat"
+      ],
+      "correctIndex": 2,
+      "explanation": "Canonical মানে মূল ও স্থায়ী; জন্মের সময়েই তৈরি ও pin করা।",
+      "whyWrong": {
+        "0": "এটা স্থায়ী, প্রতিদিনের অস্থায়ী নয়।",
+        "1": "Group room আলাদা।",
+        "3": "Archive করলে ইতিহাস database-এ থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q07",
+      "difficulty": "easy",
+      "question": "Roster কী?",
+      "options": [
+        "স্বয়ংক্রিয় কাজের সূচি",
+        "বার্তা পাঠানোর tool-এর নাম",
+        "গোপন চাবির ভাণ্ডার",
+        "সদস্যদের তালিকা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Bots pane-এর roster-এ প্রতি profile-এর একটা সারি থাকে: avatar, শেষ message, সময়।",
+      "whyWrong": {
+        "0": "কাজের সূচি হলো routine/cron।",
+        "1": "Tool-এর নাম `message_agent`।",
+        "2": "চাবি থাকে `.env`-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q08",
+      "difficulty": "medium",
+      "question": "Canonical Bot Chat-এ `/new` বা `/reset` দিলে কী হয়?",
+      "options": [
+        "`/compact`-এ পুনঃনির্দেশিত হয়",
+        "নতুন খালি chat শুরু হয়",
+        "পুরো chat সঙ্গে সঙ্গে মুছে যায়",
+        "একটা নতুন Bot তৈরি হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Bot-এর একটাই স্থায়ী chat, তাই মুছে নতুন করা চলে না; পুরনো কথা শুধু ছোট (compact) করা হয়।",
+      "whyWrong": {
+        "1": "নতুন খালি chat হয় না।",
+        "2": "আলাপ মোছা হয় না, শুধু ছোট করা হয়।",
+        "3": "Bot তৈরির সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q09",
+      "difficulty": "medium",
+      "question": "Group room-এ Bot-সংখ্যা ও পাঠানোর সীমা কত?",
+      "options": [
+        "১–২টা Bot, প্রতি send-এ ৫টা message ও ১টা round",
+        "২–৬টা Bot, প্রতি send-এ ১০০টা message ও ১০টা round",
+        "২–৬টা Bot, প্রতি send-এ ১০টা message ও ৩টা serial round",
+        "১০টা Bot, প্রতি send-এ ১০টা message ও কোনো round সীমা নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "সীমা না থাকলে Bot-রা নিজেদের মধ্যে অনন্তকাল কথা চালাত, তাই সীমা বাঁধা।",
+      "whyWrong": {
+        "0": "Group-এ অন্তত ২টা, আর সীমা এত ছোট নয়।",
+        "1": "Message ও round সীমা এত বড় নয়।",
+        "3": "Round-এর সীমা আছে, আর Bot-সংখ্যাও ২–৬।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q10",
+      "difficulty": "medium",
+      "question": "কোন Bot \"Active now\" ধরা হয়?",
+      "options": [
+        "যার নাম roster-এর একদম ওপরে আছে এবং pin করা",
+        "যার avatar সবচেয়ে সম্প্রতি বদলেছে",
+        "যে Bot-এর কোনো routine আছে",
+        "live turn চলছে বা ৯০ সেকেন্ডে লিখেছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Active now: live turn চলছে, বা ৯০ সেকেন্ডের মধ্যে লিখেছে, বা worker heartbeat সাম্প্রতিক।",
+      "whyWrong": {
+        "0": "Roster-এর ক্রম active-এর শর্ত নয়।",
+        "1": "Avatar-এর সাথে সম্পর্ক নেই।",
+        "2": "Routine থাকা শর্ত নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q11",
+      "difficulty": "medium",
+      "question": "`message_agent`-এর `target` কী নেয়?",
+      "options": [
+        "profile name, friendly name বা @-tag",
+        "শুধু একটা URL ঠিকানা, যেমন `http://spark.lan:8377`",
+        "শুধু একটা `API_SERVER_KEY` মান",
+        "শুধু একটা `session_id` সংখ্যা"
+      ],
+      "correctIndex": 0,
+      "explanation": "`target` হলো কাকে পাঠাবে; profile name আগে মেলে, দ্ব্যর্থক নাম প্রত্যাখ্যাত হয়।",
+      "whyWrong": {
+        "1": "URL লাগে `peer add`-এ।",
+        "2": "Key peer-এর জন্য আলাদা জিনিস।",
+        "3": "`session_id` অন্য কাজে লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q12",
+      "difficulty": "medium",
+      "question": "Bot-to-Bot message-এ retry-র নিয়ম কী?",
+      "options": [
+        "যতবার ব্যর্থ হয় ততবার, auth ও quota সহ সব ধরনের ব্যর্থতায়",
+        "একবার, শুধু transient বা context overflow-এ",
+        "সর্বোচ্চ একবার, শুধু auth ও quota ব্যর্থতায়",
+        "কখনোই না, কোনো ধরনের ব্যর্থতায় নয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Auth, quota ও config ব্যর্থতায় retry হয় না, কারণ আবার চেষ্টা করলেও লাভ নেই।",
+      "whyWrong": {
+        "0": "সীমাহীন retry নেই।",
+        "2": "Auth/quota-তে কখনো retry নয়।",
+        "3": "Transient-এ একবার retry আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q13",
+      "difficulty": "medium",
+      "question": "`peer dm` আর `peer run`-এর মূল পার্থক্য কী?",
+      "options": [
+        "dm লম্বা কাজের জন্য, run ছোট প্রশ্নের জন্য",
+        "dm কাজ থামায়, run কাজের অবস্থা দেখায় ও ফল আনে",
+        "dm ও run একই কাজ করে, শুধু নাম আলাদা",
+        "dm অপেক্ষা করে, run সঙ্গে সঙ্গে `run_id` দেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ছোট প্রশ্নে `peer dm`, লম্বা কাজে `peer run` (পরে `status`/`stop`)।",
+      "whyWrong": {
+        "0": "ভূমিকা উল্টে গেছে।",
+        "1": "থামানো `peer stop`, অবস্থা `peer status`।",
+        "2": "দুটো আলাদা কাজ করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q14",
+      "difficulty": "medium",
+      "question": "Peer-এর key কোথায় থাকে, আর peer-এর নাম ও URL কোথায়?",
+      "options": [
+        "key `.env`-এ, নাম ও URL `bot_peers`-এ",
+        "key `config.yaml`-এ, নাম ও URL `~/.hermes/.env`-এ",
+        "দুটোই `profile.yaml`-এর `ui_meta`-য়",
+        "দুটোই `shared-state.db`-তে, ডেটাবেসের ভেতরে লুকানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "গোপন key থাকে `.env`-এ `HERMES_PEER_<NAME>_KEY` নামে, বাকি তথ্য `bot_peers`-এ।",
+      "whyWrong": {
+        "1": "গোপন key `config.yaml`-এ রাখা হয় না।",
+        "2": "`ui_meta` অন্য কাজে।",
+        "3": "`shared-state.db` group room-এর জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q15",
+      "difficulty": "hard",
+      "question": "তুমি Desktop ছাড়া (headless) Bot Mode চালু করতে চাও। কী লাগে?",
+      "options": [
+        "শুধু `hermes -p <bot> chat -c \"Bot Chat\" --create-if-missing` চালানোই যথেষ্ট",
+        "`--create-if-missing` দিয়ে Bot Chat তৈরি ও `hermes-bots: {}` চিহ্ন, দুটোই",
+        "শুধু `ui_meta:` → `hermes-bots: {}` লিখে দেওয়াই যথেষ্ট",
+        "শুধু `hermes gateway stop` চালিয়ে আবার চালু করলেই হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Headless-এ দুটো শর্তই লাগে: canonical chat তৈরি আর কোনো Bot-এর `profile.yaml`-এ `hermes-bots: {}` চিহ্ন।",
+      "whyWrong": {
+        "0": "একটা শর্ত যথেষ্ট নয়, দুটোই চাই।",
+        "2": "একা `ui_meta` চিহ্ন যথেষ্ট নয়।",
+        "3": "Gateway থামানো এর উপায় নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q16",
+      "difficulty": "hard",
+      "question": "Desktop বন্ধ করে দিলে local gateway-র কী হয়?",
+      "options": [
+        "gateway নিজে থেমে যায়, আবার চালাতে `hermes gateway ensure`",
+        "gateway থামে না এবং `hermes gateway stop`-ও কাজ করে না",
+        "gateway থামে না; থামাতে `hermes gateway stop`",
+        "gateway শুধু `gateway.standalone: true` থাকলে থামে"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতি host-এ একটা gateway সব local profile সামলায়; Desktop বন্ধ করলেও সে চলে।",
+      "whyWrong": {
+        "0": "Desktop বন্ধে gateway থামে না।",
+        "1": "`hermes gateway stop` দিয়েই থামানো যায়।",
+        "3": "`standalone: true` শুধু profile-কে নিজের gateway দেয়, থামার শর্ত নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q17",
+      "difficulty": "hard",
+      "question": "Group room-এ একজন সদস্যকে থামাতে চাও। কোনটা কাজ করে?",
+      "options": [
+        "@mention-এর পাশে `stop` বা `pause` লেখা",
+        "বার্তার ভেতর code block-এ `stop` লেখা",
+        "বার্তা থেকে `@all` ছাড়া বাকি সব mention মুছে দেওয়া",
+        "Group settings-এ **Compress history** চাপা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Code, quote বা blockquote-এর ভেতরের stop শব্দ গোনা হয় না; **Detect stop directives** toggle-ও বন্ধ করা যায়।",
+      "whyWrong": {
+        "1": "Code block-এর stop শব্দ উপেক্ষিত।",
+        "2": "`@all`/`@everyone` তো সবাইকে ছাড়ে।",
+        "3": "Compress history শুধু ইতিহাস ছোট করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q18",
+      "difficulty": "hard",
+      "question": "তুমি হোস্টেড room-এর authority এক gateway থেকে আরেকটায় হস্তান্তর করছ। সঠিক ক্রম কোনটা?",
+      "options": [
+        "পুরনোটা আগে `groups.demote`, তারপর `groups.promote`, কোনো fence ছাড়াই চালানো",
+        "fence, `groups.promote` (confirm সহ), `groups.demote`, `groups.state`",
+        "fence ছাড়া `groups.promote` চালিয়ে, demote বাদ দিয়ে `groups.state` দেখা",
+        "শুধু turn থামিয়ে সরাসরি `groups.state` চালানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "পুরনো gateway লেখার যোগ্য থাকা অবস্থায় promote করলে split-brain হয়: দুই মেশিন নিজেকে মালিক ভাবে।",
+      "whyWrong": {
+        "0": "Fence আগে করতে হয়, নইলে ঝুঁকি।",
+        "2": "Fence বাদ দিলে split-brain।",
+        "3": "Turn থামানো fence নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q19",
+      "difficulty": "hard",
+      "question": "`groups.promote` চালালে error **4118** আসে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "`room_id` লম্বা বলে বাদ পড়েছে",
+        "Desktop-এর switch বন্ধ করা আছে",
+        "`confirm: true` দেওয়া হয়নি",
+        "peer-এর `API_SERVER_KEY` দুর্বল"
+      ],
+      "correctIndex": 2,
+      "explanation": "`groups.promote`-এ `room_id` ও `confirm: true` বাধ্যতামূলক; confirm না দিলে error 4118।",
+      "whyWrong": {
+        "0": "`room_id` দেওয়া হলেও সমস্যা confirm-এ।",
+        "1": "Desktop switch এর সাথে সম্পর্ক নেই।",
+        "3": "Key peer-এর জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-bot-mode-q20",
+      "difficulty": "hard",
+      "question": "তোমার laptop VPS-এ পৌঁছাতে পারে, কিন্তু VPS laptop-এ পারে না। কেন?",
+      "options": [
+        "কারণ `peer add` শুধু VPS-এ করা যায়, laptop-এ নয়",
+        "কারণ laptop-এ `api_server` platform চালু থাকে না",
+        "কারণ VPS-এর `idempotency-key` মেয়াদ শেষ হয়ে গেছে",
+        "connection একমুখী, NAT উল্টোদিক আটকায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Tailscale বা VPN-এর মতো পথ না থাকলে NAT-এর পেছনের laptop-এ বাইরে থেকে ঢোকা যায় না।",
+      "whyWrong": {
+        "0": "`peer add` যেকোনো দিকে করা যায়।",
+        "1": "সমস্যা `api_server`-এর নয়, NAT-এর।",
+        "2": "Idempotency key duplicate আটকায়, পৌঁছানোর সাথে সম্পর্ক নেই।"
+      }
+    }
+  ]
+}

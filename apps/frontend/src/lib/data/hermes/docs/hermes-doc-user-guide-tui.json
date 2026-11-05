@@ -1,0 +1,218 @@
+{
+  "contentId": "hermes-doc-user-guide-tui",
+  "title": "TUI (Terminal UI)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/tui",
+  "oneLiner": "এই lesson শেষে তুমি Hermes TUI চালু করা, তার special command আর live session switcher ব্যবহার করতে পারবে এবং TTY, alternate screen, env var-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: সাধারণ ফোন থেকে টাচস্ক্রিন স্মার্টফোন\n\nআগের lesson-এ CLI-কে গাড়ির ড্যাশবোর্ড বলেছিলাম। এবার কল্পনা করো ড্যাশবোর্ডটা পুরনো বোতামওয়ালা ধরনের থেকে বদলে একটা মসৃণ টাচস্ক্রিনে পাল্টে গেল। গাড়ির ইঞ্জিন একই, চালানোর নিয়মও একই। শুধু সামনের চেহারা আধুনিক।\n\n**TUI** হলো ঠিক তাই। একই Hermes ইঞ্জিন (একই Python runtime, একই agent, একই session, একই slash command), কিন্তু সামনের চেহারা অনেক মসৃণ। Hermes docs একে **recommended interactive interface** বলে, মানে \"বসে কথা বলার জন্য যেটা সুপারিশ করা হয়\"।\n\n**কেন ভালো, আর না থাকলে কী সমস্যা?**\n- প্রথম frame (প্রথম ছবি) প্রায় সঙ্গে সঙ্গে দেখা যায়। পুরনো ধরনে একটু অপেক্ষা করতে হতো।\n- session তৈরি হওয়ার আগেই তুমি prompt লিখে সারিতে রাখতে পারো (non-blocking input, মানে লেখা আটকে থাকে না)।\n- modal overlay আছে (ছোট পপআপ জানালা), live session panel আছে, mouse দিয়ে লেখা select করা যায়।\n- Alternate-screen rendering হওয়ায় flicker (ঝিলিক) বা scrollback-এ জঞ্জাল জমে না।\n- Composer-এ (লেখার বাক্সে) লম্বা paste ভাঁজ হয়ে যায়, `Cmd+V`/`Ctrl+V` clipboard-এর image-ও ধরে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) TUI\n**Terminal User Interface**। কালো জানালার (terminal) ভেতরেই সাজানো, রঙিন, বোতাম-প্যানেলওয়ালা চেহারা। browser লাগে না। ঠিক যেমন পুরনো ভিডিও গেমের মেনু, অক্ষর দিয়েই আঁকা কিন্তু সুন্দর।\n\n### ২) Runtime\nHermes চলার সময় যে ইঞ্জিন কাজ করে। CLI আর TUI দুজনেই একই ইঞ্জিন ব্যবহার করে, শুধু চেহারা আলাদা।\n\n### ৩) Alternate screen\nTerminal-এর একটা আলাদা \"পর্দা\", যেমন থিয়েটারের মঞ্চ। TUI সেই পর্দায় নিজের খেলা দেখায়, বন্ধ হলে তোমার আগের লেখা যেমন ছিল তেমনই ফিরে আসে। **না থাকলে** পুরনো লেখা আর নতুন ছবি মিশে জঞ্জাল হতো।\n\n### ৪) TTY\nএকটা আসল \"মানুষের বসা terminal\", যেখানে কেউ লিখছে আর পড়ছে। অন্য program থেকে পাইপ করে আসা input-এ TTY থাকে না।\n\n### ৫) Node.js\nJavaScript চালানোর একটা প্রোগ্রাম। TUI-র সামনের অংশ এটা দিয়ে চলে, তাই এটা ইনস্টল থাকতে হয় (ভার্সন ২০ বা তার বেশি)।\n\n### ৬) Environment variable (env var)\nকমান্ডের পাশে রাখা একটা ছোট নোট, যেমন `HERMES_TUI=1`। প্রোগ্রাম চালু হয়ে ওই নোট পড়ে নেয়।\n\n### ৭) Config\n`config.yaml` ফাইল, Hermes-এর setting-এর খাতা। **YAML** হলো সেই খাতা লেখার সহজ নিয়ম: `নাম: মান`, ভেতরে ঢুকলে স্পেস দিয়ে সরিয়ে লেখা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চালু করার উপায়\n\n```bash\nhermes --tui                              # TUI চালু\nhermes --tui -c                           # সর্বশেষ TUI session (না থাকলে সর্বশেষ classic session)\nhermes --tui --resume latest              # একই\nhermes --tui -r <id-or-title>             # নির্দিষ্ট session\nhermes --tui --resume latest --in ./my-project\nhermes --tui --dev                        # source থেকে সরাসরি (contributor-দের জন্য)\nHERMES_TUI=1 hermes                       # env variable দিয়ে\nhermes --cli                              # একবারের জন্য Classic REPL-এ ফেরা\n```\n\n| অংশ | মানে | কখন লাগে |\n|---|---|---|\n| `hermes --tui` | `--tui` flag (কমান্ডের পরের ছোট নির্দেশ) দিয়ে TUI চালাও | প্রথমবার চেখে দেখতে |\n| `-c` / `--resume latest` | সর্বশেষ session-এ ফেরা (**resume** = খাতার বন্ধ পাতা আবার খোলা) | কালকের কাজ আজ চালিয়ে যেতে |\n| `-r <id-or-title>` | নির্দিষ্ট session | অনেক session-এর মধ্যে একটা বেছে নিতে |\n| `--in ./my-project` | কোন ফোল্ডারে কাজ করবে | project ঠিক করে দিতে |\n| `--dev` | source থেকে সরাসরি, contributor (যারা Hermes নিজেই বানায়) দের জন্য | সাধারণ ব্যবহারে লাগে না |\n| `HERMES_TUI=1 hermes` | env variable দিয়ে TUI চাওয়া | flag মনে না থাকলে |\n| `hermes --cli` | একবারের জন্য Classic CLI (**REPL** = লিখি-উত্তর পাই-আবার লিখি ধরনের সাধারণ চ্যাট) | TUI-তে সমস্যা হলে |\n\n**স্থায়ীভাবে ডিফল্ট করতে** `~/.hermes/config.yaml`-এ `display.interface: tui` (ডিফল্ট মান `cli`)। স্পষ্ট flag সবসময় config-কে হারায়: ধরো config-এ `tui` আছে, তুমি `hermes --cli` লিখলে CLI-ই খুলবে।\n\n**প্রয়োজন:** Node.js ≥ 20 (`hermes doctor` পরীক্ষা করে, মানে ডাক্তারের মতো Hermes-এর স্বাস্থ্য দেখে) আর একটা TTY। pipe করা stdin বা non-interactive চালালে single-query mode-এ নামে। প্রথমবার `ui-tui/node_modules`-এ dependency (দরকারি অন্য প্রোগ্রাম) install হয়, কয়েক সেকেন্ড, একবারই। বাইরের prebuild (আগে থেকে বানানো সংস্করণ) চাইলে `HERMES_TUI_DIR=/path/to/prebuilt/ui-tui`, সেই ফোল্ডারে `dist/entry.js` থাকতে হবে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "TUI আর Classic CLI একই runtime ও একই state.db ভাগ করে; শুধু সামনের চেহারা আলাদা।",
+        "nodes": [
+          {
+            "id": "tui",
+            "kind": "client",
+            "label": "TUI",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "cli",
+            "kind": "client",
+            "label": "Classic CLI",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "rt",
+            "kind": "server",
+            "label": "Hermes runtime",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "db",
+            "kind": "database",
+            "label": "state.db",
+            "x": 440,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "tui",
+            "to": "rt",
+            "label": "একই agent"
+          },
+          {
+            "from": "cli",
+            "to": "rt",
+            "label": "একই agent"
+          },
+          {
+            "from": "rt",
+            "to": "db",
+            "label": "session জমা"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## TUI-র নিজস্ব slash command\n\n**Slash command** মানে চ্যাটের ভেতরে `/` দিয়ে লেখা ছোট হুকুম। বেশিরভাগ command Classic CLI-র মতোই (skill, quick command, personality সহ)। TUI-র নিজেরগুলো:\n\n| Command | কাজ | কখন লাগে |\n|---|---|---|\n| `/help` | শ্রেণিবদ্ধ, arrow দিয়ে চলা যায় এমন overlay | কী কী আছে ভুলে গেলে |\n| `/sessions` (alias `/switch`) | live session switcher (alias = আরেকটা ডাকনাম) | কয়েকটা আলাপের মধ্যে লাফাতে |\n| `/model` | provider অনুযায়ী সাজানো modal picker, দামের ইঙ্গিতসহ | AI বদলাতে |\n| `/skin` | live theme preview (skin = পোশাক) | চেহারা বদলাতে |\n| `/details` | tool-call details দেখানো/লুকানো | স্ক্রিন ভিড় লাগলে |\n| `/usage` | token, cost, context panel | কত খরচ হচ্ছে দেখতে |\n| `/agents` (alias `/tasks`) | subagent (ছোট সহকারী agent) tree, kill/pause, প্রতি branch-এর সারাংশ | সহকারীদের কাজ নজরে রাখতে |\n| `/connectors` | connector (বাইরের সঙ্গে জোড়া) account সামলানো | অ্যাকাউন্ট জুড়তে বা সরাতে |\n| `/reload` | restart ছাড়াই `~/.hermes/.env` আবার পড়া | `.env`-এ নতুন key বসানোর পর |\n| `/mouse [on\\|off\\|toggle\\|wheel\\|buttons\\|all]` | mouse tracking preset, `display.mouse_tracking`-এ সংরক্ষিত | mouse-এর আচরণ বদলাতে |\n| `/terminal-setup` | VS Code, Cursor, Windsurf terminal binding বসায় | ওই editor-এর ভেতর terminal-এ key ঠিকমতো চালাতে |\n\n`.env` ফাইল হলো গোপন চাবি (API key) রাখার ফাইল। এটা আলাদা lesson-এ আছে।\n\n`/mouse`-এর preset: `wheel` = hover ছাড়া scroll, `buttons` = তার ওপরে drag-select, `all` = hover সহ সব (ডিফল্ট)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Keybinding (CLI-র মতো, তবে কিছু আলাদা)\n\n- **Ctrl+T**: live-work dock (নিচের ছোট কাজের panel) বড় হয়ে full-height `/agents` roster হয়। ভেতরে `Enter`/`t` transcript (পুরো কথোপকথনের লেখা), `d` details, `e` steer (কাজের মাঝে দিক বদলে দেওয়া), `x` stop।\n- **Ctrl+R** (বা সমর্থিত জায়গায় **F7**): dock-এর preview বনাম এক লাইন summary। macOS-এ F7 চাইলে Fn+F7 বা standard function keys চালু করো, নইলে `Ctrl+R`। পছন্দ শুধু ওই process-এর জন্য।\n- স্থায়ী `/goal` থাকলে dock-এর ওপরে আলাদা সারি পায়।\n- **Mouse drag**: সমান selection background।\n- **Cmd+V / Ctrl+V**: আগে text paste, তারপর OSC52/native clipboard, শেষে image attach।\n- **Ctrl+G** বা **Ctrl+X Ctrl+E**: `$EDITOR`-এ (তোমার পছন্দের text editor) খোলে; save করলে prompt হিসেবে যায়।\n- Slash autocomplete ভাসমান panel।\n\n**Queue (সারি):** TUI-র ডিফল্ট `display.busy_input_mode: queue`। মানে Hermes ব্যস্ত থাকলে তোমার নতুন কথা বাতিল না হয়ে লাইনে দাঁড়ায়, যেমন দোকানের কাউন্টারে সারি। কাজ চলার সময় পাঠানো বার্তা gateway-র durable queue-তে যায় (**gateway** = ভেতরের পোস্ট অফিস, **durable** = যেটা ক্র্যাশ হলেও হারায় না)। `[queued] …` হয়ে `queued (N)` panel-এ দেখা যায়। `steer` ও `interrupt` তবুও চলমান turn-এ কাজ করে। সারির বার্তায় **Ctrl+X** দিলে সেটা মুছে/বাতিল হয়; সম্পাদনা করে আবার পাঠালে আসল বার্তা বাতিল হয়ে নতুনটা যায়; `Esc` সম্পাদনা বাতিল করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Live Session Switcher\n\n**সমস্যা:** তুমি একটা আলাপে কোড লিখছো, হঠাৎ আরেকটা প্রশ্ন মাথায় এলো। প্রথম আলাপ বন্ধ না করে কী করবে? **Live session switcher** তোমাকে একই process-এ (একটা চলমান Hermes-এ) একাধিক session চালিয়ে ঝটপট বদলানোর সুবিধা দেয়। যেমন ব্রাউজারের একাধিক ট্যাব।\n\nখোলার উপায়: **Ctrl+X**, `/sessions`, `/switch`, `/sessions new`, বা status-এর `N live sessions` সংখ্যায় ক্লিক।\n\n| Key (ভেতরে) | কাজ |\n|---|---|\n| `↑/↓` | ওপর-নিচে চলো |\n| `Enter` | ওই session-এ যাও |\n| `Ctrl+D` | ওই session বন্ধ করো |\n| `Ctrl+N` | ফাঁকা নতুন session |\n| `Ctrl+R` | তালিকা refresh |\n| `Esc` | switcher বন্ধ |\n\n`+new` সারিতে prompt লিখে `Enter` দিলে নতুন session; তার আগে `Tab` দিয়ে সেই session-এর জন্য model বেছে নেওয়া যায়।\n\n**মনে রেখো:** শুধু এই process-এ চালু (live) session-ই এখানে দেখায়। বন্ধ হয়ে যাওয়াটা ফেরাতে `/resume` অথবা `hermes --tui --resume <id-or-title>`। TUI ও Classic CLI একই `~/.hermes/state.db` (SQLite নামের একটা ছোট ডেটার আলমারি) ব্যবহার করে, তাই picker-এ একটা source tag দেখায় (কোনটা TUI থেকে, কোনটা CLI থেকে)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সাজসজ্জা ও ছোটখাটো সুবিধা\n\n- **Skin ও personality:** `/skin ares`, `/personality pirate`, live বদলায়। **Skin** = চেহারার পোশাক (রং, চিহ্ন), **personality** = Hermes-এর কথা বলার স্বভাব। `/skin` ও `/personality` TUI-তে live repaint হয়।\n- **Banner-এর ভাঁজ-করা অংশ:** Tools (ডিফল্ট খোলা), Skills, System Prompt, MCP Servers (ডিফল্ট বন্ধ)। `▸`/`▾` চিহ্নে বা header-এ ক্লিক করলে খোলে/বন্ধ হয়; প্রতি launch-এ reset। (**Skill** = শেখানো কাজের নিয়ম, **MCP** = বাইরের tool জোড়ার একটা সাধারণ ভাষা।)\n- **LaTeX:** গণিতের লেখার একটা ধরন। inline `$...$` আর block `$$...$$` Unicode math হয়ে আসে; না-বোঝা অংশ copy-যোগ্য code span।\n- **Light terminal ধরা:** অগ্রাধিকার ক্রমে `HERMES_TUI_THEME` (`light`/`dark`/৬-অক্ষরের hex রং), তারপর `COLORFGBG`, তারপর OSC 11 probe (terminal-কে সরাসরি রং জিজ্ঞেস করা)। জোর করতে `export HERMES_TUI_THEME=light`। **না থাকলে** সাদা পটভূমিতে সাদা লেখা পড়া যেত না।\n- **Busy indicator:** `display.tui_status_indicator` = `kaomoji` (ডিফল্ট, প্রতি ২.৫ সেকেন্ডে বদলায়) | `emoji` | `unicode` | `ascii`; session-এ `/indicator emoji`।\n- **Auto-resume:** `HERMES_TUI_RESUME=1` সর্বশেষ TUI session; `HERMES_TUI_RESUME=<session-id>` নির্দিষ্টটা।\n\n**Status line**-এ অবস্থা: `starting agent…`, `ready`, `thinking…`/`running…`, `interrupted`, `forging session…`/`resuming…`। সঙ্গে working directory + git branch, ডানে session title, চলার সময় `⏱ 12s/3m 45s` (শেষে `⏲ 32s / 3m 45s`), `🗜️ N` (কতবার compress), `▶ N` (background task), `⚠ YOLO` (বিনা জিজ্ঞাসায় সব চালানোর বিপজ্জনক mode)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Config ও gateway সংযোগ\n\nকোনো আলাদা TUI config ফাইল নেই। সব `config.yaml`-এর `display:` অংশে:\n\n```yaml\ndisplay:\n  skin: default\n  personality: helpful\n  details_mode: collapsed        # hidden | collapsed | expanded\n  sections:\n    thinking: expanded\n    tools: expanded\n    activity: collapsed\n  mouse_tracking: all            # off | wheel | buttons | all\n  interface: tui                 # cli (default) | tui\n  tui_status_indicator: kaomoji  # kaomoji | emoji | unicode | ascii\n  busy_input_mode: queue\n```\n\n| key | মানে | কখন বদলাবে |\n|---|---|---|\n| `skin`, `personality` | পোশাক আর স্বভাব | নিজের পছন্দে সাজাতে |\n| `details_mode` | tool-এর বিবরণ কতটা খোলা: `hidden` (লুকানো) / `collapsed` (ভাঁজ করা) / `expanded` (পুরো খোলা) | স্ক্রিন ভিড় বা ফাঁকা লাগলে |\n| `sections` | thinking, tools, activity আলাদা আলাদা খোলা-বন্ধ | নির্দিষ্ট অংশ বেশি দেখতে |\n| `mouse_tracking` | mouse কতটা ধরবে | mouse-এ সমস্যা হলে |\n| `interface` | `cli` বা `tui` ডিফল্ট | TUI-কে স্থায়ী করতে |\n| `busy_input_mode` | ব্যস্ত অবস্থায় নতুন কথার আচরণ | সারি, থামানো বা steer বেছে নিতে |\n\nSection-এর ডিফল্ট: `thinking` expanded, `tools` expanded, `subagents` `details_mode` অনুসরণ করে (collapsed), `activity` hidden। `/details [hidden|collapsed|expanded|cycle]` সবার জন্য; `/details <section> [...|reset]` একটার জন্য (section: `thinking`, `tools`, `subagents`, `activity`)।\n\n**Gateway:** ডিফল্টে TUI নিজেই একটা in-process gateway চালায়, কোনো সেটআপ লাগে না। (**In-process** = আলাদা প্রোগ্রাম না, একই প্রোগ্রামের ভেতরেই।) সংযোগ ছিঁড়লে:\n- *spawned gateway* (TUI নিজে চালু করা) হলে আবার চালু করে (প্রতি মিনিটে কয়েকবার চেষ্টা) session খোলে (তবে চলমান উত্তর হারায়);\n- *attached gateway (dashboard chat)* হলে backoff (ধাপে ধাপে বেশি অপেক্ষা) দিয়ে reconnect করে, streaming উত্তরসহ ফিরে আসে, কিছু আবার submit হয় না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "TUI চালু হওয়ার পথ এবং সমস্যা হলে কী হয়।",
+        "steps": [
+          {
+            "title": "Node.js ≥ 20 আর TTY আছে কিনা দেখা",
+            "body": "`hermes doctor` পরীক্ষা করে। না থাকলে Hermes diagnostic ছেপে Classic CLI-তে নামে।"
+          },
+          {
+            "title": "প্রথমবার dependency install",
+            "body": "`ui-tui/node_modules`-এ, কয়েক সেকেন্ড, একবারই।"
+          },
+          {
+            "title": "নিজের gateway চালু",
+            "body": "কোনো সেটআপ ছাড়াই in-process gateway; তারপর তুমি prompt লিখতে পারো।"
+          },
+          {
+            "title": "সমস্যা হলে ফেরা",
+            "body": "`display.interface: cli`, `HERMES_TUI` unset, অথবা `hermes --cli`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "HERMES_TUI_GATEWAY_URL ধরো না",
+      "markdown": "এটা dashboard-এর ভেতরের ব্যাপার (`/api/ws` loopback, মানে নিজের কম্পিউটারের ভেতরেই ঘোরা সংযোগ), দূরের gateway-তে জোড়ার উপায় নয়। `api_server` (`/v1/...`) `/api/ws` দেয় না, তাই সেই port-এ দিলে 404 আসবে (404 = \"এই ঠিকানায় কিছু নেই\")।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "TUI না চললে?",
+      "markdown": "Node নেই, bundle নেই বা TTY সমস্যা হলে Hermes diagnostic ছেপে Classic CLI-তে নেমে যায়। ফেরত যেতে `display.interface: cli`, `HERMES_TUI` unset, অথবা `hermes --cli`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "TUI আর Classic CLI-র মধ্যে সবচেয়ে সঠিক সম্পর্ক কোনটা?",
+      "options": [
+        "একই runtime ও session, শুধু সামনের চেহারা আলাদা",
+        "সম্পূর্ণ আলাদা দুটো প্রোগ্রাম",
+        "TUI শুধু ওয়েব browser-এ চলে",
+        "CLI পুরনো, তাই আর কাজ করে না"
+      ],
+      "answerIndex": 0,
+      "explanation": "দুটোই একই ইঞ্জিন (agent, session, slash command) ব্যবহার করে; TUI শুধু আধুনিক চেহারা।"
+    },
+    {
+      "question": "TUI স্থায়ীভাবে ডিফল্ট করতে কী করবে?",
+      "options": [
+        "প্রতিবার `--cli` লিখবে",
+        "Node.js মুছে ফেলবে",
+        "`config.yaml`-এ `display.interface: tui`",
+        "`/mouse` চালাবে"
+      ],
+      "answerIndex": 2,
+      "explanation": "config-এর `display.interface` ডিফল্ট ঠিক করে; স্পষ্ট flag config-কে হারায়।"
+    },
+    {
+      "question": "TUI-র জন্য ন্যূনতম Node.js ভার্সন কত?",
+      "options": ["১০", "২০", "১৬", "২৪"],
+      "answerIndex": 1,
+      "explanation": "Node.js ≥ 20 লাগে; `hermes doctor` এটা পরীক্ষা করে।"
+    },
+    {
+      "question": "TUI-তে `busy_input_mode`-র ডিফল্ট কী?",
+      "options": ["interrupt", "steer", "none", "queue"],
+      "answerIndex": 3,
+      "explanation": "TUI-তে ডিফল্ট queue; ব্যস্ত থাকলে নতুন কথা সারিতে দাঁড়ায়।"
+    },
+    {
+      "question": "Live Session Switcher-এ কোন session দেখা যায়?",
+      "options": [
+        "আগে তৈরি সব session",
+        "শুধু মুছে ফেলা session",
+        "শুধু এই process-এ চালু (live) session",
+        "শুধু অন্য কম্পিউটারের session"
+      ],
+      "answerIndex": 2,
+      "explanation": "বন্ধ session ফেরাতে `/resume` বা `hermes --tui --resume` লাগে।"
+    },
+    {
+      "question": "Spawned gateway ছিঁড়ে গেলে TUI কী করে?",
+      "options": [
+        "আবার চালু করে session খোলে, তবে চলমান উত্তর হারায়",
+        "চুপচাপ বন্ধ হয়ে যায়",
+        "পুরো config মুছে দেয়",
+        "dashboard-এর কাছে ক্ষমা চায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "আবার চালু করে chat খোলে; চলমান উত্তরটুকু হারায়।"
+    },
+    {
+      "question": "আলাদা TUI config ফাইল আছে কি?",
+      "options": [
+        "হ্যাঁ, `tui.yaml`",
+        "হ্যাঁ, `ui.json`",
+        "না, কোনো config-ই নেই",
+        "না, সব `config.yaml`-এর `display:` অংশে"
+      ],
+      "answerIndex": 3,
+      "explanation": "সব setting `config.yaml`-এর `display:` অংশে থাকে।"
+    },
+    {
+      "question": "Light terminal ধরার প্রথম অগ্রাধিকার কোনটা?",
+      "options": [
+        "OSC 11 probe",
+        "`HERMES_TUI_THEME`",
+        "`COLORFGBG`",
+        "কোনোটাই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ক্রম: `HERMES_TUI_THEME`, তারপর `COLORFGBG`, তারপর OSC 11 probe।"
+    }
+  ],
+  "recap": [
+    "TUI একই runtime-এর আধুনিক front-end; `hermes --tui` বা `display.interface: tui`।",
+    "Non-blocking input, modal overlay, live session switcher (`Ctrl+X`) এর বড় সুবিধা।",
+    "TUI-র নিজস্ব command: `/sessions`, `/agents`, `/details`, `/mouse`, `/reload`।",
+    "সব সেটিং `config.yaml`-এর `display:` অংশে; আলাদা TUI config নেই।",
+    "সমস্যা হলে `hermes --cli` দিয়ে সহজেই Classic-এ ফেরা যায়।"
+  ]
+}

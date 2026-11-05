@@ -1,0 +1,360 @@
+{
+  "contentId": "hermes-doc-user-guide-configuring-models",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q01",
+      "difficulty": "easy",
+      "question": "Hermes-এর **main model** কী করে?",
+      "options": [
+        "প্রতিটা message আর মূল কাজ",
+        "শুধু ছবি দেখে বোঝে",
+        "শুধু আলাপের নাম বানায়",
+        "শুধু লম্বা কথার সারসংক্ষেপ করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "main model প্রধান শিক্ষকের মতো। ছোট কাজ সহকারী (auxiliary) model পায়।",
+      "whyWrong": {
+        "1": "ছবি বোঝা Vision slot-এর কাজ।",
+        "2": "নাম বানায় Title Gen।",
+        "3": "সারসংক্ষেপ Compression slot-এর কাজ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q02",
+      "difficulty": "easy",
+      "question": "**auxiliary model** কী?",
+      "options": [
+        "মূল model-এর একটা ব্যাকআপ কপি",
+        "আলাদা ছোট কাজের সহকারী model",
+        "শুধু API key রাখার একটা ফাইল",
+        "টাকার হিসাব রাখা একটা dashboard"
+      ],
+      "correctIndex": 1,
+      "explanation": "যেমন compression, vision, session title। প্রতিটার নিজস্ব slot আছে।",
+      "whyWrong": {
+        "0": "backup নয়, আলাদা ছোট কাজের জন্য।",
+        "2": "ফাইল নয়, এটা model।",
+        "3": "dashboard আলাদা জিনিস।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q03",
+      "difficulty": "easy",
+      "question": "**provider** বলতে কী বোঝায়?",
+      "options": [
+        "AI-র নিজের মস্তিষ্ক, যেমন `claude-sonnet-4`",
+        "model-এর দাম মাপার একক, যেমন token",
+        "যে সেবা model ভাড়া দেয়, যেমন `openrouter`",
+        "বিকল্প পথ, যা প্রথমটা ব্যর্থ হলে চলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "model হলো পণ্য, provider হলো দোকান।",
+      "whyWrong": {
+        "0": "ওটা model।",
+        "1": "ওটা token-এর সংজ্ঞা।",
+        "3": "ওটা fallback।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q04",
+      "difficulty": "easy",
+      "question": "প্রতিটা auxiliary slot-এর ডিফল্ট মান কী?",
+      "options": [
+        "`off`, মানে slot বন্ধ থাকে",
+        "`cheap`, মানে সস্তা model বাছা হয়",
+        "`vision`, মানে ছবি বোঝার model",
+        "`auto`, মানে main model-ই ব্যবহার"
+      ],
+      "correctIndex": 3,
+      "explanation": "ডিফল্টে সব কাজ main model-ই করে। চাইলে আলাদা model দেওয়া যায়।",
+      "whyWrong": {
+        "0": "বন্ধ থাকে না।",
+        "1": "`cheap` নামে মান নেই।",
+        "2": "`vision` একটা slot-এর নাম।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q05",
+      "difficulty": "easy",
+      "question": "চলতি session-এ model বদলালে `model.switch_context_confirm_tokens`-এর ডিফল্ট মান কত, যা ছাড়ালে Hermes আগে নিশ্চিত হতে চায়?",
+      "options": ["১০,০০০", "৫০,০০০", "১,০০,০০০", "১০,০০,০০০"],
+      "correctIndex": 2,
+      "explanation": "বড় session-এ switch করলে cache ভেঙে খরচ বাড়ে, তাই `model.switch_context_confirm_tokens` (ডিফল্ট ১,০০,০০০) ছাড়ালে Hermes আগে নিশ্চিত হতে চায়; `0` দিলে এই যাচাই বন্ধ।",
+      "whyWrong": {
+        "0": "১০,০০০ অনেক কম; ডিফল্ট ১,০০,০০০।",
+        "1": "৫০,০০০ ডিফল্ট নয়; ডিফল্ট ১,০০,০০০।",
+        "3": "১০ লাখ ডিফল্ট নয়; ডিফল্ট ১,০০,০০০।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q06",
+      "difficulty": "easy",
+      "question": "**token** বলতে কী বোঝায়?",
+      "options": [
+        "AI-র গণনা করা ছোট লেখার টুকরো",
+        "AI-র গোপন চাবি, যা দিয়ে login করা হয়",
+        "দোকানের ঠিকানা, যেখানে অনুরোধ পাঠানো হয়",
+        "এক দফা কথা-কাজ, মানে একটা turn"
+      ],
+      "correctIndex": 0,
+      "explanation": "খরচ আর সীমা token দিয়ে মাপা হয়।",
+      "whyWrong": {
+        "1": "ওটা API key।",
+        "2": "ওটা base URL বা endpoint।",
+        "3": "ওটা turn।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q07",
+      "difficulty": "easy",
+      "question": "`hermes setup --portal` কী করে?",
+      "options": [
+        "সব auxiliary slot একসঙ্গে মুছে দেয়",
+        "নতুন `-contributor` model চালু করে দেয়",
+        "dashboard-এর REST API বন্ধ করে দেয়",
+        "login করে Nous-কে provider বানায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Nous Portal এক subscription-এ ৩০০+ model দেয়।",
+      "whyWrong": {
+        "0": "মুছে ফেলে না।",
+        "1": "`-contributor` ঝুঁকির ব্যাপার, এটা সেটা নয়।",
+        "2": "API বন্ধ করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q08",
+      "difficulty": "medium",
+      "question": "`/model gpt-5.4 --provider openrouter` (কোনো flag ছাড়া) কতক্ষণ থাকে?",
+      "options": [
+        "স্থায়ীভাবে, `config.yaml`-এও লেখা হয়",
+        "শুধু এই session-এ",
+        "মাত্র এক turn, তারপর আগের model",
+        "পরের সব নতুন session-এ"
+      ],
+      "correctIndex": 1,
+      "explanation": "স্থায়ী করতে `--global`, এক turn-এর জন্য `--once`।",
+      "whyWrong": {
+        "0": "স্থায়ী করে `--global`।",
+        "2": "এক turn মানে `--once`।",
+        "3": "নতুন session-এ যায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q09",
+      "difficulty": "medium",
+      "question": "`/model ... --global` কী বাড়তি কাজ করে?",
+      "options": [
+        "শুধু একটা turn-এর জন্য model বদলে দেয়",
+        "`config.yaml`-এও লেখে, session বদলায়",
+        "শুধু auxiliary slot-গুলো বদলে দেয়",
+        "শুধু provider-এর API key বদলে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "তাই পরের বারও model একই থাকে।",
+      "whyWrong": {
+        "0": "ওটা `--once`।",
+        "2": "slot বদলায় না, main model বদলায়।",
+        "3": "key বদলায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q10",
+      "difficulty": "medium",
+      "question": "`--once` flag-এর কাজ কী?",
+      "options": [
+        "চিরকালের জন্য model বদলায়",
+        "শুধু প্রথম session-এ কাজ করে",
+        "একবার বদলালে আর কখনো ফেরে না",
+        "মাত্র এক turn, তারপর আগেরটা"
+      ],
+      "correctIndex": 3,
+      "explanation": "সফল, ব্যর্থ বা interrupt, সব ক্ষেত্রেই আগের model ফেরত আসে।",
+      "whyWrong": {
+        "0": "স্থায়ী করে `--global`।",
+        "1": "session সংখ্যার সঙ্গে সম্পর্ক নেই।",
+        "2": "ফেরে, কিছু persist হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q11",
+      "difficulty": "medium",
+      "question": "কোন অবস্থায় Vision slot-এ আলাদা model দেওয়া হয়?",
+      "options": [
+        "main model ছবি পড়তে না পারলে",
+        "main model খুব দামি হলে সবসময়",
+        "আলাপের নাম বানাতে চাইলে",
+        "শুধু cron job চালালে"
+      ],
+      "correctIndex": 0,
+      "explanation": "যেমন `google/gemini-2.5-flash` বা `gpt-4o-mini`।",
+      "whyWrong": {
+        "1": "দামের কারণে নয়, সক্ষমতার কারণে।",
+        "2": "নাম বানায় Title Gen।",
+        "3": "cron-এর সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q12",
+      "difficulty": "medium",
+      "question": "Approval slot কোন সেটিংয়ের সঙ্গে জড়িত, আর কেমন model লাগে?",
+      "options": [
+        "`approval_mode: off`, বড় reasoning model লাগে",
+        "`display.busy_input_mode`, ছবির model লাগে",
+        "`approval_mode: smart`, সস্তা model চলে",
+        "`compression.threshold`, সারসংক্ষেপের model লাগে"
+      ],
+      "correctIndex": 2,
+      "explanation": "\"এটা চালানো নিরাপদ কি?\" বিচারে haiku, flash, gpt-5-mini-র মতো সস্তা model যথেষ্ট।",
+      "whyWrong": {
+        "0": "smart-এর জন্য, off-এর জন্য নয়।",
+        "1": "ওটা কাজের মাঝে কথা বলার সেটিং।",
+        "3": "ওটা Compression slot-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q13",
+      "difficulty": "medium",
+      "question": "নতুন install-এ `model: \"\"` থাকলে মানে কী?",
+      "options": [
+        "সব model বন্ধ করা আছে",
+        "default model `auto` বসানো আছে",
+        "model-এর নাম দেওয়া নেই বলে error",
+        "এখনও configure হয়নি"
+      ],
+      "correctIndex": 3,
+      "explanation": "`hermes setup` বা `hermes model` চালালে এটা `provider`, `default`, `base_url`, `api_mode` সহ mapping হয়ে যায়।",
+      "whyWrong": {
+        "0": "বন্ধ নয়, অকনফিগার।",
+        "1": "`auto` auxiliary-র মান।",
+        "2": "error নয়, শুধু অকনফিগার।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q14",
+      "difficulty": "medium",
+      "question": "`hermes model` interactive picker কোন key-গুলো লেখে?",
+      "options": [
+        "`model.aliases` আর `auxiliary.vision`",
+        "`providers.<name>.api` আর `extra_headers`",
+        "`model.provider` আর `model.default`",
+        "`compression.enabled` আর `threshold`"
+      ],
+      "correctIndex": 2,
+      "explanation": "provider, authentication, model বাছাইয়ের পর reasoning-effort ধাপ আসে।",
+      "whyWrong": {
+        "0": "alias আর vision আলাদাভাবে বসে।",
+        "1": "এগুলো উন্নত provider অপশন।",
+        "3": "এগুলো compression-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q15",
+      "difficulty": "hard",
+      "question": "dashboard-এ **Switch** চাপলে চলমান chat-এর main model বদলায়নি। কেন?",
+      "options": [
+        "Switch ভাঙা, restart করলেই সব ঠিক হয়",
+        "Switch শুধু নতুন session-এর; চলমান chat-এ `/model`",
+        "Switch শুধু auxiliary model বদলায়, main model-এ নয়",
+        "চলমান chat-এ model কখনো বদলানো যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "config বদল সাধারণত নতুন session থেকে কার্যকর। এটা স্বাভাবিক।",
+      "whyWrong": {
+        "0": "ভাঙা নয়, নিয়ম এটাই।",
+        "2": "main model-ই `config.yaml`-এ লেখা হয়।",
+        "3": "`/model` দিয়ে বদলানো যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q16",
+      "difficulty": "hard",
+      "question": "চলতি লম্বা আলাপে model বদলালে কেন খরচ বাড়তে পারে?",
+      "options": [
+        "cache ভেঙে যায়, কারণ cache model-এর সঙ্গে বাঁধা",
+        "নতুন model-এর token সংখ্যা সবসময় দ্বিগুণ হয়ে যায়",
+        "বদলালে context window ০ হয়ে যায়",
+        "বদলানোর জন্য আলাদা ফি লাগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "provider আগের হিসাব মনে রাখলে দাম কমে। model বদলালে সেই মনে রাখা কাজে লাগে না।",
+      "whyWrong": {
+        "1": "এমন কোনো নিয়ম নেই।",
+        "2": "window ০ হয় না।",
+        "3": "ফি-র কথা lesson-এ নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q17",
+      "difficulty": "hard",
+      "question": "লম্বা দামি session-এ ছোট প্রশ্নে `--once` দিলে সাশ্রয় না হয়ে খরচ কেন বাড়তে পারে?",
+      "options": [
+        "cache prefix দুবার ভাঙে",
+        "`--once` সবসময় দামি model বাছে",
+        "`--once` auxiliary slot মুছে ফেলে",
+        "`--once` আলাপের history ফেলে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "বদলানোর সময় একবার, ফেরার সময় আরেকবার cache ভাঙে।",
+      "whyWrong": {
+        "1": "model আপনি বাছেন, `--once` নয়।",
+        "2": "slot মোছে না।",
+        "3": "history ফেলে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q18",
+      "difficulty": "hard",
+      "question": "cron job চলছে, আর তুমি `-contributor` model বাছলে। ডিফল্টে কী হবে?",
+      "options": [
+        "চুপচাপ চলে, কেউ কিছু জিজ্ঞেস করে না",
+        "সস্তা বলে স্বয়ংক্রিয়ভাবে বেছে নেয়",
+        "fail closed, মানে নিরাপদে থেমে যায়",
+        "স্বয়ংক্রিয়ভাবে main model-এ নেমে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "vendor তোমার prompt দিয়ে train করতে পারে। মেনে নিতে `security.allow_data_training_tiers_noninteractive` `true` করো।",
+      "whyWrong": {
+        "0": "unattended পথে ডিফল্টে বন্ধ।",
+        "1": "সস্তা হলেও নিজে বাছে না।",
+        "3": "fallback-এর কথা এখানে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q19",
+      "difficulty": "hard",
+      "question": "`model_aliases:` আর `model.aliases.<name>` দুটোতেই `fav` নাম আছে। কোনটা জেতে?",
+      "options": [
+        "`model.aliases.fav`, কারণ এটা ছোট রূপ আর সহজ",
+        "দুটো মিলে একটা নতুন alias হয়",
+        "কেউ না, Hermes error দেয়",
+        "`model_aliases:`, এতে `base_url`-ও যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ছোট রূপে custom `base_url` যায় না। user alias `sonnet`, `kimi`, `opus`-এর মতো built-in-কে ঢেকে দেয়।",
+      "whyWrong": {
+        "0": "ছোট রূপ হেরে যায়।",
+        "1": "মিশে না, একটা জেতে।",
+        "2": "error দেয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-configuring-models-q20",
+      "difficulty": "hard",
+      "question": "OpenRouter-এ `claude-sonnet-4` লিখে অন্য নামে model দেখছ। এর সম্ভাব্য কারণ কী?",
+      "options": [
+        "Hermes নিজে নাম ছোট করে লুকিয়ে রাখে",
+        "aggregator নিজের ভেতরে নাম বদলায়",
+        "`auto` slot ভুল provider আন্দাজ করেছে",
+        "dashboard-এর session token বদলে গেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "OpenRouter-এর মতো aggregator একাধিক model এক জায়গায় জড়ো করে নাম বদলায়। native Anthropic-এ নাম `claude-sonnet-4-6`।",
+      "whyWrong": {
+        "0": "Hermes নাম লুকায় না।",
+        "2": "`auto` অনির্ধারিত provider আন্দাজ করে না।",
+        "3": "token REST API-র header-এর ব্যাপার।"
+      }
+    }
+  ]
+}

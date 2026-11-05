@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-delegation-patterns",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q01",
+      "difficulty": "easy",
+      "question": "Hermes-এ delegation মানে কী?",
+      "options": [
+        "`delegate_task` দিয়ে আলাদা child agent",
+        "একটা tool call-কে দুবার চালিয়ে ফল মিলিয়ে দেখা",
+        "parent agent-কে বন্ধ করে তার জায়গায় নতুন agent বসানো",
+        "`cronjob_manage` দিয়ে সময় ধরে কাজ চালিয়ে যাওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা child-এর নিজের conversation, terminal session ও toolset থাকে। Parent শুধু চূড়ান্ত সারাংশ পায়।",
+      "whyWrong": {
+        "1": "এটা delegation নয়।",
+        "2": "parent বন্ধ হয় না; সে কাজ ভাগ করে।",
+        "3": "cron আলাদা জিনিস।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q02",
+      "difficulty": "easy",
+      "question": "Subagent কাজ শেষে parent-কে কী ফেরত দেয়?",
+      "options": [
+        "মাঝের প্রতিটা tool call-এর পুরো তালিকা",
+        "শুধু চূড়ান্ত সারাংশ",
+        "পুরো conversation history, শুরু থেকে শেষ",
+        "শুধু error থাকলেই কিছু ফেরত দেয়, নইলে চুপ"
+      ],
+      "correctIndex": 1,
+      "explanation": "মাঝের tool call parent-এর context window-এ ঢোকে না, তাই মূল টেবিল ভরে না।",
+      "whyWrong": {
+        "0": "মাঝের call ঢোকে না।",
+        "2": "history পাঠানো হয় না।",
+        "3": "সফল হলেও সারাংশ ফেরে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q03",
+      "difficulty": "easy",
+      "question": "Subagent কী জানে?",
+      "options": [
+        "parent-এর আগের পুরো কথোপকথন, নিজে নিজেই জানে",
+        "গতকালের সব session-এর তথ্য মনে রেখে চলে",
+        "শুধু `goal` ও `context`-এ যা আছে",
+        "parent-এর `memory` ও `clarify`-র সব ফল পেয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Subagent একদম নতুন; কোনো conversation history নেই। তাই ফাইল path, error, test command সব দিতে হয়।",
+      "whyWrong": {
+        "0": "কথোপকথন জানে না।",
+        "1": "আগের session জানে না।",
+        "3": "child সবসময় `clarify`, `memory`, `send_message` হারায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q04",
+      "difficulty": "easy",
+      "question": "`execute_code` কী কাজে লাগে?",
+      "options": [
+        "ব্যবহারকারীকে প্রশ্ন করে উত্তর আনতে পারে",
+        "কয়েকটা subagent একসাথে চালু রাখতে পারে",
+        "session restart পেরিয়েও কাজ টিকিয়ে রাখতে পারে",
+        "যান্ত্রিক বহু ধাপের ছোট script চালাতে"
+      ],
+      "correctIndex": 3,
+      "explanation": "যান্ত্রিক বহু ধাপে `execute_code` সস্তা। প্রশ্ন করার `clarify` subagent ব্যবহার করতে পারে না।",
+      "whyWrong": {
+        "0": "প্রশ্ন করে `clarify`।",
+        "1": "সমান্তরাল চালায় `delegate_task`।",
+        "2": "টেকসই কাজে `cronjob_manage` বা background terminal।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q05",
+      "difficulty": "easy",
+      "question": "`max_concurrent_children`-এর default কত, আর কী নিয়ন্ত্রণ করে?",
+      "options": [
+        "১; কত স্তর পর্যন্ত spawn চলবে",
+        "২৫০; কত iteration চলবে",
+        "১০; এক call-এ সমান্তরাল batch",
+        "৩০; কত ফাইল edit হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`max_concurrent_children` এক `delegate_task` call-এ কতগুলো সমান্তরালে চলবে তা ঠিক করে।",
+      "whyWrong": {
+        "0": "এটা `max_spawn_depth`-এর কাজ ও default।",
+        "1": "২৫০ default iteration।",
+        "3": "৩০ উদাহরণের মান, default নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q06",
+      "difficulty": "easy",
+      "question": "Leaf subagent আর Orchestrator-এর পার্থক্য কী?",
+      "options": [
+        "Orchestrator আরও সহকারী ডাকতে পারে, Leaf পারে না",
+        "Leaf আরও সহকারী ডাকতে পারে, Orchestrator পারে না",
+        "দুটোই আরও সহকারী ডাকে, শুধু নাম আলাদা",
+        "দুটোই শুধু নিজের কাজ করে, ডাকা যায় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Orchestrator (`role=\"orchestrator\"`) ম্যানেজারের মতো; Leaf (default) পাতার মতো।",
+      "whyWrong": {
+        "1": "উল্টো হয়ে গেছে।",
+        "2": "দুটোর আচরণ আলাদা।",
+        "3": "Orchestrator `delegate_task` রাখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q07",
+      "difficulty": "easy",
+      "question": "Subagent মারা গেলে কী দেখা যায়?",
+      "options": [
+        "কিছুই না, কাজ চুপচাপ বন্ধ হয়ে যায় আর কেউ জানে না",
+        "parent-কেও সাথে সাথে বন্ধ করে দেওয়া হয় বলে লেখা",
+        "শুধু log ফাইলে লেখা হয়, chat বা tree-তে কিছু দেখানো হয় না",
+        "এক লাইনের `Subagent failed` notice"
+      ],
+      "correctIndex": 3,
+      "explanation": "CLI delegation tree-তে বা gateway-তে chat notice হিসেবে আসে; parent পুরো error tool result-এ পায়।",
+      "whyWrong": {
+        "0": "ব্যর্থতা দৃশ্যমান থাকে।",
+        "1": "parent বন্ধ হয় না।",
+        "2": "দেখানো হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q08",
+      "difficulty": "medium",
+      "question": "কোন কাজে delegation ভালো?",
+      "options": [
+        "ছোট একটা ফাইলে এক লাইন edit",
+        "debugging, যার মাঝের ডেটায় context ভরে যেত",
+        "এক tool call-ই যথেষ্ট এমন কাজ",
+        "ব্যবহারকারীকে বারবার প্রশ্ন করতে হবে এমন কাজ"
+      ],
+      "correctIndex": 1,
+      "explanation": "ভালো ক্ষেত্র: যুক্তি-ভারী কাজ, মাঝের ডেটায় context ভরে যাওয়া, সমান্তরাল স্বাধীন কাজ, নতুন চোখে দেখা।",
+      "whyWrong": {
+        "0": "ছোট edit নিজেই করো।",
+        "2": "একটা call-এ সরাসরি tool।",
+        "3": "subagent `clarify` ব্যবহার করতে পারে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q09",
+      "difficulty": "medium",
+      "question": "\"আমরা যে bug নিয়ে কথা বলছিলাম সেটা ঠিক করো\" কেন ব্যর্থ হবে?",
+      "options": [
+        "subagent bug ঠিক করার ক্ষমতাই রাখে না",
+        "subagent নতুন, কথোপকথন জানে না",
+        "`goal` ফাঁকা রাখা যায় না, তাই ব্যর্থ",
+        "`context` শুধু ইংরেজিতে লিখতে হয়, তাই ব্যর্থ"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটাই 'Context Problem'। ফাইল path, error message, কাঠামো ও সীমাবদ্ধতা স্পষ্ট করে দাও।",
+      "whyWrong": {
+        "0": "পারে, যদি স্পষ্ট তথ্য থাকে।",
+        "2": "সমস্যা `goal` ফাঁকা থাকা নয়, তথ্যের অভাব।",
+        "3": "ভাষার সীমা লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q10",
+      "difficulty": "medium",
+      "question": "বহু-ফাইল refactor সমান্তরালে চালাতে কোন নিয়ম মানতে হয়?",
+      "options": [
+        "সব subagent একই ফাইল একসাথে edit করবে",
+        "একই terminal ভাগ করে সবাই ব্যবহার করবে",
+        "parent নিজে কিছুতেই ফল পড়বে না, দেখবে না",
+        "একই ফাইল দুজন ছোঁবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতি subagent-এর আলাদা terminal, তাই ভিন্ন ফাইল হলে একই ডিরেক্টরিতে চলে। একই ফাইল ছুঁলে লেখা গুলিয়ে যায়।",
+      "whyWrong": {
+        "0": "একই খাতায় লিখলে গুলিয়ে যায়।",
+        "1": "প্রতিটার আলাদা terminal।",
+        "2": "ফল যাচাই করা দরকার।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q11",
+      "difficulty": "medium",
+      "question": "Gather Then Analyze pattern-এ সংগ্রহ কেন `execute_code` দিয়ে, বিশ্লেষণ subagent দিয়ে?",
+      "options": [
+        "সস্তা call আগে, দামি চিন্তা পরিষ্কার context-এ",
+        "`execute_code` বিশ্লেষণে ভালো, subagent শুধু সংগ্রহে",
+        "দুটোই একই খরচের, তাই ভাগ করা অর্থহীন",
+        "subagent ফাইল পড়তে পারে না, তাই `execute_code` লাগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "ধাপ: `web_search`/`web_extract` দিয়ে সংগ্রহ, JSON ফাইলে রাখা, subagent ফাইল পড়ে রিপোর্ট লেখে।",
+      "whyWrong": {
+        "1": "ভূমিকা উল্টো।",
+        "2": "খরচ আলাদা, ভাগের কারণই এটা।",
+        "3": "subagent ফাইলটা পড়ে রিপোর্ট লেখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q12",
+      "difficulty": "medium",
+      "question": "Child agent সবসময় কোন তিনটা হারায়?",
+      "options": [
+        "`delegate_task`, `terminal`, `web`",
+        "`execute_code`, `cronjob_manage`, `clarify`",
+        "`clarify`, `memory`, `send_message`",
+        "`goal`, `context`, `toolsets`"
+      ],
+      "correctIndex": 2,
+      "explanation": "Child সবসময় `clarify`, `memory` ও `send_message` হারায়। (`execute_code` নিয়ে page-এর দুই জায়গায় দুই কথা, নিজের version-এ যাচাই করো।) Leaf আরও `delegate_task` ডাকতে পারে না।",
+      "whyWrong": {
+        "0": "`terminal` ও `web` toolset parent থেকে আসে।",
+        "1": "`execute_code` child রাখে।",
+        "3": "এগুলো parameter, tool নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q13",
+      "difficulty": "medium",
+      "question": "Top-level delegation কেন \"টেকসই নয়\"?",
+      "options": [
+        "এটা background-এ চলে না, foreground-এ আটকে থাকে",
+        "এটা প্রতি ঘণ্টায় নিজে নিজে বন্ধ হয়ে যায়",
+        "এটা কখনোই কাজ শেষে ফল জানায় না, চুপ থাকে",
+        "session বন্ধ হলে কাজ বাতিল হতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`/stop`, `/new` বা restart হলে সমস্যা। টেকসই কাজে `cronjob_manage` বা `terminal(background=True, notify_on_complete=True)`।",
+      "whyWrong": {
+        "0": "এটা background-এ চলে ও ফল জানায়।",
+        "1": "এমন ঘণ্টার সীমা নেই।",
+        "2": "ফল জানায়, কিন্তু session-এর সাথে বাঁধা।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q14",
+      "difficulty": "medium",
+      "question": "`delegate_task`-এ model-facing `toolsets` parameter নেই। এর ফল কী?",
+      "options": [
+        "child সব toolset নিজে বেছে নিতে পারে",
+        "child parent-এর চেয়ে বেশি ক্ষমতা পায়",
+        "parent-এর নেই এমন ক্ষমতা child পায় না",
+        "child কোনো tool-ই ব্যবহার করতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Subagent parent-এর চালু toolset পায়, তাই কথোপকথন শুরুর আগেই parent-এর tool ঠিক করো।",
+      "whyWrong": {
+        "0": "parent-এর toolset-এর বাইরে যেতে পারে না।",
+        "1": "বরং বেশি নয়, সমান।",
+        "3": "child tool ব্যবহার করে, parent-এর সেটই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q15",
+      "difficulty": "hard",
+      "question": "তুমি `max_spawn_depth` default ১ রেখে `role=\"orchestrator\"` দিলে কী হয়?",
+      "options": [
+        "সব tool চালু, depth-এর কোনো প্রভাব নেই",
+        "`delegate_task` পাওয়া যায় না",
+        "শুধু `clarify` পাওয়া যায়, বাকি বন্ধ",
+        "`memory` ও `execute_code` সবই পাওয়া যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Orchestrator `delegate_task` রাখে শুধু যদি `delegation.max_spawn_depth` ১-এর বেশি হয়; বাকি তিনটা (`clarify`, `memory`, `execute_code`) তখনও বন্ধ।",
+      "whyWrong": {
+        "0": "depth নিয়ন্ত্রণ করে।",
+        "2": "`clarify` বন্ধ থাকে।",
+        "3": "এগুলো বন্ধ থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q16",
+      "difficulty": "hard",
+      "question": "৩০টা সমান্তরাল worker আর nested subagent চাইলে config কেমন হবে?",
+      "options": [
+        "`max_concurrent_children: 30`, `max_spawn_depth: 2`",
+        "`max_concurrent_children: 2`, `max_spawn_depth: 30`",
+        "`max_concurrent_children: 30`, `max_spawn_depth: 1`",
+        "`max_iterations: 30`, `max_spawn_depth: 2`"
+      ],
+      "correctIndex": 0,
+      "explanation": "`delegation:` অংশে `config.yaml`-এ লিখতে হয়। Default ১০ ও ১।",
+      "whyWrong": {
+        "1": "মান দুটো উল্টে গেছে।",
+        "2": "depth ১ হলে nested চলে না।",
+        "3": "`max_iterations` ভিন্ন জিনিস (default ২৫০)।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q17",
+      "difficulty": "hard",
+      "question": "তিন subagent দিয়ে তিন search বিকল্প (PostgreSQL tsvector, Elasticsearch, Meilisearch) তুলনা। কেন আলাদা subagent?",
+      "options": [
+        "যাতে তিনটাই একই মাপকাঠি এড়িয়ে চলতে পারে",
+        "যাতে parent নিজে কোনো সুপারিশ না দেয়",
+        "যাতে একটার চিন্তা অন্যটাকে দূষিত না করে",
+        "যাতে subagent একই context ভাগ করে ব্যবহার করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একই মাপকাঠি (setup জটিলতা, query ক্ষমতা, resource, maintenance) দেওয়া হয়; Parent তুলনা করে সুপারিশ দেয়।",
+      "whyWrong": {
+        "0": "একই মাপকাঠি ব্যবহার হয়।",
+        "1": "parent সুপারিশ দেয়।",
+        "3": "context আলাদা, ভাগ করা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q18",
+      "difficulty": "hard",
+      "question": "কোন নির্দেশটা subagent-এর জন্য সবচেয়ে ভালো?",
+      "options": [
+        "\"`api/handlers.py` ৪৭ নম্বর লাইনের bug সারাও\"",
+        "\"bug ঠিক করে ফেলো, তুমি তো জানোই কোনটা সেটা\"",
+        "\"আগের মতো test চালিয়ে দেখো সব ঠিক আছে কি না\"",
+        "\"যে ফাইলটা নিয়ে কাল আলোচনা করলাম সেটা সারাও\""
+      ],
+      "correctIndex": 0,
+      "explanation": "লক্ষ্য নির্দিষ্ট করো; পরম path, project root, test command দাও।",
+      "whyWrong": {
+        "1": "subagent জানে না কোন bug।",
+        "2": "'আগের মতো' সে জানে না।",
+        "3": "'কাল' সে জানে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q19",
+      "difficulty": "hard",
+      "question": "সরল কাজের বহর, খরচ কমাতে চাও। কী বদলাবে?",
+      "options": [
+        "`max_concurrent_children` বাড়াবে",
+        "`delegation.max_iterations` কমাবে",
+        "`max_spawn_depth` বাড়াবে",
+        "`orchestrator_enabled: true` দেবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Default ২৫০ iteration; সরল কাজে কমালে খরচ বাঁচে।",
+      "whyWrong": {
+        "0": "সমান্তরাল বাড়লে খরচ বাড়ে।",
+        "2": "স্তর বাড়লে খরচ বাড়ে।",
+        "3": "`orchestrator_enabled: false` হলো বিশ্বব্যাপী বন্ধ করার সেটিং।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-delegation-patterns-q20",
+      "difficulty": "hard",
+      "question": "Subagent বলল \"সব test পাস\"। তুমি কী করবে?",
+      "options": [
+        "সারাংশ দেখেই merge করবে",
+        "সারাংশ যথেষ্ট প্রমাণ ধরে নেবে",
+        "পরের subagent-কে বলবে আগেরটা মুছতে",
+        "নিজে test চালাবে বা diff পড়বে"
+      ],
+      "correctIndex": 3,
+      "explanation": "সারাংশ প্রমাণ নয়; ফল যাচাই করা জরুরি।",
+      "whyWrong": {
+        "0": "যাচাই ছাড়া merge ঝুঁকিপূর্ণ।",
+        "1": "সারাংশ প্রমাণ নয়।",
+        "2": "এমন কোনো নিয়ম নেই।"
+      }
+    }
+  ]
+}

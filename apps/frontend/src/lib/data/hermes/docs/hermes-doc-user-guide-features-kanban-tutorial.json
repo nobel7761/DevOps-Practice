@@ -1,0 +1,156 @@
+{
+  "contentId": "hermes-doc-user-guide-features-kanban-tutorial",
+  "title": "Kanban Tutorial",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban-tutorial",
+  "oneLiner": "এই lesson শেষে তুমি Kanban-এ নির্ভরশীল কাজ, review চক্র আর ব্যর্থতা সামলানোর বাস্তব উদাহরণ চালাতে পারবে, আর run, outcome, circuit breaker-এর মানে বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: তিন বন্ধুর বিজ্ঞান প্রজেক্ট\n\nতিন বন্ধু একটা বিজ্ঞান প্রজেক্ট করছে। প্রথমজন ছক আঁকবে, দ্বিতীয়জন ছক দেখে মডেল বানাবে, তৃতীয়জন মডেল পরীক্ষা করবে। প্রথমজন শেষ করার সময় একটা ছোট নোট রেখে যায়: \"ছকে এই তিনটা ঘর আছে, এই ফাইলে।\" দ্বিতীয়জন নোট পড়ে কাজ ধরে। একদিন দ্বিতীয়জনের কলম হারিয়ে গেল (মানে সে মাঝপথে **crash** করল, হঠাৎ থেমে গেল)। সে ফিরে এসে আবার শুরু করল। নোট তো আছেই!\n\nএই tutorial চারটা গল্পে (Story) Kanban-এর এই জিনিসগুলোই দেখায়: নির্ভরশীল কাজের সারি, ভাগ করা কাজ, review চক্র, আর ভেঙে পড়লে কী হয়।\n\n**এই tutorial কেন দরকার?** আগের Kanban lesson-এ নিয়মগুলো জেনেছো। এখানে দেখবে সেই নিয়মগুলো আসল কমান্ডে কীভাবে চলে, ঠিক যেমন সাইকেলের নিয়ম জানার পর চালিয়ে দেখা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Kanban বোর্ড, task, assignee\n**Kanban বোর্ড** হলো কাজের কার্ড-টাঙানো বোর্ড; প্রতিটা কাজ একটা **task**; যাকে কাজ দেওয়া হলো সে **assignee**। (বিস্তারিত আগের Kanban lesson-এ।)\n\n### ২) Parent / child task\n\"আগে এই কাজ, তারপর ওই কাজ।\" আগেরটা **parent**, পরেরটা **child**। উপমা: ছক না আঁকলে মডেল বানানো যায় না।\n\n### ৩) Dispatcher / worker\n**Dispatcher** হলো ম্যানেজার, যে ready কার্ড দেখে কর্মী জাগায়। **Worker** হলো সেই কর্মী (একটা AI agent)।\n\n### ৪) Run\nএকটা task-এর একবার চেষ্টাকে **run** বলে। একটা task-এর একাধিক run থাকতে পারে (প্রথমবার ব্যর্থ, দ্বিতীয়বার সফল)।\n\n### ৫) Outcome\nএকটা run কীভাবে শেষ হলো তার ফল, যেমন `completed`, `crashed`, `gave_up`।\n\n### ৬) Metadata\nকাজ শেষের নোটের সাথে জুড়ে দেওয়া সাজানো তথ্য (কোন ফাইল বদলেছে ইত্যাদি)। উপমা: বন্ধুর রেখে যাওয়া নোট।\n\n### ৭) Circuit breaker\nবারবার ব্যর্থ হলে \"আর না, থামো\" বলা ব্যবস্থা। উপমা: বাড়ির ফিউজ। বেশি বিদ্যুৎ এলে নিজে কেটে যায়, যাতে আগুন না লাগে।\n\n### ৮) Tenant / profile\n**Tenant** হলো বোর্ডের ভেতরে প্রজেক্টের নরম ট্যাগ। **Profile** হলো Hermes-এর আলাদা চরিত্র (নিজের সেটিং ও স্মৃতিসহ), যেমন `backend-dev`।\n\n### ৯) CLI / dashboard / tool\n**CLI** মানে terminal-এ লিখে চালানো কমান্ড। **Dashboard** হলো ব্রাউজারের ছবির মতো বোর্ড। **Tool** হলো agent-এর হাতের যন্ত্র।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রস্তুতি\n\n- `hermes kanban init` ঐচ্ছিক (না করলেও চলে); প্রথম `hermes kanban <কিছু>` নিজেই বানিয়ে নেয়।\n- `hermes dashboard` চালালে `http://127.0.0.1:9119`-এ গিয়ে **Kanban** ক্লিক করো। (`127.0.0.1` মানে \"এই কম্পিউটারই\", আর `9119` হলো তার একটা **port**, মানে দরজার নম্বর। শুধু তুমিই ঢুকতে পারবে।)\n- Worker agent কখনো dashboard বা CLI ব্যবহার করে না; সে `kanban_*` tool ব্যবহার করে।\n- তিনটা দরজাই (dashboard, CLI, tool) একই SQLite DB ছোঁয়: default বোর্ড `~/.hermes/kanban.db`, অন্যগুলো `~/.hermes/kanban/boards/<slug>/kanban.db`। (**SQLite** হলো একটা ফাইলের ভেতরের ছোট ডেটাবেস।)\n\n## বোর্ডের ছয় কলাম\n\n| কলাম | মানে | সহজ কথায় |\n|---|---|---|\n| Triage | কাঁচা আইডিয়া; dispatcher default-এ decomposer চালিয়ে child task বানায় | \"এখনো গুছিয়ে ভাবিনি\" ঝুড়ি |\n| Todo | নির্ভরতার অপেক্ষায় বা assign হয়নি | অন্যের কাজ শেষের অপেক্ষা |\n| Ready | assign হয়েছে, dispatcher-এর অপেক্ষায় | এখনই শুরু করা যায় |\n| In progress | চলছে (Lanes by profile চালু থাকলে assignee অনুযায়ী ভাগ) | কেউ হাত লাগিয়েছে |\n| Blocked | মানুষের input লাগবে বা circuit breaker জ্বলেছে | আটকে আছে |\n| Done | শেষ | শেষ |\n\nউপরের bar-এ search, tenant, assignee ফিল্টার, \"Lanes by profile\" সুইচ, আর **Nudge dispatcher** বোতাম (৬০ সেকেন্ডের অপেক্ষা না করে এখনই একটা tick চালায়। **tick** মানে ঘড়ির একটা টিক, মানে একবার দেখে নেওয়া)। **Specify** একটা task-কে goal/approach/acceptance criteria সহ spec-এ রূপ দিয়ে `todo`-তে তোলে (`auxiliary.triage_specifier`)। Spec মানে পরিষ্কার বিবরণ; acceptance criteria মানে \"কী হলে বলব কাজ ঠিক হয়েছে।\""
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Story 1: একা ডেভেলপার, তিন ধাপের feature\n\n```bash\nSCHEMA=$(hermes kanban create \"Design auth schema\" --assignee backend-dev --tenant auth-project --priority 2 --body \"...\" --json | jq -r .id)\nAPI=$(hermes kanban create \"Implement auth API endpoints\" --assignee backend-dev --tenant auth-project --priority 2 --parent $SCHEMA --body \"POST /register, POST /login, POST /refresh, POST /logout.\" --json | jq -r .id)\nhermes kanban create \"Write auth integration tests\" --assignee qa-dev --tenant auth-project --priority 2 --parent $API --body \"...\"\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `SCHEMA=$(...)` | ভেতরের কমান্ডের ফল `SCHEMA` নামের ছোট বাক্সে রাখো | কার্ডের নম্বর মনে রাখার ডায়েরি |\n| `hermes kanban create \"...\"` | নতুন কার্ড বানাও | বোর্ডে নতুন কাগজ সাঁটা |\n| `--assignee backend-dev` | এই profile করবে | কার্ডে নাম লেখা |\n| `--tenant auth-project` | প্রজেক্টের ট্যাগ | রঙিন স্টিকার |\n| `--priority 2` | কাজের গুরুত্ব | \"জরুরি\" চিহ্ন |\n| `--body \"...\"` | কাজের বিবরণ | কার্ডের লেখা |\n| `--json \\| jq -r .id` | ফল JSON-এ নিয়ে শুধু `id` অংশটা বের করো (`jq` হলো JSON কাটার যন্ত্র) | কার্ডের নম্বরটুকু টুকে নেওয়া |\n| `--parent $SCHEMA` | এই কাজ `SCHEMA` শেষ হলে তবে শুরু | \"আগে ছক, পরে মডেল\" |\n\nফল: শুধু `SCHEMA` শুরুতে `ready`; বাকি দুটো `todo`-তে অপেক্ষা করে। Worker-এর environment-এ `HERMES_KANBAN_TASK=$SCHEMA` থাকে (**environment variable** মানে প্রোগ্রামের পাশে রাখা নামধারী নোট), তাই `kanban_show()` নিজেই জানে কোন task।\n\nWorker শেষে:\n\n```python\nkanban_complete(summary=\"...\", metadata={\"changed_files\": [...], \"decisions\": [...]})\n```\n\n`kanban_complete` একই সঙ্গে run বন্ধ করে ও task `done` করে (এক লেনদেনে, মানে দুটোই হবে নয়তো একটাও না)। তারপর `API` `ready` হয় এবং তার worker schema-র সারাংশ ও metadata দেখতে পায়। দেখতে:\n\n```bash\nhermes kanban show $SCHEMA\nhermes kanban runs $SCHEMA    # outcome, profile, সময়, সারাংশ\n```\n\n## Story 2: Fleet farming\n\n**Fleet farming** মানে অনেক কর্মী-বহর একসাথে চাষ। স্বাধীন কাজ, তিন বিশেষজ্ঞ profile (`translator`, `transcriber`, `copywriter`), সবাই tenant `content-ops`-এর অধীনে। `hermes gateway start` একটা embedded dispatcher চালায় (**gateway** হলো Hermes-এর সারাক্ষণ-চালু অংশ, ভেতরে dispatcher থাকে) যা একই `kanban.db` থেকে তিনজনকেই সেবা দেয়। কোনো নির্ভরতা নেই, তাই সব `ready` হয়ে একসাথে চলে। উপমা: তিন রাঁধুনি, তিনটা আলাদা পদ, কাউকে কারো অপেক্ষা করতে হয় না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Story 3: review-সহ একই কার্ডের চক্র।",
+        "steps": [
+          {
+            "title": "Engineer review চায়",
+            "body": "`kanban_request_review(summary=..., metadata=..., reviewer=\"reviewer\")`। run-এর outcome `review_requested`।"
+          },
+          {
+            "title": "Reviewer পরিবর্তন চায়",
+            "body": "`kanban_request_changes(reason=...)`। outcome `changes_requested`; কার্ড `backend-dev`-এর কাছে `ready` বা `todo`-তে ফেরে।"
+          },
+          {
+            "title": "Engineer আবার review চায়",
+            "body": "দ্বিতীয় `kanban_request_review` (যেমন `review_iteration: 2`)।"
+          },
+          {
+            "title": "Reviewer পাস করে",
+            "body": "`kanban_complete(summary=\"review passed; ...\")`। ইতিহাস: review_requested -> changes_requested -> review_requested -> completed।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "### Review কী আর কেন?\n**Review** মানে একজনের কাজ আরেকজন দেখে \"ঠিক আছে\" বা \"এটা বদলাও\" বলা। উপমা: শিক্ষক খাতা দেখে ভুল দাগিয়ে ফেরত দেন, ছাত্র শুধরে আবার জমা দেয়। এটা না থাকলে ভুল কাজ সোজা \"শেষ\" হয়ে যেত।\n\n### দুটো review-ধরন, মিশিও না\n\n1. **আগে-থেকে-বানানো downstream কার্ড:** implementation কার্ডের একটা child আছে \"Review ... PR\"। (**PR** মানে pull request, কোড বদলের প্রস্তাব।) Engineer `kanban_complete` করলে reviewer কার্ড `todo` ছাড়ে। এখানে review চাইতে parent-কে block কোরো না।\n2. **একই-কার্ড review:** উপরের steps।\n\nদুটো একসাথে ব্যবহার করলে review লেন দ্বিগুণ হয়। `kanban_block` শুধু সত্যিকারের বাইরের বাধায় (প্রবেশাধিকার নেই, infrastructure নেই)।\n\n## Story 4: Circuit breaker ও crash recovery\n\n```bash\nhermes kanban create \"Deploy to staging (missing creds)\" --assignee deploy-bot --tenant ops --max-retries 3\n```\n\nএখানে `--max-retries 3` মানে \"৩ বার চেষ্টা করে দেখো, তারপর হাল ছাড়ো।\" Spawn (worker চালু করা) প্রতিবার ব্যর্থ হয় (`AWS_ACCESS_KEY_ID not set`, মানে ক্লাউডের চাবি সেট করা নেই)। ৩ ব্যর্থতার পর circuit খুলে যায়: task `blocked`, outcome `gave_up`। flag না দিলে সীমা `kanban.failure_limit` (default ২)।\n\n| Outcome | মানে |\n|---|---|\n| `spawn_failed` | worker চালু করা গেল না (পুনঃচেষ্টাযোগ্য) |\n| `gave_up` | আর চেষ্টা নয় (চূড়ান্ত) |\n\nঘটনার ক্রম: `created -> claimed -> spawn_failed -> claimed -> spawn_failed -> claimed -> gave_up`। দেখতে `hermes kanban runs t_ef5d`। Messaging platform (যেমন Telegram) যুক্ত থাকলে `gave_up`-এ notification যায়।\n\n**Crash recovery (ভেঙে পড়ার পর ফেরা):** Dispatcher `kill(pid, 0)` দিয়ে worker জীবিত কি না দেখে (এটা আসলে কাউকে মারে না, শুধু জিজ্ঞেস করে \"প্রোগ্রামটা আছে?\")। **PID** হলো চলন্ত প্রোগ্রামের নম্বর। Process না থাকলে claim ছেড়ে task `ready` হয় আর পরের tick-এ নতুন worker পায়। উদাহরণ: ২.৪M row-এর migration ২.৩M-এর কাছে OOM-এ (**OOM** মানে মেমোরি ফুরানো) মরল (run 1: `crashed`); run 2 `completed`, metadata-য় `\"strategy\": \"chunked with LIMIT + WHERE id > last_id\"` (মানে এবার ছোট ছোট টুকরোয় করা হয়েছে)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Structured handoff: সবচেয়ে দামী অভ্যাস\n\n**Handoff** মানে কাজ পরের জনের হাতে দেওয়ার নোট। শেষ করার সময় worker `kanban_complete(summary=..., metadata=...)` দেয়, এটাই প্রধান হাতবদলের পথ। পরের worker `kanban_show()` করলে `worker_context` পায়, তাতে থাকে:\n\n- **Prior attempts:** আগের run-এর outcome, summary, error, metadata\n- **Parent task results:** প্রতি parent-এর সর্বশেষ completed run-এর summary ও metadata\n\nকেন দামী? নোট না থাকলে নতুন worker শূন্য থেকে শুরু করত, আর আগে যা ভুল হয়েছিল তা আবার করত।\n\nBulk-close guard: `hermes kanban complete a b c --summary X` প্রত্যাখ্যাত হয় (এক নোট দিয়ে অনেক কাজ বন্ধ করা বারণ)। handoff flag ছাড়া admin কাজে bulk close চলে।\n\n## Done কার্ড আবার খুলো না: follow-up child বানাও\n\n```bash\nhermes kanban create \"Fix CI: test_backoff_jitter flakes on 3.11\" --assignee backend-dev --parent t_impl --workspace worktree --branch wt/ci-fix-backoff --body \"...\"\n```\n\n| অংশ | মানে |\n|---|---|\n| `--parent t_impl` | শেষ হয়ে যাওয়া `t_impl` কার্ডের নতুন child |\n| `--workspace worktree` | git-এর আলাদা কপি-ফোল্ডারে কাজ |\n| `--branch wt/ci-fix-backoff` | সেই কপির আলাদা ধারার নাম |\n\n(**CI** মানে স্বয়ংক্রিয় পরীক্ষা-ব্যবস্থা; **flake** মানে মাঝেমধ্যে বিনা কারণে ব্যর্থ হওয়া পরীক্ষা।) Parent `done` বলে child সঙ্গে সঙ্গে `ready` হয় (খোলা parent হলে `todo`)। Child parent-এর completion summary ও metadata পায়। নতুন worktree ও branch ব্যবহার করো। কেন নতুন কার্ড? পুরোনো কার্ডের ইতিহাস ঠিক থাকে, আর নতুন সমস্যা আলাদা করে ট্র্যাক হয়।\n\n## চলমান কাজ ও পরবর্তী ধাপ\n\nচলমান task-এর status `Running`, সক্রিয় run-এর outcome `active` আর `ended_at` নেই। Worker মরলে বা timeout হলে dispatcher সেই run বন্ধ করে পরের claim-এ নতুন run খোলে।\n\n```bash\nhermes kanban --help\nhermes kanban watch --kinds completed,gave_up,timed_out\nhermes kanban notify-subscribe <task> --platform telegram --chat-id <id>\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes kanban --help` | সব উপকমান্ডের সাহায্য | কী কী করা যায় জানতে |\n| `watch --kinds completed,gave_up,timed_out` | শুধু এই তিন ধরনের ঘটনা লাইভ দেখাও | অনেক ঘটনার ভিড়ে দরকারিগুলো দেখতে |\n| `notify-subscribe <task> --platform telegram --chat-id <id>` | ওই task-এর খবর Telegram-এ পাঠাও | কম্পিউটারের সামনে না থাকলেও জানতে |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "পরীক্ষা করার সহজ উপায়",
+      "markdown": "প্রথমে Story 1-এর মতো দুটো task `--parent` দিয়ে বানাও, `hermes kanban watch` চালিয়ে রাখো, আর দেখো প্রথমটা শেষ হলে দ্বিতীয়টা কখন `ready` হয়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Story 1-এ `API` task শুরুতে কোন অবস্থায় থাকে?",
+      "options": [
+        "`ready`",
+        "`todo` (parent `SCHEMA` শেষের অপেক্ষায়)",
+        "`done`",
+        "`blocked`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`--parent $SCHEMA` থাকায় parent শেষ না হওয়া পর্যন্ত child `todo`-তে অপেক্ষা করে।"
+    },
+    {
+      "question": "কোন বোতাম ৬০ সেকেন্ডের অপেক্ষা না করে এখনই dispatcher চালায়?",
+      "options": ["Nudge dispatcher", "Specify", "Lanes by profile", "Archive"],
+      "answerIndex": 0,
+      "explanation": "Nudge dispatcher একটা tick এখনই চালায়।"
+    },
+    {
+      "question": "`kanban_complete` কী করে?",
+      "options": [
+        "শুধু মন্তব্য লেখে",
+        "task মুছে ফেলে",
+        "শুধু run বন্ধ করে",
+        "একই সঙ্গে run বন্ধ করে ও task `done` করে"
+      ],
+      "answerIndex": 3,
+      "explanation": "দুটো কাজ এক লেনদেনে: হয় দুটোই হবে, নয়তো একটাও না।"
+    },
+    {
+      "question": "একই-কার্ড review চক্রে reviewer পরিবর্তন চাইলে কোন tool ব্যবহার করে?",
+      "options": [
+        "`kanban_block`",
+        "`kanban_complete`",
+        "`kanban_request_changes`",
+        "`kanban_create`"
+      ],
+      "answerIndex": 2,
+      "explanation": "Reviewer `kanban_request_changes(reason=...)` দিলে outcome `changes_requested` হয়।"
+    },
+    {
+      "question": "`--max-retries 3` দিয়ে তৈরি task ৩ বার spawn-এ ব্যর্থ হলে কী হয়?",
+      "options": [
+        "আবার চলে চিরকাল",
+        "task `blocked` হয়, outcome `gave_up`",
+        "task `done` হয়",
+        "task মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Circuit breaker খুলে যায়, ফিউজের মতো বারবার চেষ্টা বন্ধ হয়।"
+    },
+    {
+      "question": "Worker process OOM-এ মরলে dispatcher কীভাবে বোঝে?",
+      "options": [
+        "process আছে কি না `kill(pid, 0)` দিয়ে দেখে; না থাকলে claim ছেড়ে task `ready` করে",
+        "মানুষকে জিজ্ঞেস করে",
+        "কিছুই বোঝে না",
+        "ঘড়ি দেখে"
+      ],
+      "answerIndex": 0,
+      "explanation": "নতুন worker পরের tick-এ কাজ ধরে, আর আগের run `crashed` হিসেবে থাকে।"
+    },
+    {
+      "question": "`done` হয়ে যাওয়া কার্ডে নতুন সমস্যা (যেমন CI ব্যর্থ) এলে কী করা উচিত?",
+      "options": [
+        "কার্ড মুছে নতুন বোর্ড বানানো",
+        "কার্ড আবার খোলা",
+        "কিছু না করা",
+        "follow-up child বানানো, `--parent` দিয়ে"
+      ],
+      "answerIndex": 3,
+      "explanation": "পুরোনো ইতিহাস ঠিক থাকে; child parent-এর summary ও metadata পায়।"
+    },
+    {
+      "question": "`kanban_show()`-এর `worker_context`-এ কী থাকে?",
+      "options": [
+        "শুধু task-এর নাম",
+        "শুধু তারিখ",
+        "আগের চেষ্টাগুলো (prior attempts) আর parent task-এর ফল",
+        "মানুষের পাসওয়ার্ড"
+      ],
+      "answerIndex": 2,
+      "explanation": "এটাই structured handoff: আগের নোট থেকে নতুন worker শুরু করে।"
+    }
+  ],
+  "recap": [
+    "চারটা গল্প: নির্ভরশীল সারি, fleet farming, review চক্র, circuit breaker/crash recovery।",
+    "Child task `--parent` দিয়ে `todo` থেকে শুরু করে parent শেষ হলে `ready` হয়।",
+    "`kanban_complete(summary, metadata)` হলো হাতবদলের মূল পথ।",
+    "Review চক্র: request_review -> request_changes -> request_review -> complete।",
+    "Circuit breaker `gave_up`-এ block করে; crash হলে dispatcher নতুন worker দেয়।",
+    "Done কার্ড reopen না করে follow-up child বানাও।"
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "contentId": "hermes-doc-getting-started-updating",
+  "title": "Updating",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/getting-started/updating",
+  "oneLiner": "এই lesson শেষে তুমি জানবে নিজের install-এর ধরন অনুযায়ী Hermes কীভাবে নিরাপদে update করতে হয়, আর snapshot, gateway, branch, rollback-এর মতো শব্দগুলো বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## ফোনের অ্যাপ আপডেটের গল্প\n\nতোমার ফোনের অ্যাপ আপডেট হয় নানা ভাবে। কোনোটা Play Store নিজে করে দেয়। কোনোটা অ্যাপের ভেতরের \"Update\" বোতামে। আবার বন্ধুর পাঠানো ফাইল থেকে বসানো অ্যাপ নিজে হাতে বদলাতে হয়।\n\nHermes-ও এমন। **কে update করবে, তা নির্ভর করে তুমি কীভাবে install করেছিলে তার ওপর।** ভুল পদ্ধতিতে update করতে গেলে হয় কাজ হবে না, নয় অন্যের ফাইল বদলে যাবে। তাই আগে নিজের install-এর ধরন জেনে নাও। `hermes doctor` কমান্ড বলে দেয়।\n\n**Update কেন দরকার?** প্রোগ্রামের ভুল (bug) সারে, নতুন সুবিধা আসে, আর নিরাপত্তার ফাঁক বন্ধ হয়। না করলে পুরনো ভাঙা জিনিস নিয়েই থাকতে হয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Release ও version\n**Release** মানে \"এই সংস্করণ তৈরি, সবাই নিতে পারো\" ঘোষণা। **Version** হলো সংস্করণের নম্বর, যেমন `v1.2.3` (ফোনের অ্যাপের \"সংস্করণ ১.২.৩\"-এর মতো)।\n\n### ২) Git, repo, branch, commit\n- **Git** হলো কোডের পরিবর্তনের ইতিহাস রাখার টুল, ছবির অ্যালবামের মতো, যেখানে প্রতিটা বদলের ছবি জমা থাকে।\n- **Repo** (repository) মানে সেই অ্যালবাম বা project-এর ভাণ্ডার।\n- **Commit** হলো একটা বদলের ছবি (একটা সেভ-পয়েন্ট)।\n- **Branch** হলো ইতিহাসের একটা আলাদা সুতো। `main` হলো প্রধান সুতো। অন্য সুতোয় পরীক্ষা চালালে মূলটা নষ্ট হয় না।\n\n### ৩) Source checkout\nSource code-এর কপি সরাসরি git দিয়ে নিজের কম্পিউটারে নামানো। \"Managed source checkout\" মানে Hermes-এর install script যে ধরনের নামানো কপি তোমার জন্য বানিয়েছে। এটাতেই সাধারণ `hermes update` চলে।\n\n### ৪) Gateway\nHermes-কে Telegram, Discord-এর মতো chat app-এর সাথে জুড়ে সবসময় জাগিয়ে রাখার প্রক্রিয়া। এটা থাকলে ফোন থেকেও Hermes-কে বার্তা পাঠানো যায়।\n\n### ৫) Snapshot ও backup\nকিছু বদলানোর আগে পুরনো অবস্থার একটা কপি রাখা, যেন ভুল হলে ফিরতে পারো। পরীক্ষার আগে খাতার ফটোকপি রাখার মতো।\n\n### ৬) Rollback\nনতুনে সমস্যা হলে আগের ভালো সংস্করণে ফিরে যাওয়া।\n\n### ৭) Dependency ও PM\n**Dependency** হলো Hermes চলতে যে অন্য প্রোগ্রামগুলো লাগে (কেকের জন্য ডিম)। **PM** (package manager) হলো যে টুল সেগুলো এনে ঠিক জায়গায় বসায়। `hermes pm` হলো Hermes-এর নিজের এই টুল।\n\n### ৮) Drain ও restart\n**Restart** মানে বন্ধ করে আবার চালানো। **Drain** মানে নতুন কাজ নেওয়া বন্ধ করে, যা চলছে তা শেষ হতে দেওয়া। দোকান বন্ধের আগে নতুন খদ্দের না নিয়ে বর্তমান খদ্দেরদের বিদায় করার মতো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন install, কোন update পদ্ধতি\n\n| install-এর ধরন | update করার উপায় | সহজ কথায় |\n|---|---|---|\n| Managed source checkout | `hermes update` | Hermes নিজেই নিজেকে নতুন করে |\n| Windows sideload MSIX | Desktop-এর Update control ও Windows App Installer | ফাইল থেকে বসানো অ্যাপ, অ্যাপের বোতামে |\n| Microsoft Store | Store update | Store নিজে করে |\n| macOS bundled app | Desktop-এর Update control (`electron-updater`) | অ্যাপের ভেতরের বোতাম |\n| Docker | নতুন image pull করে একই data mount দিয়ে container আবার বানাও | নতুন বাক্স আনো, পুরনো জিনিসপত্র (data) আগের জায়গা থেকেই জুড়ে দাও |\n| Nix | flake/profile update করে rebuild | Nix-এর নিয়মে |\n| Termux APT | `pkg update`, তারপর `pkg upgrade hermes-agent` | ফোনের package-দোকান থেকে |\n\n`hermes update` প্যাকেজ-ম্যানেজারের মালিকানার ফাইল বদলায় না। আর `hermes pm update` একটা maintainer-এর pin-update কমান্ড (নির্দিষ্ট সংস্করণে আটকে রাখা তালিকা হালনাগাদ করা), এটা application updater না, ভুল করে এটা চালিও না।\n\n**Messaging থেকে:** Telegram, Discord, Slack, WhatsApp বা Teams-এ `/update` পাঠালেই হয়। restart-এর সময় bot ৫–১৫ সেকেন্ড offline থাকে।\n\n**Version দেখা:** `hermes --version`, তারপর GitHub releases পাতার সাথে মেলাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Channel: stable না main?\n\n**Channel** মানে \"কোন লাইন থেকে সংস্করণ নেবে\"। **stable** হলো ভালো করে পরীক্ষা-করা পাকা release। **main** হলো সবচেয়ে নতুন, প্রতি বদলের সাথে সাথে পাওয়া, কিন্তু কাঁচাও হতে পারে।\n\n- official repo সর্বশেষ প্রকাশিত `vX.Y.Z` release অনুসরণ করে (draft, prerelease, canary tag বাদ)। fork/mirror (কেউ কপি করে বানানো repo) অনুসরণ করে `main`।\n- `hermes update --set-channel main`: `main`-এর প্রতিটা commit অনুসরণ করো।\n- `hermes update --set-channel stable`: আবার শুধু release-এ ফিরো।\n- `hermes update --channel main`: এক বারের জন্য `main`-এ চলে, কিছু সেভ করে না।\n- পছন্দ থাকে প্রতিটা install-এর জন্য আলাদা, `config.yaml`-এর `update.installs`-এ।\n- পুরনো release-এ pin করা (আটকে রাখা) মানে rollback। `hermes update --check` তখন বলে checkout নতুনতর।\n\nনতুন config option এলে `hermes update` জিজ্ঞেস করে যোগ করবে কিনা। নিজে করতে: `hermes config check` তারপর `hermes config migrate`। (**Config** হলো সেটিং-ফাইল। **migrate** মানে পুরনো সেটিংকে নতুন ছাঁচে সরানো।)\n\n**নীরব update-নোটিস বন্ধ:** `hermes config set updates.check false` (default `true`)। এতে শুধু passive নোটিস (নিজে থেকে আসা মনে-করানো) বন্ধ হয়। `hermes update --check` ও `hermes update` তবু চলে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "`hermes update` (source install)-এর প্রধান ধাপগুলো।",
+        "steps": [
+          {
+            "title": "১. আগে snapshot",
+            "body": "pairing data, cron job, `config.yaml`, `.env`, `auth.json` সেভ হয় `state-snapshots/`-এ। `updates.pre_update_backup`: `quick` (default), `full`, `off`। snapshot ব্যর্থ হলেও update চলে, কিন্তু `⚠ Pre-update snapshot FAILED` দেখায়।"
+          },
+          {
+            "title": "২. Code update",
+            "body": "configured branch/stable tag checkout (নির্দিষ্ট সংস্করণের কপি আনা) ও submodule (ভেতরের ছোট repo) update। Linux/macOS-এ gateway এই মুহূর্তের আগে **pause** হয়।"
+          },
+          {
+            "title": "৩. Syntax যাচাই ও auto-rollback",
+            "body": "নয়টা critical startup ফাইল compile হয় (ভাষার নিয়মে ঠিক কিনা দেখা)। ব্যর্থ হলে আগের SHA-তে (commit-এর নম্বর) `git reset --hard` করে ফিরে যায়।"
+          },
+          {
+            "title": "৪. Dependency (PM)",
+            "body": "নতুন lock থেকে Python environment বানিয়ে যাচাই করে তবেই প্রকাশ করে। মানানসই না হলে plugin `plugins.disabled`-এ যায়, update ব্যর্থ হয় না।"
+          },
+          {
+            "title": "৫. Config migration ও Desktop rebuild",
+            "body": "নতুন option জিজ্ঞেস করে। Desktop আলাদা staging জায়গায় build করে যাচাই করে তারপর বদলায় (ব্যর্থ হলে পুরনো app থাকে)।"
+          },
+          {
+            "title": "৬. Gateway restart",
+            "body": "paused gateway নতুন code-এ আবার চালু হয়। একাধিক profile আলাদা gateway চালালে একটা multiplexed gateway-তে মিলিয়ে দেওয়ার চেষ্টা করে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "update-pipeline"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Update-এর সময় gateway-র কী হয়?\n\nGateway হলো সেই প্রক্রিয়া যা তোমার bot-কে chat app-এ জাগিয়ে রাখে। কোড বদলানোর সময় সে চললে ভাঙা কোডে কাজ করতে পারত। তাই আগে থামানো হয়।\n\n- code বদলানোর আগে gateway থামে। dependency তৈরি হলে নতুন code-এ আবার চালু হয়। সেই সময় bot **offline**।\n- output-এ দেখবে: `⏸ Paused for the update: …` ও `▶ Restarted paused gateway(s): …`।\n- systemd/launchd gateway তাদের manager দিয়ে থামে। (**systemd** Linux-এর, **launchd** Mac-এর service-চালু-রাখা ম্যানেজার।) হাতে চালানো `hermes gateway run` background-এ drain করে আবার চালু হয় (log: `logs/gateway-update-resume.log`)। (**Log** হলো কী কী ঘটেছে তার লেখা খাতা।)\n- update মাঝপথে মারা গেলে পরের `hermes` কমান্ডেই paused gateway আবার চালু হয়।\n- `--no-gateway-restart` flag দিলে কিছুই থামানো হয় না।\n\n### restart এত দেরি কেন?\n\nrestart **drain-first**: gateway নতুন turn (প্রশ্ন-উত্তরের পালা) নেয় না, চলমান কাজ শেষ হওয়ার অপেক্ষা করে। সর্বোচ্চ `agent.restart_after_turn_timeout` (default ৩০ মিনিট)। প্রতি ৩০ সেকেন্ডে updater জানায় কীসের অপেক্ষা করছে। `0` দিলে সঙ্গে সঙ্গে drain। `hermes gateway status` draining unit-ও দেখায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Gateway-owned session runtime-এ গেলে rollback নেই",
+      "markdown": "একবার নতুন gateway `state.db` (Hermes-এর কথোপকথনের ডাটাবেস ফাইল) লিখে ফেললে পুরনো release-এ ফেরা unsupported। `hermes update` এমন পুরনো target-এ যেতে অস্বীকার করে। manual rollback-এর ধাপ: `hermes gateway stop`, পুরনো release checkout, তারপর `/snapshot restore <id>` বা `hermes import <backup.zip>`। update-এর পরে তৈরি data snapshot-এ থাকে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ডিফল্টের বাইরের ব্যবহার: preview, branch, local কাজ\n\n```bash\nhermes update --check          # শুধু দেখো আপডেট আছে কিনা (code বদলায় না)\nhermes update --plan           # read-only: কোন service চলছে, কীভাবে restart হবে\nhermes update --branch release-candidate   # এক বারের জন্য অন্য branch\nhermes update --switch-branch  # feature branch থেকে লক্ষ্য branch-এ জোর করে যাও\nhermes update --no-backup      # pre-update backup ছাড়া\n```\n\n| Flag | কী করে | কখন লাগে |\n|---|---|---|\n| `--check` | শুধু দেখে নতুন কিছু আছে কিনা | আপডেট করার আগে উঁকি দিতে |\n| `--plan` | কিছু না বদলিয়ে পরিকল্পনা দেখায় | দুশ্চিন্তা থাকলে, বিশেষ করে bot চালু থাকলে |\n| `--branch X` | এক বারের জন্য `X` branch ব্যবহার করে | বিশেষ পরীক্ষামূলক সংস্করণ চাইলে |\n| `--switch-branch` | feature branch ছেড়ে লক্ষ্য branch-এ যায় | নিজের কাজের branch-এ আটকে থাকলে |\n| `--no-backup` | আগে থেকে কপি রাখে না | তাড়া আছে আর ঝুঁকি বোঝো। সাধারণত ব্যবহার করো না |\n\n### তোমার নিজের কাজের কী হয়?\n\nধরো তুমি Hermes-এর code-এ নিজে কিছু বদলেছ। update সেগুলো মুছে দিলে খারাপ, তাই সে সাবধান থাকে।\n\n- **uncommitted কাজ** (এখনো commit/সেভ-পয়েন্টে না তোলা বদল): terminal update সেগুলো **stash** করে (সরিয়ে একটা ড্রয়ারে রাখে), pull করে (নতুন code টেনে আনে), তারপর ফেরত দেবে কিনা জিজ্ঞেস করে। non-terminal update (desktop বোতাম, gateway `/update`)-এর জন্য `updates.non_interactive_local_changes`: `stash` (default, নিজে ফেরত বসে) বা `discard` (ফেলে দেয়)।\n- **feature branch-এ বসে থাকলে:** tree পরিষ্কার হলে লক্ষ্য branch-এ সরে যায়। dirty (অসংরক্ষিত বদল আছে) হলে কিছুই ছোঁয় না, **SKIPPED** দেখায়। `updates.parked_branch_strategy: update_in_place` দিলে branch-এই থেকে `origin/main` merge করে।\n- **`main`-এ নিজের commit থাকলে:** সেগুলো `origin/main`-এ reset হয়, মানে মুছে যায়। তবে পুরনো HEAD সেভ থাকে `refs/hermes-update-backups/diverged-main-<stamp>-<sha>`-এ (প্রতি ধরনে ১০টা নতুনতম, ৩০ দিনের কম পুরনো)। টেকসই patch-এর জন্য নিজের branch + `update_in_place`।\n- Desktop update `--keep-stash` দেয়: stash হয় কিন্তু ফেরত বসে না। হাতে ফেরাতে: `git stash list --format='%gd %H %s'`, `git stash apply stash@{0}` (stash-এর নাম `hermes-update-autostash`)।\n\n### রসিদ (receipts)\n\nপ্রতিটা run `~/.hermes/logs/update_receipts/`-এ রসিদ লেখে (শেষ ২০টা থাকে; `latest.json` নতুনতমে নির্দেশ করে): পরিকল্পনা, ধাপ, skip-এর কারণ, restart ফল, fleet version matrix (একাধিক gateway কোন সংস্করণে আছে তার ছক)। update শেষে প্রতিটা gateway-র চলমান code checkout-এর সাথে মেলানো হয়। পুরনো থাকলে restart কমান্ড ও `gateway_restart` follow-up দেয়, তবু exit code ০ (সফল-সংকেত)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Terminal কেটে গেলে? Windows-এ?\n\n- `hermes update` `SIGHUP` উপেক্ষা করে। (SIGHUP হলো \"terminal জানালা বন্ধ হয়েছে\" সংকেত। তাই তুমি জানালা বন্ধ করলেও update চলতে থাকে।) output যায় `~/.hermes/logs/update.log`-এ (`tail -f` দিয়ে লাইভ দেখো)। Ctrl-C ও SIGTERM (থামার অনুরোধ) তবু বাতিল করে। `screen`/`tmux` (জানালা টিকিয়ে রাখার টুল) লাগে না।\n- Windows ফাইল **lock** করে (চললে ফাইল ছুঁতে দেয় না), তাই dependency আলাদা generation-এ তৈরি হয়। চলমান process restart পর্যন্ত পুরনো import ধরে রাখে। সব Python/Hermes process জোর করে মেরো না। `--force`/`--force-venv` শুধু সামঞ্জস্যের জন্য, OS lock এড়ায় না। আগে `hermes update --plan`, update log ও `hermes pm status` দেখো।\n- Windows-এ updater script-কে antivirus quarantine করলে legacy forwarder সফল বলে না, ব্যর্থ হয়। install মেরামত করো, antivirus বন্ধ করো না।\n\n## Python ও Docker\n\n- Hermes চলে **Python 3.14**-এ। `pip install .`, `uv pip`, Homebrew বা PyPI build ৩.১১–৩.১৩-এ dependency ছাড়া install হয় এবং import হয় না, তাই **unsupported**। source installer বা packaged build ব্যবহার করো।\n- Docker image-এ `/etc/hermes/image-provenance.json` থাকে। `hermes update`, `hermes update --check` ও dashboard-এর Update বোতাম **exit code 2**-এ অস্বীকার করে এবং ছাপে `docker pull nousresearch/hermes-agent:latest`। Nix ও apt install-ও একই দরজায় আটকায়।\n- Nix: `nix flake update hermes-agent`, তারপর `nix profile upgrade hermes-agent`। rollback: `nix profile rollback`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Git ঝামেলা (সংক্ষেপে)\n\n| সমস্যা | কারণ | সমাধান |\n|---|---|---|\n| `not a git repository` / `.git` ভাঙা | `HEAD` হারানো/খালি, বা `.git` ফাইল অনুপস্থিত ডিরেক্টরিতে নির্দেশ করে | installer আবার চালাও। পুরনো checkout যায় `hermes-agent.broken-<timestamp>`-এ, নতুন clone (নতুন কপি নামানো) হয়। config/data থাকে। কাজ হলে `.broken-*` মুছো। কাস্টম জায়গায়: `bash -s -- --dir <path>` বা `-InstallDir <path>` |\n| `should_include_obj should only be called on existing objects` | Git 2.53+ ও `.promisor` marker-বিহীন pack | `hermes update` marker বসিয়ে একবার retry করে। installer rerun আগে বসায় |\n| `.git` অস্বাভাবিক বড় | treeless (`--filter=tree:0`) clone বারবার ডাউনলোড করত (এক রিপোর্টে ৪৩৪ GB) | `hermes update` একবার `git fetch --refetch --filter=blob:none origin` দিয়ে রূপান্তর করে (~১২০ MB) |\n\npartial clone (আংশিক কপি) **রেখে দাও**। `remote.origin.promisor` বা `partialclonefilter` সরালে `git gc` (git-এর ঝাড়ু-দেওয়া কমান্ড) `bad tree object` দিয়ে ব্যর্থ হয়। commit-graph (ইতিহাস দ্রুত খোঁজার সূচি) নিজে Hermes সামলায় (সর্বোচ্চ প্রতি ৬ ঘণ্টায় একবার, ১০ মিনিটে থামে)।\n\n## Update-এর পর যাচাই\n\n```bash\ngit status --short      # অপ্রত্যাশিত পরিবর্তন?\nhermes doctor\nhermes --version\nhermes gateway status\nhermes pm status\n```\n\n| কমান্ড | কী দেখায় |\n|---|---|\n| `git status --short` | কোন ফাইল বদলে আছে, সংক্ষেপে |\n| `hermes doctor` | Hermes-এর স্বাস্থ্য-পরীক্ষা |\n| `hermes --version` | এখন কোন সংস্করণ |\n| `hermes gateway status` | bot-এর সেতু চালু আছে কিনা |\n| `hermes pm status` | dependency-র অবস্থা |\n\n## Uninstall\n\n```bash\nhermes uninstall --dry-run   # আগে দেখে নাও কী মুছবে\nhermes uninstall\n```\n\n`--dry-run` মানে \"মহড়া\": আসলে কিছু মোছে না, শুধু দেখায় কী মুছত।\n\n- default-এ config ও data রেখে দেওয়া যায়। `--full` data-ও মোছে। `--data` শুধু user data মোছে। সব কটাই **destructive** (ফেরানো যায় না), তাই আগে backup।\n- MSIX/Store: Windows Settings → Apps। macOS: quit করে app Trash-এ। Docker/Nix/Termux: যে manager দিয়ে বসিয়েছ তা দিয়ে। (package মোছা আর data মোছা আলাদা।)\n- কম্পিউটার বদলাতে: `hermes backup` (credential থাকে; runtime, cache, browser profile বাদ) আর নতুন কম্পিউটারে `hermes import`। `hermes profile export` শুধু একটা profile, credential ছাড়া।\n\n**হাতে uninstall:** আগে service থামাও: `hermes gateway stop`, তারপর `systemctl --user disable hermes-gateway` (Linux) বা `launchctl remove ai.hermes.gateway` (macOS)। এরপর:\n\n```bash\nrm -f ~/.local/bin/hermes\nrm -rf /path/to/hermes-agent\nrm -rf ~/.hermes   # ঐচ্ছিক, পরে আবার install করতে চাইলে রেখে দাও\n```\n\n| কমান্ড | মানে | সাবধানতা |\n|---|---|---|\n| `rm -f ~/.local/bin/hermes` | `hermes` শর্টকাট মোছা | নিরাপদ |\n| `rm -rf /path/to/hermes-agent` | Hermes-এর code ফোল্ডার মোছা (`-r` ভেতরসহ, `-f` না জিজ্ঞেস করে) | পথ ঠিক আছে কিনা দুবার দেখো |\n| `rm -rf ~/.hermes` | তোমার সব config, স্মৃতি, চাবি মোছা | **ফেরানো যায় না**, আগে backup |"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "source checkout install-এ Hermes update করার সাধারণ কমান্ড কোনটা?",
+      "options": [
+        "`docker pull`",
+        "`hermes pm update`",
+        "`hermes update`",
+        "`pkg upgrade`"
+      ],
+      "answerIndex": 2,
+      "explanation": "`hermes update` managed source checkout-এর জন্য। `hermes pm update` maintainer-এর কমান্ড, application updater না।"
+    },
+    {
+      "question": "Docker image-এ `hermes update` চালালে কী হয়?",
+      "options": [
+        "exit code 2-এ অস্বীকার করে ও `docker pull nousresearch/hermes-agent:latest` ছাপে",
+        "কম্পিউটার বন্ধ হয়",
+        "সব data মোছে",
+        "সফলভাবে update হয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Docker-এর বাক্স সিল করা। ভেতরে বদল না করে নতুন image আনতে হয়, তাই `hermes update` ইচ্ছা করেই থামে।"
+    },
+    {
+      "question": "update শুরুর আগে snapshot-এ কী কী সেভ হয়?",
+      "options": [
+        "কিছুই না",
+        "শুধু ছবি",
+        "pairing data, cron job, `config.yaml`, `.env`, `auth.json`",
+        "পুরো ইন্টারনেট"
+      ],
+      "answerIndex": 2,
+      "explanation": "পরীক্ষার আগে খাতার ফটোকপির মতো। `state-snapshots/`-এ রাখা হয়, ফলে ভুল হলে ফেরা যায়।"
+    },
+    {
+      "question": "`hermes update --check` কী করে?",
+      "options": [
+        "জোর করে update করে",
+        "Hermes মুছে দেয়",
+        "gateway restart করে",
+        "কিছু না বদলিয়ে শুধু দেখে আপডেট আছে কিনা"
+      ],
+      "answerIndex": 3,
+      "explanation": "`--check` শুধু উঁকি দেয়, code বদলায় না। বদলের আগে পরিকল্পনা চাইলে `--plan`।"
+    },
+    {
+      "question": "update-এর সময় gateway restart দেরি হলে সাধারণ কারণ কী?",
+      "options": [
+        "Windows",
+        "ইন্টারনেট নেই",
+        "restart drain-first: চলমান কাজ শেষ হওয়ার অপেক্ষা করে (default সর্বোচ্চ ৩০ মিনিট)",
+        "Docker চলছে"
+      ],
+      "answerIndex": 2,
+      "explanation": "দোকান বন্ধের আগে বর্তমান খদ্দেরদের বিদায় করার মতো। `agent.restart_after_turn_timeout`-এ সময় বদলানো যায়, `0` দিলে সঙ্গে সঙ্গে।"
+    },
+    {
+      "question": "`main` branch-এ তোমার নিজের commit থাকলে update-এ কী হয়?",
+      "options": [
+        "সেগুলো `origin/main`-এ reset হয়, তবে পুরনো HEAD `refs/hermes-update-backups/...`-এ সেভ থাকে",
+        "সব data মোছে",
+        "update বাতিল হয়",
+        "কিছুই হয় না"
+      ],
+      "answerIndex": 0,
+      "explanation": "তাই টেকসই বদলের জন্য নিজের আলাদা branch ব্যবহার করো আর `updates.parked_branch_strategy: update_in_place` দাও।"
+    },
+    {
+      "question": "passive update notice বন্ধ করার config কোনটা?",
+      "options": [
+        "`hermes doctor`",
+        "`hermes config set updates.check false`",
+        "`hermes uninstall`",
+        "`--no-backup`"
+      ],
+      "answerIndex": 1,
+      "explanation": "এতে শুধু নিজে থেকে আসা মনে-করানো বন্ধ হয়। `hermes update --check` ও `hermes update` তবু চলে।"
+    },
+    {
+      "question": "`pip install hermes-agent` সম্পর্কে docs কী বলে?",
+      "options": [
+        "unsupported, কারণ Python 3.11–3.13-এ dependency ছাড়া install হয় ও import হয় না; Hermes চলে Python 3.14-এ",
+        "শুধু Windows-এ চলে",
+        "Docker-এর সমতুল্য",
+        "সবচেয়ে ভালো পথ"
+      ],
+      "answerIndex": 0,
+      "explanation": "source installer বা packaged build ব্যবহার করো। pip/Homebrew/PyPI পথ অসমর্থিত।"
+    }
+  ],
+  "recap": [
+    "Update করার উপায় নির্ভর করে কীভাবে install করেছ তার ওপর: source install-এ `hermes update`, Docker-এ নতুন image, Nix/Termux-এ নিজস্ব manager।",
+    "`hermes update` আগে snapshot রাখে, code বদলায়, যাচাই করে (ব্যর্থ হলে auto-rollback), dependency আর gateway ঠিক করে।",
+    "Gateway update-এর সময় pause হয়ে bot কিছুক্ষণ offline থাকে; restart drain-first তাই দেরি হতে পারে।",
+    "`--check` আর `--plan` কিছু না বদলিয়ে দেখায়; নিজের uncommitted কাজ stash হয়, `main`-এর নিজের commit reset হয় (পুরনো HEAD সেভ থাকে)।",
+    "Update-এর পর `hermes doctor`, `hermes --version`, `hermes gateway status` দিয়ে যাচাই করো; uninstall আর `rm -rf ~/.hermes` ফেরানো যায় না, আগে backup।"
+  ]
+}

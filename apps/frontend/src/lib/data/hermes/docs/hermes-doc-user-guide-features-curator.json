@@ -1,0 +1,168 @@
+{
+  "contentId": "hermes-doc-user-guide-features-curator",
+  "title": "Curator",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/curator",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর নিজে-বানানো skill-এর জঞ্জাল Curator কীভাবে গোছায়, আর stale, archive, pin, lock, ledger, dry-run-এর মতো শব্দগুলো।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: লাইব্রেরির ঝাড়ুদার\n\nএকটা ছোট লাইব্রেরি। প্রতিদিন নতুন বই আসে। কিছু বই সবাই পড়ে, কিছু ১৪ দিন কেউ ছোঁয়নি, কিছু ৩০ দিন ধুলো জমছে। একজন **লাইব্রেরিয়ান** আছে। তার কাজ: ধুলো-জমা বইগুলো \"পুরনো\" তাকে সরানো, আর খুব পুরনো হলে **গুদাম ঘরে** রাখা। সে কিন্তু **কখনও বই ফেলে দেয় না**। গুদামে রাখে, যাতে দরকার হলে ফেরানো যায়। আর কিছু বই আছে যাতে সে হাতই দিতে পারে না (\"এটা আমার প্রিয়, ছুঁয়ো না\" স্টিকার)।\n\n**Curator = Hermes-এর লাইব্রেরিয়ান।** (Curator মানে যে জিনিস যত্ন করে গুছিয়ে রাখে।) Hermes নিজে কাজ শিখতে শিখতে অনেক **skill** (রেসিপি-কার্ড) বানায়। সময়ে সময়ে সেগুলো জমে জঞ্জাল হয়। Curator সেই skill-গুলো ট্র্যাক করে: কোনটা কতবার দেখা, ব্যবহার, patch (ছোট সংশোধন) হলো। অব্যবহৃত হলে `active → stale → archived` ধাপে নামায়। মাঝেমধ্যে একটা ছোট auxiliary-model review চালিয়ে skill একত্র করার (consolidation) বা patch করার প্রস্তাবও দেয়।\n\n**এটা না থাকলে কী সমস্যা?** skill-এর তাক ভরে যেত, পুরনো ও একই রকম কার্ডে ঠাসা, আর Hermes দরকারি কার্ড খুঁজে পেত না।\n\n**মূল আশ্বাস:** Curator কখনও **auto-delete করে না।** সবচেয়ে খারাপ ফল হলো `~/.hermes/skills/.archive/`-এ archive, যা ফেরানো যায়। hub-installed skill সবসময় ছাড়া। bundled built-in তখনই archive হতে পারে যদি `curator.prune_builtins: true` দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Skill** | একটা কাজ কীভাবে করতে হয় তার লেখা নির্দেশিকা (`SKILL.md`) | রেসিপি-কার্ড |\n| **Archive** | পুরনো জিনিস গুদামে সরিয়ে রাখা, মুছে ফেলা না | চিলেকোঠায় বাক্সবন্দি |\n| **Stale** | বাসি, অনেকদিন কেউ ব্যবহার করেনি | তাকে ধুলো জমা বই |\n| **Auxiliary model** | মূল chat-এর মগজ ছাড়া অন্য একটা (সাধারণত ছোট ও সস্তা) মগজ, সহায়ক কাজের জন্য | মূল শিক্ষকের সহকারী শিক্ষক |\n| **Consolidation** | একই রকম অনেকগুলো skill মিশিয়ে একটা বড় skill বানানো | তিনটা প্রায়-এক রেসিপি জুড়ে একটা কার্ড |\n| **Cron vs inactivity check** | **Cron** ঘড়ি ধরে চলে। **Inactivity check** দেখে \"তুমি এখন বসে আছ কিনা\" তারপর চলে | অ্যালার্ম বনাম \"কেউ ঘরে নেই দেখলে ঝাড়ু দাও\" |\n| **Fork / background** | মূল কাজের পাশে আলাদা একটা কপি পেছনে চালানো | মূল রান্নার পাশে আরেক চুলায় আলাদা পাত্র |\n| **Pin / Lock** | **Pin** মানে মোছা নিষেধ। **Lock** মানে agent কিছুই লিখতে পারবে না | \"ফেলো না\" স্টিকার বনাম \"ছুঁয়ো না\" তালা |\n| **Ledger** | কে কী বদলাল তার খাতা, শুধু যোগ হয়, মুছা হয় না | দোকানের হিসাবের খাতা |\n| **Telemetry** | ব্যবহারের পরিসংখ্যান (কতবার ব্যবহার হলো) | লাইব্রেরির ইস্যু-রেজিস্টার |\n| **Dry-run** | আসলে না করে শুধু দেখাও \"করলে কী হতো\" | জামা কেনার আগে ট্রায়াল রুমে পরা |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "অব্যবহৃত skill-এর জীবনচক্র: active থেকে stale, তারপর archived, আর ফেরানো যায়।",
+        "steps": [
+          {
+            "title": "active",
+            "body": "skill ব্যবহার হচ্ছে বা সম্প্রতি ব্যবহৃত। তাকের সামনের বই।"
+          },
+          {
+            "title": "stale (১৪ দিন অব্যবহৃত)",
+            "body": "`stale_after_days: 14` পেরোলে skill `stale` হয়। 'পুরনো' তাকে সরানো।"
+          },
+          {
+            "title": "archived (৩০ দিন অব্যবহৃত)",
+            "body": "`archive_after_days: 30` পেরোলে `~/.hermes/skills/.archive/`-এ যায়। মোছা হয় না।"
+          },
+          {
+            "title": "restore",
+            "body": "`hermes curator restore <skill-name>` দিয়ে আবার active। গুদাম থেকে ফেরত আনা।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন চলে?\n\nCurator **cron না**। এটা **inactivity check**। (Curator-কে ঘড়ি ধরে ডাকা হয় না। যখন সুযোগ বোঝা যায়, তখনই সে চলে।) চেক হয় CLI session শুরুতে, gateway housekeeping-এ (local Desktop-সহ), আর `hermes serve`-এর maintenance timer-এ। (**Gateway** হলো Hermes-কে মেসেজ app-এর সাথে জোড়ার দরজা। **Housekeeping** মানে ঘর গোছানোর ছোট কাজ।) চলতে **দুটো শর্ত একসাথে** লাগে:\n\n1. শেষ run-এর পর `interval_hours` (ডিফল্ট **১৬৮** = ৭ দিন) পেরিয়েছে।\n2. `min_idle_hours` (ডিফল্ট **২**) অলস সময় কেটেছে।\n\nবিস্তারিত: `hermes serve`/`hermes dashboard` প্রতি ঘণ্টায় timer চালায় (প্রথম poll ৯০ সেকেন্ড পরে; poll মানে \"এখন কি সময় হলো?\" দেখা)। turn চলাকালে Curator বাদ যায়। একই profile-এর messaging gateway চললে সে এই কাজ নেয়। Curator একটা background `AIAgent` fork চালায়, নিজস্ব prompt cache-সহ। চলমান কথোপকথন ছোঁয় না।\n\n**প্রথমবার:** সঙ্গে সঙ্গে চলে না। প্রথম পর্যবেক্ষণে `last_run_at` এখনকার সময়ে বসে, আসল run এক পূর্ণ interval পিছোয়। আগে দেখতে: `hermes curator run --dry-run`।\n\n## দুই ধাপ\n\n### ধাপ ১: নিয়মমাফিক পরিবর্তন (সবসময় চালু, LLM নেই)\n\nএটা শুধু সহজ নিয়ম, কোনো AI-র মগজ লাগে না:\n\n- `stale_after_days` (১৪) অব্যবহৃত → `stale`\n- `archive_after_days` (৩০) অব্যবহৃত → `.archive/`-এ\n- **pinned** skill ও যেকোনো cron job-এ উল্লিখিত skill (paused/disabled job-সহ) বাদ।\n- কখনও-ব্যবহৃত-হয়নি (`use_count == 0`) skill অন্তত `stale_after_days` বয়সী না হওয়া পর্যন্ত archive হয় না।\n\n### ধাপ ২: LLM consolidation (ডিফল্টে **বন্ধ**)\n\nএখানে AI-র মগজ লাগে, তাই খরচ আছে। `curator.consolidate: true` বা `hermes curator run --consolidate` দিয়ে চালু। পুরো sweep-এ (ঝাড়ু দেওয়া) সাধারণত **৫০–১০০ API call** (API call মানে মগজকে একবার ডেকে উত্তর নেওয়া)। fork রাখতে, patch করতে (`skill_manage`), class-level \"umbrella\" skill-এ মেশাতে (একটা ছাতার নিচে অনেক সমগোত্রীয়) বা archive করতে (`skill_manage action=delete` + `absorbed_into`) পারে। bundled built-in ও `skills.disabled`-এর skill তাকে দেখানোই হয় না। skill package (`references/`, `templates/`, `scripts/`, `assets/`) একক হিসেবে সামলাতে হয়, চ্যাপ্টা করা যায় না।\n\n## Config\n\n`config.yaml`-এর `curator:` অংশ। (**config.yaml** হলো Hermes-এর সেটিং-ফাইল, **YAML** তার লেখার নিয়ম: `নাম: মান`)\n\n```yaml\ncurator:\n  enabled: true\n  interval_hours: 168\n  min_idle_hours: 2\n  stale_after_days: 14\n  archive_after_days: 30\n  consolidate: false\n  prune_builtins: false\n```\n\n| key | মানে | কখন বদলাবে |\n|---|---|---|\n| `enabled` | Curator চালু কিনা। `false` দিলে পুরো বন্ধ | একদম না চাইলে |\n| `interval_hours` | দুই run-এর মাঝে ন্যূনতম সময় (১৬৮ ঘণ্টা = ৭ দিন) | আরও ঘন ঘন বা কম চাইলে |\n| `min_idle_hours` | কতক্ষণ বসে না থাকলে তবে চলবে (২) | কাজের মাঝে বিরক্ত না হতে চাইলে বাড়াও |\n| `stale_after_days` | কত দিনে `stale` | তাড়াতাড়ি বা দেরিতে বাসি করতে |\n| `archive_after_days` | কত দিনে archive | একই |\n| `consolidate` | LLM-ধাপ চালু কিনা (ডিফল্ট বন্ধ) | skill একত্র করাতে চাইলে |\n| `prune_builtins` | bundled built-in skill-ও archive হতে পারবে কিনা | সাধারণত `false` রাখো |\n\n**Aux model:** `auxiliary.curator`-এ `provider`, `model`, `timeout`। (**Provider** = যে কোম্পানি মগজ ভাড়া দেয়। **timeout** = সর্বোচ্চ অপেক্ষার সেকেন্ড।)\n\n```yaml\nauxiliary:\n  curator:\n    provider: openrouter\n    model: google/gemini-3-flash-preview\n    timeout: 600\n```\n\nডিফল্ট `provider: auto` মূল chat model ব্যবহার করে। `hermes model` বা dashboard-এর Models tab থেকেও সেট করা যায়। পুরনো `curator.auxiliary.{provider,model}` ব্লক deprecated (আর ব্যবহার কোরো না)।\n\n## CLI কমান্ড\n\n```bash\nhermes curator status            # শেষ run, সংখ্যা, pinned তালিকা, ৫টা সবচেয়ে কম-সাম্প্রতিক skill\nhermes curator run [--consolidate] [--background] [--dry-run]\nhermes curator pause | resume\nhermes curator pin <skill> | unpin <skill>\nhermes curator lock <skill> | unlock <skill>\nhermes curator adopt <skill> [--all-unmanaged] [--dry-run] [--yes]\nhermes curator list-unmanaged\nhermes curator archive <skill> | restore <skill> | list-archived\nhermes curator prune [--days N]\nhermes curator backup [--reason]\nhermes curator rollback [--list] [--id <ts>] [-y]\nhermes curator ledger [--skill] [--limit] [--compact]\nhermes curator rollback <entry-id>\nhermes curator purge [--days N] [--dry-run]\n```\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `status` | অবস্থার সারাংশ | প্রথমে কী হচ্ছে দেখতে |\n| `run --dry-run` | করলে কী হতো দেখায়, কিছু বদলায় না | প্রথমবার নিরাপদ পরীক্ষা |\n| `run --consolidate` | LLM-ধাপসহ চালায় | skill একত্র করাতে |\n| `pause` / `resume` | সাময়িক থামা / চালু | ছুটির সময় |\n| `pin` / `lock` | মোছা আটকায় / সব লেখা আটকায় | প্রিয় skill বাঁচাতে |\n| `adopt` | বাইরের skill Curator-এর তত্ত্বাবধানে আনে | পুরনো skill গোছাতে |\n| `archive` / `restore` | হাতে গুদামে রাখা / ফেরানো | ভুল হলে ফেরাতে |\n| `backup` / `rollback` | ছবি-কপি নেওয়া / আগের অবস্থায় ফেরা | পরিবর্তন ভুল হলে |\n| `ledger` | পরিবর্তনের খাতা দেখা | কে কী বদলাল জানতে |\n| `purge` | archive থেকে সত্যিই মোছা | জায়গা খালি করতে (সাবধানে) |\n\nএকই subcommand session-এর ভেতরে `/curator` হিসেবেও চলে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## \"Agent-created\" মানে কী?\n\nCurator শুধু সেই skill সামলায় যেটা:\n\n- `~/.hermes/skills/.bundled_manifest` ও `.hub/lock.json` কোনোটাতেই নেই, **এবং**\n- `.usage.json`-এ তার এন্ট্রিতে `created_by: \"agent\"` বা `agent_created: true`।\n\nমানে: Hermes নিজে বানিয়েছে, তুমি বা hub দাওনি। এই marker (চিহ্ন) বসায় শুধু **background review fork** (প্রায় প্রতি ১০ agent turn-এ; write origin `background_review`)। foreground-এ বানানো skill (`skill_manage create`, `/learn`) পায় `created_by: learn`। Curator এগুলো ছোঁয় না। হাতে লেখা skill-এ `created_by: null` বা field-ই নেই। `hermes curator status`-এ agent-created skill শূন্য হলে LLM ধাপ বাদ যায়।\n\n### Unmanaged skill \"দত্তক\" নেওয়া\n\n`status` unmanaged skill দেখায় (\"pre-dates marker\" ও \"foreground-created\" ভাগে)। `adopt` একই `created_by: agent` marker বসায় (inactivity ঘড়ি রিসেট করে না)। bundled, hub-installed, external ও protected built-in skill প্রত্যাখ্যাত। দত্তক skill archive হতে পারে।\n\n## Pin বনাম Lock\n\n| | **Pin** | **Lock** |\n|---|---|---|\n| কী আটকায় | Curator ও `skill_manage delete` দিয়ে **মোছা** | agent-এর **সব লেখা** (`skill_manage`, `write_file`/`patch`, terminal লেখা, `--yolo`-তেও) |\n| patch/edit | চলে | আটকায় |\n| পড়া/ব্যবহার | চলে | চলে |\n| সংরক্ষণ | `.usage.json`-এ `\"pinned\": true`; শুধু agent-created skill | `.usage.json`-এ `\"locked\": true`, প্রতি profile-এ |\n\nসহজ কথায়: Pin = \"ফেলো না, কিন্তু সংশোধন করতে পারো।\" Lock = \"ছুঁয়ো না, শুধু পড়ো।\"\n\nagent lock খুলতে পারে না। `.usage.json` নষ্ট হলে background pass প্রত্যাখ্যাত (fail closed, মানে সন্দেহ হলে কাজ বন্ধ), সাধারণ turn চলে। Desktop-এ: Capabilities → Skills → lock switch। Lock একটা policy check, sandbox না (sandbox মানে সম্পূর্ণ আলাদা বন্ধ বাক্স)। তোমার নিজের এডিট কখনও আটকায় না। উদাহরণ: `hermes -p work curator lock deploy-runbook` (`-p work` মানে `work` নামের profile-এ)।\n\ncron-এ উল্লিখিত skill pin ছাড়াই স্বয়ংক্রিয় সুরক্ষা পায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "docs-এ দুই রকম সংখ্যা",
+      "markdown": "docs পাতায় একটা সংখ্যার অমিল আছে, কিন্তু Hermes-এর source code-এ তার মীমাংসা মেলে। **আসল default: `stale_after_days: 14`, `archive_after_days: 30`।** প্রমাণ: repo-র `agent/curator.py`-এ `DEFAULT_STALE_AFTER_DAYS = 14`, `DEFAULT_ARCHIVE_AFTER_DAYS = 30`, আর `hermes_cli/config_defaults.py`-এর `curator` অংশেও একই (`stale_after_days: 14`, `archive_after_days: 30`)।\n\n| docs-এর কোথায় | কী লেখা |\n|---|---|\n| ধাপ ১ (Automatic transitions), prose | `stale_after_days` (14) অব্যবহৃত -> `stale`; `archive_after_days` (30) -> archive |\n| Configuration YAML reference | `stale_after_days: 14`, `archive_after_days: 30` |\n| CLI: `hermes curator prune [--days N]` | default `archive_after_days`, অর্থাৎ 30 |\n| \"agent-created\" ব্যাখ্যার পুরনো lifecycle bullet | `active` -> (30d unused) `stale` -> (90d unused) `archived` |\n\nঅর্থাৎ **14/30** সঠিক; পুরনো lifecycle লাইনের **30/90** code-এর সাথে মেলে না (ওটা সম্ভবত আগের সংস্করণের কথা)। তবু তোমার install-এর `config.yaml`-এ কেউ মান বদলে থাকতে পারে, তাই `curator.stale_after_days` ও `archive_after_days` একবার দেখে নিতে পারো।\n\nআলাদা সংখ্যা, গোলমাল কোরো না: `hermes curator purge --days 90` একটা এককালীন override-এর উদাহরণ (default নয়); আর \"adopt করা skill নতুন 90-দিনের জানালা পায় না\" বাক্যে 90 আছে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Backup, rollback ও ledger\n\n**কেন লাগে?** LLM consolidation skill মিশিয়ে ফেলে। ভুল হলে যেন আগের অবস্থায় ফেরা যায়।\n\n- consolidation pass-এর আগে tar.gz snapshot (ফোল্ডারের জিপ-করা ছবি): `~/.hermes/skills/.curator_backups/<utc-iso>/skills.tar.gz`। (`.archive/`, ledger, `.hub/`, backup নিজে বাদ।)\n- rollback করার আগে বর্তমান অবস্থার snapshot নেয় (tag: `pre-rollback to <target-id>`), তাই rollback-ও ফেরানো যায়।\n- শুধু-prune run-এ snapshot নেই; তার undo হলো `hermes curator restore`।\n- `curator.backup.enabled: true`, `keep: 2` (পুরনো snapshot ছাঁটা হয়, শেষ ২টা থাকে)।\n\n**Audit ledger:** append-only ফাইল `~/.hermes/skills/.curator_ledger.jsonl`। (Append-only মানে শুধু নতুন লাইন যোগ হয়, পুরনো কেউ বদলায় না।) প্রতি পরিবর্তনে actor (`curator`/`agent`/`user`), action (create, edit, patch, delete, write_file, remove_file, archive, restore, purge, rollback), প্রমাণ, এবং আগে/পরে `{path, sha256}` (sha256 হলো ফাইলের আঙুলের ছাপ)। blob থাকে `~/.hermes/.curator_backups/blobs/`-এ। একক-এন্ট্রি rollback শুধু সেই পরিবর্তনের ফাইল ফেরায়; safety capture লিখতে না পারলে ব্যর্থ হয়। ledger telemetry, gate না (বাধা না)। বন্ধ করতে `skills.ledger: false`; আকারসীমা `skills.ledger_max_bytes: 5242880` (৫ MB), `0` মানে অটো-রক্ষণাবেক্ষণ নেই।\n\n**Archive TTL:** `curator.archive_ttl_days: 180`; ডিফল্ট `0` = কখনও purge নয়। (TTL = কতদিন পরে মুছে যাবে।) purge শুধু স্পষ্ট কমান্ডে, blob আগে ledger-এ রেখে।\n\n**Telemetry:** `~/.hermes/skills/.usage.json`-এ প্রতি skill-এর `use_count`, `view_count`, `last_used_at`, `last_viewed_at`, `patch_count`, `last_patched_at`, `created_at`, `state`, `pinned`, `archived_at`। `view_count` বাড়ে `skill_view`-এ; `use_count` prompt লোডে; `patch_count` patch/edit/write_file/remove_file-এ। bundled ও hub skill বাদ।\n\n**Report:** প্রতি run `~/.hermes/logs/curator/<timestamp>/`-এ `run.json` (পূর্ণ) ও `REPORT.md` (সারাংশ) লেখে। candidate না থাকলে `Model: (not resolved)`, `Duration: 0s`, এটা error না। শেষে consolidation-এর rename map (`old-name → new-name`)।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "নিরাপদ অভ্যাস",
+      "markdown": "প্রথমবার `hermes curator run --dry-run` চালিয়ে দেখো কী হতো। যে skill কখনও বদলাতে দিতে চাও না তাতে `lock`, যেটা মুছতে চাও না তাতে `pin`। ভুল archive হলে `hermes curator restore <skill>`। disable করতে `curator.enabled: false` বা সাময়িক `pause`/`resume`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Curator কোন skill-গুলো সামলায়?",
+      "options": [
+        "সব skill, hub-এরও",
+        "শুধু bundled skill",
+        "শুধু agent নিজে (background review-এ) বানানো skill",
+        "শুধু তুমি হাতে লেখা skill"
+      ],
+      "answerIndex": 2,
+      "explanation": "hub, bundled আর হাতে লেখা skill Curator ছোঁয় না। শুধু `created_by: agent` marker-ওয়ালা।"
+    },
+    {
+      "question": "Curator-এর সবচেয়ে চরম পদক্ষেপ কী (ডিফল্টে)?",
+      "options": [
+        "`.archive/`-এ সরানো (ফেরানো যায়)",
+        "চিরতরে মুছে ফেলা",
+        "কম্পিউটার বন্ধ করা",
+        "Hermes uninstall"
+      ],
+      "answerIndex": 0,
+      "explanation": "Curator auto-delete করে না। purge শুধু স্পষ্ট কমান্ডে হয়।"
+    },
+    {
+      "question": "Curator কখন চলে?",
+      "options": [
+        "ঠিক প্রতি রাত ১২টায় (cron)",
+        "কখনো না",
+        "প্রতি message-এ",
+        "inactivity check: শেষ run-এর ৭ দিন পেরোলে এবং ২ ঘণ্টা অলস থাকলে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Curator cron না। `interval_hours` (১৬৮) ও `min_idle_hours` (২) দুটো শর্ত একসাথে লাগে।"
+    },
+    {
+      "question": "ডিফল্ট ধাপ ১-এ ১৪ দিন অব্যবহৃত skill-এর কী হয়?",
+      "options": ["archive হয়", "`stale` হয়", "মুছে যায়", "কিছুই না"],
+      "answerIndex": 1,
+      "explanation": "১৪ দিনে `stale`, ৩০ দিনে archive।"
+    },
+    {
+      "question": "LLM consolidation কীভাবে চালু হয়?",
+      "options": [
+        "নিজে নিজে সবসময়",
+        "`pin` দিয়ে",
+        "`curator.consolidate: true` বা `hermes curator run --consolidate` দিয়ে",
+        "`lock` দিয়ে"
+      ],
+      "answerIndex": 2,
+      "explanation": "ডিফল্টে বন্ধ, কারণ এতে ৫০–১০০ API call লাগে।"
+    },
+    {
+      "question": "Pin আর Lock-এর মূল পার্থক্য কী?",
+      "options": [
+        "Pin মোছা আটকায়, edit চলে; Lock agent-এর সব লেখা আটকায়",
+        "কোনো পার্থক্য নেই",
+        "Pin সব লেখা আটকায়",
+        "Lock শুধু পড়া আটকায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Pin = ফেলো না কিন্তু সংশোধন চলবে। Lock = ছুঁয়ো না, শুধু পড়া যায়।"
+    },
+    {
+      "question": "`/learn` দিয়ে বানানো skill-কে Curator কীভাবে দেখে?",
+      "options": [
+        "agent-created হিসেবে সামলায়",
+        "`created_by: learn`, তাই ছোঁয় না",
+        "মুছে ফেলে",
+        "bundled ভাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "foreground-এ বানানো skill `created_by: learn` পায়, Curator এগুলো ছোঁয় না।"
+    },
+    {
+      "question": "consolidation-এর পর ভুল মনে হলে কী করবে?",
+      "options": [
+        "কিছু করার নেই",
+        "`.hermes` মুছে ফেলা",
+        "Hermes নতুন করে install",
+        "`hermes curator rollback` (আগে ঘটা snapshot থেকে)"
+      ],
+      "answerIndex": 3,
+      "explanation": "consolidation-এর আগে tar.gz snapshot নেওয়া হয়, তাই rollback করা যায়।"
+    },
+    {
+      "question": "docs-এর একটা পুরনো lifecycle লাইনে 30d ও 90d লেখা, কিন্তু source code ও config reference অনুযায়ী stale/archive-এর আসল default কী?",
+      "options": [
+        "14 ও 30 দিন",
+        "30 ও 90 দিন",
+        "7 ও 14 দিন",
+        "কোনো default নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "`agent/curator.py`-এ `DEFAULT_STALE_AFTER_DAYS = 14` ও `DEFAULT_ARCHIVE_AFTER_DAYS = 30`; config YAML-ও তাই বলে। 30/90 শুধু একটা পুরনো লাইনে ছিল।"
+    }
+  ],
+  "recap": [
+    "Curator হলো Hermes-এর লাইব্রেরিয়ান: agent-এর বানানো skill-কে active → stale (১৪ দিন) → archived (৩০ দিন) করে।",
+    "সে কখনও auto-delete করে না; archive থেকে `hermes curator restore` দিয়ে ফেরানো যায়।",
+    "সে cron না, inactivity check: ৭ দিন ও ২ ঘণ্টা অলস শর্তে চলে।",
+    "ধাপ ২ (LLM consolidation) ডিফল্টে বন্ধ; প্রথমে `--dry-run` চালাও।",
+    "Pin মোছা আটকায়, Lock সব লেখা আটকায়; backup ও ledger দিয়ে সব পরিবর্তন ফেরানো যায়।"
+  ]
+}

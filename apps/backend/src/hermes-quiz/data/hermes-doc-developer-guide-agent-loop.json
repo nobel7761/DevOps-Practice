@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-developer-guide-agent-loop",
+  "questions": [
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q01",
+      "difficulty": "easy",
+      "question": "Agent Loop-এ **Iteration** মানে কী?",
+      "options": [
+        "পুরো আলাপের সব বার্তা",
+        "ঘোরার এক চক্কর",
+        "AI-র একটা tool-এর নাম",
+        "আলাপ থামানোর সংকেত"
+      ],
+      "correctIndex": 1,
+      "explanation": "Loop হলো একই কাজ বারবার ঘোরা, আর তার এক চক্করকে বলে iteration।",
+      "whyWrong": {
+        "0": "সব বার্তার নাম history।",
+        "2": "tool-এর নাম আলাদা জিনিস।",
+        "3": "থামানোর সংকেত হলো interrupt।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q02",
+      "difficulty": "easy",
+      "question": "Tool call মানে কী?",
+      "options": [
+        "AI নিজেই কমান্ড চালিয়ে ফল নিয়ে আসা",
+        "provider-এর server-এ পাঠানো একটা HTTP অনুরোধ",
+        "AI-র বলা 'এই tool-টা চালাও' অনুরোধ",
+        "tool চালানোর পর পাওয়া ফলের নকল কপি"
+      ],
+      "correctIndex": 2,
+      "explanation": "AI নিজে tool চালায় না, শুধু অনুরোধ করে। চালায় Hermes।",
+      "whyWrong": {
+        "0": "AI নিজে চালায় না, চালায় Hermes।",
+        "1": "সেটা API call, tool call নয়।",
+        "3": "ফল আসে `tool` role-এর message-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q03",
+      "difficulty": "easy",
+      "question": "`tool` role-এর message-এ কী থাকে?",
+      "options": [
+        "শুরুর নির্দেশ, মানে 'তুমি কে' বর্ণনা",
+        "ব্যবহারকারীর লেখা প্রশ্ন বা অনুরোধ",
+        "AI-র বলা সাধারণ text উত্তর ও `tool_calls`",
+        "tool চালানোর ফল (`tool_call_id` সহ)"
+      ],
+      "correctIndex": 3,
+      "explanation": "`tool_call_id` দিয়ে বোঝা যায় ফলটা কোন অনুরোধের উত্তর।",
+      "whyWrong": {
+        "0": "শুরুর নির্দেশ `system`-এর কাজ।",
+        "1": "ব্যবহারকারীর কথা `user` role-এ।",
+        "2": "AI-র উত্তর `assistant` role-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q04",
+      "difficulty": "easy",
+      "question": "Interrupt কী?",
+      "options": [
+        "মাঝপথে থামানোর সংকেত",
+        "সময়সীমা শেষ হলে নতুন provider ধরা",
+        "tool-এর আগে চলা একটা পাহারা-কোড",
+        "কাজ চলার সময় ছবির মতো তোলা অবস্থা"
+      ],
+      "correctIndex": 0,
+      "explanation": "নতুন user message, `/stop` command বা signal থেকে interrupt আসে এবং loop থেমে যায়।",
+      "whyWrong": {
+        "1": "নতুন provider ধরা fallback।",
+        "2": "আগে চলা পাহারা হলো hook।",
+        "3": "অবস্থার ছবি snapshot।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q05",
+      "difficulty": "easy",
+      "question": "Fallback মানে কী?",
+      "options": [
+        "পুরোনো আলাপ ছোট সারাংশ করা",
+        "একটা tool-কে সরাসরি বন্ধ করা",
+        "উত্তরের শুরুটা আগে বসিয়ে দেওয়া",
+        "ব্যাকআপ provider-এ চলে যাওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "মূল provider-এ সমস্যা হলে `fallback_providers` তালিকার পরেরটায় যাওয়াই fallback।",
+      "whyWrong": {
+        "0": "সারাংশ বানানো compression।",
+        "1": "tool বন্ধ করার সাথে যোগ নেই।",
+        "2": "শুরুটা বসানো prefill।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q06",
+      "difficulty": "easy",
+      "question": "Iteration budget কী কাজে লাগে?",
+      "options": [
+        "চক্করের সর্বোচ্চ সীমা বাঁধতে",
+        "AI কত লম্বা উত্তর দিতে পারবে তার সীমা",
+        "একসাথে কয়টা tool চলবে তার সীমা",
+        "একটা ফাইলে কত অক্ষর থাকবে তার সীমা"
+      ],
+      "correctIndex": 0,
+      "explanation": "AI ভুল করে অনন্ত ঘুরতে থাকলে টাকা পুড়ত। Budget সেই ঘোরা বাঁধে।",
+      "whyWrong": {
+        "1": "উত্তরের দৈর্ঘ্য budget-এর কাজ নয়।",
+        "2": "একসাথে চলা tool-এর সীমা এটা নয়।",
+        "3": "অক্ষর-সীমা context file-এর কথা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q07",
+      "difficulty": "easy",
+      "question": "Context window কী?",
+      "options": [
+        "system prompt-এর নামের আরেকটা রূপ",
+        "AI-র একবারে মনে রাখার সীমা",
+        "tool call-এর ফল রাখার ডাটাবেস-টেবিল",
+        "শুধু তোমার লেখা শেষ বার্তাটা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Context window হলো টেবিলের আকার। ভরে এলে compression দিয়ে ছোট করা হয়।",
+      "whyWrong": {
+        "0": "System prompt আলাদা জিনিস।",
+        "2": "ডাটাবেস SQLite।",
+        "3": "শুধু শেষ বার্তা নয়, পুরো আলাপ।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q08",
+      "difficulty": "medium",
+      "question": "Agent Loop কখন শেষ হয়?",
+      "options": [
+        "AI একটা tool-এর অনুরোধ করলে",
+        "প্রথম API call-এর উত্তর এলেই",
+        "AI শুধু text উত্তর দিলে",
+        "tool-এর ফল user-কে দেখানো হলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Tool চাইলে চালিয়ে আবার ডাকা হয়। যখন শুধু text আসে, তখন save করে ফলাফল ফেরত দেওয়া হয়।",
+      "whyWrong": {
+        "0": "Tool চাইলে বরং loop চলতেই থাকে।",
+        "1": "প্রথম উত্তরে tool call থাকলে শেষ হয় না।",
+        "3": "ফল দেখানো মানে আবার AI-কে ডাকা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q09",
+      "difficulty": "medium",
+      "question": "`chat(message)` আর `run_conversation()`-এর পার্থক্য কী?",
+      "options": [
+        "`chat()` messages ও usage stats সহ dict দেয়",
+        "`chat()` loop না চালিয়ে শুধু system prompt বানায়",
+        "`chat()` শুধু `final_response` ফেরত দেয়",
+        "`chat()` শুধু Gateway থেকে ডাকা যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`chat()` পাতলা wrapper। আসল দরজা `run_conversation()`, সে messages, metadata, usage stats সহ dict দেয়।",
+      "whyWrong": {
+        "0": "ওটা `run_conversation()`-এর কাজ।",
+        "1": "`chat()` ভেতরে loop-ই চালায়।",
+        "3": "`chat()` যেকোনো জায়গা থেকে ডাকা যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q10",
+      "difficulty": "medium",
+      "question": "API mode বাছার ক্রমে সবার আগে কী দেখা হয়?",
+      "options": [
+        "provider-এর নাম, যেমন `anthropic`",
+        "স্পষ্ট `api_mode` argument",
+        "base URL, যেমন `api.anthropic.com`",
+        "default `chat_completions`"
+      ],
+      "correctIndex": 1,
+      "explanation": "ক্রম: স্পষ্ট `api_mode` argument → provider → base URL → default `chat_completions`। প্রথম যেটা মেলে।",
+      "whyWrong": {
+        "0": "Provider দ্বিতীয় ধাপ।",
+        "2": "base URL তৃতীয় ধাপ।",
+        "3": "default সবার শেষ ধাপ।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q11",
+      "difficulty": "medium",
+      "question": "`IterationBudget`-এর default কত, আর কীভাবে বদলানো যায়?",
+      "options": [
+        "৫০০ iteration, `agent.max_turns` দিয়ে",
+        "৫০ iteration, `agent.max_turns` দিয়ে",
+        "৫০০ iteration, `delegation.max_iterations` দিয়ে",
+        "২০ iteration, `compression.protect_last_n` দিয়ে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Default ৫০০, বদলাতে `agent.max_turns`। Subagent-এর আলাদা budget আছে, `delegation.max_iterations` (default ২৫০)।",
+      "whyWrong": {
+        "1": "৫০ IterationBudget-এর default নয়; subagent-এর আলাদা default ২৫০।",
+        "2": "`delegation.max_iterations` subagent-এর জন্য।",
+        "3": "২০ ও `compression.protect_last_n` compression-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q12",
+      "difficulty": "medium",
+      "question": "Message-এর পালা-বদলের নিয়ম এত কড়া কেন?",
+      "options": [
+        "tool-এর ফল যেন অনেক দ্রুত ফিরে আসে সেজন্য",
+        "বার্তার আকার যেন সবসময় ছোট থাকে সেজন্য",
+        "memory ফাইল যেন কখনো নষ্ট না হয় সেজন্য",
+        "provider প্রশ্ন-উত্তর ক্রমে ভাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "ক্রম ভাঙলে provider-এর কাছে বার্তা অর্থহীন লাগে, তাই সে ফিরিয়ে দেয়।",
+      "whyWrong": {
+        "0": "গতির সাথে ক্রমের সম্পর্ক নেই।",
+        "1": "আকার ক্রমের কারণ নয়।",
+        "2": "Memory ফাইলের কথা এখানে আসে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q13",
+      "difficulty": "medium",
+      "question": "একসাথে একাধিক tool call এলে কীভাবে চলে এবং ফল কোন ক্রমে বসে?",
+      "options": [
+        "`ThreadPoolExecutor`-এ একসাথে, মূল ক্রমে",
+        "ক্রমানুসারে একটা একটা করে, যার আগে শেষ সে আগে",
+        "একসাথে, যে আগে শেষ হয় সে আগে বসে",
+        "main thread-এ একটা, বাকিগুলো ফেলে দেওয়া হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "ফল আবার বসে মূল call-এর ক্রমে, যার যত আগেই শেষ হোক।",
+      "whyWrong": {
+        "1": "ক্রমানুসারে চলে শুধু `clarify`-র মতো interactive tool থাকলে।",
+        "2": "ফল শেষ হওয়ার ক্রমে বসে না।",
+        "3": "কোনো call ফেলা হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q14",
+      "difficulty": "medium",
+      "question": "Compression কখন শুরু হয়?",
+      "options": [
+        "Preflight-এ ৮৫% পেরোলে, Gateway-তে ৫০%-এ",
+        "শুধু আলাপ শেষ হওয়ার পর, সব জায়গায় ১০০%-এ",
+        "প্রতিটা turn-এর পর, ফাঁকা থাকুক বা ভরা",
+        "Preflight-এ ৫০%, Gateway-তে ৮৫%-এ"
+      ],
+      "correctIndex": 3,
+      "explanation": "Preflight compression API call-এর আগে ৫০%-এ। Gateway auto-compression turn-এর মাঝে ৮৫%-এ।",
+      "whyWrong": {
+        "0": "সংখ্যা দুটো উল্টে গেছে।",
+        "1": "১০০%-এ গেলে দেরি হয়ে যায়।",
+        "2": "প্রতি turn-এ compression হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q15",
+      "difficulty": "hard",
+      "question": "AI-র উত্তর আসার মাঝখানে তুমি 'থামো' বললে আধখানা উত্তরের কী হয়?",
+      "options": [
+        "আধখানা উত্তর history-তে জমা থাকে",
+        "আধখানা উত্তর memory ফাইলে লেখা হয়",
+        "পুরোটা ফেলে দেওয়া হয়",
+        "পরের পালায় আধখানা উত্তর আবার পাঠানো হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "আধখানা উত্তর ঢুকলে পালা-বদলের নিয়ম ভাঙত। তাই API thread ছেড়ে দিয়ে তার response ফেলে দেওয়া হয়।",
+      "whyWrong": {
+        "0": "জমা থাকলে alternation ভাঙত।",
+        "1": "Memory flush অন্য কাজ, আধখানা উত্তর লেখে না।",
+        "3": "আধখানা উত্তর আর ব্যবহার হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q16",
+      "difficulty": "hard",
+      "question": "একটা call-এ `clarify` আর আরও দুটো tool আছে। কীভাবে চলবে?",
+      "options": [
+        "`ThreadPoolExecutor`-এ তিনটা একসাথে",
+        "ক্রমানুসারে (sequential)",
+        "`clarify` বাদ পড়ে, বাকি দুটো একসাথে",
+        "main thread-এ শুধু `clarify` আর বাকিগুলো ফেলা"
+      ],
+      "correctIndex": 1,
+      "explanation": "`clarify`-র মতো interactive tool তোমাকে প্রশ্ন করে, তাই একসাথে না চালিয়ে ক্রমানুসারে চালানো হয়।",
+      "whyWrong": {
+        "0": "Interactive tool থাকলে একসাথে চলে না।",
+        "2": "`clarify` বাদ পড়ে না।",
+        "3": "কোনো tool ফেলে দেওয়া হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q17",
+      "difficulty": "hard",
+      "question": "`todo` tool-এর call কোথায় সামলানো হয়?",
+      "options": [
+        "`tools/registry.py`-র handler খুঁজে",
+        "`agent/tool_executor.py`-এ ধরা হয়",
+        "`agent/context_compressor.py`-এ সারাংশ করে",
+        "`hermes_state.py`-তে SQLite থেকে পড়ে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`todo`, `memory`, `session_search`, `delegate_task` agent-এর নিজের অবস্থা লাগে, তাই `handle_function_call()`-এর আগেই ধরা হয়।",
+      "whyWrong": {
+        "0": "এগুলো registry-র সাধারণ পথে যায় না।",
+        "2": "compressor সারাংশের কাজ করে।",
+        "3": "SQLite state ফাইলের সাথে tool-ধরা আলাদা।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q18",
+      "difficulty": "hard",
+      "question": "Provider বারবার 429 দিচ্ছে। Hermes কী করবে?",
+      "options": [
+        "`IterationBudget` শূন্য করে loop থামাবে",
+        "history মুছে একই provider-এ আবার পাঠাবে",
+        "পরের provider না খুঁজে সরাসরি compression চালাবে",
+        "`fallback_providers`-এর পরেরটা চেষ্টা করবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "429, 5xx বা 401/403 হলে তালিকা ক্রমে চেষ্টা হয়; সফল হলে নতুন provider-এই কথা চলে।",
+      "whyWrong": {
+        "0": "Budget থামা আলাদা কারণে হয়।",
+        "1": "history মোছার কথা নেই।",
+        "2": "Compression fallback নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q19",
+      "difficulty": "hard",
+      "question": "Compression চলার সময় কোন জিনিসটা নিরাপদ থাকে?",
+      "options": [
+        "সবচেয়ে পুরোনো বার্তাগুলো, বাকি সব সারাংশ",
+        "শুধু `system` role-এর বার্তা, বাকি সব বাদ",
+        "শেষ N message আর tool call-result জোড়া",
+        "মাঝের turn-গুলো, শেষেরগুলো সারাংশ"
+      ],
+      "correctIndex": 2,
+      "explanation": "শেষ N message অক্ষত থাকে (`compression.protect_last_n`, default ২০) এবং tool call ও result-এর জোড়া কখনো ভাঙে না।",
+      "whyWrong": {
+        "0": "সারাংশ হয় মাঝের turn।",
+        "1": "শুধু system role রাখার নিয়ম নেই।",
+        "3": "মাঝেরগুলোই সারাংশ হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-developer-guide-agent-loop-q20",
+      "difficulty": "hard",
+      "question": "Dangerous command হলে ব্যবহারকারীর অনুমতি কোন ধাপে চাওয়া হয়?",
+      "options": [
+        "handler চালানোর আগে, approval check-এ",
+        "handler চালানোর পরে, `post_tool_call` hook-এ",
+        "registry-তে handler খোঁজার আগে",
+        "`tool` message যোগ হওয়ার পরে"
+      ],
+      "correctIndex": 0,
+      "explanation": "ক্রম: handler খোঁজা → `pre_tool_call` hook → approval check (`approval_callback`) → handler চালানো → `post_tool_call` → `tool` message।",
+      "whyWrong": {
+        "1": "চালানোর পর অনুমতি চাইলে দেরি হয়ে যায়।",
+        "2": "handler খোঁজার সময় কমান্ড জানা থাকে না।",
+        "3": "message যোগ সবার শেষ ধাপ।"
+      }
+    }
+  ]
+}

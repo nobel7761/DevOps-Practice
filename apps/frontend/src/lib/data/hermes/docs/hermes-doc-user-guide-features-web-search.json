@@ -1,0 +1,198 @@
+{
+  "contentId": "hermes-doc-user-guide-features-web-search",
+  "title": "Web Search & Extract",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/web-search",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে web_search ও web_extract কী, backend (Firecrawl, SearXNG...) কীভাবে বাছতে হয়, আর API key, keyless, cache, rate limit, self-hosted-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nHermes একটা **গ্রন্থাগারিক** (librarian)। তার দুটো কাজ আছে:\n\n1. **খোঁজা (`web_search`):** \"এই বিষয়ে কোন কোন বই আছে?\" বলে তালিকা এনে দেওয়া।\n2. **পড়া (`web_extract`):** একটা নির্দিষ্ট বই খুলে তার লেখাটা সাজিয়ে সামনে ধরা।\n\nকিন্তু গ্রন্থাগারিক নিজে সব জানে না, তাকে **একটা সূচিপত্রের দোকান** (backend) বেছে নিতে হয়: Firecrawl, SearXNG, Brave, Tavily... কেউ শুধু খুঁজতে পারে, কেউ খুঁজতে আর পড়তে দুটোই। আর যদি তুমি কোনো দোকানই না ঠিক করো? তখন Hermes **চার দোকানের বিনামূল্যের কাউন্টারে** পালা করে যায়!\n\n**এটা না থাকলে কী সমস্যা?** Hermes-এর মগজ (LLM) শুধু আগে শেখা তথ্য জানে। আজকের খবর বা নতুন library-র নিয়ম সে জানে না। ওয়েবে খুঁজতে ও পড়তে পারলে তবেই সে নতুন তথ্য আনতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **`web_search`** | ওয়েবে খোঁজার tool। প্রশ্ন (query) দিলে লিংকের তালিকা দেয় | লাইব্রেরির সূচিপত্র খোঁজা |\n| **`web_extract`** | একটা নির্দিষ্ট ওয়েব পাতার লেখা তুলে এনে সাজিয়ে দেওয়ার tool | নির্দিষ্ট বই খুলে পড়া |\n| **Tool** | Hermes-এর একটা ছোট কাজ করার ক্ষমতা | রান্নাঘরের যন্ত্র |\n| **Backend** | পেছনের সেবা, যে আসলে খোঁজার কাজটা করে (Firecrawl, SearXNG...) | সূচিপত্রের দোকান |\n| **Provider** | যে কোম্পানি বা প্রকল্প সেই সেবা দেয়। এখানে backend আর provider প্রায় একই | দোকানের ব্র্যান্ড |\n| **API / API key** | **API** = প্রোগ্রামে প্রোগ্রামে কথা বলার জানালা। **API key** = ব্যবহারের গোপন চাবি | সদস্য-কার্ড |\n| **Environment variable (`env var`) / `.env`** | `নাম=মান` আকারে রাখা গোপন সেটিং; `.env` ফাইলে থাকে | তালা-দেওয়া ডায়েরি |\n| **Keyless** | চাবি (key) ছাড়াই ব্যবহারযোগ্য | বিনা টিকিটের খোলা মেলা |\n| **Rate limit** | 'এত সময়ে এত বারের বেশি ডাকা যাবে না' সীমা | লাইনে ঢোকার সীমা |\n| **Self-hosted** | নিজের কম্পিউটার বা সার্ভারে নিজে চালানো | নিজের বাড়ির রান্নাঘর |\n| **Docker / container** | একটা বন্ধ বাক্সে প্রোগ্রাম চালানোর ব্যবস্থা | টিফিন বাক্স, ভেতরে সব সাজানো |\n| **Markdown** | সাধারণ লেখার ফরম্যাট (`#` দিয়ে শিরোনাম) | সাদামাটা নোট |\n| **Cache** | একবার আনা জিনিস জমিয়ে রাখা, যাতে দ্বিতীয়বার দ্রুত পাওয়া যায় | খাতায় লিখে রাখা ফোন নম্বর |\n| **Timeout** | 'এত সেকেন্ডে না হলে হাল ছাড়ো' সীমা | রান্নার টাইমার |\n| **JSON** | যন্ত্রের পড়ার উপযোগী তথ্য-লেখার ধরন | ছাপা ফর্ম |\n| **Config / YAML** | **Config** = সেটিং-ফাইল (`config.yaml`)। **YAML** = `নাম: মান` আকারে লেখার নিয়ম | ফর্মের ঘর পূরণ |\n| **Prompt injection** | ওয়েব পাতার লেখায় লুকানো ক্ষতিকর নির্দেশ | জাল চিঠি |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "একটা backend বাছাই web_search আর web_extract দুটোকেই চালায়।",
+        "nodes": [
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "s",
+            "kind": "server",
+            "label": "web_search",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "e",
+            "kind": "server",
+            "label": "web_extract",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "b",
+            "kind": "external",
+            "label": "Search backend",
+            "x": 440,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "s",
+            "label": "খোঁজো"
+          },
+          {
+            "from": "a",
+            "to": "e",
+            "label": "পড়ো"
+          },
+          {
+            "from": "s",
+            "to": "b",
+            "label": "query"
+          },
+          {
+            "from": "e",
+            "to": "b",
+            "label": "URL"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "web-backend"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Backend-গুলো\n\nএকটা backend বাছাই দুটো tool-কেই চালায়। বাছতে `hermes tools` বা `config.yaml` ব্যবহার করো।\n\n(কলামের নাম: **Env var** = কোন গোপন নাম লাগবে। **Search/Extract** = খোঁজা ও পড়ার ক্ষমতা আছে কিনা। **খরচ** = বিনামূল্যে নাকি টাকা লাগে। **credit** = কেনা পয়েন্ট। **ঐচ্ছিক** = দিলে ভালো, না দিলেও চলে।)\n\n| Provider | Env var | Search | Extract | খরচ |\n|---|---|---|---|---|\n| **Firecrawl** (default) | `FIRECRAWL_API_KEY` (বাছা থাকলে ঐচ্ছিক) | হ্যাঁ | হ্যাঁ | মাসে 500 credit; keyless cloud |\n| **SearXNG** | `SEARXNG_URL` | হ্যাঁ | না | বিনামূল্যে, self-hosted |\n| **Brave Search (free)** | `BRAVE_SEARCH_API_KEY` | হ্যাঁ | না | মাসে 2,000 query |\n| **DDGS (DuckDuckGo)** | নেই | হ্যাঁ | না | বিনামূল্যে, `ddgs` package |\n| **Exa** | `EXA_API_KEY` (ঐচ্ছিক) | হ্যাঁ | হ্যাঁ | key সহ মাসে 1,000 search |\n| **Parallel** | `PARALLEL_API_KEY` (ঐচ্ছিক) | হ্যাঁ | হ্যাঁ | keyless ring-এর সদস্য; key থাকলে paid |\n| **Tavily** | `TAVILY_API_KEY` (ঐচ্ছিক) | হ্যাঁ | হ্যাঁ | বাছলে keyless |\n| **Perplexity** | `PERPLEXITY_API_KEY` | হ্যাঁ | হ্যাঁ (snippet) | paid, প্রতি request |\n| **Keenable** | `KEENABLE_API_KEY` (ঐচ্ছিক) | হ্যাঁ | হ্যাঁ | keyless ring-এর সদস্য |\n| **xAI (Grok)** | `XAI_API_KEY` বা `hermes auth add xai-oauth` | হ্যাঁ | না | paid |\n| **OpenAI Native (Codex)** | `hermes auth add openai-codex` | হ্যাঁ | না | ChatGPT/Codex subscription লাগে |\n\n**Search-only:** Brave, DDGS, xAI, OpenAI Native। `web_extract`-এর জন্য এদের সাথে একটা extract-সক্ষম backend জোড়া দাও।\n\n### Keyless ring: কিছু না থাকলেও চলে\n\n**Ring** মানে বৃত্ত। চারটা কোম্পানির বিনামূল্যের কাউন্টার এক বৃত্তে সাজানো, পালা করে একজনের পর একজনের কাছে যাওয়া। **কেন লাগে?** নতুন ব্যবহারকারী কোনো account না খুলেই যাতে ওয়েব-খোঁজা চালাতে পারে।\n\n(401, 402, 403, 5xx হলো ওয়েব সার্ভারের ব্যর্থতার সংখ্যা-কোড: যথাক্রমে 'পরিচয় নেই', 'টাকা বাকি', 'নিষেধ', 'সার্ভারের ভুল'। **Round-robin** = পালা করে। **Process** = চলমান প্রোগ্রাম।)\nকোনো credential না থাকলে request **Exa, Parallel, Firecrawl আর Keenable**-এর বিনামূল্যের স্তরে পালা করে (round-robin) যায়। Rate-limit হলে (বা 401, 402, 403, 5xx হলে) পরের vendor-এ আবার চেষ্টা হয়, যতক্ষণ না একটা সফল হয় বা সবাই ব্যর্থ। সাইন-আপ লাগে না; request-এ user-এর পরিচয় যায় না, শুধু প্রতি process-এ র‍্যান্ডম session ID যা restart-এ বদলায়।\n\n- কোনো configured backend বা API key থাকলে সেটাই ring-এর ওপরে অগ্রাধিকার পায়।\n- বন্ধ করতে `web.keyless_fallback: false`। তখন credential না থাকলে provider ঠিক না করা পর্যন্ত web tool পাওয়া যায় না।\n- Exa, Parallel, Keenable-এর জন্য `hermes tools`-এ Free (keyless) আর Paid (API key) দুই সারি দেখায়। `web.provider_tier.<name>: free|paid` হিসেবে জমা হয়। সেট না থাকলে auto (key থাকলে paid, নইলে ring)। Key ছাড়া Paid বাছলে নিঃশব্দে free-তে না নেমে error দেয়।\n- **Nous subscriber** হলে Tool Gateway দিয়ে API key ছাড়াই web tool পাওয়া যায়: নতুন install-এ `hermes setup --portal`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `web_extract` লম্বা পাতা কীভাবে সামলায়\n\n**সমস্যা:** একটা ওয়েব পাতা অনেক বড় হতে পারে, আর AI-র পড়ার টেবিল (context) ছোট। তাই Hermes অক্ষর গুনে কেটে ছোট করে। এখানে **LLM দিয়ে সারাংশ করা হয় না**। একটা নির্ধারিত অক্ষর-budget আছে।\n\n- **Budget-এর মধ্যে** (default **15,000** অক্ষর): পুরো markdown ফেরত আসে।\n- **Budget-এর বেশি:** শুরুর প্রায় 75% আর শেষের প্রায় 25% (markdown লাইনের সীমানায় কাটা) ফেরত আসে, শেষে `[TRUNCATED]` footer সহ। পুরো পরিষ্কার লেখা ডিস্কে সেভ হয়; footer-এ ফাইলের পথ আর মাঝখানটা পড়ার `read_file` call দেওয়া থাকে।\n- সংরক্ষিত লেখা সর্বোচ্চ 2 MB (2,000,000 অক্ষর) পর্যন্ত।\n- Config: `web.extract_char_limit` (default `15000`, 2,000 থেকে 500,000-এর মধ্যে ধরা হয়)। Agent চাইলে call-প্রতি `char_limit` দিতে পারে।\n- Timeout: `web.extract_timeout` (default `120` সেকেন্ড; `0` বন্ধ)। Timeout হলে সেই URL-এর জন্য আলাদা error।\n- **`char_limit`** মানে কত অক্ষর আনব তার সীমা। **Footer** মানে লেখার শেষের নোট। **Disk** মানে কম্পিউটারের স্থায়ী জায়গা।\n- JavaScript-ভারী পাতার জন্য (যে পাতা browser-এ চলার সময় নিজে নিজে ভরে ওঠে)  `browser_exec` (`new_tab(url)`, `wait_for_load()`, তারপর `page_info()` বা `js()`)।\n\n## Cache: একই কাজ দুবার নয়\n\n**কেন লাগে?** একই প্রশ্ন বারবার করলে সময় ও খরচ (credit) নষ্ট হয়। আগের উত্তর মনে রাখলে দ্রুত ও সস্তা।\n\n(**Coalescing** মানে একই সময়ে আসা একই কাজ মিলিয়ে একবারই করা। **Blocklist** মানে নিষিদ্ধ তালিকা। **localhost** মানে 'তোমার নিজের কম্পিউটার'। **LAN / private IP** মানে ঘরের ভেতরের নেটওয়ার্কের ঠিকানা। **TTL** মানে কত সময় পরে পুরনো হয়ে যাবে।)\n\n- **Search:** process-এর memory-তে; বড়-ছোট হাত আর ফাঁকা জায়গা উপেক্ষা করে মেলানো, provider ধরে।\n- **Extract:** পুরো লেখা `~/.hermes/cache/web/`-এ, CLI, gateway, cron আর subagent সবাই ভাগ করে নেয়।\n- একই সময়ে একই search এলে একটা backend request-ই হয় (coalescing)। Limit 10, 20, 50 বা 100-তে উঁচু করে নেওয়া হয়, কিন্তু প্রত্যেক caller তার চাওয়া সংখ্যাই পায়।\n- শুধু **সফল** ফল cache হয়; ব্যর্থতা সবসময় আবার চেষ্টা হয়।\n- `security.website_blocklist`-এ মেলা URL cache থেকে কখনো দেওয়া হয় না।\n- **কখনো cache হয় না:** `localhost`, `127.0.0.1`, `*.local`, এক-অংশের LAN নাম, private/link-local IP (`192.168.*`, `10.*`, `172.16-31.*`)। এগুলোর জন্য `security.allow_private_urls` লাগে।\n\n```yaml\n# ~/.hermes/config.yaml\nweb:\n  cache_exempt_hosts:\n    - mysite.vercel.app\n    - \"*.ngrok-free.app\"\n  cache_enabled: true      # false হলে দুটো cache-ই বন্ধ\n  cache_ttl_minutes: 20    # 1 থেকে 1440\n```\n\n`cache_exempt_hosts` (exempt মানে ছাড়-পাওয়া) public staging বা tunnel URL-এ সবসময় লাইভ fetch করায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Setup\n\nসবচেয়ে সহজ: `hermes tools` চালাও, **Web Search & Extract** বেছে একটা provider নাও। Wizard key বা URL config-এ লিখে দেয়।\n\n### Firecrawl (default)\n\n(`FIRECRAWL_API_KEY=fc-...` মানে তোমার চাবি এই নামে `.env` ফাইলে লিখে রাখো। `~/.hermes/.env` মানে হোম ফোল্ডারের ভেতরে Hermes-এর গোপন-সেটিং ফাইল।)\n`~/.hermes/.env`-এ `FIRECRAWL_API_KEY=fc-...`। Self-host করলে `FIRECRAWL_API_URL=http://localhost:3002`, তখন key ঐচ্ছিক। Server-এর auth বন্ধ করতে `USE_DB_AUTHENTICATION=false`।\n\n### SearXNG (বিনামূল্যে, self-hosted, শুধু search)\n\n**Docker দিয়ে (সুপারিশ, rate limit নেই):** নিচের প্রতিটা লাইনের কাজ কমেন্টে (`#`) বলা আছে। সংক্ষেপে: ফোল্ডার বানাও, container চালাও, সেটিং-ফাইল বের করে JSON চালু করো, আবার ঢুকিয়ে restart দাও, শেষে `curl` (ইন্টারনেটে অনুরোধ পাঠানোর কমান্ড) দিয়ে পরীক্ষা করো।\n\n```bash\nmkdir -p ~/searxng/searxng && cd ~/searxng\n# ~/searxng/docker-compose.yml বানাও:\n#   image searxng/searxng:latest, container name searxng\n#   port 8888:8080, volume ./searxng:/etc/searxng:rw\n#   env SEARXNG_BASE_URL=http://localhost:8888/, restart: unless-stopped\ndocker compose up -d\ndocker cp searxng:/etc/searxng/settings.yml ~/searxng/searxng/settings.yml\n# settings.yml-এ search: এর নিচে formats-এ html ও json যোগ করো\ndocker cp ~/searxng/searxng/settings.yml searxng:/etc/searxng/settings.yml\ndocker restart searxng\ncurl -s \"http://localhost:8888/search?q=test&format=json\"\n```\n\nJSON ডিফল্টে বন্ধ, তাই `formats`-এ `json` যোগ করা বাধ্যতামূলক। `curl` প্রায় ১০টা ফল দিলে ঠিক আছে; **HTTP 403** মানে JSON এখনো বন্ধ। তারপর:\n\n```bash\n# ~/.hermes/.env\nSEARXNG_URL=http://localhost:8888\n```\n```yaml\nweb:\n  search_backend: \"searxng\"\n```\n\n(**Instance** মানে চালু থাকা একটা কপি। **Public** মানে সবার জন্য খোলা। **Production** মানে সত্যিকারের কাজের পরিবেশ।)\n\n**Public instance:** searx.space-এ JSON-চালু instance খুঁজে `SEARXNG_URL=https://searx.example.com` দাও। কিন্তু rate limit আছে, uptime অনিশ্চিত, JSON যেকোনো সময় বন্ধ হতে পারে। Production-এ self-host করো।\n\n### অন্যান্য\n- **Tavily:** বাছলে keyless (rate-limited); বেশি সীমার জন্য `TAVILY_API_KEY=tvly-...`।\n- **Perplexity:** `PERPLEXITY_API_KEY=pplx-...`। `web_extract` পুরো পাতা নয়, প্রশ্নের সাথে মেলা snippet দেয়। পুরো পাতা চাইলে `web.extract_backend`-এ Firecrawl, Exa বা Parallel। `PERPLEXITY_BASE_URL` দিয়ে proxy।\n- (**Neural search** মানে AI-র মতো অর্থ ধরে খোঁজা। **Snippet** মানে ছোট উদ্ধৃতি-টুকরো। **Proxy** মানে মাঝের মধ্যস্থতাকারী সার্ভার। **Server-side** মানে সার্ভারের ভেতরে চলা।)\n- **Exa:** `EXA_API_KEY=...`, neural search। **Parallel:** `PARALLEL_API_KEY=...`।\n- **xAI (Grok):** `web.backend: \"xai\"` দিয়ে opt-in। Grok-এর server-side web search ব্যবহার করে। `web.xai`-এর অধীনে `model` (default `grok-build-0.1`), `allowed_domains`/`excluded_domains` (প্রতিটা সর্বোচ্চ 5, একসাথে দেওয়া যায় না), `timeout: 90`।\n- **OpenAI Native:** `web.search_backend: \"openai-native\"` আর `hermes auth add openai-codex`। মডেল নিজেই server-side search চালায়; শুধু Codex Responses endpoint-এ চলে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "xAI-র trust সতর্কতা",
+      "markdown": "xAI backend-এ URL আর শিরোনাম-বিবরণ **LLM বানায়**। কেউ ইচ্ছা করে বানানো query দিয়ে আউটপুট আক্রমণকারীর পছন্দের URL-এর দিকে ঘুরিয়ে দিতে পারে। বিশেষ করে query অবিশ্বস্ত উৎস থেকে এলে URL fetch করার আগে যাচাই করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Config: কোন backend কীভাবে বাছা হয়\n\n**কেন লাগে?** একাধিক key থাকলে Hermes কোনটা নেবে তা জানতে হবে। এই ক্রম সেটাই ঠিক করে। (**Auto-detect** মানে নিজে নিজে খুঁজে ধরা। **Sticky** মানে আটকে থাকা। **Capability** মানে ক্ষমতা, এখানে খোঁজা বা পড়া।)\n\n| লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `web.backend` | সব কাজের জন্য একটাই backend | সহজ সেটআপে |\n| `web.search_backend` | শুধু `web_search`-এর জন্য | খোঁজা ও পড়া আলাদা সেবায় করতে চাইলে |\n| `web.extract_backend` | শুধু `web_extract`-এর জন্য | search-only backend বাছলে এটা লাগে |\n\n```yaml\nweb:\n  backend: \"searxng\"       # একটাই সবকিছুর জন্য\n```\nঅথবা capability ধরে আলাদা:\n```yaml\nweb:\n  search_backend: \"searxng\"     # web_search\n  extract_backend: \"firecrawl\"  # web_extract (tavily, perplexity, keenable, exa, parallel-ও চলে)\n```\n\n**অগ্রাধিকারের ক্রম (প্রতিটা capability-র জন্য):**\n\n1. `web.search_backend` বা `web.extract_backend` (`nous` দিলে শুধু সেই capability managed Tool Gateway-তে যায়)\n2. `web.backend` (ভাগ করা fallback)\n3. Environment variable দেখে auto-detect, শুধু যদি কখনো shared selection লেখা না হয়ে থাকে\n\n**Auto-detect ক্রম:** `TAVILY_API_KEY`, `PERPLEXITY_API_KEY`, `EXA_API_KEY`, `PARALLEL_API_KEY`, `FIRECRAWL_API_KEY` বা `FIRECRAWL_API_URL`, তারপর Nous Tool Gateway, `SEARXNG_URL`, `BRAVE_SEARCH_API_KEY`, `ddgs` import করা গেলে ddgs, এবং কিছুই না থাকলে keyless ring। xAI auto-detect-এ **নেই**, কারণ তার credential inference, TTS ও image generation-এর সাথে ভাগ হয়। একবার shared selection তৈরি হলে `.env`-এ নতুন key দিলে traffic আর পথ বদলায় না।\n\n**Keyless rescue:** keyed backend-এর একটা call ব্যর্থ হলে সেই একটা call keyless ring-এ আবার চেষ্টা হয়; ফলে `rescued_from` ও `backend_error` থাকে। এটা sticky নয়, পরের call আবার তোমার বাছা backend-এ যায়। বন্ধ করতে `web.keyless_rescue: false`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## যাচাই আর সমস্যা সমাধান\n\n- `hermes setup` দেখায় কোন backend ধরা পড়েছে, যেমন `Web Search & Extract (searxng)`।\n- Source checkout থেকে `python -m tools.web_tools` চালিয়েও দেখা যায়।\n\n| সমস্যা | করণীয় |\n|---|---|\n| `web_search` `{\"success\": false}` দেয় | SearXNG-কে `curl` দিয়ে পরীক্ষা করো। 403 হলে `formats`-এ `json` যোগ করে restart। Connection error হলে `docker ps \\| grep searxng` |\n| `web_extract` \"search-only backend\" বলে | `web.extract_backend`-এ extract-সক্ষম provider দাও |\n| SearXNG 0 ফল দেয় | অন্য query, অন্য public instance, বা self-host |\n| Public instance-এ rate limit | নিজের Docker instance চালাও |\n| `[TRUNCATED]` footer | স্বাভাবিক। `web.extract_char_limit` বাড়াও, বড় `char_limit` দাও, বা `read_file` দিয়ে সংরক্ষিত ফাইল পড়ো |\n"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "কোন দুটো tool একটা backend বাছাইয়ে চালিত হয়?",
+      "options": [
+        "`read_file` আর `web_extract`",
+        "`browser_exec` আর `web_search`",
+        "`web_search` আর `web_extract`",
+        "`fetch` আর `crawl`"
+      ],
+      "answerIndex": 2,
+      "explanation": "একটা backend বাছাই দুটো tool-কেই চালায়।"
+    },
+    {
+      "question": "কোনো credential একেবারেই না থাকলে web tool কী করে?",
+      "options": [
+        "Exa, Parallel, Firecrawl, Keenable-এর বিনামূল্যের স্তরে পালা করে যায়",
+        "বন্ধ হয়ে যায়",
+        "শুধু DDGS ব্যবহার করে",
+        "Error দেয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Keyless ring round-robin করে; `web.keyless_fallback: false` দিলে বন্ধ।"
+    },
+    {
+      "question": "কোনটা search-only, অর্থাৎ `web_extract` করতে পারে না?",
+      "options": ["Firecrawl", "Exa", "Tavily", "SearXNG"],
+      "answerIndex": 3,
+      "explanation": "SearXNG, Brave, DDGS, xAI, OpenAI Native search-only; extract-এর জন্য আলাদা `web.extract_backend` লাগে।"
+    },
+    {
+      "question": "`web_extract` 15,000 অক্ষরের বেশি লম্বা পাতা পেলে কী করে?",
+      "options": [
+        "LLM দিয়ে সারাংশ বানায়",
+        "শুরু ও শেষের অংশ `[TRUNCATED]` footer সহ দেয়, পুরোটা ডিস্কে রাখে",
+        "Error দেয়",
+        "শুধু প্রথম অংশ দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "কোনো LLM summary নেই; head+tail (প্রায় 75/25) আর footer-এ `read_file` call দেওয়া থাকে।"
+    },
+    {
+      "question": "Self-hosted SearXNG-তে `curl` করলে HTTP 403 এলে কারণ কী?",
+      "options": [
+        "Docker চলছে না",
+        "API key নেই",
+        "JSON format বন্ধ আছে",
+        "Rate limit"
+      ],
+      "answerIndex": 2,
+      "explanation": "JSON ডিফল্টে বন্ধ; `settings.yml`-এ `formats`-এ `json` যোগ করে restart করতে হয়।"
+    },
+    {
+      "question": "`web.search_backend` খালি রাখলে কী হয়?",
+      "options": [
+        "`web.backend`-এ fallback করে",
+        "Web tool বন্ধ",
+        "সবসময় Firecrawl",
+        "সবসময় SearXNG"
+      ],
+      "answerIndex": 0,
+      "explanation": "খালি per-capability key `web.backend`-এ পড়ে।"
+    },
+    {
+      "question": "কোনটা কখনো cache হয় না?",
+      "options": [
+        "`example.com`-এর পাতা",
+        "`192.168.*` বা `localhost`-এর মতো private URL",
+        "সফল search",
+        "বড় পাতা"
+      ],
+      "answerIndex": 1,
+      "explanation": "Private ও local URL cache হয় না এবং `security.allow_private_urls` লাগে।"
+    },
+    {
+      "question": "xAI backend নিয়ে কোন সতর্কতা আছে?",
+      "options": [
+        "এটা বিনামূল্যে নয়",
+        "এটা auto-detect-এ প্রথম",
+        "এটা শুধু extract করে",
+        "LLM URL বানায়, তাই অবিশ্বস্ত query-তে URL যাচাই না করে fetch করা ঝুঁকিপূর্ণ"
+      ],
+      "answerIndex": 3,
+      "explanation": "xAI-তে মডেল URL ও শিরোনাম লেখে; আর এটা auto-detect-এ নেই, opt-in করতে হয়।"
+    }
+  ],
+  "recap": [
+    "`web_search` খোঁজে আর `web_extract` পাতা পড়ে; একটা backend বাছাই দুটোকেই চালায়।",
+    "Credential না থাকলে keyless ring (Exa, Parallel, Firecrawl, Keenable) পালা করে কাজ চালায়।",
+    "কিছু backend (SearXNG, Brave, DDGS, xAI, OpenAI Native) search-only; extract-এর জন্য `web.extract_backend` আলাদা দিতে হয়।",
+    "লম্বা পাতা LLM summary ছাড়াই head+tail করে কাটা হয়; default budget 15,000 অক্ষর (`web.extract_char_limit`)।",
+    "Search আর extract cache হয় (`web.cache_ttl_minutes`, default 20); private URL কখনো cache হয় না।",
+    "SearXNG self-host করলে `settings.yml`-এ `json` format চালু করতে ভুলো না।"
+  ]
+}

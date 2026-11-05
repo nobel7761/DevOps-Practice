@@ -1,0 +1,155 @@
+{
+  "contentId": "hermes-doc-user-guide-features-goals",
+  "title": "Persistent Goals (/goal)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/goals",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-কে একটা লক্ষ্য দিয়ে বলতে পারবে \"শেষ না হওয়া পর্যন্ত চালিয়ে যাও\", আর judge, turn, gate-এর মানে বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: \"কাজ শেষ না হলে খেলতে যেতে পাবে না!\"\n\nমিনু বাড়ির কাজ করছে। মা পাশে বসে আছেন। মিনু একটা অঙ্ক করে বলল, \"মা, হয়ে গেছে।\" মা খাতা দেখলেন: \"না, আরও দুটো বাকি। করো।\" মিনু আবার করল। মা আবার দেখলেন। শেষে বললেন, \"এবার ঠিক আছে, যাও।\" অথবা যদি অঙ্কটাই ভুল বই থেকে দেওয়া হয়, মা বলেন, \"এটা করা সম্ভব না, থামো।\"\n\nHermes-এর **`/goal`** ঠিক এই মা। তুমি একটা লক্ষ্য দাও; Hermes কাজ করে; প্রতি turn-এর পর একটা ছোট **judge model** দেখে \"কাজ শেষ?\" শেষ না হলে Hermes নিজেই পরের ধাপ চালায়। তোমাকে বারবার \"চালিয়ে যাও\" বলতে হয় না।\n\n**এটা না থাকলে কী সমস্যা হতো?** Hermes অনেক সময় একটু কাজ করেই থেমে বলে \"হয়ে গেছে\", অথচ আরও বাকি। তখন তুমি বারবার \"আবার দেখো\" লিখতে। `/goal` সেই বারবার লেখার কাজটা স্বয়ংক্রিয় করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Goal (লক্ষ্য)\nতুমি যা পেতে চাও তার এক-দুই লাইনের বিবরণ। যেমন \"সব test ঠিক করো।\" উপমা: মায়ের বলা \"সব অঙ্ক শেষ করো।\"\n\n### ২) Slash command (`/goal`)\nChat-এ `/` দিয়ে শুরু করা ছোট হুকুম। উপমা: রিমোটের বোতাম।\n\n### ৩) Turn\nHermes-এর একবার কাজ করার পালা (ভাবা, যন্ত্র চালানো, উত্তর দেওয়া)। উপমা: খেলায় একবার চাল দেওয়া।\n\n### ৪) Judge model\n**Model** হলো AI মস্তিষ্ক। **Judge** হলো একটা আলাদা, ছোট ও সস্তা মস্তিষ্ক, যার একটাই কাজ: \"লক্ষ্য পূরণ হলো কি না\" বিচার করা। উপমা: মা, যিনি খাতা দেখেন।\n\n### ৫) Turn budget\nসর্বোচ্চ কত turn চালানো যাবে। উপমা: মা বললেন \"বড়জোর ২০ মিনিট।\" এটা না থাকলে অসম্ভব লক্ষ্যে চিরকাল চলত আর টাকা খরচ হতো।\n\n### ৬) Session\nHermes-এর সাথে একটা কথোপকথনের খাতা। `/goal` একটা session-এর ভেতরেই চলে।\n\n### ৭) Shell command / exit code\n**Shell command** হলো terminal-এ লেখা কমান্ড। **Exit code** হলো কমান্ড শেষে বলা সংখ্যা: `0` মানে \"ঠিক আছে\", অন্য সংখ্যা মানে \"সমস্যা।\" উপমা: পরীক্ষার ফল: পাস বা ফেল।\n\n### ৮) Background process / PID\n**Process** হলো কম্পিউটারে চলতে থাকা প্রোগ্রাম; **background** মানে পেছনে চলা (তুমি অন্য কাজ করতে পারো); **PID** হলো তার নম্বর।\n\n### ৯) YAML / config\n**Config** হলো সেটিং-ফাইল। **YAML** তার লেখার ধরন (`নাম: মান`)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "`/goal`-এর চক্র।",
+        "steps": [
+          {
+            "title": "Goal সেট",
+            "body": "`/goal ...` দিলে `Goal set (20-turn budget)` আসে ও প্রথম turn চলে।"
+          },
+          {
+            "title": "Turn চলে",
+            "body": "Hermes সাধারণ message-এর মতো কাজ করে।"
+          },
+          {
+            "title": "Judge রায় দেয়",
+            "body": "`done` (শেষ), `continue` (চালিয়ে যাও), `blocked` (আটকে), বা `wait` (অপেক্ষা)। এক লাইনের JSON, মানে ছকে-সাজানো ছোট উত্তর।"
+          },
+          {
+            "title": "Continue হলে",
+            "body": "একটা continuation prompt (\"চালিয়ে যাও\" চিরকুট) একই session-এ ঢোকে: `Continuing toward goal (1/20)`।"
+          },
+          {
+            "title": "থামে",
+            "body": "লক্ষ্য পূরণ (`Goal achieved`), তুমি pause/clear করলে, বা turn budget শেষ হলে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "goal-loop"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কখন কাজে লাগে\n\n- `src/`-এর সব lint error (কোডের ছোটখাটো নিয়ম-ভাঙা) ঠিক করে `ruff check` পাস করানো\n- অন্য repo (কোডের ভাণ্ডার) থেকে feature পোর্ট করে test সহ CI (স্বয়ংক্রিয় পরীক্ষা) সবুজ করা\n- একটা সমস্যা তদন্ত করে রিপোর্ট লেখা\n- একবারের ছোট কাজে `/goal` লাগে না।\n\n**Goal বনাম Kanban:** `/goal` একটাই session-এ চলে; কখনো kanban card বানায় না বা অন্য profile-কে কাজ দেয় না। Kanban অনেক task, আলাদা worker process, নির্ভরতা সহ। (Kanban card `--goal` দিলে `/goal`-এর continuation engine ধার করে, বোর্ড নয়।) উপমা: `/goal` একজন ছাত্রের হোমওয়ার্ক শেষ করানো; Kanban পুরো ক্লাসের কাজের বোর্ড।\n\n## কমান্ড\n\n```text\n/goal <text>            লক্ষ্য সেট/বদল, সঙ্গে সঙ্গে প্রথম turn\n/goal -- <text>         লক্ষ্যের লেখা control word দিয়ে শুরু হলে\n/goal draft <text>      completion contract খসড়া করে তারপর সেট\n/goal show              সক্রিয় contract দেখো\n/goal  বা  /goal status  লক্ষ্য, অবস্থা, কত turn গেছে\n/goal pause             loop থামাও, লক্ষ্য মুছো না\n/goal resume            আবার চালাও (turn গণনা শূন্য)\n/goal clear             লক্ষ্য মুছে দাও\n/goal wait <pid> [reason]  background process শেষ হওয়া পর্যন্ত অপেক্ষা\n/goal unwait            অপেক্ষা সরাও\n/goal gate add <command>  quality gate যোগ\n/goal gate [list]       gate দেখো\n/goal gate remove <N>   N-তম gate সরাও\n/goal gate clear        সব gate সরাও\n```\n\n| কমান্ড | কখন লাগে |\n|---|---|\n| `/goal <text>` | নতুন লক্ষ্য দিতে |\n| `/goal status` | কত turn গেল, কী অবস্থা দেখতে |\n| `/goal pause` | কিছুক্ষণ থামাতে চাও কিন্তু লক্ষ্য রাখতে চাও |\n| `/goal resume` | থামানো লক্ষ্য আবার চালাতে |\n| `/goal clear` | লক্ষ্য একদম বাদ দিতে |\n| `/goal draft <text>` | এক লাইন থেকে \"শেষ কাকে বলে\" এর খসড়া বানাতে |\n\n`resume`, `continue`, `pause`, `status`, `show` ইত্যাদি শব্দ দিয়ে লক্ষ্য শুরু করলে `--` ব্যবহার করো (যেমন `/goal -- pause the nightly cron`)। কেন? নইলে Hermes ভাববে তুমি সেটিং-কমান্ড দিচ্ছ, লক্ষ্য নয়। Classic CLI, TUI, Desktop, dashboard chat ও messaging gateway একই handler ব্যবহার করে; ACP `/goal` সমর্থন করে না।\n\n### Quick start\n\n```text\n/goal Fix every failing test in tests/hermes_cli/ and make sure scripts/run_tests.sh passes for that directory\n```\n\nমানে: \"tests/hermes_cli/ ফোল্ডারের প্রতিটা ব্যর্থ test ঠিক করো, আর `scripts/run_tests.sh` যেন ওই ফোল্ডারে পাস করে।\" ফল: Hermes কাজ করবে, প্রতি turn-এর পর judge দেখবে, আর শেষ হলে `Goal achieved` আসবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Completion contract: \"শেষ\" মানে কী, আগে লিখে দাও\n\nমা যদি আগে বলে দেন \"সব অঙ্ক শেষ, আর উত্তর মিলিয়ে দেখা\", তাহলে ছাত্র জানে কখন ছুটি। এটাই **completion contract**।\n\nঐচ্ছিক field গুলো:\n\n| Field | মানে | উপমা |\n|---|---|---|\n| `outcome` | শেষে কী সত্যি থাকতে হবে | \"সব অঙ্ক হবে\" |\n| `verification` | কোন test/command/artifact প্রমাণ করবে | \"উত্তরমালার সাথে মেলাও\" |\n| `constraints` | কী নষ্ট করা যাবে না | \"খাতা ছিঁড়ো না\" |\n| `boundaries` | কোন ফাইল/ডিরেক্টরি/tool-এর মধ্যে কাজ | \"শুধু এই খাতায় লেখো\" |\n| `stop_when` | কখন থেমে তোমার কাছে জানতে চাইবে | \"বুঝতে না পারলে জিজ্ঞেস করো\" |\n\nদুই উপায়ে সেট করা যায়: ১) `/goal draft <objective>`: `goal_judge` helper model এক লাইনকে contract-এ বাড়ায় (model না পেলে free-form লক্ষ্য হিসেবে থাকে); ২) নিজে `field: value` লাইন লিখে:\n\n```text\n/goal Migrate auth to JWT\nverify: pytest tests/auth passes\nconstraints: keep the /login response shape unchanged\nboundaries: only touch services/auth and its tests\nstop when: a DB schema migration is required\n```\n\n(এখানে **JWT** হলো লগইন প্রমাণের একটা ডিজিটাল টিকিট-ধরন, আর **migration** মানে পুরোনো ব্যবস্থা থেকে নতুন ব্যবস্থায় সরানো।) চেনা prefix: `verify:`, `verified by:`, `constraints:`, `preserve:`, `boundaries:`, `scope:`, `stop when:`, `blocked:`। `Fix bug: the parser drops commas`-এর মতো অচেনা colon ভাঙে না। Contract থাকলে judge শুধু কংক্রিট প্রমাণ (command output, file excerpt) দেখে `done` দেয়।\n\n## `/subgoal`: চলতি অবস্থায় নতুন শর্ত\n\n```text\n/subgoal <text>      একটা নম্বর-দেওয়া শর্ত যোগ (সক্রিয় goal লাগে)\n/subgoal             তালিকা\n/subgoal remove <N>\n/subgoal clear       main goal থাকে, subgoal যায়\n```\n\nJudge তখন মূল লক্ষ্য **এবং** প্রতিটা subgoal পূরণের দাবি করে। নতুন `/goal` বা `/goal clear` সব subgoal মুছে দেয়। উপমা: কাজ চলতে চলতে মা বললেন \"আর হ্যাঁ, হাতের লেখাও সুন্দর হওয়া চাই।\"\n\n## Quality gate: \"test পাস না করলে শেষ নয়\"\n\n**Gate** (ফটক) হলো shell command, যা exit 0 না দিলে লক্ষ্য শেষ হতে পারে না। কেন লাগে? Judge শুধু কথা পড়ে বিচার করে, আর AI কখনো ভুল করে \"হয়েছে\" ভাবতে পারে। Gate একটা কঠিন যন্ত্র-পরীক্ষা, যাকে ফাঁকি দেওয়া যায় না।\n\n```text\n/goal gate add scripts/run_tests.sh tests/hermes_cli/test_goals.py\n```\n\nপ্রতি turn-এ gate আগে চলে, তারপর judge। ব্যর্থ হলে judge বাদ যায় আর exit code ও শেষ ~৩ KB output continuation prompt হয়। Default: ৩ বার retry আর প্রতি gate ৫ মিনিট timeout (**timeout** মানে \"এতক্ষণের বেশি লাগলে থামো\")। retry শেষ হলে লক্ষ্য নিজে pause হয়: gate ঠিক করো, সরাও, বা `/goal resume` দাও। Messaging-এ `/goal gate add` শুধু স্পষ্টভাবে কনফিগার করা gateway admin পারে। (**Gateway** হলো Telegram-এর মতো chat app-এর সাথে Hermes-এর সেতু।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## background process-এর জন্য অপেক্ষা\n\nধরো লক্ষ্য হলো \"CI পাস করাও\", আর CI শেষ হতে ১০ মিনিট লাগে। তখন Hermes-এর বসে বসে বারবার \"শেষ হয়েছে?\" জিজ্ঞেস করা মানে টাকা নষ্ট। তাই অপেক্ষার ব্যবস্থা আছে।\n\nJudge প্রতি turn-এ session-এর নিজের background process (`terminal(background=true)`) দেখে: PID, command, চলার সময়, শেষ output। সে `wait` রায় দিলে loop **পার্ক** হয় (গাড়ি পার্ক করার মতো)। এই সময় কোনো judge call, continuation বা turn খরচ হয় না।\n\n| অপেক্ষার ধরন | কখন ছাড়ে |\n|---|---|\n| `wait_on_session <id>` | process শেষ হলে বা `watch_patterns` (খোঁজা লেখা) মিললে |\n| `wait_on_pid <pid>` | শুধু শেষ হলে |\n| `wait_for_seconds <n>` | নির্দিষ্ট সময় পরে (backoff/cooldown, মানে একটু জিরিয়ে নেওয়া) |\n\nPID বা session অপেক্ষার সীমা ৩০ মিনিট। পার্ক থাকলে `/goal status`-এ `Goal (parked ...)` দেখায়। উদাহরণ: CI watcher `terminal(background=true, notify_on_complete=true)` দিয়ে চালালে loop তার PID-তে পার্ক হয়, CI শেষ হলে চালু।\n\n## Judge ভেতরে কীভাবে কাজ করে\n\n- **Input:** লক্ষ্যের লেখা + agent-এর শেষ উত্তরের ~৪ KB\n- **Output:** এক লাইনের JSON `{\"verdict\": \"done\" | \"blocked\" | \"continue\" | \"wait\", \"reason\": \"...\"}`\n- **রক্ষণশীল:** `done` চাই স্পষ্ট নিশ্চয়তা (সন্দেহ থাকলে \"শেষ\" বলে না)\n- **blocked:** অসম্ভব লক্ষ্য হলে pause, কখনো `done` নয়\n- **Fail-open:** judge error হলে `continue` ধরা হয় (বিচারক অসুস্থ হলে খেলা চলতে থাকে, থেমে যায় না)\n- **Turn budget:** default ২০ (`goals.max_turns`); শেষ হলে pause আর `/goal resume` বা `/goal clear` বলা হয়। Resume-এ গণনা শূন্য।\n- **তোমার message আগে:** তুমি কিছু বললে সেটা continuation-এর আগে চলে; তারপর judge আবার দেখে।\n- **Gateway:** `status`, `pause`, `clear`, `wait`, `unwait` চলার মাঝে নিরাপদ; নতুন লক্ষ্য মাঝপথে প্রত্যাখ্যাত, আগে `/stop`।\n- **Cache:** continuation সাধারণ user message; system prompt বা toolset বদলায় না। (এতে দ্রুত আর সস্তা হয়।)\n- **স্থায়িত্ব:** state `goal:<session_id>` key-তে `SessionDB.state_meta`-তে; `/resume` ফেরত আনে।\n\n## Config\n\n```yaml\ngoals:\n  max_turns: 20\n\nauxiliary:\n  goal_judge:\n    provider: openrouter\n    model: google/gemini-3-flash-preview\n```\n\n| লাইন | মানে |\n|---|---|\n| `goals.max_turns: 20` | সর্বোচ্চ ২০ turn |\n| `auxiliary.goal_judge` | বিচারক-মস্তিষ্কের সেটিং |\n| `provider: openrouter` | যে সেবা-কোম্পানির মাধ্যমে মস্তিষ্ক পাওয়া যায় |\n| `model: google/gemini-3-flash-preview` | বিচারকের মস্তিষ্কের নাম |\n\nJudge প্রতি turn-এ ~২০০ output token (AI-র লেখার মাপ, যার দাম লাগে) খরচ করে, তাই সস্তা ও দ্রুত model-ই ভালো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Judge-ও ভুল করতে পারে",
+      "markdown": "False negative (শেষ হয়েছে অথচ continue): turn budget আটকাবে; `/goal clear` বা নতুন message দাও। False positive (বাকি আছে অথচ done): follow-up দাও বা আরও নির্দিষ্ট লক্ষ্য/contract দাও। প্রতিটা `Continuing`/`Goal achieved` লাইনের reason পড়ে বুঝবে judge কী দেখেছে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`/goal`-এ প্রতি turn-এর পর কে সিদ্ধান্ত নেয় কাজ শেষ কি না?",
+      "options": [
+        "একটা ছোট judge model",
+        "তুমি নিজে",
+        "Kanban dispatcher",
+        "cron ঘড়ি"
+      ],
+      "answerIndex": 0,
+      "explanation": "Judge model এক লাইনের JSON-এ `done`/`continue`/`blocked`/`wait` বলে।"
+    },
+    {
+      "question": "Goal-এর default turn budget কত?",
+      "options": ["৫", "২০", "১০০", "সীমাহীন"],
+      "answerIndex": 1,
+      "explanation": "`goals.max_turns` default ২০। শেষ হলে লক্ষ্য pause হয়।"
+    },
+    {
+      "question": "Judge নিজে error করলে (fail-open) কী ধরা হয়?",
+      "options": ["`done`", "`blocked`", "লক্ষ্য মুছে যায়", "`continue`"],
+      "answerIndex": 3,
+      "explanation": "Judge অসুস্থ হলে থেমে না গিয়ে কাজ চলতে থাকে।"
+    },
+    {
+      "question": "`/goal gate add <command>`-এর gate কখন পাস ধরা হয়?",
+      "options": [
+        "কমান্ড অনেকক্ষণ চললে",
+        "কমান্ডের output লম্বা হলে",
+        "কমান্ড exit 0 দিলে",
+        "judge হ্যাঁ বললে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Gate হলো কঠিন পরীক্ষা: exit 0 না দিলে লক্ষ্য শেষ হতে পারে না।"
+    },
+    {
+      "question": "`/subgoal` কী কাজে লাগে?",
+      "options": [
+        "goal মুছতে",
+        "চলতি goal-এ নতুন নম্বর-দেওয়া শর্ত যোগ করতে",
+        "নতুন profile বানাতে",
+        "cron বানাতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Judge তখন মূল লক্ষ্য এবং প্রতিটা subgoal পূরণের দাবি করে।"
+    },
+    {
+      "question": "`/goal -- pause the nightly cron`-এ `--` কেন?",
+      "options": [
+        "লক্ষ্যের লেখা `pause` শব্দ দিয়ে শুরু, তাই এটা কমান্ড নয় লক্ষ্য বোঝাতে",
+        "এটা ভুল",
+        "goal মুছতে",
+        "turn বাড়াতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "`pause`, `resume` ইত্যাদি control word। `--` বলে দেয় এর পরের সবটা লক্ষ্য।"
+    },
+    {
+      "question": "Judge `wait` রায় দিলে কী হয়?",
+      "options": [
+        "লক্ষ্য মুছে যায়",
+        "আবার শুরু থেকে চলে",
+        "দ্বিগুণ খরচ হয়",
+        "loop পার্ক হয়; এই সময় judge call বা turn খরচ হয় না"
+      ],
+      "answerIndex": 3,
+      "explanation": "Process শেষ বা সময় পার হলে তবেই loop ছাড়ে (সর্বোচ্চ ৩০ মিনিট)।"
+    },
+    {
+      "question": "Goal-এর state কোথায় সেভ হয়?",
+      "options": [
+        "`~/.bashrc`-এ",
+        "কোথাও না",
+        "`goal:<session_id>` key-তে `SessionDB.state_meta`-তে",
+        "শুধু RAM-এ"
+      ],
+      "answerIndex": 2,
+      "explanation": "তাই `/resume` করলে লক্ষ্য ফিরে আসে।"
+    }
+  ],
+  "recap": [
+    "`/goal` একটা লক্ষ্য দেয়; প্রতি turn-এর পর judge দেখে শেষ হয়েছে কি না, নইলে Hermes নিজেই চালিয়ে যায়।",
+    "Turn budget default ২০; `/goal pause|resume|clear` দিয়ে নিয়ন্ত্রণ।",
+    "Completion contract (`verify:`, `constraints:` ...) দিয়ে \"শেষ\"-এর সংজ্ঞা আগে ঠিক করো।",
+    "`/subgoal` ও quality gate দিয়ে শর্ত কড়া করা যায়।",
+    "Background process থাকলে loop পার্ক হয়; খরচ হয় না।",
+    "Goal একটা session-এর; অনেক task হলে Kanban।"
+  ]
+}

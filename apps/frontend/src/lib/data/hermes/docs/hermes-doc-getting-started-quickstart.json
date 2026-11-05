@@ -1,0 +1,175 @@
+{
+  "contentId": "hermes-doc-getting-started-quickstart",
+  "title": "Quickstart",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/getting-started/quickstart",
+  "oneLiner": "এই lesson শেষে তুমি Hermes চালু করে প্রথম chat পর্যন্ত যেতে পারবে, provider কী ও কেন লাগে বুঝবে, আর কিছু না চললে কোন ক্রমে খুঁজবে তা জানবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা সাইকেল শেখার গল্প\n\nনতুন সাইকেল কিনেই কেউ পাহাড়ে ওঠে না। আগে সোজা রাস্তায় প্যাডেল ঘোরে কিনা দেখে। তারপর মোড় নেয়। তারপর গিয়ার, ঝুড়ি, আলো, একে একে।\n\nHermes Quickstart-এর মূল কথা ঠিক এটাই: **install করো, একটা \"মস্তিষ্ক\" বাছো, একটা সত্যিকারের কথোপকথন চালিয়ে দেখো। তারপর বাকি feature যোগ করো।**\n\ndocs-এর একটা সোনালি নিয়ম আছে: *সাধারণ chat-ই যদি না চলে, তাহলে এখনো কোনো নতুন feature যোগ করো না।* মানে সাইকেলের প্যাডেলই যদি না ঘোরে, ঝুড়ি লাগিয়ে লাভ নেই।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\nএই lesson-এ যে শব্দগুলো বারবার আসবে, আগে সেগুলো।\n\n### ১) Provider (প্রোভাইডার)\nযে কোম্পানি বা সার্ভিস Hermes-কে \"মস্তিষ্ক\" ভাড়া দেয়। যেমন তুমি বিদ্যুৎ কেনো বিদ্যুৎ-কোম্পানির কাছ থেকে, Hermes তেমনি বুদ্ধি কেনে provider-এর কাছ থেকে। উদাহরণ: Nous Portal, OpenAI, Anthropic।\n\n### ২) Model ও LLM\n**LLM** (Large Language Model) হলো সেই বিশাল প্রোগ্রাম, যে মানুষের মতো লেখা পড়ে আর লেখা তৈরি করে। **Model** হলো provider-এর কাছে থাকা এক একটা নির্দিষ্ট LLM, যেমন একই কোম্পানির ছোট মাথা আর বড় মাথা। Hermes নিজে LLM না, সে LLM-কে কাজে লাগায়।\n\n### ৩) API key ও token\n**API** মানে এক প্রোগ্রামের সাথে আরেক প্রোগ্রামের কথা বলার দরজা। **API key** হলো সেই দরজার চাবি, একটা লম্বা গোপন লেখা। চাবি দেখালে provider বোঝে \"এটা সত্যিই তুমি\", আর বিল তোমার নামে লেখে। **Token** শব্দটাও গোপন পাসের মতো জিনিস। (আরেক অর্থে token মানে লেখার ছোট টুকরো, নিচে context-এ আসবে।) চাবি কাউকে দেখাতে নেই।\n\n### ৪) Terminal ও command\n**Terminal** হলো একটা জানালা, যেখানে ছবির বোতাম টেপার বদলে তুমি **লিখে** কম্পিউটারকে হুকুম দাও। সেই লেখা হুকুমকে বলে **command**। যেমন `hermes` লিখে Enter দিলে Hermes চালু হয়।\n\n### ৫) CLI ও TUI\n**CLI** (Command-Line Interface) মানে terminal-এ চলা প্রোগ্রাম। **TUI** (Text User Interface) হলো terminal-এর ভেতরেই একটু সাজানো চেহারা, যেখানে মাউস চলে, ছোট জানালা (overlay) ভেসে ওঠে। দুটোতেই একই Hermes।\n\n### ৬) Config ও YAML\n**Config** (configuration) মানে সেটিং, যেমন ফোনের Settings। Hermes-এর সেটিং থাকে `config.yaml` নামের ফাইলে। **YAML** হলো সেই ফাইলের লেখার ধরন: `নাম: মান` এভাবে লাইন বাই লাইন। আর `.env` হলো আরেকটা ফাইল, যেখানে শুধু গোপন জিনিস (চাবি) রাখা হয়।\n\n### ৭) Session\nএকটা কথোপকথনের পুরো খাতা। পরে `--continue` দিয়ে খাতাটা আবার খোলা যায়।\n\n### ৮) Context length / context window\nModel একবারে কতটুকু লেখা মাথায় ধরে রাখতে পারে তার সীমা। এটা মাপা হয় **token** দিয়ে, মানে লেখার ছোট ছোট টুকরো (মোটামুটি একটা শব্দের কাছাকাছি)। টেবিলে যত জিনিস ধরে, সেটাই তার context window।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Quickstart-এর চার ধাপ: আগে সাধারণ chat, পরে বাড়তি feature।",
+        "steps": [
+          {
+            "title": "১. Install",
+            "body": "Desktop installer, অথবা শুধু terminal-এর জন্য `install.sh` / `install.ps1`। তারপর shell reload (নতুন নাম চিনিয়ে দেওয়া)।"
+          },
+          {
+            "title": "২. Provider বাছো",
+            "body": "`hermes model` লিখে মস্তিষ্ক ঠিক করো। একদম নতুন install-এ `hermes setup`।"
+          },
+          {
+            "title": "৩. প্রথম chat",
+            "body": "`hermes` লিখে কথা বলো। উপরের banner-এ model আর provider-এর নাম দেখা যায়।"
+          },
+          {
+            "title": "৪. Session যাচাই",
+            "body": "`hermes --continue` দিয়ে আগের কথোপকথন ফিরিয়ে আনো। তারপরই gateway, skills, MCP।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবচেয়ে দ্রুত পথ (Fastest Path)\n\nতোমার লক্ষ্য অনুযায়ী প্রথম পদক্ষেপ আলাদা। এই টেবিলে অচেনা শব্দগুলো ছোট করে বলা আছে:\n\n| তোমার লক্ষ্য | প্রথম ধাপ | পরের ধাপ | সহজ কথায় |\n|---|---|---|---|\n| নিজের কম্পিউটারে Hermes চালাতে চাই | `hermes setup` | একটা সত্যিকারের chat | প্রথমবার সব সাজানোর প্রশ্নোত্তর |\n| কোন provider নেব জানি | `hermes model` | সেভ করে chat | মস্তিষ্ক বদলানোর বোতাম |\n| bot চাই, সবসময় চালু | CLI চললে `hermes gateway setup` | messaging app যোগ | **gateway** মানে Hermes-কে Telegram-এর মতো chat app-এর সাথে জুড়ে দেওয়ার সেতু |\n| নিজের কম্পিউটারে চলা model | `hermes model` → custom endpoint | endpoint, model name, context length যাচাই | **endpoint** মানে ওই model-এর ঠিকানা (URL) |\n| একাধিক provider fallback | আগে `hermes model` | base chat চললে তবেই routing/fallback | **fallback** মানে একটা না চললে আরেকটা চেষ্টা। **routing** মানে কোন কাজ কোন provider-এ যাবে তা ভাগ করা |\n\n## ১. Installation\n\nInstall নিয়ে আলাদা lesson আছে, এখানে শুধু সারকথা:\n\n- macOS/Windows-এ **Hermes Desktop installer** (CLI আর desktop app দুটোই বসায়) সবচেয়ে সহজ, docs এটাই recommend করে।\n- শুধু terminal চাইলে: Linux/macOS/WSL2-তে `curl ... install.sh | bash`। Windows-এ `iex (irm ...install.ps1)`। (`curl` ইন্টারনেট থেকে script নামায়, `| bash` সেটা চালায়। `iex`/`irm` Windows-এ একই কাজ করে।)\n- শেষে `source ~/.bashrc` বা `source ~/.zshrc`। **কেন?** তোমার shell (terminal-এর ভেতরে যে প্রোগ্রাম কমান্ড বোঝে) নতুন `hermes` নামটা এখনো চেনে না। এই কমান্ড তার নামের তালিকা নতুন করে পড়ায়।\n- Android (aarch64) ফোনে: আলাদা Termux APT guide।\n\n(**WSL2** হলো Windows-এর ভেতরে ছোট একটা Linux চালানোর সুবিধা। **aarch64** একটা প্রসেসরের ধরন, বেশিরভাগ আধুনিক ফোন ও Apple chip-এ থাকে।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ২. Provider বাছাই\n\nকেন এটা দরকার? Hermes নিজে কিছু \"ভাবতে\" পারে না। ভাবার কাজটা করে LLM। তাই Hermes-কে বলে দিতে হয় \"কার কাছ থেকে মস্তিষ্ক নেব\"। এটাই provider বাছাই। এটা না থাকলে Hermes চালু হয় ঠিকই, কিন্তু উত্তর দেওয়ার কেউ থাকে না।\n\n`hermes model` লিখলে একটা প্রশ্নোত্তর (interactive) শুরু হয়, তাতে তুমি তালিকা থেকে বাছো।\n\n| কমান্ড | অংশ | মানে | কখন লাগে |\n|---|---|---|---|\n| `hermes model` | `hermes` | Hermes প্রোগ্রাম | সবসময় |\n| | `model` | \"model/provider বদলাও\" নির্দেশ | provider বাছতে বা বদলাতে |\n| `hermes setup` | `setup` | পুরো প্রথম-সাজানোর প্রশ্নোত্তর | একদম নতুন install-এ |\n| `hermes setup --portal` | `--portal` | flag, মানে বাড়তি নির্দেশ: Nous Portal দিয়ে সোজা শুরু | সবচেয়ে সহজ পথ চাইলে |\n\n**Nous Portal (সবচেয়ে সহজ):** একটা subscription-এ ৩০০+ model আর **Tool Gateway** (বাড়তি কিছু tool, যেমন search/image, একই সাবস্ক্রিপশনে) পাওয়া যায়।\n\n### `hermes setup`-এর তিনটা mode (নতুন install-এ)\n\n| Mode | কী করে | কখন বাছবে |\n|---|---|---|\n| **Quick Setup (Nous Portal)** | **OAuth** login (মানে একটা ওয়েবসাইটে লগইন করে অনুমতি দেওয়া, চাবি কপি করতে হয় না)। বিল আসে Nous subscription-এ | সবচেয়ে দ্রুত শুরু। recommended |\n| **Full Setup** | প্রতিটা provider, tool, option নিজে সাজাও | সব নিজে ঠিক করতে চাইলে |\n| **Blank Slate** | শুধু provider/model, File Operations আর Terminal toolset চালু। web, browser, code execution, vision, memory, delegation, cron, skills, plugins, MCP সব বন্ধ। compression, checkpoints, smart routing, memory capture-ও বন্ধ | একদম খালি, হালকা শুরু চাইলে |\n\nBlank Slate-এর শব্দগুলো: **toolset** মানে সম্পর্কিত tool-এর একটা সেট (tool = Hermes-এর হাতের যন্ত্র, যেমন ফাইল পড়া)। **Cron** মানে নির্দিষ্ট সময়ে নিজে নিজে কাজ চালানো (ঘড়ির অ্যালার্মের মতো)। **Skill** মানে শেখানো একটা কাজের নিয়ম-খাতা। **MCP** মানে বাইরের tool-সার্ভার জোড়ার একটা মানদণ্ড। পরে চাইলে `hermes tools`, `hermes skills opt-in --sync` বা `hermes setup agent` দিয়ে এগুলো আবার চালু করা যায়।\n\nsetup যদি OpenClaw, Claude Code, Codex CLI বা Cursor তোমার কম্পিউটারে খুঁজে পায়, তাহলে সেগুলোর সেটিং **import** করার (এনে নেওয়ার) প্রস্তাব দেয়। এতে `agent-importers` নামের **plugin** (বাড়তি জুড়ে দেওয়া অংশ) বসে।\n\n### কিছু provider-এর উদাহরণ\n\n| provider | কীভাবে জোড়া হয় | সহজ কথায় |\n|---|---|---|\n| Nous Portal | `hermes model` দিয়ে OAuth | ওয়েবসাইটে লগইন |\n| OpenAI Codex | `hermes model` দিয়ে device code | একটা ছোট কোড অন্য device-এ বসিয়ে অনুমতি দেওয়া |\n| Anthropic | OAuth (Max plan + extra credits) বা API key | লগইন অথবা চাবি |\n| OpenRouter | API key | একটা দোকান যেখানে অনেক model পাওয়া যায় |\n| Google AI Studio | `GOOGLE_API_KEY` / `GEMINI_API_KEY` | চাবির নাম (env var) |\n| DeepSeek | `DEEPSEEK_API_KEY` | চাবির নাম |\n| Ollama Cloud | `OLLAMA_API_KEY` | চাবির নাম |\n| Custom Endpoint | vLLM, SGLang, Ollama বা যেকোনো OpenAI-compatible API: base URL ও API key | নিজের কম্পিউটারে/সার্ভারে চলা model-এর ঠিকানা |\n\n(**Env var** বা environment variable হলো কম্পিউটারের মনে রাখা একটা নাম-মানের জোড়া, যেমন `DEEPSEEK_API_KEY=গোপন-লেখা`। **OpenAI-compatible** মানে ওই সার্ভার OpenAI-র মতো একই ভাষায় কথা বলে।) পুরো তালিকা Providers পাতায়। Fireworks, Z.AI, Kimi, MiniMax, AWS Bedrock, Azure Foundry, xAI ইত্যাদিও আছে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "ন্যূনতম context: ৬৪,০০০ token",
+      "markdown": "৬৪,০০০ token-এর ছোট context-এর model Hermes **চালুর সময়ই ফিরিয়ে দেয়**। কারণ এত ছোট টেবিলে Hermes-এর খাতা, tool-এর তালিকা আর কথোপকথন একসাথে ধরে না। নিজের কম্পিউটারে model চালালে উদাহরণ: llama.cpp-তে `--ctx-size 65536`, Ollama-তে `-c 65536`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### কোথায় কী সেভ হয়?\n\nএকটা বাড়ির কথা ভাবো। দরজার চাবি রাখা হয় সিন্দুকে, আর সাধারণ জিনিস তাকে। Hermes-ও তাই করে:\n\n- **গোপন জিনিস** (API key, token) → `~/.hermes/.env` (সিন্দুক)\n- **সাধারণ setting** → `~/.hermes/config.yaml` (তাক)\n\n(`~` মানে তোমার নিজের home ফোল্ডার, আর `.hermes`-এর আগের `.` মানে ফোল্ডারটা লুকানো।)\n\n`hermes config set` নিজেই বুঝে ঠিক ফাইলে মান বসায়:\n\n```bash\nhermes config set model anthropic/claude-opus-4.6\nhermes config set terminal.backend docker\nhermes config set OPENROUTER_API_KEY sk-or-...\n```\n\n| অংশ | মানে | সহজ কথায় |\n|---|---|---|\n| `hermes config set` | একটা সেটিং বদলাও | Settings-এ গিয়ে বদলানো |\n| `model` | কোন সেটিং, এখানে model | কোন সুইচ |\n| `anthropic/claude-opus-4.6` | নতুন মান | সুইচের নতুন অবস্থা |\n| `terminal.backend` | terminal-এর ভেতরের `backend` সেটিং, `.` দিয়ে ভাগ করা | ফোল্ডারের ভেতরের ফোল্ডার |\n| `OPENROUTER_API_KEY sk-or-...` | চাবির নাম আর চাবি (এটা `.env`-এ যায়) | সিন্দুকে চাবি রাখা |\n\nকমান্ড চালালে সাধারণত নিশ্চিত করার একটা ছোট বার্তা আসে। দরকার হলে `hermes model` দিয়ে যেকোনো সময় provider বদলানো যায়।\n\n## ৩. প্রথম Chat\n\n- `hermes`: classic চেহারা (prompt_toolkit CLI, মানে পুরনো ধাঁচের terminal পর্দা)।\n- `hermes --tui`: নতুন চেহারা, recommended। ভেসে ওঠা জানালা, মাউস দিয়ে লেখা বাছা, আর উত্তর আসার সময়ও তুমি লিখতে পারো। দুটোতেই session, slash command, config একই।\n\n**শুরুর প্রশ্নের উদাহরণ** (ইংরেজিতে, কারণ docs-এ এভাবেই আছে):\n\n```text\nSummarize this repo in 5 bullets and tell me what the main entrypoint is.\nCheck my current directory and tell me what looks like the main project file.\nHelp me set up a clean GitHub PR workflow for this codebase.\n```\n\n(**Repo** মানে একটা project-এর ফাইলের ভাণ্ডার। **Entrypoint** মানে যে ফাইল থেকে প্রোগ্রাম শুরু হয়। **PR** মানে অন্যকে বলা \"আমার বদল তোমার project-এ নাও\"।)\n\n**সফল হলে কী দেখবে:** banner-এ model/provider-এর নাম আছে, কোনো error নেই, দরকারে Hermes tool চালাচ্ছে, আর কথা কয়েক turn (প্রশ্ন-উত্তরের পালা) ধরে চলছে।\n\n## ৪. Session যাচাই\n\n`hermes --continue` (সংক্ষেপে `hermes -c`) আগের শেষ কথোপকথন ফিরিয়ে আনে। **কেন দরকার?** না থাকলে প্রতিবার Hermes সব ভুলে যেত। না এলে দুটো জিনিস দেখো: **profile** ঠিক আছে কিনা (profile মানে আলাদা আলাদা একেকটা ব্যক্তিগত Hermes-এর সেট), আর session সেভ হয়েছিল কিনা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৫. দরকারি কিছু ব্যবহার\n\n- **Terminal কাজ:** Hermes নিজেই কমান্ড চালিয়ে ফল দেখায় (যেমন disk-এ কত জায়গা নেওয়া হয়েছে)।\n- **Slash command:** `/` লিখলেই autocomplete (বাকিটা নিজে নিজে দেখায়)। উদাহরণ: `/help`, `/tools`, `/model`, `/personality pirate`, `/save`। এগুলো chat-এর ভেতরে চলা ছোট কমান্ড, terminal-এর কমান্ড না।\n- **একাধিক লাইন লেখা:** `Alt+Enter`, `Ctrl+J` বা `Shift+Enter`। শুধু Enter চাপলে message চলে যায়, তাই নতুন লাইনের জন্য আলাদা চাবি লাগে। সব terminal-এ `Shift+Enter` আলাদা করে পৌঁছায় না। Kitty, foot, WezTerm, Ghostty-তে default-এ চলে। iTerm2, Alacritty, VS Code terminal-এ Kitty keyboard protocol চালু করলে। `Alt+Enter` ও `Ctrl+J` সব জায়গায় চলে।\n- **থামানো (Interrupt):** নতুন message পাঠাও (কাজ বদলে যাবে) অথবা `Ctrl+C`।\n\n## ৬. পরের স্তর (শুধু base chat চললে)\n\n| বিষয় | কী করে / কেন | কমান্ড |\n|---|---|---|\n| **Bot** | Hermes-কে Telegram, Discord, Slack, WhatsApp, Signal, Email, Home Assistant (plugin), Microsoft Teams-এ জোড়ে, যাতে ফোন থেকেও কথা বলা যায় | `hermes gateway setup` |\n| **Automation** | tool/skill ঠিক করে cron দিয়ে নিজে নিজে কাজ চালানো | `hermes tools`, `hermes skills` |\n| **Sandbox** | Hermes-এর কমান্ড চালানোর জায়গাকে আলাদা খেলার ঘরে বন্দি করা। ভুল হলে তোমার আসল কম্পিউটারের ক্ষতি হয় না | `hermes config set terminal.backend docker` (বা `ssh`) |\n| **Voice** | কথা বলে Hermes-কে হুকুম দেওয়া | `hermes tools`, তারপর CLI-তে `/voice on`, রেকর্ডে `Ctrl+B` |\n\n**Sandbox-এর শব্দ:** **Docker** হলো একটা সিল করা বাক্স (container), যার ভেতরে প্রোগ্রাম আলাদাভাবে চলে। **SSH** হলো অন্য কম্পিউটারে (remote server) নিরাপদে ঢুকে কাজ করার পথ। Docker-এ **egress credential-injection proxy** আছে: এটা একটা মধ্যস্থ, যে আসল API key বাক্সের বাইরে রাখে আর বাইরের জগতে যাওয়ার সময় চাবিটা ঠিক জায়গায় বসিয়ে দেয়। এতে বাক্সের ভেতরের প্রোগ্রাম চাবি চুরি করতে পারে না। চালু করতে: `hermes egress setup && hermes egress start` (`&&` মানে প্রথমটা সফল হলে দ্বিতীয়টা)।\n\n### Skills\n\nপ্রতিটা skill একটা `SKILL.md` ফাইল (নাম, বর্ণনা, ধাপ লেখা)। default-এ শুধু ছোট বর্ণনা মাথায় থাকে, দরকার হলে পুরোটা পড়া হয়। এতে context window ভরে যায় না। skill থাকে `~/.hermes/skills/`-এ।\n\n```bash\nhermes skills browse\nhermes skills search kubernetes\nhermes skills install openai/skills/k8s   # আগে security scan চলে\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `skills browse` | দোকানের তাক ঘুরে দেখা | কী কী আছে দেখতে |\n| `skills search kubernetes` | নাম ধরে খোঁজা | নির্দিষ্ট কিছু চাইলে |\n| `skills install openai/skills/k8s` | নামিয়ে বসানো। আগে নিরাপত্তা-পরীক্ষা (security scan) চলে | পছন্দ হলে |\n\ninstall করা skill slash command হয়ে যায়, যেমন `/k8s`।\n\n### MCP server ও Editor integration\n\n- **MCP server:** `~/.hermes/config.yaml`-এর `mcp_servers`-এ যোগ করো। docs-এর উদাহরণ: `github` server, চালানোর কমান্ড `npx -y @modelcontextprotocol/server-github`, আর গোপন env `GITHUB_PERSONAL_ACCESS_TOKEN`। MCP হলো এমন একটা সাধারণ প্লাগ, যা দিয়ে অন্য কোম্পানির tool Hermes-এ লাগানো যায়।\n- **Editor integration (ACP):** code লেখার editor-এর ভেতর থেকে Hermes চালানো। curl installer-এর `[all]`-এ থাকে। চালাও `hermes acp`।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "আগে ভিত গড়ো, তারপর feature।",
+        "beforeTitle": "ভুল ক্রম",
+        "before": "প্রথমেই gateway, routing, fallback, MCP সব একসাথে চালু করা।\n\nকিছু না চললে বোঝা যায় না দোষ কোথায়।",
+        "afterTitle": "ঠিক ক্রম",
+        "after": "1. `hermes model`\n2. সাধারণ chat ঠিক চলে কিনা দেখা\n3. `hermes --continue` যাচাই\n4. তারপর gateway, skills, MCP"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ঝামেলার তালিকা (Common Failure Modes)\n\n| লক্ষণ | সম্ভাব্য কারণ | সমাধান |\n|---|---|---|\n| ফাঁকা বা ভাঙা উত্তর | provider-এর চাবি/লগইন বা model ভুল | `hermes model` আবার চালাও |\n| custom endpoint আবোলতাবোল দেয় | base URL/model name ভুল, বা সার্ভার OpenAI-compatible না | আলাদা client-এ endpoint পরীক্ষা করো |\n| gateway চলে কিন্তু কেউ message করতে পারে না | token/allowlist (অনুমতি-তালিকা)/platform setup অসম্পূর্ণ | `hermes gateway setup`, `hermes gateway status` |\n| `--continue` session পায় না | অন্য profile-এ আছো, বা session সেভ হয়নি | `hermes sessions list` |\n| অদ্ভুত model/fallback আচরণ | routing/fallback বেশি আক্রমণাত্মক | base provider স্থির না হওয়া পর্যন্ত routing বন্ধ |\n| `hermes doctor` config নিয়ে অভিযোগ | কোনো মান নেই বা পুরনো | config ঠিক করে আবার চেষ্টা |\n\n### উদ্ধারের ক্রম (Recovery Toolkit)\n\nডাক্তার যেমন আগে সাধারণ পরীক্ষা করে, তেমনি এই ক্রমে এগোও। `hermes doctor` হলো Hermes-এর নিজের স্বাস্থ্য-পরীক্ষা।\n\n```text\n1. hermes doctor\n2. hermes model\n3. hermes setup\n4. hermes sessions list\n5. hermes --continue\n6. hermes gateway status\n```\n\n### ঝটপট মনে রাখার তালিকা\n\n`hermes` (chat) · `hermes model` · `hermes tools` · `hermes setup` · `hermes doctor` · `hermes update` · `hermes gateway` · `hermes --continue`\n\nআরেকটা কাজের কথা: কম্পিউটার বদলালে `hermes backup` দিয়ে পুরো setup (বা একটা profile) নতুন জায়গায় নেওয়া যায়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Quickstart-এর সোনালি নিয়ম কোনটা?",
+      "options": [
+        "সবসময় Blank Slate বাছো",
+        "আগে সব feature একসাথে চালু করো",
+        "সাধারণ chat না চললে এখনো নতুন feature যোগ কোরো না",
+        "প্রথমেই gateway বানাও"
+      ],
+      "answerIndex": 2,
+      "explanation": "সাইকেলের প্যাডেলই না ঘুরলে ঝুড়ি লাগিয়ে লাভ নেই। আগে ভিত (install, provider, chat), তারপর বাকি।"
+    },
+    {
+      "question": "Provider মানে সহজ কথায় কী?",
+      "options": [
+        "যে কোম্পানি/সার্ভিস Hermes-কে ভাবার মস্তিষ্ক (LLM) ভাড়া দেয়",
+        "একটা terminal-এর নাম",
+        "একটা slash command",
+        "Hermes-এর ফাইল রাখার ফোল্ডার"
+      ],
+      "answerIndex": 0,
+      "explanation": "Hermes নিজে ভাবে না। ভাবার কাজ করে LLM, আর সেটা আসে provider থেকে, যেমন বিদ্যুৎ আসে বিদ্যুৎ-কোম্পানি থেকে।"
+    },
+    {
+      "question": "Hermes ন্যূনতম কত context length-এর model চায় এবং কম হলে কী হয়?",
+      "options": [
+        "কোনো সীমা নেই",
+        "৮ হাজার, তবু চলে",
+        "৬৪,০০০ token; ছোট হলে চালুর সময়ই ফিরিয়ে দেয়",
+        "১ লক্ষ, কম হলে ধীর চলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Hermes-এর খাতা, tool-এর তালিকা আর কথা একসাথে ধরার জন্য অন্তত ৬৪,০০০ token লাগে। llama.cpp-তে `--ctx-size 65536`, Ollama-তে `-c 65536`।"
+    },
+    {
+      "question": "API key কোন ফাইলে যায় আর সাধারণ setting কোথায়?",
+      "options": [
+        "API key `~/.hermes/.env`-এ, সাধারণ setting `~/.hermes/config.yaml`-এ",
+        "API key `config.yaml`-এ, setting `.env`-এ",
+        "দুটোই terminal-এ লেখা থাকে",
+        "দুটোই `config.yaml`-এ"
+      ],
+      "answerIndex": 0,
+      "explanation": "গোপন জিনিস সিন্দুকে (`.env`), সাধারণ জিনিস তাকে (`config.yaml`)। `hermes config set` নিজেই ঠিক ফাইল বেছে নেয়।"
+    },
+    {
+      "question": "`hermes --continue` কোনো session না পেলে সবচেয়ে সম্ভাব্য কারণ কোনটা?",
+      "options": [
+        "Docker চলছে না",
+        "অন্য profile-এ আছো, বা session সেভ হয়নি",
+        "কম্পিউটার পুরনো",
+        "Terminal-এর রং ভুল"
+      ],
+      "answerIndex": 1,
+      "explanation": "profile আলাদা হলে আলাদা খাতা। কোন খাতা আছে `hermes sessions list` দেখালে বোঝা যায়।"
+    },
+    {
+      "question": "Blank Slate setup-এ কোন দুটো toolset চালু থাকে?",
+      "options": [
+        "File Operations আর Terminal",
+        "cron আর memory",
+        "vision আর MCP",
+        "web আর browser"
+      ],
+      "answerIndex": 0,
+      "explanation": "Blank Slate মানে একদম খালি শুরু: শুধু ফাইল পড়া-লেখা আর terminal। বাকি সব পরে `hermes tools` ইত্যাদি দিয়ে চালু করা যায়।"
+    },
+    {
+      "question": "Docker sandbox-এ আসল API key বাক্সের বাইরে রাখতে কী ব্যবহার হয়?",
+      "options": [
+        "`/personality pirate`",
+        "`hermes backup`",
+        "egress credential-injection proxy (`hermes egress setup && hermes egress start`)",
+        "`hermes doctor`"
+      ],
+      "answerIndex": 2,
+      "explanation": "proxy হলো মধ্যস্থ: বাইরের জগতে যাওয়ার সময় সে চাবি বসায়, তাই বাক্সের ভেতরের প্রোগ্রাম আসল চাবি দেখতেই পায় না।"
+    },
+    {
+      "question": "`hermes --tui` আর `hermes`-এর সম্পর্ক কী?",
+      "options": [
+        "একই Hermes, শুধু চেহারা আলাদা; session, slash command, config একই",
+        "`--tui` শুধু Windows-এ চলে",
+        "`hermes` শুধু bot-এর জন্য",
+        "দুটো সম্পূর্ণ আলাদা প্রোগ্রাম, session আলাদা"
+      ],
+      "answerIndex": 0,
+      "explanation": "TUI হলো একই terminal-এর সাজানো চেহারা (মাউস, ভাসা জানালা)। ভেতরের সব কিছু একই।"
+    }
+  ],
+  "recap": [
+    "Quickstart-এর ক্রম: install, provider বাছা (`hermes model`), একটা সত্যিকারের chat, `--continue` যাচাই; তারপর বাকি feature।",
+    "Provider হলো মস্তিষ্ক-ভাড়া দেওয়া সার্ভিস; Hermes চালাতে অন্তত ৬৪,০০০ token context-এর model লাগে।",
+    "গোপন চাবি `~/.hermes/.env`-এ, সাধারণ setting `~/.hermes/config.yaml`-এ; `hermes config set` ঠিক জায়গায় বসায়।",
+    "`hermes setup`-এর তিন mode: Quick Setup (Nous Portal), Full Setup, Blank Slate।",
+    "কিছু না চললে `hermes doctor`, `hermes model`, `hermes setup`, `hermes sessions list`, `hermes --continue`, `hermes gateway status` ক্রমে দেখো।"
+  ]
+}

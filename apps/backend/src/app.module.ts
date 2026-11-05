@@ -15,6 +15,7 @@ import { TranslateModule } from './translate/translate.module';
 import { AskModule } from './ask/ask.module';
 import { ProgressModule } from './progress/progress.module';
 import { PoridhiSyncModule } from './poridhi-sync/poridhi-sync.module';
+import { HermesQuizModule } from './hermes-quiz/hermes-quiz.module';
 import { SystemDesignQuizModule } from './system-design-quiz/system-design-quiz.module';
 import { SystemDesignRecallModule } from './system-design-recall/system-design-recall.module';
 
@@ -93,6 +94,7 @@ if (!existsSync(envPath)) {
     ProgressModule,
     PoridhiSyncModule,
     SystemDesignQuizModule,
+    HermesQuizModule,
     SystemDesignRecallModule,
   ],
   controllers: [AppController],

@@ -1,0 +1,154 @@
+{
+  "contentId": "hermes-doc-integrations-providers",
+  "title": "Providers",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/integrations/providers",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-এর জন্য AI provider কীভাবে বাছতে হয়, API key কোন ফাইলে থাকে, আর local মডেল চালাতে port ও context-এর কোন সংখ্যা খেয়াল রাখতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## চুলা ভাড়ার গল্প\n\nHermes একজন রাঁধুনি। কিন্তু রান্নার **চুলা** (মানে AI model, যে ভাবার কাজ করে) তার নিজের নেই। চুলা সে ভাড়া নিতে পারে অনেক দোকান থেকে:\n\n- 🎫 **মাসিক সাবস্ক্রিপশনে**: মাসে একটা ফি দিলে যত খুশি। (যেমন Nous Portal, ChatGPT plan)\n- 🧑‍💼 **দালালের মাধ্যমে**: একজন দালাল অনেক দোকানের চুলা এক জায়গায় দেখায়। (যেমন OpenRouter)\n- 🏪 **সরাসরি কোম্পানি থেকে**: (যেমন Anthropic, OpenAI)\n- 🏠 **নিজের বাড়ির চুলা**: নিজের কম্পিউটারে চালানো। (যেমন Ollama, vLLM)\n\nকোন দোকান বাছবে এবং সেটা Hermes-কে কীভাবে জানাবে, এটাই এই **Providers** page-এর কাজ।\n\n**এটা না থাকলে কী সমস্যা হতো?** Hermes জানতই না কার কাছে \"ভাবার কাজ\" পাঠাবে। চুলা ছাড়া রাঁধুনি রান্না করতে পারে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Provider, Model, LLM\n- **LLM** (Large Language Model) = বিশাল ভাষার-মস্তিষ্ক, যে প্রশ্ন বোঝে আর উত্তর লেখে। সাধারণ কথায় বলা হয় \"AI model\"।\n- **Model** = ওই কোম্পানির নির্দিষ্ট একটা মস্তিষ্ক (যেমন একটা কোম্পানির ছোট-সস্তা মডেল, আরেকটা বড়-দামি মডেল)।\n- **Provider** = যে কোম্পানি মডেলগুলো চালায় আর ভাড়া দেয়।\n\n### ২) API key আর `.env`\n- **API key** = provider-কে বলার জন্য তোমার গোপন পরিচয়পত্র। দোকানের মেম্বারশিপ কার্ডের মতো, কার্ড দেখালে দোকান বোঝে তুমি কে, আর বিল তোমার নামে হয়।\n- **`.env` ফাইল** = key রাখার গোপন ডায়েরি। Hermes-এ এটা `~/.hermes/.env`। (`~` মানে তোমার home ফোল্ডার, `.` দিয়ে শুরু মানে লুকানো।)\n\n### ৩) Config আর YAML\n- **Config** (কনফিগ) = Hermes-এর সেটিং-খাতা। `~/.hermes/config.yaml`।\n- **YAML** = সেটিং লেখার সোজা একটা ধরন: `নাম: মান`। ভেতরে ঢুকলে (indent) বোঝায় \"এটা ওপরের জিনিসের অংশ।\"\n\n### ৪) OAuth আর `auth.json`\n- **OAuth** = পাসওয়ার্ড না দিয়ে \"অনুমতি দিলাম\" বলে login করার ব্যবস্থা (যেমন \"Google দিয়ে login\")। এতে একটা **token** (সাময়িক প্রবেশপত্র) তৈরি হয়।\n- **`auth.json`** = OAuth token রাখার ফাইল।\n\n### ৫) Endpoint, Base URL\n- **Endpoint** = ঠিকানা, যেখানে অনুরোধ পাঠানো হয়। **Base URL** = সেই ঠিকানার মূল অংশ (যেমন `http://localhost:11434/v1`)।\n- **localhost** মানে \"আমার নিজের কম্পিউটার\"। **Port** (পোর্ট) মানে ওই কম্পিউটারের ভেতরের একটা দরজা-নম্বর। একই বাড়িতে যেমন অনেক ঘর, তেমনি একটা কম্পিউটারে অনেক port-এ আলাদা আলাদা সেবা চলে।\n\n### ৬) Token আর Context window\n- **Token** = AI-র লেখা পড়ার ছোট টুকরো (মোটামুটি একটা শব্দের অংশ)।\n- **Context window** = AI একবারে কতটা লেখা মনে রেখে কাজ করতে পারে, তার সীমা। ছোট টেবিলের মতো: বড় টেবিলে বেশি খাতা ছড়ানো যায়।\n\n### ৭) Local model আর VRAM\n- **Local model** = নিজের কম্পিউটারে চালানো মডেল, ইন্টারনেট বা বিল লাগে না।\n- **VRAM/GPU** = গ্রাফিক্স কার্ডের নিজস্ব মেমোরি। বড় মডেল চালাতে এটা বেশি লাগে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রথম setup: দুটো কমান্ড মনে রাখো\n\n**Terminal** = যে জানালায় তুমি লিখে কম্পিউটারকে হুকুম দাও। **Command** = সেই হুকুম।\n\n| কমান্ড | কোথায় চালাবে | কাজ | কখন লাগে |\n|---|---|---|---|\n| `hermes model` | session-এর **বাইরে**, সাধারণ terminal-এ | পুরো provider wizard খোলে (প্রশ্নোত্তর-ভিত্তিক গাইড) | প্রথমবার provider বাছতে বা পুরো provider বদলাতে |\n| `/model` | Hermes-এর chat **ভেতরে** (session চলার সময়) | আগে configure করা provider-গুলোর মধ্যে বদলানো | কাজের মাঝে অন্য মডেলে যেতে |\n\n**Session** = Hermes-এর সাথে একটা আলাপ, শুরু থেকে শেষ। `hermes model` টা হলো \"দোকান বদলাও\", আর `/model` হলো \"এই দোকানের অন্য চুলা বাছো।\"\n\nআরও কিছু কমান্ড (ছোট্ট ব্যাখ্যাসহ):\n\n| কমান্ড | কী করে |\n|---|---|\n| `hermes setup --portal` | Nous Portal দিয়ে সবকিছু একসাথে সেটআপ |\n| `hermes portal info` | তোমার Portal-এর অবস্থা দেখায় |\n| `hermes chat --provider <id> --model <id>` | শুধু এই একবারের জন্য provider আর model বলে দিয়ে chat শুরু (`<id>` তুমি বসাবে) |\n| `hermes auth add <provider>` | নতুন credential (key বা login) যোগ |\n| `hermes doctor` | নিজে পরীক্ষা করে কী ঠিক নেই বলে দেয় (ডাক্তারের মতো) |\n| `hermes update` | Hermes নতুন সংস্করণে আনা |\n\n### কোন ফাইলে কী থাকে\n\n| ফাইল | কী থাকে | উপমা |\n|---|---|---|\n| `~/.hermes/config.yaml` | model ও endpoint-এর **source of truth** (মানে \"শেষ কথা\", কোনটা ঠিক তা এই ফাইলই বলে) | নির্দেশ-খাতা |\n| `~/.hermes/.env` | API key | গোপন ডায়েরি |\n| `~/.hermes/auth.json` | OAuth credential (login-এর token) | প্রবেশপত্রের ব্যাগ |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "provider বাছার সহজ পথ।",
+        "steps": [
+          {
+            "title": "১. কেমন provider?",
+            "body": "Subscription/OAuth, aggregator (দালাল), সরাসরি API key, cloud platform, নাকি নিজের কম্পিউটারের local।"
+          },
+          {
+            "title": "২. `hermes model`",
+            "body": "wizard-এ provider বাছো। key যায় `.env`-এ, OAuth token যায় `auth.json`-এ।"
+          },
+          {
+            "title": "৩. `config.yaml` দেখো",
+            "body": "`model.default`, `model.provider`, `model.base_url` ঠিক আছে কি না।"
+          },
+          {
+            "title": "৪. `/model` দিয়ে বদলাও",
+            "body": "session-এর ভেতরে প্রয়োজনমতো অন্য মডেলে যাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Provider-এর পাঁচ ধরন\n\nদোকানের গল্প মাথায় রাখো। কোন ধরনে কোন কোন নাম আছে:\n\n- **Subscription / OAuth** (মাসিক কার্ড, login করে ব্যবহার): Nous Portal, OpenAI Codex (ChatGPT plan), Anthropic (Claude Max + extra credits), xAI Grok OAuth, Qwen OAuth, MiniMax OAuth, Ollama Cloud।\n- **Aggregator / router** (দালাল, এক জায়গায় অনেক মডেল): OpenRouter, Ramp Router, AI Gateway, Fireworks AI, NovitaAI, Nebius, GMI Cloud, Hugging Face, Kilo Code, OpenCode Zen/Go, NVIDIA Build, DeepInfra ইত্যাদি।\n- **সরাসরি API key** (কোম্পানি থেকে সরাসরি): Anthropic, OpenAI API, Google Gemini, z.ai/GLM, Kimi, MiniMax, xAI, Alibaba DashScope, DeepSeek, StepFun ইত্যাদি।\n- **Cloud platform** (বড় ক্লাউড কোম্পানির ভেতরের সেবা): AWS Bedrock (boto3 chain, Converse API), Google Vertex AI (OAuth2, কোনো স্থির key নেই), Azure AI Foundry।\n- **Local / self-hosted** (নিজের কম্পিউটার বা নিজের server): Ollama, vLLM, SGLang, llama.cpp / llama-server, LM Studio, custom endpoint, LiteLLM Proxy, ClawRouter।\n\n(**Self-hosted** মানে নিজেই চালানো, অন্য কেউ চালায় না। **Custom endpoint** মানে তোমার নিজের দেওয়া যেকোনো OpenAI-compatible ঠিকানা।)\n\n### কিছু পরিচিত key-র নাম\n\n| Env var | কোন provider-এর |\n|---|---|\n| `OPENROUTER_API_KEY` | OpenRouter |\n| `ANTHROPIC_API_KEY` | Anthropic |\n| `OPENAI_API_KEY` | OpenAI |\n| `GOOGLE_API_KEY` / `GEMINI_API_KEY` | Google |\n| `XAI_API_KEY` | xAI |\n| `DEEPSEEK_API_KEY` | DeepSeek |\n| `HF_TOKEN` | Hugging Face |\n| `NVIDIA_API_KEY` | NVIDIA Build |\n\nBase URL (ঠিকানা) বদলাতে `*_BASE_URL` ধরনের variable আছে (যেমন `GLM_BASE_URL`, `KIMI_BASE_URL`)। `OPENAI_BASE_URL` শুধু `openai-api` provider-এর জন্য মানা হয়।\n\n> `LLM_MODEL` সরানো হয়েছে এবং `HERMES_MAX_TOKENS` আর পড়া হয় না। পুরোনো টিউটোরিয়ালে এগুলো দেখলে এড়িয়ে চলো।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Context কমপক্ষে ৬৪,০০০ token চাই",
+      "markdown": "agent হিসেবে ব্যবহারের জন্য মডেলের context window কমপক্ষে **৬৪,০০০ token** লাগে। কেন? Hermes প্রতিবার নির্দেশ, tool-এর তালিকা আর আলাপের ইতিহাস সব একসাথে মডেলকে দেখায়, তাই ছোট টেবিলে জায়গা কুলায় না। llama-server-এ `-c 64000 -np 4` দিলে ৬৪,০০০ চারজনের মধ্যে ভাগ হয়ে প্রতিটা slot পায় মাত্র ১৬k, তাই সাবধান।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## config.yaml-এ provider সাজানো\n\n### `model:` ব্লক\n\n```yaml\nmodel:\n  default: ...      # কোন model ডিফল্ট\n  provider: ...     # কোন provider\n  base_url: ...     # কোন ঠিকানা (custom/local হলে)\n```\n\n| key | মানে | কখন লাগে |\n|---|---|---|\n| `default` | ডিফল্ট model | সবসময় |\n| `provider` | provider-এর নাম | সবসময় |\n| `base_url` | endpoint-এর ঠিকানা | local বা custom server হলে |\n| `context_length` | model-এর context সীমা (token) | Hermes নিজে সঠিক সংখ্যা না জানলে |\n| `ollama_num_ctx` | Ollama-র context সীমা | Ollama ব্যবহার করলে |\n| `supports_vision` | model ছবি বোঝে কি না | ছবি পাঠালে |\n| `lmstudio_load_mode` | `explicit` বা `jit` | LM Studio-তে model কখন লোড হবে তা ঠিক করতে |\n\n### নিজের নামে provider বানানো (`providers.<name>`)\n\nনিজের মতো করে একটা provider লেখা যায়। ভেতরের key: `api`, `key_env`, `api_key`, `key_cmd`, `transport`, `default_model`, `models`, `context_length`, `discover_models`, `extra_body`, `extra_headers`, `ssl_ca_cert`, `ssl_verify`, `enabled`।\n\n`transport` মানে \"কথা বলার ভাষা\", তিনটা মান: `chat_completions` (প্রায় সবার সাধারণ ভাষা), `anthropic_messages` (Anthropic-এর নিজস্ব), `codex_responses` (OpenAI Codex-এর)। **Header** মানে অনুরোধের সাথে পাঠানো ছোট তথ্য-লেবেল। **SSL** মানে নিরাপদ সংযোগের সার্টিফিকেট।\n\nঅন্য সংশ্লিষ্ট অংশ: `fallback_providers`, `provider_routing`, `auxiliary.*.provider`, `agent.reasoning_effort`, `bedrock`, `vertex`, `web.backend`।\n\nকাস্টম মডেল ID লেখার ধরন: `custom:<name>:<model>`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Local model চালানো: কিছু সংখ্যা\n\n**কেন local?** বিল নেই, ইন্টারনেট লাগে না, তোমার লেখা বাইরে যায় না। **সমস্যা:** কম্পিউটারের শক্তি লাগে।\n\n| Server | Default port (দরজা-নম্বর) |\n|---|---|\n| Ollama | 11434 |\n| vLLM | 8000 |\n| SGLang | 30000 |\n| llama-server | 8080 |\n| LM Studio | 1234 |\n| LiteLLM | 4000 (page-এর example-এ `--port 4000`, default হিসেবে বলা নেই) |\n\nতাই Ollama-র base URL হয় মোটামুটি `http://localhost:11434/v1`: `localhost` (আমার কম্পিউটার) + `11434` (দরজা-নম্বর) + `/v1` (OpenAI-র ভাষার পথ)।\n\nকিছু জরুরি সংখ্যা:\n- Ollama-র default context VRAM অনুযায়ী: ২৪ GB-র কম হলে 4,096; ২৪–৪৮ GB-তে 32,768; ৪৮+ GB-তে 256,000। **খেয়াল করো:** ৪,০৯৬ খুবই ছোট, Hermes-এর ৬৪k দরকার, তাই `ollama_num_ctx` বাড়াতে হতে পারে।\n- vLLM-এর `--gpu-memory-utilization` default 0.9 (পরামর্শ 0.95), মানে GPU-র কত অংশ ব্যবহার করবে।\n- SGLang default-এ সর্বোচ্চ ১২৮ output token দেয়, মানে উত্তর খুব ছোট হয়ে কেটে যেতে পারে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "খরচ ও সীমা",
+      "markdown": "Hugging Face free tier-এ মাসে $0.10 credit আছে। Nous Portal-এ ৩০০+ মডেল। Meta-র `muse-spark-*-contributor` মডেল তোমার prompt দিয়ে train করতে পারে, তাই interactive বাছার সময় Hermes আগে নিশ্চিতকরণ চায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Provider routing ও fallback-এর আভাস\n\n- **`provider_routing`** (`sort`, `only`, `ignore`, `order`, `require_parameters`, `data_collection`, `models`) শুধু **OpenRouter**-এর জন্য। দালালের পেছনের কোন কোম্পানি কাজ করবে তা ঠিক করে। বিস্তারিত **Provider Routing** lesson-এ।\n- **`fallback_providers`** হলো ব্যাকআপ provider-এর তালিকা, মূল provider পড়ে গেলে পরেরটায় যাওয়ার জন্য। বিস্তারিত **Fallback Providers** lesson-এ।\n\n### OpenRouter routing: ছোট সুবিধা\n\n```yaml\nprovider_routing:\n  sort: \"throughput\"        # \"price\" (default), \"throughput\" বা \"latency\"\n  # only: [\"anthropic\"]\n  # ignore: [\"deepinfra\"]\n  # order: [\"anthropic\", \"google\"]\n  # require_parameters: true\n  # data_collection: \"deny\"\n  # models:                 # প্রতি model-এর জন্য আলাদা pin\n  #   \"openai/gpt-6-astra\": {only: [\"openai\"]}\n```\n\n- **শর্টকাট:** model-এর নামের শেষে `:nitro` দিলে throughput অনুযায়ী বাছাই, `:floor` দিলে দাম অনুযায়ী (যেমন `anthropic/claude-sonnet-4:nitro`)।\n- **Pareto Code router:** `openrouter/pareto-code` model বাছলে OpenRouter সবচেয়ে সস্তা সেই model-এ পাঠায় যেটা কোডিং-মানের একটা সীমা পার করে। সীমাটা `openrouter.min_coding_score` (০.০–১.০, ডিফল্ট ০.৬৫; বেশি = শক্তিশালী কিন্তু দামি)। এটা শুধু `model.model` `openrouter/pareto-code` হলে পাঠানো হয়, অন্য model-এ কিছুই করে না।\n\n### Fallback Providers: আরেকটু বিস্তারিত\n\n```yaml\nfallback_providers:\n  - provider: openrouter\n    model: anthropic/claude-sonnet-4\n  - provider: anthropic\n    model: claude-sonnet-4\n    # base_url: http://localhost:8000/v1   # ঐচ্ছিক\n    # api_mode: chat_completions          # ঐচ্ছিক (`transport:` নামও চলে)\n```\n\n- মূল model ব্যর্থ হলে (rate limit, server error, auth ভুল) তালিকার ক্রমে একটা একটা করে চেষ্টা হয়।\n- পুরোনো একক-জোড়া `fallback_model:` dict এখনো চলে (পুরোনো সংস্করণের সাথে মেলানোর জন্য)।\n- fallback চালু হলে কথোপকথন না হারিয়ে মাঝপথে model ও provider বদলে যায়; একটা session-এ এটা একবারই চালু হয়।\n- তুমি `providers.<name>` block-এর নাম দিলে (যেমন `custom:my-relay`), entry-তে নিজের `api_mode` না থাকলে ওই block-এর `transport`/`api_mode` উত্তরাধিকারে আসে।\n- Fallback শুধু `config.yaml` দিয়ে, অথবা interactive-ভাবে `hermes fallback` দিয়ে সাজানো যায়।\n\n### Firecrawl নিজের মেশিনে (self-host)\n\nডিফল্টে web search/scrape-এ Firecrawl-এর cloud API চলে। নিজে চালাতে চাইলে Firecrawl-এর Docker stack (৫টা container, প্রায় ৪–৮ GB RAM) চালিয়ে Hermes-কে ঠিকানা দাও: `hermes config set FIRECRAWL_API_URL http://localhost:3002`। লাভ: API key, rate limit আর per-page খরচ লাগে না। ক্ষতি: cloud-এর উন্নত anti-bot (Cloudflare, CAPTCHA) নেই, কিছু সুরক্ষিত সাইট ব্যর্থ হতে পারে; search-এ Google-এর বদলে DuckDuckGo। নিজের instance-এ auth থাকলে `FIRECRAWL_API_KEY`-ও দিতে পারো।\n\n### অন্য সেবার env variable\n\nWeb scraping: `FIRECRAWL_API_KEY`/`FIRECRAWL_API_URL`; browser automation: `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID`; image generation: `FAL_KEY`; ElevenLabs TTS: `ELEVENLABS_API_KEY`; OpenAI TTS ও voice transcription: `VOICE_TOOLS_OPENAI_KEY`; Mistral TTS/transcription: `MISTRAL_API_KEY`; Honcho: `HONCHO_API_KEY`; Supermemory: `SUPERMEMORY_API_KEY`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`hermes model` আর `/model`-এর পার্থক্য কী?",
+      "options": [
+        "দুটো একই",
+        "`/model` শুধু Windows-এ চলে",
+        "`hermes model` session-এর বাইরে পুরো wizard খোলে; `/model` session-এর ভেতরে আগে configure করা provider-এর মধ্যে বদলায়",
+        "`hermes model` Hermes মুছে ফেলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "hermes model = দোকান বদলানোর পুরো গাইড। /model = chat চলার সময় এক ক্লিকে অন্য মডেলে যাওয়া।"
+    },
+    {
+      "question": "API key সাধারণত কোন ফাইলে রাখা হয়?",
+      "options": [
+        "`~/.hermes/.env`",
+        "`~/.hermes/config.yaml`",
+        "`~/.hermes/auth.json` শুধু",
+        "কোথাও না"
+      ],
+      "answerIndex": 0,
+      "explanation": "API key যায় `.env`-এ। OAuth login-এর token যায় `auth.json`-এ। config.yaml হলো মডেল ও endpoint-এর সেটিং।"
+    },
+    {
+      "question": "Agent হিসেবে চালাতে মডেলের context কমপক্ষে কত লাগে?",
+      "options": [
+        "১,০০০ token",
+        "৪,০৯৬ token",
+        "কোনো সীমা নেই",
+        "৬৪,০০০ token"
+      ],
+      "answerIndex": 3,
+      "explanation": "docs বলছে কমপক্ষে ৬৪,০০০ token। llama-server-এ `-c 64000 -np 4` দিলে slot-প্রতি মাত্র ১৬k, তাই সাবধান।"
+    },
+    {
+      "question": "Local model চালানোর একটা সুবিধা কী?",
+      "options": [
+        "সবসময় আগের চেয়ে দ্রুত",
+        "বিল বা ইন্টারনেট লাগে না এবং লেখা বাইরে যায় না",
+        "কম্পিউটারের শক্তি লাগে না",
+        "key ছাড়া সব provider-এ চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "নিজের কম্পিউটারে চালালে বিল নেই, লেখা বাইরে যায় না। তবে কম্পিউটারের শক্তি (VRAM) লাগে।"
+    },
+    {
+      "question": "Ollama-র default port কোনটা?",
+      "options": ["8000", "1234", "11434", "4000"],
+      "answerIndex": 2,
+      "explanation": "Ollama 11434, vLLM 8000, LM Studio 1234, LiteLLM-এর example-এ 4000।"
+    },
+    {
+      "question": "`provider_routing` কোন provider-এর জন্য কাজ করে?",
+      "options": [
+        "শুধু OpenRouter",
+        "সব provider",
+        "শুধু Anthropic",
+        "শুধু local model"
+      ],
+      "answerIndex": 0,
+      "explanation": "provider_routing শুধু OpenRouter-এর জন্য: দালালের পেছনের কোন কোম্পানি কাজ করবে তা ঠিক করে।"
+    },
+    {
+      "question": "`config.yaml`-কে model ও endpoint-এর \"source of truth\" বলার মানে কী?",
+      "options": [
+        "ফাইলটা ভুল তথ্য রাখে",
+        "ফাইলটা শুধু পড়ার জন্য",
+        "ফাইলটা key রাখে",
+        "কোন model আর কোন endpoint ব্যবহার হবে, শেষ কথাটা ওই ফাইলই বলে"
+      ],
+      "answerIndex": 3,
+      "explanation": "source of truth মানে \"শেষ কথা\"। বিরোধ হলে config.yaml-এর মানই ধরা হয়।"
+    }
+  ],
+  "recap": [
+    "Provider হলো যে কোম্পানি AI model ভাড়া দেয়; Hermes নিজে ভাবে না, provider-এর model দিয়ে ভাবে।",
+    "`hermes model` দিয়ে session-এর বাইরে provider বাছো, `/model` দিয়ে ভেতরে মডেল বদলাও।",
+    "key যায় `~/.hermes/.env`-এ, OAuth token `auth.json`-এ, আর model/endpoint-এর সেটিং `config.yaml`-এ।",
+    "Provider পাঁচ ধরনের: subscription/OAuth, aggregator, সরাসরি API key, cloud platform, local/self-hosted।",
+    "Agent হিসেবে চালাতে context কমপক্ষে ৬৪,০০০ token দরকার; local server-এর default port-গুলো আলাদা।"
+  ]
+}

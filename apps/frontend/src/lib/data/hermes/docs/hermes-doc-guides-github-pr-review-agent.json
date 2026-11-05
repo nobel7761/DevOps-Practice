@@ -1,0 +1,245 @@
+{
+  "contentId": "hermes-doc-guides-github-pr-review-agent",
+  "title": "GitHub PR Review Agent",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/github-pr-review-agent",
+  "oneLiner": "এই lesson শেষে তুমি cron, skill ও memory জুড়ে নিজের GitHub PR review agent বানাতে পারবে এবং PR, diff, gh CLI, polling, webhook-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলের খাতা-দেখা আপা\n\nপরীক্ষার পর শিক্ষকের টেবিলে খাতার স্তূপ। দু'দিন কেউ ছোঁয় না।\n\nএক আপা ঠিক করলেন: প্রতি দুই ঘণ্টায় নতুন খাতা দেখবেন, একটা চেকলিস্ট ধরে (ভুল, নকল, হাতের লেখা), আর প্রতিটায় লিখবেন \"পাশ / আবার দেখো / মন্তব্য\"। তিনি পাড়ার নিয়মও জানেন: \"এই স্কুলে লাল কালি চলে না।\"\n\nএই tutorial-এ তুমি Hermes দিয়ে তেমন একজন **GitHub PR Review Agent** বানাবে।\n\nসমস্যা: PR দিনের পর দিন পড়ে থাকে, নতুন ডেভেলপার bug merge করে, maintainer-রা সকাল কাটায় diff পড়ে। সমাধান: cron প্রতি কয়েক ঘণ্টায় Hermes-কে জাগায়। সে `gh` CLI দিয়ে GitHub পড়ে, একটা **skill**-এর চেকলিস্ট ধরে, **memory**-তে রাখা team-নিয়ম মেনে review করে, সারাংশ Telegram/Discord/local-এ পাঠায়।\n\nকেন cron? Polling-এর জন্য server বা public endpoint লাগে না। NAT ও firewall-এর পেছনেও চলে। (রিয়েল-টাইম চাইলে webhook-ভিত্তিক guide, যাতে public endpoint লাগে।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **GitHub ও repo:** GitHub হলো কোড রাখার ওয়েবসাইট। Repo (repository) হলো একটা project-এর কোডের ভাণ্ডার।\n- **PR (Pull Request):** \"আমি কোডে এই বদল করেছি, মূল কোডে মেশাবে কি?\" এমন একটা প্রস্তাব। সহপাঠীর খাতা জমা দেওয়ার মতো।\n- **Diff:** পুরোনো আর নতুন কোডের তফাত, মানে কোন লাইন যোগ বা মোছা হলো। \"সাতটা ভুল খুঁজো\" ছবির দাগ দেওয়া জায়গাগুলো।\n- **Merge:** প্রস্তাবিত বদল মূল কোডে মিলিয়ে দেওয়া।\n- **Review:** PR-এর কোড পড়ে ভুল বা উন্নতি বলা। খাতা দেখা।\n- **`gh` CLI:** GitHub-এর কমান্ড-লাইন টুল। CLI মানে terminal-এ লিখে চালানো। `gh auth login` করলে সে তোমার নামে GitHub-এর সঙ্গে কথা বলতে পারে।\n- **Cron:** সময় ধরে নিজে চলা কাজ। অ্যালার্ম ঘড়ি।\n- **Skill:** Hermes-এর রেসিপি-কার্ড, কীভাবে কাজ করতে হয় তার নির্দেশিকা।\n- **Memory:** Hermes-এর খাতা, যেখানে সে তথ্য মনে রাখে। session (আলাপ) পেরিয়েও থাকে।\n- **Gateway:** চলতে-থাকা প্রোগ্রাম, যা Hermes-কে chat app আর cron-এর সঙ্গে জোড়ে। cron job এখানেই চলে।\n- **Polling বনাম webhook:** Polling মানে নিজে বারবার গিয়ে দেখে আসা (\"নতুন চিঠি এসেছে?\")। Webhook মানে ডাকপিয়ন নিজে এসে ঘণ্টা বাজায়, তার জন্য তোমার ঠিকানা (public endpoint) জানাতে হয়।\n- **NAT / firewall:** বাড়ির নেটওয়ার্কের দেওয়াল। বাইরের কেউ ঢুকতে পারে না, কিন্তু ভেতর থেকে বেরিয়ে দেখে আসা যায়। তাই polling নিরাপদ ও সহজ।\n- **Rate limit:** একটা সেবা ঘণ্টায় কতবার অনুরোধ নেবে তার সীমা।\n- **PATH:** terminal কোন কোন ফোল্ডারে কমান্ড খুঁজবে তার তালিকা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Cron জাগায়, agent gh দিয়ে PR পড়ে, skill ও memory মেনে review করে, ফল পাঠায়।",
+        "nodes": [
+          {
+            "id": "cron",
+            "kind": "server",
+            "label": "Cron timer",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "gh",
+            "kind": "external",
+            "label": "GitHub (gh CLI)",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "sm",
+            "kind": "database",
+            "label": "Skill + Memory",
+            "x": 440,
+            "y": 120
+          },
+          {
+            "id": "out",
+            "kind": "external",
+            "label": "Chat app",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "cron",
+            "to": "agent",
+            "label": "fire"
+          },
+          {
+            "from": "agent",
+            "to": "gh",
+            "label": "gh pr diff"
+          },
+          {
+            "from": "agent",
+            "to": "sm",
+            "label": "guidelines"
+          },
+          {
+            "from": "agent",
+            "to": "out",
+            "label": "deliver"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে যা লাগবে\n\n- Hermes Agent install করা।\n- cron-এর জন্য gateway চালু: `hermes gateway install` (service, মানে পেছনে সারাক্ষণ চলা) অথবা `hermes gateway` (foreground, terminal খোলা রেখে)।\n- GitHub CLI `gh` installed ও authenticated: `gh auth login` (macOS-এ Homebrew, Ubuntu/Debian-এ apt; এগুলো package manager, মানে প্রোগ্রাম নামানোর ডেলিভারি-লোক)।\n- ঐচ্ছিক: Telegram বা Discord।\n\n> Test-এর সময় `deliver: \"local\"` দিলে review `~/.hermes/cron/output/`-এ জমে। নিরাপদ শুরু।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "ছয় ধাপে PR review agent।",
+        "steps": [
+          {
+            "title": "১. setup যাচাই",
+            "body": "`hermes` চালিয়ে বলো: `NousResearch/hermes-agent`-এর open PR-এর `gh pr list` চালাও, limit ৩।"
+          },
+          {
+            "title": "২. হাতে review",
+            "body": "বলো: PR 3888 `gh pr diff` দিয়ে review করো। bug, security, code quality, লাইন নম্বর ও কোড quote সহ।"
+          },
+          {
+            "title": "৩. review skill বানাও",
+            "body": "`~/.hermes/skills/code-review/SKILL.md`। একটা চেকলিস্ট ও output format।"
+          },
+          {
+            "title": "৪. team-নিয়ম memory-তে",
+            "body": "'Remember: ...' দিয়ে বলো; session পেরিয়েও থাকে।"
+          },
+          {
+            "title": "৫. cron job",
+            "body": "`hermes cron create` দিয়ে প্রতি ২ ঘণ্টায় (`0 */2 * * *`) চালাও।"
+          },
+          {
+            "title": "৬. দরকারে এখনই",
+            "body": "`hermes cron run pr-review` বা chat-এ `/cron run pr-review`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ১ ও ২: যাচাই আর হাতে review\n\n**কেন আগে হাতে?** স্বয়ংক্রিয় করার আগে নিশ্চিত হও সব সংযোগ ঠিক আছে। না হলে cron ভুল জিনিস বারবার করবে।\n\nHermes চালিয়ে এই ধরনের কথা বলো (প্রথমে):\n\n```text\nRun gh pr list for NousResearch/hermes-agent, state open, limit 3.\n```\n\nতারপর:\n\n```text\nReview PR 3888 using gh pr diff. Look for bugs, security issues and code quality.\nGive line numbers and quote the code.\n```\n\nHermes diff আনে, পড়ে, findings (খুঁজে পাওয়া সমস্যা) দেয়।\n\n## ধাপ ৩: Review skill\n\nফোল্ডার `~/.hermes/skills/code-review/`, ফাইল `SKILL.md`, frontmatter-এ (ফাইলের ওপরের তথ্য-অংশ) `name: code-review` আর বর্ণনা (PR review: bug, security, quality)। চেকলিস্ট:\n\n- **Bugs** (ভুল)\n- **Security:** injection (লুকিয়ে খারাপ হুকুম ঢোকানো), auth bypass (লগইন এড়িয়ে ঢোকা), secrets (গোপন পাসওয়ার্ড কোডে ফাঁস), SSRF (সার্ভারকে দিয়ে অনিচ্ছাকৃত জায়গায় অনুরোধ পাঠানো)\n- **Performance:** N+1 query (একটার জায়গায় শত শত ডেটাবেস প্রশ্ন), সীমাহীন loop, leak (জায়গা ফুরিয়ে যাওয়া)\n- **Style** (লেখার ধাঁচ) ও **Tests**\n\nপ্রতি finding-এ: `File:Line`, তীব্রতা (**Critical / Warning / Suggestion**), এক বাক্যে সমস্যা, আর fix। নিয়ম: নির্দিষ্ট হও; পাঠযোগ্যতা না নষ্ট হলে style-নিয়ে খুঁতখুঁতি নয়; সমস্যা বানিয়ো না; শেষে `APPROVE` (মঞ্জুর), `REQUEST_CHANGES` (বদল চাই) বা `COMMENT` (শুধু মন্তব্য)। Hermes শুরুর সময় skills list-এ এটা দেখাবে। যাচাই করে নাও।\n\n## ধাপ ৪: Team-নিয়ম memory-তে\n\n```text\nRemember: backend is Python with FastAPI; type annotations and Pydantic models on all endpoints;\nno raw SQL (SQLAlchemy ORM only); tests in tests/ using pytest fixtures.\nRemember: frontend is TypeScript with React; no `any` types; props interfaces for all components;\nReact Query for data fetching instead of useEffect for API calls.\n```\n\n(এগুলো প্রযুক্তির নাম: FastAPI, Pydantic, SQLAlchemy, pytest, TypeScript, React ইত্যাদি। মূল কথা: তোমার দলের নিয়ম লিখে দাও।)\n\nএতে generic review না হয়ে তোমার দলের নিয়ম ধরে review হয়। আপা যেমন জানেন \"এই স্কুলে লাল কালি চলে না\"।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৫: Cron job\n\n```bash\nhermes cron create \"0 */2 * * *\" \\\n  \"myorg/backend-api আর myorg/frontend-app-এ gh pr list --limit 5 --json number,title,author,createdAt চালাও; গত ৪ ঘণ্টার PR-এর diff code-review নির্দেশিকা ধরে review করো; 'PR Reviews - today' শিরোনামে PR প্রতি লেখক ও verdict দাও; নতুন PR না থাকলে তাই জানাও\" \\\n  --name \"pr-review\" --deliver telegram --skill code-review\nhermes cron list    # যাচাই\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `hermes cron create` | নতুন সময়-ঠিক-করা কাজ বানাও | অ্যালার্ম বানানো |\n| `\"0 */2 * * *\"` | প্রতি ২ ঘণ্টায় | অ্যালার্মের সময় |\n| `\"myorg/backend-api ...\"` | prompt: সহকারীর চিরকুট (self-contained, কারণ cron-এর আগের আলাপ মনে থাকে না) | আপার নির্দেশ |\n| `--name \"pr-review\"` | job-এর নাম | লেবেল |\n| `--deliver telegram` | ফল Telegram-এ পাঠাও | কোথায় রিপোর্ট দেবে |\n| `--skill code-review` | এই skill লোড করে কাজ করো | চেকলিস্ট হাতে দেওয়া |\n| `\\` (লাইনের শেষে) | কমান্ড পরের লাইনে চলছে | লম্বা বাক্য ভাঙা |\n\n| Schedule | মানে |\n|---|---|\n| `0 */2 * * *` | প্রতি ২ ঘণ্টায় |\n| `0 9,13,17 * * 1-5` | কর্মদিবসে দিনে তিনবার |\n| `0 9 * * 1` | সোমবার সকালের সাপ্তাহিক সারসংক্ষেপ |\n| `30m` | ব্যস্ত repo-র জন্য প্রতি ৩০ মিনিটে |\n\n## আরও এগোতে\n\n- **GitHub-এ review পোস্ট:** `gh pr review` + `--comment`, `--request-changes` বা `--approve`। `repo` scope-এর token লাগে (scope মানে token কী কী করতে পারবে তার অনুমতি-সীমা)। review authenticated `gh` ব্যবহারকারীর নামে যায়।\n- **সাপ্তাহিক dashboard:** cron `0 9 * * 1`, নাম `weekly-dashboard`, Telegram-এ: open PR সংখ্যা, merged PR, stale PR, assignee-হীন (unassigned) PR।\n- **বহু repo:** prompt-এ আরও repo জুড়লে একসাথে অনেক repo নজরে রাখা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Polling (cron) বনাম webhook।",
+        "beforeTitle": "Polling (cron), এই guide",
+        "before": "Hermes নিজে প্রতি কয়েক ঘণ্টায় গিয়ে GitHub দেখে আসে।\n\n- public endpoint লাগে না\n- NAT/firewall-এর পেছনেও চলে\n- সামান্য দেরি হয়",
+        "afterTitle": "Webhook",
+        "after": "GitHub নিজে এসে খবর দেয়।\n\n- রিয়েল-টাইম\n- তোমার একটা public endpoint লাগে\n- আলাদা guide আছে"
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "৪ ঘণ্টা বনাম ২ ঘণ্টা",
+      "markdown": "উদাহরণে schedule প্রতি ২ ঘণ্টা কিন্তু lookback ৪ ঘণ্টা, তাই একই PR একাধিকবার review হতে পারে। জানালা schedule-এর সাথে মেলাতে ভেবে দেখো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সমস্যা হলে\n\n| সমস্যা | মানে কী | করণীয় |\n|---|---|---|\n| `gh: command not found` | Gateway-র সীমিত environment-এ `gh` PATH-এ নেই | PATH ঠিক করে gateway restart |\n| Review খুব সাধারণ | Hermes তোমার দলের নিয়ম জানে না | skill যোগ করো, memory-তে convention শেখাও, stack-এর context বাড়াও |\n| Cron চলছে না | gateway বন্ধ হতে পারে | `hermes gateway status` আর `hermes cron list` দেখো |\n| Rate limit | GitHub অনুরোধের সীমা | authenticated ঘণ্টায় ৫,০০০ request; page-এর হিসাবে প্রতি review-তে ~৩-৫ request লাগে |\n\n**পরবর্তী ধাপ:** webhook-ভিত্তিক review (public endpoint), Daily Briefing Bot-এর সাথে জোড়া, plugin বানিয়ে প্যাকেজ, আলাদা reviewer profile (নিজের memory ও config), আর fallback provider (বদলি সেবা) যাতে এক provider পড়ে গেলেও review চলে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "এই guide কেন webhook নয়, cron polling দিয়ে শুরু করে?",
+      "options": [
+        "Webhook নিষিদ্ধ",
+        "Cron দ্রুত",
+        "Cron-এ memory লাগে না",
+        "Server বা public endpoint লাগে না; NAT/firewall-এর পেছনেও চলে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Polling-এ তুমি নিজে গিয়ে দেখে আসো, তাই বাইরে থেকে ঢোকার পথ খুলতে হয় না।"
+    },
+    {
+      "question": "Cron job-এ `gh` command লাগলে কীসের উপর নির্ভর করে?",
+      "options": [
+        "শুধু Telegram",
+        "GitHub-এ লগইন করা `gh` CLI ও gateway-র PATH",
+        "browser",
+        "Docker"
+      ],
+      "answerIndex": 1,
+      "explanation": "`gh auth login` করা থাকতে হয় আর gateway-র PATH-এ `gh` থাকতে হয়।"
+    },
+    {
+      "question": "Review-এ team-র নিয়ম (যেমন 'no any types') কোথায় রাখা হয়?",
+      "options": [
+        "cron schedule-এ",
+        "প্রতিবার হাতে",
+        "GitHub token-এ",
+        "Memory-তে 'Remember:' দিয়ে, যা session পেরিয়ে টেকে"
+      ],
+      "answerIndex": 3,
+      "explanation": "আপা যেমন পাড়ার নিয়ম মনে রাখেন, Hermes তেমন memory থেকে।"
+    },
+    {
+      "question": "Skill-এর output-এ প্রতিটা finding-এ কী থাকে?",
+      "options": [
+        "শুধু verdict",
+        "`File:Line`, severity, এক বাক্যে সমস্যা ও fix",
+        "শুধু কোড",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "কোথায়, কত গুরুতর, কী সমস্যা, কীভাবে ঠিক করবে।"
+    },
+    {
+      "question": "`0 9,13,17 * * 1-5` কী?",
+      "options": [
+        "প্রতি ২ ঘণ্টা",
+        "সোমবারে একবার",
+        "কর্মদিবসে দিনে তিনবার (৯, ১৩, ১৭ টায়)",
+        "প্রতি ৩০ মিনিট"
+      ],
+      "answerIndex": 2,
+      "explanation": "ঘণ্টার ঘরে ৯,১৩,১৭ আর সপ্তাহের ঘরে ১-৫ (সোম-শুক্র)।"
+    },
+    {
+      "question": "Review সরাসরি GitHub-এ পোস্ট করতে কী লাগে?",
+      "options": [
+        "Telegram bot",
+        "`gh pr review` এবং `repo` scope-এর token",
+        "নতুন profile",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "Review authenticated `gh` ব্যবহারকারীর নামে যায়।"
+    },
+    {
+      "question": "প্রতি ২ ঘণ্টায় চললেও lookback ৪ ঘণ্টা হলে কী ঝুঁকি?",
+      "options": [
+        "Job মুছে যায়",
+        "rate limit বন্ধ",
+        "skill লোড হয় না",
+        "একই PR একাধিকবার review হতে পারে"
+      ],
+      "answerIndex": 3,
+      "explanation": "জানালা আর সময়সূচি না মিললে একই খাতা দুইবার দেখা হয়।"
+    },
+    {
+      "question": "PR বলতে কী বোঝায়?",
+      "options": [
+        "একটা পাসওয়ার্ড",
+        "কোডে করা বদল মূল কোডে মেশানোর প্রস্তাব",
+        "একটা cron job",
+        "একটা Telegram bot"
+      ],
+      "answerIndex": 1,
+      "explanation": "PR হলো \"আমার বদলটা মেশাবে কি?\" প্রস্তাব, যা review করে মঞ্জুর বা ফেরত দেওয়া হয়।"
+    }
+  ],
+  "recap": [
+    "Cron প্রতি কয়েক ঘণ্টায় Hermes-কে জাগায়; সে `gh` দিয়ে PR পড়ে review করে ফল পাঠায়।",
+    "Polling-এ public endpoint লাগে না; webhook রিয়েল-টাইম কিন্তু endpoint লাগে।",
+    "Skill দেয় চেকলিস্ট ও output format; memory দেয় দলের নিয়ম।",
+    "প্রথমে হাতে review করে যাচাই করো, তারপর `hermes cron create` দিয়ে স্বয়ংক্রিয় করো।",
+    "lookback জানালা schedule-এর সাথে মেলাও, নইলে একই PR বারবার review হবে।"
+  ]
+}

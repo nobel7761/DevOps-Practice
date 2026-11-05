@@ -1,0 +1,191 @@
+{
+  "contentId": "hermes-doc-user-guide-bot-mode",
+  "title": "Bot Mode",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/bot-mode",
+  "oneLiner": "এই lesson শেষে তুমি Desktop-এর Bot Mode, group chat, bot-to-bot message আর peer বুঝবে এবং profile, routine, @mention, NAT-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: ছোট অফিস আর নোটিশবোর্ড\n\nআগে তুমি Hermes-কে একটাই রোবট ভাবতে। এবার ভাবো তোমার একটা **ছোট অফিস**: একজন রোবট হিসাব দেখে, একজন লেখালেখি করে, একজন গবেষণা করে। প্রত্যেকের নিজের **ডেস্ক** (নিজের খাতা, নিজের চাবি, নিজের কথাবার্তার ইতিহাস)। আর দেয়ালে একটা **নোটিশবোর্ড**, যেখানে সবার নাম, সবার সাথে কথা বলার সুতো, আর প্রত্যেকের নিয়মিত কাজের তালিকা।\n\n**Bot Mode** হলো সেই নোটিশবোর্ড। প্রত্যেক Bot আসলে একটা **Hermes profile** (`~/.hermes/profiles/<name>/`), যার নিজের config, memory, skill, credential ও chat history। Bot Mode নতুন কিছু বানায় না, profile-এর ওপরে একটা **UI স্তর** (মানে চোখে দেখার ও ক্লিক করার পর্দা)। এটা desktop app-এর ভেতরে তৈরি, default-এ চালু, আলাদা install লাগে না। কোনো core patch, background daemon বা বাড়তি storage নেই।\n\n**এটা না থাকলে কী সমস্যা?** অনেকগুলো profile থাকলে প্রতিটার জন্য আলাদা terminal খুলে কমান্ড লিখতে হতো, কে কী করছে একসঙ্গে দেখা যেত না। Bot Mode সবাইকে এক জানালায় আনে।\n\nSessions-এর পাশে একটা **Bots** ট্যাব আর একটা **Routines** tile যোগ হয়। CLI-তে সমতুল্য: `hermes -p <bot> chat` ও `hermes cron list`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Profile ও Bot\n**Profile** = Hermes-এর একটা আলাদা ঘর (নিজের সেটিং, স্মৃতি, চাবি)। **Bot** = সেই ঘরের একটা নামধারী সহকারী, যাকে Desktop-এ নাম-ছবি দিয়ে দেখানো হয়।\n\n### ২) Desktop app\nকম্পিউটারে install করা সাধারণ app (ফোনের app-এর মতো), যেখানে ক্লিক করে Hermes চালানো যায়, কালো terminal ছাড়াই।\n\n### ৩) Routine ও cron job\n**Cron job** = ঘড়ি ধরে নিজে নিজে চলা কাজ, যেমন \"রোজ সকাল ৯টায় খবর সংক্ষেপ করো\"। **Routine** = Bot Mode-এ এর সহজ নাম।\n\n### ৪) Gateway ও WebSocket\n**Gateway** = ভেতরের পোস্ট অফিস। **WebSocket** = একবার জুড়ে রাখলে দুই দিকে সারাক্ষণ কথা চলা ফোনলাইন (`/api/ws` তার ঠিকানা)।\n\n### ৫) @mention\nচ্যাটে `@নাম` লিখে কাউকে ডাকা। যেমন ক্লাসে নাম ধরে ডাকা।\n\n### ৬) Fire-and-forget\nবার্তা পাঠিয়ে উত্তরের জন্য অপেক্ষা না করে চলে যাওয়া। যেমন চিঠি ডাকবাক্সে ফেলা।\n\n### ৭) API key\nগোপন চাবি। **API** = এক প্রোগ্রাম আরেক প্রোগ্রামের সঙ্গে কথা বলার নিয়ম।\n\n### ৮) NAT, VPN, Tailscale\n**NAT** = বাড়ির রাউটারের দেয়াল: ভেতর থেকে বাইরে যাওয়া যায়, বাইরে থেকে সরাসরি ভেতরে ঢোকা যায় না। **VPN/Tailscale** = দুই মেশিনের মধ্যে একটা গোপন সুড়ঙ্গ বানিয়ে ওই দেয়াল পার হওয়া।\n\n### ৯) SSH, headless\n**SSH** = দূরের কম্পিউটারে নিরাপদে ঢোকার দরজা। **Headless** = পর্দা (Desktop UI) ছাড়াই চলা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "সাধারণ profile আর Bot Mode-এর পার্থক্য: প্রতি Bot-এর একটা স্থায়ী chat, bot-to-bot message ও group।",
+        "beforeTitle": "সাধারণ Profile",
+        "before": "- এক profile-এ **অনেক session**\n- profile-গুলো একে অপর থেকে বিচ্ছিন্ন\n- cron আলাদা জায়গায়",
+        "afterTitle": "Bot Mode",
+        "after": "- প্রতি Bot-এর একটাই স্থায়ী **Bot Chat**\n- Bot-রা একে অপরকে **message** করতে ও **group chat** করতে পারে\n- প্রতি Bot-এর **routine** তার chat-এর পাশেই"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Bots pane: roster\n\n**Roster** মানে সদস্যদের তালিকা।\n\n- প্রতি profile-এর একটা সারি: avatar (ছোট ছবি), শেষ message-এর ঝলক, সময়।\n- Bot-এ click করলে তার **canonical Bot Chat** খোলে (**canonical** = মূল, স্থায়ী; জন্মের সময়েই তৈরি ও pin করা, মানে সবসময় ওপরে আটকানো)। অন্য খোলা ট্যাব খোলাই থাকে।\n- Right-click → **Open recent session**: Bot Chat ছাড়া সবচেয়ে সাম্প্রতিক কথোপকথন ট্যাবে খোলে।\n- **Active now**: যার live turn চলছে, যে Bot **৯০ সেকেন্ডের** মধ্যে লিখেছে, বা যার worker heartbeat (বেঁচে থাকার সংকেত) সাম্প্রতিক।\n- **Search** লিখতে লিখতেই ছাঁকে। **Hide Bot** শুধু দেখানো লুকায়, @mention, group, routine অক্ষত।\n\n### Canonical Bot Chat-এর বিশেষ নিয়ম\n\n- `/new` ও `/reset` পুনঃনির্দেশিত হয় `/compact`-এ (পুরনো কথা ছোট করা, আলাপ মুছে ফেলা নয়)। কারণ Bot-এর একটাই স্থায়ী chat, তাই মুছে নতুন করা চলে না।\n- Archive করলে (সরিয়ে রাখা) chat অবসর নেয়; পরের click-এ নতুন canonical chat শুরু হয়। পুরনো ইতিহাস database-এ থাকে।\n- `sessions.auto_archive` কখনো Bot Chat অবসর দেয় না।\n\n### Section দিয়ে গুছানো\n\n`+ → New section` বা **Move to section** দিয়ে Clients, Team-এর মতো folder বানানো যায়। drag করে বা right-click → **Move to section** দিয়ে সাজাও; **Remove from section** দিলে **Unassigned**। Section মুছলে Bot মুছে যায় না (**Undo** toast আসে, মানে ছোট \"ফিরিয়ে আনো\" বার্তা)। সদস্যপদ থাকে প্রতিটা Bot-এর `ui_meta`-য়, section-এর ক্রম প্রতি desktop-এ আলাদা।\n\n## Bot তৈরি করা\n\n**New Agent** → দ্রুত পথে **Name**, **Title**, **Description**। **Advanced**-এ:\n\n| অপশন | মানে | কখন লাগে |\n|---|---|---|\n| আরেকটা profile থেকে clone, বা **Fresh profile** | কপি করে শুরু, বা একদম ফাঁকা | আগের সেটিং চাইলে / একদম নতুন চাইলে |\n| **Create empty** | কোনো bundled skill ছাড়া | পরিষ্কার শুরু |\n| **Model & provider pin** | কোন AI ব্যবহার হবে আটকে দেওয়া (ফাঁকা রাখলে launch profile-এরটা) | Bot-কে নির্দিষ্ট AI দিতে |\n| নিজের **SOUL.md** | স্বভাবের বর্ণনা | আলাদা ব্যক্তিত্ব দিতে |\n| skill, toolset ও MCP server চালু/বন্ধ | ক্ষমতা বাছাই | শুধু দরকারি ক্ষমতা দিতে |\n| **Copy API keys** (default চালু) | static key কপি হয়; এক-ব্যবহারের OAuth login (Anthropic, OpenAI Codex, xAI) কপি হয় না, `hermes -p <name> auth add <provider>` দিয়ে sign in করো | চাবি আবার না বসাতে |\n\nএকাধিক connection থাকলে **Create on** picker দিয়ে বেছে নেওয়া যায় কোন মেশিনে profile হবে। আরও আছে **Edit Profile**, **Duplicate** (পুরো clone), **Delete Profile** (default profile মোছা যায় না)।\n\n## Avatar ও Voice\n\n- **Blob face** (default): নাম থেকে নির্ধারিত; **Randomize**, **Lock face**, ছয় রূপ: round, organic, boxy, nub, cloud, sun।\n- **Geometric face**: ৭ আকার × ১০ রং।\n- ছবি upload, বা AI-তৈরি portrait (image backend লাগে), বা petdex gallery থেকে pixel pet (`hermes pets`)।\n- Voice আসে Bot profile-এর `config.yaml`-এর `tts.*` থেকে (TTS = লেখা থেকে কথা); STT আসে active profile-এর STT সেটিং থেকে (STT = কথা থেকে লেখা)।\n\n## Routines\n\nRoutine হলো Bot-এর নিয়মিত কাজ। পর্দায় Bots ট্যাবে chat-এর পাশে থাকে। ভেতরে এগুলো cron job, নাম `[bot:<name>] <routine>`, `hermes cron list`-এ দেখা যায়। schedule বাছাই করার structured picker আছে, আর Advanced-এ নিজের Hermes schedule string। ফলাফল Bot-এর chat history-তে আসে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Group chat\n\nএকটা room-এ **২–৬টা Bot**। সীমা: প্রতি send-এ **১০টা message**, **৩টা serial round** (পালা করে তিন দফা উত্তর)। **সমস্যা:** সীমা না থাকলে Bot-রা নিজেদের মধ্যে অনন্তকাল কথা চালিয়ে যেত। Bot-রা তখনই উত্তর দেয় যখন নতুন কিছু বলার আছে; @mention দিয়ে round সীমিত হয়।\n\n| ঠিকানা | মানে |\n|---|---|\n| `@name` | সেই Bot-কে |\n| `@user` | তোমার কাছে escalate (তোমাকে জানানো) |\n| `@hermes` | primary Bot |\n| `@all` / `@everyone` | সবাইকে |\n\n**Hold ও release**: @mention-এর পাশে `stop`, `halt` বা `pause` লিখলে সেই সদস্য থেমে যায়; `@all`/`@everyone` সবাইকে ছাড়ে। code, quote বা blockquote-এর ভেতরের stop শব্দ গোনা হয় না (যাতে কথার ছলে লেখা শব্দে ভুল না হয়)। **Detect stop directives** toggle বন্ধ করা যায়।\n\n**Timeout**: (অপেক্ষার সীমা।) স্পষ্টত কাজ করা সদস্য ৩ ঘণ্টা পর্যন্ত; চুপ থাকলে ৩ মিনিটে expire; শান্ত room আরও ৩ ঘণ্টা নজর রাখে। ব্যর্থতা দেখায় `builder hit an error — <প্রথম লাইন>` (secret token redacted, মানে ঢাকা)।\n\n**Transcript window**: (Bot যতটা আগের কথা দেখতে পায়।) প্রায় ২০০ message বা ৩২,০০০ অক্ষর; বড় message ৮,০০০ অক্ষরের excerpt-এ কাটা।\n\n**ব্যবস্থাপনা**: **Manage members** (২–৬ Bot), **Group settings** (নাম, ছবি, **Compress history**, যা `/compress`-এর মতো), room pin/move। composer-এ (লেখার বাক্সে) **Enter** পাঠায়, **Shift+Enter** নতুন লাইন।\n\n**Storage**: প্রতিটা room যুক্ত gateway-গুলোর shared profile metadata-য় mirror হয় (আয়নার মতো কপি); shared store হলো root-এর `shared-state.db` (পুরনো room `state.db` থেকে একবার migrate হয়)। সব সদস্য একই gateway-তে থাকলে Desktop বন্ধ থাকলেও gateway turn চালায় (`groups.capabilities`-এ `driver: true`); বহু-মেশিন room শুধু Desktop খোলা থাকলে চলে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Bot-to-Bot messaging\n\nযেকোনো chat-এ `@scribe` লিখলে live roster-এর সাথে মেলানো হয়, আর Bot নিজে `message_agent` দিয়ে বার্তা বানায়:\n\n```text\nmessage_agent(target=\"...\", message=\"...\")\n```\n\n| অংশ | মানে |\n|---|---|\n| `message_agent` | tool-এর নাম: \"অন্য Bot-কে বার্তা পাঠাও\" |\n| `target` | কাকে: profile name, friendly name বা @-tag (`@scribe`, `@dr-foo`) |\n| `message` | কী বলবে |\n\n- profile name আগে মেলে; দ্ব্যর্থক (একাধিক মানে হতে পারে এমন) নাম প্রত্যাখ্যাত।\n- প্রাপক দেখে `Message from 🤖 <friendly name> (@<handle>):`।\n- শুধু Bot-Mode-পরিচালিত install-এর canonical Bot Chat-এ পাওয়া যায়।\n- **Fire-and-forget**: উত্তরে `status: queued`, `delivery_id`, `process_id`। ফলাফল আসে completion notification-এ, অথবা `reply_delivery: poll` ও `process(action=\"wait\", session_id=…)` দিয়ে।\n- উত্তর ১৬,০০০ অক্ষর পর্যন্ত; বাকিটা `process(action=\"log\", session_id=…)`-এ।\n- `[SILENT]`, `NO_REPLY`-এর মতো silence token কিছুই দেখায় না।\n- Config: `agent.bot_mode_protocol: true`, `bot_mode.envelope_ttl_seconds`, `terminal.oneshot_completion_wait_seconds`।\n\n**Error ও retry**: `target_busy`, `provider_quota_limit`, `context_overflow`, `delivery_timeout` ইত্যাদি typed code `[reason: <code>]` রূপে আসে। সর্বোচ্চ **একবার** retry (আবার চেষ্টা), শুধু transient (সাময়িক) বা context overflow-এ; auth, quota ও config ব্যর্থতায় কখনো না। `queued` মানে ভর্তি হয়েছে (শেষ হয়নি); `settled` মানে শেষ, অজানা-ফলের delivery আবার পাঠিও না (দুবার পৌঁছে যেতে পারে)।\n\n**Desktop ছাড়া (headless) চালু করতে** দুটো শর্তই লাগে: `hermes -p <bot> chat -c \"Bot Chat\" --create-if-missing` এবং যেকোনো Bot-এর `profile.yaml`-এ `ui_meta:` → `hermes-bots: {}`।\n\nDesktop relay-তে সময়সীমা: (relay = মাঝখানে বার্তা পৌঁছে দেওয়া।) Desktop-এর deadline ~২৬ মিনিট, sender মোট ~৫২ মিনিট অপেক্ষা করে (তারপর `delivery_timeout`), আর target-এর turn সর্বোচ্চ ১০ মিনিট।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Desktop-এর Bots ট্যাব স্থানীয় gateway দিয়ে প্রতিটা Bot-এর সাথে কথা বলে; Bot-রা নিজেদের মধ্যেও message পাঠায়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি (Desktop)",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "g",
+            "kind": "gateway",
+            "label": "Local gateway",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Bot: scribe",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "b",
+            "kind": "server",
+            "label": "Bot: research",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "g",
+            "label": "/api/ws"
+          },
+          {
+            "from": "g",
+            "to": "a",
+            "label": "Bot Chat"
+          },
+          {
+            "from": "g",
+            "to": "b",
+            "label": "Bot Chat"
+          },
+          {
+            "from": "a",
+            "to": "b",
+            "label": "message_agent"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `hermes peer`: সবসময়-চালু, মেশিন থেকে মেশিনে\n\n**Peer** মানে সমকক্ষ, অন্য মেশিনের আরেকটা Hermes। তার সাথে সরাসরি কথা বলতে:\n\n```bash\nhermes peer add spark --url http://spark.lan:8377 --key <API_SERVER_KEY>\nhermes peer list\nhermes peer dm spark\nhermes peer dm spark/researcher\nhermes peer run spark --idempotency-key ticket-123\nhermes peer status spark run_abc123\nhermes peer stop spark run_abc123\n```\n\n| কমান্ড | কাজ | কখন লাগে |\n|---|---|---|\n| `peer add spark --url ... --key ...` | `spark` নামে বন্ধুকে ঠিকানা-চাবি সহ নোট করে রাখো | প্রথমবার পরিচয় করতে |\n| `peer list` | চেনা peer-দের তালিকা | কাকে ডাকা যায় দেখতে |\n| `peer dm spark` / `spark/researcher` | সরাসরি কথা (ওই মেশিনের নির্দিষ্ট Bot-ও ডাকা যায়) | ছোট প্রশ্নে |\n| `peer run spark --idempotency-key ticket-123` | কাজ শুরু করে সঙ্গে সঙ্গে চলে আসো | লম্বা কাজে |\n| `peer status spark run_abc123` | কাজ কতদূর | ফল দেখতে |\n| `peer stop spark run_abc123` | কাজ থামাও | ভুল কাজ বন্ধ করতে |\n\n- `peer dm` একটা HTTP connection ধরে রেখে উত্তরের অপেক্ষা করে, ছোট প্রশ্নের জন্য। open Desktop chat-এ ৫ মিনিট পরে \"হারিয়ে গেছে\" না বলে \"queued\" জানায়।\n- `peer run` সঙ্গে সঙ্গে `run_id` দেয়; স্থির **idempotency key** (একই কাজ দুবার পাঠালেও একবারই হবে, এমন পরিচয়-চিহ্ন) duplicate আটকায়।\n- দরকার: peer-এ `api_server` platform ও শক্ত `API_SERVER_KEY`।\n- key থাকে `~/.hermes/.env`-এ `HERMES_PEER_<NAME>_KEY` নামে; peer-এর নাম ও URL `config.yaml`-এর `bot_peers`-এ।\n- `message_agent(target=\"spark/researcher\")` বা `target=\"spark\"` দিয়েও peer-কে ডাকা যায়।\n\n> **NAT সতর্কতা**: connection সরাসরি ও একমুখী। laptop VPS-এ (ভাড়া করা দূরের কম্পিউটার) পৌঁছাতে পারে, উল্টোটা Tailscale বা VPN-এর মতো পথ ছাড়া নয়।\n\n## একাধিক মেশিনে Bot\n\nউৎস: local runtime, remote gateway, SSH host, Hermes Cloud। unreachable মেশিন শেষ-জানা entry রাখে। একই নাম দুই জায়গায় থাকলে `@name-device` (যেমন `@research-homelab`)। remote Bot-এ click করলে মেশিন বদলায় না।\n\n## Local gateway\n\nপ্রতি host-এ (প্রতি কম্পিউটারে) একটা gateway process সব local profile সামলায়। local Bot খোলার সময় Desktop `hermes gateway ensure --json` চালায়, তারপর one-use ticket (একবার ব্যবহারযোগ্য টিকিট) দিয়ে `/api/ws`-এ WebSocket। Desktop বন্ধ করলে gateway থামে না; থামাতে `hermes gateway stop`। `gateway.standalone: true` profile নিজের gateway চালায়।\n\n## বন্ধ করা\n\n**Capabilities → Plugins → Bots** → **Desktop** switch, সঙ্গে সঙ্গে কার্যকর। profile, session ও cron job অক্ষত থাকে।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Hosted room authority হস্তান্তর (অপারেটরের কাজ)",
+      "markdown": "এটা atomic নয় (এক ঝটকায় হয় না)। আগে পুরনো writer-কে **fence** (বন্ধ ও restart আটকানো) করো, turn থামানো fence নয়। তারপর `groups.promote` (`room_id`, `confirm: true` বাধ্যতামূলক; confirm না দিলে error **4118**), পুরনোটাকে `groups.demote`, শেষে `groups.state` দিয়ে যাচাই। পুরনো gateway লেখার যোগ্য থাকা অবস্থায় promote করলে split-brain হয় (দুই মেশিন নিজেকে মালিক ভাবে), history আপনা-আপনি মেশে না।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "CLI-তে একই জিনিস",
+      "markdown": "Chat: `hermes -p <bot> chat`; ফাইল: `~/.hermes/profiles/<bot>/`; routine: `hermes cron list`; profile: `hermes profile create|list|rename`।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Bot Mode-এ একটা \"Bot\" আসলে কী?",
+      "options": [
+        "একটা Hermes profile",
+        "আলাদা বাইরের program",
+        "একটা skill",
+        "একটা model"
+      ],
+      "answerIndex": 0,
+      "explanation": "Bot = profile; Bot Mode হলো তার ওপরের UI স্তর।"
+    },
+    {
+      "question": "Canonical Bot Chat-এ `/new` বা `/reset` লিখলে কী হয়?",
+      "options": [
+        "আলাপ মুছে যায়",
+        "Bot মুছে যায়",
+        "`/compact`-এ পুনঃনির্দেশিত হয়",
+        "নতুন Bot বানায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Bot-এর একটাই স্থায়ী chat, তাই মোছার বদলে ছোট করা হয়।"
+    },
+    {
+      "question": "Group room-এ কতটা Bot থাকতে পারে?",
+      "options": ["১টা", "২ থেকে ৬টা", "১০টা", "সীমাহীন"],
+      "answerIndex": 1,
+      "explanation": "২–৬টা Bot; প্রতি send-এ ১০টা message, ৩টা serial round সীমা।"
+    },
+    {
+      "question": "`@all` বা `@everyone` ঠিকানায় (stop-এর সঙ্গে) কী হয়?",
+      "options": [
+        "শুধু primary Bot থামে",
+        "কিছুই না",
+        "group মুছে যায়",
+        "সবাইকে ছাড়ে (release)"
+      ],
+      "answerIndex": 3,
+      "explanation": "@mention-এর পাশে `stop` লিখলে সদস্য থামে; `@all`/`@everyone` সবাইকে ছাড়ে।"
+    },
+    {
+      "question": "Bot-to-Bot message পাঠানোর tool কী?",
+      "options": ["`send_mail`", "`peer_dm`", "`message_agent`", "`chat_all`"],
+      "answerIndex": 2,
+      "explanation": "`message_agent(target=..., message=...)`; fire-and-forget।"
+    },
+    {
+      "question": "Bot-এর routine ভেতরে কোন রূপে সংরক্ষিত?",
+      "options": [
+        "cron job, নাম `[bot:<name>] <routine>`",
+        "skill",
+        "session",
+        "memory"
+      ],
+      "answerIndex": 0,
+      "explanation": "`hermes cron list`-এ দেখা যায়।"
+    },
+    {
+      "question": "`hermes peer` ব্যবহারে NAT-এর সীমা কী?",
+      "options": [
+        "কোনো সীমা নেই",
+        "শুধু Windows-এ",
+        "key লাগে না",
+        "connection একমুখী; উল্টো পথের জন্য Tailscale/VPN লাগে"
+      ],
+      "answerIndex": 3,
+      "explanation": "laptop VPS-এ পৌঁছাতে পারে, উল্টোটা সুড়ঙ্গ ছাড়া নয়।"
+    }
+  ],
+  "recap": [
+    "Bot = Hermes profile; Bot Mode হলো তার ওপরে desktop UI স্তর, default চালু।",
+    "প্রতি Bot-এর একটা স্থায়ী Bot Chat, আর তার পাশে routine (`[bot:<name>]` cron job)।",
+    "Group room-এ ২–৬ Bot; `@name`, `@user`, `@hermes`, `@all` দিয়ে ঠিকানা।",
+    "Bot-রা `message_agent` দিয়ে message পাঠায়, উত্তর fire-and-forget; সর্বোচ্চ একবার retry।",
+    "`hermes peer` দিয়ে আলাদা মেশিনের Hermes-এর সাথে কথা বলা যায়, তবে API key লাগে।",
+    "Bot Mode বন্ধ করলে profile, session, cron অক্ষত থাকে।"
+  ]
+}

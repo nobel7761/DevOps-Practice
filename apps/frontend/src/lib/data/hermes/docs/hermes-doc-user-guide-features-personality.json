@@ -1,0 +1,242 @@
+{
+  "contentId": "hermes-doc-user-guide-features-personality",
+  "title": "Personality & SOUL.md",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/personality",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে SOUL.md (আসল স্বভাব) আর /personality (সাময়িক পোশাক)-এর তফাত, আর system prompt, slot, overlay, YAML-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nHermes একটা অভিনেতার মতো। তার একটা **আসল চরিত্র** আছে: সে কেমন করে কথা বলে, কতটা সোজাসুজি, কতটা গম্ভীর। এই চরিত্রটা লেখা আছে একটা **স্ক্রিপ্টে**, নাম `SOUL.md`। অভিনেতা মঞ্চে ওঠার আগে সবার আগে এই স্ক্রিপ্টটা পড়ে নেয়।\n\nএরপর কখনো কখনো তুমি বলো, \"আজ একটু **জলদস্যু** সেজে কথা বলো তো!\" তখন অভিনেতা স্ক্রিপ্ট ফেলে দেয় না, শুধু ওপরে একটা **পোশাক** চাপায়। এই পোশাকটাই `/personality`। পোশাক খুলে ফেললেই আবার আসল চরিত্র।\n\n- **SOUL.md** = আসল চরিত্র, সবসময় থাকে\n- **/personality** = সাময়িক পোশাক, session-এর জন্য\n\n**এটা না থাকলে কী সমস্যা?** Hermes প্রতিবার নতুন করে 'আমি কেমন করে কথা বলব' ঠিক করত, কখনো গম্ভীর, কখনো ঢিলেঢালা। `SOUL.md` থাকলে তার স্বভাব সবসময় একই থাকে। আর `/personality` থাকলে তুমি এক কথায় মেজাজ বদলাতে পারো, আসল স্বভাব না নষ্ট করেই।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Personality (ব্যক্তিত্ব)** | Hermes কেমন সুরে ও ঢঙে কথা বলে | মানুষের স্বভাব, গম্ভীর বা হাসিখুশি |\n| **System prompt** | AI-কে কাজ শুরুর আগে দেওয়া গোপন নির্দেশ-খাতা। এতে অনেক অংশ থাকে, প্রতিটা অংশের নিজের জায়গা (slot) | অভিনেতার পুরো স্ক্রিপ্ট |\n| **Slot** | system prompt-এর ভেতরে একটা নির্দিষ্ট জায়গা। slot #1 মানে সবার আগের জায়গা | লাইনের প্রথম আসন |\n| **Overlay** | ওপরে চাপিয়ে দেওয়া পাতলা স্তর। নিচের জিনিস বদলায় না, ঢেকে দেয় | স্বচ্ছ ট্রেসিং-কাগজ |\n| **`HERMES_HOME`** | Hermes-এর নিজের ঘরের ঠিকানা, সাধারণত `~/.hermes`। `~` মানে তোমার হোম ফোল্ডার | বাড়ির নম্বর |\n| **CWD (working directory)** | এখন তুমি যে ফোল্ডারে কাজ করছ | মানচিত্রে 'আপনি এখানে' |\n| **Config / YAML** | **Config** = সেটিং-ফাইল (`config.yaml`)। **YAML** = তার লেখার ধরন `নাম: মান`, ভেতরে ঢুকিয়ে লিখে ভাগ করা | ফর্মের ঘর পূরণ |\n| **Prompt injection / security scan** | লেখার ভেতরে লুকানো ক্ষতিকর নির্দেশ। scan মানে তা খুঁজে দেখা | জাল চিঠি ধরার পরীক্ষা |\n| **Truncation** | লেখা বেশি বড় হলে কেটে ছোট করা | লম্বা চিঠি ছেঁটে ফেলা |\n| **Subagent / delegation** | Hermes-এর ছোট সহকারী, যাকে কাজ ভাগ দেওয়া হয় | বড় ভাইয়ের ছোট ভাইকে কাজ দেওয়া |\n| **Migration** | এক ব্যবস্থা থেকে আরেকটায় সরে যাওয়া | বাসা বদলের সময় মালপত্র সরানো |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "SOUL.md system prompt-এর এক নম্বর জায়গায় বসে, আর /personality সবার শেষে একটা overlay হিসেবে যোগ হয়।",
+        "nodes": [
+          {
+            "id": "s",
+            "kind": "database",
+            "label": "SOUL.md",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "p",
+            "kind": "server",
+            "label": "System Prompt",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "o",
+            "kind": "external",
+            "label": "/personality",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "a",
+            "kind": "database",
+            "label": "AGENTS.md",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "s",
+            "to": "p",
+            "label": "slot #1"
+          },
+          {
+            "from": "a",
+            "to": "p",
+            "label": "project নিয়ম"
+          },
+          {
+            "from": "o",
+            "to": "p",
+            "label": "শেষে overlay"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## SOUL.md আসলে কী\n\n`SOUL.md` হলো agent-এর **প্রধান পরিচয়**। এটা system prompt-এর **১ নম্বর slot**-এ বসে এবং Hermes-এর hardcoded default পরিচয়ের জায়গা নেয়।\n\n(**Hardcoded default** মানে প্রোগ্রামের ভেতরে আগে থেকে লিখে রাখা পরিচয়, যা তুমি বদলাতে পারো না যতক্ষণ না SOUL.md দাও। **Overwrite** মানে ওপরে লিখে আগেরটা মুছে দেওয়া।)\n\n### ফাইল কোথায়\n- Default পথ: `~/.hermes/SOUL.md`। আসলে `$HERMES_HOME/SOUL.md`, তাই তুমি অন্য home দিলে সেটাই অনুসরণ করা হয়।\n- ফাইল না থাকলে Hermes একটা **starter SOUL.md** নিজে বানিয়ে দেয়।\n- তোমার নিজের লেখা SOUL.md **কখনো overwrite হয় না**।\n- Hermes SOUL.md শুধু `HERMES_HOME` থেকে পড়ে, **current working directory থেকে নয়**। তাই কোন project-এ আছো তাতে personality বদলায় না।\n\n### কীভাবে ঢোকে\n- খালি না হলে লেখাটা security scan আর truncation-এর পর **হুবহু** (কোনো wrapper ছাড়া) ঢোকে।\n- Context files-এর অংশে আলাদা করে দ্বিতীয়বার ঢোকে না।\n- Prompt injection-এর pattern আছে কিনা scan করা হয়, অন্য context file-এর মতোই। তাই SOUL.md-কে persona আর voice-এ সীমাবদ্ধ রাখো, meta-নির্দেশ নয়।\n- পাতায় truncation-এর সংখ্যাগত সীমা বা scan-এর খুঁটিনাটি pattern দেওয়া নেই।\n\n### কখন built-in default identity ফিরে আসে\n- ফাইল নেই বা পড়া যাচ্ছে না\n- ফাইল খালি, বা শুধু ফাঁকা জায়গা\n- `skip_context_files` সেট আছে (এটা একটা সেটিং যা বলে 'context ফাইল পড়ো না', যেমন subagent বা delegation-এর ক্ষেত্রে)\n\nDefault পরিচয়টা ছোট একটা বাক্য: \"Hermes Agent, built by Nous Research\", যেখানে সোজাসুজি কথা আর অনুরোধের ওজন অনুযায়ী উত্তরের দৈর্ঘ্যের কথা আছে। তাই খালি SOUL.md মানে \"পরিচয়হীন\" নয়, বরং default পরিচয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "কোন কথা SOUL.md-তে যাবে আর কোনটা AGENTS.md-তে।",
+        "beforeTitle": "SOUL.md (সব জায়গায় সাথে যায়)",
+        "before": "- পরিচয়, tone, style, সোজাসুজি ভাব\n- কথা বলার default আর যা এড়াবে\n- অনিশ্চয়তা, মতভেদ, অস্পষ্টতা সামলানোর ধরন\n\n**যাবে না:** একবারের project নির্দেশ, file path, repo নিয়ম, সাময়িক workflow",
+        "afterTitle": "AGENTS.md (project-এর নিজস্ব)",
+        "after": "- architecture, coding নিয়ম\n- tool পছন্দ, repo workflow\n- command, port, path, deployment নোট\n\n**নিয়ম:** সব জায়গায় খাটলে SOUL.md, শুধু একটা project-এর হলে AGENTS.md"
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "ভালো SOUL.md-র লক্ষণ",
+      "markdown": "ভালো লেখা হবে: ১) বিভিন্ন context-এ একই রকম খাটে, ২) অনেক রকম কথোপকথনের জন্য যথেষ্ট ব্যাপক, ৩) voice গড়ার জন্য যথেষ্ট নির্দিষ্ট, ৪) communication আর পরিচয় নিয়ে। পাতার উদাহরণ ছিল এক \"pragmatic senior engineer\", যার ভেতরে Style, What to avoid আর Technical posture নামে তিনটা অংশ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## /personality: সাময়িক পোশাক\n\n### ১৪টা built-in personality\n\n| নাম | কেমন |\n|---|---|\n| helpful | বন্ধুত্বপূর্ণ, সাধারণ কাজের |\n| concise | সংক্ষিপ্ত, সোজা |\n| technical | বিস্তারিত, নির্ভুল বিশেষজ্ঞ |\n| creative | ছকের বাইরে ভাবে |\n| teacher | ধৈর্যশীল, উদাহরণ দেয় |\n| kawaii | মিষ্টি অভিব্যক্তি, sparkle (★) |\n| catgirl | neko-chan ঢং, \"nya~\" |\n| pirate | Captain Hermes, tech-জানা জলদস্যু |\n| shakespeare | কাব্যিক গদ্য, নাটকীয়তা |\n| surfer | ঢিলেঢালা \"bro\" ভাব |\n| noir | কঠোর গোয়েন্দার বর্ণনা |\n| uwu | অতি মিষ্টি uwu-কথা |\n| philosopher | প্রতিটা প্রশ্নে গভীর চিন্তা |\n| hype | চরম উদ্যম আর উচ্ছ্বাস |\n\n(কিছু শব্দ: **kawaii** = জাপানি 'মিষ্টি' ঢং। **noir** = পুরনো গোয়েন্দা-সিনেমার কঠোর বর্ণনা। **uwu** = ইন্টারনেটের আদুরে ভাষা। এগুলো মজার সাজ, কাজ একই থাকে।)\n\n### কমান্ড\n\n```text\n/personality                  # তালিকা দেখাও (none সহ), active-টা চিহ্নিত\n/personality concise          # বদলাও\n/personality technical\n/personality teacher          # messaging platform-এও চলে\n/personality none             # overlay মুছে দাও\n/personality default          # একই কাজ\n/personality neutral          # একই কাজ\n```\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `/personality` | তালিকা দেখায়, এখন কোনটা চালু চিহ্নিত | কী কী আছে দেখতে |\n| `/personality concise` | `concise` পোশাক পরায় | ছোট উত্তর চাইলে |\n| `/personality none` / `default` / `neutral` | পোশাক খুলে ফেলে, SOUL.md-র আসল স্বভাবে ফেরে | সাজ আর না চাইলে |\n\nপরিবর্তন কাজ করে **পরের message** থেকে। CLI, messaging platform, TUI আর desktop app সবখানে built-in personality পাওয়া যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিজের personality বানানো\n\n`~/.hermes/config.yaml`-এ `agent.personalities`-এর নিচে লেখো। পাতায় `codereviewer` নামের একটা উদাহরণ ছিল, যা `/personality codereviewer` দিয়ে চালু হয়। (নিচের ছাঁচটা ধারণা বোঝানোর জন্য, তুমি নিজের লেখা বসাবে।)\n\n```yaml\nagent:\n  personalities:\n    codereviewer: \"You are a careful code reviewer. ...\"\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `agent:` | 'agent-এর সেটিং শুরু' শিরোনাম | ফর্মের অংশ |\n| `  personalities:` | নিজের বানানো পোশাকের তালিকা | পোশাকের আলমারি |\n| `    codereviewer: \"...\"` | পোশাকের নাম, তারপর কেমন আচরণ করবে তার বর্ণনা (উদ্ধৃতি-চিহ্নের ভেতরে) | পোশাকের লেবেল ও বর্ণনা |\n\nনিয়মগুলো:\n\n- Top-level `personalities:` block-ও কাজ করে। একই নাম দুই জায়গায় থাকলে **`agent.personalities` জেতে**।\n- Built-in-এর নাম আবার ব্যবহার করলে সেটা built-in-কে **override** করে।\n- যেটা বেছেছো তার নাম সংরক্ষিত হয় `display.personality`-তে।\n- `agent.system_prompt` হলো হাতে লেখা prompt-এর ঘর। এটা কাজ করে **শুধু যখন কোনো personality বাছা নেই**। Personality এটাকে কখনো বদলায় না।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "System prompt যে ক্রমে সাজানো হয়।",
+        "steps": [
+          {
+            "title": "১. SOUL.md",
+            "body": "বা built-in fallback পরিচয়।"
+          },
+          {
+            "title": "২. Tool-aware নির্দেশ",
+            "body": "tool কীভাবে ব্যবহার করবে তার পথনির্দেশ।"
+          },
+          {
+            "title": "৩. Memory ও user context",
+            "body": "স্মৃতির খাতা থেকে আসা তথ্য।"
+          },
+          {
+            "title": "৪. Skills guidance",
+            "body": "Skill ব্যবহারের নির্দেশ।"
+          },
+          {
+            "title": "৫. Context files",
+            "body": "`AGENTS.md`, `.cursorrules` ইত্যাদি।"
+          },
+          {
+            "title": "৬. Timestamp",
+            "body": "এখনকার সময়।"
+          },
+          {
+            "title": "৭. Platform hint",
+            "body": "platform অনুযায়ী formatting ইঙ্গিত।"
+          },
+          {
+            "title": "৮. Overlay",
+            "body": "ঐচ্ছিক, যেমন `/personality`।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও কিছু জানার কথা\n\n### Upgrade-এর পর একবারের migration\nUpgrade করে প্রথমবার চালালে আগে সংরক্ষিত personality বাছাই **`none`-এ রিসেট** হয়ে যায়। Hermes ছাপে কোনটা মুছেছে। আবার চাইলে `/personality <name>` দাও। তোমার হাতে লেখা `agent.system_prompt` অক্ষত থাকে।\n\n### চেহারা আর ব্যক্তিত্ব আলাদা জিনিস\nTerminal-এর চেহারা বদলায় `display.skin` আর `/skin` দিয়ে (Skins & Themes পাতা)। এটা personality-র সাথে সম্পর্কহীন।\n\n(**Skin** মানে terminal-এর রং-সাজ। **Workflow** মানে কাজ করার ধাপ। **`AGENTS.md`** হলো project-এর নিজস্ব নিয়মের চিরকুট-ফাইল।)\n\n### সুপারিশ করা workflow\n1. একটা global `~/.hermes/SOUL.md` রাখো।\n2. Project-এর নির্দেশ `AGENTS.md`-এ রাখো।\n3. `/personality` ব্যবহার করো শুধু সাময়িক mode বদলাতে।\n\n### সাধারণ ভুল\n- ধরে নেওয়া যে SOUL.md working directory থেকে পড়া হয়: হয় না।\n- Personality চালু থাকা অবস্থায় `agent.system_prompt` লিখে ফল আশা করা: এটা তখন উপেক্ষিত।\n- `/personality` overlay স্থায়ী ভাবা: এটা সাময়িক; SOUL.md-ই ভিত্তি থাকে, যদি না overlay অনেকটা বদলে দেয়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "SOUL.md system prompt-এর কোথায় বসে?",
+      "options": [
+        "একদম শেষে",
+        "Memory-র পরে",
+        "১ নম্বর slot-এ, default পরিচয়ের জায়গায়",
+        "শুধু project folder থাকলে"
+      ],
+      "answerIndex": 2,
+      "explanation": "SOUL.md primary identity, slot #1।"
+    },
+    {
+      "question": "Hermes SOUL.md কোথা থেকে পড়ে?",
+      "options": [
+        "শুধু `HERMES_HOME` থেকে",
+        "current working directory থেকে",
+        "যেকোনো parent folder থেকে",
+        "internet থেকে"
+      ],
+      "answerIndex": 0,
+      "explanation": "তাই কোন project-এ আছো তাতে personality বদলায় না।"
+    },
+    {
+      "question": "SOUL.md ফাইলটা খালি রাখলে কী হয়?",
+      "options": [
+        "Hermes পরিচয়হীন হয়ে যায়",
+        "Hermes চালু হয় না",
+        "Error আসে",
+        "Built-in default পরিচয়ে ফিরে যায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "খালি বা ফাঁকা ফাইল হলে fallback পরিচয় ব্যবহার হয়।"
+    },
+    {
+      "question": "\"আমাদের এই repo-তে tab ব্যবহার হয় আর test চালাতে `make test`\" কথাটা কোথায় রাখা উচিত?",
+      "options": [
+        "SOUL.md",
+        "AGENTS.md",
+        "`/personality`-তে",
+        "`display.skin`-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "Project-নির্দিষ্ট জিনিস AGENTS.md-এর, সব জায়গার জন্য হলে SOUL.md।"
+    },
+    {
+      "question": "`/personality` overlay বন্ধ করার উপায় কোনটা নয়?",
+      "options": [
+        "/personality none",
+        "/personality default",
+        "/personality off-now",
+        "/personality neutral"
+      ],
+      "answerIndex": 2,
+      "explanation": "`none`, `default`, `neutral` তিনটাই overlay মুছে দেয়।"
+    },
+    {
+      "question": "একই নামের personality `agent.personalities` আর top-level `personalities:` দুটোতেই থাকলে কোনটা জেতে?",
+      "options": [
+        "top-level",
+        "`agent.personalities`",
+        "যেটা আগে লেখা",
+        "দুটোই মিশে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "`agent.personalities` অগ্রাধিকার পায়।"
+    },
+    {
+      "question": "`agent.system_prompt` কখন কাজ করে?",
+      "options": [
+        "সবসময়",
+        "শুধু যখন কোনো personality বাছা নেই",
+        "শুধু CLI-তে",
+        "শুধু SOUL.md খালি থাকলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Personality চালু থাকলে এটা উপেক্ষিত হয়, আর personality এটাকে বদলায়ও না।"
+    },
+    {
+      "question": "Upgrade-এর পর প্রথমবার চালালে সংরক্ষিত personality-র কী হয়?",
+      "options": [
+        "অপরিবর্তিত থাকে",
+        "সব built-in মুছে যায়",
+        "SOUL.md মুছে যায়",
+        "`none`-এ রিসেট হয়, আবার `/personality <name>` দিতে হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "একবারের migration, আর হাতে লেখা `agent.system_prompt` প্রভাবিত হয় না।"
+    }
+  ],
+  "recap": [
+    "SOUL.md হলো agent-এর প্রধান পরিচয়: `~/.hermes/SOUL.md`, system prompt-এর ১ নম্বর slot, শুধু `HERMES_HOME` থেকে পড়া হয়।",
+    "ফাইল না থাকলে starter বানানো হয়, থাকলে কখনো overwrite হয় না; খালি হলে default পরিচয় ফিরে আসে।",
+    "সব জায়গার জন্য SOUL.md, শুধু একটা project-এর জন্য AGENTS.md।",
+    "`/personality <name>` সাময়িক overlay; ১৪টা built-in আছে, `none` দিয়ে মোছা যায়, পরের message থেকে কার্যকর।",
+    "নিজের personality `agent.personalities`-এ লেখো; `agent.system_prompt` শুধু personality না থাকলে কাজ করে।",
+    "Upgrade-এর পর একবার personality বাছাই `none`-এ রিসেট হয়।"
+  ]
+}

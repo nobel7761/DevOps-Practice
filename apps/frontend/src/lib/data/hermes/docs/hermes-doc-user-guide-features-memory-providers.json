@@ -1,0 +1,246 @@
+{
+  "contentId": "hermes-doc-user-guide-features-memory-providers",
+  "title": "Memory Providers",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/memory-providers",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে External Memory Provider কী, কেন লাগে ও কীভাবে একটা চালু করতে হয়, আর plugin, cloud, self-hosted, scrub, endpoint-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা ছোট্ট গল্প দিয়ে শুরু করি\n\nমনে করো তোমার বন্ধু **Hermes**-এর পকেটে দুটো ছোট খাতা আছে (`MEMORY.md` আর `USER.md`)। খাতা ছোট, তাই সব কথা ধরে না।\n\nএকদিন তুমি তাকে একটা **বিশাল আলমারি** ভাড়া করে দিলে। আলমারিটা বাইরের একটা দোকানে থাকে। এখন Hermes প্রতিটা কথাবার্তার পর আলমারিতে নোট রেখে আসে, আর কথা বলার আগে আলমারি থেকে দরকারি নোট খুঁজে আনে। পকেটের খাতা কিন্তু বন্ধ হয় না, সেটা সবসময় সাথেই থাকে।\n\nএই বাইরের আলমারিটাই হলো **External Memory Provider**। আলমারির অনেক ব্র্যান্ড আছে: Honcho, Mem0, Hindsight, Holographic... কিন্তু নিয়ম একটাই: **একসাথে একটা আলমারিই ব্যবহার করা যায়।**\n\n**এটা না থাকলে কী সমস্যা?** পকেটের খাতায় মোটে কয়েক হাজার অক্ষর ধরে। যে মানুষের সাথে মাসের পর মাস কাজ করো, তার সব কথা এতে ধরে না। বাইরের আলমারি থাকলে স্মৃতি প্রায় সীমাহীন, আর Hermes গুছিয়ে খুঁজে আনতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Memory Provider** | যে বাইরের সেবা Hermes-এর জন্য বাড়তি স্মৃতি রাখে ও খুঁজে দেয় | ভাড়া করা আলমারি |\n| **Plugin** | বাইরে থেকে যোগ করা অতিরিক্ত অংশ, Hermes-এর মূল কোড না ছুঁয়ে | ফোনে নতুন app |\n| **Bundled / Catalog** | **Bundled** = Hermes-এর সাথেই আসা। **Catalog** = আলাদা তালিকা যেখান থেকে নামিয়ে বসাতে হয় | বাসার ভেতরের আলমারি বনাম দোকানের তাক |\n| **Turn** | তোমার একটা message আর Hermes-এর একটা উত্তর | কথার এক পাল্লা |\n| **System prompt** | মগজকে কাজ শুরুর আগে দেওয়া গোপন নির্দেশ-খাতা | অভিনেতার হাতের স্ক্রিপ্ট |\n| **Prefetch** | জিজ্ঞেস করার আগেই দরকারি জিনিস আগে থেকে এনে রাখা | খাবার বেড়ে দেওয়ার আগে প্লেট সাজিয়ে রাখা |\n| **Background** | পেছনে চলা কাজ, তুমি টের পাও না | রান্নাঘরের পেছনের দরজায় ডেলিভারি |\n| **Cloud / Self-hosted / Local** | **Cloud** = কোম্পানির সার্ভারে। **Self-hosted** = নিজে একটা সার্ভারে চালানো। **Local** = নিজের কম্পিউটারেই | ভাড়ার বাসা / নিজের জমিতে বাড়ি / নিজের ঘর |\n| **Scrub / redact** | লেখা থেকে গোপন জিনিস (পাসওয়ার্ড, চাবি) ঢেকে দেওয়া | চিঠির সংবেদনশীল অংশে কালো কালি |\n| **API key** | সেবা ব্যবহারের গোপন চাবি (যেমন `MEM0_API_KEY`) | সদস্য-কার্ড |\n| **Environment variable / `.env`** | `নাম=মান` আকারে রাখা গোপন সেটিং। `.env` ফাইলে সেগুলো থাকে | তালা-দেওয়া ডায়েরি |\n| **CLI** | terminal-এ লিখে চালানো প্রোগ্রাম (যেমন `brv`) | চিঠিতে হুকুম দেওয়া |\n| **Endpoint / port** | **Endpoint** = সেবার ইন্টারনেট ঠিকানা। **Port** = ঠিকানার ভেতরের দরজা-নম্বর (যেমন 1933) | বাড়ির ঠিকানা ও ফ্ল্যাট-নম্বর |\n| **SQLite / FTS5** | **SQLite** = ছোট ডেটাবেস-ফাইল। **FTS5** = শব্দ ধরে খোঁজার ব্যবস্থা | তথ্যের আলমারি ও সূচিপত্র |\n| **Profile** | আলাদা আলাদা Hermes-পরিচয়, প্রতিটার নিজস্ব সেটিং | পরিবারের প্রতিজনের আলাদা আলমারি |"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Built-in খাতা সবসময় চালু থাকে, তার পাশে একটা মাত্র external provider যোগ হয়।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "b",
+            "kind": "database",
+            "label": "MEMORY, USER",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "p",
+            "kind": "external",
+            "label": "বাইরের Provider",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "h",
+            "label": "কথা বলো"
+          },
+          {
+            "from": "h",
+            "to": "b",
+            "label": "সবসময় চালু"
+          },
+          {
+            "from": "h",
+            "to": "p",
+            "label": "একটাই active"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## মূল নিয়ম\n\n- Hermes-এর সাথে **দুটো bundled** external provider আসে: **RetainDB** আর **ByteRover**। বাকিগুলো **plugin catalog** থেকে install করতে হয়।\n- **একসাথে একটাই** external provider active থাকে।\n- Built-in memory (`MEMORY.md` আর `USER.md`) **সবসময় চালু** থাকে, provider-এর পাশাপাশি।\n\n### চালু করার কমান্ড\n\n```bash\nhermes memory setup    # interactive picker, provider বেছে সাজাও\nhermes memory status   # এখন কোনটা active দেখো\nhermes memory off      # external provider বন্ধ করো\n```\n\nঅন্য দুটো উপায়: `hermes plugins` চালিয়ে (Provider Plugins, তারপর Memory Provider) বেছে নাও, অথবা `~/.hermes/config.yaml`-এ `memory.provider` সেট করো।\n\n| কমান্ড | কী করে | কখন লাগে |\n|---|---|---|\n| `hermes memory setup` | প্রশ্ন করে করে provider বেছে সাজায় (interactive picker মানে মেনু থেকে বাছাই) | প্রথমবার চালু করতে |\n| `hermes memory status` | এখন কোন provider চালু দেখায় | সন্দেহ হলে যাচাই করতে |\n| `hermes memory off` | external provider বন্ধ করে (পকেটের খাতা তবুও চালু থাকে) | আলমারি আর না চাইলে |\n| `memory.provider` (config-এ) | `~/.hermes/config.yaml`-এ লেখা, কোন provider চালু | হাতে লিখে ঠিক করতে চাইলে |\n\n**কেন \"একটাই provider\"?** দুটো আলমারিতে একই কথা দুবার রাখলে গোলমাল হতো, খরচও দ্বিগুণ হতো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Provider active থাকলে প্রতিটা turn-এ Hermes কী কী করে।",
+        "steps": [
+          {
+            "title": "১. Context ঢোকানো",
+            "body": "Provider তার নিজের context system prompt-এ ঢুকিয়ে দেয়।"
+          },
+          {
+            "title": "২. Prefetch",
+            "body": "প্রতিটা turn-এর আগে background-এ প্রাসঙ্গিক memory খুঁজে আনা হয়।"
+          },
+          {
+            "title": "৩. Sync",
+            "body": "প্রতিটা উত্তরের পর কথোপকথনের turn provider-এ পাঠানো হয়।"
+          },
+          {
+            "title": "৪. Extract",
+            "body": "Session শেষে provider সমর্থন করলে memory বের করে নেয়।"
+          },
+          {
+            "title": "৫. Mirror",
+            "body": "Built-in memory-তে যা লেখা হয়, তার কপি provider-এও যায়।"
+          },
+          {
+            "title": "৬. নিজস্ব tool",
+            "body": "Provider তার নিজের কিছু tool Hermes-কে দেয় (যেমন search, add)।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Secret scrubbing",
+      "markdown": "Provider-এ যা-ই পাঠানো হয় (turn, tool output, recall query, transcript, mirror করা লেখা, delegation-এর ফল, tool argument) সবকিছু আগে **scrub** করা হয়। `security.redact_secrets` বন্ধ থাকলেও এটা হয়। তবে যে credential-এর কোনো চেনা আকার নেই, সেটা ধরা পড়ে না। আর তোমার local transcript-এ আসল লেখাই থাকে। (**Credential** মানে পাসওয়ার্ড বা চাবি। চেনা আকার মানে যেমন `sk-...` দিয়ে শুরু key। না চেনা আকারের গোপন জিনিস ঢাকা যায় না।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Provider-দের পরিচয়\n\n(Tool সংখ্যা মানে provider Hermes-কে কয়টা ছোট কাজ করার ক্ষমতা দেয়। যেমন `search`, `add`।)\n\n| Provider | Tool সংখ্যা | কোথায় থাকে | মূল কথা |\n|---|---|---|---|\n| Honcho | 5 | cloud বা self-hosted | base layer আর dialectic layer |\n| OpenViking | 6 | self-hosted | tiered loading, ছয় category-তে auto extraction |\n| Mem0 | 4 | cloud বা self-hosted | search, add, update, delete |\n| Hindsight | 3 | cloud বা local | `hindsight_reflect` দিয়ে একাধিক memory মিলিয়ে সিদ্ধান্ত |\n| Holographic | 2 | local | SQLite + FTS5, trust scoring |\n| RetainDB | 10 | cloud | মাসে $20, `RETAINDB_API_KEY` লাগে |\n| ByteRover | 3 | local বা cloud | `brv` CLI, local knowledge tree |\n| Supermemory | 4 | cloud বা self-hosted | `container_tag`, `auto_recall`, `auto_capture` |\n| Memori | 5 | cloud | বাইরের `hermes-memori` CLI লাগে |\n\n### Catalog-এর provider install\n\n```bash\nhermes plugins install honcho\nhermes plugins install openviking\nhermes plugins install mem0\nhermes plugins install hindsight\nhermes plugins install holographic\nhermes plugins install supermemory\n```"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Setup-এর তুলনা (এক নজরে)\n\n| Provider | Storage | খরচ | Dependency / লাগে কী | Standout |\n|---|---|---|---|---|\n| Honcho | cloud / self-hosted | cloud paid, self-hosted free | `hermes plugins install honcho` | dialectic user modeling |\n| OpenViking | self-hosted | Free | plugin + server চালানো | filesystem-style hierarchy, tiered loading |\n| Mem0 | cloud / self-hosted | Free বা paid | `hermes plugins install mem0` | server-side LLM extraction |\n| Hindsight | cloud / local | Free বা paid | `hermes plugins install hindsight` | knowledge graph, reflect synthesis |\n| Holographic | local | Free | `hermes plugins install holographic` | HRR algebra, trust scoring |\n| RetainDB | cloud | $20/মাস | `requests`, `RETAINDB_API_KEY` | delta compression |\n| ByteRover | local / cloud | Free বা paid | `brv` CLI | compression-এর আগে extraction |\n| Supermemory | cloud / self-hosted | Free বা paid | `hermes plugins install supermemory`, `SUPERMEMORY_API_KEY` | context fencing, multi-container |\n| Memori | cloud | Free বা paid | `hermes-memori` CLI, Memori API key | tool-aware memory, structured recall |\n"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রতিটা provider একটু কাছ থেকে\n\n### Honcho (Plastic Labs)\nপাঁচটা tool। দুই স্তর: একটা **base context** layer (মূল পরিচয়-তথ্য) আর একটা **dialectic** layer (প্রশ্ন-উত্তরের মতো যুক্তি করে বোঝার স্তর)। কিছু knob (knob মানে ঘোরানোর সেটিং-বোতাম; cadence মানে 'কত turn পরপর'):\n\n- `contextCadence` (default 1), `dialecticCadence` (default 2)\n- `dialecticDepth` (১ থেকে ৩, default 1)\n- `recallMode` (default `hybrid`), `writeFrequency` (default `async`)\n- `observationMode` (default `directional`, অথবা `unified`)\n\nConfig খোঁজা হয় এই ক্রমে: `$HERMES_HOME/honcho.json`, `~/.hermes/honcho.json`, তারপর `~/.honcho/config.json`। একাধিক profile হলে `hermes profile create <name> --clone` আর `hermes honcho sync`। Gateway-তে user চেনার জন্য `pinUserPeer`, `userPeerAliases`, `runtimePeerPrefix`।\n\n### OpenViking (Volcengine)\nSelf-hosted (নিজে সার্ভার চালাতে হয়)। ছয়টা tool। `OPENVIKING_ENDPOINT` দিয়ে ঠিকানা দেওয়া হয় (local port default 1933), profile-এর `.env`-এ। Server-এর setting `ov.conf`-এ, client-এর `ovcli.conf`-এ। Endpoint local হলে আর কেউ না শুনলে plugin নিজেই `openviking-server` চালু করে দেয় (Hermes-এর environment সহ)। এটা না চাইলে server নিজে আগে চালাও।\n\n### Mem0\nচারটা tool। তিন mode (mode মানে চলার ধরন): **Platform** (cloud, `MEM0_API_KEY`), **self-hosted dashboard** (`MEM0_HOST`, `mem0.json`), আর **OSS** (in-process)। SDK-র (SDK মানে প্রোগ্রামারদের জন্য তৈরি হাতিয়ার-সেট) anonymous telemetry (নাম-পরিচয় ছাড়া ব্যবহার-পরিসংখ্যান পাঠানো) বন্ধ করতে `MEM0_TELEMETRY=false`। `sync_max_chars` default 450।\n\n### Hindsight\nতিনটা tool। Mode: `cloud`, `local_embedded` (Hermes-এর ভেতরেই), `local_external` (আলাদা প্রোগ্রাম হিসেবে)। Config `$HERMES_HOME/hindsight/config.json`-এ। সাবধান: `config.yaml`-এর ভেতরে `memory.hindsight` section লিখলে সেটা **উপেক্ষা** করা হয়।\n\n### Holographic\nLocal SQLite fact store। FTS5 search, trust scoring, আর **HRR** (Holographic Reduced Representations, জটিল প্রশ্নে তথ্য জুড়ে হিসাব করার একটা পদ্ধতি)। এটা catalog plugin। লাগে শুধু SQLite, NumPy ঐচ্ছিক (HRR algebra-র জন্য)। খরচ: Free।\n\n```bash\nhermes plugins install holographic   # catalog থেকে\nhermes memory setup                  # \"holographic\" বেছে নাও\n# অথবা হাতে:\nhermes config set memory.provider holographic\n```\n\nConfig থাকে `config.yaml`-এর `plugins.hermes-memory-store`-এর নিচে:\n\n| Key | Default | মানে |\n|---|---|---|\n| `db_path` | `$HERMES_HOME/memory_store.db` | SQLite ফাইলের জায়গা |\n| `auto_extract` | `false` | session শেষে নিজে নিজে fact বের করা |\n| `default_trust` | `0.5` | শুরুর trust score (0.0 থেকে 1.0) |\n\nদুটো tool: `fact_store` (৯টা action: add, search, probe, related, reason, contradict, update, remove, list) আর `fact_feedback` (helpful/unhelpful রেটিং দিয়ে trust বদলায়)।\n\n- `probe`: একটা entity নিয়ে সব fact মনে করা\n- `reason`: একাধিক entity জুড়ে compositional AND query\n- `contradict`: পরস্পরবিরোধী fact ধরা\n- Feedback: helpful হলে +0.05, unhelpful হলে −0.10\n\n**Gotcha:** setting-গুলো `plugins.hermes-memory-store`-এর নিচে, `memory.holographic` নামে কোনো section নেই। NousResearch-এর পুরোনো (archived) কপি থাকলে `hermes plugins update holographic` দিয়ে catalog entry-তে সরানো যায়, data যেখানে ছিল সেখানেই থাকে। বর্তমান action/option-এর শেষ কথা catalog plugin-এর নিজের README।\n\n### RetainDB\nCloud memory API। hybrid search (vector + BM25 + reranking), ৭ রকম memory type, delta compression। Core-এর সাথে আসে, কিন্তু **১৫ অক্টোবর ২০২৬-এ core ছাড়ছে**। উপযুক্ত: যাদের RetainDB infrastructure আগে থেকেই আছে। লাগে RetainDB account আর API key। খরচ $20/মাস। Dependency: `requests`।\n\n```bash\nhermes memory setup    # \"retaindb\" বেছে নাও\n# অথবা হাতে:\nhermes config set memory.provider retaindb\necho \"RETAINDB_API_KEY=your-key\" >> ~/.hermes/.env\n```\n\nপাতায় এই provider-এর কোনো config file বা key দেওয়া নেই। Profile অনুযায়ী project-এর নাম নিজে নিজে বানানো হয়। দশটা tool:\n\n| Tool | কাজ |\n|---|---|\n| `retaindb_profile` | user profile |\n| `retaindb_search` | semantic search |\n| `retaindb_context` | কাজ-সম্পর্কিত context |\n| `retaindb_remember` | type আর importance দিয়ে memory রাখা |\n| `retaindb_forget` | memory মুছে ফেলা |\n| `retaindb_upload_file`, `retaindb_list_files`, `retaindb_read_file`, `retaindb_ingest_file`, `retaindb_delete_file` | file-সংক্রান্ত tool (পাতায় এদের আচরণ ব্যাখ্যা করা নেই) |\n\n**Gotcha:** আলাদা repository এখন maintain হয় না, নতুন maintainer-এর জন্য খোলা।\n\n### ByteRover\n`brv` CLI দিয়ে persistent memory। **Hierarchical knowledge tree** আর tiered retrieval (আগে fuzzy text, তারপর LLM-চালিত search)। Local-first, ঐচ্ছিক cloud sync (পাতায় SOC2 Type II certified বলা আছে)। এটাও ১৫ অক্টোবর ২০২৬-এ core ছাড়ছে। খরচ: local Free, cloud হলে ByteRover-এর pricing।\n\n```bash\n# আগে CLI install\ncurl -fsSL https://byterover.dev/install.sh | sh\n# (বিকল্প: npm install -g byterover-cli)\nhermes memory setup    # \"byterover\" বেছে নাও\n# অথবা হাতে:\nhermes config set memory.provider byterover\n```\n\nকোনো config key নেই। Knowledge tree থাকে `$HERMES_HOME/byterover/`-এ (profile অনুযায়ী আলাদা)। তিনটা tool: `brv_query` (tree-তে খোঁজা), `brv_curate` (fact, সিদ্ধান্ত বা pattern রাখা), `brv_status` (CLI version আর tree-র পরিসংখ্যান)। বিশেষত্ব: context compression-এর **আগেই** insight বের করে রাখে, যাতে compression সেগুলো ফেলে না দেয়। **Gotcha:** `brv` CLI আগে install না থাকলে চলবে না।\n\n### Supermemory\nSemantic long-term memory: profile recall, semantic search, স্পষ্ট memory tool, আর প্রতি turn-এ capture (প্রতি session-এ প্রতি ৪ ঘণ্টার জানালায় একটা document)। Catalog plugin। লাগে `hermes plugins install supermemory` আর cloud API key (app.supermemory.ai) অথবা self-hosted server।\n\n```bash\nhermes plugins install supermemory\nhermes memory setup                  # \"supermemory\" বেছে নাও\n# অথবা হাতে:\nhermes config set memory.provider supermemory\necho 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env\n```\n\nSelf-host করতে `npx supermemory local` চালাও। `hermes memory setup`-এর **আগে** `$HERMES_HOME/supermemory.json`-এ ঠিকানা দাও, তারপর setup-এর সময় local server-এর ছাপা API key বসাও:\n\n```json\n{ \"base_url\": \"http://localhost:6767\" }\n```\n\nConfig (`$HERMES_HOME/supermemory.json`):\n\n| Key | Default | মানে |\n|---|---|---|\n| `base_url` | `https://api.supermemory.ai` | hosted বা self-hosted ঠিকানা (`SUPERMEMORY_BASE_URL`-কে হারায়) |\n| `container_tag` | `hermes` | search/write-এর tag; `{identity}` দিলে profile অনুযায়ী আলাদা |\n| `auto_recall` | `true` | turn-এর আগে প্রাসঙ্গিক memory ঢোকানো |\n| `auto_capture` | `true` | প্রতি উত্তরের পর পরিষ্কার করা user-assistant turn রাখা |\n| `max_recall_results` | `10` | context-এ সর্বোচ্চ কয়টা recalled item |\n| `profile_frequency` | `50` | প্রথম turn-এ আর প্রতি N turn-এ profile fact দেওয়া |\n| `capture_mode` | `all` | পাতা বলে ছোট/তুচ্ছ turn ডিফল্টে বাদ যায় |\n| `search_mode` | `hybrid` | `hybrid`, `memories` অথবা `documents` |\n| `api_timeout` | `5.0` | SDK request-এর timeout |\n\nEnv var: `SUPERMEMORY_API_KEY` (বাধ্যতামূলক), `SUPERMEMORY_BASE_URL` (`base_url` না থাকলে), `SUPERMEMORY_CONTAINER_TAG` (config-কে হারায়)। `base_url`-এর অগ্রাধিকার: `supermemory.json`, তারপর `SUPERMEMORY_BASE_URL`, তারপর default।\n\nএকাধিক container:\n\n```json\n{\n  \"container_tag\": \"hermes\",\n  \"enable_custom_container_tags\": true,\n  \"custom_containers\": [\"project-alpha\", \"shared-knowledge\"],\n  \"custom_container_instructions\": \"Use project-alpha for coding context.\"\n}\n```\n\nচারটা tool: `supermemory_store`, `supermemory_search`, `supermemory_forget` (ID বা সবচেয়ে মেলা query দিয়ে), `supermemory_profile`। **Context fencing:** capture করা turn থেকে recall করা memory ছেঁটে ফেলা হয়, যাতে স্মৃতি নিজেকেই বারবার দূষিত না করে। ব্যর্থ write পরের turn, session শেষ, `/reset` বা shutdown-এ আবার চেষ্টা হয়। `security.allow_lazy_installs: false` থাকলে নিজে `hermes plugins install supermemory` চালাও। `hermes-agent[supermemory]` pip extra আর লাগে না।\n\n### Memori\nMemori Cloud-এ structured long-term memory। শেষ হওয়া turn background-এ ধরা হয়, tool-aware turn context আর স্পষ্ট recall tool আছে। উপযুক্ত: agent নিজে recall নিয়ন্ত্রণ করবে, project আর session অনুযায়ী attribution চাই। লাগে বাইরে থেকে দেওয়া `hermes-memori` CLI ও provider integration, আর একটা Memori API key (app.memorilabs.ai-তে sign up)। খরচ: Memori-র pricing।\n\n```bash\n# বাইরের installer-এর integration contract যাচাই করার পরেই চালাও\nhermes-memori install\nhermes config set memory.provider memori\nhermes memory setup\n```\n\n- Installer ঠিক Hermes home-কে target করছে কি না, আর নিজের Python dependency জানিয়েছে কি না, আগে দেখে নাও।\n- বাইরের installer-কে Hermes-এর বাছাই করা environment-এ pip install করতে দিও না।\n- Dependency তৈরি হলে Hermes restart দাও।\n- পাতা সতর্ক করে: `hermes pm install` নামে কোনো কমান্ড বানিয়ে নিও না। Installer PM-managed admission না জানলে publisher-কে জিজ্ঞেস করো।\n\nকোনো config key নেই। পাঁচটা tool: `memori_recall` (long-term memory খোঁজা), `memori_recall_summary` (সারাংশ context), `memori_quota` (ব্যবহার ও quota), `memori_signup` (signup email চাওয়া), `memori_feedback` (integration নিয়ে feedback)।\n\n**Gotcha:** শুধু CLI আছে মানেই Hermes-এর ভেতরে Python provider পাওয়া যায় না। Entry-point-only distribution-এ owner-এর নিজস্ব build লাগে। পাতায় Memori-র profile isolation নিয়ে কিছু বলা নেই।\n"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Profile isolation",
+      "markdown": "Local provider-রা `$HERMES_HOME` ব্যবহার করে, তাই প্রতিটা profile-এর স্মৃতি আলাদা। Config-ফাইল-ভিত্তিক provider-এর setting-ও `$HERMES_HOME`-এ থাকে। RetainDB profile অনুযায়ী project-এর নাম বানায়। OpenViking প্রতিটা profile-এর `.env` পড়ে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Migration আর ভবিষ্যৎ\n\n- Hindsight, Honcho, OpenViking, Mem0, Holographic, Supermemory এখন catalog-এ। `memory.provider`-এ এদের নাম থাকলে `hermes update` বা agent-এর প্রথম চালুর সময় নিজে নিজে install হয়।\n- `security.allow_lazy_installs: false` থাকলে Hermes নিজে install না করে শুধু install কমান্ডটা ছাপে।\n- **RetainDB আর ByteRover core থেকে সরে যাবে ১৫ অক্টোবর ২০২৬ তারিখে**, আর তাদের repository এখন maintain করা হয় না।\n- (**Migration** মানে এক ব্যবস্থা থেকে আরেকটায় সরে যাওয়া। **Lazy install** মানে দরকার পড়লে তবেই নামানো।)\n- নিজের provider বানাতে চাইলে Developer Guide-এর Memory Provider Plugins পাতা দেখো।\n\n## কোনটা বেছে নেবে (নতুনদের জন্য সহজ পথ)\n\nপাতাটা কোনো একটাকে সেরা বলে না, তাই এগুলো শুধু প্রশ্ন:\n\n1. সব কিছু নিজের কম্পিউটারে রাখতে চাও? তাহলে local option দেখো (Holographic, ByteRover, OpenViking)।\n2. Cloud-এ চালাতে আপত্তি নেই? Mem0 Platform, Supermemory ইত্যাদি।\n3. Tool কম চাও নাকি বেশি? Holographic-এ ২টা, RetainDB-তে ১০টা।\n\nশুরু করতে `hermes memory setup` চালালেই picker সব দেখিয়ে দেবে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "একসাথে কয়টা external memory provider active থাকতে পারে?",
+      "options": ["যত খুশি", "দুটো", "একটাই", "শুধু bundled দুটো"],
+      "answerIndex": 2,
+      "explanation": "পাতা স্পষ্ট বলে একসাথে একটা external provider active থাকে।"
+    },
+    {
+      "question": "External provider চালু থাকলে built-in `MEMORY.md` আর `USER.md`-এর কী হয়?",
+      "options": [
+        "সবসময় চালু থাকে",
+        "মুছে যায়",
+        "বন্ধ হয়ে যায়",
+        "শুধু cloud-এ যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "Built-in memory provider-এর পাশাপাশি সবসময় চালু থাকে।"
+    },
+    {
+      "question": "কোন কমান্ডে external provider বন্ধ করা যায়?",
+      "options": [
+        "hermes sessions off",
+        "hermes memory stop",
+        "hermes plugins remove memory",
+        "hermes memory off"
+      ],
+      "answerIndex": 3,
+      "explanation": "`hermes memory off` provider বন্ধ করে; `status` দিয়ে অবস্থা দেখা যায়।"
+    },
+    {
+      "question": "Hindsight-এর config নিয়ে কোনটা সত্য?",
+      "options": [
+        "`config.yaml`-এর `memory.hindsight` section-ই আসল জায়গা",
+        "Config থাকে `$HERMES_HOME/hindsight/config.json`-এ, আর `memory.hindsight` section উপেক্ষা করা হয়",
+        "Hindsight-এ কোনো config লাগে না",
+        "শুধু environment variable চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতা সতর্ক করে যে `config.yaml`-এর `memory.hindsight` ignore হয়।"
+    },
+    {
+      "question": "Provider-এ পাঠানো লেখা সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "শুধু `security.redact_secrets` চালু থাকলে scrub হয়",
+        "কিছুই scrub হয় না",
+        "Secret scrub করা হয়, তবে চেনা আকারহীন credential ধরা নাও পড়তে পারে",
+        "Local transcript-ও বদলে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Scrub সবসময় হয়, `redact_secrets` বন্ধ থাকলেও। কিন্তু আকারহীন credential ধরা পড়ে না, আর local transcript অপরিবর্তিত থাকে।"
+    },
+    {
+      "question": "Holographic-এ একটা feedback 'unhelpful' হলে trust কত বদলায়?",
+      "options": ["−০.১০", "+০.০৫", "−০.০৫", "০"],
+      "answerIndex": 0,
+      "explanation": "Helpful হলে +0.05, unhelpful হলে −0.10।"
+    },
+    {
+      "question": "RetainDB আর ByteRover নিয়ে কোনটা ঠিক?",
+      "options": [
+        "catalog থেকে install করতে হয়",
+        "bundled, কিন্তু ১৫ অক্টোবর ২০২৬-এ core থেকে সরে যাবে",
+        "দুটোই নতুন আর বেশি maintain হচ্ছে",
+        "দুটোর কোনো tool নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "এই দুটো bundled এবং core ছেড়ে যাচ্ছে; repository unmaintained।"
+    },
+    {
+      "question": "Provider active থাকলে প্রতিটা turn-এর আগে কী ঘটে?",
+      "options": [
+        "সব memory মুছে যায়",
+        "Provider বদলে যায়",
+        "Session বন্ধ হয়",
+        "প্রাসঙ্গিক memory background-এ prefetch হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "Prefetch turn-এর আগে, sync উত্তরের পরে।"
+    },
+    {
+      "question": "Holographic-এর `db_path`, `auto_extract` আর `default_trust` কোথায় লিখতে হয়?",
+      "options": [
+        "`memory.holographic` section-এ",
+        "`plugins.hermes-memory-store`-এর নিচে",
+        "`$HERMES_HOME/supermemory.json`-এ",
+        "`~/.hermes/.env`-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতা স্পষ্ট বলে: setting-গুলো `plugins.hermes-memory-store`-এর নিচে, `memory.holographic` নামে section নেই।"
+    },
+    {
+      "question": "Supermemory self-host করার সময় `base_url` কখন সেট করতে হয়?",
+      "options": [
+        "`hermes memory setup` চালানোর আগে",
+        "setup শেষ হওয়ার পরে",
+        "কখনোই না, নিজে ধরে নেয়",
+        "শুধু `SUPERMEMORY_API_KEY` দিলেই চলে"
+      ],
+      "answerIndex": 0,
+      "explanation": "`npx supermemory local` চালিয়ে setup-এর আগে `supermemory.json`-এ `base_url` দিতে হয়, তারপর server-এর ছাপা API key বসাতে হয়।"
+    }
+  ],
+  "recap": [
+    "Built-in খাতা সবসময় চালু; তার পাশে একটাই external provider active থাকে।",
+    "চালানোর কমান্ড: `hermes memory setup`, `status`, `off`; অথবা `memory.provider` সেট করো।",
+    "Provider turn-এ context ঢোকায়, prefetch করে, sync করে, session শেষে extract করে, আর built-in লেখা mirror করে।",
+    "Provider-এ যাওয়া সব তথ্য আগে scrub হয়, তবে চেনা আকারহীন credential ধরা নাও পড়তে পারে।",
+    "বেশিরভাগ provider catalog থেকে `hermes plugins install <name>` দিয়ে আসে; RetainDB ও ByteRover ১৫ অক্টোবর ২০২৬-এ core ছাড়বে।",
+    "Profile অনুযায়ী স্মৃতি আলাদা থাকে, কারণ provider-রা `$HERMES_HOME` বা profile-এর `.env` ব্যবহার করে।",
+    "RetainDB-তে `RETAINDB_API_KEY`, ByteRover-এ আগে `brv` CLI, Memori-তে বাইরের `hermes-memori` CLI লাগে; RetainDB ও ByteRover ১৫ অক্টোবর ২০২৬-এ core ছাড়ছে।"
+  ]
+}

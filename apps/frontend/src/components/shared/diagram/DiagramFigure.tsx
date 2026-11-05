@@ -14,7 +14,7 @@ export function DiagramFigure({
   canvasRef,
   children,
 }: {
-  caption: string;
+  caption: ReactNode;
   alt: string;
   /** Lets other parts of the page (e.g. the LinkedIn post card) find this diagram. */
   diagramId?: string;

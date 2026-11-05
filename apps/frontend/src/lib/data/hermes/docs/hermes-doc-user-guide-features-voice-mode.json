@@ -1,0 +1,243 @@
+{
+  "contentId": "hermes-doc-user-guide-features-voice-mode",
+  "title": "Voice Mode",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/voice-mode",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর সাথে কথা বলে কাজ করাতে পারবে এবং STT, TTS, Whisper, provider, API key, gateway, barge-in-এর মতো শব্দগুলো বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: walkie-talkie-ওয়ালা রোবট\n\nধরো তোমার রোবট বন্ধু **Hermes** এতদিন শুধু চিঠিতে কথা বলত। তুমি লিখতে, সে লিখত। এবার তুমি তাকে একটা **walkie-talkie** দিলে। বোতাম চাপো, কথা বলো, থামলে সে নিজেই বুঝে নেয় তোমার কথা শেষ। তারপর সে **মুখে** উত্তর দেয়।\n\nএর পেছনে তিনটা জিনিস কাজ করে:\n\n- 👂 **কান (STT, Speech-to-Text):** তোমার গলা শুনে লেখায় বদলায়।\n- 🧠 **মাথা:** সেই লেখা পড়ে ভাবে। এটা সাধারণ Hermes agent, সব tool সহ।\n- 🗣️ **মুখ (TTS, Text-to-Speech):** উত্তরের লেখা গলায় বদলে শোনায়।\n\nএই পুরো ব্যবস্থার নামই **Voice Mode**। **এটা কেন দরকার?** হাত বন্ধ থাকলে (রান্না, গাড়ি চালানো) বা টাইপ করতে ইচ্ছে না করলে কথা বলাই সহজ। Voice Mode না থাকলে Hermes শুধু লেখা বুঝত।\n\nএটা তিন জায়গায় চলে: **CLI**-তে (`Ctrl+B` চেপে), **Telegram/Discord**-এ (voice message পাঠালে), আর **Discord voice channel**-এ (bot VC-তে ঢুকে শোনে ও বলে)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) STT ও TTS\n**STT** (Speech-to-Text) = কান: গলা থেকে লেখা। **TTS** (Text-to-Speech) = মুখ: লেখা থেকে গলা। দুটো আলাদা কাজ, আলাদা প্রোগ্রাম।\n\n### ২) Whisper\nএকটা বিখ্যাত STT model, যে কথা শুনে লিখে ফেলে। Hermes-এ Whisper নানা জায়গা থেকে চালানো যায়: নিজের কম্পিউটারে (local) অথবা Groq/OpenAI-এর সার্ভারে (cloud)।\n\n### ৩) Provider\nযে কোম্পানি বা সার্ভিস কাজটা করে দেয় (এখানে STT বা TTS)। যেমন ইলেকট্রিশিয়ান ডাকা: Hermes কাজ চায়, provider কাজ করে।\n\n### ৪) API key\nprovider-এর কাছে \"আমি আসল গ্রাহক\" প্রমাণের গোপন চাবি। কাউকে দেখাতে নেই। Hermes চাবি রাখে `~/.hermes/.env` ফাইলে। (`~` মানে তোমার home ফোল্ডার, `.env` হলো গোপন-জিনিসের ফাইল।)\n\n### ৫) Local বনাম Cloud\n**Local** = তোমার নিজের কম্পিউটারে চলে। চাবি লাগে না, খরচ নেই, তবে কম্পিউটারের জোর লাগে। **Cloud** = অন্যের সার্ভারে চলে। দ্রুত ও ভালো, তবে চাবি আর (প্রায়ই) টাকা লাগে।\n\n### ৬) Config ও YAML\n**Config** মানে সেটিং। Hermes-এর সেটিং থাকে `~/.hermes/config.yaml` ফাইলে। **YAML** হলো লেখার ধরন: `নাম: মান`, আর ভেতরে ঢোকানো লাইন মানে \"এটা উপরের অংশের ভেতরের সেটিং\"।\n\n### ৭) Gateway\nHermes-কে Telegram/Discord-এর সাথে জুড়ে সবসময় জাগিয়ে রাখার সেতু-প্রক্রিয়া। `hermes gateway` দিয়ে চালু হয়।\n\n### ৮) Slash command\nchat-এর ভেতরে `/` দিয়ে শুরু হওয়া ছোট হুকুম, যেমন `/voice on`।\n\n### ৯) Codec ও ffmpeg\n**Codec** হলো শব্দকে ছোট ফাইলে বাঁধার ভাষা (MP3, Opus, WAV হলো একেক ভাষা)। **ffmpeg** হলো একটা টুল, যা এক ভাষা থেকে আরেক ভাষায় বদলে দেয়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তোমার গলা কান (STT) দিয়ে লেখা হয়, মাথা (agent) ভাবে, মুখ (TTS) দিয়ে উত্তর শোনা যায়।",
+        "nodes": [
+          {
+            "id": "you",
+            "kind": "user",
+            "label": "তুমি (মাইক)",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "stt",
+            "kind": "external",
+            "label": "STT (Whisper)",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "Hermes agent",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "tts",
+            "kind": "external",
+            "label": "TTS (মুখ)",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "you",
+            "to": "stt",
+            "label": "কথা"
+          },
+          {
+            "from": "stt",
+            "to": "agent",
+            "label": "লেখা"
+          },
+          {
+            "from": "agent",
+            "to": "tts",
+            "label": "উত্তর"
+          },
+          {
+            "from": "tts",
+            "to": "you",
+            "label": "শব্দ"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "stt-fallback"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## শুরুর আগে কী লাগবে (Prerequisites)\n\n- Hermes install করা, আর একটা **LLM provider** ঠিক করা (`hermes model`)। (LLM হলো ভাবার মস্তিষ্ক।)\n- আগে `hermes` চালিয়ে দেখো **text chat ঠিক চলছে কি না**, তারপর voice চালু করো। (লেখা না চললে কথা চালিয়ে লাভ নেই।)\n- `~/.hermes/` আর `config.yaml` প্রথমবার Hermes চালালে নিজে তৈরি হয়। চাবি রাখার `~/.hermes/.env` ফাইল তুমি নিজে বানাও।\n- Nous Portal-এর paid subscription থাকলে LLM আর OpenAI TTS আলাদা OpenAI key ছাড়াই পাওয়া যায় (`hermes setup --portal`)।\n\n### দরকারি system প্রোগ্রাম\n\nHermes ছাড়াও কম্পিউটারে কিছু ছোট প্রোগ্রাম লাগে। এগুলো না থাকলে মাইক/শব্দ কাজ করে না।\n\n| প্রোগ্রাম | কীসের জন্য | install | সহজ কথায় |\n|---|---|---|---|\n| **PortAudio** | CLI-তে মাইক ও speaker | `brew install portaudio` / `apt install portaudio19-dev` | কম্পিউটারের কান-মুখের সাথে Hermes-এর সংযোগ |\n| **ffmpeg** | format বদল (MP3→Opus, PCM→WAV), লম্বা recording ভাগ করা | সব platform-এ লাগে | শব্দের ভাষা-অনুবাদক |\n| **Opus** | Discord voice codec | `brew install opus` / `apt install libopus0` | Discord যে শব্দ-ভাষা বোঝে |\n| **espeak-ng** | local NeuTTS-এর জন্য | `brew install espeak-ng` / `apt install espeak-ng` | নিজের কম্পিউটারে কথা বলার ছোট ইঞ্জিন |\n\n(`brew` হলো Mac-এর package manager, `apt` Linux-এর। package manager হলো প্রোগ্রাম এনে বসানোর ডেলিভারি-লোক।)\n\n### API key (`~/.hermes/.env`)\n\n| Variable | কী করে | কখন লাগে |\n|---|---|---|\n| `GROQ_API_KEY` | Groq Whisper STT (cloud, free tier) | দ্রুত ও বিনামূল্যে cloud STT চাইলে |\n| `VOICE_TOOLS_OPENAI_KEY` | OpenAI Whisper STT ও OpenAI TTS (paid) | OpenAI-র ভালো মান চাইলে |\n| `ELEVENLABS_API_KEY` | ElevenLabs TTS (premium) | সবচেয়ে প্রাণবন্ত গলা চাইলে |\n\n(**Variable** বা environment variable হলো নাম-মানের জোড়া, যেমন `GROQ_API_KEY=তোমার-গোপন-চাবি`।)\n\n**চাবি ছাড়াও চলে:** `faster-whisper` install থাকলে STT একদম বিনা key-তে নিজের কম্পিউটারেই চলে। `base` model (প্রায় 150 MB) প্রথমবার নামে। `huggingface.co` (model-এর দোকান) না খুললে `HF_ENDPOINT` দিয়ে mirror (কপি-ঠিকানা) দাও আর `HF_HUB_DISABLE_XET=1` দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## CLI Voice Mode: Ctrl+B-র খেলা\n\n`hermes chat` (classic CLI) আর `hermes --tui` দুটোতেই একই রকম চলে। (**CLI** মানে terminal-এ লিখে চালানো প্রোগ্রাম। **TUI** হলো তার সাজানো চেহারা।)\n\n**Slash command:**\n\n| Command | মানে | কখন লাগে |\n|---|---|---|\n| `/voice` | চালু/বন্ধ toggle (একবার চালু, আবার বন্ধ) | সহজে সুইচ করতে |\n| `/voice on` | voice mode চালু | কথা বলে শুরু করতে |\n| `/voice off` | বন্ধ | আবার শুধু লেখায় ফিরতে |\n| `/voice tts` | উত্তর মুখে বলা toggle | Hermes-এর উত্তর শুনতে চাইলে |\n| `/voice status` | এখনকার অবস্থা দেখায় | কী চালু আছে ভুলে গেলে |\n\n### একটা turn কীভাবে চলে\n\n**Turn** মানে এক পালা: তুমি বললে, সে উত্তর দিল।\n\n1. **Ctrl+B** চাপো। 880 Hz-এ একটা beep বাজে, recording শুরু। (Hz হলো শব্দের সুরের উচ্চতার একক।)\n2. পর্দায় live **level bar** দেখা যায়, মানে মাইক কতটা জোরে শুনছে।\n3. **3 সেকেন্ড চুপ** থাকলে recording নিজে থামে।\n4. 660 Hz-এ **দুটো beep**: শেষ হয়েছে নিশ্চিত।\n5. Whisper লেখায় বদলে agent-কে পাঠায়।\n6. TTS চালু থাকলে উত্তর মুখে শোনা যায়।\n7. আবার নিজে থেকে recording শুরু। (কেন? যাতে প্রতিবার বোতাম চাপতে না হয়, স্বাভাবিক কথোপকথনের মতো।)\n\nলুপ থামে যখন recording-এর সময় `Ctrl+B` চাপো, অথবা পরপর **3টা recording-এ কোনো কথা নেই**। record key বদলাতে `voice.record_key` (default `ctrl+b`)।\n\n### চুপ থাকা কীভাবে ধরে (Silence detection)\n\nHermes কীভাবে বোঝে তুমি কথা শেষ করেছ? আওয়াজ মেপে।\n\n- আওয়াজ **RMS 200**-এর উপরে অন্তত **0.3 সেকেন্ড** থাকলে ধরা হয় তুমি কথা বলছ। (RMS হলো আওয়াজের জোর মাপার একটা সংখ্যা।)\n- তারপর **3.0 সেকেন্ড** টানা চুপ = কথা শেষ।\n- একদম কথাই না হলে **15 সেকেন্ডে** recording থামে।\n- বদলানোর key: `silence_threshold` (কত জোরের নিচে \"চুপ\" ধরবে), `silence_duration` (কত সেকেন্ড চুপ থাকলে শেষ)। beep বন্ধ করতে `voice.beep_enabled: false`।\n\n### মুখে বলে বন্ধ করা (Stop phrase)\n\n`voice.stop_phrases` (যেমন `[\"stop\", \"goodbye hermes\"]`)। **পুরো বাক্যটাই** phrase-এর সাথে মিলতে হবে (বড়/ছোট হাতের অক্ষর আর punctuation ধরা হয় না)। লম্বা বাক্যের মধ্যে \"stop\" থাকলে সেটা agent-এর কাছে সাধারণ কথা হিসেবে যায়। যেমন \"please don't stop yet\" বললে বন্ধ হয় না। `[]` দিলে এই সুবিধা বন্ধ। যেকোনো ভাষার phrase চলে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "CLI voice-এর এক চক্র।",
+        "steps": [
+          {
+            "title": "Ctrl+B",
+            "body": "880 Hz beep, recording শুরু। level bar দেখা যায়।"
+          },
+          {
+            "title": "কথা বলো, তারপর চুপ",
+            "body": "কথার পর 3.0 সেকেন্ড চুপ করলে recording থামে, দুটো 660 Hz beep বাজে।"
+          },
+          {
+            "title": "STT",
+            "body": "Whisper তোমার গলা লেখায় বদলে agent-কে পাঠায়।"
+          },
+          {
+            "title": "উত্তর",
+            "body": "`/voice tts` চালু থাকলে Hermes উত্তর মুখে বলে।"
+          },
+          {
+            "title": "আবার শুরু",
+            "body": "নিজে থেকে নতুন recording। `Ctrl+B` বা 3 বার নীরবতায় থামে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Whisper-এর বানানো কথা",
+      "markdown": "Whisper চুপচাপ আওয়াজ থেকেও মাঝে মাঝে কথা বানিয়ে ফেলে, যেমন \"Thank you for watching\"। (এটাকে hallucination বলে: model যা শোনেনি তাই \"দেখে\" ফেলে, যেমন ঘুমের ঘোরে কথা বলা।) Hermes-এর **hallucination filter** এমন 26টা পরিচিত phrase (নানা ভাষায়) আর পুনরাবৃত্তির regex (লেখার ছাঁচ-মেলানো নিয়ম) ধরে বাদ দেয়। তবু ভুয়া transcript (লেখা-রূপ) এলে শান্ত ঘরে বসো, `silence_threshold` বাড়াও, বা অন্য STT model চেষ্টা করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আরও উন্নত অংশ (এক নজরে)\n\n### Live transcription ও Streaming TTS\n\n- `stt.streaming: true` দিলে তুমি বলার সময়ই আংশিক লেখা পর্দায় আসে। সমর্থিত: `openai` (নিজের `OPENAI_API_KEY` লাগে), `xai` (`XAI_API_KEY`), `elevenlabs` (Scribe v2 realtime)। live session না খুললে বা মাঝপথে কেটে গেলে Hermes আপনা-আপনি সাধারণ file transcription-এ ফিরে যায়।\n- **Streaming TTS:** উত্তর পুরো তৈরি হওয়ার অপেক্ষা না করে **বাক্য ধরে ধরে** বলা শুরু হয়। (বই পুরো পড়া শেষ করে বলার বদলে প্রতি বাক্য পড়েই বলা।) অন্তত 20 অক্ষরের বাক্য জমলে বলে। markdown, emoji আর `<think>` অংশ (model-এর ভেতরের ভাবনা) ছেঁটে ফেলা হয়। ElevenLabs ও OpenAI raw PCM stream করে (সবচেয়ে কম দেরি)।\n\n### Barge-in: কথার মাঝে কথা বলা\n\nউত্তর বাজার সময়ও মাইক খোলা থাকে। তুমি মাঝখানে কথা বললে Hermes চুপ করে যায় আর তোমার কথা পরের message হয়ে যায়। (কেউ কথা বলতে বলতে তুমি \"এক মিনিট\" বললে যেমন সে থামে।) কিছু key:\n\n| Key | কী করে | কখন লাগে |\n|---|---|---|\n| `voice.barge_in: false` | বাধা দেওয়ার সুবিধা বন্ধ | ভুলে ভুলে থেমে যাচ্ছে |\n| `voice.barge_in_threshold_multiplier` (default `3.0`) | কম মানে বেশি সংবেদনশীল | শান্ত Bluetooth headset-এ `1.5` দাও |\n| `voice.barge_in_grace_seconds` (default `0.5`) | playback শুরুর ঠিক পরের trigger উপেক্ষা করে | শুরুতেই নিজের শব্দে থেমে গেলে |\n\n### দ্রুত voice model: `auxiliary.voice_chat`\n\nকথার জন্য আলাদা, দ্রুত model দেওয়া যায়, কারণ কথায় দেরি হলে অস্বস্তি লাগে। সেটিং: `provider` (default `auto` = session-এর নিজের model), `model`, `reasoning_effort` (default `none`, মানে বেশি ভাবনা ছাড়া তাড়াতাড়ি উত্তর)। পরের typed message আবার session-এর নিজের model-ই ব্যবহার করে।\n\n### Desktop-এর দুটো mode\n\n- **client-direct voice:** remote gateway-তে (দূরের সার্ভারে চলা) Desktop connect থাকলে অডিও সরাসরি provider-এর কাছে যায়, gateway দিয়ে শুধু লেখা যায়। বন্ধ করতে `voice.client_direct: false`।\n- **GPT-Live (full duplex, মানে একসাথে শোনা-বলা):** `voice.voice_chat_mode: gpt-live`। OpenAI-র `gpt-live-1` শোনে ও বলে, কিন্তু আসল কাজ Hermes করে। খরচ: OpenAI **$0.05 প্রতি মিনিট** (idle সময়সহ)। এটা CLI/TUI-তে চলে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Telegram ও Discord-এ voice reply\n\n`hermes gateway` দিয়ে gateway চালাও (প্রথমবার `hermes gateway setup`)। তারপর chat-এ:\n\n| Command | মানে | কখন লাগে |\n|---|---|---|\n| `/voice off` | শুধু লেখা (default) | সাধারণ অবস্থা |\n| `/voice on` | তুমি voice message পাঠালে তবেই মুখে উত্তর | কথা দিয়ে কথার জবাব চাইলে |\n| `/voice tts` | **প্রতিটা** উত্তর মুখে | সবসময় শুনতে চাইলে |\n| `/voice status` | এখনকার mode দেখায় | ভুলে গেলে |\n\nmode gateway restart-এর পরও থেকে যায়। **Telegram** inline Opus/OGG voice bubble (chat-এ সরাসরি বাজানো যায় এমন ছোট শব্দ-বুদবুদ) পাঠায় (MP3 হলে ffmpeg বদলে দেয়)। **Discord** native voice bubble পাঠায়, ব্যর্থ হলে file attachment।\n\n**Discord নিয়ম:** DM-এ (সরাসরি ব্যক্তিগত বার্তা) @mention লাগে না। server channel-এ bot user-কে (একই নামের role নয়) @mention করতে হয়। `DISCORD_REQUIRE_MENTION=false` দিলে লাগে না। `DISCORD_FREE_RESPONSE_CHANNELS=123,456` দিয়ে নির্দিষ্ট channel mention-মুক্ত করা যায়।\n\n### Discord voice channel\n\n**Voice channel (VC)** হলো Discord-এর কথা বলার ঘর, যেখানে সবাই মুখে কথা বলে। bot সেখানে ঢুকে শোনে ও বলে।\n\n- Permission: **Connect**, **Speak** (সাথে Use Voice Activity ভালো)। text+voice integer `309240908864`। **Message Content Intent** বাধ্যতামূলক (Discord-এর একটা অনুমতি-সুইচ, যা bot-কে message-এর লেখা পড়তে দেয়)।\n- Environment: `DISCORD_BOT_TOKEN` (bot-এর গোপন চাবি), `DISCORD_ALLOWED_USERS` (কাদের কথা শুনবে)।\n- Command: `/voice join` (তুমি আগে একটা VC-তে থাকতে হবে), `/voice leave`, `/voice status`।\n- প্রত্যেকের অডিও আলাদা সামলানো হয়। অন্তত 0.5 সেকেন্ড কথা বলার পর **1.5 সেকেন্ড** চুপ থাকলে processing শুরু।\n- পথ: STT → পূর্ণ agent (session, tool, memory) → VC-তে TTS। transcript text channel-এ `[Voice] @user: ...` হিসেবে আসে।\n- echo (নিজের শব্দ ফিরে শোনা) ঠেকাতে TTS বাজার সময় listener থেমে থাকে।\n- শুধু `DISCORD_ALLOWED_USERS` বা `DISCORD_ALLOWED_ROLES`-এর লোকের কথা শোনা হয়। (এটা নিরাপত্তা: ঘরের যে কেউ হুকুম দিতে পারে না।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Discord VC-তে bot শুনছে না?",
+      "markdown": "চেক করো: তোমার ID `DISCORD_ALLOWED_USERS`-এ আছে কি না, তুমি mute কি না, আর join করার কয়েক সেকেন্ডের মধ্যে কথা বলেছ কি না (SPEAKING event দিয়ে তোমার অডিও চেনা হয়)। শোনে কিন্তু উত্তর দেয় না? STT ঠিক আছে কি (`faster-whisper` বা key), LLM-এ পৌঁছানো যাচ্ছে কি, আর `~/.hermes/logs/gateway.log` (ঘটনার লেখা খাতা) দেখো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Configuration ও provider-এর তুলনা\n\n### `config.yaml` → `voice`\n\n```yaml\nvoice:\n  record_key: \"ctrl+b\"\n  max_recording_seconds: 120\n  auto_tts: false\n  beep_enabled: true\n  silence_threshold: 200   # RMS, 0-32767\n  silence_duration: 3.0\n  stop_phrases: [\"stop\"]   # [] দিলে বন্ধ\n```\n\n| Key | মানে | কখন বদলাবে |\n|---|---|---|\n| `record_key` | recording-এর চাবি | `Ctrl+B` অন্য কাজে লাগলে |\n| `max_recording_seconds` | এক recording সর্বোচ্চ কত সেকেন্ড | বেশি লম্বা কথা বলতে হলে |\n| `auto_tts` | নিজে থেকে উত্তর মুখে বলবে কিনা | সবসময় শুনতে চাইলে `true` |\n| `beep_enabled` | beep শব্দ | beep বিরক্তিকর হলে `false` |\n| `silence_threshold` | এর নিচের আওয়াজ = চুপ | ঘরে গোলমাল থাকলে বাড়াও |\n| `silence_duration` | কত সেকেন্ড চুপে শেষ ধরা হবে | ধীরে কথা বললে বাড়াও |\n| `stop_phrases` | মুখে বলে বন্ধ করার বাক্য | নিজের ভাষার বাক্য দিতে |\n\n### `stt`\n\n```yaml\nstt:\n  enabled: true        # false = transcribe হবে না, তবে audio cache হয় ও path agent-কে যায়\n  provider: \"local\"    # local | groq | openai | mistral | xai | elevenlabs | deepinfra\n  streaming: false\n  local:\n    model: base        # tiny | base | small | medium | large-v3 | turbo\n```\n\n(`model` যত বড়, তত নিখুঁত কিন্তু তত ধীর ও বেশি জায়গা লাগে। `tiny` ছোট ও হালকা, `large-v3` বড় ও ভারী।)\n\n### `tts`\n\nprovider: `edge` (**free default**), `elevenlabs`, `openai`, `neutts`, `minimax`, `mistral`, `gemini`, `xai`, `kittentts`, `piper`। Edge-এর default voice `en-US-AriaNeural`। OpenAI-র `gpt-4o-mini-tts` / `alloy`।\n\n### STT তুলনা (কয়েকটা)\n\n| Provider | Model | গতি | খরচ |\n|---|---|---|---|\n| Local | `base` | hardware-নির্ভর | Free |\n| Groq | `whisper-large-v3-turbo` | ~0.5 s | Free tier |\n| OpenAI | `whisper-1` | ~1 s | Paid |\n| OpenAI | `gpt-4o-transcribe` | ~2 s | Paid |\n\nautomatic fallback ক্রম (একটা না চললে পরেরটা): **local, তারপর Groq, তারপর OpenAI**।\n\n### বড় recording\n\nupload সীমা: OpenAI ও Groq **25 MB**। বেশি বড় হলে Hermes আগে 16 kHz mono AAC-তে ছোট করে। তবুও বড় হলে চুপ থাকার জায়গায় কেটে ভাগে ভাগে transcribe করে জুড়ে দেয়। Local provider-এর কোনো সীমা নেই (ffmpeg লাগে)।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "সবচেয়ে সহজ শুরু",
+      "markdown": "কিছু install না করে শুরু করতে: `faster-whisper` (বিনা key STT) + default Edge TTS (বিনা key, বিনা খরচ)। ভালো মান চাইলে পরে ElevenLabs বা OpenAI TTS যোগ করো। \"No audio device found\" এলে PortAudio install করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "CLI voice mode-এ recording নিজে থেকে থামে কখন?",
+      "options": [
+        "কখনোই না",
+        "3 সেকেন্ড চুপ থাকলে",
+        "1 মিনিট কথা বললে",
+        "শুধু Enter চাপলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "কথা বলার পর 3.0 সেকেন্ড টানা চুপ = কথা শেষ ধরা হয়। (`silence_duration` দিয়ে বদলানো যায়।)"
+    },
+    {
+      "question": "stop phrase `[\"stop\"]` থাকলে তুমি বললে \"please don't stop yet\"। কী হবে?",
+      "options": [
+        "সাধারণ কথা হিসেবে agent-এর কাছে যাবে, কারণ পুরো বাক্য মিলতে হয়",
+        "Hermes বন্ধ হবে",
+        "কম্পিউটার বন্ধ হবে",
+        "voice mode বন্ধ হবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "শুধু পুরো বাক্যটা phrase-এর সাথে মিললেই বন্ধ হয়। লম্বা বাক্যের মধ্যে শব্দ থাকলে চলবে না।"
+    },
+    {
+      "question": "Telegram/Discord-এ `/voice on` আর `/voice tts`-এর পার্থক্য কী?",
+      "options": [
+        "`tts` লেখা বন্ধ করে",
+        "কোনো পার্থক্য নেই",
+        "`on`: তুমি voice message পাঠালে তবেই মুখে উত্তর; `tts`: প্রতিটা উত্তর মুখে",
+        "`on` শুধু Discord, `tts` শুধু Telegram"
+      ],
+      "answerIndex": 2,
+      "explanation": "`on` হলো \"তুমি কথায় বললে আমি কথায় উত্তর দেব\"। `tts` হলো \"সবসময় মুখে বলো\"।"
+    },
+    {
+      "question": "কোন STT পদ্ধতিতে কোনো API key লাগে না?",
+      "options": [
+        "OpenAI Whisper",
+        "local `faster-whisper`",
+        "ElevenLabs",
+        "Groq"
+      ],
+      "answerIndex": 1,
+      "explanation": "local মানে নিজের কম্পিউটারে চলে, তাই চাবিও লাগে না, খরচও নেই। শুধু প্রথমবার model (`base` ~150 MB) নামে।"
+    },
+    {
+      "question": "Discord voice channel-এ bot কার কথা শোনে?",
+      "options": [
+        "কারও না",
+        "যে কেউ",
+        "শুধু `DISCORD_ALLOWED_USERS` বা `DISCORD_ALLOWED_ROLES`-এর লোকের",
+        "শুধু admin"
+      ],
+      "answerIndex": 2,
+      "explanation": "নিরাপত্তার জন্য ঘরের যে কেউ bot-কে হুকুম দিতে পারে না, শুধু অনুমতি-তালিকার লোক।"
+    },
+    {
+      "question": "Barge-in মানে কী?",
+      "options": [
+        "Hermes-কে বন্ধ করা",
+        "নতুন model নামানো",
+        "beep বাড়ানো",
+        "উত্তর বাজার সময় তুমি কথা বললে playback থামে ও তোমার কথা পরের message হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "কেউ কথা বলতে বলতে তুমি \"এক মিনিট\" বললে সে থামে, ঠিক তেমন। `voice.barge_in: false` দিয়ে বন্ধ করা যায়।"
+    },
+    {
+      "question": "Whisper-এর বানানো \"Thank you for watching\" ধরনের কথা ঠেকাতে কী আছে?",
+      "options": [
+        "বেশি ভলিউম",
+        "কিছুই নেই",
+        "hallucination filter, যা ২৬টা পরিচিত phrase ও পুনরাবৃত্তির regex ধরে বাদ দেয়",
+        "শুধু Docker"
+      ],
+      "answerIndex": 2,
+      "explanation": "তবু ভুয়া লেখা এলে শান্ত ঘরে বসো, `silence_threshold` বাড়াও, বা অন্য STT model নাও।"
+    },
+    {
+      "question": "STT আর TTS-এর মধ্যে কোনটা কী করে?",
+      "options": [
+        "STT গলা থেকে লেখা (কান), TTS লেখা থেকে গলা (মুখ)",
+        "দুটোই একই",
+        "দুটোই ছবি বানায়",
+        "STT লেখা থেকে গলা, TTS গলা থেকে লেখা"
+      ],
+      "answerIndex": 0,
+      "explanation": "Speech-to-Text = কান। Text-to-Speech = মুখ।"
+    }
+  ],
+  "recap": [
+    "Voice Mode = কান (STT) + মাথা (agent) + মুখ (TTS); CLI-তে `Ctrl+B`, Telegram/Discord-এ voice message বা `/voice` command।",
+    "CLI-তে 3 সেকেন্ড চুপ থাকলে recording থামে; বদলাতে `silence_threshold` ও `silence_duration`।",
+    "`/voice on` = voice message-এর জবাবে voice; `/voice tts` = সব উত্তর voice।",
+    "চাবি ছাড়া শুরু: local `faster-whisper` (STT) + Edge TTS (default, বিনামূল্যে)।",
+    "Discord VC-তে শুধু অনুমতি-তালিকার লোকের কথা শোনা হয়; Message Content Intent বাধ্যতামূলক।"
+  ]
+}

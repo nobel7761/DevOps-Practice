@@ -1,0 +1,161 @@
+{
+  "contentId": "hermes-doc-guides-work-with-skills",
+  "title": "Work with Skills",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/work-with-skills",
+  "oneLiner": "এই lesson শেষে তুমি skill খুঁজতে, install করতে, চালাতে ও নিজে বানাতে পারবে এবং Skill ও Memory-র পার্থক্য, SKILL.md, frontmatter, Hub-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: রান্নাঘরের রেসিপি বই\n\nদাদির রান্নাঘরে একটা তাকে অনেক রেসিপি বই। দাদি সব রেসিপি মুখস্থ রাখেন না। দরকার হলে বই নামিয়ে সেই পাতা খোলেন।\n\nআর ছোট একটা হলুদ স্টিকি নোটে লেখা থাকে \"নাতি বেশি ঝাল খায় না\"। এটা সবসময় চোখের সামনে।\n\nHermes-এ **Skill** হলো রেসিপি বই: কাজ শেখানোর দলিল, দরকারের সময় তবেই লোড হয়। আর **Memory** হলো স্টিকি নোট: ছোট, সবসময় সাথে। এই guide বলে কীভাবে skill খুঁজবে, চালাবে, install করবে, নিজে বানাবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Skill (স্কিল):** একটা কাজ কীভাবে করতে হয় তার লেখা নির্দেশিকা। যেমন \"GitHub PR কীভাবে সামলাবে\"। রেসিপি-কার্ড।\n- **`SKILL.md`:** skill-এর মূল ফাইল। `.md` মানে Markdown, সাধারণ লেখার ফাইল।\n- **Memory:** Hermes-এর ছোট স্থায়ী খাতা, যেখানে তোমার সম্পর্কে তথ্য থাকে। স্টিকি নোট।\n- **Slash command:** chat-এ `/` দিয়ে শুরু হওয়া ছোট হুকুম, যেমন `/plan`।\n- **Token:** AI যে লেখা পড়ে, তার ছোট টুকরো। যত বেশি token, তত খরচ। তাই বড় রেসিপি বই সবসময় সাথে রাখা বোকামি।\n- **Progressive disclosure:** ধাপে ধাপে খোলা। আগে শুধু নামের তালিকা, লাগলে পুরো পাতা, আরও লাগলে পরিশিষ্ট। বইয়ের সূচিপত্র আগে, পাতা পরে।\n- **Hub:** skill-এর অনলাইন দোকান বা ভাণ্ডার, যেখান থেকে নামানো যায়।\n- **Install:** নামিয়ে নিজের কম্পিউটারে বসানো।\n- **Frontmatter:** ফাইলের একদম ওপরের ছোট তথ্য-অংশ (`---` দিয়ে ঘেরা)। বইয়ের মলাটের ওপর নাম, লেখক, সংস্করণ।\n- **YAML ও config:** YAML হলো `নাম: মান` সাজানোর লেখার ধরন। Config হলো সেটিংস (`config.yaml` ফাইল)।\n- **Plugin:** Hermes-এ বাইরে থেকে জোড়া অতিরিক্ত অংশ। যেন মূল মেশিনে লাগানো এক্সট্রা যন্ত্র।\n- **Namespace:** নামের আগে উপাধি (`plugin:skill`), যাতে একই নামের দুটো জিনিস গুলিয়ে না যায়। দুই ক্লাসে দুজন \"রহিম\", তাই ক্লাসসহ ডাকা।\n- **TUI:** terminal-এর ভেতরেই ছবির মতো বোতাম-মেনুওয়ালা জানালা।\n- **Platform:** CLI, Telegram, Discord ইত্যাদি, যেখানে Hermes চলে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Skill খোঁজা\n\n```bash\n/skills                       # chat-এ\nhermes skills list            # CLI-তে\n/skills search docker         # chat-এ keyword দিয়ে খোঁজা (যেমন /skills search music)\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `/skills` | chat-এ skill-এর তালিকা | কী কী আছে দেখতে |\n| `hermes skills list` | terminal (CLI)-তে একই তালিকা | chat ছাড়া দেখতে |\n| `/skills search docker` | chat-এ `docker` শব্দ ধরে খোঁজো | নির্দিষ্ট কিছু খুঁজতে |\n\nBundled skill (Hermes-এর সাথেই আসা)-এর উদাহরণ: `ascii-art`, `arxiv`, `github-pr-workflow`, `plan`, `excalidraw`। Official **optional** skill গুলো default-এ চালু নয়। `/skills browse` দিয়ে দেখো, Hub-এ খুঁজতে `/skills search blockchain`।\n\n## Skill চালানো\n\nপ্রতিটা installed skill একটা slash command: `/<skill-name> <কাজ>`। যেমন `/plan`, `/github-pr-workflow`। শুধু নাম দিলে (যেমন `/excalidraw`) skill লোড হয়ে তোমার বর্ণনার অপেক্ষা করে। স্বাভাবিক কথাতেও চাইতে পারো। Hermes `skill_view` tool (হাতিয়ার) দিয়ে লোড করে।\n\n### তিন স্তরের progressive disclosure\n\n**কেন লাগে?** সব skill সবসময় পড়ালে token খরচ বেড়ে যেত আর Hermes-এর মাথা ভারী হতো। তাই তিন ধাপে:\n\n1. `skills_list()`: সব skill-এর ছোট তালিকা, প্রায় ৩k token, session শুরুতে।\n2. `skill_view(name)`: পুরো `SKILL.md`, দরকারে।\n3. `skill_view(name, file_path)`: নির্দিষ্ট reference ফাইল, শুধু লাগলে।\n\nতাই skill ব্যবহার না করা পর্যন্ত কোনো বড় token খরচ নেই।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Hub থেকে skill নিয়ে ব্যবহার পর্যন্ত পথ।",
+        "steps": [
+          {
+            "title": "১. install",
+            "body": "`hermes skills install official/research/arxiv` (CLI) বা chat-এ `/skills install official/creative/songwriting-and-ai-music`।"
+          },
+          {
+            "title": "২. কোথায় যায়",
+            "body": "skill directory (ফোল্ডার) কপি হয় `~/.hermes/skills/`-এ, `skills_list`-এ ঢোকে, আর slash command হয়।"
+          },
+          {
+            "title": "৩. নতুন session লাগবে",
+            "body": "Install করা skill নতুন session-এ কাজ করে। এই session-এ চাইলে `/reset`, অথবা `--now` (prompt cache বাতিল হয়, পরের turn-এ বেশি token)।"
+          },
+          {
+            "title": "৪. যাচাই",
+            "body": "`hermes skills list | grep arxiv` অথবা `/skills search arxiv`।"
+          },
+          {
+            "title": "৫. চালাও",
+            "body": "`/arxiv ...` লিখে কাজ দাও।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Install-এর কমান্ড ভেঙে দেখি\n\n`hermes skills install official/research/arxiv`\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `hermes skills install` | skill নামিয়ে বসাও | বই কিনে তাকে রাখো |\n| `official/research/arxiv` | ঠিকানা: official ভাণ্ডার, research বিভাগ, arxiv skill | দোকান/তাক/বইয়ের নাম |\n\n`--now`-এর কথা: Hermes প্রতি আলাপে system prompt-এর অংশ মনে রাখে (prompt cache, মানে আগে পড়া অংশ মনে রেখে সস্তায় আবার ব্যবহার)। চলতি session-এই skill চাইলে সেই cache বাতিল করতে হয়, ফলে পরের turn-এ বেশি token লাগে।\n\n## URL থেকে install\n\n```bash\nhermes skills install https://sharethis.chat/SKILL.md\n/skills install https://example.com/SKILL.md --name my-skill\n```\n\nURL মানে ইন্টারনেট ঠিকানা। Support ফাইল সহ আসে। `--name` দিয়ে নিজের পছন্দের নাম দেওয়া যায়।\n\n## Plugin-এর skill\n\nPlugin skill-এর নাম `plugin:skill` ধাঁচের (যেমন `superpowers:writing-plans`), তাই built-in নামের সাথে সংঘর্ষ হয় না। `skill_view(\"superpowers:writing-plans\")` plugin-টা লোড করে, `skill_view(\"writing-plans\")` built-in-টা। এগুলো system prompt বা `skills_list`-এ থাকে না। এগুলো opt-in, মানে নিজে চাইলে তবেই আসে। লোড হলে agent একই plugin-এর অন্য skill-এর একটা banner দেখে।\n\n## Skill-এর নিজস্ব config\n\nকিছু skill-এর নিজের সেটিং লাগে (যেমন একটা API key)। Skill frontmatter-এর `metadata.hermes.config`-এ config ঘোষণা করতে পারে (`key`, `description`, `prompt`, `url`)। যেমন `gif-search` skill-এর `tenor.api_key` (Tenor হলো GIF-এর সেবা)। প্রথমবার লোডে Hermes মান চায় আর `config.yaml`-এ `skills.config.*`-এর নিচে রাখে।\n\n```bash\nhermes skills config gif-search          # interactive\nhermes config get skills.config --json   # সব দেখো\n```\n\n`interactive` মানে Hermes প্রশ্ন করবে, তুমি উত্তর দেবে। `--json` মানে কম্পিউটারের পড়ার উপযোগী সাজানো ফর্ম্যাটে দেখাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিজের Skill বানাও\n\n```bash\nmkdir -p ~/.hermes/skills/my-category/my-skill\n```\n\n`mkdir -p` মানে ফোল্ডার বানাও (দরকারে মাঝের ফোল্ডারগুলোও)। এরপর `~/.hermes/skills/my-category/my-skill/SKILL.md`-এ YAML frontmatter লেখো:\n\n```yaml\n---\nname: my-skill\ndescription: কী করে তার এক লাইন\nversion: 1.0.0\nmetadata:\n  hermes:\n    tags: [my-tag, automation]\n    category: my-category\n---\n```\n\n| লাইন | মানে |\n|---|---|\n| `name` | skill-এর নাম (slash command এটাই হবে) |\n| `description` | এক লাইনে কী করে |\n| `version` | সংস্করণ নম্বর |\n| `tags`, `category` | খোঁজা ও সাজানোর লেবেল |\n\nশরীরে (frontmatter-এর নিচের লেখায়) সাধারণত থাকে: **When to Use** (কখন লাগে), **Procedure** (ধাপ), **Pitfalls** (যেসব ভুল সহজে হয়), **Verification** (ঠিক হলো কি না যাচাই)।\n\nঐচ্ছিক ফোল্ডার: `references/` (যেমন `api-docs.md`, তথ্যের কাগজ), `templates/` (যেমন `config.yaml`, ছাঁচ), `scripts/` (যেমন `setup.sh`, ছোট প্রোগ্রাম)। পড়তে: `skill_view(\"my-skill\", \"references/api-docs.md\")`।\n\nTest: `hermes chat -q \"/my-skill help me with the thing\"` (`-q` মানে একটা প্রশ্ন করে উত্তর নিয়ে বেরোও)। কোনো registration (নাম লেখানো) লাগে না। ফোল্ডার `~/.hermes/skills/`-এ ফেললেই live। Agent নিজেও `skill_manage` দিয়ে skill বানাতে/বদলাতে পারে, জটিল কাজের পর সে প্রস্তাবও দিতে পারে।\n\n## Platform অনুযায়ী চালু/বন্ধ\n\n`hermes skills` একটা interactive TUI খোলে। সেখানে CLI, Telegram, Discord ইত্যাদি platform-ভিত্তিক skill চালু/বন্ধ করা যায় (যেমন Telegram-এ dev skill বন্ধ)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "কোনটা Skill, কোনটা Memory?",
+        "beforeTitle": "Skill",
+        "before": "procedural জ্ঞান ('কীভাবে করতে হয়')। বড় হতে পারে, দরকারে লোড হয়, লোডের আগে ০ token। উদাহরণ: 'Kubernetes-এ deploy কীভাবে'।",
+        "afterTitle": "Memory",
+        "after": "তথ্যগত জ্ঞান। প্রতি session-এ ঢোকে, ছোট রাখতে হয়, ছোট স্থায়ী token খরচ। উদাহরণ: 'ব্যবহারকারী dark mode পছন্দ করে, PST-এ থাকে'।"
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "থাম্ব-রুল",
+      "markdown": "রেফারেন্স ডকুমেন্টে যা থাকত তা Skill; স্টিকি নোটে যা থাকত তা Memory।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "ভালো skill-এর টিপস",
+      "markdown": "- Skill ছোট ও নির্দিষ্ট রাখো: 'Fly.io-তে Python app deploy', 'সব DevOps' নয়।\n- জটিল কাজের পর agent-কে skill বানাতে দাও। সে pitfall গুলো ধরে রাখে।\n- `devops/`, `research/`-এর মতো subdirectory category ব্যবহার করো।\n- পুরনো হলে skill হালনাগাদ করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Skill ব্যবহার না হলে কত token খরচ হয়?",
+      "options": [
+        "সবসময় বড় খরচ",
+        "কোনো বড় token নয় (শুধু ছোট তালিকা session শুরুতে)",
+        "পুরো SKILL.md প্রতি session-এ",
+        "শুধু Telegram-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "Progressive disclosure: আগে শুধু সূচিপত্র, পাতা লাগলে তবেই খোলে।"
+    },
+    {
+      "question": "Install করা skill এই চলতি session-এ চালাতে কী করা যায়?",
+      "options": [
+        "কিছুই না",
+        "gateway restart",
+        "`hermes skills config`",
+        "`/reset` অথবা `--now` (বেশি token লাগে)"
+      ],
+      "answerIndex": 3,
+      "explanation": "নতুন session লাগে। চলতি session-এ চাইলে `/reset` বা `--now`, যেটা prompt cache বাতিল করে।"
+    },
+    {
+      "question": "`skill_view(name, file_path)` কোন স্তর?",
+      "options": [
+        "স্তর ১",
+        "স্তর ৩, নির্দিষ্ট reference ফাইল শুধু লাগলে",
+        "স্তর ২",
+        "সংঘর্ষ সমাধান"
+      ],
+      "answerIndex": 1,
+      "explanation": "স্তর ১ তালিকা, স্তর ২ পুরো SKILL.md, স্তর ৩ নির্দিষ্ট সহায়ক ফাইল।"
+    },
+    {
+      "question": "`superpowers:writing-plans` ধরনের নামের উদ্দেশ্য কী?",
+      "options": [
+        "ইন্টারনেট থেকে নামানো",
+        "skill মুছে ফেলা",
+        "cron schedule",
+        "built-in skill-এর সাথে নামের সংঘর্ষ এড়ানো (plugin namespace)"
+      ],
+      "answerIndex": 3,
+      "explanation": "দুই ক্লাসের দুই \"রহিম\"-কে আলাদা করতে ক্লাসের নামসহ ডাকা।"
+    },
+    {
+      "question": "নিজের skill বানাতে ন্যূনতম কী লাগে?",
+      "options": [
+        "পুরো রিপোজিটরি fork",
+        "বিশেষ compile command",
+        "`~/.hermes/skills/<category>/<name>/SKILL.md` ফাইল frontmatter সহ; আলাদা registration নয়",
+        "Hub-এ upload"
+      ],
+      "answerIndex": 2,
+      "explanation": "ফোল্ডার ফেললেই live হয়, নাম লেখানোর দরকার নেই।"
+    },
+    {
+      "question": "'ব্যবহারকারী PST timezone-এ থাকে', এটা কোথায় রাখবে?",
+      "options": ["Skill", "Cron job", "references/ ফোল্ডার", "Memory"],
+      "answerIndex": 3,
+      "explanation": "এটা ছোট তথ্য, স্টিকি নোট (Memory)। \"কীভাবে করতে হয়\" হলে Skill হতো।"
+    },
+    {
+      "question": "Skill-এর নিজের API key-র মতো সেটিং কোথায় ঘোষণা হয়?",
+      "options": [
+        "frontmatter-এর `metadata.hermes.config`-এ",
+        "`SOUL.md`-তে",
+        "`/reset`-এ",
+        "Hub-এ"
+      ],
+      "answerIndex": 0,
+      "explanation": "Hermes প্রথমবার লোডে মান চায় আর `config.yaml`-এর `skills.config.*`-এ রাখে।"
+    }
+  ],
+  "recap": [
+    "Skill হলো রেসিপি বই (\"কীভাবে\"), Memory হলো স্টিকি নোট (\"কী\")।",
+    "`/skills`, `hermes skills list`, `/skills search` দিয়ে খোঁজো; প্রতিটা skill একটা slash command।",
+    "তিন স্তরের progressive disclosure তাই skill না চালালে বড় token খরচ নেই।",
+    "`hermes skills install` দিয়ে নামাও (নতুন session লাগে); URL থেকেও নামানো যায়।",
+    "নিজের skill বানাতে `~/.hermes/skills/<category>/<name>/SKILL.md` ফাইল frontmatter সহ লিখলেই হয়।"
+  ]
+}

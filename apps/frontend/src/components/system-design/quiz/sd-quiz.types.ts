@@ -53,6 +53,9 @@ export interface SdQuizStatus {
   }[];
 }
 
+/** Size of a System Design topic's question bank. */
+export const QUESTION_BANK_SIZE = 60;
+
 export const DIFFICULTY_LABELS: Record<SdQuizDifficulty, string> = {
   easy: "সহজ",
   medium: "মাঝারি",

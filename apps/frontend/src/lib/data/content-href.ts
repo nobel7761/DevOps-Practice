@@ -21,6 +21,16 @@ export function resolveContentHref(
     return item.contentId ? `/system-design/lesson/${item.contentId}` : null;
   }
 
+  if (item.type === "doc_lesson") {
+    return item.contentId ? `/module/doc/${item.contentId}` : null;
+  }
+
+  // Udemy lectures with written-up content open in-app; ones that still carry
+  // an externalUrl are opened externally by the row before this is consulted.
+  if (item.type === "udemy_lecture" && !item.externalUrl) {
+    return item.contentId ? `/module/story/${item.contentId}` : null;
+  }
+
   if (item.type === "ai_interview") {
     return hasInterview(moduleId) ? `/module/interview/${moduleId}` : null;
   }

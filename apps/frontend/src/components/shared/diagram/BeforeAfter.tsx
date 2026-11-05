@@ -7,7 +7,7 @@ function ComparisonPane({
   children,
 }: {
   tone: "before" | "after";
-  title: string;
+  title: ReactNode;
   note?: string;
   children: ReactNode;
 }) {
@@ -42,8 +42,8 @@ export function BeforeAfter({
   stacked?: boolean;
   before: ReactNode;
   after: ReactNode;
-  beforeTitle?: string;
-  afterTitle?: string;
+  beforeTitle?: ReactNode;
+  afterTitle?: ReactNode;
   /** e.g. "User অপেক্ষা করে ~3s" */
   beforeNote?: string;
   afterNote?: string;

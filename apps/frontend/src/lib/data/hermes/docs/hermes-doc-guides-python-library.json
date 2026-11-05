@@ -1,0 +1,150 @@
+{
+  "contentId": "hermes-doc-guides-python-library",
+  "title": "Use Hermes as a Python Library",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/python-library",
+  "oneLiner": "এই lesson শেষে তুমি Python code থেকে `AIAgent` import করে Hermes-কে নিজের script, web app বা CI-তে চালাতে পারবে এবং library, class, toolset, thread-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: রোবট বন্ধুকে ফোন না করে বাড়িতে রাখা\n\nএতদিন তুমি Hermes-এর সাথে terminal-এ কথা বলেছ। যেন বন্ধুকে ফোন করা।\n\nএখন ভাবো, বন্ধুকে **তোমার নিজের প্রোগ্রামের ভেতরে** বসিয়ে দিলে। তুমি Python-এ একটা লাইন লেখো, সে উত্তর দিয়ে দেয়। ফোন করার দরকারই নেই।\n\nএটাই Hermes-কে **Python library** হিসেবে ব্যবহার। `AIAgent` class import করে script, web app বা automation pipeline-এ চালানো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Python:** একটা জনপ্রিয় programming language, মানে কম্পিউটারকে হুকুম লেখার ভাষা।\n- **Library (লাইব্রেরি):** অন্যের লেখা তৈরি কোডের সংগ্রহ, যা তুমি নিজের কোডে ব্যবহার করতে পারো। উপমা: নিজে ইট বানানোর বদলে ইট কিনে আনা। এখানে Hermes-ই সেই ইট।\n- **Class ও `AIAgent`:** Class হলো একটা ছাঁচ, যা দিয়ে জিনিস বানানো যায়। `AIAgent` হলো Hermes-এর ছাঁচ। `AIAgent(...)` লিখলে একটা আসল agent তৈরি হয়। বিস্কুটের ছাঁচ থেকে বিস্কুট।\n- **Import:** অন্য জায়গা থেকে জিনিস নিজের কোডে আনা। `from run_agent import AIAgent` মানে \"run_agent ফাইল থেকে AIAgent নিয়ে এসো\"।\n- **Parameter / argument:** ছাঁচ বানানোর সময় যে সেটিং দাও, যেমন `model=\"...\"`। বিস্কুটের মাপ ঠিক করার মতো।\n- **Function / method:** একটা নাম-দেওয়া কাজ। `agent.chat(\"...\")` মানে agent-কে `chat` কাজটা করতে বলা।\n- **Git, clone ও repo:** Git হলো কোডের সংস্করণ রাখার টুল। Repo (repository) হলো কোডের ভাণ্ডার। Clone মানে সেই ভাণ্ডারের কপি নিজের কম্পিউটারে নামানো।\n- **Environment variable ও API key:** নামওয়ালা সেটিং, যেমন `OPENROUTER_API_KEY=...`। API key হলো AI সেবা ব্যবহারের গোপন পাসওয়ার্ড।\n- **Toolset:** Hermes-এর হাতিয়ারের গোষ্ঠী, যেমন `web`, `terminal`। যেন যন্ত্রপাতির বাক্স।\n- **Thread:** একসাথে একাধিক কাজ চালানোর আলাদা সুতো। একজন রাঁধুনির বদলে তিনজন রাঁধুনি।\n- **JSONL:** একটা ফাইল, যেখানে প্রতি লাইনে একটা করে সাজানো তথ্য (JSON) থাকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Installation\n\n```bash\ngit clone https://github.com/NousResearch/hermes-agent.git\ncd hermes-agent\nsource ./activate\npython your_app.py\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `git clone ...` | Hermes-এর কোড-ভাণ্ডারের কপি নামাও | বইয়ের ফটোকপি আনা |\n| `cd hermes-agent` | ওই ফোল্ডারে ঢোকো | ঘরে ঢোকা |\n| `source ./activate` | Hermes-এর কাজের পরিবেশ চালু করো | ঘরের আলো জ্বালানো |\n| `python your_app.py` | নিজের লেখা Python ফাইল চালাও | নিজের রেসিপি রাঁধা |\n\nHermes কোনো supported wheel বা sdist (Python প্যাকেজের তৈরি বাক্স) প্রকাশ করে না, তাই `requirements.txt` দিয়ে install **সমর্থিত নয়**। CLI-র মতোই environment variable লাগে। অন্তত `OPENROUTER_API_KEY`, অথবা সরাসরি provider-এর জন্য `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`।\n\n## সবচেয়ে সহজ: `chat()`\n\n```python\nfrom run_agent import AIAgent\n\nagent = AIAgent(\n    model=\"anthropic/claude-sonnet-4.6\",\n    quiet_mode=True,\n)\nresponse = agent.chat(\"What is the capital of France?\")\nprint(response)\n```\n\n| অংশ | মানে |\n|---|---|\n| `from run_agent import AIAgent` | ছাঁচটা আনো |\n| `model=\"...\"` | কোন AI মগজ ব্যবহার করবে |\n| `quiet_mode=True` | spinner আর progress output ছাপা বন্ধ (কম কথা বলো) |\n| `agent.chat(\"...\")` | প্রশ্ন পাঠাও, উত্তর ফেরত নাও |\n| `print(response)` | উত্তরটা পর্দায় দেখাও |\n\n`chat()` পুরো loop (tool call, retry) চালায় আর শুধু **final text** ফেরত দেয়। Loop মানে Hermes ভেতরে ভেতরে বারবার ভাবে, হাতিয়ার ডাকে, আবার চেষ্টা করে। তুমি শুধু শেষ উত্তরটা পাও।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "embed করার সময় সবসময় `quiet_mode=True`",
+      "markdown": "নাহলে agent spinner আর progress output ছাপাবে। তোমার নিজের প্রোগ্রামের output তাতে এলোমেলো হয়ে যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## পুরো নিয়ন্ত্রণ: `run_conversation()`\n\n**কেন লাগে?** `chat()` শুধু শেষ লেখা দেয়। কখনো পুরো ইতিহাস লাগে, তখন এটা।\n\n```python\nresult = agent.run_conversation(\n    user_message=\"Search for recent Python 3.13 features\",\n    task_id=\"my-task-1\",\n)\nprint(result[\"final_response\"])\nprint(f\"Messages exchanged: {len(result['messages'])}\")\n```\n\ndict-এ (dict = নামওয়ালা খোপের সংগ্রহ) `final_response` (শেষ উত্তর) আর `messages` (system, user, assistant, tool call-সহ পুরো history)। `task_id` agent-এ VM isolation-এর জন্য রাখা হয় (প্রতিটা কাজ আলাদা ঘরে)। এটা dict-এ ফেরত আসে না। এক call-এর জন্য system prompt (Hermes-এর গোপন নির্দেশ-খাতা) বদলাতে `system_message=` দাও।\n\n## Tool বাছাই\n\n```python\n# শুধু web tool\nagent = AIAgent(model=\"anthropic/claude-sonnet-4.6\", enabled_toolsets=[\"web\"], quiet_mode=True)\n# terminal ছাড়া সব\nagent = AIAgent(model=\"anthropic/claude-sonnet-4.6\", disabled_toolsets=[\"terminal\"], quiet_mode=True)\n```\n\n`enabled_toolsets` = allowlist (শুধু এগুলো চলবে, যেমন research bot)। `disabled_toolsets` = blocklist (এগুলো ছাড়া সব চলবে, যেমন shared পরিবেশে terminal বন্ধ)। Terminal বন্ধ রাখা মানে agent আর তোমার কম্পিউটারে কমান্ড চালাতে পারবে না, তাই নিরাপদ।\n\n## Multi-turn\n\nMulti-turn মানে একাধিক পালা, আগের কথা মনে রেখে।\n\n```python\nresult1 = agent.run_conversation(\"My name is Alice\")\nhistory = result1[\"messages\"]\nresult2 = agent.run_conversation(\n    \"What's my name?\",\n    conversation_history=history,\n)\n```\n\n`conversation_history`-তে আগের `messages` দাও। agent ভেতরে list-এর কপি নেয়, মূলটা বদলায় না। এটা না দিলে দ্বিতীয় প্রশ্নে সে নাম জানবে না, কারণ প্রতি call নতুন।\n\n## Trajectory ও system prompt\n\n- `save_trajectories=True` → প্রতি conversation `trajectory_samples.jsonl`-এ ShareGPT format-এ এক লাইন। Trajectory মানে কথোপকথনের পুরো ধাপ-তালিকা; dataset (উদাহরণের সংগ্রহ) বানাতে কাজে লাগে।\n- `ephemeral_system_prompt=\"You are a SQL expert. Only answer database questions.\"` → আচরণ নির্দেশ করে কিন্তু trajectory ফাইলে সেভ হয় না। Ephemeral মানে ক্ষণস্থায়ী।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "তোমার app থেকে Hermes চালানোর ধাপ।",
+        "steps": [
+          {
+            "title": "১. checkout activate",
+            "body": "`git clone`, `cd hermes-agent`, `source ./activate`।"
+          },
+          {
+            "title": "২. API key",
+            "body": "`OPENROUTER_API_KEY` (বা অন্য provider key) environment-এ রাখো।"
+          },
+          {
+            "title": "৩. agent বানাও",
+            "body": "`AIAgent(model=..., quiet_mode=True)`।"
+          },
+          {
+            "title": "৪. কথা বলো",
+            "body": "সহজ কাজে `agent.chat(...)`, বিস্তারিত দরকারে `run_conversation(...)`।"
+          },
+          {
+            "title": "৫. কাজ সারা",
+            "body": "`final_response` ব্যবহার করো। প্রতি task/thread-এ নতুন agent।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Batch processing\n\nBatch মানে অনেকগুলো কাজ একসাথে ঝেঁটিয়ে করা।\n\n```bash\npython batch_runner.py --input prompts.jsonl --output results.jsonl\n```\n\n| অংশ | মানে |\n|---|---|\n| `batch_runner.py` | অনেক prompt একসাথে চালানোর প্রোগ্রাম |\n| `--input prompts.jsonl` | প্রশ্নের ফাইল (প্রতি লাইনে একটা) |\n| `--output results.jsonl` | উত্তর যে ফাইলে জমবে |\n\nপ্রতি prompt আলাদা `task_id` ও isolated environment পায়। নিজে thread pool বানাতে:\n\n```python\nimport concurrent.futures\nfrom run_agent import AIAgent\n\ndef process_prompt(prompt):\n    # Create a fresh agent per task for thread safety\n    agent = AIAgent(model=\"anthropic/claude-sonnet-4\", quiet_mode=True, skip_memory=True)\n    return agent.chat(prompt)\n\nwith concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:\n    results = list(executor.map(process_prompt, prompts))\n```\n\n`max_workers=3` মানে একসাথে ৩ জন কর্মী। প্রতি কাজের জন্য নতুন agent, যাতে কেউ কারও খাতায় হাত না দেয়।\n\n## Integration উদাহরণ\n\nIntegration মানে নিজের সিস্টেমের সঙ্গে জোড়া লাগানো।\n\n**FastAPI endpoint** (FastAPI = ওয়েব সার্ভার বানানোর Python টুল; endpoint = একটা ঠিকানা যেখানে অনুরোধ আসে)\n\n```python\n@app.post(\"/chat\")\nasync def chat(request: ChatRequest):\n    agent = AIAgent(\n        model=request.model,\n        quiet_mode=True,\n        skip_context_files=True,\n        skip_memory=True,\n    )\n    response = agent.chat(request.message)\n    return {\"response\": response}\n```\n\n**Discord bot:** `AIAgent(..., platform=\"discord\")` দিয়ে agent বানিয়ে `response[:2000]` পাঠানো হয় (Discord-এর সীমা, ২০০০ অক্ষর)।\n\n**CI/CD PR review:** CI/CD হলো কোড বদলালে নিজে-নিজে চলা যাচাই-ব্যবস্থা। PR (pull request) হলো কোড বদলের প্রস্তাব। এখানে `git diff main...HEAD` (কী কী বদলেছে তার তালিকা) পড়ে `disabled_toolsets=[\"terminal\", \"browser\"]` সহ agent-কে diff review করতে বলা হয়।\n\n## মূল constructor parameter\n\nConstructor হলো ছাঁচ থেকে জিনিস বানানোর মুহূর্ত, আর parameter হলো তখনকার সেটিং।\n\n| parameter | default | কাজ | কখন লাগে |\n|---|---|---|---|\n| `model` | `\"\"` | OpenRouter-format model; খালি হলে Hermes config থেকে | মগজ বেছে নিতে |\n| `quiet_mode` | `False` | CLI output বন্ধ | নিজের app-এ বসালে |\n| `enabled_toolsets` / `disabled_toolsets` | `None` | allowlist / blocklist | হাতিয়ার সীমিত করতে |\n| `save_trajectories` | `False` | JSONL-এ সেভ | dataset বানাতে |\n| `ephemeral_system_prompt` | `None` | কাস্টম system prompt, সেভ হয় না | বিশেষ ভূমিকা দিতে |\n| `max_iterations` | `500` | প্রতি conversation-এ সর্বোচ্চ tool-calling iteration | অনন্ত লুপ আটকাতে |\n| `skip_context_files` | `False` | AGENTS.md লোড বাদ | web endpoint-এ |\n| `skip_memory` | `False` | persistent memory read/write বন্ধ | stateless (স্মৃতিহীন) API-তে |\n| `api_key` / `base_url` | `None` | key (না থাকলে env) / custom endpoint | নিজের ঠিকানা/চাবি দিতে |\n| `platform` | `None` | `\"discord\"`, `\"telegram\"` ইত্যাদি formatting hint | chat app-এর ধাঁচে লেখাতে |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Thread safety ও খরচ",
+      "markdown": "**প্রতি thread/task-এ নতুন `AIAgent`।** history, tool session, iteration counter thread-safe নয় (দুই কর্মী একই খাতায় লিখলে গোলমাল)। `max_iterations` default ৫০০ উদার; সাধারণ Q&A-তে `max_iterations=10`-এর মতো কম মান runaway loop (অনন্ত ঘূর্ণি) ও খরচ আটকায়। stateless API endpoint-এ `skip_memory=True`। long-lived process-এ প্রতিটা conversation যেন স্বাভাবিকভাবে শেষ হয়, যাতে terminal/browser session পরিষ্কার হয়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Python code থেকে Hermes-এর কোন class ব্যবহার হয়?",
+      "options": ["HermesClient", "AIAgent", "Agent", "RunAgent"],
+      "answerIndex": 1,
+      "explanation": "`from run_agent import AIAgent` দিয়ে আনা হয়।"
+    },
+    {
+      "question": "`chat()` কী ফেরত দেয়?",
+      "options": [
+        "পুরো messages list",
+        "একটা dict",
+        "generator",
+        "শুধু final text"
+      ],
+      "answerIndex": 3,
+      "explanation": "`chat()` ভেতরের সব ধাপ নিজে সামলে শুধু শেষ উত্তর দেয়।"
+    },
+    {
+      "question": "Embed করার সময় `quiet_mode=True` কেন?",
+      "options": [
+        "দ্রুত করতে",
+        "spinner ও progress output ছাপা বন্ধ করতে",
+        "খরচ কমাতে",
+        "memory বন্ধ করতে"
+      ],
+      "answerIndex": 1,
+      "explanation": "নাহলে তোমার প্রোগ্রামের output-এর মাঝে spinner ঢুকে এলোমেলো করে দেয়।"
+    },
+    {
+      "question": "আগের কথোপকথন মনে রেখে দ্বিতীয় প্রশ্ন করতে কী দাও?",
+      "options": [
+        "`task_id`",
+        "`save_trajectories=True`",
+        "`platform`",
+        "`conversation_history=result1[\"messages\"]`"
+      ],
+      "answerIndex": 3,
+      "explanation": "প্রতি call নতুন, তাই আগের messages হাতে তুলে দিতে হয়।"
+    },
+    {
+      "question": "একাধিক thread-এ কীভাবে agent ব্যবহার করবে?",
+      "options": [
+        "একটা agent সব thread-এ শেয়ার",
+        "lock ছাড়া শেয়ার",
+        "প্রতি thread/task-এ নতুন `AIAgent`",
+        "কোনোভাবেই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "agent-এর ভেতরের অবস্থা thread-safe নয়, তাই প্রতি কাজে নতুন agent।"
+    },
+    {
+      "question": "terminal tool বন্ধ রাখতে কোনটা ব্যবহার করবে?",
+      "options": [
+        "`enabled_toolsets=[\"terminal\"]`",
+        "`disabled_toolsets=[\"terminal\"]`",
+        "`skip_memory=True`",
+        "`quiet_mode=True`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`disabled_toolsets` হলো blocklist, তাতে নাম দিলে ওই হাতিয়ার বন্ধ।"
+    },
+    {
+      "question": "`ephemeral_system_prompt`-এর বিশেষত্ব কী?",
+      "options": [
+        "সবসময় মনে থাকে",
+        "শুধু CLI-তে চলে",
+        "model বদলে দেয়",
+        "trajectory ফাইলে সেভ হয় না"
+      ],
+      "answerIndex": 3,
+      "explanation": "আচরণ নির্দেশ করে, কিন্তু ক্ষণস্থায়ী; সেভ হওয়া ফাইলে ঢোকে না।"
+    }
+  ],
+  "recap": [
+    "Python-এ `from run_agent import AIAgent` করে Hermes-কে নিজের প্রোগ্রামের ভেতর বসানো যায়।",
+    "সহজ কাজে `chat()` (শুধু উত্তর), বিস্তারিত দরকারে `run_conversation()` (পুরো history)।",
+    "Embed করলে `quiet_mode=True` দাও; `enabled_toolsets`/`disabled_toolsets` দিয়ে হাতিয়ার সীমিত করো।",
+    "Multi-turn-এ আগের `messages` কে `conversation_history`-তে দাও।",
+    "প্রতি thread/task-এ নতুন `AIAgent` বানাও, আর `max_iterations` কমিয়ে খরচ আটকাও।"
+  ]
+}

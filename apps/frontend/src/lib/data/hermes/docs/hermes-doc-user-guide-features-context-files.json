@@ -1,0 +1,164 @@
+{
+  "title": "Context Files",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে AGENTS.md, SOUL.md-এর মতো context file কেন লাগে ও Hermes কোনটা আগে পড়ে, আর git root, CWD, prompt injection, truncation-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: নতুন কাজের মেয়ের হাতে চিরকুট\n\nধরো তুমি নতুন একজন সহকারীকে বাসায় কাজে নিলে। প্রথম দিন সে ঢুকলে তুমি কি প্রতিটা কথা মুখে বলবে? না — দরজার পাশে একটা **চিরকুট** ঝুলিয়ে রাখবে: \"রান্নাঘরে গ্যাস বন্ধ করে যেও, বাচ্চার ঘরে ঢুকলে আস্তে কথা বোলো\"। সহকারী ঢুকেই সেটা পড়ে নেয়।\n\nআর একটা চিরকুট আছে সহকারীর নিজের **স্বভাব** নিয়ে: \"তুমি হাসিখুশি, সংক্ষেপে কথা বলো\"। সেটা বাড়ির দরজায় না, সহকারীর নিজের পকেটে।\n\nHermes-এর **Context Files** ঠিক এই চিরকুট। project ফোল্ডারে `AGENTS.md` রাখলে Hermes কাজ শুরুর আগে নিজে পড়ে নেয় — project-এর নিয়ম, stack, port। আর `SOUL.md` হলো Hermes-এর নিজের স্বভাব; সেটা project-এ না, Hermes-এর নিজের ঘরে (`HERMES_HOME`) থাকে।\n\n**এটা না থাকলে কী সমস্যা?** প্রতিবার নতুন কাজ শুরুর সময় তোমাকে মুখে বলতে হতো: 'আমরা Next.js ব্যবহার করি, test এভাবে চালাও, port এটা।' ভুলে গেলে Hermes ভুল অনুমান করত। চিরকুট থাকলে সে নিজে পড়ে নেয়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Context file** | Hermes-কে প্রসঙ্গ (project-এর নিয়ম, স্বভাব) জানানোর লেখা ফাইল | দরজার পাশের চিরকুট |\n| **`.md` / Markdown** | সাধারণ লেখার ফাইল, `#` দিয়ে শিরোনাম বানানো যায় | সাদামাটা নোটবই |\n| **Project** | তোমার কাজের ফোল্ডার, যেমন একটা অ্যাপের সব কোড | একটা ঘর বানানোর পুরো সাইট |\n| **Directory / folder** | ফাইল রাখার ঘর। `subdirectory` মানে ঘরের ভেতরের ঘর | আলমারির ভেতরের ড্রয়ার |\n| **CWD (Current Working Directory)** | তুমি এই মুহূর্তে যে ফোল্ডারে আছ | মানচিত্রে 'আপনি এখানে' চিহ্ন |\n| **git / git root / repo** | **git** হলো কোডের ইতিহাস রাখার প্রোগ্রাম। **repo** (repository) হলো সেই ইতিহাস-সহ project। **git root** হলো repo-র সবচেয়ে উপরের ফোল্ডার | ছবির অ্যালবাম, যাতে প্রতিটা বদলের ছবি তোলা থাকে |\n| **Monorepo** | একটা repo-তে অনেক ছোট project (frontend, backend...) | একটা বাড়িতে অনেক ঘর |\n| **gitignored** | git-কে বলা \"এই ফাইল ট্র্যাক কোরো না\", তাই অন্যের কাছে যায় না | ব্যক্তিগত ডায়েরি, যা শেয়ার করা হয় না |\n| **System prompt** | AI-কে কাজ শুরুর আগে দেওয়া গোপন নির্দেশ-খাতা | অভিনেতার স্ক্রিপ্ট |\n| **Token** | লেখার ছোট টুকরো, যার হিসেবে খরচ ও জায়গা মাপা হয় | চিঠির শব্দ গোনা |\n| **Prompt caching** | একই শুরুর অংশ বারবার এলে AI আগের হিসাব মনে রেখে সস্তায় কাজ করে | রোজ একই রাস্তায় গেলে মুখস্থ হয়ে যাওয়া |\n| **Prompt injection** | লেখার ভেতরে লুকানো ক্ষতিকর নির্দেশ, যা AI-কে ভুল পথে নিতে চায় | জাল চিঠি: 'আমি তোমার বস, টাকা পাঠাও' |\n| **Truncation** | বেশি বড় লেখা কেটে ছোট করা | লম্বা চিঠির মাঝখান ছেঁটে ফেলা |\n| **Environment variable `HERMES_HOME`** | Hermes-এর নিজের ঘরের ঠিকানা (সাধারণত `~/.hermes`)। `~` মানে তোমার হোম ফোল্ডার | বাড়ির নম্বর |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোন ফাইল কী?\n\n| ফাইল | কাজ | কোথায় খোঁজে |\n|---|---|---|\n| `.hermes.md` / `HERMES.md` | project নির্দেশ (সর্বোচ্চ অগ্রাধিকার) | git root পর্যন্ত উপরে হেঁটে |\n| `AGENTS.override.md` | `AGENTS.md`-এর ব্যক্তিগত override, সাধারণত gitignored | শুরুর CWD + দরকারে subdirectory |\n| `AGENTS.md` | project-এর নির্দেশ, নিয়ম, architecture | শুরুর CWD + দরকারে subdirectory |\n| `CLAUDE.md` | Claude Code-এর context ফাইলও চেনে | শুরুর CWD + দরকারে subdirectory |\n| `SOUL.md` | বিশ্বব্যাপী personality ও tone | **শুধু** `HERMES_HOME/SOUL.md` |\n| `.cursorrules` | Cursor IDE-র coding নিয়ম | শুধু CWD |\n| `.cursor/rules/*.mdc` | Cursor IDE-র rule module | শুধু CWD |\n\n(**Override** মানে উপরে বসিয়ে দেওয়া। **IDE** মানে কোড লেখার বিশেষ editor। **Cursor** একটা AI-সহ IDE। `.mdc` তার নিয়মের ফাইলের ধরন। `*` মানে 'যেকোনো নাম'।)\n\n### অগ্রাধিকার: প্রথম মিললেই জয়\n\nপ্রতি session-এ **একটাই** project context ধরন লোড হয়। ক্রম:\n\n`.hermes.md` → `AGENTS.override.md` → `AGENTS.md` → `CLAUDE.md` → `.cursorrules`\n\n`SOUL.md` সবসময় আলাদাভাবে identity (slot #1) হিসেবে লোড হয়। `AGENTS.override.md` পাশে থাকলে `AGENTS.md`-এর বদলে সেটা লোড হয় — তাই tracked ফাইল না ছুঁয়েই নিজের ব্যক্তিগত override রাখা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "প্রথম মিলে যাওয়া project context ফাইলটাই জেতে।",
+        "steps": [
+          {
+            "title": "১. `.hermes.md` আছে?",
+            "body": "থাকলে এটাই লোড; বাকি সব বাদ।"
+          },
+          {
+            "title": "২. `AGENTS.override.md`?",
+            "body": "না থাকলে এটা দেখো। থাকলে `AGENTS.md`-এর বদলে এটা।"
+          },
+          {
+            "title": "৩. `AGENTS.md`",
+            "body": "না থাকলে এটা।"
+          },
+          {
+            "title": "৪. `CLAUDE.md`",
+            "body": "না থাকলে এটা।"
+          },
+          {
+            "title": "৫. `.cursorrules`",
+            "body": "সবশেষে এটা (আর `.cursor/rules/*.mdc`)।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "context-file-priority"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## AGENTS.md — প্রধান project ফাইল\n\n### Directory chain (git root → working directory)\n\ngit repo-র ভেতরে session শুরুতে Hermes একটা **জোড়া চেইন** লোড করে: আগে git-root-এর `AGENTS.md`, তারপর মাঝের প্রতিটা directory-র, শেষে working directory-র। **গভীরেরটা পরে আসে এবং অগ্রাধিকার পায়।** প্রতিটা ফাইলের আগে provenance header (কোন ফাইল থেকে এল তার নাম-লেবেল) বসে (যেমন `## ../../AGENTS.md`), আর হুবহু একই কপি একবারই থাকে।\n\nউদাহরণ: monorepo-তে cwd যদি `packages/webapp/` হয়, লোড হয় root, `packages/`, তারপর `packages/webapp/`।\n\ngit repo-র **বাইরে** শুধু working directory দেখা হয়, উপরের folder কখনও না — তাই `/tmp` বা `$HOME`-এর ভুল ফাইল অন্য session-এ ঢোকে না।\n\n### Subdirectory-তে ধীরে আবিষ্কার\n\nশুরুতে শুধু working directory-র `AGENTS.md` system prompt-এ যায়। পরে agent `read_file`, `terminal` বা `search_files` দিয়ে কোনো subdirectory-তে কাজ করলে Hermes সেই জায়গার context ফাইল **তখন** কথোপকথনে ঢোকায়।\n\n- **সুবিধা:** system prompt ফুলে ওঠে না, আর prompt সব turn-এ স্থির থাকে — তাই **prompt caching** নষ্ট হয় না।\n- প্রতি subdirectory প্রতি session-এ সর্বোচ্চ একবার দেখা হয়।\n- parent-ও দেখা হয়: `backend/src/main.py` পড়লে `backend/src/`-তে ফাইল না থাকলেও `backend/AGENTS.md` মেলে।\n- একই security scan চলে।\n\n### একটা AGENTS.md-এর উদাহরণ\n\nনিচের ফাইলে কিছু শব্দ আছে: **Stack** মানে কোন কোন প্রযুক্তি দিয়ে বানানো। **Convention** মানে দলের লেখার নিয়ম। **Migration** মানে ডেটাবেসের গড়ন বদলানোর ধাপ। **Port** মানে একটা প্রোগ্রামের ঠিকানার দরজা-নম্বর (3000 = frontend)। **`.env.local`** মানে গোপন চাবির ফাইল। **commit** মানে git-এ ইতিহাসে সংরক্ষণ করা। এই ফাইলটা হলো সেই চিরকুট।\n\n```markdown\n# Project Context\n\n## Stack\n- Next.js 14 (App Router) in /frontend, FastAPI + SQLAlchemy in /backend\n- PostgreSQL 16, Docker Compose on a Hetzner VPS\n\n## Conventions\n- TypeScript strict mode; PEP 8 with type hints in Python\n- API responses shaped as {data, error, meta}\n- Tests: __tests__/ (frontend), tests/ (backend)\n\n## Notes\n- Migrations change only through Alembic\n- .env.local holds real API keys — never commit it\n- Ports: 3000 (frontend), 8000 (backend), 5432 (DB)\n```\n\nmonorepo-তে প্রতি folder-এ আলাদা ফাইল: `frontend/AGENTS.md`-এ \"`pnpm` ব্যবহার করো, `npm` না; component `src/components/`-এ; Tailwind, inline style না; test `pnpm test`\" — আর `backend/AGENTS.md`-এ \"`poetry` ব্যবহার করো; dev server `poetry run uvicorn main:app --reload`; endpoint-এ OpenAPI docstring\"।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## SOUL.md — Hermes-এর স্বভাব\n\n- personality, tone ও কথা বলার ধরন ঠিক করে (বিস্তারিত Personality পাতায়)।\n- জায়গা: `~/.hermes/SOUL.md`, বা custom home থাকলে `$HERMES_HOME/SOUL.md`।\n- না থাকলে Hermes একটা ডিফল্ট `SOUL.md` বসিয়ে দেয়।\n- **শুধু `HERMES_HOME` থেকে** লোড হয়, working directory থেকে কখনও না।\n- ফাঁকা ফাইল কিছু যোগ করে না; ভরা ফাইল scan ও truncation-এর পর **হুবহু** ঢোকে।\n\n## `.cursorrules`\n\nCursor-এর `.cursorrules` ও `.cursor/rules/*.mdc` project root থেকে পড়া হয় — কিন্তু শুধু যদি `.hermes.md`, `AGENTS.md` ও `CLAUDE.md` কোনোটাই না থাকে।\n\n## ভেতরে কীভাবে লোড হয়\n\nএই অংশ কৌতূহলীদের জন্য। কীভাবে Hermes ফাইল খুঁজে পড়ে ও system prompt-এ বসায় তার ধাপ।\n\n**শুরুতে (system prompt):** docs অনুযায়ী `agent/prompt_builder.py`-এর `build_context_files_prompt()`:\n\n1. working directory-তে `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `.cursorrules` খোঁজো (প্রথম মিলেই থামো)।\n2. UTF-8-এ পড়ো (UTF-8 হলো লেখা কম্পিউটারে সাজানোর সাধারণ নিয়ম)।\n3. prompt-injection scan চালাও।\n4. সীমা ছাড়ালে কাটো: **৭০% শুরু থেকে, ২০% শেষ থেকে**, মাঝখানে marker।\n5. `# Project Context` header-এর নিচে জোড়া দাও।\n6. system prompt-এ ঢোকাও।\n\n**Session চলাকালে:** `agent/subdirectory_hints.py`-এর `SubdirectoryHintTracker` (subdirectory-র ইঙ্গিত খুঁজে রাখে):\n\n1. tool argument (`path`, `workdir`, shell কমান্ড) থেকে path বের করো।\n2. directory ও **৫টা parent** পর্যন্ত হাঁটো; আগে দেখা directory-তে থামো।\n3. প্রতি directory-তে প্রথম মিল: `AGENTS.md`, `CLAUDE.md` বা `.cursorrules`।\n4. একই injection scan।\n5. প্রতি ফাইলে **৩২,০০০ অক্ষর** সীমা — এটা স্থির, `context_file_max_chars` মানে না।\n6. tool result-এর শেষে জুড়ে দাও, যাতে model দেখে।\n\nশেষে তৈরি অংশে `## AGENTS.md` ও `## .cursorrules` উপ-শিরোনাম থাকে; SOUL-এর লেখা কোনো wrapper ছাড়াই বসে।\n\n### সীমা\n\n| সীমা | মান |\n|---|---|\n| প্রতি ফাইলের সর্বোচ্চ অক্ষর | `context_file_max_chars` দিলে সেটা; নইলে গতিশীল (নিম্ন ২০,০০০, উর্ধ্ব ৫,০০,০০০) |\n| পড়ার timeout (timeout মানে 'এতক্ষণে না পেলে হাল ছাড়ো') | `context_file_read_timeout`, ডিফল্ট **৫ সেকেন্ড** — ধীর ফাইল (iCloud Drive, OneDrive, NFS; এগুলো ইন্টারনেটের উপর ফাইল রাখার ব্যবস্থা, তাই ধীর হতে পারে) সতর্কতা দিয়ে বাদ |\n| শুরু থেকে রাখা | ৭০% |\n| শেষ থেকে রাখা | ২০% |\n| মাঝের marker | ১০% (অক্ষরসংখ্যা দেখায়, file tool-এর পরামর্শ দেয়) |\n\nকাটা হলে এমন বার্তা: `[...truncated AGENTS.md: kept 14000+4000 of 25000 chars. Use file tools to read the full file.]`"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Prompt-injection সুরক্ষা",
+      "markdown": "context ফাইল আসলে **নির্দেশ**, তাই কেউ সেখানে ক্ষতিকর নির্দেশ লুকাতে পারে। Hermes scan করে: instruction override (\"ignore previous instructions\"), deception (\"do not tell the user\"), system prompt override, লুকানো HTML comment, `display:none` div, credential exfiltration (যেমন `$API_KEY` দিয়ে `curl`), secret ফাইল পড়া (যেমন `cat .env`), অদৃশ্য অক্ষর (zero-width space, bidirectional override, word joiner)। ধরা পড়লে project ফাইল **ব্লক** হয় এবং agent দেখে: `[BLOCKED: AGENTS.md contained potential prompt injection (prompt_injection). Content not loaded.]`। scanner তোমার নিজে-পর্যালোচনার বিকল্প না — অচেনা repo-র `AGENTS.md` আগে নিজে দেখো। (**Credential exfiltration** মানে গোপন চাবি চুরি করে বাইরে পাঠানো। `curl` একটা প্রোগ্রাম যা ইন্টারনেটে তথ্য পাঠায়। **Zero-width space** মানে চোখে না-দেখা অক্ষর।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "### দুটো ব্যতিক্রম\n\n- **`SOUL.md`:** scanner-এ ধরা পড়লেও তোমার নিজের `SOUL.md` ব্লক হয় না। Hermes সতর্কতা log করে (pattern-এর নামসহ), ফাইল লোড করে, আর `/context`-এ সতর্কতা দেখায়। ওই লেখা তুমি না লিখে থাকলে ধরে নাও অন্য কেউ ফাইল বদলেছে।\n- **Profile distribution:** (profile মানে আলাদা Hermes-পরিচয়; git URL হলো কোড-ঠিকানা) `hermes profile install <git-url>` ও `hermes profile update` তৃতীয় পক্ষের `SOUL.md` scan বা অনুমোদন ছাড়াই কপি করে। `distribution.yaml` ফাইলের মালিক হলে scanner-এ ধরা পড়লে তা এখনও ব্লক।\n\n## ভালো context file লেখার টিপস\n\n1. **ছোট রাখো** — প্রতি turn-এ পড়া হয়, তাই `context_file_max_chars`-এর নিচে।\n2. `##` শিরোনামে সাজাও: architecture, conventions, notes।\n3. **সত্যিকারের উদাহরণ** দাও: code pattern, API আকার, naming।\n4. কী **করবে না** তা লেখো (যেমন \"migration ফাইল সরাসরি বদলাবে না\")।\n5. কাজের path ও port লিখে রাখো, terminal কমান্ডে লাগে।\n6. project বদলালে হালনাগাদ করো — **পুরনো context না থাকার চেয়েও খারাপ**।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "একই folder-এ `AGENTS.md` ও `CLAUDE.md` আছে (`.hermes.md` নেই)। কোনটা লোড হবে?",
+      "options": ["দুটোই", "`CLAUDE.md`", "`AGENTS.md`", "কোনোটাই না"],
+      "answerIndex": 2,
+      "explanation": "প্রথম মিলেই জয়: `.hermes.md` → `AGENTS.override.md` → `AGENTS.md` → `CLAUDE.md` → `.cursorrules`।"
+    },
+    {
+      "question": "`SOUL.md` কোথা থেকে লোড হয়?",
+      "options": [
+        "শুধু `HERMES_HOME` (যেমন `~/.hermes/SOUL.md`)",
+        "project-এর working directory",
+        "git root",
+        "যেকোনো parent folder"
+      ],
+      "answerIndex": 0,
+      "explanation": "SOUL.md বিশ্বব্যাপী identity, তাই project folder থেকে কখনও নয়।"
+    },
+    {
+      "question": "cwd `packages/webapp/` এবং git repo-র ভেতরে। কোন ক্রমে `AGENTS.md` লোড হয়?",
+      "options": [
+        "webapp → packages → root",
+        "শুধু root",
+        "শুধু webapp",
+        "root → packages → webapp (গভীরটা পরে ও অগ্রাধিকার পায়)"
+      ],
+      "answerIndex": 3,
+      "explanation": "git root থেকে working directory পর্যন্ত চেইন; deeper ফাইল পরে লোড হয় ও জেতে।"
+    },
+    {
+      "question": "Subdirectory-র context ফাইল শুরুতে না ঢুকিয়ে কাজের সময় ঢোকানোর মূল সুবিধা কী?",
+      "options": [
+        "নিরাপত্তা বাড়ে",
+        "system prompt স্থির থাকে, তাই prompt caching টেকে ও prompt ফোলে না",
+        "ফাইল দ্রুত লেখা যায়",
+        "অগ্রাধিকার বদলায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "system prompt স্থির থাকলে cache কাজ করে; দরকারি folder-এর নির্দেশ তখনই ঢোকে।"
+    },
+    {
+      "question": "বড় ফাইল কাটার সময় কত অংশ শুরু ও শেষ থেকে রাখা হয়?",
+      "options": [
+        "৫০% / ৫০%",
+        "১০০% / ০%",
+        "৭০% / ২০% (মাঝে ১০% marker)",
+        "২০% / ৭০%"
+      ],
+      "answerIndex": 2,
+      "explanation": "৭০% head, ২০% tail, বাকি ১০% marker।"
+    },
+    {
+      "question": "কোনো `AGENTS.md`-এ \"ignore previous instructions\" লেখা পাওয়া গেলে কী হয়?",
+      "options": [
+        "ফাইল ব্লক হয়, `[BLOCKED: ...]` বার্তা আসে",
+        "সতর্কতা দিয়ে লোড",
+        "ফাইল মুছে যায়",
+        "আরও বড় অগ্রাধিকার পায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "project context ফাইল injection scan-এ ধরা পড়লে ব্লক হয়। (শুধু তোমার নিজের SOUL.md ব্যতিক্রম।)"
+    },
+    {
+      "question": "Session চলাকালে আবিষ্কৃত subdirectory ফাইলের অক্ষর সীমা কত?",
+      "options": [
+        "`context_file_max_chars`",
+        "৩২,০০০ (স্থির)",
+        "২০,০০০",
+        "সীমা নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রতি ফাইলে ৩২,০০০ অক্ষর, `context_file_max_chars` উপেক্ষা করে।"
+    },
+    {
+      "question": "`AGENTS.override.md` কীসের জন্য ভালো?",
+      "options": [
+        "subdirectory বন্ধ করতে",
+        "SOUL.md বদলাতে",
+        "Cursor rule আমদানিতে",
+        "tracked `AGENTS.md` না বদলে ব্যক্তিগত override রাখতে (সাধারণত gitignored)"
+      ],
+      "answerIndex": 3,
+      "explanation": "পাশে থাকলে `AGENTS.md`-এর বদলে এটাই লোড হয়।"
+    }
+  ],
+  "recap": [
+    "Hermes project-এর `.hermes.md`/`AGENTS.md`/`CLAUDE.md`/`.cursorrules` নিজে পড়ে; প্রথম মিলটাই জেতে।",
+    "`SOUL.md` Hermes-এর স্বভাব; শুধু `HERMES_HOME` থেকে আসে এবং সবসময় আলাদা slot-এ।",
+    "git repo-তে root থেকে cwd পর্যন্ত `AGENTS.md`-এর চেইন; subdirectory-র ফাইল কাজের সময় ঢোকে (cache বাঁচে)।",
+    "সীমা: ৭০/২০ কাটা, subdirectory ফাইল ৩২,০০০ অক্ষর, পড়ার timeout ডিফল্ট ৫ সেকেন্ড।",
+    "প্রতিটা context ফাইল prompt-injection scan হয়; ধরা পড়লে ব্লক (নিজের SOUL.md ছাড়া)।",
+    "ফাইল ছোট, নির্দিষ্ট ও হালনাগাদ রাখো।"
+  ],
+  "contentId": "hermes-doc-user-guide-features-context-files"
+}

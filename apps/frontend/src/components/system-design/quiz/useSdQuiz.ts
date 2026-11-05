@@ -20,16 +20,16 @@ const errorMessage = (error: unknown) =>
     : "কিছু একটা ভুল হয়েছে।";
 
 /** Drives one topic's quiz: status → attempt (20 questions) → result → retry with a fresh 20. */
-export function useSdQuiz(topicId: string) {
+export function useSdQuiz(topicId: string, basePath = "/sd-quiz") {
   const [phase, setPhase] = useState<Phase>({ name: "loading" });
   const [status, setStatus] = useState<SdQuizStatus | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
 
   const loadStatus = useCallback(async () => {
-    const res = await client.get<SdQuizStatus>(`/sd-quiz/${topicId}/status`);
+    const res = await client.get<SdQuizStatus>(`${basePath}/${topicId}/status`);
     setStatus(res.data);
     return res.data;
-  }, [topicId]);
+  }, [topicId, basePath]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,14 +55,16 @@ export function useSdQuiz(topicId: string) {
     setPhase({ name: "loading" });
     setAnswers({});
     try {
-      const res = await client.post<SdAttempt>(`/sd-quiz/${topicId}/attempts`);
+      const res = await client.post<SdAttempt>(
+        `${basePath}/${topicId}/attempts`,
+      );
       setPhase({ name: "answering", attempt: res.data });
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 404)
         setPhase({ name: "unavailable" });
       else setPhase({ name: "error", message: errorMessage(error) });
     }
-  }, [topicId]);
+  }, [topicId, basePath]);
 
   const submit = useCallback(async () => {
     if (phase.name !== "answering") return;
@@ -70,7 +72,7 @@ export function useSdQuiz(topicId: string) {
     setPhase({ name: "submitting", attempt });
     try {
       const res = await client.post<SdAttemptResult>(
-        `/sd-quiz/attempts/${attempt.attemptId}/submit`,
+        `${basePath}/attempts/${attempt.attemptId}/submit`,
         { answers },
       );
       setPhase({ name: "result", result: res.data });
@@ -78,7 +80,7 @@ export function useSdQuiz(topicId: string) {
     } catch (error) {
       setPhase({ name: "error", message: errorMessage(error) });
     }
-  }, [answers, loadStatus, phase]);
+  }, [answers, basePath, loadStatus, phase]);
 
   const answer = useCallback((questionId: string, optionIndex: number) => {
     setAnswers((current) => ({ ...current, [questionId]: optionIndex }));

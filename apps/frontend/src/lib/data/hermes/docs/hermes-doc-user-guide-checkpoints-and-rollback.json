@@ -1,0 +1,201 @@
+{
+  "contentId": "hermes-doc-user-guide-checkpoints-and-rollback",
+  "title": "Checkpoints and Rollback",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/checkpoints-and-rollback",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর checkpoint চালু করা, /rollback দিয়ে ভুল ফাইল-বদল ফেরানো বুঝবে এবং snapshot, shadow repo, hash, prune-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: খেলার আগে \"সেভ\" বোতাম\n\nভিডিও গেম খেলার সময় বড় boss-এর আগে তুমি **save** করে নাও, তাই না? হেরে গেলে আবার সেখান থেকেই শুরু করা যায়।\n\nHermes agent তোমার project-এর ফাইল বদলায়, মোছে, সরায়। যদি সে ভুল করে? **Checkpoint** হলো সেই আপনা-আপনি save: ফাইল বদলানোর ঠিক আগে Hermes একটা ছবি (snapshot) তুলে রাখে। ভুল হলে এক command-এ, `/rollback`, পুরনো অবস্থায় ফেরা যায়।\n\n**এটা না থাকলে কী সমস্যা?** Hermes ভুল করে একটা দরকারি ফাইল মুছে দিলে বা এলোমেলো করে দিলে ফেরার উপায় থাকত না (যদি না তুমি আগেই git-এ save করে রাখতে)।\n\nকিছু গুরুত্বপূর্ণ কথা:\n\n- Checkpoint **default-এ বন্ধ** (v2 থেকে opt-in, মানে চাইলে নিজে চালু করতে হয়), কারণ জমতে জমতে জায়গা খায়।\n- Hermes একটা আলাদা **shadow git repository** ব্যবহার করে: `~/.hermes/checkpoints/store/`। তোমার আসল project-এর `.git` **কখনো ছোঁয়া হয় না**।\n- সব project একই store ভাগ করে, তাই git একই জিনিস বারবার জমায় না (**deduplication** = একই জিনিসের দ্বিতীয় কপি না রাখা)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Snapshot ও checkpoint\n**Snapshot** = সেই মুহূর্তে সব ফাইল কেমন ছিল তার ছবি। **Checkpoint** = Hermes-এর নেওয়া এমন ছবি, একটা save point।\n\n### ২) Rollback\nপিছিয়ে যাওয়া। গেমে \"আগের save থেকে লোড করো\"।\n\n### ৩) Git, repo, commit\n**Git** = ফাইলের ইতিহাস মনে রাখার টুল। **Repo** = যে ফোল্ডারে Git কাজ করে। **Commit** = Git-এর একটা save point।\n\n### ৪) Shadow repo\nআড়ালে রাখা গোপন Git repo, যেন তোমার আসল repo-র ছায়া। তোমার নিজের `.git`-এর সঙ্গে মেশে না। **বাঁচোয়া:** তোমার আসল commit-ইতিহাস কখনো নোংরা হয় না।\n\n### ৫) Hash\nকোনো জিনিসের অনন্য ছাপ-নাম (যেমন `4270a8c`)। একই বিষয়বস্তু মানে একই hash, তাই ডুপ্লিকেট চেনা সহজ।\n\n### ৬) Tool\nHermes-এর হাতের যন্ত্র। `write_file` (ফাইল লেখা) আর `patch` (ফাইলের কিছু অংশ বদলানো) দুটো file tool।\n\n### ৭) Turn\nএক দফা: তুমি বললে, Hermes কাজ করল, উত্তর দিল।\n\n### ৮) Prune\nপুরনো, অপ্রয়োজনীয় জিনিস ছেঁটে ফেলা।\n\n### ৯) Container backend\nHermes যদি Docker-এর মতো আলাদা বাক্সে কমান্ড চালায়। এই lesson-এর শেষে দেখবে সেখানে checkpoint কেন চলে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## চালু করার দুই উপায়\n\n```bash\nhermes chat --checkpoints          # শুধু এই session-এর জন্য\n```\n\n```yaml\n# ~/.hermes/config.yaml — সবসময়ের জন্য\ncheckpoints:\n  enabled: true\n```\n\n| উপায় | কখন লাগে |\n|---|---|\n| `hermes chat --checkpoints` | আজ একটা ঝুঁকির কাজ করছো, শুধু এবার চালু চাও |\n| `config.yaml`-এ `enabled: true` | সবসময় চালু চাও (সেটিং-এর খাতায় চিরস্থায়ী) |\n\n## কখন snapshot তোলা হয়?\n\nফাইল বদলানোর **আগে**:\n\n- **File tool:** `write_file`, `patch`\n- **ধ্বংসাত্মক terminal command:** `rm`, `rmdir`, `cp`, `install`, `mv`, `sed -i`, `truncate`, `dd`, `shred`, output redirect (`>`), `git reset`, `git clean`, `git checkout`\n\nসীমা: প্রতি directory-তে প্রতি turn-এ **সর্বোচ্চ একটা** checkpoint। কিছু না বদলালে নতুন checkpoint-ই হয় না।\n\n## ভেতরে কী ঘটে?\n\n1. Hermes বুঝতে পারে একটা tool ফাইল বদলাতে যাচ্ছে।\n2. প্রতি turn-এ, প্রতি directory-তে: project root খুঁজে বের করে, shared store চালু করে/ব্যবহার করে, পরিবর্তন per-project index-এ stage করে (**stage** = \"এগুলো ছবিতে থাকবে\" বলে চিহ্নিত করা), tree বানায় (ফাইল-কাঠামোর ছবি), `refs/hermes/<project-hash>`-এ commit করে।\n3. এই ref-গুলোর (নামকরা পয়েন্টার) ইতিহাস `/rollback` দিয়ে দেখা ও ফেরা যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "sequence",
+        "caption": "agent ফাইল লেখার আগে Checkpoint Manager snapshot নেয়; পরে /rollback দিয়ে ফেরা যায়।",
+        "participants": [
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "Hermes agent"
+          },
+          {
+            "id": "mgr",
+            "kind": "gateway",
+            "label": "Checkpoint Mgr"
+          },
+          {
+            "id": "store",
+            "kind": "database",
+            "label": "shadow store"
+          },
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি"
+          }
+        ],
+        "messages": [
+          {
+            "from": "agent",
+            "to": "mgr",
+            "label": "write_file করতে যাচ্ছি"
+          },
+          {
+            "from": "mgr",
+            "to": "store",
+            "label": "snapshot commit"
+          },
+          {
+            "from": "mgr",
+            "to": "agent",
+            "label": "এগোও"
+          },
+          {
+            "from": "agent",
+            "to": "u",
+            "label": "ফাইল বদলাল"
+          },
+          {
+            "from": "u",
+            "to": "mgr",
+            "label": "/rollback 1"
+          },
+          {
+            "from": "mgr",
+            "to": "store",
+            "label": "ফাইল ফেরত আনো"
+          },
+          {
+            "from": "mgr",
+            "to": "u",
+            "label": "restore সম্পন্ন"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "checkpoint-rollback"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `/rollback` কমান্ড\n\n| Command | কাজ | কখন লাগে |\n|---|---|---|\n| `/rollback` | checkpoint-এর তালিকা, কত ফাইল/লাইন বদলেছে সহ | কোথায় ফিরব বেছে নিতে |\n| `/rollback <N>` | N নম্বর checkpoint-এ ফেরা; হাতে করা edit রাখা; শেষ chat turn undo | সাধারণ ফেরা |\n| `/rollback <N> --all` | পুরোপুরি ফেরা, হাতের edit-সহ | সব কিছু ওই সময়ের মতো চাইলে |\n| `/rollback diff <N>` | N আর এখনকার অবস্থার পার্থক্য আগে দেখা | ফেরার আগে যাচাইয়ে |\n| `/rollback <N> <file>` | শুধু একটা ফাইল ফেরানো | বাকি সব ঠিক, একটা নষ্ট |\n\nতালিকা দেখতে এমন: নম্বর, ছোট hash (`4270a8c`), সময়, কারণ (`before patch`, `before write_file`, `before terminal: sed -i ...`) আর ফাইল-পরিসংখ্যান।\n\n### `/rollback 1` আসলে কী করে?\n\n1. store-এ target commit আছে কিনা দেখে।\n2. **Pre-rollback snapshot** নেয়, যেন restore নিজেও undo করা যায় (ফেরার আগে বর্তমান অবস্থাও save)।\n3. tracked ফাইল ফেরায় (Git যে ফাইলগুলো চেনে), তোমার হাতের edit **সংরক্ষণ করে**।\n4. শেষ conversation turn undo করে, যেন agent-এর মনে থাকা কথা আর ফাইলের অবস্থা মেলে।\n\n### হাতের edit কীভাবে বাঁচে?\n\n**সমস্যা:** Hermes একটা ফাইল লিখল, তুমি নিজে সেটা আবার একটু বদলালে। এখন rollback করলে তোমার নিজের কাজ মুছে যাওয়ার কথা। তাই Hermes একটা **agent-write ledger** (হিসাবের খাতা) রাখে: প্রতিটা সফল `write_file`/`patch`-এর সাথে ফাইলের content hash। restore-এর সময় যে ফাইলের বর্তমান বিষয়বস্তু Hermes-এর শেষ লেখার থেকে আলাদা (মানে তুমি নিজে বদলেছ), সেটা **বাদ পড়ে** ও জানানো হয়:\n\n```text\nRestored to checkpoint a1b2c3d4: before write_file\nKept your hand-edits: src/config.py, notes.md\n```\n\nসবকিছু জোর করে ফেরাতে `--all`। ledger খালি থাকলে (আগের store বা এখনও লেখা হয়নি) পুরো restore হয়।\n\nএকটা ফাইল ফেরাতে: `/rollback 1 src/broken_file.py`।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "আগে diff, পরে restore",
+      "markdown": "`/rollback diff 1` চালিয়ে দেখে নাও কোন checkpoint-এ ফিরবে। আর agent-এর কাজ undo করতে `git reset`-এর বদলে `/rollback` ভালো, কারণ এটা শুধু agent-এর বদল ফেরায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Store নিয়ন্ত্রণ: `hermes checkpoints`\n\n| Command | কাজ | কখন লাগে |\n|---|---|---|\n| `hermes checkpoints` / `status` / `list` | মোট size, project সংখ্যা, প্রতি project-এর হিসাব | কতটা জায়গা খাচ্ছে জানতে |\n| `hermes checkpoints prune` | জোর করে পরিষ্কার: orphan ও পুরনো entry মোছা, GC (garbage collection, মানে আবর্জনা সাফ), size cap প্রয়োগ | জায়গা দ্রুত বাঁচাতে |\n| `hermes checkpoints clear` | পুরো checkpoint base মোছা (নিশ্চিতকরণ চায়) | সব শূন্য থেকে শুরু |\n| `hermes checkpoints clear-legacy` | v1 migration-এর `legacy-*` archive মোছা | পুরনো সংস্করণের আবর্জনা সরাতে |\n\nউদাহরণ: `hermes checkpoints prune --retention-days 3 --max-size-mb 200` মানে \"৩ দিনের পুরনো মোছো আর মোট ২০০ MB-র মধ্যে রাখো\", ২৪ ঘণ্টার marker উপেক্ষা করে পুরো sweep।\n\n## Config\n\n```yaml\ncheckpoints:\n  enabled: false          # master switch\n  max_snapshots: 20       # প্রতি project-এ সর্বোচ্চ\n  max_total_size_mb: 500  # store-এর hard cap\n  max_file_size_mb: 10    # এর চেয়ে বড় ফাইল বাদ\n  auto_prune: true\n  retention_days: 7\n  min_interval_hours: 24\n```\n\n| key | মানে | কেন |\n|---|---|---|\n| `enabled` | মূল সুইচ | ডিফল্ট বন্ধ, কারণ জায়গা খায় |\n| `max_snapshots: 20` | প্রতি project-এ সর্বোচ্চ ২০টা ছবি | সীমাহীন বাড়া ঠেকাতে |\n| `max_total_size_mb: 500` | সব মিলিয়ে ৫০০ MB-র শক্ত সীমা | ডিস্ক ভরে যাওয়া ঠেকাতে |\n| `max_file_size_mb: 10` | ১০ MB-র বড় ফাইল ছবিতে নেয় না | বড় ডেটা-ফাইল বাদ |\n| `auto_prune` | নিজে নিজে পরিষ্কার | ঝামেলা কমাতে |\n| `retention_days: 7` | ৭ দিনের পুরনো গেলে ফেলা যায় | |\n| `min_interval_hours: 24` | পরিষ্কারের মধ্যে কমপক্ষে ২৪ ঘণ্টা | বারবার ভারী কাজ ঠেকাতে |\n\n- **auto-prune** background-এ চলে (CLI-তে helper thread, মানে পেছনের কর্মী; gateway-তে housekeeping tick, মানে নিয়মিত ঘরদোর-গোছানো); prompt বা gateway startup আটকায় না, কারণ `git gc` কয়েক দশ সেকেন্ড নিতে পারে।\n- Auto-prune **orphan** entry (workdir নেই) কখনো মোছে না, কারণ ফোল্ডারটা মোছা project হতে পারে, আবার unmount করা drive-ও হতে পারে (পেনড্রাইভ খুলে রাখা)। orphan শুধু `hermes checkpoints prune`-এ, নিশ্চিতকরণসহ যায়।\n- সব বন্ধ করতে `enabled: false` ও `auto_prune: false`; তখন store নিজে বাড়তেই থাকবে যতক্ষণ না হাতে `prune` চালাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নিরাপত্তা ও কর্মক্ষমতার সীমা\n\n- **Nested git repo**: ভেতরের git repo copy হয় না, gitlink (commit reference, শুধু একটা ঠিকানা-চিহ্ন) হিসেবে থাকে; তার uncommitted/untracked বিষয়বস্তু **ধরা পড়ে না**। এমন checkpoint-এ পুরো rollback (`--all`-সহ) **অস্বীকার** করা হয়, কোনো ফাইল বদলানোর আগেই। সম্পর্কহীন ফাইল ফেরানো যায়, যেমন `/rollback 1 notes.txt`।\n- **Container backend** (docker, modal, daytona, vercel_sandbox, singularity): path sandbox-এর, তাই checkpoint বা ledger entry বানানো হয় না। `/rollback` তালিকা দেখায় কিন্তু diff ও restore অস্বীকার করে। Local ও SSH backend অপ্রভাবিত।\n- **git না থাকলে**: `git` `PATH`-এ না থাকলে (PATH = কমান্ড খোঁজার ফোল্ডারের তালিকা) checkpoint নিঃশব্দে বন্ধ।\n- **Directory সীমা**: root `/` ও `$HOME` বাদ; ৫০,০০০-এর বেশি ফাইলের directory বাদ।\n- **ফাইলের সীমা**: ১০ MB-র বেশি ফাইল বাদ (dataset, model weight, media থেকে বাঁচাতে)।\n- **Size cap**: store ৫০০ MB ছাড়ালে প্রতি project থেকে round-robin করে (পালা করে) সবচেয়ে পুরনো commit ফেলা হয়, তবে প্রতিটা project অন্তত একটা snapshot রাখে।\n- **Concurrency**: (একসঙ্গে অনেক কাজ।) snapshot, restore, diff ও maintenance একই process-wide lock ভাগ করে, যেন একসঙ্গে দুজন ঘেঁটে না দেয়।\n- **Non-fatal**: snapshot ব্যর্থ হলেও tool আটকায় না।\n\n## Storage layout (`~/.hermes/checkpoints/`)\n\n```text\nstore/                 # একটাই shared bare git repo\n  refs/hermes/<hash>   # প্রতি project-এর branch tip\n  indexes/<hash>       # প্রতি project-এর index\n  projects/<hash>.json # workdir, created_at, last_touch\n  .gc-pending\n.last_prune\nlegacy-<ts>/           # v1-এর পুরনো archive\n```\n\n`<hash>` আসে working directory-র absolute path থেকে। হাতে না ঘেঁটে `status`, `prune`, `clear` ব্যবহার করো। `.checkpoints.lock` ফাইল Hermes চলার সময় কখনো মুছো না।\n\n## v1 থেকে migration\n\n(**Migration** = পুরনো ব্যবস্থা থেকে নতুনে সরে আসা।) v1-এ প্রতি directory-র জন্য পুরো আলাদা shadow repo ছিল, deduplication ছাড়া এবং pruner কিছুই করত না, তাই সীমাহীন বাড়ত। প্রথম v2 চালানোয় পুরনোগুলো `~/.hermes/checkpoints/legacy-<timestamp>/`-এ সরে যায়। জায়গা ফেরত পেতে `hermes checkpoints clear-legacy`; অথবা `retention_days` পরে auto-prune মুছে দেয়।\n\n## Best practice\n\n- দরকার হলেই চালু করো (`hermes chat --checkpoints` বা per-profile `enabled: true`)।\n- restore-এর আগে `/rollback diff`।\n- মাঝে মাঝে `hermes checkpoints status` দেখো।\n- parallel agent চালালে Git worktree ব্যবহার করো, এক session-এ এক worktree। (**Worktree** = একই repo-র আলাদা কপি-ঘর।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Container backend-এ rollback হবে না",
+      "markdown": "Docker sandbox-এ agent-এর ফাইল sandbox-এর ভেতরে, তাই checkpoint তৈরি হয় না এবং `/rollback` restore করতে অস্বীকার করে। Local বা SSH backend হলে ঠিক আছে।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Checkpoint-এর default অবস্থা কী?",
+      "options": [
+        "বন্ধ (opt-in)",
+        "চালু",
+        "শুধু gateway-তে চালু",
+        "শুধু Docker-এ চালু"
+      ],
+      "answerIndex": 0,
+      "explanation": "জমতে জমতে জায়গা খায়, তাই নিজে চালু করতে হয়।"
+    },
+    {
+      "question": "Checkpoint কোথায় জমা হয়?",
+      "options": [
+        "project-এর `.git`-এ",
+        "`.env`-এ",
+        "`~/.hermes/checkpoints/store/`-এর shadow git repo-তে",
+        "internet-এ"
+      ],
+      "answerIndex": 2,
+      "explanation": "আসল `.git` কখনো ছোঁয়া হয় না।"
+    },
+    {
+      "question": "কোন কাজের আগে snapshot তোলা হয়?",
+      "options": [
+        "শুধু ফাইল পড়ার আগে",
+        "`write_file`, `patch` ও `rm`, `mv`, `sed -i`-র মতো ধ্বংসাত্মক command-এর আগে",
+        "শুধু `ls`-এর আগে",
+        "প্রতিটা message-এর আগে"
+      ],
+      "answerIndex": 1,
+      "explanation": "ফাইল বদলানোর ঠিক আগের ছবি; কিছু না বদলালে নতুন checkpoint হয় না।"
+    },
+    {
+      "question": "`/rollback 1` চালালে তোমার নিজের হাতে বদলানো ফাইলের কী হয়?",
+      "options": [
+        "মুছে যায়",
+        "সবসময় নষ্ট হয়",
+        "commit হয়ে যায়",
+        "agent-write ledger দেখে সংরক্ষিত থাকে (`--all` না দিলে)"
+      ],
+      "answerIndex": 3,
+      "explanation": "যে ফাইল Hermes-এর শেষ লেখা থেকে আলাদা, সেটা বাদ পড়ে ও জানানো হয়।"
+    },
+    {
+      "question": "শুধু একটা ফাইল ফেরাতে কোন command?",
+      "options": [
+        "`/rollback --all`",
+        "`hermes checkpoints clear`",
+        "`/rollback 1 src/broken_file.py`",
+        "`/new`"
+      ],
+      "answerIndex": 2,
+      "explanation": "`/rollback <N> <file>` একটা ফাইল ফেরায়।"
+    },
+    {
+      "question": "Docker sandbox backend-এ `/rollback` সম্পর্কে কোনটা সঠিক?",
+      "options": [
+        "তালিকা দেখায় কিন্তু diff ও restore অস্বীকার করে",
+        "সব ঠিকঠাক চলে",
+        "ফাইল দ্বিগুণ হয়",
+        "শুধু diff করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "path sandbox-এর, তাই checkpoint বানানোই হয় না।"
+    },
+    {
+      "question": "Auto-prune কেন orphan entry মোছে না?",
+      "options": [
+        "ভুলে গেছে",
+        "orphan খুব ছোট",
+        "orphan লুকোনো",
+        "ফোল্ডারটা unmount করা drive বা মোছা project হতে পারে, তাই হাতে নিশ্চিত করে মুছতে হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "শুধু `hermes checkpoints prune`-এ, নিশ্চিতকরণসহ যায়।"
+    }
+  ],
+  "recap": [
+    "Checkpoint ফাইল বদলানোর আগে আপনা-আপনি snapshot নেয়; default-এ বন্ধ, `--checkpoints` বা `checkpoints.enabled: true` দিয়ে চালু।",
+    "Snapshot থাকে `~/.hermes/checkpoints/store/`-এর shadow git repo-তে; তোমার আসল `.git` অক্ষত।",
+    "`/rollback`, `/rollback <N>`, `--all`, `diff <N>`, `<N> <file>`, পাঁচটা রূপ মনে রাখো।",
+    "Restore তোমার হাতের edit রাখে (agent-write ledger দিয়ে), আর restore-এর আগে নিজেও snapshot নেয়।",
+    "সীমা: ২০ snapshot/project, ৫০০ MB মোট, ১০ MB/ফাইল, ৭ দিন retention।",
+    "`hermes checkpoints status/prune/clear` দিয়ে store-এর খরচ সামলাও।"
+  ]
+}

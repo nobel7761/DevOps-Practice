@@ -1,0 +1,350 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-webhooks",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q01",
+      "difficulty": "easy",
+      "question": "**Webhook** কী?",
+      "options": [
+        "একটা ঠিকানা, যেখানে তুমি বারবার গিয়ে খবর জিজ্ঞেস করো",
+        "একটা password, যা দিয়ে Hermes-এ ঢোকা যায়",
+        "একটা tool, যা terminal থেকে ওয়েবসাইট খোলে",
+        "একটা ঠিকানা, যেখানে অন্য সেবা নিজে থেকে খবর পাঠায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ঘটনা ঘটলে অন্যপক্ষ তোমার \"দরজার ঘণ্টা\" বাজায়। এতে বারবার জিজ্ঞেস করতে হয় না।",
+      "whyWrong": {
+        "0": "বারবার জিজ্ঞেস করা হলো polling, উল্টো পদ্ধতি।",
+        "1": "এটা ঠিকানা, পাসওয়ার্ড নয়।",
+        "2": "এটা `curl`-এর বর্ণনা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q02",
+      "difficulty": "easy",
+      "question": "**Payload** মানে কী?",
+      "options": [
+        "সেবার পাঠানো তথ্য-চিরকুট, প্রায়ই JSON",
+        "যে port-এ webhook server চলে সেই নম্বরটা",
+        "যে secret দিয়ে সিল বানানো হয় সেই গোপন শব্দ",
+        "ঠিকানায় বসানো route-এর নামের অংশটা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Payload হলো পাঠানো তথ্য। যেমন PR-এর শিরোনাম, লেখক, নম্বর।",
+      "whyWrong": {
+        "1": "Port হলো দরজা-নম্বর (`8644`)।",
+        "2": "গোপন শব্দের নাম secret।",
+        "3": "ঠিকানার সেই অংশ route।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q03",
+      "difficulty": "easy",
+      "question": "**HMAC signature** কী কাজ করে?",
+      "options": [
+        "চিরকুটের লেখা ছোট করে কেটে ছেঁটে দেয়",
+        "আসল সেবা পাঠিয়েছে কি না তা মেলায়",
+        "চিরকুটকে সাথে সাথে LLM-এ পাঠিয়ে দেয়",
+        "চিরকুটের উত্তর GitHub-এ comment করে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "দুপক্ষ একটা secret ভাগ করে রাখে। সেবা সিল বানায়, Hermes নিজের হিসাবে সিল বানিয়ে মেলায়।",
+      "whyWrong": {
+        "0": "লেখা ছাঁটে prompt template-এর সীমা।",
+        "2": "LLM-এ পাঠানো হয় যাচাইয়ের পরে, আলাদা ধাপে।",
+        "3": "Comment করে `deliver: github_comment`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q04",
+      "difficulty": "easy",
+      "question": "**Route** কী?",
+      "options": [
+        "কোন ঠিকানায় কোন ভাষা বলা যাবে তার তালিকা",
+        "যে ফোল্ডারে script রাখা হয় সেই পথ",
+        "কোন ঠিকানায় কী কাজ হবে তার নিয়ম",
+        "একটা HTTP status code-এর ডাকনাম"
+      ],
+      "correctIndex": 2,
+      "explanation": "যেমন `/webhooks/github-pr`-এ এলে \"PR review করো\"। একটা বাড়িতে একাধিক দরজা-ঘণ্টা, প্রতিটার আলাদা কাজ।",
+      "whyWrong": {
+        "0": "ভাষার সাথে এর সম্পর্ক নেই।",
+        "1": "Script থাকে `~/.hermes/scripts/`-এ।",
+        "3": "Status code আলাদা ব্যাপার।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q05",
+      "difficulty": "easy",
+      "question": "**Idempotency** মানে কী?",
+      "options": [
+        "একই খবর দুবার এলেও কাজ একবারই হওয়া",
+        "পুরোনো আসল চিরকুট আবার পাঠিয়ে দেওয়া",
+        "চিরকুটের ভেতরের লেখা বদলে ফেলা",
+        "চিরকুট না পড়েই উত্তর পাঠিয়ে দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hermes delivery ID ১ ঘণ্টা মনে রাখে, তাই একই খবর দুবার এলে একবারই কাজ হয়।",
+      "whyWrong": {
+        "1": "পুরোনো চিরকুট আবার পাঠানোকে বলে replay।",
+        "2": "লেখা বদলানো এর অর্থ নয়।",
+        "3": "এমন কিছু নয়; এটা কাজ একবার হওয়ার নিশ্চয়তা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q06",
+      "difficulty": "easy",
+      "question": "Webhook server-এর default port কত?",
+      "options": ["`3000`", "`8080`", "`8644`", "`443`"],
+      "correctIndex": 2,
+      "explanation": "`WEBHOOK_PORT` default `8644`। সেবাকে `http://your-server:8644/webhooks/<route-name>` ঠিকানা দেখাতে হয়।",
+      "whyWrong": {
+        "0": "`3000` লেসনে webhook-এর port হিসেবে নেই।",
+        "1": "`8080` লেসনে নেই।",
+        "3": "`443` লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q07",
+      "difficulty": "easy",
+      "question": "Webhook server চালু করার সুইচ কোনটা, আর তার default কী?",
+      "options": [
+        "`WEBHOOK_ENABLED`; default `true` থাকে",
+        "`WEBHOOK_SECRET`; default `false` থাকে",
+        "`WEBHOOK_PORT`; default `true` থাকে",
+        "`WEBHOOK_ENABLED`; default `false`"
+      ],
+      "correctIndex": 3,
+      "explanation": "default বন্ধ, তাই `WEBHOOK_ENABLED=true` দিয়ে চালু করতে হয়।",
+      "whyWrong": {
+        "0": "Default `false`, `true` নয়।",
+        "1": "Secret সুইচ নয়; এটা সবার জন্য সাধারণ গোপন শব্দ।",
+        "2": "Port একটা নম্বর, সুইচ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q08",
+      "difficulty": "medium",
+      "question": "Webhook server ঠিকভাবে চলছে কি না দেখতে কোন কমান্ড?",
+      "options": [
+        "`curl http://localhost:8644/secret/ok`",
+        "`curl http://localhost:8644/health`",
+        "`hermes webhook ping --localhost`",
+        "`hermes health --webhook-server`"
+      ],
+      "correctIndex": 1,
+      "explanation": "ঠিক থাকলে `{\"status\": \"ok\", \"platform\": \"webhook\"}` আসে।",
+      "whyWrong": {
+        "0": "`/secret` নামে এমন path নেই।",
+        "2": "`hermes webhook ping` নামে কমান্ড লেসনে নেই।",
+        "3": "এমন ফ্ল্যাগ লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q09",
+      "difficulty": "medium",
+      "question": "Route-এর `events: [\"pull_request\"]` কী করে?",
+      "options": [
+        "সব event নেয় কিন্তু শুধু PR-এ উত্তর দেয়",
+        "প্রতিটা PR-এ নতুন route বানিয়ে দেয়",
+        "শুধু PR-এর খবর নেয়, বাকি event বাদ",
+        "শুধু `pull_request` নামের repo-তে কাজ করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`events` তালিকা খালি থাকলে সব event নেয়। GitHub-এর জন্য এটা `X-GitHub-Event` header থেকে পড়া হয়।",
+      "whyWrong": {
+        "0": "অন্য event বাদ যায়, নেওয়ার পরে ফিল্টার হয় না।",
+        "1": "Route নিজে থেকে বানানো হয় না।",
+        "3": "এটা repo-র নাম নয়, event-এর ধরন।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q10",
+      "difficulty": "medium",
+      "question": "`deliver` চাবির default মান কী?",
+      "options": ["`log`", "`github_comment`", "`telegram`", "`email`"],
+      "correctIndex": 0,
+      "explanation": "না দিলে উত্তর শুধু log-এ যায়। `deliver_only` দিলে কিন্তু `log` চলে না, আসল target লাগে।",
+      "whyWrong": {
+        "1": "`github_comment`-এর জন্য `gh auth login` ও `deliver_extra` লাগে, default নয়।",
+        "2": "`telegram`-এ `chat_id` লাগে, default নয়।",
+        "3": "`email` default নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q11",
+      "difficulty": "medium",
+      "question": "`deliver_only: true` হলে কী হয়?",
+      "options": [
+        "agent দুবার চলে, নিশ্চিত হতে",
+        "agent বাদ, prompt-ই সরাসরি বার্তা",
+        "বার্তা শুধু log ফাইলে লেখা হয়",
+        "বার্তা পাঠানোর সাথে সাথে মুছে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "LLM-এর খরচ শূন্য, কারণ কোনো LLM call হয় না। monitoring alert-এর মতো সহজ কাজে চমৎকার; আসল `deliver` target লাগে।",
+      "whyWrong": {
+        "0": "Agent একবারও চলে না।",
+        "2": "`log` target এর সাথে `deliver_only` চালুর সময়ই reject হয়।",
+        "3": "বার্তা পাঠানো হয়, মুছে যায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q12",
+      "difficulty": "medium",
+      "question": "GitLab webhook-এ secret কীভাবে আসে?",
+      "options": [
+        "`X-Hub-Signature-256`-এ HMAC হয়ে",
+        "payload-এর ভেতরে `secret` চাবিতে বসে",
+        "ঠিকানার শেষে `?secret=` হয়ে বসে",
+        "`X-Gitlab-Token`-এ সরাসরি মেলানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "GitHub-এ `X-Hub-Signature-256` (`sha256=`)। GitLab-এ সরাসরি token মেলানো হয়।",
+      "whyWrong": {
+        "0": "`X-Hub-Signature-256` হলো GitHub-এর।",
+        "1": "Payload থেকে secret পড়া হয় না।",
+        "2": "URL query-তে secret আসার কথা লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q13",
+      "difficulty": "medium",
+      "question": "Prompt template-এ `{pull_request.title}` কী বোঝায়?",
+      "options": [
+        "`payload[\"pull_request\"][\"title\"]`",
+        "`pull_request` নামের একটা নতুন route",
+        "`title` নামের একটা Skill-এর নামটা",
+        "পুরো payload-এর প্রথম ৪০০০ অক্ষরটা"
+      ],
+      "correctIndex": 0,
+      "explanation": "ডট দিয়ে ভেতরে ঢোকা যায়। নেই এমন key literal `{key}` হয়েই থাকে, error হয় না।",
+      "whyWrong": {
+        "1": "Route এভাবে লেখা হয় না।",
+        "2": "Skill এখানে বসে না।",
+        "3": "পুরো payload-এর জন্য `{__raw__}`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q14",
+      "difficulty": "medium",
+      "question": "কোন status code বলে \"HMAC signature নেই বা ভুল\"?",
+      "options": ["`400`", "`404`", "`401`", "`429`"],
+      "correctIndex": 2,
+      "explanation": "`400` ভাঙা JSON, `404` অচেনা route, `413` বড় body, `429` rate limit, `502` target প্রত্যাখ্যান।",
+      "whyWrong": {
+        "0": "`400` মানে ভাঙা JSON।",
+        "1": "`404` মানে অচেনা route।",
+        "3": "`429` মানে অনেক বেশি অনুরোধ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q15",
+      "difficulty": "hard",
+      "question": "GitHub PR review route বানাচ্ছ, কিন্তু উত্তর PR-এ comment হয়ে যাচ্ছে না। কোন সেটিং লাগবেই?",
+      "options": [
+        "`deliver_only: true` আর `cron_job` একসাথে",
+        "`github_comment` + `deliver_extra`",
+        "`events: []` আর `INSECURE_NO_AUTH` একসাথে",
+        "`coalesce` আর `mirror_to_session: true` একসাথে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সাথে gateway-র মেশিনে `gh auth login` লাগে। `deliver_extra` বলে কোন repo আর কোন PR নম্বরে comment হবে।",
+      "whyWrong": {
+        "0": "`deliver_only` আর `cron_job` একসাথে চলে না, আর comment-এর জন্য নয়।",
+        "2": "`INSECURE_NO_AUTH` শুধু পরীক্ষার জন্য।",
+        "3": "`coalesce` শুধু জমিয়ে চালায়, গন্তব্য ঠিক করে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q16",
+      "difficulty": "hard",
+      "question": "একই PR-এ ১০ সেকেন্ডে ৫টা push এল, তুমি agent একবারই চালাতে চাও। কী দেবে?",
+      "options": [
+        "`deliver_only: true` রেখে দিয়ে",
+        "শুধু `rate_limit: 1` দিয়ে দিয়ে",
+        "`filters`-এ `exists` ব্যবহার করে",
+        "`coalesce`-এ `key` দিয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Coalesce একই বিষয়ের event জমিয়ে শেষ payload-এ একটাই agent run করে। HTTP 202 `coalesced` আসে।",
+      "whyWrong": {
+        "0": "`deliver_only` agent বাদ দেয়, জমায় না।",
+        "1": "Rate limit বাকিগুলো 429 দিয়ে ফেরায়, জমায় না।",
+        "2": "`exists` শুধু field আছে কি না দেখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q17",
+      "difficulty": "hard",
+      "question": "Script route-এ কেন `~/.hermes/scripts/`-এর বাইরে রাখা যায় না?",
+      "options": [
+        "কারণ script শুধু Python-এই চলতে পারে",
+        "কারণ বাইরে রাখলে payload সবসময় ফাঁকা আসে",
+        "বাইরের পথে ঢোকা নিরাপত্তার জন্য বন্ধ",
+        "কারণ ওখানে আলাদা secret লাগে না বলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`.sh/.bash` bash-এ আর বাকিগুলো Python-এ চলে। stdout-এ JSON object দিলে payload বদলে যায়।",
+      "whyWrong": {
+        "0": "`.sh` bash-এ চলে, তাই শুধু Python নয়।",
+        "1": "Payload ফাঁকার সাথে পথের সম্পর্ক নেই।",
+        "3": "Script-এর secret-এর কথা নয়, পথ আটকানোর কথা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q18",
+      "difficulty": "hard",
+      "question": "PR-এর title-এ কেউ দুষ্টু নির্দেশ লিখে রেখেছে। default webhook toolset এ কী ঠেকায়?",
+      "options": [
+        "toolset-এ সবসময় `terminal` আর `file` থাকে বলে",
+        "HMAC verification নির্দেশগুলো ছেঁকে ফেলে বলে",
+        "`rate_limit` দুষ্টু লেখা মুছে দেয় বলে",
+        "ছোট toolset: `web_search`, `clarify`"
+      ],
+      "correctIndex": 3,
+      "explanation": "HMAC শুধু প্রমাণ করে কে পাঠাল, কী পাঠাল তা নয়। তাই `terminal`/`file` শুধু বিশ্বস্ত route-এ দাও, আর `{__raw__}`-এর বদলে নির্দিষ্ট field ব্যবহার করো।",
+      "whyWrong": {
+        "0": "`terminal`/`file` default-এ নেই, ইচ্ছা করে বাদ।",
+        "1": "HMAC লেখার ভেতরের নির্দেশ ছাঁকে না।",
+        "2": "Rate limit শুধু অনুরোধের সংখ্যা সীমিত করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q19",
+      "difficulty": "hard",
+      "question": "কেউ পুরোনো আসল চিরকুট আবার পাঠিয়ে replay করার চেষ্টা করছে। কোন signature-ধরন এটা সবচেয়ে ভালো ঠেকায়?",
+      "options": [
+        "Generic V1 (legacy), যাতে কোনো timestamp লাগে না",
+        "Generic V2, যাতে timestamp ±৩০০ সেকেন্ডের মধ্যে",
+        "GitLab-এর `X-Gitlab-Token`, যা সরাসরি মেলানো হয়",
+        "`INSECURE_NO_AUTH`, যাতে সব যাচাই বাদ যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "V2 সুপারিশকৃত: `X-Webhook-Signature-V2` ও `X-Webhook-Timestamp`। পুরোনো সময়ের চিরকুট তাই বাতিল হয়।",
+      "whyWrong": {
+        "0": "V1-এ replay-সুরক্ষা নেই, একবার deprecation warning আসে।",
+        "2": "সরাসরি token মেলানোয় সময়ের যাচাই নেই।",
+        "3": "যাচাই বাদ দিলে তো আরও ঝুঁকি, আর এটা শুধু loopback-এ চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-messaging-webhooks-q20",
+      "difficulty": "hard",
+      "question": "একই GitHub delivery দুবার এল, কিন্তু কাজ একবারই হল। কেন?",
+      "options": [
+        "delivery ID ১ ঘণ্টা মনে রাখা হয়",
+        "`rate_limit` দ্বিতীয়টাকে সরাসরি আটকে দেয়",
+        "`coalesce` দুটোকে সবসময় এক করে ফেলে",
+        "`INSECURE_NO_AUTH` দ্বিতীয়টা বাতিল করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Header-গুলো (`X-GitHub-Delivery`, `svix-id`, `webhook-id`, `X-Request-ID`) থেকে Hermes ID পড়ে। দ্বিগুণ উত্তর হলে দেখো source এই header পাঠায় কি না।",
+      "whyWrong": {
+        "1": "Rate limit-এ আসে `429`, `duplicate` নয়।",
+        "2": "Coalesce শুধু যেসব route-এ কনফিগ করা সেখানে চলে।",
+        "3": "`INSECURE_NO_AUTH` শুধু যাচাই বাদ দেয়।"
+      }
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "contentId": "hermes-doc-user-guide-which-file-does-what",
+  "title": "Which File Does What",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/which-file-does-what",
+  "oneLiner": "এই lesson শেষে তুমি SOUL.md, USER.md, MEMORY.md, AGENTS.md আর .hermes.md-এর কাজ, লেখক ও অবস্থান আলাদা করতে পারবে এবং system prompt, frozen snapshot, working directory-র মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: স্কুলব্যাগের পাঁচটা খাতা\n\nHermes-কে স্কুলে পাঠাচ্ছ। তার ব্যাগে কয়েকটা আলাদা খাতা। প্রতিটার আলাদা কাজ, আর **কে লেখে** সেটাও আলাদা:\n\n- 🪪 **SOUL.md**: \"আমি কে\" লেখা পরিচয়পত্র। তুমি লেখো।\n- 📗 **USER.md**: \"ও কে\" লেখা তোমার পরিচয়। Hermes নিজে লেখে।\n- 📒 **MEMORY.md**: Hermes-এর নিজের শেখা নোট। Hermes নিজে লেখে।\n- 📋 **AGENTS.md**: \"এই project-এ কী করতে হবে\" নিয়মের তালিকা। তুমি বা project-এর লেখক লেখেন।\n- ⭐ **.hermes.md / HERMES.md**: Hermes-এর জন্যই বিশেষ project-নিয়ম, সবচেয়ে বেশি অগ্রাধিকার।\n\nএই lesson একটাই প্রশ্নের উত্তর দেয়: **কোন ফাইল কী ধরে, কে লেখে, কখন দেখা যায়, আর কোথায় থাকে?**\n\n**এটা না জানলে কী সমস্যা?** তুমি হয়তো `SOUL.md`-এ নিজের নাম লিখে বসে থাকবে আর ভাববে Hermes কেন তোমাকে চেনে না, অথবা `AGENTS.md` ভুল জায়গায় রেখে ভাববে সে কেন প্রজেক্টের নিয়ম মানছে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) `.md` ফাইল ও Markdown\n`.md` মানে Markdown, সাধারণ লেখার ফাইল যেখানে `#` দিয়ে শিরোনাম, `-` দিয়ে তালিকা লেখা যায়। যে কেউ নোটপ্যাডে খুলে পড়তে পারে।\n\n### ২) System prompt\nHermes-কে কথা শুরুর আগেই দেওয়া গোপন \"ভূমিকা-পত্র\": তুমি কে, কীভাবে আচরণ করবে। প্রতিটা আলাপের শুরুতে এটা AI-কে দেওয়া হয়। **Slot** মানে ওই ভূমিকা-পত্রের একেকটা জায়গা। 1 নম্বর slot সবচেয়ে আগে।\n\n### ৩) Memory ও `memory` tool\n**Memory** = Hermes-এর দীর্ঘমেয়াদি স্মৃতি, যা আলাপ শেষ হলেও থাকে। **Tool** = Hermes-এর হাতের যন্ত্র। `memory` tool দিয়ে সে নিজে স্মৃতির খাতায় লেখে।\n\n### ৪) Working directory ও project ফোল্ডার\n**Working directory** = এখন যে ফোল্ডারে বসে Hermes চালাচ্ছ। **Project ফোল্ডার** = তোমার কাজের প্রজেক্টের ফোল্ডার, যেমন `my-app/`।\n\n### ৫) `~/.hermes/` ও `HERMES_HOME`\n`~` মানে তোমার home ফোল্ডার। `~/.hermes/` হলো Hermes-এর নিজের ঘর। `$HERMES_HOME` একটা environment variable (ছোট নোট) যা বলে \"Hermes-এর ঘর কোথায়\"।\n\n### ৬) Frozen snapshot\nআলাপ শুরুর মুহূর্তে একবার তোলা ছবি, যা পরে আর আপডেট হয় না। নিচে বিস্তারিত।\n\n### ৭) Prefix cache\nএকই লম্বা শুরু বারবার পাঠালে AI কোম্পানি যদি আগের হিসাব মনে রাখে, তখন সময় ও টাকা কম লাগে। শুরুর অংশ বদলালে ওই ছাড় হারায়।\n\n### ৮) Gateway\nHermes-কে Telegram/Discord-এর মতো chat app-এর সঙ্গে জোড়া পোস্ট অফিস। gateway-র কথোপকথন লম্বা সময় ধরে চলে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## মূল টেবিল\n\n| ফাইল | কী ধরে | কে লেখে | কখন দেখা যায় | কোথায় |\n|---|---|---|---|---|\n| **SOUL.md** | agent-এর মূল পরিচয়: ব্যক্তিত্ব, সুর, কথা বলার ধরন, কী এড়াবে | **তুমি**। না থাকলে Hermes একটা starter বসায়, আর থাকলে কখনো overwrite করে না | system prompt-এর **১ নম্বর slot**, session শুরুতে | `~/.hermes/SOUL.md` বা `$HERMES_HOME/SOUL.md`, কখনো working directory-তে নয় |\n| **USER.md** | তোমার নাম, ভূমিকা, পছন্দ, প্রত্যাশা | **agent**, `memory` tool দিয়ে। তুমি `write_approval` বা `hermes journey edit` দিয়ে নিয়ন্ত্রণ করতে পারো | session শুরুতে frozen snapshot | `~/.hermes/memories/` |\n| **MEMORY.md** | agent-এর নোট: environment, project-নিয়ম, tool-এর খামখেয়ালি | **agent**, `memory` tool দিয়ে (একই gating/editing) | frozen snapshot, session শুরুতে | `~/.hermes/memories/` |\n| **AGENTS.md** | project নির্দেশ: command, port, path, workflow | তুমি বা project-এর লেখক | startup-এ working directory থেকে; উপ-ফোল্ডারে গেলে ধাপে ধাপে আরও খোঁজে | project ফোল্ডার ও উপ-ফোল্ডার |\n| **.hermes.md / HERMES.md** | Hermes-নির্দিষ্ট project নির্দেশ, সর্বোচ্চ অগ্রাধিকার | তুমি বা project-এর লেখক | startup-এ; git root পর্যন্ত ওপরে খোঁজে | project ফোল্ডার |\n\nকিছু শব্দ: **gating** মানে \"লেখার আগে অনুমতির দরজা\" (`write_approval` এটা ঠিক করে)। **Git root** মানে যে ফোল্ডারে Git-এর ইতিহাস শুরু (প্রজেক্টের সর্বোচ্চ ফোল্ডার)। **Overwrite** মানে আগের লেখা মুছে নতুন বসানো। `hermes journey edit` হলো Hermes-এর স্মৃতি নিজে দেখে সম্পাদনার কমান্ড।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "কোন ফাইল কোথা থেকে আসে: SOUL ও memory ~/.hermes থেকে, project নির্দেশ working directory থেকে।",
+        "nodes": [
+          {
+            "id": "home",
+            "kind": "database",
+            "label": "~/.hermes/",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "proj",
+            "kind": "database",
+            "label": "project folder",
+            "x": 0,
+            "y": 180
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes prompt",
+            "x": 260,
+            "y": 120
+          },
+          {
+            "id": "a",
+            "kind": "user",
+            "label": "তোমার কাজ",
+            "x": 480,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "home",
+            "to": "h",
+            "label": "SOUL, USER, MEMORY"
+          },
+          {
+            "from": "proj",
+            "to": "h",
+            "label": "AGENTS.md ইত্যাদি"
+          },
+          {
+            "from": "h",
+            "to": "a",
+            "label": "উত্তর"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Priority chain: project ফাইলের মধ্যে কে জেতে?\n\nপ্রতি session-এ **শুধু একটা** project context ফাইল লোড হয়, প্রথম যেটা পাওয়া যায়:\n\n```text\n.hermes.md  →  AGENTS.md  →  CLAUDE.md  →  .cursorrules\n```\n\nবাঁ দিকেরটা সবচেয়ে জোরালো। `CLAUDE.md` আর `.cursorrules` অন্য AI টুলের (Claude Code, Cursor) নিয়ম-ফাইল; কেউ ওগুলো আগে থেকে লিখে রাখলে Hermes সেটাই কাজে লাগাতে পারে, নতুন করে লিখতে হয় না।\n\n`SOUL.md` এই চেইনের অংশ **নয়**। সে সবসময় আলাদাভাবে লোড হয়।\n\n## এক লাইনে মনে রাখো\n\n- **SOUL.md** → agent কে (তুমি লেখো)\n- **USER.md** → তুমি কে (agent লেখে)\n- **MEMORY.md** → agent কী শিখেছে (agent লেখে)\n- **AGENTS.md বা .hermes.md** → project-এর কী দরকার\n\n## কেন \"ভুলে যায়\" মনে হয়? (Frozen snapshot)\n\nMEMORY.md ও USER.md **একবারই** session শুরুতে তুলে নেওয়া হয়। মাঝপথে সেভ হলে ফাইলে সঙ্গে সঙ্গে লেখা হয়, কিন্তু system prompt-এ পরের session পর্যন্ত আসে না, prefix cache বাঁচাতে (আগের ছাড় না হারাতে)। tool-এর উত্তর অবশ্য live অবস্থা দেখায়, তাই কিছু হারায় না। যেমন তুমি সকালে ব্যাগ গুছালে, দুপুরে একটা বই যোগ হলে ব্যাগের তালিকা-কাগজে পরের দিন পর্যন্ত লেখা হয় না, কিন্তু বইটা ব্যাগে ঠিকই আছে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "সাধারণ গোলমাল দুটো: ভুল ফাইলে লেখা, আর session না বদলে ফল আশা করা।",
+        "steps": [
+          {
+            "title": "গোলমাল ১: SOUL.md-এ তথ্য, USER.md ফাঁকা",
+            "body": "দুটো আলাদা। SOUL.md তুমি লেখো আর সেটা **কণ্ঠস্বর** ঠিক করে। USER.md agent লেখে `memory` tool-এ। পছন্দ সেভ করাতে বলো: \"মনে রেখো, আমি ছোট উত্তর পছন্দ করি\"।"
+          },
+          {
+            "title": "গোলমাল ২: মাঝপথে নাম বললাম, মানল না",
+            "body": "সম্ভবত সেভ হয়েছে। `memory` tool-এর উত্তর দেখো বা `hermes journey list` চালাও। injected block session-শুরুর অবস্থা দেখায়, যদিও agent কথোপকথন তো দেখতেই পায়।"
+          },
+          {
+            "title": "SOUL.md / AGENTS.md বদলালে",
+            "body": "এগুলোর জন্যও নতুন session লাগে। লম্বা gateway কথোপকথনে `hermes sessions refresh-prompts` চালালে ইতিহাস রেখেই আপডেট নেয়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## দ্রুত সিদ্ধান্ত নির্দেশিকা\n\n| তুমি কী চাও | কী করবে |\n|---|---|\n| agent-এর কথা বলার ধরন বদলাতে | `~/.hermes/SOUL.md` সম্পাদনা করো |\n| agent কোনো তথ্য মনে রাখুক | তাকে বলো, সে memory-তে সেভ করবে |\n| project-এর নিয়ম ঠিক করতে | project-এ `AGENTS.md` বা `.hermes.md` রাখো |\n| সাময়িক ব্যক্তিত্ব বদল | `/personality`: session-স্তরের overlay (ওপরে চাপানো পাতলা স্তর), ফাইল ছোঁয়া হয় না |\n\n## আরও পড়তে (সংশ্লিষ্ট docs)\n\n- **Persistent Memory**: MEMORY.md, USER.md, `memory` tool, ধারণক্ষমতা, `write_approval`।\n- **Personality & SOUL.md**: SOUL.md-এর নির্দেশনা, `/personality` preset, prompt stack।\n- **Context Files**: AGENTS.md, `.hermes.md`, ধাপে ধাপে আবিষ্কার, security scan।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "মনে রাখার ছড়া",
+      "markdown": "পরিচয় → SOUL.md (তুমি লেখো)। তোমাকে চেনা → USER.md (সে লেখে)। তার শেখা → MEMORY.md (সে লেখে)। project-এর নিয়ম → AGENTS.md / .hermes.md।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "SOUL.md কোথায় রাখবে",
+      "markdown": "শুধু `~/.hermes/SOUL.md` (বা `$HERMES_HOME/SOUL.md`)। কখনো project-এর working directory-তে নয়, সেখানে রাখলে লোড হবে না।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "কোন ফাইল agent-এর পরিচয়, সুর ও কথা বলার ধরন ঠিক করে?",
+      "options": ["SOUL.md", "MEMORY.md", "USER.md", "AGENTS.md"],
+      "answerIndex": 0,
+      "explanation": "SOUL.md হলো agent-এর পরিচয়পত্র; system prompt-এর ১ নম্বর slot।"
+    },
+    {
+      "question": "USER.md ও MEMORY.md কে লেখে?",
+      "options": [
+        "তুমি হাতে",
+        "project-এর লেখক",
+        "agent, `memory` tool দিয়ে",
+        "Git"
+      ],
+      "answerIndex": 2,
+      "explanation": "তুমি `write_approval` বা `hermes journey edit` দিয়ে নিয়ন্ত্রণ করতে পারো।"
+    },
+    {
+      "question": "Project context ফাইলের অগ্রাধিকার ক্রম কোনটা?",
+      "options": [
+        "`AGENTS.md` → `.hermes.md` → `CLAUDE.md`",
+        "`.hermes.md` → `AGENTS.md` → `CLAUDE.md` → `.cursorrules`",
+        "`.cursorrules` → `CLAUDE.md` → `AGENTS.md`",
+        "সব একসঙ্গে লোড হয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রথম যেটা পাওয়া যায় শুধু সেটাই লোড হয়।"
+    },
+    {
+      "question": "SOUL.md কি project context চেইনের অংশ?",
+      "options": [
+        "হ্যাঁ, সবার আগে",
+        "হ্যাঁ, সবার শেষে",
+        "শুধু gateway-তে",
+        "না, সে সবসময় আলাদাভাবে লোড হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "চেইন শুধু project ফাইলের জন্য; SOUL.md আলাদা।"
+    },
+    {
+      "question": "মাঝপথে বললে \"মনে রেখো\", কিন্তু injected prompt-এ নতুন তথ্য নেই। কারণ?",
+      "options": [
+        "সেভ হয়নি",
+        "Hermes ভুলে গেছে",
+        "memory ফাইল session-শুরুতে frozen snapshot, নতুন তথ্য পরের session-এ আসে (ফাইলে সেভ হয়েছে)",
+        "SOUL.md বদলায়নি"
+      ],
+      "answerIndex": 2,
+      "explanation": "prefix cache বাঁচাতে; tool-এর উত্তর অবশ্য live অবস্থা দেখায়।"
+    },
+    {
+      "question": "Gateway-র লম্বা কথোপকথনে SOUL.md বদলের পর ইতিহাস না হারিয়ে আপডেট নিতে কোন command?",
+      "options": [
+        "`hermes sessions refresh-prompts`",
+        "`/new`",
+        "`hermes uninstall`",
+        "`/personality`"
+      ],
+      "answerIndex": 0,
+      "explanation": "ইতিহাস রেখে system prompt নতুন করে নেয়।"
+    },
+    {
+      "question": "সাময়িকভাবে ব্যক্তিত্ব বদলাতে ফাইল না ছুঁয়ে কী করবে?",
+      "options": [
+        "SOUL.md মুছবে",
+        "USER.md বদলাবে",
+        "নতুন profile বানাবে",
+        "`/personality` ব্যবহার করবে"
+      ],
+      "answerIndex": 3,
+      "explanation": "`/personality` session-স্তরের overlay; ফাইল অক্ষত।"
+    }
+  ],
+  "recap": [
+    "SOUL.md = agent কে (তুমি লেখো); USER.md = তুমি কে (agent লেখে); MEMORY.md = agent-এর শেখা নোট (agent লেখে)।",
+    "AGENTS.md ও .hermes.md = project-এর নির্দেশ।",
+    "Project ফাইলের চেইন: `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `.cursorrules`। একটাই লোড হয়; SOUL.md আলাদা।",
+    "Memory ফাইল session শুরুতে frozen snapshot; মাঝের সেভ পরের session-এ দেখা যায়।",
+    "SOUL.md থাকে `~/.hermes/`-এ, কখনো working directory-তে নয়।",
+    "সাময়িক বদলে `/personality`, লম্বা gateway chat-এ `hermes sessions refresh-prompts`।"
+  ]
+}

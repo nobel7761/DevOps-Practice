@@ -1,0 +1,213 @@
+{
+  "contentId": "hermes-doc-integrations-nous-portal",
+  "title": "Nous Portal",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/integrations/nous-portal",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Nous Portal কী, এক login-এ কী কী পাওয়া যায় (মডেল ও Tool Gateway), আর `hermes setup --portal` দিয়ে কীভাবে চালু করতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## সুপারমার্কেটের মেম্বারশিপ কার্ড\n\nআগে Hermes চালাতে হলে তুমি আলাদা আলাদা দোকানে যেতে: মডেলের জন্য এক দোকান, ইন্টারনেট search-এর জন্য আরেক, ছবি আঁকার জন্য আরেক, ব্রাউজারের জন্য আরেক। প্রতিটায় আলাদা কার্ড, আলাদা বিল, আলাদা পাসওয়ার্ড।\n\n**Nous Portal** হলো একটা **সুপারমার্কেটের মেম্বারশিপ কার্ড**: এক login, এক বিল, সবকিছু। docs একে Hermes চালানোর **recommended** (সুপারিশ-করা) উপায় বলে।\n\n**এটা না থাকলে কী সমস্যা হতো?** নতুন মানুষ ৫-৬টা অ্যাকাউন্ট খুলত, ৫-৬টা key কপি করত, ভুল জায়গায় বসালে error পেত। Portal-এ শুধু একবার login।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Nous Portal\nNous Research-এর একটা **subscription** (মাসিক চাঁদা-ভিত্তিক সেবা)। এতে AI model আর কয়েকটা tool একসাথে পাওয়া যায়।\n\n### ২) OAuth login\nপাসওয়ার্ড কপি না করে ব্রাউজারে \"অনুমতি দিচ্ছি\" বলে login করা (যেমন \"Google দিয়ে login\")। এতে একটা **token** (সাময়িক প্রবেশপত্র) তৈরি হয়।\n\n### ৩) Token, Refresh token, JWT\n- **Token** = প্রবেশপত্র।\n- **Refresh token** = দীর্ঘমেয়াদি \"নবায়নের কার্ড\", যা দিয়ে নতুন ছোট প্রবেশপত্র পাওয়া যায়।\n- **JWT** = ছোট-মেয়াদি প্রবেশপত্রের ধরন। প্রতি অনুরোধে নতুন JWT বানানো হয়, তাই চুরি হলেও ক্ষতি কম সময়ের।\n\n### ৪) Inference provider\nযে সেবা AI-কে \"ভাবতে\" দেয়। (**Inference** = model-এর দিয়ে প্রশ্নের উত্তর বের করানো।) `model.provider: nous` মানে Hermes-এর মস্তিষ্ক এখন Nous Portal-এর কাছ থেকে আসছে।\n\n### ৫) Tool Gateway\nPortal-এর সাথে পাওয়া চারটা tool-সেবার সমষ্টি। **Tool** = Hermes-এর হাতিয়ার (যেমন ওয়েবে খোঁজা), **gateway** = প্রবেশের দরজা। মানে \"একই দরজা দিয়ে অনেক tool।\"\n\n### ৬) Headless, SSH, port forwarding\n- **Headless** = যে কম্পিউটারে স্ক্রিন বা ব্রাউজার নেই (যেমন দূরের server)।\n- **SSH** = দূরের কম্পিউটারে নিরাপদে ঢোকার উপায়।\n- **Port forwarding (`ssh -L`)** = দূরের কম্পিউটারের একটা \"দরজা-নম্বর\" তোমার নিজের কম্পিউটারের দরজার সাথে জুড়ে দেওয়া, যাতে ব্রাউজারে login সম্ভব হয়।\n\n### ৭) `config.yaml` আর `auth.json`\n- **`config.yaml`** = Hermes-এর সেটিং-খাতা। কোন provider ইত্যাদি লেখা থাকে।\n- **`auth.json`** = login-এর গোপন token রাখার ফাইল। Credential `config.yaml`-এ নয়, `auth.json`-এ থাকে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "এক Portal login থেকে মডেল ও Tool Gateway।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "n",
+            "kind": "gateway",
+            "label": "Nous Portal",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "m",
+            "kind": "external",
+            "label": "৩০০+ মডেল",
+            "x": 660,
+            "y": 20
+          },
+          {
+            "id": "t",
+            "kind": "external",
+            "label": "Tool Gateway",
+            "x": 660,
+            "y": 180
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "h",
+            "label": "setup --portal"
+          },
+          {
+            "from": "h",
+            "to": "n",
+            "label": "OAuth token"
+          },
+          {
+            "from": "n",
+            "to": "m",
+            "label": "মডেল"
+          },
+          {
+            "from": "n",
+            "to": "t",
+            "label": "search, image, TTS"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick start\n\n```bash\nhermes setup --portal\n```\n\n**কমান্ড ভেঙে বুঝি:**\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `hermes` | Hermes-কে ডাকো | দোকানদারকে ডাকা |\n| `setup` | সেটআপ করো (গোছগাছের গাইড) | নতুন বাড়ির জিনিস সাজানো |\n| `--portal` | Nous Portal দিয়ে | মেম্বারশিপ কার্ড বের করা |\n\nএই এক কমান্ড চারটা কাজ করে: OAuth login করায়, Nous model বাছতে দেয়, `config.yaml`-এ Nous-কে inference provider বানায়, এবং Tool Gateway চালু করে। **আগে subscription লাগবে:** portal.nousresearch.com/manage-subscription-এ।\n\n| তোমার অবস্থা | কী করবে |\n|---|---|\n| নতুন install | `hermes setup --portal` |\n| আগে থেকে install করা আছে | `hermes model` চালিয়ে \"Nous Portal\" বাছো (আগের provider ঠিক থাকে) |\n| Headless / SSH | OAuth callback (login-এর শেষে ফেরার ঠিকানা) host-এ চলে, তাই SSH port forwarding (`ssh -L`) লাগে |\n\n## সাবস্ক্রিপশনে কী কী পাওয়া যায়?\n\n### মডেল (৩০০+, এক বিল)\nAnthropic (Opus 4.7, Sonnet 4.6, Haiku 4.5...), OpenAI (GPT-5.5, GPT-5.4 Mini...), Google (Gemini 3 Pro Preview...), DeepSeek V4 Pro, Kimi K2.6, GLM-5.1, Grok 4.3, Hermes-4-70B/405B ও আরও ২৮০+।\n\nপ্রতিটা model-এর **routing** (কোন পথে পৌঁছাবে) আলাদা। কোনোটা OpenRouter দিয়ে, কোনোটা অন্য পথে; পথ বদলাতেও পারে, তুমি এর ঝামেলা দেখো না। session-এর মাঝে `/model` দিয়ে model বদলানো যায়।\n\n### Tool Gateway (চারটা tool + একটা ঐচ্ছিক)\n\n| Tool | কী করে | কীভাবে |\n|---|---|---|\n| Web search ও extract | ইন্টারনেটে খোঁজে ও পাতা থেকে লেখা তোলে | Nous-managed |\n| Image generation | লিখে বললে ছবি বানায় | FAL, নয়টা model |\n| Text-to-speech | লেখা পড়ে শোনায় (voice mode চালু করে) | OpenAI TTS |\n| Cloud browser | ইন্টারনেটের ওপর ভাড়া-ব্রাউজার চালায় (`browser_exec` দিয়ে) | Browser Use |\n| Cloud terminal sandbox | নিরাপদ বালির-বাক্সে কমান্ড চালায় (ঐচ্ছিক add-on) | Modal |\n\nপ্রতিটা tool **আলাদা করে opt-in**, মানে তুমি চাইলে তবেই চালু হয়। (**Sandbox** = বালির বাক্স, ভেতরে যা-ই হোক বাইরের কিছু নষ্ট হয় না।)"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Hermes-4 মডেল Hermes Agent-এ নয়",
+      "markdown": "Hermes-4-70B ও 405B ছাড়ে পাওয়া chat মডেল, কিন্তু Nous নিজেই বলে এগুলো Agent-এর tool-calling loop-এ ব্যবহার না করতে। বদলে ব্যবহার করো: `/model anthropic/claude-sonnet-4.6`, `/model openai/gpt-5.5-pro`, `/model google/gemini-3-pro-preview` বা `/model deepseek/deepseek-v4-pro`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কমান্ড\n\n| কমান্ড | কাজ | কখন লাগে |\n|---|---|---|\n| `hermes portal` | `hermes auth add nous --type oauth`-এর alias (অন্য নাম): login, model বাছা, gateway opt-in | প্রথমবার বা আবার login করতে |\n| `hermes portal info` (বা `status`) | login, model routing, gateway routing দেখায় | \"আমার কী চালু আছে?\" জানতে |\n| `hermes portal tools` | প্রতি tool-এর gateway তালিকা | কোন tool Portal দিয়ে চলছে দেখতে |\n| `hermes portal open` | subscription page খোলে | সাবস্ক্রিপশন দেখতে |\n| `hermes tools` | প্রতি tool-এর backend বাছা | কোন tool Portal দিয়ে, কোনটা অন্য কিছু দিয়ে ঠিক করতে |\n\n## config.yaml-এর key\n\n```yaml\nmodel:\n  provider: nous\n  default: anthropic/claude-sonnet-4.6\n  base_url: https://inference-api.nousresearch.com/v1\nweb:\n  backend: nous\nimage_gen:\n  provider: nous\ntts:\n  provider: nous\nbrowser:\n  cloud_provider: nous\n```\n\n| key | মানে |\n|---|---|\n| `model.provider: nous` | মস্তিষ্ক আসবে Nous Portal থেকে |\n| `model.default` | ডিফল্ট model |\n| `model.base_url` | Portal-এর ঠিকানা (endpoint) |\n| `web.backend: nous` | ওয়েব search Nous দিয়ে |\n| `image_gen.provider: nous` | ছবি বানানো Nous দিয়ে |\n| `tts.provider: nous` | কথা বানানো Nous দিয়ে |\n| `browser.cloud_provider: nous` | ভাড়া-ব্রাউজার Nous দিয়ে |\n\n- কোনো category `nous` থাকলে `.env`-এর key উপেক্ষিত হয়। সরাসরি provider দিয়ে key না দিলে চুপচাপ অন্য পথে না গিয়ে **error আসে**।\n- Credential থাকে `auth.json`-এ, `config.yaml`-এ নয়।\n\n## Token কীভাবে চলে\n\n- `~/.hermes/auth.json`-এর **refresh token**-ই ডিস্কে একমাত্র credential।\n- প্রতি request-এ ছোট-মেয়াদী JWT বানানো হয়।\n- সব profile একই token store ভাগ করে। (**Profile** = Hermes-এর আলাদা ব্যক্তিত্ব-ফোল্ডার।)\n- Gateway ও dashboard **keepalive** চালায়, মানে নিয়মিত ঘণ্টি বাজিয়ে token সতেজ রাখে। `nous.keepalive_interval_seconds: 900` সর্বোচ্চ tick (গোনার ব্যবধান); `0` বন্ধ করে।\n- Refresh token বাতিল হলে quarantine (আলাদা করে আটকে রাখা) হয় ও \"re-authentication required\" দেখায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "সমস্যা হলে কী করবে।",
+        "steps": [
+          {
+            "title": "\"Not logged in\"",
+            "body": "`hermes portal` চালাও বা `hermes model`-এ আবার Nous Portal বাছো।"
+          },
+          {
+            "title": "Re-authentication required",
+            "body": "`hermes auth add nous` চালিয়ে আবার login করো।"
+          },
+          {
+            "title": "`/model`-এ model নেই",
+            "body": "OpenRouter-style slug চেষ্টা করো, যেমন `/model anthropic/claude-opus-4.6`; না হলে GitHub issue।"
+          },
+          {
+            "title": "Bill দেখা যাচ্ছে না",
+            "body": "`hermes portal info` অন্য provider (যেমন openrouter) দেখালে `hermes model` দিয়ে Nous Portal বাছো।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "OpenRouter-এর বাড়তি সুবিধা নেই",
+      "markdown": "`provider` preference, `session_id` sticky routing, top-level `cache_control`: এসব OpenRouter-এর নিজস্ব extension, Portal API-র অংশ নয়, তাই উপেক্ষিত হতে পারে। (OpenRouter-এর পেছনের provider বাছতে চাইলে Provider Routing lesson-এর কথা মনে করো: সেটা Portal-এ কাজ করে না।)"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Nous Portal-এর সবচেয়ে বড় সুবিধা কী?",
+      "options": [
+        "শুধু ছবি আঁকে",
+        "Hermes-কে মুছে দেয়",
+        "এক login আর এক বিলে ৩০০+ model ও Tool Gateway-র tool",
+        "key ছাড়া কিছুই চলে না"
+      ],
+      "answerIndex": 2,
+      "explanation": "সুপারমার্কেটের মেম্বারশিপ কার্ডের মতো: আলাদা আলাদা দোকানের বদলে এক জায়গায় সব।"
+    },
+    {
+      "question": "নতুন install-এ Portal সেটআপের কমান্ড কোনটা?",
+      "options": [
+        "`hermes setup --portal`",
+        "`hermes delete portal`",
+        "`hermes portal remove`",
+        "`hermes tools --off`"
+      ],
+      "answerIndex": 0,
+      "explanation": "আগে থেকে install থাকলে `hermes model` থেকে \"Nous Portal\" বাছো।"
+    },
+    {
+      "question": "Tool Gateway-তে কোনগুলো পাওয়া যায়?",
+      "options": [
+        "শুধু ছবি",
+        "শুধু browser",
+        "কিছুই না",
+        "Web search, image generation, TTS, cloud browser (আর ঐচ্ছিক cloud terminal sandbox)"
+      ],
+      "answerIndex": 3,
+      "explanation": "প্রতিটা tool আলাদা করে opt-in, মানে তুমি চাইলে তবেই চালু হয়।"
+    },
+    {
+      "question": "Hermes-4-70B/405B মডেল সম্পর্কে docs কী বলে?",
+      "options": [
+        "এগুলোই সবচেয়ে ভালো",
+        "এগুলো Agent-এর tool-calling loop-এ ব্যবহার না করতে",
+        "এগুলো বিনামূল্যে",
+        "এগুলো বন্ধ"
+      ],
+      "answerIndex": 1,
+      "explanation": "এগুলো chat মডেল হিসেবে পাওয়া যায়, কিন্তু Agent-এর জন্য Sonnet, GPT-5.5 Pro, Gemini 3 Pro Preview বা DeepSeek V4 Pro ব্যবহার করো।"
+    },
+    {
+      "question": "কোনো category (যেমন `web.backend`) `nous` থাকলে `.env`-এর key-র কী হয়?",
+      "options": [
+        "key জেতে",
+        "দুটো একসাথে চলে",
+        "key উপেক্ষিত হয়; আর key ছাড়া সরাসরি provider দিলে চুপচাপ অন্য পথে না গিয়ে error আসে",
+        "key মুছে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Key ছাড়া সরাসরি provider দিলে gateway-তে ঘুরে না গিয়ে error আসে।"
+    },
+    {
+      "question": "Headless মেশিনে (স্ক্রিন-ব্রাউজার নেই) Portal login কীভাবে সম্ভব?",
+      "options": [
+        "OAuth callback host-এ চলে, তাই SSH port forwarding (`ssh -L`) ব্যবহার করতে হয়",
+        "সম্ভব না",
+        "পাসওয়ার্ড ইমেইল করে",
+        "Docker দিয়ে"
+      ],
+      "answerIndex": 0,
+      "explanation": "দূরের মেশিনের দরজা-নম্বর নিজের কম্পিউটারের সাথে জুড়লে নিজের ব্রাউজারে login সম্পন্ন হয়।"
+    },
+    {
+      "question": "Portal-এ Provider Routing (`provider_routing`) কেন কাজ করে না?",
+      "options": [
+        "কারণ Portal ধীর",
+        "কারণ key নেই",
+        "কাজ করে",
+        "Portal নিজেই প্রতি model-এর routing ঠিক করে; OpenRouter-এর extension Portal API-র অংশ নয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "`provider` preference, `session_id` sticky routing, `cache_control` OpenRouter-এর নিজস্ব; Portal এগুলো উপেক্ষা করতে পারে।"
+    }
+  ],
+  "recap": [
+    "Nous Portal হলো এক login ও এক বিলে ৩০০+ model আর Tool Gateway (web search, image generation, TTS, cloud browser)।",
+    "শুরু করতে `hermes setup --portal`; আগে থেকে install থাকলে `hermes model` থেকে \"Nous Portal\" বাছো।",
+    "অবস্থা দেখতে `hermes portal info`, tool দেখতে `hermes portal tools`; `config.yaml`-এ `model.provider: nous`।",
+    "Credential থাকে `auth.json`-এ (refresh token); প্রতি request-এ ছোট-মেয়াদী JWT বানানো হয়।",
+    "Hermes-4 মডেল Agent-এর জন্য নয়, আর OpenRouter-এর extension (provider routing ইত্যাদি) Portal-এ কাজ করে না।"
+  ]
+}

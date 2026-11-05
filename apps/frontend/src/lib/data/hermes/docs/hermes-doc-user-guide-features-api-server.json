@@ -1,0 +1,173 @@
+{
+  "contentId": "hermes-doc-user-guide-features-api-server",
+  "title": "API Server",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে API Server কী, কেন লাগে, কীভাবে চালু করতে হয় এবং Open WebUI-র মতো বাইরের chat অ্যাপ থেকে Hermes-কে নিরাপদে ডাকতে হয়।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## ঘরের জানালার গল্প\n\nHermes ঘরের ভেতরে কাজ করে: terminal, ফাইল, ওয়েব search, memory, skill সব তার হাতের কাছে। কিন্তু বাইরের chat অ্যাপ (যেমন **Open WebUI** বা **LobeChat**, দেখতে ChatGPT-র মতো সুন্দর ওয়েব-অ্যাপ) তার সাথে কথা বলতে চায়। ঘরে ঢোকার তো দরজা নেই!\n\nতাই ঘরের দেয়ালে একটা **জানালা** কাটা হয়। এই জানালার নাম **API Server**। বাইরের অ্যাপ জানালা দিয়ে **OpenAI-র ভাষায়** প্রশ্ন দেয়। ভেতরে পুরো Hermes (terminal, file, web search, memory, skill সহ) কাজ করে উত্তর ফেরত দেয়। Streaming চালু থাকলে tool-এর অগ্রগতিও বাইরে থেকে দেখা যায়।\n\n**এটা না থাকলে কী সমস্যা হতো?** প্রতিটা chat অ্যাপের জন্য আলাদা করে Hermes-এর সাথে জোড়া বানাতে হতো। এখন প্রায় সব অ্যাপ OpenAI-র ভাষা জানে, তাই একটা জানালাতেই সব অ্যাপ ঢোকে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) API আর API Server\n- **API** = এক প্রোগ্রামের সাথে আরেক প্রোগ্রামের কথা বলার নিয়ম (রেস্টুরেন্টের মেনু দেখে অর্ডার দেওয়ার মতো)।\n- **API Server** = Hermes-এর ভেতর চালু হওয়া একটা ছোট \"জানালা-সেবা\", যা বাইরের প্রোগ্রামের অনুরোধ শোনে।\n\n### ২) OpenAI-compatible\n**OpenAI**-র API ভাষা প্রায় সবাই শিখে নিয়েছে। \"OpenAI-compatible\" মানে \"ওই ভাষা বোঝে ও বলে।\" তাই যেকোনো OpenAI-সমর্থিত অ্যাপ Hermes-কে ChatGPT-র মতো করে ডাকতে পারে।\n\n### ৩) Endpoint, URL, port, localhost\n- **Endpoint** = অনুরোধ পাঠানোর নির্দিষ্ট ঠিকানা-পথ (যেমন `/v1/chat/completions`)।\n- **localhost** = \"আমার নিজের কম্পিউটার\"। **port** = ওই কম্পিউটারের ভেতরের দরজা-নম্বর। `http://127.0.0.1:8642` মানে \"আমার কম্পিউটারের ৮৬৪২ নম্বর দরজা।\"\n- **127.0.0.1** = localhost-এর সংখ্যার নাম।\n- **bind address** = কোন \"দরজা\" দিয়ে সেবা শুনবে। `127.0.0.1` মানে শুধু নিজের কম্পিউটার থেকে ঢোকা যাবে, বাইরের কেউ পারবে না।\n\n### ৪) Bearer token (API key)\nজানালার তালা খোলার চাবি। অনুরোধের সাথে `Authorization: Bearer <key>` পাঠাতে হয়। চাবি না থাকলে ঢোকা যায় না।\n\n### ৫) Stateless আর Stateful\n- **Stateless** = সার্ভার আগের কিছু মনে রাখে না। প্রতিবার পুরো কথা আবার দিতে হয় (ভুলে-যাওয়া বন্ধুর মতো)।\n- **Stateful** = সার্ভার নিজে মনে রাখে।\n\n### ৬) Streaming, SSE\nউত্তর পুরো তৈরি হওয়ার অপেক্ষা না করে একটু একটু করে পাঠানো (যেমন ChatGPT-তে লেখা ফুটে ওঠে)। এর প্রযুক্তি **SSE** (Server-Sent Events, সার্ভার থেকে একটানা বার্তা)।\n\n### ৭) CORS\nব্রাউজারের একটা নিরাপত্তা-নিয়ম: এক ওয়েবসাইট অন্য ঠিকানায় অনুরোধ পাঠাতে চাইলে সেই ঠিকানার **অনুমতি** লাগে। তাই `API_SERVER_CORS_ORIGINS` দিয়ে \"এই সাইটগুলো ডাকতে পারবে\" বলে দিতে হয়।\n\n### ৮) Idempotency\nএকই অনুরোধ দুবার গেলেও কাজ একবারই হওয়া। (বিস্তারিত নিচে।)\n\n### ৯) Gateway\nchat অ্যাপ (Telegram, Discord) আর Hermes-এর মাঝখানের ডাকঘর। `hermes gateway` সেই ডাকঘর চালু করে, আর API Server এই ডাকঘরের একটা জানালা।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Quick start: তিন ধাপে চালু\n\n**ধাপ ১:** `~/.hermes/.env` ফাইলে চালু করো। (`.env` = গোপন সেটিং রাখার ফাইল, `~` = home ফোল্ডার।)\n\n```text\nAPI_SERVER_ENABLED=true\nAPI_SERVER_KEY=<তোমার key>\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `API_SERVER_ENABLED=true` | জানালাটা খোলো | জানালার ছিটকিনি খোলা |\n| `API_SERVER_KEY=<তোমার key>` | চাবির পাসওয়ার্ড (তুমি নিজে ঠিক করো, লম্বা আর গোপন) | জানালার তালার চাবি |\n\n(ব্রাউজার সরাসরি Hermes-কে ডাকলে তবেই `API_SERVER_CORS_ORIGINS` লাগে।)\n\n**ধাপ ২:** `hermes gateway` চালাও। ডিফল্টে সেবা শুনবে `http://127.0.0.1:8642` এ।\n\n**ধাপ ৩:** যেকোনো OpenAI-compatible অ্যাপকে `http://localhost:8642/v1`-এ দেখাও। `curl` দিয়ে ডাকলে Bearer token আর `\"model\": \"hermes-agent\"` দাও। (`curl` = terminal থেকে ওয়েব-অনুরোধ পাঠানোর টুল।)\n\n**আগে থেকে ঠিক থাকতে হবে:** provider আর tool backend। `hermes setup --portal` দুটোই একসাথে করে দেয়।\n\n### Environment variable-এর টেবিল\n\n| Variable | Default | কাজ | কখন বদলাবে |\n|---|---|---|---|\n| `API_SERVER_ENABLED` | `false` | সার্ভার চালু | চালু করতে `true` দাও |\n| `API_SERVER_PORT` | `8642` | port (দরজা-নম্বর) | ৮৬৪২ অন্য কাজে ব্যস্ত থাকলে |\n| `API_SERVER_HOST` | `127.0.0.1` | bind address | অন্য কম্পিউটার থেকে ঢুকতে দিতে (সাবধানে) |\n| `API_SERVER_KEY` | আবশ্যক | Bearer token | সবসময় দিতে হবে |\n| `API_SERVER_CORS_ORIGINS` | নেই | ব্রাউজারের অনুমোদিত সাইট | ব্রাউজার সরাসরি ডাকলে |\n| `API_SERVER_MODEL_NAME` | profile নাম | `/v1/models`-এ দেখানো নাম | অ্যাপে অন্য নাম দেখাতে |\n\n(**Profile** = Hermes-এর আলাদা একটা \"ব্যক্তিত্ব-ফোল্ডার\", নিজস্ব সেটিং, স্মৃতি আর key সহ। একই কম্পিউটারে একাধিক Hermes আলাদা রাখতে।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "বাইরের frontend থেকে Hermes-এ প্রশ্ন যাওয়ার পথ।",
+        "nodes": [
+          {
+            "id": "f",
+            "kind": "client",
+            "label": "Open WebUI",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "id": "g",
+            "kind": "gateway",
+            "label": "API Server :8642",
+            "x": 220,
+            "y": 100
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 440,
+            "y": 100
+          },
+          {
+            "id": "t",
+            "kind": "external",
+            "label": "Tools + Provider",
+            "x": 660,
+            "y": 100
+          }
+        ],
+        "edges": [
+          {
+            "from": "f",
+            "to": "g",
+            "label": "Bearer + /v1"
+          },
+          {
+            "from": "g",
+            "to": "h",
+            "label": "admission queue"
+          },
+          {
+            "from": "h",
+            "to": "t",
+            "label": "tool, মডেল"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রধান endpoint (জানালার কোন পথ কী করে)\n\n**Endpoint** = একেকটা নির্দিষ্ট পথ। `POST` মানে \"কিছু পাঠাও\", `GET` মানে \"কিছু আনো\", `DELETE` মানে \"মুছো\"।\n\n### চ্যাট\n- `POST /v1/chat/completions` — **stateless**: প্রতিবার পুরো `messages` তালিকা পাঠাতে হয়। `\"stream\": true` দিলে SSE। tool শুরু হলে custom `hermes.tool.progress` event আসে। কঠোর client (যে অচেনা event সহ্য করে না)-এর জন্য `gateway.platforms.api_server.tool_progress_events: false`।\n- `POST /v1/responses` — **server-side state**: Hermes নিজে মনে রাখে। `previous_response_id` বা `conversation` দিয়ে আগের কথার সাথে জোড়া যায়।\n- `GET`/`DELETE /v1/responses/{id}` — একটা সংরক্ষিত উত্তর আনো বা মোছো।\n\n### আবিষ্কার ও স্বাস্থ্য\n`GET /v1/models`, `GET /v1/capabilities`, `GET /health` (বা `/v1/health`), `GET /health/detailed` (authenticated, মানে key লাগে)। `/v1/skills` ও `/v1/toolsets` শুধু পড়ার জন্য (read-only)।\n\n### Runs API\nএকটা কাজ শুরু করে পরে খোঁজ নেওয়ার জন্য (লম্বা কাজে কাজে লাগে):\n- `POST /v1/runs` → `run_id` ও `status: \"started\"` ফেরত।\n- `GET /v1/runs/{run_id}` → অবস্থা (running, completed, failed, cancelled ইত্যাদি)।\n- `GET /v1/runs/{run_id}/events` → SSE।\n- `POST .../stop`, `.../approval`, `.../clarify` → থামানো, অনুমতি দেওয়া, প্রশ্নের উত্তর।\n\n### Jobs API (`/api/jobs`)\n`hermes cron`-এর মতো সময়মতো কাজ (scheduled job) তৈরি, pause, resume, তাৎক্ষণিক run। (**cron** = ঘড়ি ধরে নির্দিষ্ট সময়ে কাজ চালানোর ব্যবস্থা।)\n\n### Sessions API (`/api/sessions`)\nআলাপের তালিকা, তৈরি, history (`/messages`), `fork`, `chat`, `chat/stream`। সবকিছুতেই `API_SERVER_KEY` লাগে।\n\n**ছবি:** inline image সমর্থিত (`image_url`, `input_image`)। **ফাইল আপলোড** করলে `400 unsupported_content_type` ত্রুটি আসে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Idempotency ও retry\n\n**সমস্যা:** নেটওয়ার্ক কেটে গেলে অ্যাপ ভাবে \"অনুরোধ যায়নি\", তাই আবার পাঠায়। কিন্তু প্রথমটা আসলে পৌঁছে গিয়ে থাকতে পারে। তখন একই কাজ দুবার চললে? (যেমন দুবার কিছু কিনে ফেলা।)\n\n**সমাধান:** `Idempotency-Key` নামে একটা header (অনুরোধের সাথে লেবেল)। `POST /v1/chat/completions` ও `/v1/responses` এটা নেয়।\n\n| অবস্থা | ফল |\n|---|---|\n| একই key + একই অনুরোধ | আগের উত্তর **replay** (পুনরায় শোনানো), কাজ আবার চলে না |\n| একই key কিন্তু বদলে-যাওয়া অনুরোধ | `admission_conflict` (HTTP 409) |\n| `/v1/runs`-এর key | ২৪ ঘণ্টা মনে রাখা হয় |\n| সীমা পেরোলে | নতুন key দিয়ে আবার না পাঠানো ভালো, কারণ প্রথম চেষ্টা চলে থাকতে পারে (`unknown_execution`) |\n\n## Per-request মডেল বাছা\n\nAuthenticated client (যে চাবি দেখিয়েছে) `model`, `provider`, `model_options` (reasoning, service tier) পাঠাতে পারে। কোনটা আগে মানা হবে (অগ্রাধিকার):\n\n1. Session-এর `/model` override (সবচেয়ে জোরালো)\n2. `gateway.platforms.api_server.model_routes` alias\n3. অনুরোধের `model` ও `provider`\n4. গ্লোবাল gateway config/env\n\nOpenAI-compatible endpoint-এ শুধু `model` (provider ছাড়া) উপেক্ষিত হয়, যদি না `direct_model_requests: true` থাকে।\n\n## Long-term memory scope: `X-Hermes-Session-Key`\n\nHoncho-র মতো বাইরের memory provider-এর জন্য প্রতি channel-এ একটা **স্থির পরিচয়-নম্বর** দরকার, যাতে সে চেনে \"এটা কার স্মৃতি।\" `X-Hermes-Session-Id` `/new` (নতুন আলাপ) দিলে বদলে যায়, কিন্তু `X-Hermes-Session-Key` বদলায় না। সর্বোচ্চ ২৫৬ অক্ষর; control character নিষিদ্ধ।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Key সবসময় আবশ্যক",
+      "markdown": "Bearer token (`API_SERVER_KEY`) প্রতিটি deployment-এ লাগে, এমনকি `127.0.0.1`-এও। **CORS** ডিফল্টে বন্ধ, তাই `API_SERVER_CORS_ORIGINS` সংকীর্ণ রাখো (শুধু যে সাইট দরকার)। বেশিরভাগ frontend server থেকে server-এ যুক্ত হয়, তাই CORS লাগেই না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সীমা, নিরাপত্তা ও multi-user\n\n- **Concurrent run cap:** `max_concurrent_runs` ডিফল্ট ১০। পূর্ণ হলে HTTP 429 (মানে \"এখন ভিড়, পরে আসুন\")। Cron run এই সীমার বাইরে।\n- **SSE keepalive:** ১০ সেকেন্ড নিঃশব্দ থাকলে `: keepalive` নামে comment যায় (যাতে সংযোগ কেটে না যায়)। নিজের parser লিখলে `:` দিয়ে শুরু হওয়া লাইন বাদ দিতে হবে।\n- **Security header:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`।\n- **Stored response:** SQLite (ছোট ডাটাবেস-ফাইল)-এ রাখা, সর্বোচ্চ ১০০টা; পুরোনোগুলো আগে সরে যায় (LRU eviction)।\n\n### প্রতি user-এর আলাদা profile\n\nএকই কম্পিউটারে alice আর bob-এর আলাদা Hermes চাইলে:\n\n```bash\nhermes profile create alice\n# alice-এর .env: API_SERVER_ENABLED=true, নিজস্ব API_SERVER_PORT ও API_SERVER_KEY\nhermes -p alice gateway\n```\n\n| লাইন | মানে |\n|---|---|\n| `hermes profile create alice` | `alice` নামে নতুন আলাদা profile বানাও |\n| `hermes -p alice gateway` | `-p` = profile; alice-এর profile দিয়ে gateway চালাও |\n\nপ্রতি profile নিজের নামে `/v1/models`-এ দেখা দেয়। `gateway.multiplex_profiles` চালু থাকলে `/p/<profile>/v1/...` পথে প্রতি profile-এর নিজস্ব key লাগে; default key দিলে 401।\n\n## সামঞ্জস্যপূর্ণ frontend\n\nOpen WebUI, LobeChat, LibreChat, AnythingLLM, NextChat, ChatBox, Jan, HF Chat-UI, big-AGI। কোডে ব্যবহার:\n\n```python\nfrom openai import OpenAI\nclient = OpenAI(base_url=\"http://localhost:8642/v1\", api_key=\"<API_SERVER_KEY>\")\n```\n\nএখানে `base_url` মানে \"ডাকার ঠিকানা\"। OpenAI-র বদলে Hermes-এর জানালা দেখিয়ে দেওয়া হলো। `api_key` হলো তোমার `API_SERVER_KEY`।\n\n**Proxy mode:** অন্য gateway-তে `GATEWAY_PROXY_URL` দিলে সব বার্তা এই সার্ভারে forward (এগিয়ে পাঠানো) হয়। যেমন Docker-এর ভেতরে Matrix chat-এর সুরক্ষিত বার্তা (E2EE) চালু, কিন্তু আসল agent চলছে host-এ।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "API Server কেন লাগে?",
+      "options": [
+        "Hermes-কে বন্ধ করতে",
+        "মডেল ট্রেন করতে",
+        "বাইরের chat অ্যাপ (Open WebUI, LobeChat ইত্যাদি) যেন Hermes-কে OpenAI-র ভাষায় ডাকতে পারে",
+        "ফাইল মুছতে"
+      ],
+      "answerIndex": 2,
+      "explanation": "API Server ঘরের জানালা। বাইরের অ্যাপ OpenAI-র ভাষায় প্রশ্ন দেয়, ভেতরে পুরো Hermes উত্তর দেয়।"
+    },
+    {
+      "question": "`/v1/chat/completions` আর `/v1/responses`-এর মূল পার্থক্য কী?",
+      "options": [
+        "chat/completions stateless (প্রতিবার পুরো messages পাঠাতে হয়), responses server-side state রাখে",
+        "কোনো পার্থক্য নেই",
+        "responses শুধু ছবির জন্য",
+        "chat/completions শুধু Windows-এ"
+      ],
+      "answerIndex": 0,
+      "explanation": "stateless মানে সার্ভার আগের কিছু মনে রাখে না। responses-এ `previous_response_id` দিয়ে আগের কথায় জোড়া যায়।"
+    },
+    {
+      "question": "`API_SERVER_KEY` কি `127.0.0.1`-এও লাগে?",
+      "options": [
+        "না, শুধু ইন্টারনেটে",
+        "শুধু Docker-এ",
+        "শুধু streaming-এ",
+        "হ্যাঁ, প্রতিটি deployment-এ সবসময় লাগে"
+      ],
+      "answerIndex": 3,
+      "explanation": "docs বলছে এমনকি 127.0.0.1-এও Bearer token আবশ্যক। চাবি ছাড়া জানালা খোলে না।"
+    },
+    {
+      "question": "একই `Idempotency-Key` কিন্তু বদলে-যাওয়া অনুরোধ পাঠালে কী হয়?",
+      "options": [
+        "আগের উত্তর replay",
+        "`admission_conflict` (HTTP 409)",
+        "নতুন উত্তর",
+        "server বন্ধ"
+      ],
+      "answerIndex": 1,
+      "explanation": "একই key + একই অনুরোধে আগের উত্তর replay হয়। অনুরোধ বদলালে 409 conflict।"
+    },
+    {
+      "question": "`max_concurrent_runs` পূর্ণ হয়ে গেলে কী আসে?",
+      "options": ["HTTP 200", "কিছুই না", "HTTP 429", "Hermes মুছে যায়"],
+      "answerIndex": 2,
+      "explanation": "ডিফল্ট ১০টা একসাথে। বেশি হলে 429, মানে এখন ভিড়, পরে আসো।"
+    },
+    {
+      "question": "কেন প্রতি user-এর জন্য আলাদা profile চালানো ভালো?",
+      "options": [
+        "প্রতিটা profile-এর নিজস্ব port, key, স্মৃতি ও সেটিং, তাই user-দের মধ্যে মিশে যায় না",
+        "profile ছাড়া চলেই না",
+        "শুধু গতি বাড়ে",
+        "শুধু ছবি দেখায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "alice-এর আলাদা `.env`, port ও key থাকে; `hermes -p alice gateway` তার জন্য আলাদা Hermes চালায়।"
+    },
+    {
+      "question": "`X-Hermes-Session-Key` কেন আছে?",
+      "options": [
+        "বিল গোনার জন্য",
+        "log মোছার জন্য",
+        "ছবি পাঠাতে",
+        "বাইরের memory provider-এর জন্য এক channel-এ স্থির পরিচয়, যা `/new`-এও বদলায় না"
+      ],
+      "answerIndex": 3,
+      "explanation": "`X-Hermes-Session-Id` `/new`-এ বদলায়, কিন্তু Session-Key বদলায় না। তাই স্মৃতি ঠিকমতো চেনা যায়।"
+    }
+  ],
+  "recap": [
+    "API Server হলো Hermes-এর জানালা: বাইরের chat অ্যাপ OpenAI-র ভাষায় `http://localhost:8642/v1`-এ ডাকলে ভেতরের পুরো Hermes উত্তর দেয়।",
+    "চালু করতে `.env`-এ `API_SERVER_ENABLED=true` আর `API_SERVER_KEY` দাও, তারপর `hermes gateway` চালাও; key সবসময় আবশ্যক।",
+    "`/v1/chat/completions` stateless; `/v1/responses` server-side state রাখে; লম্বা কাজের জন্য Runs API।",
+    "`Idempotency-Key` দিলে একই অনুরোধ দুবার গেলেও কাজ একবারই চলে।",
+    "CORS ডিফল্টে বন্ধ, `max_concurrent_runs` ডিফল্ট ১০; প্রতি user-এর জন্য আলাদা profile চালানো যায়।"
+  ]
+}

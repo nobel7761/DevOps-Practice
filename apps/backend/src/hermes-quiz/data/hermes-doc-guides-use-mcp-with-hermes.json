@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-use-mcp-with-hermes",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q01",
+      "difficulty": "easy",
+      "question": "MCP-র পুরো নাম কী?",
+      "options": [
+        "Model Context Protocol",
+        "Machine Control Panel, যন্ত্র চালানোর পর্দা",
+        "Multi Command Processor, অনেক কমান্ডের প্রসেসর",
+        "Memory Cache Pool, স্মৃতি জমানোর ভাণ্ডার"
+      ],
+      "correctIndex": 0,
+      "explanation": "MCP হলো AI-কে বাইরের যন্ত্রের সঙ্গে জোড়ার সর্বজনীন নিয়ম, যেন সব চার্জারের জন্য একই USB পোর্ট।",
+      "whyWrong": {
+        "1": "এই নামে কিছু লেসনে নেই।",
+        "2": "এটা MCP-র অর্থ নয়।",
+        "3": "MCP স্মৃতি নয়, যন্ত্র জোড়ার নিয়ম।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q02",
+      "difficulty": "easy",
+      "question": "MCP server কী?",
+      "options": [
+        "Hermes-এর ভেতরের একটা model, যা উত্তর লেখে",
+        "একটা ছোট প্রোগ্রাম, যা কিছু tool দেয়",
+        "একটা ওয়েবসাইট, যেখানে config সেভ করা হয়",
+        "একটা password, যা প্রমাণ করে অনুমতি আছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "MCP server MCP-র নিয়মে কিছু tool (যেমন ফাইল পড়া, issue বানানো) দেয়; Hermes সেগুলোর client।",
+      "whyWrong": {
+        "0": "model-এর কাজ আলাদা; server শুধু tool দেয়।",
+        "2": "config থাকে `~/.hermes/config.yaml`-এ, ওয়েবসাইটে নয়।",
+        "3": "গোপন পাসওয়ার্ড হলো token, server নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q03",
+      "difficulty": "easy",
+      "question": "`tools.include` কোন ধরনের তালিকা?",
+      "options": [
+        "Blocklist, মানে এগুলো একদম চলবে না",
+        "Log তালিকা, মানে কী কী ঘটল তার রেকর্ড",
+        "Allowlist, মানে শুধু এগুলো চলবে",
+        "Resource তালিকা, মানে server-এর পড়ার ফাইল"
+      ],
+      "correctIndex": 2,
+      "explanation": "`include` = allowlist, `exclude` = blocklist।",
+      "whyWrong": {
+        "0": "blocklist হলো `exclude`।",
+        "1": "log আলাদা জিনিস, প্রোগ্রামের ডায়েরি।",
+        "3": "`resources` আলাদা wrapper সেটিং, `include` নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q04",
+      "difficulty": "easy",
+      "question": "Config বদলানোর পর MCP সেটিং নতুন করে পড়াতে কোন slash command?",
+      "options": [
+        "`/reload-config`",
+        "`/restart-hermes`",
+        "`/refresh-tools`",
+        "`/reload-mcp`"
+      ],
+      "correctIndex": 3,
+      "explanation": "include/exclude, enabled flag, resources/prompts toggle বা auth header/env বদলালে `/reload-mcp` চালাতে হয়।",
+      "whyWrong": {
+        "0": "এই নামের command লেসনে নেই।",
+        "1": "এই command লেসনে নেই।",
+        "2": "এই command লেসনে নেই; সঠিকটা `/reload-mcp`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q05",
+      "difficulty": "easy",
+      "question": "`hermes mcp test <server>` আর exit code `0` মানে কী?",
+      "options": [
+        "সংযোগ ব্যর্থ হয়েছে, আবার চেষ্টা করো",
+        "config-এ ওই নামের server খুঁজে পাওয়া যায়নি",
+        "সংযুক্ত হয়েছে এবং tool তালিকা পাওয়া গেছে",
+        "কমান্ড ভুলভাবে লেখা হয়েছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Exit code `0` সফল। `1` সংযোগ ব্যর্থ, `3` config-এ server নেই, `2` argparse usage error।",
+      "whyWrong": {
+        "0": "ব্যর্থতার কোড `1`।",
+        "1": "server না পাওয়ার কোড `3`।",
+        "3": "কমান্ড ভুলের কোড `2`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q06",
+      "difficulty": "easy",
+      "question": "`env` দিয়ে GitHub server-কে কী দেওয়া হয়?",
+      "options": [
+        "গোপন `GITHUB_PERSONAL_ACCESS_TOKEN`",
+        "শুধু একটা `tools.include` তালিকা, token নয়",
+        "server চালু করার `command` নামের প্রোগ্রাম",
+        "কোন folder দেখতে দেওয়া হবে তার path"
+      ],
+      "correctIndex": 0,
+      "explanation": "`env` হলো environment variable, প্রোগ্রামকে চাবি দেওয়ার উপায়। `***`-এর জায়গায় আসল token বসে, কখনো প্রকাশ করা যাবে না।",
+      "whyWrong": {
+        "1": "তালিকা `tools.include`-এ যায়।",
+        "2": "`command` আলাদা key।",
+        "3": "folder path `args`-এ দেওয়া হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q07",
+      "difficulty": "easy",
+      "question": "config না মুছে একটা MCP server সাময়িক বন্ধ রাখতে কী করা হয়?",
+      "options": [
+        "পুরো `mcp_servers:` অংশ মুছে ফেলা",
+        "`tools.include` খালি রেখে `hermes mcp add` চালানো",
+        "`exclude` তালিকায় সব tool-এর নাম বসানো",
+        "সেই server-এ `enabled: false` দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "`enabled: false` দিলে config থাকে, কিন্তু server সংযুক্ত হয় না।",
+      "whyWrong": {
+        "0": "মুছলে config হারাবে; প্রশ্নে মুছতে মানা।",
+        "1": "এভাবে server বন্ধ হয় না, লেসনে এমন নিয়ম নেই।",
+        "2": "সব নাম বসানো ঝামেলার, `enabled: false` সরল।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q08",
+      "difficulty": "medium",
+      "question": "কেন সংবেদনশীল system-এ `exclude`-এর চেয়ে `include` ভালো?",
+      "options": [
+        "`include` দিলে tool-এর সংখ্যা বেড়ে যায়, তাই বেশি কাজ হয়",
+        "ভুলে কিছু বাদ পড়লেও tool বন্ধই থাকে",
+        "`exclude` দিলে server সংযুক্তই হয় না",
+        "`include` দিলে `/reload-mcp` আর লাগে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Blocklist-এ কিছু ভুলে গেলে বিপদ খোলা থেকে যায়; allowlist ছোট থেকে শুরু করে নিরাপদ রাখে।",
+      "whyWrong": {
+        "0": "`include` tool কমায়, বাড়ায় না।",
+        "2": "`exclude` দিলেও server সংযুক্ত হয়, শুধু কিছু tool লুকানো থাকে।",
+        "3": "তালিকা বদলালে `/reload-mcp` তবুও লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q09",
+      "difficulty": "medium",
+      "question": "`args: [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/my-project\"]`-এর শেষ অংশ কী কাজ করে?",
+      "options": [
+        "কোন model ব্যবহার হবে সেটা ঠিক করে",
+        "কোন folder server দেখতে পাবে",
+        "কোন token দিয়ে login হবে সেটা ঠিক করে",
+        "কোন port-এ server চলবে সেটা ঠিক করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Filesystem server শুধু ওই folder-ই দেখতে পায়, বাকি কম্পিউটার নয়।",
+      "whyWrong": {
+        "0": "model আলাদা সেটিং।",
+        "2": "token `env`-এ যায়।",
+        "3": "port-এর কথা এখানে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q10",
+      "difficulty": "medium",
+      "question": "`npx` আর `uvx`-এর পার্থক্য কী?",
+      "options": [
+        "`npx` Python server চালায়, `uvx` Node.js server চালায়",
+        "`npx` শুধু HTTP server, `uvx` শুধু stdio server",
+        "দুটোই Windows-এর জন্য, Linux-এ চলে না",
+        "`npx` Node.js-এর, `uvx` Python-এর"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটোই অন্যের প্রোগ্রাম নামিয়ে সঙ্গে সঙ্গে চালায়; `npx` Node.js, `uvx` Python-এর জন্য।",
+      "whyWrong": {
+        "0": "ভাষা দুটো উল্টে গেছে।",
+        "1": "stdio/HTTP আলাদা বিষয়, এই দুই টুলের পার্থক্য নয়।",
+        "2": "এমন কোনো সীমা লেসনে নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q11",
+      "difficulty": "medium",
+      "question": "`tools.resources` ও `tools.prompts` কোন ধরনের জিনিস ধরে?",
+      "options": [
+        "Hermes-এর যোগ করা wrapper",
+        "server-native tool, যেগুলো server নিজে নিজেই দেয়",
+        "শুধু `env`-এ বসানো গোপন token এর মান",
+        "শুধু exit code ও সংযোগের log এর তথ্য"
+      ],
+      "correctIndex": 0,
+      "explanation": "Server-native tool ধরে `include`/`exclude`; `resources` (`list_resources`, `read_resource`) আর `prompts` (`list_prompts`, `get_prompt`) wrapper ধরে।",
+      "whyWrong": {
+        "1": "server-native tool-এর জন্য `include`/`exclude`।",
+        "2": "token `env`-এর কাজ, filter-এর নয়।",
+        "3": "exit code আলাদা জিনিস।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q12",
+      "difficulty": "medium",
+      "question": "কখন MCP না নিয়ে built-in Hermes tool নেওয়াই ভালো?",
+      "options": [
+        "যখন tool আগে থেকেই MCP-তে আছে",
+        "যখন server ধরে exposure নিয়ন্ত্রণ চাও",
+        "যখন built-in tool-ই কাজ করে",
+        "যখন Hermes core না বদলে internal system ধরতে চাও"
+      ],
+      "correctIndex": 2,
+      "explanation": "লেসনে 'MCP বাদ দাও' শর্ত: built-in tool কাজ করে, server-এর বিপজ্জনক surface filter করবে না, বা সংকীর্ণ integration-এ native tool সহজ ও নিরাপদ।",
+      "whyWrong": {
+        "0": "এটা 'MCP নাও' শর্ত।",
+        "1": "এটাও 'MCP নাও' শর্ত।",
+        "3": "এটাও 'MCP নাও' শর্ত।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q13",
+      "difficulty": "medium",
+      "question": "server সংযুক্ত দেখাচ্ছে কিন্তু একটা tool পাওয়া যাচ্ছে না। প্রথমে কী দেখবে?",
+      "options": [
+        "`enabled: false` আছে কিনা, তারপর Hermes আবার install করা, তাতেই হবে",
+        "শুধু HTTP endpoint পৌঁছানো যায় কিনা, আর auth header ঠিক কিনা",
+        "`hermes mcp add` দিয়ে সব server নতুন করে যোগ করা",
+        "`include` ও wrapper সেটিং"
+      ],
+      "correctIndex": 3,
+      "explanation": "সংযুক্ত কিন্তু tool নেই মানে filter বা capability সমস্যা। 'কিছুই লোড হয় না' হলে তবেই `enabled`, `npx`/`uvx`, endpoint, auth দেখতে হয়।",
+      "whyWrong": {
+        "0": "`enabled: false` হলে server-ই সংযুক্ত দেখাত না; reinstall দরকার নেই।",
+        "1": "endpoint পৌঁছানো গেলে সংযুক্ত দেখানোর কথা, তাই সমস্যা এখানে নয়।",
+        "2": "সব নতুন করে যোগ করা অকারণ ও ঝুঁকিপূর্ণ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q14",
+      "difficulty": "medium",
+      "question": "Open Scaffold server যোগ করলে ডিফল্টভাবে লেখার tool-এর কী অবস্থা?",
+      "options": [
+        "Write চালু, `--read-only` দিলে বন্ধ হয়",
+        "সবই চালু, merge ও deploy-ও করতে পারে",
+        "Read-only; লিখতে `--allow-write`",
+        "Write-এর জন্য `@latest` লাগে"
+      ],
+      "correctIndex": 2,
+      "explanation": "ডিফল্টে read-only; এটা merge/deploy অনুমোদনও দেয় না। reproducible schema-র জন্য `open-scaffold@<version>` pin করো।",
+      "whyWrong": {
+        "0": "ডিফল্ট উল্টো: পড়া-ই।",
+        "1": "এটা merge/deploy অনুমোদন দেয় না।",
+        "3": "`@latest`-এর বদলে সংস্করণ pin করতে বলা আছে, লেখার সঙ্গে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q15",
+      "difficulty": "hard",
+      "question": "তুমি Stripe-এ টাকা-গ্রাহকের কাজ করার জন্য MCP যোগ করছ। কোনটা সবচেয়ে নিরাপদ শুরু?",
+      "options": [
+        "`exclude: [delete_customer, refund_payment]` রেখে বাকি সব খোলা",
+        "ছোট `include` তালিকা",
+        "সব tool চালু রেখে পরে ধীরে ধীরে বন্ধ করে নেওয়া",
+        "`resources: true` আর `prompts: true` সব চালু রাখা"
+      ],
+      "correctIndex": 1,
+      "explanation": "টাকা/গ্রাহক/ধ্বংসাত্মক system-এ allowlist: ছোট থেকে শুরু। তালিকায় ভুলে গেলেও tool বন্ধ থাকে।",
+      "whyWrong": {
+        "0": "লেসনের উদাহরণ blocklist দেখায়, কিন্তু ভুলে যাওয়া tool খোলা থাকার ঝুঁকি আছে, তাই এটা নিরাপদতম নয়।",
+        "2": "সব খুলে পরে বন্ধ করা বিপজ্জনক ক্রম।",
+        "3": "এটা resources/prompts সেটিং, সুরক্ষা নয়; অব্যবহৃত হলে বন্ধ রাখা উচিত।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q16",
+      "difficulty": "hard",
+      "question": "GitHub triage-এর জন্য config-এ `include: [list_issues, create_issue, update_issue, search_code]`, `prompts: false`, `resources: false` কেন বসানো?",
+      "options": [
+        "শুধু দরকারি ৪টা কাজ খোলা রাখতে",
+        "server যাতে সব tool একসাথে খুলে দেয়, কিছু বাদ না যায়",
+        "token যেন `env`-এর বাইরে যেকোনো জায়গায় লেখা যায়",
+        "`/reload-mcp` যেন আর কখনো চালাতে না হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "ছোটতম কিন্তু কাজের surface সংযুক্ত করাই মূল কথা: issue দেখা/বানানো/বদলানো ও কোড খোঁজা, বাকিটা বন্ধ।",
+      "whyWrong": {
+        "1": "উদ্দেশ্য ঠিক উল্টো, বন্ধ করা।",
+        "2": "token `env`-এই থাকে।",
+        "3": "`include` বদলালে `/reload-mcp` তবুও লাগে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q17",
+      "difficulty": "hard",
+      "question": "একই project-এ ফাইল দেখা আর ইতিহাস দেখা দুটোই চাই। কোন config মেলে?",
+      "options": [
+        "শুধু একটা `git` server `npx` দিয়ে, filesystem লাগে না",
+        "শুধু `fs` server রাখা, git ইতিহাস ফাইল থেকেই আসে",
+        "`fs` server `npx`-এ আর `git` server `uvx`-এ",
+        "দুটো server-ই `url:` দিয়ে HTTP-তে, `command` ছাড়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "Local project assistant pattern: filesystem + git server মিলে Hermes ফাইলও দেখে, ইতিহাসও দেখে।",
+      "whyWrong": {
+        "0": "git ইতিহাসের জন্য আলাদা git server দরকার, filesystem-এর কাজ নয়।",
+        "1": "git ইতিহাস ফাইলের ভেতরে এভাবে পড়া যায় না বলে লেসনে আলাদা server দেখানো।",
+        "3": "উদাহরণে local `command` ব্যবহার, `url` নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q18",
+      "difficulty": "hard",
+      "question": "WSL2 থেকে Windows Chrome ধরতে কোন ধাপ ঠিক?",
+      "options": [
+        "আগে `chrome://inspect/#remote-debugging` চালু করা",
+        "`/browser connect` চালানো, এটা WSL থেকে সবসময় কাজ করে",
+        "Hermes `\\\\wsl$` UNC path থেকে চালানো",
+        "`--autoConnect` ছাড়াই `chrome-devtools-mcp` চালানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "Hermes (WSL) → MCP stdio bridge → Windows Chrome। recommended `chrome-devtools-mcp`; পরে নতুন session বা `/reload-mcp`।",
+      "whyWrong": {
+        "1": "`/browser connect` WSL থেকে ব্যর্থ হতে পারে, কারণ সেটা একই environment-এর জন্য।",
+        "2": "UNC warning এড়াতে `/mnt/c/Users/<you>` থেকে চালাতে বলা আছে।",
+        "3": "লেসনের command-এ `--autoConnect` আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q19",
+      "difficulty": "hard",
+      "question": "একজন internal API-র জন্য `exclude` তালিকা বানিয়ে ১০টা বিপজ্জনক tool লিখেছে। পরে server নতুন একটা মুছে-ফেলার tool যোগ করল। কী হবে?",
+      "options": [
+        "Hermes নিজে অনুমান করে নতুন tool ব্লক করে দেবে",
+        "নতুন tool-টা খোলা থাকবে",
+        "server সংযোগ ভেঙে যাবে আর exit code `1` আসবে",
+        "tool শুধু `/reload-mcp` চালানো পর্যন্ত বন্ধ থাকবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Blocklist সবসময় আগের জানা বিপদ আটকায়; নতুন যোগ হলে সেটা খোলা। তাই internal API-র জন্য strict `include` + `resources: false`, `prompts: false`।",
+      "whyWrong": {
+        "0": "Hermes নিজে অনুমান করে না; তোমার policy প্রয়োগ করে।",
+        "2": "সংযোগ ভাঙার কারণ নেই।",
+        "3": "reload শুধু সেটিং আবার পড়ে, tool নিজে ব্লক হয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-use-mcp-with-hermes-q20",
+      "difficulty": "hard",
+      "question": "Phase শেখার ক্রম অনুযায়ী `update_issue` কখন যোগ করবে?",
+      "options": [
+        "Phase 1: একদম শুরুতেই সব tool-এর সাথে",
+        "Phase 3: দ্বিতীয় server আসার পরই যোগ করবে",
+        "কখনোই না, কারণ `update_issue` সবসময় নিষিদ্ধ",
+        "Phase 2: দরকার হলে, তারপর `/reload-mcp`"
+      ],
+      "correctIndex": 3,
+      "explanation": "Phase 1 ছোট include + `prompts: false`/`resources: false`; Phase 2 দরকারে `update_issue`; Phase 3 filesystem-এর মতো দ্বিতীয় server নিজস্ব policy সহ।",
+      "whyWrong": {
+        "0": "Phase 1 ছোট তালিকা, `update_issue` ছাড়া।",
+        "1": "Phase 3 দ্বিতীয় server-এর জন্য।",
+        "2": "নিষিদ্ধ নয়, দরকারে যোগ করা যায়।"
+      }
+    }
+  ]
+}

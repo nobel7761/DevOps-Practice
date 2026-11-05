@@ -1,0 +1,230 @@
+{
+  "contentId": "hermes-doc-user-guide-features-delegation",
+  "title": "Delegation (Subagents)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes কীভাবে কাজ ভাগ করে child agent-দের পাঠায় ও সারাংশ ফেরত পায়, আর parent, child, context, toolset-এর মানে কী।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: বড় আপার তিন সহকারী\n\nবড় আপা একটা স্কুল-মেলার রিপোর্ট লিখছেন। তিনি তিনজন ছাত্রকে বললেন: \"তুমি খাবারের স্টল দেখে এসো, তুমি খেলার স্টল, তুমি বইয়ের স্টল। ফিরে এসে **শুধু এক লাইনে** বলবে কী দেখলে।\"\n\nছাত্ররা তিন দিকে ছুটল। প্রত্যেকের হাতে শুধু ততটুকু তথ্য যা আপা দিয়েছেন। আপার পুরো খাতা তারা পায়নি। ফিরে এসে প্রত্যেকে **সংক্ষিপ্ত সারাংশ** দিল। আপার খাতা ভরে যায়নি, কাজও তিনগুণ দ্রুত হলো।\n\nHermes-এর **`delegate_task`** ঠিক এটাই। **Parent agent** (বড় আপা) একটা বা একাধিক **child agent** (ছাত্র) ছাড়ে। প্রতিটা child-এর নতুন কথোপকথন, নিজের terminal session, আর parent-এর toolset। **শুধু শেষ সারাংশ** parent-এর context-এ ফেরত আসে।\n\n**এটা না থাকলে কী সমস্যা হতো?** একটাই agent সব কাজ একের পর এক করত, আর প্রতিটা ফাইল পড়া ও খোঁজার খুঁটিনাটি তার একই \"খাতায়\" জমে খাতা ভরে যেত। ফলে ধীর হতো, আর পুরোনো দরকারি কথা খাতা থেকে ঠেলে বেরিয়ে যেত।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Agent\nHermes যখন নিজে ভেবে ভেবে একের পর এক কাজ করে (ফাইল পড়ে, কমান্ড চালায়), তখন তাকে agent বলে। উপমা: যে সহকারী শুধু উত্তর দেয় না, নিজে হাত লাগিয়ে কাজও করে।\n\n### ২) Parent / Child agent\nযে agent কাজ ভাগ করে সে **parent**, আর যাদের কাজ দেওয়া হয় তারা **child** (বা **subagent**)। উপমা: বড় আপা আর তাঁর সহকারীরা।\n\n### ৩) Context / Context window\nAgent-এর \"চোখের সামনে খোলা খাতা\", যেখানে এই কথোপকথনের সব লেখা আছে। খাতার জায়গা সীমিত, তাই একে **context window** বলে। উপমা: ডেস্কের সাইজ, যার বেশি কাগজ রাখা যায় না।\n\n### ৪) Toolset / Tool\n**Tool** হলো Hermes-এর হাতের যন্ত্র (ফাইল পড়া, কমান্ড চালানো)। **Toolset** হলো যন্ত্রের একটা বাক্স। উপমা: সহকারীদের হাতে দেওয়া যন্ত্রের ব্যাগ।\n\n### ৫) Terminal session\nকমান্ড লেখার একটা আলাদা কালো জানালা। প্রতিটা child নিজের জানালা পায়, তাই একজনের কাজ অন্যজনের জানালায় গোলমাল করে না।\n\n### ৬) Background\n\"পেছনে চলা।\" কাজ পেছনে চলতে থাকে আর তুমি অন্য কাজ করতে পারো। উপমা: ভাত রান্না হচ্ছে, তুমি তখন পড়ছো।\n\n### ৭) JSON / Schema\n**JSON** হলো সাজানো তথ্য লেখার একটা ধরন (`{\"নাম\": \"রিয়া\"}`)। **Schema** হলো তার ছক: কোন ঘরে কী থাকবে। উপমা: ফর্মের খালি ঘরগুলো।\n\n### ৮) Git worktree\nএকই project-এর একটা আলাদা কপি-ফোল্ডার, যেখানে একজন নিজের মতো বদলাতে পারে অন্যের কাজ নষ্ট না করে। (**git** হলো কোড-বদলের ইতিহাস রাখার যন্ত্র।)"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Parent কাজ ভাগ করে child-দের পাঠায়; প্রতিটা child আলাদা চলে আর শুধু সারাংশ ফেরত দেয়।",
+        "nodes": [
+          {
+            "id": "p",
+            "kind": "server",
+            "label": "Parent agent",
+            "x": 0,
+            "y": 120
+          },
+          {
+            "id": "c1",
+            "kind": "server",
+            "label": "Child 1",
+            "x": 260,
+            "y": 0
+          },
+          {
+            "id": "c2",
+            "kind": "server",
+            "label": "Child 2",
+            "x": 260,
+            "y": 120
+          },
+          {
+            "id": "c3",
+            "kind": "server",
+            "label": "Child 3",
+            "x": 260,
+            "y": 240
+          }
+        ],
+        "edges": [
+          {
+            "from": "p",
+            "to": "c1",
+            "label": "কাজ+তথ্য"
+          },
+          {
+            "from": "p",
+            "to": "c2",
+            "label": "কাজ+তথ্য"
+          },
+          {
+            "from": "p",
+            "to": "c3",
+            "label": "কাজ+তথ্য"
+          },
+          {
+            "from": "c1",
+            "to": "p",
+            "label": "সারাংশ"
+          },
+          {
+            "from": "c2",
+            "to": "p",
+            "label": "সারাংশ"
+          },
+          {
+            "from": "c3",
+            "to": "p",
+            "label": "সারাংশ"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "delegation"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ব্যবহার\n\n```python\n# একটা কাজ\ndelegate_task(goal=\"...\", context=\"...\")\n\n# একসাথে অনেক কাজ (batch)\ndelegate_task(tasks=[ ... ])\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `delegate_task` | child ছাড়ার tool | \"যাও, দেখে এসো\" বলা |\n| `goal` | কী করতে হবে | কাজের এক লাইনের বিবরণ |\n| `context` | কাজের প্রয়োজনীয় সব তথ্য | আপার হাতে-লেখা চিরকুট |\n| `tasks=[...]` | অনেকগুলো কাজের তালিকা (**batch**) | তিন ছাত্রকে একসাথে তিন দিকে পাঠানো |\n\n- Batch-এ default-এ **১০টি** পর্যন্ত একসাথে চলে (Hermes-এর source code-এও ১০; Configuration পাতায় ৩ লেখা আছে, দুই পাতা মেলে না — code-এর মান ১০)। বদলাতে `delegation.max_concurrent_children` বা `DELEGATION_MAX_CONCURRENT_CHILDREN` (সর্বনিম্ন ১, উপরের সীমা নেই)।\n- সীমার বেশি দিলে ছেঁটে ফেলে না, **tool error** দেয়।\n- Top-level call **background**-এ চলে: Hermes সঙ্গে সঙ্গে একটা **handle** (রসিদের মতো টোকেন) দেয়, ফল পরে এসে পৌঁছায়।\n\n### সবচেয়ে বড় নিয়ম: child কিছুই জানে না\n\nChild parent-এর কথোপকথন দেখতে পায় না। তাই `goal` আর `context`-এ **সব** লিখে দিতে হয়: ফাইলের path (ঠিকানা), error message, সীমাবদ্ধতা। কেন? ছাত্র তো আপার খাতা পায়নি। চিরকুটে না থাকলে সে জানবেই না।\n\n(ব্যতিক্রম: workspace পাওয়া গেলে project context ফাইল ঢোকে, ক্রম `.hermes.md` > AGENTS.md > CLAUDE.md > `.cursorrules`; `SOUL.md` বাদ।)\n\n### ছবি পাঠানো\n\nপ্রতি task-এ `images` list (সর্বোচ্চ ৮টি): local path, `http(s)` URL বা `data:image/...`। Vision-সক্ষম (ছবি দেখতে পারে এমন) model হলে সরাসরি ছবি পায়; না হলে goal-এ `[Image attached at: <path>]` যোগ হয় আর child `vision_analyze` tool ব্যবহার করে।\n\n### Structured output (`output_schema`)\n\nকখনো তুমি চাও child ফিরিয়ে দিক ছক-মেলানো তথ্য, মন-খুশি গল্প নয়। প্রতি task-এ JSON Schema দিলে child-কে বলা হয় শুধু সেই JSON ফেরত দিতে। মিলল না? **ঠিক একবার** সংশোধনের সুযোগ। ফলে `schema_valid`; ব্যর্থ হলে `schema_errors` ও `schema_note`। তবু `status: completed` থাকে, কাঁচা লেখা `summary`-তে। Schema ক্ষমাশীল রাখো: যে field সত্যিই পড়বে শুধু সেগুলোই `required` দাও।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ফল কীভাবে ফেরে (batch delivery)\n\n| সেটিং | কী হয় | কখন লাগে |\n|---|---|---|\n| Default | সব task শেষ হলে **একটাই একত্র message** | সব ফল একসাথে পড়তে চাইলে |\n| `delegation.independent_completions: true` (opt-in) | প্রতিটা unit শেষ হলেই আলাদা ফল | যে কাজ আগে শেষ, তার ফল আগে চাইলে |\n| `group` field | একই group-এর task একসাথে একটা message-এ ফেরে | সম্পর্কিত কাজ একসাথে পেতে (এটা delivery ঠিক করে, চালানোর ক্রম নয়) |\n\n- `/stop` বা session বন্ধ করলে background child থামে; তারা `status=\"interrupted\"` আর আংশিক output ফেরত দেয়।\n- **Durable completions:** completion `state.db`-তে (Hermes-এর ডেটাবেস ফাইল) আগে সেভ হয়, তাই restart-এ হারায় না। কিন্তু child নিজে crash-এর পর আবার চলে না। তার owner মরলে অবস্থা `unknown`।\n\n## Child কী পারে, কী পারে না\n\nChild parent-এর toolset পায়, তবে **সব child-এর জন্য বন্ধ**: `clarify` (ব্যবহারকারীকে প্রশ্ন করা), `memory` (স্থায়ী স্মৃতিতে লেখা), `send_message` (বাইরে বার্তা পাঠানো), `cronjob` (সময়-ধরা কাজ বানানো)। কেন? ছাত্ররা যেন আপার হয়ে অভিভাবকদের ফোন না করে বসে।\n\n`delegate_task` শুধু `role=\"orchestrator\"`-এর থাকে; সাধারণ `leaf` child আর কাউকে ডাকতে পারে না। (`orchestrator` = যে নিজেও আরেক স্তরের সহকারী ডাকতে পারে; `leaf` = গাছের পাতা, যার নিচে কেউ নেই।) `execute_code` দুই role-ই পায়।\n\n### গভীরতা (nested)\n\n- Default flat: `delegation.max_spawn_depth: 1`, তাই orchestrator role কিছু করে না।\n- ২ করলে leaf নাতি-child হয়; ৩+ করলে আরও গভীর গাছ।\n- `delegation.orchestrator_enabled: false` সবাইকে leaf বানায়।\n- খরচের সতর্কতা: depth ৩ আর ৩ concurrent মানে সর্বোচ্চ ২৭টা leaf!\n- `hermes chat -q` বা `--oneshot`-এ (একবার প্রশ্ন করে বেরিয়ে আসার mode) `delegation.oneshot_max_children` default ২ (`0` = সীমাহীন)।\n\n## সময় ও আটকে যাওয়া\n\n- `delegation.max_iterations` default **২৫০** (global)। **Iteration** মানে \"ভাবো-কাজ-করো\" এর এক চক্র। শেষ হলে `exit_reason: max_iterations`, `truncated: true`।\n- `delegation.child_timeout_seconds` default `0` (কোনো timeout নেই)। পজিটিভ মান হলো নিষ্ক্রিয়তার সীমা, সর্বনিম্ন ৩০ সেকেন্ড; প্রতিটা অগ্রগতি জানালা নতুন করে শুরু করে। প্রায় ৮০%-এ child একটা `[delegation budget warning]` পায়।\n- Failed child `status: \"failed\"` আর `error` লেখা সহ জানানো হয়। শূন্য call-এর timeout-এ `~/.hermes/logs/subagent-timeout-<session>-<timestamp>.log` diagnostic লেখা হয়। (**Log** মানে ঘটনার লিখিত খাতা, যা পরে দেখে সমস্যা খোঁজা যায়।)\n- **Stall detection** (background): আপনাআপনি চালু। অগ্রগতি করা child-কে ছোঁয়া হয় না; জমে যাওয়া child interrupt হয়, দরকারে `stalled` ঘটনায় জোর করে শেষ।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা delegation-এর জীবনচক্র।",
+        "steps": [
+          {
+            "title": "Parent dispatch করে",
+            "body": "`delegate_task(goal, context)` call হয়; Hermes সঙ্গে সঙ্গে একটা handle ফেরত দেয়।"
+          },
+          {
+            "title": "Child নিজের মতো কাজ করে",
+            "body": "নতুন কথোপকথন, নিজের terminal session, parent-এর API key ও credential pool। (**API key** হলো AI কোম্পানির দেওয়া গোপন পাসওয়ার্ড।)"
+          },
+          {
+            "title": "সারাংশ তৈরি",
+            "body": "Child শেষে একটা সারাংশ দেয়; মাঝের সব tool output child-এর ভেতরেই থাকে।"
+          },
+          {
+            "title": "Completion ফেরে",
+            "body": "ফল `state.db`-তে সেভ হয়ে parent session-এ একটা স্বাভাবিক completion হিসেবে ঢোকে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## নজর রাখা ও নির্দেশ দেওয়া\n\n- **`/agents`** (alias `/tasks`): TUI-তে (terminal-এর ভেতরের ছবির মতো পর্দা) Ctrl+T বা `/agents` একটা গাছ দেখায়; Enter-এ live transcript, `d` detail, `e` steer (দিক বদলে দেওয়া), `x` একটা worker থামায়, `X` তার পুরো subtree। Classic CLI-তে Ctrl+T বা F6।\n- Parent নিজে: `delegate_task` এ `{\"action\": \"list\"}`, `{\"action\": \"steer\", \"subagent_id\": ..., \"message\": ...}`, `{\"action\": \"stop\", \"subagent_id\": ...}`।\n- Live transcript: `~/.hermes/cache/delegation/live/<delegation_id>/task-<n>.log`, যেমন `tail -f ~/.hermes/cache/delegation/live/deleg_ab12cd34/task-0.log` (`tail -f` মানে ফাইলের শেষ অংশ লাইভ দেখা, যেমন খেলার সরাসরি সম্প্রচার)। ৭ দিনের পুরনো ডিরেক্টরি পরিষ্কার হয়।\n\n### Background process-এর মালিকানা\n\n**Process** মানে কম্পিউটারে চলতে থাকা একটা প্রোগ্রাম। Process তার শুরু করা agent-এর। Child বন্ধ হলে তার process-ও মরে। তাই দীর্ঘ-জীবী watcher/server **parent-এ** চালাও; child শুধু বাঁধা সময়ের কমান্ডের জন্য অপেক্ষা করুক। দরকারে `process_manage(action=\"wait\" | \"kill\" | \"handoff\", session_id=...)`। CI watcher-এর (যে নিয়মিত দেখে স্বয়ংক্রিয় পরীক্ষা পাস হলো কি না) জন্য ভালো উপায়: child PR number আর SHA ফেরত দিক, parent নিজে watcher চালাক।\n\n## খরচ কমানো: মডেল বদলানো\n\n**Model** হলো কোন AI মস্তিষ্ক কাজ করবে। বড় মস্তিষ্ক দামি, ছোট সস্তা। তাই parent-এ শক্তিশালী model, child-দের জন্য সস্তা model:\n\n```yaml\ndelegation:\n  model: ...        # child-এর model\n  provider: ...\n  base_url: ...\n  max_concurrent_children: 10\n  max_spawn_depth: 1\n  worktree_isolation: false\n```\n\n| লাইন | মানে |\n|---|---|\n| `model` | child-দের কোন AI মস্তিষ্ক |\n| `provider` | কোন কোম্পানির সেবা থেকে |\n| `base_url` | সেবার ইন্টারনেট ঠিকানা |\n| `max_concurrent_children` | একসাথে কয়টা child |\n| `max_spawn_depth` | কতটা গভীর গাছ |\n| `worktree_isolation` | প্রতি child-কে আলাদা git কপি-ফোল্ডার দেবে কি না |\n\n(**YAML** হলো সেটিং লেখার ফাইল-ধরন: `নাম: মান`, ইন্ডেন্ট দিয়ে সাজানো।)\n\n`base_url` প্রথমে, তারপর `provider`, নইলে inherit (parent-এরটাই নেওয়া); `model` সব ক্ষেত্রে প্রযোজ্য। Pin টা global: default `delegate_task`-এ per-task model parameter নেই।\n\n### Strategy (`delegation.backend`)\n\n`default`, `model_map`, `profile_routes`। শেষ দুটো `advanced-delegation` plugin থেকে (**plugin** মানে বাড়তি যোগ করা ছোট প্যাক; এতে `hermes delegation config` ও `/delegation` slash command আসে)। `profile_routes`-এ প্রতিটা child একটা Hermes profile হিসেবে চলে, নিজের credential, skill ও persona নিয়ে।\n\n### Worktree isolation\n\n`delegation.worktree_isolation: true` করলে প্রতি child একটা git worktree পায়: `<repo>/.worktrees/subagent-<id>`, branch `hermes-subagent/subagent-<id>`। কেন লাগে? একাধিক child একই ফাইল বদলালে ঝগড়া (conflict) হয়; আলাদা কপি-ফোল্ডারে ঝগড়া নেই। শুধু git ও local terminal backend-এ; Docker/SSH/Modal-এ নীরবে shared workspace-এ ফিরে যায়।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "delegate_task বনাম execute_code",
+      "markdown": "`delegate_task`: পুরো যুক্তি-চক্র, নতুন context, বেশি token খরচ (token মানে AI-র পড়া-লেখার মাপ, যার দাম লাগে) - **বিচারবুদ্ধির** কাজে। `execute_code`: শুধু Python, ৭টা tool RPC-তে, কম খরচ, শুধু stdout ফেরে - **যান্ত্রিক pipeline**-এ। সহজ নিয়ম: judgment হলে delegate, mechanical হলে execute_code।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Durable কাজ delegation-এ নয়",
+      "markdown": "Background child Hermes restart-এ টিকে না। দীর্ঘ বা টেকসই কাজের জন্য `cronjob` (`action=create`) বা `terminal(background=True, notify_on_complete=True)` ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `/review` কমান্ড\n\n`/review` একটা পূর্ণ-অধিকারের background reviewer ছাড়ে, `delegate_task`-এর একই পথে। সে শেষ ১০টা user/assistant message-এর snapshot নেয় (tool/system output বাদ), আর ফল স্বাভাবিক completion হিসেবে ফেরে। Model: `auxiliary.review`-এর `provider` ও `model`। এটা `/refine` থেকে আলাদা (যা memory ও skill-এর জন্য কথোপকথন পর্যালোচনা করে)।\n\n## Messaging chat-এ\n\n`delegation.gateway_mode`: `auto` (default), `inline`, `background` (alias `async`)। **Gateway** হলো Telegram-এর মতো chat app-এর সাথে Hermes-এর সেতু।\n\n| মান | মানে |\n|---|---|\n| `inline` | child গুলো শেষ হওয়া পর্যন্ত অপেক্ষা করে একসাথে জানায় |\n| `background` | সঙ্গে সঙ্গে ছেড়ে দেয়, ফল পরে আসে |\n| `auto` | platform-এ `display.interim_assistant_messages` বন্ধ থাকলে inline, নইলে background |\n\n\"still working\" notice আসে `agent.gateway_notify_interval` (১৮০ সেকেন্ড) পর।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Child agent শেষে parent-কে কী ফেরত দেয়?",
+      "options": [
+        "তার পুরো কথোপকথন",
+        "শুধু শেষ সারাংশ",
+        "তার সব tool output",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "আপার সহকারীরা এক লাইনের সারাংশ আনে। এতে parent-এর খাতা ভরে যায় না।"
+    },
+    {
+      "question": "Child agent parent-এর কথোপকথন সম্পর্কে কী জানে?",
+      "options": [
+        "কিছুই জানে না, তাই goal ও context-এ সব লিখে দিতে হয়",
+        "সব জানে",
+        "শুধু শেষ message জানে",
+        "শুধু `memory` থেকে জানে"
+      ],
+      "answerIndex": 0,
+      "explanation": "Child নতুন কথোপকথনে শুরু করে। চিরকুটে (goal/context) না থাকলে সে জানবে না।"
+    },
+    {
+      "question": "Batch-এ default-এ একসাথে সর্বোচ্চ কয়টা child চলে?",
+      "options": ["২", "৩", "৫", "১০"],
+      "answerIndex": 3,
+      "explanation": "Default ১০; `delegation.max_concurrent_children` দিয়ে বদলানো যায়। সীমার বেশি দিলে tool error আসে।"
+    },
+    {
+      "question": "কোনটা সব child-এর জন্য বন্ধ?",
+      "options": ["`execute_code`", "terminal", "`send_message`", "ফাইল পড়া"],
+      "answerIndex": 2,
+      "explanation": "`clarify`, `memory`, `send_message`, `cronjob` সব child-এর জন্য বন্ধ।"
+    },
+    {
+      "question": "`delegation.max_spawn_depth` default ১ হলে `role=\"orchestrator\"` দিলে কী হয়?",
+      "options": [
+        "নাতি-child বানাতে পারে",
+        "orchestrator role কার্যত কিছু করে না, কারণ গাছ flat",
+        "সব child বন্ধ হয়ে যায়",
+        "parent মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Default flat। গভীরতা ২ বা বেশি করলে তবেই নিচে আরও স্তর হয়।"
+    },
+    {
+      "question": "দীর্ঘস্থায়ী CI watcher চালানোর সবচেয়ে ভালো উপায় কোনটা?",
+      "options": [
+        "parent নিজে watcher চালাবে, child শুধু PR number ও SHA ফেরত দেবে",
+        "child-এ চালানো",
+        "দুটো child-এ একসাথে",
+        "চালানোর দরকার নেই"
+      ],
+      "answerIndex": 0,
+      "explanation": "Child বন্ধ হলে তার process-ও মরে, তাই দীর্ঘ-জীবী কাজ parent-এ রাখা হয়।"
+    },
+    {
+      "question": "Restart-এর পর background child-দের কী হয়?",
+      "options": [
+        "আবার সব চলে",
+        "তারা টেকে না; টেকসই কাজে cronjob ব্যবহার করো",
+        "আরও দ্রুত চলে",
+        "নতুন child হয়ে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "Completion সেভ থাকে, কিন্তু child নিজে crash/restart-এর পর আবার চলে না।"
+    },
+    {
+      "question": "বিচার-বুদ্ধির কাজে কোনটা ভালো, `delegate_task` না `execute_code`?",
+      "options": [
+        "`execute_code`, কারণ সস্তা",
+        "দুটোই সমান",
+        "`delegate_task`, আর যান্ত্রিক pipeline-এ `execute_code`",
+        "কোনোটাই নয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "Judgment-এর কাজে পুরো যুক্তি-চক্র লাগে (`delegate_task`); যান্ত্রিক কাজে সস্তা `execute_code`।"
+    }
+  ],
+  "recap": [
+    "`delegate_task` child agent ছাড়ে; প্রতিটার নতুন context ও নিজের terminal, parent-এ শুধু সারাংশ ফেরে।",
+    "Child কিছুই জানে না, তাই `goal` ও `context`-এ সব লিখে দাও।",
+    "Batch default-এ ১০টা concurrent; `max_spawn_depth` দিয়ে গভীরতা, তবে খরচ সাবধানে।",
+    "`clarify`, `memory`, `send_message`, `cronjob` child-এর জন্য বন্ধ।",
+    "`delegation.model` দিয়ে child-এ সস্তা model; `/agents` দিয়ে নজর ও steer।",
+    "Background child restart-এ টেকে না; টেকসই কাজে cron ব্যবহার করো।"
+  ]
+}

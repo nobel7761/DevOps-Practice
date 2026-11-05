@@ -1,0 +1,184 @@
+{
+  "contentId": "hermes-doc-user-guide-messaging-slack",
+  "title": "Slack",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/slack",
+  "oneLiner": "এই lesson শেষে তুমি Slack-এ Hermes-কে ঢোকাতে এবং Socket Mode, token, scope, event-এর মতো কঠিন শব্দগুলো বুঝে সঠিকভাবে সাজাতে পারবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: অফিসের রিসেপশন ডেস্ক\n\nধরো অফিসে নতুন সহকারী **Hermes** এসেছে। বাইরের রাস্তা থেকে কেউ তাকে ডাকে না। বরং সে অফিসের ভেতরে একটা **গোপন ফোন-লাইন** দিয়ে নিজেই অফিসের সাথে জুড়ে থাকে। এই ফোন-লাইনের নাম **Socket Mode**। তাই অফিসের বাইরে কোনো দরজা (public URL) খুলতে হয় না।\n\nসহকারীর কাছে দুটো পরিচয়পত্র লাগে:\n\n- 🪪 **`xoxb-` bot token**: \"আমি এই অফিসের সহকারী।\"\n- 🎫 **`xapp-` app-level token**: \"আমি ফোন-লাইনে জুড়তে পারি।\"\n\nঅফিসের নিয়ম: **DM-এ** ডাকলেই উত্তর। **channel-এ** `@Hermes` বলতে হবে। আর একবার কথোপকথন (thread) শুরু হলে পরের উত্তরে আবার ডাকতে হয় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Slack ও workspace\nSlack হলো অফিসের জন্য chat app। একটা কোম্পানির পুরো Slack-কে বলে **workspace**, যেন একটা অফিস-ভবন। ভেতরে **channel** মানে আলাদা বিষয়ের ঘর।\n\n### Slack app ও bot\nHermes-কে Slack-এ ঢোকানোর জন্য তোমাকে একটা **Slack app** বানাতে হয়, আর তার ভেতরে থাকে bot-ব্যবহারকারী। যেন অফিসে নতুন কর্মী নিয়োগ।\n\n### Token (`xoxb-` ও `xapp-`)\nগোপন পাসওয়ার্ড-জাতীয় লেখা। `xoxb-` শুরু হলে বার্তা পাঠানো-পড়ার জন্য। `xapp-` শুরু হলে সরাসরি সংযোগের (Socket Mode) জন্য। দুটোই লাগে।\n\n### Socket Mode ও public URL\nসাধারণত Slack কোনো ঘটনা ঘটলে তোমার ওয়েব-ঠিকানায় ডাক পাঠায়। তার জন্য ইন্টারনেটে একটা খোলা ঠিকানা (**public URL**) লাগে। **Socket Mode**-এ উল্টো: Hermes নিজেই Slack-এর সাথে একটা সংযোগ খুলে রাখে (**WebSocket**, চালু থাকা ফোন-কলের মতো)। তাই বাইরে দরজা খুলতে হয় না, নিরাপদ।\n\n### Scope ও Event\n**Scope** হলো অনুমতি (\"বার্তা লিখতে পারবে\", \"ফাইল পড়তে পারবে\")। **Event** হলো কোন ঘটনার খবর Slack পাঠাবে (\"কেউ DM করল\", \"কেউ mention করল\")।\n\n### Member ID\nSlack-এ প্রতিজনের একটা পরিচয়-কোড, যেমন `U01ABC2DEF3`। username নয়, এই কোড দিয়ে Hermes মানুষ চেনে।\n\n### Manifest\nপুরো app-এর সব সেটিং এক ফাইলে (JSON আকারে) লেখা। এক ধাক্কায় paste করলে সব ঠিক হয়ে যায়, যেন তৈরি ফর্ম।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes Socket Mode-এ Slack-এর সাথে নিজেই WebSocket জুড়ে রাখে, তাই public URL লাগে না।",
+        "nodes": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "Slack user",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "s",
+            "kind": "external",
+            "label": "Slack",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "g",
+            "kind": "gateway",
+            "label": "Hermes gateway",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Agent",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "s",
+            "label": "বার্তা/@mention"
+          },
+          {
+            "from": "g",
+            "to": "s",
+            "label": "Socket Mode"
+          },
+          {
+            "from": "g",
+            "to": "a",
+            "label": "চালাও"
+          },
+          {
+            "from": "a",
+            "to": "s",
+            "label": "উত্তর (xoxb-)"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Slack app বানানো: ধাপে ধাপে\n\nHermes Slack-এর সাথে Python-এর `slack-bolt` ও `slack_sdk` library দিয়ে কথা বলে। মনে রাখো: পুরোনো Classic (RTM) Slack app ২০২৫-এর মার্চে deprecated (বাতিলের পথে)। তাই নতুন app বানাও। আর user-কে চেনা হয় **Member ID** দিয়ে, username দিয়ে নয়।\n\n### সবচেয়ে সহজ পথ: manifest\n\n```bash\nhermes slack manifest --agent-view --write\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes slack manifest` | Slack app-এর পুরো সেটিংসের ফাইল বানিয়ে দেয় |\n| `--agent-view` | নতুন ধরনের Slack agent-দৃশ্য ব্যবহার করে। পুরোনো Assistant view চালানো app হলে এটা **বাদ** দাও |\n| `--write` | ফাইলটা `~/.hermes/slack-manifest.json`-এ লিখে রাখে |\n| `--long-description-file <path>` | app-এর লম্বা বর্ণনা ফাইল থেকে নেয় (Slack ১৭৫ থেকে ৪,০০০ অক্ষর নেয়) |\n\nতারপর api.slack.com/apps → *Create New App → From an app manifest* → JSON paste। এতে scope, event সবই এক ধাক্কায় ঠিক হয়ে যায়।\n\n### হাতে করলে (Option B)\n\n1. **Bot Token Scopes** (OAuth & Permissions পাতায়):\n   - আবশ্যক: `chat:write`, `app_mentions:read`, `channels:history`, `channels:read`, `groups:history`, `im:history`, `im:read`, `im:write`, `mpim:history`, `mpim:read`, `users:read`, `files:read`, `files:write`\n   - ঐচ্ছিক: `groups:read`, `assistant:write`\n2. **Socket Mode** চালু করো। `connections:write` scope-সহ app-level token (`xapp-`) বানাও। এটাই `SLACK_APP_TOKEN`।\n3. **Event Subscriptions:** `message.im`, `message.mpim`, `message.channels`, `app_mention` (সবই আবশ্যক) আর `message.groups` (সুপারিশকৃত)।\n4. **App Home → Messages Tab** চালু করো, আর user-কে বার্তা পাঠাতে দেওয়ার অপশন টিক দাও। নইলে Slack বলবে \"Sending messages to this app has been turned off\"।\n5. **Install App** চাপো। Bot User OAuth Token (`xoxb-`) কপি করো। এটাই `SLACK_BOT_TOKEN`।\n6. নিজের **Member ID** বের করো: profile → ⋮ → Copy member ID।\n\nscope-এর নাম পড়ার সহজ নিয়ম: `channels` = সবার জন্য খোলা channel, `groups` = private channel, `im` = দুজনের DM, `mpim` = কয়েকজনের group DM। `history` = পুরোনো বার্তা পড়া, `read` = তথ্য জানা, `write` = লেখা।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Scope বা event বদলালে reinstall",
+      "markdown": "কোনো scope বা event subscription বদলালে app আবার **reinstall** করতে হয়। না করলে বদল কাজ করে না। এটাই সবচেয়ে সাধারণ ভুল। আর `channels:history`/`groups:history` না থাকলে bot শুধু DM-এ কাজ করবে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hermes configure করা\n\n`~/.hermes/.env`:\n\n```bash\nSLACK_BOT_TOKEN=xoxb-...        # আবশ্যক\nSLACK_APP_TOKEN=xapp-...        # আবশ্যক\nSLACK_ALLOWED_USERS=U01ABC2DEF3 # আবশ্যক, কমা দিয়ে Member ID\nSLACK_HOME_CHANNEL=C...         # cron/proactive বার্তা\n```\n\n| লাইন | মানে | কখন লাগে |\n|---|---|---|\n| `SLACK_BOT_TOKEN` | `xoxb-` পরিচয়পত্র | বার্তা পড়া-লেখার জন্য, সবসময় |\n| `SLACK_APP_TOKEN` | `xapp-` পরিচয়পত্র | Socket Mode সংযোগের জন্য, সবসময় |\n| `SLACK_ALLOWED_USERS` | অনুমোদিত মানুষের Member ID | না দিলে **সব বার্তা deny** হয় |\n| `SLACK_HOME_CHANNEL` | cron বা নিজে থেকে পাঠানো বার্তার ঠিকানা | রোজকার রিপোর্ট পাঠাতে |\n\nচালানোর উপায়:\n\n```bash\nhermes gateway setup            # interactive, Slack বেছে নাও\nhermes gateway                  # foreground (সামনের জানালায়)\nhermes gateway install          # user service (নিজে চালু থাকে)\nsudo hermes gateway install --system   # Linux boot-time service\n```\n\nশেষ ধাপ: যে channel-এ চাও সেখানে `/invite @Hermes Agent` লেখো। bot নিজে কোনো channel-এ ঢোকে না, যেন নিমন্ত্রণ ছাড়া অতিথি ঢোকে না।\n\n## Hermes কখন উত্তর দেয়\n\n- **DM:** mention ছাড়াই সব বার্তায়।\n- **Channel:** শুধু @mention করলে, আর উত্তর দেয় thread-এ।\n- **Thread:** active session শুরু হয়ে গেলে পরের উত্তরে mention লাগে না।\n\n### config.yaml: `platforms.slack`\n\n- `reply_to_mode`: `off | first (default) | all`\n- `extra.reply_in_thread` (default `true`), `extra.reply_broadcast` (default `false`)\n- `extra.rich_blocks` (default `false`): Block Kit (Slack-এর সাজানো ছক) দিয়ে header, divider, table। বড় table (১০০ row / ২০ column / ১০ হাজার অক্ষর ছাড়ালে) monospace লেখায় নামে।\n- `extra.native_task_cards`, `extra.suggested_prompts` (সর্বোচ্চ ৪টা), `extra.allow_bots`\n- `channel_prompts`: channel ID ধরে আলাদা system prompt (Hermes-কে গোপন আচরণ-নির্দেশ)\n- `channel_skill_bindings`: channel-এ নির্দিষ্ট Skill বাঁধা। বদলালে `/new` দিতে হয়\n- `group_sessions_per_user` (default `true`): `false` করলে channel-এ একটাই session, আর একজনের `/reset` সবার জন্য মুছে দেয়\n- `unauthorized_dm_behavior`: `pair` (default, code দিয়ে অনুমতি চাওয়া) বা `ignore` (চুপ থাকা)\n\n**Mention নিয়ন্ত্রণের চাবি:** `require_mention` (default `true`), `strict_mention` (প্রতি বার্তায়, thread-এও, নতুন mention লাগবে), `thread_require_mention`, `free_response_channels`, `allowed_channels`, `mention_patterns` (যেমন `\"hey hermes\"`), `reply_prefix`। Env var থাকলে সেটা YAML-কে হারায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Slash command ও thread-এর ঝামেলা\n\nHermes-এর প্রতিটা command (`/stop`, `/new`, `/model`, `/help`…) Slack-এর native slash command হয়ে যায়। আপডেটের পর তালিকা নতুন করতে:\n\n```bash\nhermes slack manifest --write\n```\n\nতারপর App Manifest-এ নতুন JSON paste করো (Slack reinstall চাইতে পারে)।\n\n**Thread-এর সীমাবদ্ধতা:** Slack নিজেই thread-এর ভেতরে native slash command আটকে দেয়। তাই `!` prefix ব্যবহার করো: `!queue`, `!stop`, `!model`। শুধু প্রথম শব্দ command তালিকায় মেলানো হয়, তাই `!nice work` সাধারণ বার্তা হিসেবে agent-এ যায়। button না চললে `!approve` / `!deny` লিখতে পারো।\n\nSlash command-এর উত্তর **ephemeral**, মানে শুধু তুমি দেখো। লম্বা হলে follow-up ephemeral বার্তায় ভাগ হয়; পুরো reply-flow সর্বোচ্চ ৫টা post-এ থামে, তার বেশি হলে truncation notice আসে। public পোস্টে কখনো নামে না।\n\n## আরও সুবিধা\n\n- **Bot-to-bot (`allow_bots`):** `none` (default), `mentions` (সুপারিশকৃত, বার্তাতেই নিজেকে mention থাকতে হবে), `all` (লুপের ঝুঁকি)। নিজের বার্তা Hermes সবসময় উপেক্ষা করে।\n- **Reaction trigger:** `reactions:read` scope আর `reaction_added/removed` event লাগে। emoji দিয়েও agent চালানো যায়।\n- **Working-state status:** `display.live_status` (`full`/`verb`/`off`)। `assistant:write` scope লাগে।\n- **Multi-workspace:** `SLACK_BOT_TOKEN`-এ কমা দিয়ে একাধিক token। প্রথমটা প্রধান Socket Mode সংযোগ।\n- **Cron/home channel:** `deliver: slack` home channel-এ যায়, `slack:C…` নির্দিষ্ট channel-এ, `slack:U…` কারও DM-এ (`im:write` লাগে)। (**Cron** মানে সময় ঠিক করে দেওয়া কাজ।)\n- **Voice:** আসা audio লেখায় বদলায় (faster-whisper / Groq / OpenAI Whisper), TTS (লেখা থেকে কণ্ঠ) audio attachment হয়ে যায়।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Slack-এ একই bot DM আর channel-এ আলাদা আচরণ করে।",
+        "beforeTitle": "DM",
+        "before": "- mention লাগে না\n- প্রতিটা বার্তায় উত্তর\n- Messages Tab চালু থাকতে হবে",
+        "afterTitle": "Channel",
+        "after": "- `@Hermes` mention লাগে\n- আগে `/invite @Hermes Agent`\n- `message.channels` + `channels:history` লাগে\n- উত্তর thread-এ"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সমস্যা-সমাধান ছক\n\n| সমস্যা | কী করবে |\n|---|---|\n| DM কাজ করে না | `message.im` আছে? Messages Tab চালু? reinstall করেছ? |\n| DM-এ চলে, channel-এ না | `message.channels`, `message.groups` যোগ করে reinstall, তারপর `/invite` |\n| Private channel-এ না | `message.groups` + `groups:history` + invite |\n| Group DM-এ না | `message.mpim`, `mpim:history`, `mpim:read` |\n| ফাইল পড়ে না | `files:read` যোগ করে reinstall |\n| `not_authed` / `invalid_auth` | (মানে \"পরিচয় মিলছে না\") দুটো token নতুন করে বানিয়ে `.env` ঠিক করো |\n| `missing_scope` | scope যোগ করে reinstall |\n\n**শেষ checklist:** `message.channels`, `message.groups`, `app_mention` subscribe। `channels:history`, `groups:history` যোগ। reinstall। `/invite @Hermes Agent`। বার্তায় @mention।\n\n**নিরাপত্তা:** token `~/.hermes/.env`-এ রাখো আর `chmod 600` দাও (মানে শুধু তুমি পড়তে-লিখতে পারো)। মাঝে মাঝে token বদলাও। Socket Mode-এ কোনো public endpoint খোলা থাকে না।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Slack-এ Hermes চালাতে public URL লাগে না কেন?",
+      "options": [
+        "Slack নিজে Hermes-এর বাড়িতে আসে",
+        "Socket Mode-এ Hermes নিজেই Slack-এর সাথে WebSocket সংযোগ খুলে রাখে",
+        "Slack কোনো নিরাপত্তা দেখে না",
+        "Hermes ইন্টারনেট ছাড়াই চলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "Hermes ভেতর থেকে বাইরে সংযোগ খোলে, তাই বাইরে থেকে ভেতরে আসার জন্য দরজা খুলতে হয় না।"
+    },
+    {
+      "question": "`SLACK_APP_TOKEN` কোন prefix দিয়ে শুরু হয়?",
+      "options": ["`xoxb-`", "`xapp-`", "`sk-`", "`U01`"],
+      "answerIndex": 1,
+      "explanation": "`xapp-` হলো app-level token, Socket Mode-এর জন্য। `xoxb-` হলো bot token।"
+    },
+    {
+      "question": "Bot DM-এ চলে কিন্তু channel-এ চুপ। সম্ভাব্য ঘাটতি কী?",
+      "options": [
+        "`message.channels` ও `channels:history` নেই, বা reinstall/`/invite` করা হয়নি",
+        "Hermes-এর license শেষ",
+        "ফোন charge নেই",
+        "`xapp-` token বড়"
+      ],
+      "answerIndex": 0,
+      "explanation": "DM আর channel-এর event ও scope আলাদা। channel-এর জন্য আলাদা event, scope, reinstall আর invite লাগে।"
+    },
+    {
+      "question": "Thread-এর ভেতরে `/stop` কাজ না করলে কী করবে?",
+      "options": [
+        "`!stop` লিখবে",
+        "Slack মুছে ফেলবে",
+        "কিছুই করবে না",
+        "Hermes reinstall করবে"
+      ],
+      "answerIndex": 0,
+      "explanation": "Slack thread-এর ভেতরে native slash command আটকে দেয়। তাই `!` prefix ব্যবহার হয়।"
+    },
+    {
+      "question": "`SLACK_ALLOWED_USERS` সেট না থাকলে কী হয়?",
+      "options": [
+        "সবাই ঢুকতে পারে",
+        "সব বার্তা deny হয়",
+        "শুধু admin ঢোকে",
+        "bot মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "allowlist না থাকলে নিরাপদ ডিফল্টে সবাইকে ফিরিয়ে দেওয়া হয়।"
+    },
+    {
+      "question": "`allow_bots`-এর কোন মান সুপারিশকৃত?",
+      "options": ["`all`", "`mentions`", "`none` সবসময়", "কোনোটাই না"],
+      "answerIndex": 1,
+      "explanation": "`mentions` মানে বার্তায় নিজেকে mention থাকতে হবে। `all` লুপের ঝুঁকি দেয়। ডিফল্ট `none`।"
+    },
+    {
+      "question": "Scope বা event বদলানোর পর বদল কার্যকর করতে কী লাগে?",
+      "options": [
+        "Slack বন্ধ করা",
+        "app আবার reinstall করা",
+        "কম্পিউটার বন্ধ করা",
+        "কিছুই না"
+      ],
+      "answerIndex": 1,
+      "explanation": "reinstall না করলে বদল কাজ করে না। এটাই সবচেয়ে সাধারণ ভুল।"
+    }
+  ],
+  "recap": [
+    "Slack-এ Hermes Socket Mode ব্যবহার করে, তাই public URL লাগে না।",
+    "দুটো token লাগে: `xoxb-` (bot) আর `xapp-` (app-level)।",
+    "সবচেয়ে সহজ পথ `hermes slack manifest --agent-view --write`।",
+    "scope বা event বদলালে app reinstall করতেই হয়।",
+    "thread-এর ভেতরে slash command-এর বদলে `!` prefix ব্যবহার করো।"
+  ]
+}

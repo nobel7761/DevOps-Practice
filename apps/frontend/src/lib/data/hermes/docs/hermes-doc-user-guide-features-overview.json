@@ -1,0 +1,221 @@
+{
+  "contentId": "hermes-doc-user-guide-features-overview",
+  "title": "Features Overview",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/overview",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর সব feature-এর একটা মানচিত্র পাবে, আর প্রতিটা কঠিন শব্দ (tool, skill, cron, MCP, sandbox, API key...) সহজ উপমায় বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: Swiss Army Knife\n\nধরো রাহিম একটা ছুরি কিনল। দোকানদার বলল, \"এটা শুধু ছুরি না, এটা **Swiss Army Knife**!\" রাহিম খুলে দেখে কাঁচি আছে, স্ক্রু-ড্রাইভার আছে, বোতল-খোলার জিনিস আছে, ছোট করাতও আছে। প্রথমে সে ভয় পেল: \"এত কিছু আমি শিখব কীভাবে?\"\n\nদোকানদার হাসল: \"সব একসাথে শিখতে হবে না। আগে দেখো কোন জিনিস কোন কাজের, তারপর যখন যেটা লাগে সেটা খুলবে।\"\n\n**Hermes Agent-ও ঠিক তাই।** সে শুধু chat করার বট না। তার ভেতরে স্মৃতি আছে, ফাইল পড়ার ক্ষমতা আছে, browser চালানোর ক্ষমতা আছে, গলার আওয়াজও আছে। এই lesson হলো একটা **মানচিত্র**: কোন feature কী কাজ করে, কেন লাগে, এক-দুই লাইনে। পরের lesson-গুলোতে একটা একটা করে খুলব।\n\n> Quick start (docs অনুযায়ী): `hermes setup --portal` চালালে model provider আর চারটা Tool Gateway tool (web search, image generation, TTS, browser) একসাথে সেট হয়ে যায়।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\nএই lesson-এ অনেক নতুন শব্দ আসবে। আগে সবচেয়ে দরকারি ৮টা বুঝে নাও। বাকিগুলো যেখানে আসবে সেখানেই বুঝিয়ে দেব।\n\n| শব্দ | মানে (সহজ কথায়) | দৈনন্দিন উদাহরণ |\n|---|---|---|\n| **Agent** | যে AI শুধু কথা বলে না, নিজে কাজও করে (ফাইল পড়ে, ওয়েবে খোঁজে) | শুধু পরামর্শ দেয় এমন বন্ধু নয়, যে নিজে হাত লাগায় এমন সহকারী |\n| **Model / LLM** | AI-এর \"মগজ\"। LLM মানে Large Language Model, বিশাল লেখা পড়ে শেখা প্রোগ্রাম যে লেখা বোঝে ও লেখে | স্কুলের খুব পড়ুয়া ছাত্র |\n| **Provider** | যে কোম্পানি ওই মগজ ভাড়া দেয় (যেমন Anthropic, OpenRouter) | বিদ্যুৎ কোম্পানি, তুমি লাইন নাও |\n| **Tool** | Hermes যে ছোট ছোট কাজ করতে পারে: ওয়েবে খোঁজা, ফাইল লেখা | রান্নাঘরের ছুরি, চামচ, হাতা |\n| **Toolset** | কয়েকটা tool-এর দল | একটা টুলবক্স |\n| **Skill** | একটা কাজ কীভাবে করতে হয় তার লেখা নির্দেশিকা। দরকার হলে পড়ে নেয় | রান্নার রেসিপির বই |\n| **Memory** | সব কথোপকথন পেরিয়ে মনে রাখা ছোট নোট | ফ্রিজের গায়ে সাঁটা কাগজ |\n| **Session** | একবার শুরু থেকে শেষ পর্যন্ত একটা কথোপকথন | একটা ফোনকল |\n\nআরও কয়েকটা, যেগুলো নিচে আসবে: **Cron** (ঘড়ি ধরে কাজ), **MCP** (অন্য প্রোগ্রামের tool ধার করার নিয়ম), **API key** (গোপন পাসওয়ার্ডের মতো চাবি), **Plugin** (যোগ করা অতিরিক্ত অংশ)।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "Hermes-এর feature-গুলো পাঁচটা ঘরে ভাগ করা: Core, Automation, Media & Web, Integrations, Customization।",
+        "nodes": [
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes Agent",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "core",
+            "kind": "database",
+            "label": "Core",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "auto",
+            "kind": "queue",
+            "label": "Automation",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "media",
+            "kind": "cdn",
+            "label": "Media & Web",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "integ",
+            "kind": "gateway",
+            "label": "Integrations",
+            "x": 110,
+            "y": 240
+          },
+          {
+            "id": "cust",
+            "kind": "client",
+            "label": "Customization",
+            "x": 330,
+            "y": 240
+          }
+        ],
+        "edges": [
+          {
+            "from": "h",
+            "to": "core",
+            "label": "মূল শক্তি"
+          },
+          {
+            "from": "h",
+            "to": "auto",
+            "label": "নিজে নিজে কাজ"
+          },
+          {
+            "from": "h",
+            "to": "media",
+            "label": "চোখ-কান-মুখ"
+          },
+          {
+            "from": "h",
+            "to": "integ",
+            "label": "বাইরের জগৎ"
+          },
+          {
+            "from": "h",
+            "to": "cust",
+            "label": "নিজের মতো সাজাও"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ১. Core: Hermes-এর মূল শক্তি\n\nএই ঘরের feature-গুলো ছাড়া Hermes শুধু একটা সাধারণ chat বট হতো। এখানে \"এটা না থাকলে কী হতো\" সহ দেখো।\n\n| Feature | সহজ কথায় | না থাকলে কী সমস্যা |\n|---|---|---|\n| **Tools & Toolsets** | Hermes-এর হাত-পা। কাজগুলো (function) দলে (toolset) ভাগ করা। কোন প্ল্যাটফর্মে কোন দল চালু থাকবে ঠিক করা যায়: web search, terminal, file editing, memory, delegation | শুধু কথা বলতে পারত, কাজ করতে পারত না |\n| **Skills System** | দরকারের সময় খোলা হয় এমন জ্ঞানের নথি। \"progressive disclosure\" মানে সব একবারে না ঢুকিয়ে ধাপে ধাপে দেখানো, যাতে token বাঁচে। এটা agentskills.io standard-এর সাথে মেলে | সব নির্দেশ একসাথে ঢোকালে মগজ ভরে যেত, খরচও বাড়ত |\n| **Persistent Memory** | session পেরিয়েও মনে রাখা ছোট, গোছানো স্মৃতি: `MEMORY.md` আর `USER.md` | প্রতিদিন আবার নতুন করে নিজের পরিচয় দিতে হতো |\n| **Context Files** | project-এর ফাইল নিজে নিজে লোড হয়: `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `SOUL.md`, `.cursorrules` | প্রতিবার project-এর নিয়ম হাতে লিখে বোঝাতে হতো |\n| **Context References** | `@` লিখে ফাইল, folder, git diff বা URL সরাসরি message-এ ঢুকিয়ে দাও | ফাইলের লেখা কপি-পেস্ট করতে হতো |\n| **Checkpoints** | ফাইল বদলানোর আগে working directory-র ছবি (snapshot) তোলে। ভুল হলে `/rollback` | ভুল হলে আগের অবস্থায় ফেরার উপায় থাকত না |\n\nকয়েকটা শব্দ: **token** মানে AI যে ছোট ছোট লেখার টুকরো গুনে পড়ে (এবং যার হিসেবে টাকা লাগে)। **Working directory** মানে এই মুহূর্তে তুমি যে ফোল্ডারে কাজ করছ। **Snapshot** মানে সেই মুহূর্তের একটা ছবির মতো কপি। `/rollback` মানে \"আগের ছবিতে ফিরে যাও\", ঠিক ভিডিও গেমের save-load-এর মতো।\n\n## ২. Automation: নিজে নিজে কাজ\n\n- **Scheduled Tasks (Cron):** তুমি ঘুমিয়ে থাকলেও কাজ হবে। সাধারণ ভাষায় (\"প্রতি সকাল ৮টায়\") বা cron expression-এ সময় ঠিক করো। **Cron** হলো কম্পিউটারের অ্যালার্ম-ঘড়ি, যে ঠিক সময়ে একটা কাজ চালায়। job-এ skill জুড়তে পারো, যেকোনো platform-এ ফল পাঠাতে পারো (platform মানে Telegram, Discord-এর মতো মেসেজ app), pause/resume/edit করা যায়।\n- **Subagent Delegation:** `delegate_task` tool ছোট \"child agent\" বানায়। বড় ভাই ছোট ভাইকে কাজ ভাগ দেওয়ার মতো। প্রতিটার আলাদা context (মনে রাখার জায়গা), সীমিত toolset, নিজের terminal session। ডিফল্টে একসাথে **১০টা** subagent চলে (বদলানো যায়)।\n- **Code Execution:** `execute_code` tool agent-এর লেখা Python চালায়। সেই code \"sandboxed RPC\" দিয়ে Hermes-এর tool ডাকে। **Sandbox** মানে বালির বাক্স, ভেতরে খেললে বাইরে ক্ষতি হয় না। **RPC** মানে এক প্রোগ্রাম অন্য প্রোগ্রামকে ফোন করে কাজ করানো। সুবিধা: অনেক ধাপের কাজ **একটা LLM turn**-এ হয়ে যায় (turn মানে মগজকে একবার ডেকে উত্তর নেওয়া)।\n- **Event Hooks:** কিছু ঘটলে নিজে নিজে চলা ছোট কাজ। দরজায় ঘণ্টার মতো, কেউ ঢুকলে বাজে। দুই রকম: gateway hook (logging, alert, webhook) আর plugin hook (tool আটকানো, metrics, guardrail)। **Gateway** মানে Hermes-কে মেসেজ app-এর সাথে জোড়া লাগানোর দরজা, **webhook** মানে কিছু ঘটলে অন্য প্রোগ্রামের ঠিকানায় খবর পাঠানো, **guardrail** মানে রাস্তার পাশের রেলিং, যাতে ভুল দিকে না যায়।\n- **Batch Processing:** শত-হাজার prompt সমান্তরালে (একসাথে) চালিয়ে ShareGPT-format trajectory data বানায়। এটা training/evaluation-এর জন্য, মানে AI-কে শেখানো বা পরীক্ষা করার জন্য ডেটা তৈরি।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "কীভাবে মনে রাখবে",
+      "markdown": "প্রতিটা feature মুখস্থ করার দরকার নেই। নিজেকে প্রশ্ন করো: \"আমি কী চাইছি?\" মনে রাখা চাইলে **Memory**। বারবার করানো চাইলে **Cron**। অন্যকে কাজ ভাগ দেওয়া চাইলে **Delegation**। ফাইল দেখানো চাইলে **Context References**। উত্তর পেলে সেই feature-এর lesson খোলো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ৩. Media & Web: চোখ, কান, মুখ\n\n- **Voice Mode:** microphone দিয়ে কথা বলা, উত্তর শোনা। CLI (terminal-এ লিখে চালানো রূপ) আর messaging-এ চলে, এমনকি Discord voice channel-এও।\n- **Wake Word:** on-device \"Hey Hermes\" hotword। \"On-device\" মানে তোমার নিজের কম্পিউটারের ভেতরেই শোনা, ইন্টারনেটে পাঠানো ছাড়া। Alexa-কে \"Alexa\" বলে ডাকার মতো। CLI, TUI (terminal-এর ভেতরের সাজানো পর্দা) বা desktop app-এ voice session শুরু করে।\n- **Browser Automation:** Hermes নিজে ওয়েবসাইট খুলে ক্লিক করে। backend (পেছনের ইঞ্জিন) হিসেবে Browserbase cloud, Browser Use cloud, local Chrome/Brave/Chromium/Edge (CDP দিয়ে, মানে browser-কে দূর থেকে চালানোর protocol) বা local Chromium।\n- **Vision & Image Paste:** clipboard-এ (কপি করা জিনিসের অস্থায়ী জায়গা) থাকা ছবি CLI-তে paste করো। vision-capable model (যে মগজ ছবি দেখতে পারে) সেটা বিশ্লেষণ করবে।\n- **Image Generation:** FAL.ai-এর text-to-image, মানে লিখে বললে ছবি আঁকে। **১১টা model** আছে (FLUX 2 Klein/Pro, GPT-Image 1.5/2, Nano Banana Pro, Ideogram V3, Recraft V4 Pro, Qwen, Z-Image Turbo, Krea V2 Medium/Large)। `hermes tools` দিয়ে বাছাই করো।\n- **Voice & TTS:** TTS মানে text-to-speech, লেখাকে কথায় পড়ে শোনানো। সব messaging platform-এ চলে, আর voice-message transcription (কথা থেকে লেখা) ও আছে। **দশটা** native provider: Edge TTS (ফ্রি), ElevenLabs, OpenAI TTS, MiniMax, Mistral Voxtral, Google Gemini, xAI, NeuTTS, KittenTTS, Piper। যেকোনো local TTS CLI-র জন্য custom command provider-ও চলে।\n\n## ৪. Integrations: বাইরের জগতের সাথে যোগ\n\n| Feature | কাজ | কেন লাগে |\n|---|---|---|\n| **MCP Integration** | MCP হলো AI-এর জন্য \"সবার একই plug\" নিয়ম। যেকোনো MCP server-এর সাথে stdio (সরাসরি পাইপ) বা HTTP (ইন্টারনেট) দিয়ে যুক্ত হয়। প্রতি server-এর tool ছেঁকে নেওয়া ও sampling সাপোর্ট আছে | অন্যের বানানো tool নিজে না বানিয়ে ধার নেওয়ার জন্য |\n| **Provider Routing** | খরচ, গতি বা মান অনুযায়ী কোন provider কাজ করবে ঠিক করা (sorting, allowlist, blocklist, priority) | সস্তা বা দ্রুত পথ বেছে নেওয়ার জন্য |\n| **Fallback Providers** | error হলে নিজে নিজে backup LLM-এ চলে যায়। vision/compression-এর মতো সহায়ক কাজের জন্য আলাদা fallback | একটা কোম্পানির সার্ভার বন্ধ হলেও কাজ না থামার জন্য |\n| **Credential Pools** | একই provider-এর একাধিক API key-তে কাজ ছড়িয়ে দেয়। rate limit বা failure হলে ঘুরিয়ে নেয় | এক key-র সীমা ফুরোলে অন্য key চালানোর জন্য |\n| **Prompt Caching** | সবসময় চালু। session পেরিয়ে **১ ঘণ্টার** prefix cache। native Anthropic, OpenRouter, Nous Portal-এ Claude-এর জন্য। কোনো config লাগে না | একই শুরুর অংশ বারবার পড়ার খরচ বাঁচানোর জন্য |\n| **Memory Providers** | বাইরের memory backend (RetainDB, ByteRover; plugin catalog-এ Honcho, Hindsight, Supermemory, Mem0, OpenViking, Holographic) | বড় ও গভীর স্মৃতির জন্য |\n| **API Server** | Hermes-কে OpenAI-compatible HTTP endpoint বানায়। Open WebUI, LobeChat, LibreChat-এর মতো frontend-এর জন্য | চেনা chat পর্দার পেছনে Hermes বসানোর জন্য |\n| **IDE Integration (ACP)** | VS Code, Zed, JetBrains-এ chat, tool activity, file diff, terminal command দেখায় | কোড লেখার editor ছেড়ে না বেরিয়ে Hermes ব্যবহারের জন্য |\n\nশব্দ ব্যাখ্যা: **API key** একটা গোপন চাবি। প্রতিটা provider এটা দেয়, দেখায় তুমি কে। **Rate limit** মানে \"এক মিনিটে এত বারের বেশি ডাকা যাবে না\" সীমা। **Cache** মানে আগের কাজ মনে রেখে দ্বিতীয়বার সেটা না করা, যেমন একই ফোন নম্বর খাতায় লিখে রাখা। **Endpoint** মানে একটা ইন্টারনেট ঠিকানা যেখানে অন্য প্রোগ্রাম কথা বলতে পারে। **Frontend** মানে পর্দায় যা দেখা যায়। **IDE** মানে কোড লেখার বিশেষ editor।\n\n## ৫. Customization: নিজের মতো সাজাও\n\n- **Personality & SOUL.md:** `SOUL.md` হলো Hermes-এর মূল পরিচয়ের ফাইল। এটা system prompt-এর **একদম শুরুতে** বসে। (**System prompt** মানে মগজকে কাজ শুরুর আগে দেওয়া গোপন নির্দেশ-খাতা।) `/personality` দিয়ে built-in বা নিজের preset session-ভিত্তিক বদলানো যায়।\n- **Skins & Themes:** শুধু সাজ। banner-এর রং, spinner-এর মুখ ও ক্রিয়াপদ, response-box-এর label, branding লেখা, tool activity prefix।\n- **Plugins:** core code না ছুঁয়ে tool/hook/integration যোগ করা। তিন ধরন: general (tools/hooks), memory provider, context engine। চালাও `hermes plugins` দিয়ে। এটা ফোনে নতুন app বসানোর মতো, ফোনের মূল সফটওয়্যার না বদলেই।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "সাধারণ chat bot বনাম Hermes Agent।",
+        "beforeTitle": "সাধারণ chat bot",
+        "before": "- প্রতি কথোপকথনে শুরু থেকে\n- ফাইল দেখতে পায় না\n- শুধু উত্তর দেয়, কাজ করে না\n- সময় ধরে নিজে কিছু করে না",
+        "afterTitle": "Hermes Agent",
+        "after": "- Memory দিয়ে মনে রাখে\n- Context Files/References দিয়ে project বোঝে\n- Tools দিয়ে terminal, browser, file চালায়\n- Cron দিয়ে নিজে নিজে সময়মতো কাজ করে"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## প্রথম কমান্ডটা ভেঙে দেখি\n\n```bash\nhermes setup --portal\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `hermes` | terminal-এ Hermes প্রোগ্রামটা ডাকা। (**Terminal** হলো সেই জানালা যেখানে লিখে কম্পিউটারকে হুকুম দাও) | নাম ধরে সহকারীকে ডাকা |\n| `setup` | \"প্রথমবার গুছিয়ে দাও\" উপ-হুকুম | নতুন বাসায় জিনিস গোছানো |\n| `--portal` | একটা flag, মানে বাড়তি পছন্দ। এখানে Nous Portal দিয়ে সব একসাথে বসাও | \"সব একটা প্যাকেজে দাও\" বলা |\n\n**কী পাবে:** model provider আর চারটা tool (web search, image generation, TTS, browser) একসাথে সেট হয়ে যাবে। না হলে চারটা আলাদা কোম্পানিতে আলাদা account খুলে আলাদা key বসাতে হতো।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "লাইসেন্স ও সাহায্য",
+      "markdown": "docs অনুযায়ী Hermes Agent **MIT licensed** (মানে বিনা বাধায় ব্যবহার, বদল ও ভাগ করা যায়) এবং Nous Research তৈরি করেছে। সাহায্যের জায়গা: Discord, GitHub Issues, Skills Hub।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "রহিম চায় প্রতি সকালে Hermes নিজে নিজে একটা কাজ করে তাকে Telegram-এ জানাক। কোন feature লাগবে?",
+      "options": [
+        "Context References",
+        "Checkpoints",
+        "Scheduled Tasks (Cron)",
+        "Wake Word"
+      ],
+      "answerIndex": 2,
+      "explanation": "Cron হলো অ্যালার্ম-ঘড়ির মতো, ঠিক সময়ে কাজ চালায় এবং ফল যেকোনো platform-এ পাঠাতে পারে।"
+    },
+    {
+      "question": "Skills System-এ \"progressive disclosure\"-এর মূল সুবিধা কী?",
+      "options": [
+        "সব নির্দেশ একবারে না ঢুকিয়ে ধাপে ধাপে দেখানো হয়, তাই token বাঁচে",
+        "ছবি আঁকা যায়",
+        "পাসওয়ার্ড লুকানো যায়",
+        "কম্পিউটার দ্রুত বন্ধ হয়"
+      ],
+      "answerIndex": 0,
+      "explanation": "রেসিপির বইয়ের মতো: দরকারি পাতাটাই খোলা হয়, পুরো বই নয়। তাতে token (খরচ) বাঁচে।"
+    },
+    {
+      "question": "Subagent Delegation-এ ডিফল্টে একসাথে কয়টা subagent চলে?",
+      "options": ["১টা", "২টা", "১০টা", "৩টা"],
+      "answerIndex": 3,
+      "explanation": "ডিফল্টে ৩টা, বদলানো যায়।"
+    },
+    {
+      "question": "`execute_code` tool-এর বিশেষত্ব কোনটা?",
+      "options": [
+        "শুধু ছবি আঁকে",
+        "agent-এর লেখা Python sandbox-এ চালায়, তাই অনেক ধাপের কাজ একটা LLM turn-এ হয়",
+        "ইন্টারনেট বন্ধ করে",
+        "ফাইল মুছে দেয়"
+      ],
+      "answerIndex": 1,
+      "explanation": "sandbox মানে নিরাপদ বালির বাক্স। সেখান থেকে Hermes-এর tool ডেকে অনেক ধাপ একবারে সারা যায়।"
+    },
+    {
+      "question": "SOUL.md system prompt-এ কোথায় বসে?",
+      "options": [
+        "একদম শেষে",
+        "মাঝখানে",
+        "একদম শুরুতে",
+        "বসে না, শুধু লুকানো থাকে"
+      ],
+      "answerIndex": 2,
+      "explanation": "SOUL.md হলো মূল পরিচয়, তাই system prompt-এর একদম শুরুতে বসে।"
+    },
+    {
+      "question": "একই provider-এর একাধিক API key-তে rate limit এড়াতে কোন feature?",
+      "options": [
+        "Credential Pools",
+        "Prompt Caching",
+        "Skins & Themes",
+        "Batch Processing"
+      ],
+      "answerIndex": 0,
+      "explanation": "Credential Pools কাজ একাধিক key-তে ছড়িয়ে দেয় এবং limit বা failure হলে ঘুরিয়ে নেয়।"
+    },
+    {
+      "question": "ফাইল বদলানোর পর ভুল হয়ে গেলে আগের অবস্থায় ফিরতে কী ব্যবহার করবে?",
+      "options": [
+        "/personality",
+        "/rollback (Checkpoints থেকে)",
+        "hermes tools",
+        "Wake Word"
+      ],
+      "answerIndex": 1,
+      "explanation": "Checkpoints ফাইল বদলানোর আগে snapshot নেয়, আর /rollback সেখানে ফেরায়।"
+    },
+    {
+      "question": "Fallback Providers কেন দরকার?",
+      "options": [
+        "ছবি সুন্দর করতে",
+        "ফাইল ছোট করতে",
+        "গান বাজাতে",
+        "একটা provider-এ error হলে নিজে নিজে backup মগজে চলে যেতে"
+      ],
+      "answerIndex": 3,
+      "explanation": "এক কোম্পানির সার্ভার বন্ধ হলেও যেন Hermes-এর কাজ না থামে।"
+    }
+  ],
+  "recap": [
+    "Hermes-এর feature পাঁচ ঘরে ভাগ: Core, Automation, Media & Web, Integrations, Customization।",
+    "Core-এ আছে Tools, Skills, Memory, Context Files/References আর Checkpoints, যেগুলো Hermes-কে কাজের এজেন্ট বানায়।",
+    "Automation মানে Cron, Subagent, Code Execution, Hooks আর Batch Processing, যাতে তুমি না থাকলেও কাজ চলে।",
+    "Integrations দিয়ে MCP, একাধিক provider/key আর IDE-র সাথে জোড়া লাগে।",
+    "Customization-এ SOUL.md, Skins আর Plugins দিয়ে Hermes-কে নিজের মতো সাজানো যায়।"
+  ]
+}

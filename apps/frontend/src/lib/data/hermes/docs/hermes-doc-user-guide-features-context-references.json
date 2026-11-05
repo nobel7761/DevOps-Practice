@@ -1,0 +1,194 @@
+{
+  "title": "Context References",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/context-references",
+  "oneLiner": "এই lesson শেষে তুমি `@file`, `@folder`, `@diff`, `@url`-এর মতো reference দিয়ে ফাইল ও ওয়েব Hermes-কে দেখাতে পারবে, আর CLI, git diff, context length, path traversal-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: \"ওই যে ওটা দেখো\"\n\nতুমি বন্ধুকে বললে, \"আমার হোমওয়ার্কে ভুল আছে, দেখো তো।\" বন্ধু জিজ্ঞেস করবে, \"কোন খাতা? কোন পাতা?\" সময় নষ্ট।\n\nএখন ভাবো তুমি খাতাটা তার হাতেই তুলে দিলে — \"এই নাও, ১০ থেকে ২৫ নম্বর লাইন দেখো।\" কাজ শেষ!\n\n**Context References** হলো সেই \"হাতে তুলে দেওয়া\"। message-এ `@` দিয়ে লিখলেই Hermes ফাইলটা নিজে খুলে তোমার message-এর সাথে জুড়ে দেয় — `--- Attached Context ---` অংশে।\n\n**এটা না থাকলে কী সমস্যা?** ফাইলের লেখা নিজে কপি করে message-এ পেস্ট করতে হতো। বড় ফাইল হলে কষ্ট, আর কোন লাইন দরকার তা আলাদা করে বলাও কঠিন। `@` লিখলেই কাজ শেষ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n| শব্দ | মানে | উপমা |\n|---|---|---|\n| **Reference (রেফারেন্স)** | `@` দিয়ে লেখা ছোট নির্দেশ, যা বলে 'ওই জিনিসটা এখানে জুড়ে দাও' | বইয়ের পাতা-নম্বর উল্লেখ করা, আর বইটা নিজে এসে হাজির |\n| **CLI** | terminal-এ লিখে চালানো রূপ। **Terminal** হলো সেই জানালা যেখানে লিখে কম্পিউটারকে হুকুম দাও | চিঠিতে কথা বলা |\n| **Expansion** | `@file:...`-কে আসল ফাইলের লেখায় বদলে দেওয়া | সংক্ষিপ্ত রূপকে পুরো রূপে খোলা |\n| **Directory / folder** | ফাইল রাখার ঘর। path মানে সেই ঘরের ঠিকানা (`src/main.py`) | আলমারির ড্রয়ার-নম্বর |\n| **git / diff / staged / commit** | **git** কোডের ইতিহাস রাখে। **diff** মানে আগের-পরের পার্থক্য। **staged** মানে 'সংরক্ষণের জন্য সাজিয়ে রাখা'। **commit** মানে ইতিহাসে স্থায়ী সংরক্ষণ | সম্পাদকের লাল-কালির সংশোধন; staged = 'এটা ছাপতে পাঠাব' ঝুড়ি |\n| **URL** | ওয়েব পাতার ঠিকানা (`https://...`) | বাড়ির ঠিকানা |\n| **Context length / context window** | AI একবারে সর্বোচ্চ যত লেখা মনে রেখে পড়তে পারে তার সীমা | পড়ার টেবিলের আকার |\n| **Compression** | জায়গা বাঁচাতে পুরনো কথা সংক্ষেপ করে ফেলা | নোট ছোট করে লেখা |\n| **Path traversal** | `../../..` দিয়ে অনুমতির বাইরের ফোল্ডারে উঁকি দেওয়ার চালাকি | বসার ঘর থেকে শোবার ঘরে ঢোকার চেষ্টা |\n| **MIME type / binary** | **Binary** মানে মানুষ পড়তে পারে না এমন ফাইল (ছবি, প্রোগ্রাম)। **MIME type** হলো ফাইলের ধরনের লেবেল | ডাকের পার্সেলের ওপরে লেখা 'কাচ' লেবেল |\n| **Credential** | পাসওয়ার্ড বা গোপন চাবি | বাসার চাবি |"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কী কী reference আছে?\n\n| লেখা | কী ঢোকে |\n|---|---|\n| `@file:path/to/file.py` | ফাইলের বিষয়বস্তু |\n| `@file:path/to/file.py:10-25` | লাইন ১০–২৫ (১ থেকে গোনা, দুই প্রান্তসহ) |\n| `@file:src/main.py:42` | শুধু ৪২ নম্বর লাইন |\n| `@folder:path/to/dir` | directory-র tree-তালিকা, ফাইল-metadata সহ |\n| `@diff` | staged না এমন পরিবর্তন (`git diff`) |\n| `@staged` | staged পরিবর্তন (`git diff --staged`) |\n| `@git:5` | শেষ N commit patch-সহ (সর্বোচ্চ ১০) |\n| `@url:https://example.com` | ওয়েব পাতা এনে ঢোকায় |\n\n| লেখা | কখন লাগে |\n|---|---|\n| `@file:` | একটা ফাইল পড়ে দেখাতে বা সংশোধন করাতে |\n| `@file:...:10-25` | বড় ফাইলের শুধু দরকারি অংশ, যাতে জায়গা কম লাগে |\n| `@folder:` | project-টা কেমন সাজানো দেখাতে |\n| `@diff` | কী বদলেছি (এখনও সংরক্ষণ হয়নি) তা review করাতে |\n| `@staged` | সংরক্ষণের আগে শেষবার দেখাতে |\n| `@git:5` | শেষ কয়েকটা কাজের ইতিহাস বোঝাতে |\n| `@url:` | ওয়েবের লেখা পড়ে সারসংক্ষেপ বা তুলনা করাতে |\n\n### উদাহরণ\n\n```text\nReview @file:src/main.py and suggest improvements\nWhat changed? @diff\nCompare @file:old_config.yaml and @file:new_config.yaml\nWhat's in @folder:src/components?\nSummarize this article @url:https://arxiv.org/abs/2301.00001\n```\n\nএকই message-এ একাধিক reference চলে। reference-র শেষের বিরামচিহ্ন (`,` `.` `;` `!` `?`) বাদ পড়ে।\n\n### Tab completion (CLI)\n\n**Tab completion** মানে অর্ধেক লিখে `Tab` চাপলে বাকিটা প্রস্তাব করা, যেমন ফোনে শব্দ সাজেশন।\n\n`@` টাইপ করলে সব ধরন দেখায়: `@diff`, `@staged`, `@file:`, `@folder:`, `@git:`, `@url:`। `@file:` ও `@folder:`-এ path completion আসে, ফাইলের আকারসহ। শুধু `@` আর আংশিক নাম দিলে বর্তমান directory-র মিলে যাওয়া ফাইল/folder প্রস্তাব করে।\n\nলাইন-range ভুল হলে (invalid) চুপচাপ উপেক্ষিত হয় এবং **পুরো ফাইল** আসে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "sequence",
+        "caption": "CLI-তে `@` expansion agent-এর কাছে message পৌঁছানোর আগেই হয়ে যায়।",
+        "participants": [
+          {
+            "id": "u",
+            "kind": "user",
+            "label": "তুমি"
+          },
+          {
+            "id": "c",
+            "kind": "client",
+            "label": "Hermes CLI"
+          },
+          {
+            "id": "f",
+            "kind": "external",
+            "label": "ফাইল / git / URL"
+          },
+          {
+            "id": "a",
+            "kind": "server",
+            "label": "Agent"
+          }
+        ],
+        "messages": [
+          {
+            "from": "u",
+            "to": "c",
+            "label": "Review @file:src/main.py"
+          },
+          {
+            "from": "c",
+            "to": "f",
+            "label": "বিষয়বস্তু আনো"
+          },
+          {
+            "from": "f",
+            "to": "c",
+            "label": "ফাইলের লেখা",
+            "dashed": true
+          },
+          {
+            "from": "c",
+            "to": "a",
+            "label": "message + --- Attached Context ---"
+          },
+          {
+            "from": "a",
+            "to": "u",
+            "label": "পর্যালোচনা",
+            "dashed": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "context-reference-budget"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আকারের সীমা\n\n**কেন লাগে?** AI-র পড়ার টেবিল (context length) ছোট। একটা বিশাল ফাইল ঢোকালে টেবিল ভরে যেত, আর আসল কথা বলার জায়গা থাকত না। তাই দুই ধাপের সীমা: ২৫% এ সতর্ক করা, ৫০% এ থামিয়ে দেওয়া।\n\n| সীমা | মান | কী হয় |\n|---|---|---|\n| Soft limit | context length-এর **২৫%** | সতর্কতা জোড়া হয়, expansion চলে |\n| Hard limit | context length-এর **৫০%** | expansion প্রত্যাখ্যাত; message অপরিবর্তিত ফেরত |\n| Folder entry | সর্বোচ্চ **২০০টা** ফাইল | বাড়তিগুলো `- ...` দিয়ে বদলানো |\n| Git commit | সর্বোচ্চ **১০টা** | `@git:N` [1, 10]-এ আটকানো |\n\n### Compression-এর সাথে সম্পর্ক\n\nকথোপকথন দীর্ঘ হলে Hermes পুরনো অংশ সংক্ষেপ করে (compression), যাতে টেবিলে জায়গা থাকে।\n\nexpand করা বিষয়বস্তু compression summary-তে যায় এবং context ব্যবহারে গোনা হয়। compress হলে ফাইল আর হুবহু থাকে না, সংক্ষিপ্ত হয়ে যায়। তাই বড় ফাইলে **লাইন-range** ব্যবহার করো, যেমন `@file:main.py:100-200`।\n\n## নিরাপত্তা\n\n**কেন?** `@file:` যেকোনো ফাইল ঢোকাতে পারে। যদি তুমি ভুল করে (বা কেউ চালাকি করে) তোমার গোপন চাবির ফাইল ঢোকায়, তা AI-র কাছে চলে যেতে পারে। তাই কিছু ফাইল সবসময় নিষিদ্ধ। (`~` মানে তোমার হোম ফোল্ডার। **SSH key** হলো দূরের কম্পিউটারে ঢোকার চাবি-ফাইল। **Shell profile** হলো terminal-এর সেটিং-ফাইল।)\n\n### সংবেদনশীল path সবসময় ব্লক (`@file:`-এ)\n\n- **SSH:** `~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, `~/.ssh/authorized_keys`, `~/.ssh/config`\n- **Shell profile:** `~/.bashrc`, `~/.zshrc`, `~/.profile`, `~/.bash_profile`, `~/.zprofile`\n- **Credential:** `~/.netrc`, `~/.pgpass`, `~/.npmrc`, `~/.pypirc`\n- **Hermes env:** `$HERMES_HOME/.env`\n- **পুরো directory ব্লক:** `~/.ssh/`, `~/.aws/`, `~/.gnupg/`, `~/.kube/`, `$HERMES_HOME/skills/.hub/`\n\n### Path traversal সুরক্ষা\n\npath working directory-র সাপেক্ষে সমাধান হয়। অনুমোদিত workspace root-এর **বাইরে** গেলে প্রত্যাখ্যাত (`../../..` চালাকি চলে না)।\n\n### Binary ফাইল\n\nMIME type ও null-byte scan দিয়ে ধরা হয়। পরিচিত text extension (`.py`, `.md`, `.json`, `.yaml`, `.toml`, `.js`, `.ts` ইত্যাদি) MIME পরীক্ষা এড়িয়ে যায়। binary হলে সতর্কতাসহ প্রত্যাখ্যাত।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "শুধু CLI-তে",
+      "markdown": "এটা মূলত CLI feature — tab completion ও expansion message agent-এর কাছে যাওয়ার আগে হয়। Telegram/Discord-এর মতো messaging platform-এ gateway `@` syntax expand করে না; message যেমন আছে তেমনই যায়। তবে agent তখনও `read_file`, `search_files`, `web_extract` tool দিয়ে ফাইল/ওয়েব পড়তে পারে। (**Gateway** হলো Hermes-কে Telegram/Discord-এর সাথে জোড়ার দরজা। **Syntax** মানে লেখার নিয়ম।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কাজে লাগানোর ধরন\n\n- **Code review:** `Review @diff and check for security issues`\n- **Debug:** ব্যর্থ test `@file:tests/test_auth.py` আর implementation-এর কিছু লাইন `@file:src/auth.py:50-80`।\n- **Project বোঝা:** `@folder:src @file:README.md`\n- **গবেষণা:** দুটো `@url:` (যেমন দুটো arXiv পাতা) তুলনা।\n\n## ভুল হলে কী দেখাবে (inline সতর্কতা, ব্যর্থতা না)\n\n| ঘটনা | সতর্কতা |\n|---|---|\n| ফাইল নেই | \"file not found\" |\n| Binary ফাইল | \"binary files are not supported\" |\n| Folder নেই | \"folder not found\" |\n| git কমান্ড ব্যর্থ | git-এর stderr সহ সতর্কতা |\n| URL-এ লেখা নেই | \"no content extracted\" |\n| সংবেদনশীল path | \"path is a sensitive credential file\" |\n| workspace-এর বাইরে | \"path is outside the allowed workspace\" |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "Context Files-এর সাথে পার্থক্য",
+      "markdown": "**Context Files** (`AGENTS.md` ইত্যাদি) নিজে নিজে লোড হয়, প্রতিবার, project-এর নিয়ম হিসেবে। **Context References** তুমি এক message-এর জন্য হাতে বেছে দাও — এক-বারের দেখানো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "`@file:src/main.py:10-25` কী ঢোকায়?",
+      "options": [
+        "পুরো ফাইল",
+        "শুধু ১০ ও ২৫ নম্বর লাইন",
+        "১০ থেকে ২৫ নম্বর লাইন (১-ভিত্তিক, দুই প্রান্তসহ)",
+        "ফাইলের আকার"
+      ],
+      "answerIndex": 2,
+      "explanation": "range ১ থেকে গোনা এবং inclusive।"
+    },
+    {
+      "question": "staged হয়নি এমন পরিবর্তন দেখাতে কোনটা?",
+      "options": ["@diff", "@staged", "@git:1", "@folder:."],
+      "answerIndex": 0,
+      "explanation": "`@diff` = `git diff` (unstaged); `@staged` = `git diff --staged`।"
+    },
+    {
+      "question": "`@git:50` লিখলে কী হয়?",
+      "options": [
+        "৫০ commit আসে",
+        "কিছুই না",
+        "error",
+        "সংখ্যা [1, 10]-এ আটকে সর্বোচ্চ ১০টা commit আসে"
+      ],
+      "answerIndex": 3,
+      "explanation": "`@git:N` clamp হয় ১ থেকে ১০-এ।"
+    },
+    {
+      "question": "Expansion context length-এর ৫০% ছাড়ালে কী হয়?",
+      "options": [
+        "সতর্কতা দিয়ে চলে",
+        "expansion প্রত্যাখ্যাত, message অপরিবর্তিত",
+        "ফাইল কাটা হয়",
+        "নতুন session"
+      ],
+      "answerIndex": 1,
+      "explanation": "২৫%-এ শুধু সতর্কতা; ৫০%-এ hard limit — refuse।"
+    },
+    {
+      "question": "কোনটা `@file:` দিয়ে পড়া যাবে না?",
+      "options": [
+        "`src/app.py`",
+        "`README.md`",
+        "`~/.ssh/id_rsa`",
+        "`config.yaml`"
+      ],
+      "answerIndex": 2,
+      "explanation": "SSH key, shell profile, credential ফাইল ও `~/.aws/` ইত্যাদি সবসময় ব্লক।"
+    },
+    {
+      "question": "Telegram-এ `@file:main.py` লিখলে কী হয়?",
+      "options": [
+        "gateway expand করে না; message অপরিবর্তিত যায়",
+        "Hermes ফাইল expand করে",
+        "ব্লক হয়",
+        "ব্যবহারকারী বহিষ্কার"
+      ],
+      "answerIndex": 0,
+      "explanation": "`@` syntax মূলত CLI feature; messaging-এ expand হয় না (agent tool দিয়ে পড়তে পারে)।"
+    },
+    {
+      "question": "বড় ফাইলে context বাঁচাতে কী করা উচিত?",
+      "options": [
+        "`@folder:` ব্যবহার",
+        "লাইন-range দেওয়া, যেমন `@file:main.py:100-200`",
+        "বারবার `@diff`",
+        "বন্ধ করা"
+      ],
+      "answerIndex": 1,
+      "explanation": "range দিলে শুধু দরকারি অংশ ঢোকে, compression-এও ভার কম।"
+    },
+    {
+      "question": "ফাইল পাওয়া না গেলে Hermes কী করে?",
+      "options": [
+        "পুরো কাজ ব্যর্থ",
+        "নতুন session",
+        "ফাইল বানিয়ে ফেলে",
+        "inline \"file not found\" সতর্কতা দেয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "এই ত্রুটিগুলো inline সতর্কতা, কাজ বন্ধ করে না।"
+    }
+  ],
+  "recap": [
+    "`@file:`, `@folder:`, `@diff`, `@staged`, `@git:N`, `@url:` — message-এর ভেতরেই context জোড়া যায়।",
+    "লাইন-range: `@file:path:10-25` (১-ভিত্তিক, inclusive); ভুল range হলে পুরো ফাইল।",
+    "সীমা: soft ২৫%, hard ৫০% context; folder ২০০ entry; git ১০ commit।",
+    "SSH key, shell profile, credential ও `~/.aws/` ইত্যাদি সবসময় ব্লক; workspace-এর বাইরের path প্রত্যাখ্যাত।",
+    "এটা CLI feature; messaging platform-এ `@` expand হয় না।"
+  ],
+  "contentId": "hermes-doc-user-guide-features-context-references"
+}

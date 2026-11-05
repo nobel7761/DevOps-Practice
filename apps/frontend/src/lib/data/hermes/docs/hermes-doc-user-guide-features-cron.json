@@ -1,0 +1,217 @@
+{
+  "contentId": "hermes-doc-user-guide-features-cron",
+  "title": "Cron Jobs (Scheduled Tasks)",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/features/cron",
+  "oneLiner": "এই lesson শেষে তুমি বুঝবে Hermes-কে কীভাবে সময় ধরে নিজে নিজে কাজ চালাতে ও ফল পাঠাতে বলা যায়, আর cron, session, gateway, script-এর মতো শব্দগুলোর মানে কী।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: মায়ের অ্যালার্ম ঘড়ি\n\nছোট্ট রিয়া রোজ সকাল সাতটায় স্কুলে যায়। মা কাউকে বলে রাখেননি, কিন্তু রান্নাঘরের দেয়ালে একটা **অ্যালার্ম ঘড়ি** আছে। সময় হলেই ঘড়ি বাজে, আর রিয়ার ছোট ভাই \"ওঠো ওঠো\" বলে ডাকতে যায়। কাউকে মনে রাখতে হয় না, ঘড়ি নিজেই মনে রাখে।\n\nHermes-এর **cron** ঠিক এই ঘড়ি। তুমি একবার বলে দাও: \"প্রতিদিন সকাল ৯টায় আমাকে খবরের সারাংশ পাঠাও।\" তারপর তুমি ঘুমাও। ঠিক সময়ে Hermes একটা **নতুন, পরিষ্কার session** খোলে, কাজটা করে, আর ফলাফল তোমার Telegram বা অন্য কোথাও পাঠিয়ে দেয়।\n\n**এটা না থাকলে কী সমস্যা হতো?** তোমাকে রোজ নিজে এসে Hermes-কে বলতে হতো \"এখন রিপোর্ট বানাও\"। ভুলে গেলে রিপোর্ট নেই। Cron থাকলে \"সময় মনে রাখার\" কাজটা কম্পিউটার করে দেয়।\n\nআসল কথা: cron job হলো তিনটা জিনিস একসাথে: **১) কখন চলবে (schedule), ২) কী কাজ (prompt বা script), ৩) ফল কোথায় যাবে (delivery)**।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Cron / Cron job\n**Cron** মানে \"সময় ধরে নিজে নিজে কাজ চালানোর ব্যবস্থা।\" আর একটা নির্দিষ্ট কাজকে বলে **cron job**। উপমা: দেয়ালঘড়ির প্রতিটা অ্যালার্ম একটা করে job।\n\n### ২) Schedule\n\"কখন চলবে\" তার হিসাব। যেমন \"প্রতি ২ ঘণ্টায়\" বা \"সোমবার সকাল ৯টায়\"। উপমা: অ্যালার্মে সময় ঠিক করা।\n\n### ৩) Prompt\nHermes-কে লেখা নির্দেশ। যেমন \"সার্ভারের অবস্থা দেখো।\" উপমা: মা ভাইকে যে কাজের কথা বলে দেন।\n\n### ৪) Session\nHermes-এর সাথে একটা আলাদা কথোপকথনের খাতা। Cron-এর প্রতিটা run একটা **একদম নতুন খাতা** খোলে, আগের কথা মনে থাকে না। উপমা: রোজ নতুন পাতায় লেখা শুরু।\n\n### ৫) Gateway\nHermes-এর যে অংশ সারাক্ষণ চালু থেকে বাইরের chat app (Telegram, Discord...) আর ভেতরের কাজের মধ্যে ডাকপিয়নের কাজ করে। Cron-এর ঘড়িটা **gateway-র ভেতরেই** থাকে। তাই gateway বন্ধ থাকলে ঘড়িও বন্ধ। উপমা: যে দাদু দেয়ালঘড়িতে চাবি দেন। দাদু ঘুমালে ঘড়ি থামে।\n\n### ৬) Delivery (`deliver`)\nকাজ শেষে ফল কোথায় পাঠানো হবে তার ঠিকানা। উপমা: চিঠিতে ডাকঘরের ঠিকানা লেখা।\n\n### ৭) LLM / Agent\n**LLM** হলো যে AI মডেল ভাষা বোঝে ও লেখে। **Agent** হলো সেই LLM-কে ঘিরে থাকা Hermes, যে tool চালিয়ে কাজ করে। Agent চালালে টাকা (token খরচ) লাগে।\n\n### ৮) Script\nকয়েক লাইনের লেখা প্রোগ্রাম, যা প্রতিবার একই ধাপ চালায়। এতে AI লাগে না। উপমা: ভাঁজ করা রেসিপি কার্ড, যেটা কেউ না ভেবেই অনুসরণ করতে পারে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "তুমি একবার job বানাও; gateway প্রতি ৬০ সেকেন্ডে দেখে কোনটার সময় হয়েছে, তারপর agent চালিয়ে ফল পাঠায়।",
+        "nodes": [
+          {
+            "id": "you",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "jobs",
+            "kind": "database",
+            "label": "jobs.json",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "gw",
+            "kind": "server",
+            "label": "Gateway ঘড়ি",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "নতুন session",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "dest",
+            "kind": "external",
+            "label": "Telegram / local",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "you",
+            "to": "jobs",
+            "label": "job বানাও"
+          },
+          {
+            "from": "jobs",
+            "to": "gw",
+            "label": "সময় হলো?"
+          },
+          {
+            "from": "gw",
+            "to": "agent",
+            "label": "চালাও"
+          },
+          {
+            "from": "agent",
+            "to": "dest",
+            "label": "ফল পাঠাও"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সবকিছু একটাই tool দিয়ে: `cronjob_manage`\n\n**Tool** মানে Hermes-এর হাতের যন্ত্র, যা দিয়ে সে নির্দিষ্ট কাজ করে (ফাইল পড়া, ওয়েব খোঁজা ইত্যাদি)। Cron-এর সব কাজ (বানানো, দেখা, থামানো) **একটাই tool** করে, নাম `cronjob_manage`। এর action গুলো:\n\n| action | মানে | উপমা |\n|---|---|---|\n| `create` | নতুন job বানাও | নতুন অ্যালার্ম সেট |\n| `list` | সব job দেখাও | সব অ্যালার্মের তালিকা |\n| `update` | বদলাও | অ্যালার্মের সময় বদল |\n| `pause` / `resume` | থামাও / আবার চালাও | অ্যালার্ম সাময়িক নিঃশব্দ / আবার চালু |\n| `run` | এখনই একবার চালাও | বোতাম টিপে এখনই বাজানো |\n| `remove` / `cancel` | মুছে দাও / বাতিল করো | অ্যালার্ম ফেলে দেওয়া |\n\nএকটা job-এ থাকতে পারে:\n\n- শূন্য বা একাধিক **Skill** (Skill মানে Hermes-কে শেখানো নির্দেশিকা-পাতা; ক্রমে লোড হয়)\n- ফল পাঠানোর জায়গা (chat, local file, বিভিন্ন platform)\n- **no-agent script job** (AI ছাড়া শুধু script)\n- webhook দিয়ে চালু হওয়া job (**webhook** মানে অন্য কোনো app থেকে আসা \"দরজায় টোকা\", যা শুনে কাজ শুরু হয়)\n\n> সতর্কতা: cron-এ চলা session নিজে আরেকটা cron job বানাতে পারে না, যদি না `cron.allow_agent_scheduling: true` করো (default `false`)। কেন? যাতে একটা job নিজে নিজে অসংখ্য job বানিয়ে খরচ বাড়াতে না পারে।\n\n## Job বানানো: তিনটা পথ\n\n```bash\n# chat-এর ভেতর\n/cron add \"in 30m\" \"রিপোর্টটা তৈরি করো\"\n\n# CLI থেকে\nhermes cron create \"every 2h\" \"সার্ভারের অবস্থা দেখো\" --skill X --name \"server-watch\"\n```\n\n**CLI** মানে terminal-এ লিখে চালানো কমান্ড। **terminal** হলো সেই জানালা, যেখানে ছবির বদলে লিখে কম্পিউটারকে হুকুম দিতে হয়।\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `/cron add` | chat-এ job যোগ করার কমান্ড | অ্যালার্ম অ্যাপে \"নতুন\" বোতাম |\n| `hermes cron create` | terminal-এ একই কাজ | একই বোতাম, কিন্তু লিখে |\n| `\"in 30m\"` / `\"every 2h\"` | কখন চলবে | অ্যালার্মের সময় |\n| `\"রিপোর্টটা তৈরি করো\"` | কী কাজ (prompt) | ভাইকে বলা কথা |\n| `--skill X` | কাজে একটা Skill লোড করো | রেসিপির বই দেওয়া |\n| `--name \"server-watch\"` | job-এর নাম | অ্যালার্মের লেবেল |\n\nফল: Hermes একটা job বানিয়ে `~/.hermes/cron/jobs.json`-এ লিখে রাখে। `/cron` চললে chat-এ নিশ্চিতকরণ বার্তা আসে, আর `hermes cron list` দিয়ে job দেখা যায়।\n\n**Flag** হলো কমান্ডের শেষে `--` দিয়ে লেখা অতিরিক্ত নির্দেশ (সুইচের মতো)। নিচের তালিকা:\n\n| Option | কী করে | কখন লাগে |\n|---|---|---|\n| `--workdir` | একটা absolute (পুরো ঠিকানা), বিদ্যমান directory; সেখান থেকে AGENTS.md, CLAUDE.md, .cursorrules লোড হয় | যখন job কোনো project-এর ফোল্ডারে কাজ করবে এবং সেই project-এর নিয়ম মানবে |\n| `--timezone` | IANA timezone (যেমন `Asia/Dhaka`) | \"সকাল ৯টা\" বলতে তোমার শহরের ৯টা বোঝাতে |\n| `--grace-minutes` | ০ থেকে ১৪৪০; দেরিতে হলেও চালানোর জানালা | কম্পিউটার একটু দেরিতে জাগলে তবু চালাতে |\n| `--paused` + `--paused-reason` | থামানো অবস্থায় বানাও | এখনই চালাতে চাও না, পরে চালাবে |\n| `--catch-up on\\|off` | মিস হওয়া slot পূরণ করবে কি না | ঘুম থেকে উঠে ছুটে যাওয়া কাজ করতে চাও কি না |\n| `--continuity` / `--no-continuity` | আগের run-এর output পরের run-এ দেখাবে কি না | \"গতবারের চেয়ে কী বদলালো\" বলতে হলে |\n| `--no-agent --script --interpreter` | AI ছাড়া script job | সহজ কাজে খরচ বাঁচাতে |\n| `--deliver` | ফল কোথায় যাবে | ফল Telegram-এ চাইলে |\n\n**Timezone** মানে সময়-অঞ্চল। ঢাকার ৯টা আর লন্ডনের ৯টা আলাদা। না বললে ভুল সময়ে চলতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## সময় লেখার নিয়ম (schedule formats)\n\nHermes চার রকম করে সময় বুঝতে পারে:\n\n| ধরন | উদাহরণ | কখন লাগে |\n|---|---|---|\n| একবার (one-shot) | `in 30m`, `in 2h`, `in 1d`, অথবা ISO timestamp `2026-03-15T09:00:00` | একবারই মনে করিয়ে দিতে, যেমন \"আধ ঘণ্টা পরে\" |\n| ব্যবধান (interval) | `30m` (শুধু সময় লিখলেও recurring), `every 30m`, `every hour` (শুধু unit মানে ১) | নির্দিষ্ট বিরতিতে বারবার |\n| দিন/সময় | `every monday 9am`, `weekdays at 9am`, `daily at 7am`, `noon`, `midnight`, `14:00` | মানুষের মতো করে বলতে |\n| cron expression | ৫ ঘরের standard, যেমন `MON-FRI`, `JAN` নাম সহ (`croniter` লাগে) | খুব নির্দিষ্ট জটিল সময়ের জন্য |\n\n**Natural day/time** আরও কয়েকটা রূপ: `every day at 9am`, `weekends at 10am`, `monday, wednesday at 9am`। সময় লেখা যায় `9am`, `9:30pm`, `14:00`, `at 7` (২৪-ঘণ্টা), `noon`, `midnight`। এগুলো ভেতরে cron expression-এ compile হয় বলে `croniter` package লাগে। Cron expression-এর উদাহরণ: `0 9 * * 1-5`, `0 */6 * * *`, `30 8 1 * *`, `0 0 * * 0`।\n\n**ISO timestamp** মানে সাল-মাস-দিনTঘণ্টা:মিনিট:সেকেন্ড আকারে সময় লেখা। **Cron expression** হলো পুরোনো, ছোট্ট সংকেতে সময় লেখার ধরন। নতুনদের জন্য প্রথম তিন ধরনই সহজ।\n\n**কতবার চলবে?** one-shot হলে ১ বার; interval আর cron হলে চিরকাল। `repeat=N` দিয়ে বদলানো যায় (যেমন মোট ৫ বার)।\n\n## ঘড়ি কীভাবে চলে\n\n- Gateway প্রতি **৬০ সেকেন্ডে** একবার \"tick\" করে, মানে ঘড়ির কাঁটার মতো টিক শব্দ করে দেখে কোনো job-এর সময় হলো কি না। দুবার একসাথে যেন না চলে, সেজন্য একটা **lock file** থাকে `~/.hermes/cron/.tick.lock`-এ। Lock file হলো দরজায় ঝোলানো \"ব্যস্ত আছি\" ফলক।\n- Per-job timezone দিলে expression সেই timezone-এর দেয়ালঘড়ি ধরে। `--timezone \"\"` দিলে profile-এর timezone নেয়। (**Profile** মানে Hermes-এর আলাদা আলাদা সেটিং-সেট, যেমন \"অফিস\" আর \"বাড়ি\"।)\n- **Catch-up:** গেটওয়ে বন্ধ থাকলে মিস হওয়া slot-এর জন্য একবার ধরে চালানো হয়। জানালা = job-এর period-এর অর্ধেক, তবে ২ মিনিট থেকে ২ ঘণ্টার মধ্যে। `--grace-minutes 0` দিলে catch-up বন্ধ। Global সুইচ: `cron.catch_up_missed` (default `true`)। উপমা: ঘুমিয়ে পড়ে অ্যালার্ম মিস করলে উঠে একবার জরুরি কাজটা সেরে নেওয়া, কিন্তু তিন ঘণ্টার বাসি কাজ আর নয়।\n- থামিয়ে রাখা recurring job চালু করলে, থামা অবস্থায় slot এসে গেলে একবার catch-up হয়।\n- মিস হওয়া slot **run ledger**-এ `missed xN` হিসেবে লেখা হয়। Ledger মানে হিসাবের খাতা।\n\n(দ্রষ্টব্য: official docs-এর অন্য একটা পাতা (Automate with Cron guide) বলে `daily at 9am` ধরনের natural language সমর্থিত নয়। কিন্তু Hermes-এর source code (`cron/jobs.py`-এর `parse_schedule` ও `_natural_every_to_cron`) দেখলে বোঝা যায় `every day at 9am`, `weekdays at 9am`, `monday, wednesday at 9am` পার্স হয়, `every` ছাড়া `daily at 9am`-ও `0 9 * * *`-এ compile হয়। তাই এই feature পাতাই ঠিক; guide পাতার কথাটা পুরনো। শর্ত একটাই: `croniter` package থাকতে হবে।)"
+    },
+    {
+      "type": "simulator",
+      "id": "cron"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোথায় কী জমা থাকে\n\n| কী | কোথায় | মানে |\n|---|---|---|\n| Job-এর সংজ্ঞা | `~/.hermes/cron/jobs.json` | সব অ্যালার্মের তালিকা। **JSON** হলো সাজানো তথ্য রাখার একটা ফাইল-ধরন |\n| Output | `~/.hermes/cron/output/{job_id}/{timestamp}.md` | প্রতিটা run-এর ফল, সময়ের নামে |\n| Execution ledger | `~/.hermes/cron/executions.db` | কোন run কী অবস্থায় আছে তার খাতা |\n\nLedger-এর state গুলো: `claimed` (কাজ ধরা হয়েছে), `running` (চলছে), `completed` (শেষ), `failed` (ব্যর্থ), `unknown` (জানা নেই)।\n\n**ভাঙা run:** মাঝপথে বন্ধ হয়ে যাওয়া run `unknown` চিহ্নিত হয় এবং **নিজে নিজে আবার চলে না**; paused job paused-ই থাকে যাতে মানুষ দেখে নেয়। কেন? কাজ অর্ধেক হয়ে থাকলে আবার চালালে দুবার ভুল হতে পারে। Hand-edit না করে `hermes cron edit`, `/cron` বা `cronjob_manage` ব্যবহার করো।\n\n**Store লেখা না গেলে** (`ENOSPC` = জায়গা ফুরিয়েছে, `EROFS` = শুধু-পড়া ডিস্ক, `EACCES` = অনুমতি নেই): due job চলে না, ticker মোটামুটি মিনিটে একবার আবার দেখে। `hermes cron status` আর `hermes doctor` জানায় (ফাঁকা জায়গা ১০০ MB-এর কম হলে doctor সতর্ক করে)।\n\n**Systemd:** Linux-এ **systemd** হলো সিস্টেমের কাজ-ব্যবস্থাপক। Job গুলো `systemd-run --user --scope` worker-এ চলে। কেউ লগ আউট করলে এগুলো যেন মরে না যায়, তার স্থায়ী সমাধান `sudo loginctl enable-linger <user>`।\n\n## ফল পাঠানো (`deliver:`)\n\n- `origin` (যেখান থেকে বানিয়েছ), `local` (CLI-র default; `~/.hermes/cron/output/`-এ সেভ), `all`, কমা দিয়ে একাধিক, বা `origin,all` মিশ্রণ\n- Platform: `telegram` (`telegram:chat_id[:thread_id]`), `discord` (`discord:#channel`), `slack`, `whatsapp`, `signal`, `matrix`, `mattermost`, `email`, `sms`, `homeassistant` ইত্যাদি\n- `bot-chat` অন্য bot-কে message হিসেবে দেয়: একই machine-এ, প্রতি delivery-তে এক agent turn খরচ, আর `all`-এর মধ্যে পড়ে না\n- Home channel env: `TELEGRAM_HOME_CHANNEL`, `DISCORD_HOME_CHANNEL`, `HASS_HOME_CHANNEL`; আলাদা Telegram topic-এর জন্য `TELEGRAM_CRON_THREAD_ID`\n\n**Env** (environment variable) হলো কম্পিউটারের নামধারী ছোট নোট, যেখানে \"বাড়ির ঠিকানা\" টাইপের সেটিং রাখা হয়। **Home channel** হলো তোমার ডিফল্ট ঠিকানা: কিছু না বললে ফল ওখানেই যায়।\n\n**Output নিয়ন্ত্রণ:**\n\n| লেখা | ফল | কখন কাজে লাগে |\n|---|---|---|\n| উত্তরে `[SILENT]` | পাঠানো হয় না (কিন্তু ফাইলে সেভ থাকে) | \"নতুন কিছু নেই\" দিনে বিরক্ত না করতে |\n| প্রথম লাইনে একা `[CRON_FAILURE]` | run ব্যর্থ ধরা হয় | agent নিজে বলে দিতে পারে \"কাজ হয়নি\" |\n| `cron.wrap_response: false` | header/footer থাকে না | শুধু খাঁটি লেখা চাইলে |\n| (নিজে থেকে) | পাঠানো লেখা থেকে secret মুছে (redact) দেওয়া হয় | পাসওয়ার্ড যেন chat-এ ফাঁস না হয় |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "Prompt হতে হবে self-contained",
+      "markdown": "প্রতিটা run একদম নতুন session। তাই আগের কথোপকথন মনে থাকবে না। Prompt-এ কাজের সব তথ্য লিখে দাও, যেন একজন অচেনা মানুষ শুধু ওই কাগজ পড়েই কাজ করতে পারে। আগের run-এর ফল লাগলে `--continuity` বা `context_from` (অন্য job-এর সর্বশেষ output) ব্যবহার করো।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## AI ছাড়া চালাও: no-agent mode\n\nসব কাজে AI লাগে না। যেমন \"ডিস্কে জায়গা আছে কি না\" দেখতে বুদ্ধি লাগে না, শুধু একটা মাপ দেখলেই হয়। এতে AI চালালে শুধু টাকা নষ্ট। `--no-agent --script <file>` দিলে শুধু script চলে আর তার **stdout** (script যা পর্দায় ছাপে) হুবহু পাঠানো হয়।\n\n- stdout খালি হলে চুপচাপ tick (কিছু পাঠায় না)\n- non-zero exit (script ভুল করে শেষ হলে) বা timeout হলে error alert যায়\n- শেষ লাইনে `{\"wakeAgent\": false}` দিলে silent tick\n- Script থাকতে হবে `$HERMES_HOME/scripts/`-এ; `.sh`/`.bash` bash-এ, অন্যগুলো Python-এ চলে\n- Provider credential (AI-কোম্পানির পরিচয়পত্র) সরিয়ে দেওয়া হয়; secret লাগলে `terminal.env_passthrough`\n\n**Gate (দরজার পাহারাদার):** শেষ stdout লাইনে `wakeAgent` JSON (`true`/`false`, চাইলে `context`) দিয়ে ঠিক করো agent জাগবে কি না। এভাবে \"ফাইল বদলেছে কি?\" বা \"SQL count > 0?\" দেখে তবেই দামি agent চালানো যায়। উপমা: ঘরের দরজায় সস্তা সেন্সর, নড়াচড়া দেখলে তবেই দামি ক্যামেরা চালু।\n\n## সময়সীমা (timeouts)\n\n**Timeout** মানে \"এতক্ষণের বেশি লাগলে থেমে যাও।\" কাজ আটকে গেলে যেন অনন্তকাল না চলে।\n\n| কী | default |\n|---|---|\n| Script (`script_timeout_seconds`) | ৩৬০০ সেকেন্ড |\n| Cleanup (`cleanup_timeout_seconds`) | ১০ সেকেন্ড |\n| Media প্রতি attachment | ৩০০ সেকেন্ড |\n| Standalone send | ৬০ সেকেন্ড |\n\n`cron.max_parallel_jobs` একসাথে কয়টা চলবে তা সীমিত করে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কিছু ভুল হলে\n\n- **Pre-dispatch validation:** AI চালানোর আগেই API key, skill, delivery credential, MCP server যাচাই হয়। (**API key** হলো AI কোম্পানির দেওয়া গোপন পাসওয়ার্ড। **MCP server** হলো বাইরের একটা সহায়ক সেবা, যার সাথে Hermes কথা বলে।) ব্যর্থ হলে `last_status: blocked_config` আর একটা alert। বন্ধ করতে `cron.preflight: false`। উপমা: রান্না শুরুর আগে দেখে নেওয়া চাল-ডাল সব আছে কি না।\n- **নেটওয়ার্ক সাময়িক বন্ধ:** model call-এর আগে হলে ৫, ১৫, ৩০ মিনিট পরে নিজে আবার চেষ্টা (`cron.retry_unreachable`, default `true`)।\n- **Quota শেষ:** (provider-এর দেওয়া ব্যবহারের সীমা ফুরালে) job পার্ক হয় যতক্ষণ না usage window আবার খোলে (`quota_hold_until`)।\n- `failure_streak` পরপর ব্যর্থতা গোনে (delivery ব্যর্থতা গোনা হয় না)। `cron.failure_nudge_threshold` (default ৩) পেরোলে review-এর ধাক্কা দেওয়া হয়।\n- একই error বারবার alert এড়াতে `cron.failure_repeat_alert_hours` (default ৬)।\n- Error-এর জায়গা: `last_error`, `last_fire_error`, `last_delivery_error`।\n\n## দরকারি কমান্ড\n\n```bash\nhermes cron list | pause | resume | run | cancel | remove | edit | status | tick\nhermes cron runs [job] --limit N\nhermes cron incidents\nhermes cron doctor      # read-only; সমস্যা পেলে exit 1\nhermes pause            # সব cron বন্ধের জরুরি সুইচ (চলমান run চলতে থাকে)\nhermes resume\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `hermes cron list` | সব job-এর তালিকা | কী কী আছে দেখতে |\n| `hermes cron run` | এখনই একবার চালাও | পরীক্ষা করতে |\n| `hermes cron runs [job] --limit N` | পুরোনো run-এর ইতিহাস | কাল কী হয়েছিল দেখতে |\n| `hermes cron doctor` | শুধু-পড়ে সমস্যা খোঁজে | কিছু কাজ না করলে |\n| `hermes pause` / `hermes resume` | সব cron-এর জরুরি সুইচ | সব এক ঝটকায় থামাতে |\n\n**Model কোনটা?** (Model মানে কোন AI মস্তিষ্ক কাজ করবে।) fire-এর সময় ক্রম: ১) job-এ pin করা model/provider, ২) `cron.model` / `cron.model_provider`, ৩) main model। Pin করা job ব্যর্থ হলে `fallback_providers`-এ যায় না, শুধু pin-না-করা job যায়।\n\n**নিরাপত্তা:** Prompt বানানো/বদলানোর সময় injection (কেউ চালাকি করে ভুল নির্দেশ ঢোকানো) আর exfiltration (গোপন তথ্য বাইরে পাচার) এর জন্য স্ক্যান হয়।\n\n## Job storage আর prompt\n\nপাতার শেষ অংশগুলোর সূচি: Managing jobs programmatically (manual run asynchronous), Toolsets available to cron jobs, `wakeAgent` দিয়ে agent বাদ দেওয়া, `context_from` দিয়ে job জোড়া, Job storage, self-contained prompt, Security। উদাহরণ: programmatic API-তে `schedule=\"every 2h\"` লেখা যায়, আর chaining উদাহরণে `every day 7am`, `every sunday 9am` দেখানো আছে। পাতার একদম শেষ অংশ শুধু navigation আর footer।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Cron job-এর প্রতিটা run কেমন session-এ চলে?",
+      "options": [
+        "আগের run-এর session-এই চলে",
+        "একদম নতুন, পরিষ্কার session-এ",
+        "শুধু তোমার chat window-এ",
+        "কোনো session লাগে না"
+      ],
+      "answerIndex": 1,
+      "explanation": "প্রতিটা run নতুন খাতা খোলে। তাই prompt-এ সব তথ্য লিখে দিতে হয়।"
+    },
+    {
+      "question": "`every 2h` কোন ধরনের schedule?",
+      "options": [
+        "ব্যবধান (interval)",
+        "একবার (one-shot)",
+        "ISO timestamp",
+        "এটা ভুল লেখা"
+      ],
+      "answerIndex": 0,
+      "explanation": "`every 2h` মানে প্রতি দুই ঘণ্টা পরপর, অর্থাৎ interval।"
+    },
+    {
+      "question": "Gateway কত সেকেন্ড পরপর due job খোঁজে?",
+      "options": ["১০", "১৫", "৩০", "৬০"],
+      "answerIndex": 3,
+      "explanation": "Gateway প্রতি ৬০ সেকেন্ডে একবার tick করে দেখে কোন job-এর সময় হয়েছে।"
+    },
+    {
+      "question": "Agent-এর উত্তরে `[SILENT]` লিখলে কী হয়?",
+      "options": [
+        "Job মুছে যায়",
+        "Error alert যায়",
+        "ফল পাঠানো হয় না, কিন্তু ফাইলে সেভ থাকে",
+        "Gateway বন্ধ হয়"
+      ],
+      "answerIndex": 2,
+      "explanation": "`[SILENT]` মানে 'কিছু বলার নেই', তাই পাঠানো হয় না। তবু ফাইলে সেভ থাকে।"
+    },
+    {
+      "question": "`--no-agent --script` job-এর stdout খালি হলে কী হয়?",
+      "options": [
+        "Error alert যায়",
+        "চুপচাপ tick, কিছু পাঠায় না",
+        "Agent জেগে ওঠে",
+        "Job মুছে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "খালি stdout মানে 'বলার কিছু নেই', তাই কিছু পাঠানো হয় না।"
+    },
+    {
+      "question": "Gateway কয়েক ঘণ্টা বন্ধ ছিল। ফিরে এলে মিস হওয়া recurring job-এর কী হয়?",
+      "options": [
+        "একবার catch-up করে চালানো হয় (জানালার মধ্যে হলে)",
+        "মিস হওয়া প্রতিটা slot আলাদা করে চলে",
+        "job আপনা-আপনি মুছে যায়",
+        "কিছুই হয় না, চিরকাল বন্ধ"
+      ],
+      "answerIndex": 0,
+      "explanation": "Catch-up একবারই হয়, আর জানালা period-এর অর্ধেক (২ মিনিট থেকে ২ ঘণ্টার মধ্যে)।"
+    },
+    {
+      "question": "মাঝপথে ভেঙে যাওয়া run-এর কী হয়?",
+      "options": [
+        "নিজে নিজে আবার চলে",
+        "সঙ্গে সঙ্গে মুছে যায়",
+        "পরের দিন নিজে চলে",
+        "`unknown` চিহ্নিত হয় এবং নিজে আবার চলে না"
+      ],
+      "answerIndex": 3,
+      "explanation": "অর্ধেক কাজ আবার চালালে দুবার ভুল হতে পারে, তাই মানুষের দেখার জন্য থেমে থাকে।"
+    },
+    {
+      "question": "Cron-এ চলা session নিজে নতুন cron job বানাতে পারে কি?",
+      "options": [
+        "সবসময় পারে",
+        "কখনোই না",
+        "না, যদি না `cron.allow_agent_scheduling: true` করো",
+        "শুধু ভোরবেলা পারে"
+      ],
+      "answerIndex": 2,
+      "explanation": "Default `false`। এতে job নিজে নিজে অসংখ্য job বানিয়ে খরচ বাড়াতে পারে না।"
+    },
+    {
+      "question": "Natural day/time schedule (যেমন `weekdays at 9am`) ভেতরে কীভাবে চলে, আর কী লাগে?",
+      "options": [
+        "সরাসরি LLM বোঝে, কিছু লাগে না",
+        "cron expression-এ compile হয়, `croniter` package লাগে",
+        "শুধু one-shot হিসেবে চলে",
+        "শুধু ISO timestamp-এ বদলে যায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "পাতা বলে এই রূপগুলো ভেতরে cron expression-এ compile হয় এবং `croniter` package লাগে।"
+    }
+  ],
+  "recap": [
+    "Cron হলো Hermes-এর অ্যালার্ম ঘড়ি: schedule + prompt/script + delivery।",
+    "সব ব্যবস্থাপনা `cronjob_manage` tool, `/cron`, বা `hermes cron ...` দিয়ে; `jobs.json` হাতে বদলিও না।",
+    "প্রতি run নতুন session, তাই prompt self-contained রাখো।",
+    "Gateway প্রতি ৬০ সেকেন্ডে tick করে; মিস হলে একবার catch-up হয়।",
+    "`--no-agent` script আর `wakeAgent` gate দিয়ে অকারণ AI খরচ বাঁচানো যায়।",
+    "`[SILENT]`, `[CRON_FAILURE]` আর `hermes cron doctor` দিয়ে output ও সমস্যা সামলাও।",
+    "Natural day/time schedule `croniter` দিয়ে cron expression-এ compile হয়, কিন্তু automate-with-cron guide পাতা এটা অসমর্থিত বলে, তাই দুই পাতায় অসঙ্গতি আছে।"
+  ]
+}

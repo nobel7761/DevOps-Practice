@@ -1,0 +1,182 @@
+{
+  "contentId": "hermes-doc-reference-environment-variables",
+  "title": "Environment Variables",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/reference/environment-variables",
+  "oneLiner": "এই lesson শেষে তুমি environment variable, API key, `.env` কী বুঝবে এবং কোন variable কখন কাজে লাগে আর কোন ফাঁদগুলো এড়াতে হবে তা জানবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## গল্প: বাড়ির চাবির বাক্স\n\nনীলা একটা চাবির বাক্স রাখে। ভেতরে আলাদা আলাদা খোপ: OpenRouter-এর চাবি, Telegram bot-এর চাবি, Firecrawl-এর চাবি... আর কয়েকটা **সুইচ** (যেমন \"Docker-এ চালাও\")। বাক্সটা থাকে একটা নির্দিষ্ট জায়গায়: `~/.hermes/.env`।\n\nHermes-এর **Environment Variables reference** এই বাক্সের তালিকা: কোন খোপের নাম কী, কোনটা কী কাজে লাগে। তালিকা বিশাল, তাই আমরা শিখব **কোথায় রাখি**, **কোন দল আছে**, আর **ফাঁদগুলো**।\n\n**এটা না থাকলে কী সমস্যা হতো?** গোপন চাবি সরাসরি প্রোগ্রামের লেখার ভেতর বসাতে হতো। তাহলে কেউ প্রোগ্রাম দেখলেই চাবি দেখে ফেলত। আলাদা বাক্সে রাখলে প্রোগ্রাম এক জায়গায়, চাবি অন্য জায়গায়।\n\n(পেজটা অনেক বড়, তাই এখানে সবগুলো variable নেই। পুরো তালিকার জন্য আসল পেজ দেখো।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### Environment variable (env var)\nএকটা নামওয়ালা সেটিং, লেখা হয় `নাম=মান` আকারে। যেমন `TELEGRAM_BOT_TOKEN=১২৩৪`। এটা কম্পিউটারের কাছে একটা চিরকুট: \"প্রোগ্রাম, তুমি চালু হলে এই নামে এই মান পাবে।\" সব বড় হাতের অক্ষরে আর মাঝে `_` দিয়ে লেখাকে বলে **UPPER_SNAKE** নাম।\n\n### `.env` ফাইল\nসব env var এক জায়গায় রাখার ফাইল: `~/.hermes/.env`। (`~` মানে তোমার home ফোল্ডার, আর নামের আগের `.` মানে লুকানো।) গোপন চাবির জন্য এটাই ঘর।\n\n### API key\nকোনো সেবা (provider) তোমাকে যে লম্বা গোপন পাসওয়ার্ড দেয়। এটা দেখালে সেবা বোঝে \"এই আসল ব্যবহারকারী\"। **API key মানে টাকা**, কারণ ব্যবহারের বিল ওই key-তে ওঠে।\n\n### Provider ও LLM\n**Provider** হলো যে কোম্পানি AI-টা চালায় (OpenRouter, OpenAI, Anthropic...)। **LLM** (Large Language Model, বড় ভাষা-মডেল) হলো সেই AI, যে লেখা বোঝে আর লেখে।\n\n### Base URL\nসেবার ঠিকানা। যেমন তোমার নিজের কম্পিউটারে চালানো AI-র ঠিকানা `http://localhost:1234/v1`। (**localhost** মানে \"এই নিজের কম্পিউটার\"।)\n\n### Terminal backend\nHermes কোনো shell command চালালে সেটা **কোথায়** চলবে, তার বাছাই: নিজের কম্পিউটারে (`local`), Docker-এর বন্ধ বাক্সে (`docker`), দূরের মেশিনে (`ssh`), বা ক্লাউডে। **Docker** হলো প্রোগ্রামকে একটা আলাদা বাক্সে বন্ধ করে চালানো, যাতে আসল কম্পিউটারে ক্ষতি না হয়। **SSH** মানে নিরাপদে দূরের কম্পিউটারে ঢুকে কাজ করা।\n\n### Gateway ও Home channel\n**Gateway** হলো পিওন, যে chat app-কে Hermes-এর সাথে জোড়ে। **Home channel** হলো সেই chat-এর ডিফল্ট ঠিকানা, যেখানে cron-এর (সময়-ঠিক-করা কাজের) ফল পাঠানো হয়।\n\n### Secret\nগোপন কিছু (token, key, password)। Hermes secret `.env`-এ রাখে, আর output ও log-এ লুকিয়ে দেয় (`HERMES_REDACT_SECRETS`)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কোথায় রাখবে, কোথায় রাখবে না\n\n- **Secret** (API key, token) → `~/.hermes/.env`\n- **গোপন নয় এমন আচরণ** → `config.yaml` (যদি মিলে যাওয়া key থাকে)। `config.yaml` হলো সেটিংসের আরেকটা খাতা, `নাম: মান` আকারে।\n- `HERMES_HOME` দিয়ে পুরো ঘরের জায়গা বদলানো যায়। Default `~/.hermes` (POSIX, মানে Mac/Linux), `%LOCALAPPDATA%\\hermes` (Windows)। official Docker image-এ `/opt/data`।\n- কিছু variable শুধু process-এর override বা **internal bridge** (ভেতরের যোগাযোগের সেতু), যেমন `HERMES_REPO_URL`, `HERMES_UPDATE_STATUS_FILE`। ডকে আছে বলেই এগুলো `.env`-এ বসিও না।\n- `hermes config set` নাম দেখে ঠিক করে: environment-style নাম `.env`-এ, dotted নাম `config.yaml`-এ। `HERMES_HOME`-এর মতো denylist-এর (নিষিদ্ধ তালিকা) নাম প্রত্যাখ্যাত।\n\n```bash\nhermes config set OPENROUTER_API_KEY sk-or-v1-xxxxxxxx   # .env-এ যায়\nhermes config env-path                                   # .env কোথায় দেখো\n```\n\n| অংশ | মানে |\n|---|---|\n| `hermes config set` | একটা সেটিং লেখার command |\n| `OPENROUTER_API_KEY` | সেটিং-এর নাম (UPPER_SNAKE, তাই `.env`-এ যায়) |\n| `sk-or-v1-xxxxxxxx` | মান: তোমার আসল key (এখানে নমুনা) |\n| `hermes config env-path` | `.env` ফাইল ঠিক কোথায় আছে বলে দেয় |\n\n## দলগুলো, আর কখন লাগে\n\n| দল | উদাহরণ | কখন লাগে |\n|---|---|---|\n| **LLM provider** | `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_BASE_URL` (vLLM/SGLang), `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` (alias `GEMINI_API_KEY`), `HF_TOKEN`, `LM_BASE_URL` (default `http://localhost:1234/v1`) | Hermes-কে \"মগজ\" দিতে। যে কোম্পানির AI ব্যবহার করবে তার key |\n| **Provider auth** | `ANTHROPIC_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`, `HERMES_PORTAL_BASE_URL` | key ছাড়া অন্য পরিচয়-পদ্ধতিতে ঢুকতে |\n| **Tool API** | `FIRECRAWL_API_KEY`, `TAVILY_API_KEY`, `EXA_API_KEY`, `SEARXNG_URL`, `BROWSERBASE_API_KEY`, `FAL_KEY`, `ELEVENLABS_API_KEY` | ওয়েব খোঁজা, ছবি বানানো, কণ্ঠ তৈরির মতো হাতিয়ার চালাতে |\n| **Terminal backend** | `TERMINAL_ENV` (`local`, `docker`, `ssh`, `modal`, `daytona`, `vercel_sandbox`), `TERMINAL_DOCKER_IMAGE`, `TERMINAL_TIMEOUT` | command কোথায় চলবে ঠিক করতে |\n| **SSH** | `TERMINAL_SSH_HOST`, `_USER`, `_PORT` (default ২২), `_KEY` | দূরের কম্পিউটারে চালাতে |\n| **Container resource** | `TERMINAL_CONTAINER_CPU` (১), `_MEMORY` (৫১২০ MB), `_DISK` (৫১২০০ MB), `_PERSISTENT` (true) | বাক্সের আকার আর ডেটা থাকবে কি না ঠিক করতে |\n| **Messaging** | `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`, `SLACK_BOT_TOKEN` (`xoxb-`), `SLACK_APP_TOKEN` (`xapp-`), `GATEWAY_ALLOWED_USERS` | chat app জুড়তে আর কারা কথা বলবে ঠিক করতে |\n| **Dashboard** | `HERMES_DASHBOARD_*` auth variable | ব্রাউজারের নিয়ন্ত্রণ-ফলক নিরাপদ রাখতে |\n| **Agent আচরণ** | `HERMES_MAX_ITERATIONS` (৫০০), `HERMES_API_TIMEOUT` (১৮০০), `HERMES_STREAM_READ_TIMEOUT` (১২০), `HERMES_YOLO_MODE`, `HERMES_TIMEZONE` | কতবার চেষ্টা, কতক্ষণ অপেক্ষা, কোন সময় অঞ্চল |\n| **Interface** | `HERMES_TUI`, `HERMES_TUI_THEME` | টার্মিনালের চেহারা বাছতে |\n\nশব্দ: **Timeout** মানে \"এত সেকেন্ডের বেশি অপেক্ষা করব না\"। **Iteration** মানে একটা ধাপ বা চক্র। **Context length** মানে AI একসাথে কতটা কথা সামনে রাখতে পারে।\n\n### Messaging platform-এর চারটা ধাপের নকশা\n\nপ্রতিটা platform একই ছাঁচে চলে: **token** → `*_ALLOWED_USERS` → (শুধু dev-এ, মানে পরীক্ষায়) `*_ALLOW_ALL_USERS` → `*_HOME_CHANNEL` (cron-এর বার্তা কোথায় যাবে)। আগে পরিচয়, তারপর অতিথি-তালিকা, তারপর বিশেষ ঠিকানা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "একটা key-এর যাত্রা: `.env` থেকে Hermes হয়ে provider-এ।",
+        "nodes": [
+          {
+            "id": "env",
+            "kind": "database",
+            "label": "~/.hermes/.env",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "h",
+            "kind": "server",
+            "label": "Hermes",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "p",
+            "kind": "external",
+            "label": "LLM provider",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "t",
+            "kind": "external",
+            "label": "Tool API",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "env",
+            "to": "h",
+            "label": "পড়ে"
+          },
+          {
+            "from": "h",
+            "to": "p",
+            "label": "OPENROUTER_API_KEY"
+          },
+          {
+            "from": "h",
+            "to": "t",
+            "label": "FIRECRAWL_API_KEY"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ফাঁদ ও gotcha\n\n- **`OPENAI_API_KEY` OpenRouter key হিসেবে গণ্য হয় কেবল `sk-or-` দিয়ে শুরু হলে।** OpenRouter key রাখো `OPENROUTER_API_KEY`-তে।\n- `OPENAI_BASE_URL` দিলে `OPENAI_API_KEY` যায় শুধু ওই **একই origin**-এ (scheme, host, port মিলিয়ে একই ঠিকানা)। **কেন?** যাতে ভুল ঠিকানায় চাবি চলে না যায়।\n- **Telegram webhook:** `TELEGRAM_WEBHOOK_URL` দিলে `TELEGRAM_WEBHOOK_SECRET` **বাধ্যতামূলক**, নইলে gateway চালুই হবে না।\n- **API server চালু করলে `API_SERVER_KEY` লাগবে**, loopback-এও (মানে শুধু নিজের কম্পিউটার থেকে ডাকলেও)।\n- `GATEWAY_ALLOW_ALL_USERS` default `false`। খুলে দিও না (`*_ALLOW_ALL_USERS` শুধু dev-এ)।\n- `SMS_INSECURE_NO_SIGNATURE` Twilio-র (SMS-সেবা) signature-যাচাই বন্ধ করে। শুধু local dev-এ।\n- **`HERMES_WRITE_SAFE_ROOT`** `write_file`/`patch`-কে তালিকার বাইরে লিখতে দেয় না (approval ছাড়াই block)।\n- `HERMES_REDACT_SECRETS` default `true`: tool output, log, chat-এ secret লুকিয়ে দেয়।\n- `HERMES_TOOL_PROGRESS` উপেক্ষিত, `display.tool_progress` ব্যবহার করো। `TERMINAL_CWD` ও `MESSAGING_CWD` deprecated (পুরোনো), `terminal.cwd` ব্যবহার করো।\n- Dashboard `--host 0.0.0.0` দিলে (মানে অন্য কম্পিউটার থেকেও ঢোকা যায়) auth gate (পরিচয়ের দরজা) চালু হয়। `HERMES_DASHBOARD_BASIC_AUTH_SECRET` ফাঁকা রাখলে প্রতি restart-এ session মুছে যায়।\n- `HERMES_SESSION_ID`, `AI_AGENT`, `HERMES_AGENT` Hermes **নিজে** সেট করে। হাতে দিও না।\n\n### config.yaml-only কিছু জিনিস\n\n`compression` (`enabled: true`, `threshold: 0.50`, `target_ratio: 0.20`, `protect_last_n: 20`), `fallback_providers`, `provider_routing`। এগুলো env variable নয়, `config.yaml`-এ রাখো।\n\n| key | মানে | কখন লাগে |\n|---|---|---|\n| `compression.threshold: 0.50` | context অর্ধেক ভরলে সংক্ষেপ শুরু | আলাপ লম্বা হলে নিজে জায়গা বানাতে |\n| `target_ratio: 0.20` | threshold-এর কত ভাগ সাম্প্রতিক অংশ হিসেবে রাখা হবে | |\n| `protect_last_n: 20` | শেষ ২০টা বার্তা সংক্ষেপ থেকে বাঁচানো | সাম্প্রতিক কথা অক্ষত রাখতে |\n| `fallback_providers` | প্রথম provider ব্যর্থ হলে বিকল্প | সেবা বন্ধ থাকলেও চালিয়ে যেতে |"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "`.env` কখনো commit কোরো না",
+      "markdown": "API key মানে টাকা। `.env` git-এ তুলো না (git হলো কোডের সংস্করণ রাখার টুল), chat-এ পেস্ট কোরো না।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "খুঁজবে কীভাবে",
+      "markdown": "পেজে section-এর নাম ধরে যাও (LLM Providers, Terminal Backend, Messaging...)। নাম মনে না থাকলে প্রথমে দল ঠিক করো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "API key কোথায় রাখা উচিত?",
+      "options": [
+        "`config.yaml`-এ",
+        "`~/.hermes/.env`-এ",
+        "chat-এ পেস্ট করে",
+        "যেকোনো ছবির ফাইলে"
+      ],
+      "answerIndex": 1,
+      "explanation": "secret থাকে `.env`-এ। আচরণের সেটিং থাকে `config.yaml`-এ।"
+    },
+    {
+      "question": "`TELEGRAM_WEBHOOK_URL` সেট করলে আর কী বাধ্যতামূলক?",
+      "options": [
+        "`TELEGRAM_WEBHOOK_SECRET`",
+        "`DISCORD_BOT_TOKEN`",
+        "`HERMES_TUI`",
+        "কিছুই না"
+      ],
+      "answerIndex": 0,
+      "explanation": "secret না থাকলে gateway চালুই হয় না।"
+    },
+    {
+      "question": "`OPENAI_API_KEY` কখন OpenRouter key হিসেবে গণ্য হয়?",
+      "options": [
+        "সবসময়",
+        "কখনোই না",
+        "যখন `sk-or-` দিয়ে শুরু",
+        "যখন খুব বড়"
+      ],
+      "answerIndex": 2,
+      "explanation": "OpenRouter key সাধারণত `OPENROUTER_API_KEY`-তে রাখো।"
+    },
+    {
+      "question": "`HERMES_WRITE_SAFE_ROOT` কী করে?",
+      "options": [
+        "`write_file`/`patch`-কে তালিকার বাইরে লিখতে দেয় না",
+        "ফোল্ডার মুছে দেয়",
+        "key বদলায়",
+        "internet বন্ধ করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "নিরাপদ ফোল্ডারের বাইরে লেখা approval ছাড়াই আটকে দেয়।"
+    },
+    {
+      "question": "`TERMINAL_ENV`-এর বৈধ মান কোনটা?",
+      "options": ["`red`", "`docker`", "`mobile`", "`fast`"],
+      "answerIndex": 1,
+      "explanation": "`local`, `docker`, `ssh`, `modal`, `daytona`, `vercel_sandbox`। এটা ঠিক করে command কোথায় চলবে।"
+    },
+    {
+      "question": "কোন variable Hermes নিজে সেট করে, হাতে দেওয়ার নয়?",
+      "options": [
+        "`OPENROUTER_API_KEY`",
+        "`HERMES_SESSION_ID`",
+        "`TELEGRAM_BOT_TOKEN`",
+        "`HERMES_HOME`"
+      ],
+      "answerIndex": 1,
+      "explanation": "`HERMES_SESSION_ID`, `AI_AGENT`, `HERMES_AGENT` Hermes নিজে সেট করে।"
+    },
+    {
+      "question": "`compression.threshold` কোথায় সেট হয়?",
+      "options": [
+        "`.env`-এ",
+        "`config.yaml`-এ, এটা env variable নয়",
+        "BotFather-এ",
+        "কোথাও না"
+      ],
+      "answerIndex": 1,
+      "explanation": "`compression`, `fallback_providers`, `provider_routing` শুধু `config.yaml`-এ।"
+    },
+    {
+      "question": "`OPENAI_BASE_URL` দিলে `OPENAI_API_KEY` কোথায় যায়?",
+      "options": [
+        "যেকোনো ঠিকানায়",
+        "শুধু ওই একই origin-এ",
+        "কোথাও না",
+        "সব provider-এ"
+      ],
+      "answerIndex": 1,
+      "explanation": "যাতে চাবি ভুল ঠিকানায় না যায়।"
+    }
+  ],
+  "recap": [
+    "Env var হলো `নাম=মান` আকারের সেটিং; গোপন key রাখো `~/.hermes/.env`-এ।",
+    "`HERMES_HOME` ঘরের জায়গা বদলায়, default `~/.hermes`।",
+    "`config.yaml`-only জিনিস (`compression`, `fallback_providers`) env var দিয়ে হয় না।",
+    "`TELEGRAM_WEBHOOK_URL` দিলে `TELEGRAM_WEBHOOK_SECRET` বাধ্যতামূলক।",
+    "`.env` কখনো git-এ তুলো না, key মানে টাকা।"
+  ]
+}

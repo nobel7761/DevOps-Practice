@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-user-guide-features-context-references",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q01",
+      "difficulty": "easy",
+      "question": "Context Reference কীভাবে লেখা শুরু হয়?",
+      "options": [
+        "message-এর ভেতরে `@` দিয়ে",
+        "message-এর শুরুতে `/` দিয়ে, যেমন slash command",
+        "message-এর শেষে `#` দিয়ে, যেমন hashtag",
+        "message-এর ভেতরে `$` দিয়ে, যেমন environment variable"
+      ],
+      "correctIndex": 0,
+      "explanation": "`@file:`, `@diff` ইত্যাদি সবই `@` দিয়ে শুরু হয়।",
+      "whyWrong": {
+        "1": "`/` slash command-এর জন্য।",
+        "2": "`#` ব্যবহার হয় না।",
+        "3": "`$` variable-এর জন্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q02",
+      "difficulty": "easy",
+      "question": "`@file:src/main.py` লিখলে কী ঘটে?",
+      "options": [
+        "Hermes ফাইলটা মুছে দিয়ে সেই জায়গায় একটা নতুন ফাঁকা ফাইল বানায়",
+        "Hermes ফাইলটা খুলে তার লেখা message-এর সাথে জুড়ে দেয়",
+        "Hermes শুধু ফাইলের নামটা মনে রাখে, কিন্তু ভেতরের লেখা খোলে না",
+        "Hermes ফাইলটা git-এ commit করে তার ইতিহাসে স্থায়ীভাবে রেখে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "লেখাটা `--- Attached Context ---` অংশে message-এর সাথে যায়।",
+      "whyWrong": {
+        "0": "মোছা বা বানানো এর কাজ নয়।",
+        "2": "ভেতরের লেখাই জোড়া হয়, শুধু নাম নয়।",
+        "3": "Commit করা এর কাজ নয়, শুধু পড়ে জুড়ে দেয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q03",
+      "difficulty": "easy",
+      "question": "`@diff` কী ঢোকায়?",
+      "options": [
+        "staged পরিবর্তন (`git diff --staged`)",
+        "staged না এমন পরিবর্তন (`git diff`)",
+        "শেষ কয়েকটা commit-এর patch",
+        "একটা directory-র tree-তালিকা"
+      ],
+      "correctIndex": 1,
+      "explanation": "`@diff` এখনও সংরক্ষণ হয়নি এমন বদল দেখায়; review করাতে কাজে লাগে।",
+      "whyWrong": {
+        "0": "ওটা `@staged`।",
+        "2": "ওটা `@git:N`।",
+        "3": "ওটা `@folder:`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q04",
+      "difficulty": "easy",
+      "question": "`@url:https://example.com` কী করে?",
+      "options": [
+        "পাতাটা browser-এ খুলে রাখে আর তুমি নিজে পড়ে নাও, এমনভাবে",
+        "ওয়েব পাতা এনে message-এর সাথে ঢোকায়",
+        "পাতার ঠিকানাটা বদলে দেয় আর নতুন একটা ঠিকানা বানিয়ে ফেলে",
+        "পাতাটাকে একটা ফাইল ধরে নিয়ে তাকে মুছে ফেলার চেষ্টা করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "ওয়েবের লেখা পড়ে সারসংক্ষেপ বা তুলনা করাতে `@url:` কাজে লাগে।",
+      "whyWrong": {
+        "0": "Browser-এ খোলা এর কাজ নয়।",
+        "2": "ঠিকানা বদলায় না।",
+        "3": "পাতা মোছা যায় না, শুধু লেখা আনা হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q05",
+      "difficulty": "easy",
+      "question": "**Path traversal** বলতে কী বোঝায়?",
+      "options": [
+        "একটা ফাইলের লাইন গুনে গুনে তার range বের করার একটা কৌশল",
+        "ফোল্ডারের ভেতরের সব ফাইলের একটা সুন্দর তালিকা বানানোর কাজ",
+        "`../..` দিয়ে অনুমতির বাইরের ফোল্ডারে উঁকি দেওয়া",
+        "আগের কথা সংক্ষেপ করে context-এ জায়গা বাঁচানোর পদ্ধতি"
+      ],
+      "correctIndex": 2,
+      "explanation": "Workspace root-এর বাইরে গেলে Hermes তা প্রত্যাখ্যান করে।",
+      "whyWrong": {
+        "0": "লাইন range আলাদা জিনিস।",
+        "1": "ওটা `@folder:`-এর কাজ।",
+        "3": "ওটা compression।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q06",
+      "difficulty": "easy",
+      "question": "**Context length (context window)** কী?",
+      "options": [
+        "একটা ফাইলে সর্বোচ্চ কয়টা লাইন থাকতে পারে তার হিসাব",
+        "একটা message-এ সর্বোচ্চ কয়টা `@` থাকতে পারে তার সীমা",
+        "একটা git commit-এ সর্বোচ্চ কত ফাইল বদলানো যায় তার সীমা",
+        "AI একবারে সর্বোচ্চ যত লেখা মনে রেখে পড়তে পারে তার সীমা"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটাকে পড়ার টেবিলের আকার ভাবো; soft ও hard limit এই আকারের শতাংশ।",
+      "whyWrong": {
+        "0": "লাইন-সংখ্যার সীমা নয়, AI-র মোট মনে রাখার সীমা।",
+        "1": "`@`-এর সংখ্যার কোনো সীমা বলা হয়নি।",
+        "2": "Commit-এর সীমা আলাদা: `@git:N` সর্বোচ্চ ১০।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q07",
+      "difficulty": "easy",
+      "question": "Tab completion মানে কী?",
+      "options": [
+        "`Tab` চাপলে নির্বাচিত ফাইলটা মুছে ফেলা হয় আর জায়গা খালি হয়",
+        "`Tab` চাপলে অর্ধেক লেখা message-টা পুরোপুরি পাঠিয়ে দেওয়া হয়",
+        "`Tab` চাপলে পুরোনোটা বন্ধ হয়ে একটা নতুন session শুরু হয়",
+        "অর্ধেক লিখে `Tab` চাপলে বাকিটা প্রস্তাব করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "ফোনের শব্দ সাজেশনের মতো; `@` টাইপ করলেই সব ধরন দেখায়।",
+      "whyWrong": {
+        "0": "মোছা এর কাজ নয়।",
+        "1": "পাঠানো নয়, শুধু প্রস্তাব।",
+        "2": "Session শুরু এর কাজ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q08",
+      "difficulty": "medium",
+      "question": "`@file:path/to/file.py:10-25` লিখলে কোন লাইনগুলো আসে?",
+      "options": [
+        "১০ থেকে ২৫ নম্বর, দুই প্রান্তসহ",
+        "১১ থেকে ২৪ নম্বর, দুই প্রান্ত বাদে",
+        "শুধু ২৫ নম্বর লাইন",
+        "০ থেকে ২৫ নম্বর, কারণ গোনা ০ থেকে শুরু"
+      ],
+      "correctIndex": 0,
+      "explanation": "গোনা ১ থেকে শুরু, আর দুই প্রান্তসহ (inclusive)।",
+      "whyWrong": {
+        "1": "প্রান্ত বাদ যায় না।",
+        "2": "একটা লাইন চাইলে `:42` ধরনের লেখা হয়।",
+        "3": "গোনা ১ থেকে, ০ থেকে নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q09",
+      "difficulty": "medium",
+      "question": "লাইন-range ভুল (invalid) লিখলে কী হয়?",
+      "options": [
+        "চুপচাপ উপেক্ষিত হয় আর পুরো ফাইল আসে",
+        "Hermes error দিয়ে message বাতিল করে",
+        "শুধু প্রথম লাইনটা আসে",
+        "কিছুই আসে না, ফাইলটা বাদ যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Range ভুল হলে ব্যর্থতা নয়, বরং পুরো ফাইল জোড়া হয়; তাই বড় ফাইলে সঠিক range দেওয়া ভালো।",
+      "whyWrong": {
+        "1": "বাতিল হয় না।",
+        "2": "প্রথম লাইনের নিয়ম নেই।",
+        "3": "বাদ যায় না, পুরোটাই আসে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q10",
+      "difficulty": "medium",
+      "question": "`@git:5` কী ঢোকায়, আর `@git:50` লিখলে কী হবে?",
+      "options": [
+        "শেষ ৫টা commit; আর `@git:50` লিখলে ৫০টাই patch-সহ চলে আসবে",
+        "প্রথম ৫টা commit; আর `@git:50` লিখলে একটা error দেখাবে",
+        "শেষ ৫টা ফাইলের তালিকা; আর `@git:50` লিখলে ৫০টা ফাইল ধরবে",
+        "শেষ ৫টা commit; `@git:50` সর্বোচ্চ ১০-এ আটকাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "`@git:N` সংখ্যা [1, 10]-এ আটকানো হয়।",
+      "whyWrong": {
+        "0": "সর্বোচ্চ ১০, তার বেশি আসে না।",
+        "1": "Error নয়, সীমায় আটকানো হয়, আর এটা শেষ N commit।",
+        "2": "এটা commit, ফাইল নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q11",
+      "difficulty": "medium",
+      "question": "Soft limit আর Hard limit-এর পার্থক্য কী?",
+      "options": [
+        "soft (৫০%) প্রত্যাখ্যান করে, আর hard (২৫%) শুধু সতর্ক করে ছেড়ে দেয়",
+        "দুটোই ২৫%-এ থামিয়ে দেয়, শুধু সতর্কতার ভাষা আলাদা হয়",
+        "soft (২৫%) সতর্ক করে ও চলে; hard (৫০%) প্রত্যাখ্যান করে",
+        "দুটোই কেবল সতর্ক করে ও expansion চলতে দেয়, কখনও থামায় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "ছোট সীমায় সতর্কতা, বড় সীমায় expansion প্রত্যাখ্যাত ও message অপরিবর্তিত ফেরত।",
+      "whyWrong": {
+        "0": "শতাংশগুলো উল্টে গেছে।",
+        "1": "Hard limit আলাদা, ৫০%।",
+        "3": "Hard limit-এ expansion প্রত্যাখ্যাত হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q12",
+      "difficulty": "medium",
+      "question": "বড় ফাইলে লাইন-range ব্যবহার করতে বলা হয়েছে কেন?",
+      "options": [
+        "compress হলে ফাইল সংক্ষিপ্ত হয়ে যায় আর জায়গাও বেশি লাগে",
+        "যাতে ফাইলটা git-এ staged হয়ে যায় আর তার ইতিহাস পরিষ্কার থাকে",
+        "যাতে ফাইলটা binary বলে ধরা না পড়ে আর MIME ঠিক থাকে",
+        "যাতে `@url:` আর `@file:` দুটো একসাথে একই message-এ কাজ করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Expand করা লেখা context ব্যবহারে গোনা হয় ও compress হলে হুবহু থাকে না; তাই শুধু দরকারি অংশ আনা ভালো।",
+      "whyWrong": {
+        "1": "Staged হওয়ার সাথে range-এর সম্পর্ক নেই।",
+        "2": "Binary ধরা পড়ে MIME ও null-byte scan-এ।",
+        "3": "দুটো এমনিতেই একসাথে চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q13",
+      "difficulty": "medium",
+      "question": "`@file:~/.ssh/id_rsa` লিখলে কী ঘটবে?",
+      "options": [
+        "ফাইলটা পুরো ঢুকে যাবে, কারণ তুমি নিজে স্পষ্ট করে চেয়েছ",
+        "শুধু প্রথম ২৫% ঢুকবে, বাকিটা সংবেদনশীল বলে কাটা পড়বে",
+        "সংবেদনশীল path বলে প্রত্যাখ্যাত হবে",
+        "ফাইলটা ঢুকবে, তবে একটা সতর্কতা জোড়া থাকবে সাথে"
+      ],
+      "correctIndex": 2,
+      "explanation": "SSH key, shell profile, credential ইত্যাদি সবসময় ব্লক; সতর্কতা: \"path is a sensitive credential file\"।",
+      "whyWrong": {
+        "0": "ব্লক করার জন্যই এই নিয়ম।",
+        "1": "আংশিক ঢোকার নিয়ম নেই।",
+        "3": "ঢোকেই না, শুধু সতর্কতা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q14",
+      "difficulty": "medium",
+      "question": "Telegram-এ `@file:src/main.py` লিখে message পাঠালে কী হয়?",
+      "options": [
+        "Hermes ঠিক CLI-এর মতোই ফাইল খুলে message-এর সাথে জুড়ে দেয়",
+        "gateway `@` expand করে না; message যেমন আছে তেমনই যায়",
+        "message ব্লক হয়ে যায় আর Telegram একটা error ফেরত দেয়",
+        "Telegram নিজেই ফাইল পড়ে ফেলে আর তার সারাংশ ফেরত দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Context Reference মূলত CLI feature। তবে agent `read_file`, `search_files`, `web_extract` tool দিয়ে পড়তে পারে।",
+      "whyWrong": {
+        "0": "Expansion CLI-তে হয়, gateway-তে না।",
+        "2": "ব্লক হয় না।",
+        "3": "Telegram এর কোনো ভূমিকা নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q15",
+      "difficulty": "hard",
+      "question": "তুমি একটা বড় `main.py`-এর ১০০ থেকে ২০০ নম্বর লাইন আর একটা README দেখাতে চাও। কোন message ঠিক?",
+      "options": [
+        "`Explain @file:main.py-100-200 and @folder:README.md`",
+        "`Explain @diff:main.py:100-200 and @file:README.md`",
+        "`Explain @file:main.py:100-200 and @file:README.md`",
+        "`Explain @file:main.py:100:200 and @url:README.md`"
+      ],
+      "correctIndex": 2,
+      "explanation": "Range-এর গঠন `@file:path:শুরু-শেষ`, আর একই message-এ একাধিক reference চলে।",
+      "whyWrong": {
+        "0": "Range-এর আগে `:` লাগে, `-` নয়, আর README ফোল্ডার নয়।",
+        "1": "`@diff` ফাইল ধরে না।",
+        "3": "Range-এ `-` লাগে, আর README একটা ফাইল, URL নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q16",
+      "difficulty": "hard",
+      "question": "তুমি কমিট করতে চলেছ এবং সংরক্ষণের আগে শেষবার দেখাতে চাও। কোনটা সবচেয়ে মানানসই?",
+      "options": [
+        "`@staged`",
+        "`@diff`, কারণ সেটা staged বদল দেখায়",
+        "`@git:1`, কারণ সেটা আগামী commit দেখায়",
+        "`@folder:.`, কারণ সেটা বদলের তালিকা দেখায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "`@staged` মানে `git diff --staged`, অর্থাৎ commit-এর জন্য সাজিয়ে রাখা বদল।",
+      "whyWrong": {
+        "1": "`@diff` staged না এমন বদল দেখায়।",
+        "2": "`@git:1` আগের commit দেখায়, আগামীটা না।",
+        "3": "`@folder:` তালিকা দেয়, বদল না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q17",
+      "difficulty": "hard",
+      "question": "তুমি `@folder:src` দিলে কিন্তু folder-এ ৫০০টা ফাইল। কী আসবে?",
+      "options": [
+        "`Explain @file:main.py-100-200 and @folder:README.md`, কারণ range-এ `-` চলে",
+        "`Explain @diff:main.py:100-200 and @file:README.md`, কারণ `@diff` ফাইলও ধরে",
+        "`Explain @file:main.py:100:200 and @url:README.md`, কারণ দুই প্রান্তে `:` চলে",
+        "সর্বোচ্চ ২০০টা, বাকিগুলো `- ...` দিয়ে বদলানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "Folder entry-র সীমা ২০০; বাড়তিগুলো `- ...` দিয়ে বদলে যায়।",
+      "whyWrong": {
+        "0": "সীমা আছে।",
+        "1": "১০ হলো `@git:N`-এর সীমা, folder-এর নয়।",
+        "2": "বড় folder-এও প্রথম ২০০টা আসে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q18",
+      "difficulty": "hard",
+      "question": "একটা `.py` ফাইলের MIME ঠিকমতো ধরা পড়ছে না, কিন্তু ফাইলটা সত্যিই text। Hermes কী করবে?",
+      "options": [
+        "`@diff`, কারণ সেটাই সংরক্ষণের জন্য সাজিয়ে রাখা বদল দেখায়",
+        "`@git:1`, কারণ সেটা আগামী commit-এর patch আগেই দেখায়",
+        "`.py` পরিচিত text extension, তাই MIME পরীক্ষা এড়িয়ে যায়",
+        "`@folder:.`, কারণ সেটা project-এর বদলের তালিকা দেখায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "পরিচিত text extension (`.py`, `.md`, `.json`, `.yaml`, `.toml`, `.js`, `.ts`) MIME পরীক্ষা এড়ায়।",
+      "whyWrong": {
+        "0": "Text extension ছাড় পায়।",
+        "1": "Null-byte scan আর MIME দুটো মিলিয়ে binary ধরা হয়, তবে text extension-এ MIME বাদ।",
+        "3": "`.py`-ও তালিকায় আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q19",
+      "difficulty": "hard",
+      "question": "কোন পরিস্থিতিতে Context Reference আর Context Files দুটোর মধ্যে Reference বেছে নেবে?",
+      "options": [
+        "project-এর নিয়ম প্রতিবার নিজে নিজে লোড করাতে",
+        "এক message-এর জন্য হাতে বেছে একটা ফাইল দেখাতে",
+        "Hermes-এর স্বভাব স্থায়ীভাবে ঠিক করতে",
+        "`HERMES_HOME`-এ নিয়ম রেখে সব session-এ চালাতে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Context Files নিজে লোড হয় প্রতিবার; References তুমি এক-বারের জন্য হাতে বেছে দাও।",
+      "whyWrong": {
+        "0": "ওটা `AGENTS.md`-এর কাজ।",
+        "2": "স্বভাব `SOUL.md`-এ।",
+        "3": "স্থায়ী ব্যাপার Context Files-এর।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-context-references-q20",
+      "difficulty": "hard",
+      "question": "`@file:/etc/../home/user/.ssh/config` এর মতো path দিয়ে চালাকি করলে কোন সুরক্ষা প্রথমে আটকাবে?",
+      "options": [
+        "project-এর নিয়ম প্রতিবার নিজে নিজে লোড করানোর জন্য, যেমন `AGENTS.md`",
+        "Hermes-এর স্বভাব আর tone স্থায়ীভাবে ঠিক করার জন্য, যেমন `SOUL.md`",
+        "`HERMES_HOME`-এ নিয়ম রেখে সব session-এ একই রকম চালানোর জন্য",
+        "path সমাধান করে workspace-বহির্ভূত বা sensitive বলে প্রত্যাখ্যান"
+      ],
+      "correctIndex": 3,
+      "explanation": "Path working directory-র সাপেক্ষে সমাধান হয়; অনুমোদিত root-এর বাইরে গেলে বা `~/.ssh/` ব্লক-তালিকায় পড়লে প্রত্যাখ্যাত।",
+      "whyWrong": {
+        "0": "দুটো সুরক্ষাই আছে।",
+        "1": "Binary scan অন্য কাজ।",
+        "2": "URL সুরক্ষা এই ক্ষেত্রে অপ্রাসঙ্গিক।"
+      }
+    }
+  ]
+}

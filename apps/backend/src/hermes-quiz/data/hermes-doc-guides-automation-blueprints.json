@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-guides-automation-blueprints",
+  "questions": [
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q01",
+      "difficulty": "easy",
+      "question": "Automation Blueprints-এ তিন ধরনের trigger কোনগুলো?",
+      "options": [
+        "Schedule, GitHub Event, API Call",
+        "Schedule, Memory, Skill (সময়, স্মৃতি ও দক্ষতা)",
+        "Cron, Gateway, Profile (সময়, সেতু ও সেটআপ)",
+        "Model, Provider, Token (মগজ, সেবা ও টুকরো)"
+      ],
+      "correctIndex": 0,
+      "explanation": "ঘড়ি (সময় ধরে), কলিং বেল (ঘটনা ঘটলে), ফোন (বাইরে থেকে call)।",
+      "whyWrong": {
+        "1": "Memory ও Skill trigger নয়।",
+        "2": "Gateway ও Profile trigger নয়।",
+        "3": "এগুলো trigger নয়, অন্য ধারণা।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q02",
+      "difficulty": "easy",
+      "question": "Webhook কী?",
+      "options": [
+        "Hermes নিজে বারবার গিয়ে অন্য সেবা দেখে আসা, এমন ব্যবস্থা",
+        "ঘটনা ঘটলে অন্য সেবা খবর দেয়, এমন ঠিকানা",
+        "সময় ধরে নিজে নিজে চলা কাজের একটা নকশা",
+        "ফল কোথায় পাঠানো হবে তার একটা বিস্তারিত তালিকা"
+      ],
+      "correctIndex": 1,
+      "explanation": "কলিং বেলের মতো: তুমি বারবার গিয়ে দেখো না, খবর নিজে আসে।",
+      "whyWrong": {
+        "0": "এটা polling।",
+        "2": "এটা cron।",
+        "3": "এটা delivery।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q03",
+      "difficulty": "easy",
+      "question": "`[SILENT]` উত্তরে থাকলে কী হয়?",
+      "options": [
+        "job মুছে যায় চিরতরে",
+        "Telegram ছাড়া সব জায়গায় যায়",
+        "delivery দমন হয়",
+        "agent পরের run বন্ধ করে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "agent-এর বলার মতো কিছু থাকলেই শুধু তুমি জানবে।",
+      "whyWrong": {
+        "0": "job থাকে।",
+        "1": "দমন মানে কোথাও যায় না।",
+        "3": "পরের run চলে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q04",
+      "difficulty": "easy",
+      "question": "`--deliver origin` মানে কী?",
+      "options": [
+        "শুধু local ফাইলে সেভ",
+        "শুধু Telegram-এর home channel-এ",
+        "শুধু GitHub comment হিসেবে",
+        "যেখানে job বানিয়েছ সেখানেই"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা default। অন্য লক্ষ্য: `local`, `telegram`, `discord`, `slack`, `sms:+15551234567`।",
+      "whyWrong": {
+        "0": "এটা `local`।",
+        "1": "এটা `telegram`।",
+        "2": "এটা `github_comment`-এর কাজ, default নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q05",
+      "difficulty": "easy",
+      "question": "HMAC signature কী প্রমাণ করে?",
+      "options": [
+        "PR-এর কোডে কোনো ভুল নেই, সব ঠিক আছে",
+        "payload ৪০০০ অক্ষরের চেয়ে ছোট আছে",
+        "চিঠি সত্যিই GitHub পাঠিয়েছে",
+        "job প্রতি ঘণ্টায় ঠিকমতো চলছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "দুই পক্ষের জানা secret দিয়ে সীলমোহর বানানো হয়; curl উদাহরণে `X-Hub-Signature-256` header আছে।",
+      "whyWrong": {
+        "0": "কোড-মান আলাদা বিষয়।",
+        "1": "আকার signature-এর কাজ নয়।",
+        "3": "সময়সূচির সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q06",
+      "difficulty": "easy",
+      "question": "Stripe webhook-এ পরিমাণ কোন এককে আসে?",
+      "options": [
+        "cent-এ, ১০০ cent = ১ ডলার",
+        "ডলারে, দশমিকসহ",
+        "শতাংশে, ১০০% = ১ ডলার",
+        "টাকায়, ১০০ টাকা = ১ ডলার"
+      ],
+      "correctIndex": 0,
+      "explanation": "Stripe webhook-এ `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.dispute.created` মনে রাখো।",
+      "whyWrong": {
+        "1": "ডলারে নয়, cent-এ।",
+        "2": "শতাংশ নয়।",
+        "3": "টাকা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q07",
+      "difficulty": "easy",
+      "question": "CVSS ≥ 7.0 কী বোঝায় Dependency Security Audit-এ?",
+      "options": [
+        "নতুন skill install করা",
+        "docs পুরনো হয়ে যাওয়া",
+        "ফাইল মুছে ফেলা",
+        "গুরুতর CVE চিহ্নিত করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "CVE হলো জানা নিরাপত্তা-ফাঁকের নম্বর, CVSS তার তীব্রতা (১০ সবচেয়ে গুরুতর)।",
+      "whyWrong": {
+        "0": "skill-এর সাথে সম্পর্ক নেই।",
+        "1": "docs drift আলাদা blueprint।",
+        "2": "ফাইল মোছা এর কাজ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q08",
+      "difficulty": "medium",
+      "question": "Nightly Backlog Triage কখন চলে এবং কী করে?",
+      "options": [
+        "প্রতি সোমবার `0 9 * * 1`; PR review করে",
+        "প্রতিদিন `0 2 * * *`; label বসায়",
+        "প্রতি ৩০ মিনিটে; তিন endpoint পরখ করে",
+        "প্রতিদিন `0 6 * * *`; `uv.lock` স্ক্যান করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "`gh issue list` ব্যবহার করে (P0-P3; bug/feature/docs/security), ফল Telegram-এ digest।",
+      "whyWrong": {
+        "0": "সোমবার সাপ্তাহিক হলো Docs Drift Detection।",
+        "2": "৩০ মিনিটে চলে Uptime Monitor।",
+        "3": "`uv.lock` স্ক্যান করে Dependency Security Audit।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q09",
+      "difficulty": "medium",
+      "question": "Automatic PR Code Review-এ কোন trigger ব্যবহার হয়?",
+      "options": [
+        "`issues` webhook, যা label প্রস্তাব করে",
+        "`pull_request` webhook",
+        "`check_run` route, যা CI ব্যর্থতা ধরে",
+        "`deployment` webhook, যা health পরখ করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "dynamic: `--skills github-code-review --deliver github_comment`; static: `config.yaml`-এ port `8644`।",
+      "whyWrong": {
+        "0": "`issues` Issue Auto-Labeling-এ।",
+        "2": "`check_run` CI Failure Analysis-এ।",
+        "3": "`deployment` Deploy Verification-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q10",
+      "difficulty": "medium",
+      "question": "`github_comment` delivery-তে `deliver_extra`-তে কী লাগে?",
+      "options": [
+        "`secret` ও `port` দুটোই",
+        "`chat_id` ও `topic` দুটো",
+        "`cvss` ও `cve` সংখ্যা",
+        "`repo` ও `pr_number`"
+      ],
+      "correctIndex": 3,
+      "explanation": "যাতে comment ঠিক কোন repo-র কোন PR-এ যাবে সেটা জানা যায়।",
+      "whyWrong": {
+        "0": "secret route-প্রতি আলাদা।",
+        "1": "এগুলো telegram-এর।",
+        "2": "এগুলো নিরাপত্তা-ফাঁকের নম্বর।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q11",
+      "difficulty": "medium",
+      "question": "Uptime Monitor job কীভাবে চলে?",
+      "options": [
+        "প্রতি ৩০ মিনিটে script দিয়ে পরখ",
+        "প্রতি ঘণ্টায় agent নিজে HTTP এনে দেখে",
+        "প্রতি সোমবার সকালে weekly report বানায়",
+        "শুধু GitHub event ঘটলে তবেই চলে"
+      ],
+      "correctIndex": 0,
+      "explanation": "script `OUTAGE DETECTED` বা `NO_ISSUES` ছাপে; prompt: বিপদ থাকলে জানাও, নইলে `[SILENT]`।",
+      "whyWrong": {
+        "1": "সময় ৩০ মিনিট, agent নয় script আনে।",
+        "2": "সাপ্তাহিক নয়।",
+        "3": "এটা schedule trigger।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q12",
+      "difficulty": "medium",
+      "question": "Webhook template variable-এর `{__raw__}` কী?",
+      "options": [
+        "শুধু PR-এর শিরোনাম আর তার বিবরণ",
+        "শুধু যিনি পাঠিয়েছেন তাঁর লগইন নাম",
+        "পুরো JSON, ৪০০০ অক্ষরে ছাঁটা",
+        "শুধু repo-র পুরো নাম ও মালিকের নাম"
+      ],
+      "correctIndex": 2,
+      "explanation": "অন্যগুলো: `{pull_request.title}`, `{issue.number}`, `{repository.full_name}`, `{action}`, `{sender.login}`।",
+      "whyWrong": {
+        "0": "শিরোনাম `{pull_request.title}`।",
+        "1": "নাম `{sender.login}`।",
+        "3": "repo-র নাম `{repository.full_name}`।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q13",
+      "difficulty": "medium",
+      "question": "Blueprint কপি করার পর সবচেয়ে প্রথম কী করতে হয়?",
+      "options": [
+        "`[SILENT]` মুছে দেওয়া",
+        "trigger বদলে cron করা",
+        "কোনো skill না রাখা",
+        "placeholder বদলানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "URL, secret, endpoint, repo-র নাম নিজের দিয়ে বদলাও; secret কখনো prompt বা কোডে খোলা রেখো না।",
+      "whyWrong": {
+        "0": "`[SILENT]` রাখা ভালো।",
+        "1": "trigger কাজের ধরন অনুযায়ী।",
+        "2": "skill জোড়া যায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q14",
+      "difficulty": "medium",
+      "question": "Docs Drift Detection কী খোঁজে?",
+      "options": [
+        "নতুন bug-এর label আর priority",
+        "uptime-এর বিভ্রাট বা outage",
+        "বদলেছে অথচ docs বদলায়নি",
+        "আজকের BTC ও ETH-এর দাম"
+      ],
+      "correctIndex": 2,
+      "explanation": "সাপ্তাহিক `0 9 * * 1`; tool schema, CLI command, config option, environment variable দেখে।",
+      "whyWrong": {
+        "0": "label Backlog Triage।",
+        "1": "uptime আলাদা monitor।",
+        "3": "দাম Daily Revenue Summary-তে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q15",
+      "difficulty": "hard",
+      "question": "তুমি চাও GitHub-এ কেউ PR খুললেই Hermes জানাবে। কোন সেটআপ ঠিক?",
+      "options": [
+        "`/cron add \"every 1h\"` ও শুধু schedule",
+        "`hermes webhook subscribe`",
+        "`--script` ছাড়া শুধু `local` delivery",
+        "কোনো trigger ছাড়া শুধু prompt লিখে"
+      ],
+      "correctIndex": 1,
+      "explanation": "GitHub Event-এ PR, issue, deploy ইত্যাদি ঘটলে নিজে খবর আসে। কলিং বেল।",
+      "whyWrong": {
+        "0": "এটা সময় ধরে চলে, event ধরে নয়।",
+        "2": "delivery ঘটনা ধরে না।",
+        "3": "trigger ছাড়া চলবে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q16",
+      "difficulty": "hard",
+      "question": "একজন Stripe webhook-এ ৫০০০ পেল, আর ভাবল পাঁচ হাজার ডলার। সমস্যা কী?",
+      "options": [
+        "পরিমাণ cent-এ আসে, ৫০ ডলার",
+        "পরিমাণ টাকায় আসে, ৫০০০ টাকা",
+        "পরিমাণ শতাংশে আসে, ৫০০০%",
+        "ঠিকই আছে, ৫০০০ ডলার"
+      ],
+      "correctIndex": 0,
+      "explanation": "১০০ cent = ১ ডলার, তাই ৫০০০ cent = ৫০ ডলার।",
+      "whyWrong": {
+        "1": "টাকা নয়।",
+        "2": "শতাংশ নয়।",
+        "3": "৫০০০ cent মানে ৫০ ডলার।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q17",
+      "difficulty": "hard",
+      "question": "CI Failure Analysis-এ `pull_requests.0.number` কেন লেখা হয়?",
+      "options": [
+        "শূন্য নম্বর PR বাদ দিতে",
+        "সব PR-এর যোগফল বের করতে",
+        "তালিকার প্রথম আইটেমের নম্বর নিতে",
+        "PR-এর শূন্য সংখ্যক comment বোঝাতে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`config.yaml`-এ `check_run` route আছে; ব্যর্থতা বিশ্লেষণ করে PR-এ পোস্ট হয়।",
+      "whyWrong": {
+        "0": "এটা index।",
+        "1": "যোগফল নয়।",
+        "3": "comment-এর কথা নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q18",
+      "difficulty": "hard",
+      "question": "Uptime script-এর উদাহরণ নিয়ে লেসন কী সতর্ক করে?",
+      "options": [
+        "Python 3.12-এর আগে syntax error",
+        "উদাহরণটা Python 2-এ একদমই চলবে না",
+        "উদাহরণে curl ও header-ই নেই",
+        "উদাহরণে `--deliver` নামের flag নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটা লেসন-লেখকের পর্যবেক্ষণ, official page-এ উল্লেখ নেই। নিজের script-এ সাবধানে লেখো।",
+      "whyWrong": {
+        "1": "Python 2-এর কথা নেই।",
+        "2": "curl Deploy Verification-এ।",
+        "3": "`--deliver telegram` আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q19",
+      "difficulty": "hard",
+      "question": "Dependency Security Audit-এর prompt Hermes-কে কোন কাজটা করতে মানা করে?",
+      "options": [
+        "`uv.lock` স্ক্যান করে নির্ভরতা দেখা",
+        "`website/`-এ `npm audit --json` চালানো",
+        "CVSS ≥ 7.0 হলে CVE চিহ্নিত করা",
+        "environment বদল বা scanner install"
+      ],
+      "correctIndex": 3,
+      "explanation": "Prompt বলে Hermes-এর নিজস্ব dependency environment সক্রিয় বা বদল না করতে, আর সেখানে scanner install না করতে। স্ক্যান, `npm audit` আর CVE চিহ্নিত করা কাজেরই অংশ।",
+      "whyWrong": {
+        "0": "`uv.lock` স্ক্যান করা এই job-এর কাজই।",
+        "1": "`npm audit --json` চালানো কাজের অংশ।",
+        "2": "গুরুতর CVE চিহ্নিত করাই এই job-এর উদ্দেশ্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-guides-automation-blueprints-q20",
+      "difficulty": "hard",
+      "question": "তিন trigger-এর ফল কোথায় পাঠানো যায়?",
+      "options": [
+        "শুধু Telegram-এ, আর কোথাও কোনোভাবেই নয়",
+        "নানা জায়গায়: Telegram, Slack, ফাইল",
+        "শুধু cron job-এর ফল যায়, webhook-এর যায় না",
+        "শুধু local ফাইলে যায়, chat app-এ কখনোই নয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "তিনটাই ফল পাঠাতে পারে Telegram, Discord, Slack, SMS, email, GitHub comment বা local ফাইলে।",
+      "whyWrong": {
+        "0": "Telegram ছাড়াও Discord, Slack, email, ফাইল ইত্যাদিতে যায়।",
+        "2": "Webhook-ভিত্তিক trigger-ও ফল delivery করতে পারে।",
+        "3": "Chat app-এও যায়, শুধু ফাইলে সীমাবদ্ধ নয়।"
+      }
+    }
+  ]
+}

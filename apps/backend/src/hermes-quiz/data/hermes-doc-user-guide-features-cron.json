@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-user-guide-features-cron",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-features-cron-q01",
+      "difficulty": "easy",
+      "question": "Cron job কী তিনটা জিনিসের সমষ্টি?",
+      "options": [
+        "model, provider আর fallback, তিনটা আলাদা AI মস্তিষ্কের নাম",
+        "skill, toolset আর plugin, তিনটা বাড়তি ক্ষমতার তালিকা",
+        "schedule, prompt বা script, আর delivery",
+        "session, gateway আর profile, তিনটা চলার জায়গার নাম"
+      ],
+      "correctIndex": 2,
+      "explanation": "অ্যালার্ম ঘড়ির মতো: সময় ঠিক করা, কাজ বলা, আর কোথায় জানাবে তা বলা।",
+      "whyWrong": {
+        "0": "ওগুলো model বাছাইয়ের ধাপ।",
+        "1": "ওগুলো আলাদা ধারণা।",
+        "3": "ওগুলো cron job-এর তিন অংশ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q02",
+      "difficulty": "easy",
+      "question": "Cron-এর প্রতিটা run কেমন session খোলে?",
+      "options": [
+        "আগের run-এর সব কথা মনে রাখা পুরনো session",
+        "শুধু gateway-র নিজের একটা স্থায়ী session",
+        "একদম নতুন ও পরিষ্কার, আগের কথা মনে থাকে না",
+        "একটাই session, যা সব job মিলে ভাগ করে নেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "তাই prompt self-contained রাখতে হয়: অচেনা মানুষ শুধু ওটা পড়েই কাজ করতে পারে এমন।",
+      "whyWrong": {
+        "0": "আগের কথা মনে থাকে না।",
+        "1": "প্রতি run নতুন।",
+        "3": "ভাগাভাগি নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q03",
+      "difficulty": "easy",
+      "question": "Cron-এর ঘড়ি কোথায় থাকে?",
+      "options": [
+        "`jobs.json` ফাইলের ভেতরে, ফাইল থাকলেই ঘড়ি চলতে থাকে",
+        "Telegram app-এর ভেতরে, app চালু থাকলেই ঘড়ি চলে যায়",
+        "gateway-র ভেতরে; gateway বন্ধ হলে ঘড়িও বন্ধ",
+        "একটা আলাদা service-এ, gateway-র সাথে যার কোনো যোগ নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "দাদু ঘুমালে ঘড়ি থামে: gateway প্রতি ৬০ সেকেন্ডে tick করে।",
+      "whyWrong": {
+        "0": "`jobs.json` শুধু job রাখে।",
+        "1": "Telegram ঘড়ি রাখে না।",
+        "3": "আলাদা service নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q04",
+      "difficulty": "easy",
+      "question": "`--no-agent` job-এ কী চলে?",
+      "options": [
+        "agent, তবে ছোট model দিয়ে",
+        "শুধু prompt, script ছাড়াই",
+        "দুটোই একসাথে, একবার agent ও একবার script",
+        "শুধু script, AI লাগে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Agent চালালে token খরচ লাগে; সহজ কাজে script খরচ বাঁচায়।",
+      "whyWrong": {
+        "0": "Agent-ই চলে না।",
+        "1": "Script লাগে, prompt নয়।",
+        "2": "একসাথে নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q05",
+      "difficulty": "easy",
+      "question": "**Delivery** (`deliver`) কী?",
+      "options": [
+        "কাজ কখন চলবে তার হিসাব, যেমন `every 2h` বা সময়",
+        "কাজে কোন model লাগবে তার তালিকা আর ক্রম",
+        "কাজ শেষে ফল পাঠানোর ঠিকানা",
+        "কাজ বাতিল করার জরুরি সুইচ, যা সব cron থামায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "চিঠিতে ডাকঘরের ঠিকানা লেখার মতো: `origin`, `local`, `telegram` ইত্যাদি।",
+      "whyWrong": {
+        "0": "ওটা schedule।",
+        "1": "Model আলাদা ব্যাপার।",
+        "3": "ওটা `hermes pause`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q06",
+      "difficulty": "easy",
+      "question": "`in 30m` লিখলে job কেমন চলে?",
+      "options": [
+        "প্রতি ৩০ মিনিটে চিরকাল",
+        "প্রতিদিন রাত ১২টা ৩০-এ",
+        "প্রতি ৩০ সেকেন্ডে একবার",
+        "একবারই, আধ ঘণ্টা পরে"
+      ],
+      "correctIndex": 3,
+      "explanation": "One-shot ধরন; বারবার চালাতে `every 30m` বা cron expression।",
+      "whyWrong": {
+        "0": "Interval হলে `every` থাকত।",
+        "1": "এটা ঘড়ির সময় নয়।",
+        "2": "`m` মানে মিনিট।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q07",
+      "difficulty": "easy",
+      "question": "`/cron add \"in 30m\" \"রিপোর্টটা তৈরি করো\"` কোথায় লেখা হয়?",
+      "options": [
+        "chat-এর ভেতরে",
+        "terminal-এ, `hermes cron create`-এর বদলে",
+        "`jobs.json` ফাইলে হাতে",
+        "`config.yaml`-এর ভেতরে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Terminal-এ একই কাজ `hermes cron create`।",
+      "whyWrong": {
+        "1": "Chat-এর কমান্ড।",
+        "2": "Job হাতে লেখা উচিত নয়।",
+        "3": "Config-এ job থাকে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q08",
+      "difficulty": "medium",
+      "question": "`jobs.json` হাতে না বদলে কীভাবে বদলাবে?",
+      "options": [
+        "যেকোনো text editor-এ সরাসরি ফাইল খুলে, হাতে লিখে",
+        "`.env` ফাইলে নতুন একটা লাইন যোগ করে, তারপর restart দিয়ে",
+        "`hermes dashboard`-এর Logs পাতায় গিয়ে সরাসরি বদলে দিয়ে",
+        "`hermes cron edit`, `/cron` বা `cronjob_manage` দিয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "ফাইল `~/.hermes/cron/jobs.json`-এ থাকে, কিন্তু বদলানো tool দিয়েই করতে হয়।",
+      "whyWrong": {
+        "0": "Hand-edit নিষেধ।",
+        "1": "`.env` গোপন সেটিংয়ের ফাইল।",
+        "2": "Logs শুধু পড়ার।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q09",
+      "difficulty": "medium",
+      "question": "`--timezone Asia/Dhaka` কেন লাগে?",
+      "options": [
+        "যাতে job আরও বেশি দ্রুত আর সহজে চালু হয়ে যায়",
+        "যাতে \"সকাল ৯টা\" তোমার শহরের ৯টা হয়",
+        "যাতে ফল শুধু ঢাকার Telegram chat-এ গিয়ে পৌঁছায়",
+        "যাতে AI বাংলা ভাষায় সব উত্তর লিখে পাঠায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "না বললে ভুল সময়ে চলতে পারে; `--timezone \"\"` দিলে profile-এর timezone নেয়।",
+      "whyWrong": {
+        "0": "গতির সাথে সম্পর্ক নেই।",
+        "2": "Delivery আলাদা।",
+        "3": "ভাষার সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q10",
+      "difficulty": "medium",
+      "question": "Gateway বন্ধ থাকার সময় একটা slot মিস হলে কী হয়?",
+      "options": [
+        "চালু হলে একবার catch-up হয়",
+        "কখনোই আর চলে না, slot হারিয়েই যায় একেবারে",
+        "যতগুলো slot মিস হয়েছিল সবগুলোই আলাদা আলাদা চলে",
+        "শুধু paused অবস্থার job-ই আবার চালানো হয় তখন"
+      ],
+      "correctIndex": 0,
+      "explanation": "জানালা = period-এর অর্ধেক, ২ মিনিট থেকে ২ ঘণ্টার মধ্যে। `--grace-minutes 0` দিলে বন্ধ।",
+      "whyWrong": {
+        "1": "একবার ধরে চলে।",
+        "2": "সব নয়, একবার।",
+        "3": "Paused নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q11",
+      "difficulty": "medium",
+      "question": "`--catch-up off` বা `--grace-minutes 0` দিলে কী হয়?",
+      "options": [
+        "মিস হওয়া slot আর পূরণ হয় না",
+        "job চিরতরে থেমে যায়, আর কখনও চালু হয় না",
+        "job প্রতি মিনিটে চলে, কারণ জানালা বেড়ে যায়",
+        "ফল আর কোথাও পাঠানো হয় না, শুধু ফাইলে থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Global সুইচ: `cron.catch_up_missed` (default `true`)।",
+      "whyWrong": {
+        "1": "Job থামে না।",
+        "2": "ঘন ঘন চলে না।",
+        "3": "Delivery বন্ধ নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q12",
+      "difficulty": "medium",
+      "question": "উত্তরে `[SILENT]` থাকলে কী হয়?",
+      "options": [
+        "ফল মুছে যায়, ফাইলেও কোনো কিছু থাকে না আর",
+        "দ্বিগুণবার পাঠানো হয়, একবার chat-এ আর একবার ফাইলে",
+        "run ব্যর্থ ধরা হয়, আর error alert পাঠানো হয়",
+        "পাঠানো হয় না, কিন্তু ফাইলে সেভ থাকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "\"নতুন কিছু নেই\" দিনে বিরক্ত না করতে কাজে লাগে।",
+      "whyWrong": {
+        "0": "ফাইলে থাকে।",
+        "1": "দ্বিগুণ নয়।",
+        "2": "ব্যর্থ ধরা হয় `[CRON_FAILURE]` দিয়ে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q13",
+      "difficulty": "medium",
+      "question": "No-agent script কোথায় রাখতে হয়?",
+      "options": [
+        "`~/.hermes/cron/output/`-এ",
+        "`$HERMES_HOME/scripts/`-এ",
+        "`~/.hermes/cron/executions.db`-এ",
+        "যেকোনো ফোল্ডারে, কোনো নিয়ম নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "`.sh`/`.bash` bash-এ আর বাকিরা Python-এ চলে।",
+      "whyWrong": {
+        "0": "ওটা output-এর জায়গা।",
+        "2": "ওটা ledger।",
+        "3": "নিয়ম আছে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q14",
+      "difficulty": "medium",
+      "question": "`cron.allow_agent_scheduling` default কত, কেন?",
+      "options": [
+        "`true`, যাতে job নিজে নিজে আরও job বানিয়ে বাড়তে পারে",
+        "`false`, যাতে job অসংখ্য job বানাতে না পারে",
+        "`false`, কারণ cron-এ কোনো agent চলেই না আসলে",
+        "`true`, কারণ তা না হলে কোনো job বানানোই যায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Cron-এ চলা session নিজে আরেকটা cron job বানাতে পারে না, যদি না এটা `true` করো।",
+      "whyWrong": {
+        "0": "Default `false`।",
+        "2": "Agent চলে।",
+        "3": "Job বানাতে লাগে না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q15",
+      "difficulty": "hard",
+      "question": "তুমি রোজ \"ডিস্কে জায়গা আছে কি না\" দেখতে চাও, কম খরচে। কোন পথ ভালো?",
+      "options": [
+        "agent job, কারণ AI সবচেয়ে নির্ভুল আর নিরাপদ",
+        "`--no-agent --script`, কারণ বুদ্ধি লাগে না",
+        "`hermes pause`, কারণ তাতে সব কাজ থেমে যায়",
+        "`--catch-up on`, কারণ তাতে খরচ অনেক কমে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Script-এর stdout হুবহু পাঠানো হয়; stdout খালি হলে চুপচাপ tick।",
+      "whyWrong": {
+        "0": "Agent চালালে শুধু টাকা নষ্ট।",
+        "2": "`pause` সব বন্ধ করে।",
+        "3": "Catch-up খরচের সাথে সম্পর্কহীন।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q16",
+      "difficulty": "hard",
+      "question": "তোমার script-এর শেষ stdout লাইনে `{\"wakeAgent\": false}` আছে। ফল কী?",
+      "options": [
+        "agent জাগে আর দ্বিগুণ কাজ করে",
+        "job মুছে যায়",
+        "silent tick: agent জাগে না",
+        "error alert যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটাই Gate: \"ফাইল বদলেছে কি?\" দেখে তবেই দামি agent চালানো যায়।",
+      "whyWrong": {
+        "0": "`false` মানে জাগে না।",
+        "1": "Job মোছে না।",
+        "3": "Error alert যায় non-zero exit-এ।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q17",
+      "difficulty": "hard",
+      "question": "গতকালের run-এর output আজকের run-এ দেখাতে চাও। কী ব্যবহার করবে?",
+      "options": [
+        "`--paused` আর `--paused-reason`, দুটো একসাথে দিয়ে",
+        "`--timezone Asia/Dhaka`, যাতে সময় মেলে আর মনে থাকে",
+        "`--workdir` দিয়ে project-এর directory ধরিয়ে দিয়ে",
+        "`--continuity` বা `context_from`"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতি run নতুন session, তাই আগের output স্বয়ংক্রিয়ভাবে মনে থাকে না।",
+      "whyWrong": {
+        "0": "`--paused` থামিয়ে রাখে।",
+        "1": "Timezone সময়-অঞ্চল।",
+        "2": "Workdir project-এর নিয়ম লোড করে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q18",
+      "difficulty": "hard",
+      "question": "তুমি ঘুমিয়ে ছিলে, run মাঝপথে ভেঙে গেল। Ledger-এ কী চিহ্ন পড়বে আর পরে কী হবে?",
+      "options": [
+        "`unknown`; নিজে নিজে আবার চলবে না",
+        "`completed`, আর পরের tick-এ আবার নিজে চলবে",
+        "`failed`, আর তিনবার পর্যন্ত নিজে আবার চলবে",
+        "`claimed`, আর পরের tick-এ আবার নিজে চলবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "অর্ধেক হওয়া কাজ আবার চালালে দুবার ভুল হতে পারে; paused job paused-ই থাকে।",
+      "whyWrong": {
+        "1": "Completed নয়।",
+        "2": "Failed নয়।",
+        "3": "Claimed ধরা হওয়ার অবস্থা।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q19",
+      "difficulty": "hard",
+      "question": "Job চালানোর আগেই API key নেই বলে `last_status: blocked_config` এল। কেন?",
+      "options": [
+        "AI চালানোর আগেই key, skill, credential যাচাই হয়",
+        "টাকা ফুরিয়েছে বলে provider-এর quota hold হয়েছে",
+        "ledger-এ `unknown` পড়েছে, তাই সেটা blocked",
+        "agent নিজে `[CRON_FAILURE]` লিখে দিয়েছে প্রথম লাইনে"
+      ],
+      "correctIndex": 0,
+      "explanation": "বন্ধ করতে `cron.preflight: false`। রান্নার আগে চাল-ডাল আছে কি না দেখার মতো।",
+      "whyWrong": {
+        "1": "Quota-র আলাদা অবস্থা `quota_hold_until`।",
+        "2": "`unknown` ভাঙা run-এর।",
+        "3": "`[CRON_FAILURE]` agent লেখে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-features-cron-q20",
+      "difficulty": "hard",
+      "question": "সব cron এক ঝটকায় থামাতে কোন কমান্ড?",
+      "options": [
+        "`hermes cron doctor`, কারণ সে সব সমস্যা থামিয়ে দেয়",
+        "`hermes pause`; চলমান run চলতে থাকে",
+        "`hermes cron list`, কারণ সে সব job-এর তালিকা থামায়",
+        "`hermes cron runs`, কারণ সে পুরনো run ফিরিয়ে আনে"
+      ],
+      "correctIndex": 1,
+      "explanation": "ফেরাতে `hermes resume`।",
+      "whyWrong": {
+        "0": "Doctor শুধু-পড়ে সমস্যা খোঁজে।",
+        "2": "List শুধু তালিকা।",
+        "3": "Runs ইতিহাস দেখায়।"
+      }
+    }
+  ]
+}

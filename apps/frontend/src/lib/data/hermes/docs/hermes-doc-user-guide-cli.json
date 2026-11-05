@@ -1,0 +1,236 @@
+{
+  "contentId": "hermes-doc-user-guide-cli",
+  "title": "CLI",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/cli",
+  "oneLiner": "এই lesson শেষে তুমি Hermes-এর CLI চালানো, resume করা, keybinding আর slash command ব্যবহার করতে পারবে এবং প্রতিটা কঠিন শব্দ (terminal, flag, session, gateway...) বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: গাড়ির ড্যাশবোর্ড\n\nধরো তুমি একটা গাড়ি চালাচ্ছো। ইঞ্জিন গাড়ির ভেতরে লুকোনো, কিন্তু তুমি ইঞ্জিনে হাত দাও না। তুমি চালাও **ড্যাশবোর্ড** দিয়ে: স্টিয়ারিং, স্পিডোমিটার, জ্বালানির কাঁটা। ড্যাশবোর্ড না থাকলে ইঞ্জিন থাকলেও গাড়ি চালানো যেত না।\n\nHermes Agent-এর **CLI** হলো ঠিক এই ড্যাশবোর্ড। Hermes-এর আসল \"ইঞ্জিন\" (যে ভাবে, tool চালায়, উত্তর দেয়) ভেতরে চলে। আর CLI হলো সেই জানালা, যেখানে তুমি লিখে তাকে কথা বলো আর তার কাজ চোখে দেখো।\n\nএই lesson-এ শিখবে: CLI কীভাবে চালাবে, আগের কথোপকথনে কীভাবে ফিরবে, কোন key চাপলে কী হয়, `/` দিয়ে শুরু হওয়া ছোট হুকুমগুলো কী, আর Hermes কাজ করার মাঝখানে তুমি কথা বললে কী ঘটে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) CLI\nCLI-র পুরো নাম **Command Line Interface**। মানে \"লিখে হুকুম দেওয়ার জানালা\"। ফোনের app-এ তুমি ছবিতে আঙুল ছোঁয়াও; CLI-তে তুমি **লিখে** বলো। যেমন রেস্টুরেন্টে মেনু দেখিয়ে অর্ডার না দিয়ে ওয়েটারকে মুখে বলা।\n\n### ২) Terminal\nযে কালো (বা সাদা) জানালায় CLI চলে। Mac-এ এর নাম Terminal। এটাই তোমার \"কথা বলার ঘর\"।\n\n### ৩) Terminal UI (TUI)\nUI মানে **User Interface**, মানে স্ক্রিনে যা দেখো আর যা চাপো। Terminal UI মানে ওই কালো জানালার ভেতরেই একটু সাজানো চেহারা: রং, লাইন, বার। এটা ওয়েব পেজ নয়, browser লাগে না।\n\n### ৪) Session\nএকটা আলাদা কথোপকথন। যেমন একটা খাতার একটা পাতা। নতুন session মানে নতুন পাতা, পুরনো session মানে পুরনো পাতা, যেটা খুলে আবার লেখা চালানো যায়।\n\n### ৫) Flag (ফ্ল্যাগ)\nকমান্ডের পরে `-` বা `--` দিয়ে লেখা ছোট নির্দেশ। যেমন কফি অর্ডার করার সময় বলা \"চিনি ছাড়া\"। কমান্ড হলো \"কফি\", flag হলো \"চিনি ছাড়া\"।\n\n### ৬) Slash command\nচ্যাটের ভেতরে `/` দিয়ে শুরু হওয়া ছোট হুকুম, যেমন `/help`। Terminal-এ লেখা আসল কমান্ড (`hermes ...`) আর চ্যাটের ভেতরের slash command আলাদা জিনিস। প্রথমটা দিয়ে Hermes-কে চালু করো, দ্বিতীয়টা দিয়ে চালু Hermes-কে নির্দেশ দাও।\n\n### ৭) Gateway\nHermes-এর ভেতরের একটা \"পোস্ট অফিস\" যা বার্তা আদান-প্রদান করে। CLI এই gateway-র কাছে তোমার কথা পাঠায়। বিস্তারিত নিচে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## কীভাবে চালাবে\n\nআগে সহজ পথ: একবার `hermes setup --portal` চালিয়ে সেটআপ করো (এতে Hermes-কে কোন AI-র সঙ্গে কথা বলবে ঠিক করা হয়), তারপর `hermes chat` লিখে Enter দাও।\n\n| কমান্ড বা flag | কী হয় | কখন লাগে |\n|---|---|---|\n| `hermes` | interactive session খোলে (ডিফল্ট), মানে তুমি-আমি চ্যাট চলে | সাধারণ কাজে, রোজ |\n| `hermes chat -q \"...\"` | একটা মাত্র প্রশ্ন করে উত্তর নিয়ে শেষ | ছোট প্রশ্ন, বা script-এর ভেতর থেকে |\n| `--query-file FILE` অথবা `--query-file -` | প্রশ্নটা ফাইল (বা stdin) থেকে পড়ে। shell লেখাটা নিজে ব্যাখ্যা করে না, তাই বিশেষ চিহ্ন (যেমন `$`, `\"`) নিয়ে ভয় নেই | প্রশ্নে অনেক quote বা বিশেষ চিহ্ন থাকলে |\n| `--model`, `--provider` | কোন model (AI-র \"মস্তিষ্ক\") আর কোন provider (যে কোম্পানি সেই AI দেয়, যেমন `nous`, `openrouter`) | অন্য AI দিয়ে চালাতে চাইলে |\n| `--toolsets web,terminal,skills` | কোন toolset (সম্পর্কিত tool-এর দল) চালু থাকবে | Hermes-কে কম বা বেশি ক্ষমতা দিতে |\n| `-s` / `--skills` | শুরুতেই কিছু skill (শেখানো কাজের নিয়ম) লোড করে | নির্দিষ্ট কাজের জন্য আগে থেকে তৈরি থাকতে |\n| `--verbose` | debug output, মানে ভেতরের খুঁটিনাটি দেখায় | কিছু ভুল হচ্ছে, কারণ খুঁজতে |\n| `-w` / `--worktree` | আলাদা git worktree-তে চালায় (নিচে ব্যাখ্যা) | একই project-এ নিরাপদে পরীক্ষা করতে |\n\n**Shell** মানে terminal-এর ভেতরের সেই অংশ যে তোমার লেখা কমান্ড বোঝে আর চালায়। **stdin** মানে \"ইনপুট ঢোকার নল\", `-` দিলে লেখাটা ওই নল দিয়ে আসে।\n\n### পুরনো আলাপে ফেরা (resume)\n\n**Resume** মানে বন্ধ করা খাতার পাতাটা আবার খোলা, যেখানে থেমেছিলে সেখান থেকে চালিয়ে যাওয়া। এটা না থাকলে প্রতিবার Hermes সব ভুলে নতুন করে শুরু করত।\n\n```bash\nhermes --continue            # বা -c : সর্বশেষ session-টা\nhermes --resume <id>         # -r : নির্দিষ্ট id-র session\nhermes --resume \"my title\"   # নাম দিয়ে খোঁজা\nhermes -c \"my title\" --create-if-missing\nhermes --resume latest --in ./my-project\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `--continue` / `-c` | সর্বশেষ session খোলো | খাতার সবশেষ ব্যবহার করা পাতা |\n| `--resume <id>` / `-r` | নির্দিষ্ট id-র session | পাতার নম্বর ধরে খোলা |\n| `--resume \"my title\"` | নাম ধরে খোলা | পাতার মাথার শিরোনাম দেখে খোলা |\n| `--create-if-missing` | ওই নামের session না থাকলে নতুন বানাও | পাতা না পেলে নতুন পাতা |\n| `--in ./my-project` | কোন ফোল্ডারে কাজ করবে | কোন ঘরে বসে লিখবে |\n\n**Quiet mode** ডিফল্ট। মানে tool-এর লম্বা log (ঘটনার লেখা খাতা) লুকিয়ে শুধু একটা ছোট animated ইঙ্গিত দেখায়, যাতে স্ক্রিন ভরে না যায়। বিস্তারিত দেখতে চাইলে `hermes chat --verbose`।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "CLI আসলে gateway-র client: terminal বন্ধ করলে শুধু detach হয়, কাজ থামে না।",
+        "nodes": [
+          {
+            "id": "you",
+            "kind": "user",
+            "label": "তুমি",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "cli",
+            "kind": "client",
+            "label": "Classic CLI",
+            "x": 220,
+            "y": 60
+          },
+          {
+            "id": "gw",
+            "kind": "gateway",
+            "label": "Gateway",
+            "x": 440,
+            "y": 60
+          },
+          {
+            "id": "agent",
+            "kind": "server",
+            "label": "Agent turn",
+            "x": 660,
+            "y": 60
+          }
+        ],
+        "edges": [
+          {
+            "from": "you",
+            "to": "cli",
+            "label": "লেখো"
+          },
+          {
+            "from": "cli",
+            "to": "gw",
+            "label": "local WebSocket"
+          },
+          {
+            "from": "gw",
+            "to": "agent",
+            "label": "turn চালায়"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ভেতরের ব্যবস্থা: CLI হলো gateway-র \"ক্লায়েন্ট\"\n\nআগে তিনটা শব্দ:\n- **Client** = যে অনুরোধ পাঠায়। রেস্টুরেন্টে তুমি ক্রেতা (client)।\n- **Gateway** = ভেতরের ম্যানেজার, যে আসল কাজ চালায়। রান্নাঘরের ম্যানেজার।\n- **WebSocket** = দুই প্রান্তের মধ্যে খোলা রাখা একটা ফোনলাইন। একবার জুড়লে দুই দিকে কথা চলতেই থাকে। **local** মানে এটা তোমার নিজের কম্পিউটারের ভেতরেই, ইন্টারনেটের বাইরে।\n\nClassic CLI আসলে একটা gateway client। চালু হলে সে তোমার **profile**-এর gateway খুঁজে নেয় (profile মানে Hermes-এর আলাদা \"ব্যক্তিত্ব-ঘর\", পরে আলাদা lesson আছে)। gateway না চললে `hermes gateway ensure` দিয়ে চালু করে নেয়। তারপর local WebSocket-এ জুড়ে যায়।\n\n**এটা কেন ভালো?** ধরো তুমি রান্নাঘরে অর্ডার দিয়ে চলে গেলে। রান্না কিন্তু থামে না। ঠিক তেমনি terminal বন্ধ করলে CLI শুধু **detach** হয় (ফোনলাইন কেটে দেয়), চলতে থাকা **turn** (এক দফা কাজ: তুমি বললে, Hermes ভাবল আর কাজ করল) বাতিল হয় না। এই ব্যবস্থা না থাকলে terminal ভুলে বন্ধ করলেই অর্ধেক কাজ হারিয়ে যেত।\n\n### কী কী \"জমে যায়\" (frozen)\n\nSession তৈরির মুহূর্তে কিছু জিনিস ঠিক হয়ে যায়, পরে বদলানো যায় না। যেমন বাসে উঠে বসার পর গন্তব্য বদলানো যায় না:\n\nworking directory (কোন ফোল্ডারে কাজ), `--model`, `--provider`, `--reasoning`, `--toolsets`, `--max-turns`, `--skills`, `--checkpoints`, `--yolo`, `--accept-hooks`, `--pass-session-id`, `--ignore-rules`, `--base-url`, `--api-key`, `--safe-mode`, `--ignore-user-config`।\n\n### Gateway mode-এ কিছু flag চলে না\n\nএই flag-গুলো দিলে exit code `2` (মানে \"ভুল ব্যবহার\") দিয়ে বেরিয়ে যায়: `--image`, `--worktree`/`-w`, `--no-restore-cwd`, `--run-budget`, `--verbose`/`-v`, `--compact`, আর `-c` ছাড়া `--create-if-missing`। আর `--safe-mode` বা `--ignore-user-config` দিলে স্পষ্টভাবে model দিতে হয়।\n\nএই mode-এ কয়েকটা slash command: `/stop`, `/approve <id> <choice>`, `/answer <id> <text>`, `/discard <admission_id>`, `/branch [title]`, `/model <model> [--provider name]`, `/compress`, `/yolo [on|off]`, `/help`, `/quit`।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Layout আর status bar\n\n**Layout** মানে স্ক্রিন কীভাবে সাজানো। `display.cli_layout` নামের setting দুই রকম:\n\n- **`modern`** (ডিফল্ট): তোমার লেখা আর Hermes-এর উত্তরের সামনে ছোট চিহ্ন (glyph) বসে। `❯` তোমার কথা, `∴` reasoning (Hermes-এর ভাবনা), `☤` উত্তর, `│` diff (কী বদলাল তার দাগ), `✗` ব্যর্থ tool। লেখার বাক্সের ওপরে live activity, নিচে status line।\n- **`classic`**: প্রতিটা অংশ বাক্সের (panel) ভেতরে, input-এর ওপরে status bar।\n\n**Status bar** হলো গাড়ির ড্যাশবোর্ডের কাঁটার মতো একটা লাইন। এতে থাকে:\n\n| জিনিস | মানে |\n|---|---|\n| model নাম | কোন AI চলছে (২৬ অক্ষরে কাটা) |\n| token ব্যবহার/সর্বোচ্চ | **token** মানে AI যে ছোট ছোট লেখার টুকরো গোনে। `~` মানে আন্দাজ |\n| context bar | Hermes-এর \"মনে রাখার টেবিল\" কতটা ভরেছে (**context** = Hermes একসঙ্গে যতটা কথা মনে রাখতে পারে) |\n| cost | কত খরচ, দাম না জানলে `n/a` |\n| `🗜️ N` | কতবার compress (কথা ছোট করে সারসংক্ষেপ) হয়েছে |\n| `▶ N` | background task কতগুলো চলছে |\n| সময়, session title, `⚠ YOLO` | সময়, session-এর নাম, আর YOLO mode (বিনা জিজ্ঞাসায় চালানোর বিপজ্জনক mode) চালু আছে কিনা |\n\nপ্রস্থ অনুযায়ী তিন রূপ: ৭৬ column বা তার বেশিতে পূর্ণ, ৫২ থেকে ৭৫-এ compact, ৫২-র কম হলে minimal।\n\n**Context bar-এর রং, ট্রাফিক লাইটের মতো:** সবুজ (৫০% এর কম), হলুদ (৫০ থেকে ৮০%), কমলা (৮০ থেকে ৯৫%), লাল (৯৫% বা বেশি)। লাল হলে `/compress` চালানোর কথা ভাবো। **এটা না দেখলে** হঠাৎ টেবিল ভরে গিয়ে পুরনো কথা বাদ পড়তে পারত। বিস্তারিত হিসাব `/usage`-এ।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Keybinding: ড্যাশবোর্ডের বোতাম\n\n**Keybinding** মানে কোন key চাপলে কী হবে। `Ctrl+C` মানে Ctrl চেপে ধরে C চাপা।\n\n| Key | কাজ | কখন লাগে |\n|---|---|---|\n| `Enter` | পাঠাও | লেখা শেষ হলে |\n| `Alt+Enter`, `Ctrl+J`, `Shift+Enter` | নতুন লাইন (পাঠায় না) | কয়েক লাইনে লিখতে |\n| `Ctrl+V` / `Alt+V` | text paste / image paste | লেখা বা ছবি বসাতে |\n| `Ctrl+B` | voice record চালু/বন্ধ | কথা বলে নির্দেশ দিতে |\n| `Ctrl+G` বা `Ctrl+X Ctrl+E` | `$EDITOR`-এ input সম্পাদনা (`$EDITOR` মানে তোমার পছন্দের text editor) | লম্বা লেখা আরামে লিখতে |\n| `Ctrl+S` | draft stash, মানে অসমাপ্ত লেখা সরিয়ে রাখা; ফাঁকা বাক্সে আবার চাপলে ফেরত | অন্য কিছু আগে লিখে পরে ফিরতে |\n| `Ctrl+C` | আগে draft মোছে; ফাঁকা prompt-এ interrupt (২ সেকেন্ডে দুবার = জোর করে বের) | থামাতে |\n| `Ctrl+T` / `F6` | full-screen live work monitor (`s` steer, `x` stop) | Hermes কী করছে ভালো করে দেখতে |\n| `Ctrl+R` / `F7` | dock preview বনাম এক-লাইন summary | স্ক্রিনের জায়গা বদলাতে |\n| `Ctrl+D` | বের হও (ফাঁকা prompt-এ) | শেষ করতে |\n| `Ctrl+Z` | suspend (Unix), `fg` দিয়ে ফেরা | সাময়িক সরে অন্য কাজ করতে |\n| `Tab` | suggestion গ্রহণ | autocomplete মেনে নিতে |\n\nলম্বা paste দেখাবে এক লাইনের preview, যেমন `[pasted: 47 lines, 1,842 chars]`। লাইনের শেষে backslash (`\\`) দিলেও লেখা পরের লাইনে চলে। `Shift+Enter` কাজ করতে terminal-এ Kitty keyboard protocol বা xterm `modifyOtherKeys` লাগে (Kitty, WezTerm, Ghostty, iTerm2, VS Code terminal ইত্যাদিতে চলে; macOS Terminal.app-এ চলে না)।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "`!` দিয়ে সরাসরি shell",
+      "markdown": "লাইনের শুরুতে `!` দিলে কমান্ডটা তোমার কম্পিউটারে (host) সরাসরি চলে। **কোনো model call নেই, history-তে entry নেই**, মানে AI-কে জিজ্ঞাসাও করা হয় না, খরচও হয় না। তবে approval prompt (\"সত্যিই চালাব?\" প্রশ্ন) তখনও আসে, আর এটা শুধু CLI-তে চলে (gateway/cron অগ্রাহ্য করে)।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Slash command, quick command, skill\n\n`/` লিখলেই autocomplete (লিখতে লিখতে সম্ভাব্য নাম ভেসে ওঠা) চালু হয়। কিছু নাম:\n\n| Command | কী করে |\n|---|---|\n| `/help` | সব command-এর তালিকা |\n| `/model` | AI বদলানো |\n| `/tools` | কোন tool আছে দেখা |\n| `/skills browse` | skill ঘুরে দেখা |\n| `/bg <prompt>` | কাজটা পেছনে চালানো |\n| `/btw <question>` | চলতি কাজ না থামিয়ে পাশ থেকে প্রশ্ন |\n| `/skin`, `/voice on`, `/reasoning high` | চেহারা, কথা বলা, ভাবনার গভীরতা |\n| `/title`, `/status`, `/context`, `/sessions`, `/usage` | session ও ব্যবহারের তথ্য |\n| `/personality`, `/busy`, `/queue`, `/verbose` | স্বভাব, ব্যস্ত অবস্থার আচরণ, সারি, কথাবার্তার পরিমাণ |\n\nInstall করা প্রতিটা skill-ও `/<skill-name>` নামে একটা command হয়ে যায়।\n\n**Quick commands** হলো তোমার নিজের বানানো shortcut, যেমন ফোনের speed dial। `config.yaml` ফাইলে (**config** = setting-এর খাতা, **YAML** = সেই খাতার লেখার একটা সহজ ধরন) `quick_commands`-এর নিচে বানাও। দুই ধরন: `exec` (একটা shell command চালায) আর `alias` (অন্য command-এর ডাকনাম, যেমন `/gateway restart`)।\n\n**Skill preload:** `-s`/`--skills` দিয়ে শুরুতেই; অথবা `skills.auto_load` তালিকা দিলে প্রতি নতুন session-এ। নেই বা বন্ধ থাকা skill warning দিয়ে বাদ পড়ে। `--ignore-rules` (বা `HERMES_IGNORE_RULES=1`) auto-load, AGENTS.md, SOUL.md, `.cursorrules`, memory, সব এড়িয়ে যায়; তবে স্পষ্ট `-s` তবুও লোড হয়। (`HERMES_IGNORE_RULES=1` একটা **env var**, মানে কমান্ডের আশেপাশের পরিবেশে রাখা একটা ছোট নোট।)\n\n**Personality:** Hermes-এর কথা বলার স্বভাব। `/personality <name>` দিয়ে বদলাও। ১৪টা built-in: `helpful`, `concise`, `technical`, `creative`, `teacher`, `kawaii`, `catgirl`, `pirate`, `shakespeare`, `surfer`, `noir`, `uwu`, `philosopher`, `hype`। `/personality none` বন্ধ করে। নিজের personality বানাতে `config.yaml`-এ `personalities:` map।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Hermes কাজ করার মাঝখানে কথা বললে কী হয়?\n\n**সমস্যা:** Hermes একটা লম্বা কাজ করছে, আর তুমি মাঝখানে নতুন কিছু বলতে চাও। কী হবে? ক্লাসে শিক্ষক বোর্ডে লিখছেন, তুমি হাত তুললে: তিনি থেমে শুনবেন? নাকি তোমাকে অপেক্ষা করতে বলবেন? `display.busy_input_mode` setting ঠিক করে:\n\n| mode | কী হয় | উপমা |\n|---|---|---|\n| **`interrupt`** (ডিফল্ট) | থামিয়ে নতুন দিক দেয়; চলমান foreground terminal command background-এ চলে যায় | শিক্ষক চক রেখে তোমার কথা শোনেন |\n| **`queue`** | পরের turn-এর জন্য লাইনে দাঁড় করায় (gateway ধরে রাখে, crash হলেও থাকে) | \"হাত নামাও, এটা শেষ হলে শুনব\" |\n| **`steer`** | পরের tool call-এর পর ভেতরে ঢুকিয়ে দেয়। agent শুরু না হলে বা image থাকলে `queue`-তে নামে | শিক্ষক লেখা চালিয়ে যেতে যেতে তোমার ইশারা মেনে দিক বদলান |\n\n`/busy queue|steer|interrupt|status` দিয়ে বদলাও। লাইন সামলাতে: `/queue <prompt>`, `/queue list`, `/queue rm N`, `/queue edit N …`, `/queue move A B`, `/queue clear`।\n\n**Tool progress:** `/verbose` ঘুরে ঘুরে চারটা অবস্থা দেয়: `off → new → all → verbose`। `display.tool_preview_length` ডিফল্ট `0` (সীমাহীন); `80` দিলে tool-এর লেখা ছেঁটে ৮০ অক্ষরে দেখাবে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "একটা চলমান turn-এর মাঝে নতুন কথা বললে busy_input_mode অনুযায়ী যা ঘটে।",
+        "steps": [
+          {
+            "title": "Hermes কাজ করছে",
+            "body": "তুমি দেখছো tool feed, যেমন `┊ 💻 terminal ... (0.3s)`।"
+          },
+          {
+            "title": "তুমি নতুন কিছু লিখলে",
+            "body": "mode দেখা হয়: interrupt / queue / steer।"
+          },
+          {
+            "title": "interrupt",
+            "body": "এখনকার কাজ থামে, নতুন নির্দেশ ধরে।"
+          },
+          {
+            "title": "queue বা steer",
+            "body": "queue = পরের turn-এ; steer = পরের tool call-এর পর।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Session, compression আর background কাজ\n\nপ্রতিটা আলাপ `~/.hermes/state.db`-তে জমে। এটা **SQLite** ফাইল, মানে একটা ছোট ডেটার আলমারি, যেখানে metadata (আলাপ সম্পর্কে তথ্য), message, lineage (কোন আলাপ কোন আলাপ থেকে এসেছে) আর full-text search থাকে। `~` মানে তোমার home ফোল্ডার। `session_search` tool এই আলমারিতে খোঁজে। বের হলে resume কমান্ড, session ID, সময় আর message সংখ্যা ছাপা হয়। নাম দিতে `/title <name>` বা `hermes sessions rename <id> <title>`; তালিকা `hermes sessions list`। Resume করলে banner আর prompt-এর মাঝে \"Previous Conversation\" recap দেখা যায়।\n\n**Compression:** context টেবিল ভরে এলে মাঝখানের পুরনো কথা ছোট সারসংক্ষেপে বদলে দেওয়া। `compression.enabled: true`, `compression.threshold: 0.50` (মানে ৫০% ভরলে শুরু)। সারসংক্ষেপ করে যে model, তা `auxiliary.compression.model`-এ (ফাঁকা = main model)। **প্রথম ৩ আর শেষ ২০ turn** অক্ষত থাকে, শুধু মাঝেরটা ছোট হয়। **এটা না থাকলে** লম্বা আলাপে একসময় আর জায়গাই থাকত না।\n\n**Background session:** `/bg <prompt>` আলাদা একটা session শুরু করে পেছনে (daemon thread, মানে চুপচাপ চলা পেছনের কর্মী)। task ID যেমন `bg_143022_a1b2c3`। এটা model, provider, toolset, reasoning আর fallback (বিকল্প ব্যবস্থা) উত্তরাধিকারসূত্রে পায়, কিন্তু **বর্তমান আলাপের history পায় না**। ফল আলাদা panel-এ আসে; `display.bell_on_complete` শেষে bell বাজায়। মূল history-তে এগুলো দেখা যায় না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Worktree আর plugin: সংক্ষেপে\n\n**Git** হলো কোডের পুরনো সংস্করণ মনে রাখার টুল (খেলার save point-এর মতো)। **Worktree** হলো একই project-এর আলাদা একটা কপি-ঘর, যেখানে পরীক্ষা করলে মূল ঘর নোংরা হয় না। `hermes -w` প্রতিবার `<repo>/.worktrees/`-এ ফেলে-দেওয়া-যায় এমন worktree বানায় (এক query-র জন্য `hermes -w -z \"...\"`)। বের হলে পরিষ্কার worktree branch-সহ মুছে যায়; uncommitted/unpushed কাজ (মানে save না করা বা পাঠিয়ে না দেওয়া কাজ) থাকলে থাকে। কমান্ড: `hermes worktree list` (`--json`), `prune` (`--dry-run`, `--older-than DAYS`), `restore <name>`; session-এর ভেতরে `/worktree prune [--dry-run]`। Archive যায় `refs/hermes/archive/<tree>`-এ; `.worktrees/` ১০টার বেশি tree বা ৫ GB ছাড়ালে warning আসে। (পুরো গল্প Git Worktrees lesson-এ।)\n\n**Plugin** মানে Hermes-এ বাইরে থেকে জোড়া লাগানো অতিরিক্ত ক্ষমতা, যেমন ফোনে নতুন app। কমান্ড: `hermes plugins install owner/repo --no-enable`, `list`, `enable <name>`, `disable <name>`, `update <name>`, `remove <name>`। Portable package enable না করা পর্যন্ত বন্ধ থাকে, মানে অজান্তে চালু হয়ে যায় না।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "Ctrl+D আর Ctrl+C-র তফাত",
+      "markdown": "খালি prompt-এ `Ctrl+D` বের করে দেয়, কিন্তু gateway turn চলার সময় সেটা শুধু detach করে, turn চলতেই থাকে। আর `Ctrl+C` প্রথমে draft মোছে; ২ সেকেন্ডের মধ্যে দুবার চাপলে জোর করে বের হয়।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "CLI-কে গাড়ির ড্যাশবোর্ডের সঙ্গে তুলনা করা হয়েছে। কেন?",
+      "options": [
+        "ইঞ্জিন লুকোনো থাকে, ড্যাশবোর্ড দিয়ে তুমি তাকে চালাও আর দেখো",
+        "CLI-ই আসল ইঞ্জিন",
+        "CLI শুধু গাড়ির রং বদলায়",
+        "CLI ওয়েব পেজ"
+      ],
+      "answerIndex": 0,
+      "explanation": "CLI হলো নিয়ন্ত্রণের জানালা; আসল কাজ ভেতরে gateway আর agent করে।"
+    },
+    {
+      "question": "Classic CLI-তে চলমান turn-এর সময় terminal বন্ধ করলে কী হয়?",
+      "options": [
+        "তৎক্ষণাৎ বাতিল",
+        "পুরো session মুছে যায়",
+        "শুধু detach হয়, turn চলতে থাকে",
+        "gateway বন্ধ হয়ে যায়"
+      ],
+      "answerIndex": 2,
+      "explanation": "CLI একটা gateway client; ফোনলাইন কাটলেও রান্নাঘরে রান্না চলে।"
+    },
+    {
+      "question": "`hermes -c` কী করে?",
+      "options": [
+        "নতুন session বানায়",
+        "সর্বশেষ session-এ ফেরে",
+        "সব session মোছে",
+        "config বদলায়"
+      ],
+      "answerIndex": 1,
+      "explanation": "`--continue` / `-c` সর্বশেষ পাতাটা আবার খোলে।"
+    },
+    {
+      "question": "`busy_input_mode: queue` হলে Hermes-কে কাজের মাঝে নতুন কথা বললে?",
+      "options": [
+        "সঙ্গে সঙ্গে থেমে যায়",
+        "কথাটা বাতিল হয়",
+        "পরের tool call-এ ঢোকে",
+        "পরের turn-এর জন্য লাইনে দাঁড়ায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "queue মানে হাত তুলে অপেক্ষা; steer ঢোকে পরের tool call-এর পর, interrupt থামিয়ে দেয়।"
+    },
+    {
+      "question": "Context bar লাল (≥৯৫%) হলে কী ভাবা উচিত?",
+      "options": [
+        "কিছু না",
+        "Hermes মুছে ফেলা",
+        "`/compress` চালানো",
+        "terminal বন্ধ করা"
+      ],
+      "answerIndex": 2,
+      "explanation": "টেবিল প্রায় ভরা; compress করে পুরনো কথা ছোট করলে জায়গা হয়।"
+    },
+    {
+      "question": "লাইনের শুরুতে `!` দিলে কী হয়?",
+      "options": [
+        "কমান্ড সরাসরি host-এ চলে, model call নেই",
+        "model call হয়ে উত্তর আসে",
+        "কমান্ড মুছে যায়",
+        "gateway-তে যায়"
+      ],
+      "answerIndex": 0,
+      "explanation": "AI-কে না জিজ্ঞেস করে সরাসরি shell; তবে approval prompt তখনও আসে।"
+    },
+    {
+      "question": "`/bg <prompt>`-এর background session-এর বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "বর্তমান আলাপের পুরো history পায়",
+        "কখনো model পায় না",
+        "শুধু gateway mode-এ চলে",
+        "বর্তমান আলাপের history পায় না, আলাদা panel-এ ফল আসে"
+      ],
+      "answerIndex": 3,
+      "explanation": "এটা model/toolset উত্তরাধিকারে পায় কিন্তু history পায় না।"
+    },
+    {
+      "question": "Compression-এ কোন turn-গুলো অক্ষত থাকে?",
+      "options": [
+        "সব turn ছোট হয়",
+        "প্রথম ৩ আর শেষ ২০",
+        "শুধু শেষ ১টা",
+        "শুধু প্রথম ১০"
+      ],
+      "answerIndex": 1,
+      "explanation": "মাঝের turn সারসংক্ষেপ হয়, শুরু আর শেষ রক্ষা পায়।"
+    }
+  ],
+  "recap": [
+    "CLI একটা terminal UI, ভেতরে gateway client; terminal বন্ধ করলে turn থামে না।",
+    "`-c`, `--resume`, `-w`, `-s`, `--toolsets` দিয়ে শুরুর আচরণ ঠিক হয়।",
+    "`busy_input_mode` (interrupt/queue/steer) ঠিক করে কাজের মাঝে কথা বললে কী হবে।",
+    "Status bar-এর context রং দেখে `/compress` বুঝে নাও; compression প্রথম ৩ ও শেষ ২০ turn রাখে।",
+    "`!` shell, `/bg`, quick commands, personalities: ছোট কিন্তু কাজের হাতিয়ার।"
+  ]
+}

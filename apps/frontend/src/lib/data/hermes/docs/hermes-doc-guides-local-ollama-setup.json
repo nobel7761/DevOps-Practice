@@ -1,0 +1,197 @@
+{
+  "contentId": "hermes-doc-guides-local-ollama-setup",
+  "title": "Run Hermes with Ollama",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/local-ollama-setup",
+  "oneLiner": "এই lesson শেষে তুমি নিজের কম্পিউটারে Ollama দিয়ে বিনা API-খরচে Hermes চালাতে পারবে এবং Ollama, model, API, port, context window-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: নিজের বাড়ির রান্নাঘর\n\nবাইরের রেস্টুরেন্টে খেলে প্রতিবার বিল দিতে হয়। কিন্তু নিজের রান্নাঘরে রাঁধলে শুধু গ্যাসের খরচ।\n\n**Ollama** হলো তোমার নিজের কম্পিউটারের রান্নাঘর। সেখানে AI model (AI-র মগজ) চলে, আর কোনো API বিল নেই। **Hermes** হলো সেই ঘরের বাবুর্চি-সহকারী। সে রান্নাঘরের (Ollama-র) সঙ্গে কথা বলে কাজ করায়।\n\nএই guide-এ ধাপে ধাপে দেখব Ollama বসিয়ে Hermes-কে তার সঙ্গে জুড়তে হয় কীভাবে। (Desktop app ব্যবহার করলে **Settings → Providers → Local Models** থেকেই হয়ে যায়। এই lesson হাতে-কলমে manual পথ।)"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Model (মডেল):** AI-র মগজ। এই মগজই লেখা পড়ে উত্তর বানায়। বড় model বেশি বুদ্ধিমান কিন্তু বেশি জায়গা আর শক্তি চায়।\n- **Provider (প্রোভাইডার):** যে সেবা model চালিয়ে তোমাকে দেয়। সাধারণত কোম্পানি, ইন্টারনেটে, বিল নিয়ে। এখানে provider হলো তোমার নিজের কম্পিউটারের Ollama। উপমা: দোকান থেকে কেনা খাবার বনাম নিজের রান্নাঘরের খাবার।\n- **Local:** নিজের কম্পিউটারে, ইন্টারনেটের ওপারে না। বাড়ির ফ্রিজ বনাম দোকানের ফ্রিজ।\n- **API:** এক প্রোগ্রাম আরেক প্রোগ্রামের সঙ্গে কথা বলার নিয়ম। ওয়েটারের মতো: তুমি (Hermes) ওয়েটারকে (API) অর্ডার দাও, সে রান্নাঘর (Ollama) থেকে খাবার এনে দেয়।\n- **API key:** API ব্যবহারের গোপন পাসওয়ার্ড। বাইরের সেবায় লাগে। Local Ollama-তে লাগে না, তাই খালি রাখা যায়।\n- **Port (পোর্ট) ও localhost:** `localhost` মানে \"আমার নিজের কম্পিউটার\"। Port হলো সেই কম্পিউটারের নম্বর-দেওয়া জানালা। Ollama থাকে **11434** নম্বর জানালায়। বাড়ির ঠিকানা = localhost, ঘরের নম্বর = port।\n- **Base URL:** সেবার ঠিকানা। `http://localhost:11434/v1` মানে \"আমার কম্পিউটারের ১১৪৩৪ নম্বর জানালার v1 সেবা\"।\n- **Tool calling:** model-এর file খোলা, command চালানোর মতো হাতিয়ার ডাকতে পারার ক্ষমতা। Hermes-এর সব কাজ এর ওপর নির্ভর করে। যে বাবুর্চি হাতা ধরতেই পারে না, সে রাঁধবে কীভাবে।\n- **Context window:** model একসাথে কতটা লেখা মনে রাখতে পারে তার সীমা। ছোট টেবিলে যেমন কম বই ধরে। মাপা হয় **token** দিয়ে (লেখার ছোট টুকরো)।\n- **RAM ও GPU:** RAM হলো কম্পিউটারের কাজের টেবিল। GPU হলো বিশেষ দ্রুত হিসাবের যন্ত্র। দুটোই model চালাতে কাজে লাগে।\n- **Config file (`config.yaml`):** সেটিংসের নথি। YAML হলো তার লেখার ধরন: `নাম: মান` সাজানো লাইন।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## হার্ডওয়্যার কী লাগবে?\n\nModel চালাতে কম্পিউটারের শক্তি লাগে। না থাকলে model ধীর চলে বা চালুই হয় না।\n\n- ন্যূনতম: **8 GB RAM, 4 CPU core, 5 GB ফাঁকা জায়গা** (CPU core = কম্পিউটারের মগজের কর্মী)\n- ২৭B+ model চালাতে চাইলে **32+ GB RAM** সুপারিশ (B মানে billion, অর্থাৎ model-এর আকার)\n- GPU **ঐচ্ছিক** (না থাকলেও চলে), তবে গতি বাড়ায়"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "Ollama দিয়ে Hermes চালানোর আট ধাপ।",
+        "steps": [
+          {
+            "title": "১. Ollama install করো",
+            "body": "official install script চালাও, তারপর দেখো local API port **11434**-এ সাড়া দিচ্ছে কি না।"
+          },
+          {
+            "title": "২. Model pull করো",
+            "body": "হার্ডওয়্যারে যা ধরে এমন model নাও। (pull মানে ইন্টারনেট থেকে নামিয়ে আনা।) Tool calling নির্ভরযোগ্য বলে লেখা একমাত্র option: `gemma4:31b`।"
+          },
+          {
+            "title": "৩. Hermes configure করো",
+            "body": "`hermes setup` → Custom Endpoint → base URL `http://localhost:11434/v1`; API key খালি রাখা যায়।"
+          },
+          {
+            "title": "৪. `hermes` চালাও",
+            "body": "file edit, command চালানো, web browsing, তিনটা পরীক্ষা করো।"
+          },
+          {
+            "title": "৫. কাজ অনুযায়ী model বাছো",
+            "body": "session-এর মধ্যে `/model` দিয়ে বদলানো যায়।"
+          },
+          {
+            "title": "৬. গতি optimize করো",
+            "body": "`num_ctx` বাড়াও, `keep_alive` দাও, `ollama ps` দেখো।"
+          },
+          {
+            "title": "৭. (ঐচ্ছিক) Gateway bot",
+            "body": "`platforms`-এ Telegram/Discord token দিয়ে `hermes gateway` চালাও।"
+          },
+          {
+            "title": "৮. (ঐচ্ছিক) Fallback",
+            "body": "`fallback_providers`-এ OpenRouter দাও। local fail করলে তবেই paid call।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ১-২: Ollama আর model\n\nOllama-র official install script দিয়ে install করো। তারপর confirm করো এটা `11434` port-এ আছে। এরপর model pull করো।\n\n**গুরুত্বপূর্ণ সতর্কতা:** পাতায় বলা আছে `gemma2` model গুলো আর `llama3.2:3b` **tool call করতে পারে না**। অর্থাৎ Hermes-এর agent কাজের জন্য তারা অচল। নির্ভরযোগ্য tool calling-এর জন্য পাতা `gemma4:31b` উল্লেখ করেছে।\n\n```bash\nollama pull gemma4:31b\n```\n\n| অংশ | মানে | উপমা |\n|---|---|---|\n| `ollama` | Ollama-র নিজের কমান্ড (terminal-এ লিখে চালাতে হয়) | রান্নাঘরের ম্যানেজারকে ডাকা |\n| `pull` | ইন্টারনেট থেকে নামিয়ে আনো | গুদাম থেকে মাল আনা |\n| `gemma4:31b` | model-এর নাম (`gemma4`) আর আকার (`31b`, মানে ৩১ billion) | কোন বাবুর্চি, কত অভিজ্ঞ |\n\nকী আশা করবে? progress bar দেখাবে, নামা শেষ হলে model প্রস্তুত। বড় model, তাই সময় লাগতে পারে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৩: Hermes-কে Ollama-র সঙ্গে জোড়া\n\n**কেন লাগে?** Hermes জানে না তোমার কম্পিউটারে Ollama আছে। ঠিকানা বলে দিলে তবেই সে কথা বলে।\n\nসহজ পথ:\n\n```bash\nhermes setup\n# Custom Endpoint বেছে নাও\n# Base URL: http://localhost:11434/v1\n# API key: খালি রাখো\n```\n\n`hermes setup` একটা প্রশ্নোত্তরের উইজার্ড। এখানে Custom Endpoint মানে \"নিজের বসানো যেকোনো ঠিকানা\"। Base URL-এ Ollama-র ঠিকানা দাও। API key খালি, কারণ নিজের ঘরে পাসওয়ার্ড লাগে না।\n\nঅথবা সরাসরি `~/.hermes/config.yaml`-এ `model.default`, `model.provider: custom`, আর `model.base_url` সেট করো:\n\n```yaml\nmodel:\n  default: gemma4:31b\n  provider: custom\n  base_url: http://localhost:11434/v1\n```\n\n| লাইন | মানে | উপমা |\n|---|---|---|\n| `model:` | এই অংশে model-এর সেটিংস | খাতার একটা শিরোনাম |\n| `default: gemma4:31b` | সাধারণত কোন model ব্যবহার হবে | ডিফল্ট বাবুর্চি |\n| `provider: custom` | নিজের বসানো সেবা, বড় কোম্পানির না | নিজের রান্নাঘর |\n| `base_url: ...` | সেবার ঠিকানা | রান্নাঘরের দরজা |\n\n(`~/.hermes/` হলো তোমার home ফোল্ডারের ভেতরে Hermes-এর নিজস্ব ফোল্ডার।)\n\nতারপর `hermes` চালিয়ে কয়েকটা কাজ দিয়ে পরীক্ষা করো: file edit, terminal command, web browsing।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৬: গতি ও context\n\n### Context window: সবচেয়ে বড় ফাঁদ\n\n**সমস্যা:** Ollama default-এ মাত্র **২০৪৮ token** context রাখে। কিন্তু Hermes-এর লাগে **কমপক্ষে ৬৪,০০০**। Hermes-এর নিজের নির্দেশ আর tool-এর বিবরণ-ই (system prompt আর tool schema) ছোট টেবিল ভরে ফেলে।\n\n**সমাধান:** একটা **Modelfile** বানাও যাতে `num_ctx` সেট করা আছে। Modelfile হলো model-এর রেসিপি-নথি, যেখানে সেটিং লেখা যায়। `num_ctx` মানে context-এর আকার। সেটা নতুন নামে build করো, তারপর config-এ ওই নতুন model-এর নাম দাও।\n\n### Model বারবার unload হওয়া\n\nOllama idle (কাজ না করা) model **৫ মিনিট** পর মেমরি থেকে নামিয়ে দেয়। তারপর আবার লোড হতে সময় লাগে। ধরে রাখতে `keep_alive` **24h** দাও, অথবা environment variable (নামওয়ালা সেটিং):\n\n```bash\nOLLAMA_KEEP_ALIVE=24h\n```\n\n### GPU-তে চলছে কি না\n\n```bash\nollama ps   # GPU layer offloading দেখায়\n```\n\n`ps` মানে \"এখন কী চলছে দেখাও\"। Offloading মানে ভারী কাজ GPU-কে ভাগ করে দেওয়া।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "Context না বাড়ালে বনাম বাড়ালে।",
+        "beforeTitle": "Default (২০৪৮ token)",
+        "before": "Hermes-এর system prompt আর tool schema-ই জায়গা ভরে ফেলে → context window error বা অস্থির আচরণ।",
+        "afterTitle": "`num_ctx` ≥ ৬৪,০০০",
+        "after": "Modelfile-এ `num_ctx` বাড়িয়ে নতুন model build করলে Hermes স্বাভাবিকভাবে কাজ করে।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৭-৮: Bot আর Fallback\n\n- **Gateway:** Gateway হলো chat app (Telegram, Discord) আর Hermes-এর মাঝের সেতু। `platforms`-এর নিচে Telegram বা Discord token দাও (token = বটের পরিচয়-পাসওয়ার্ড), তারপর `hermes gateway` চালাও।\n- **Fallback:** মানে বদলি ব্যবস্থা। `fallback_providers`-এ OpenRouter (একটা cloud সেবা) ও একটা cloud model দাও। তাহলে সাধারণত local চলবে (বিনা খরচে), আর local fail করলে তবেই paid call হবে। যেন নিজের রান্নাঘর বন্ধ থাকলে তবেই রেস্টুরেন্ট থেকে আনানো।\n\n## সমস্যা হলে (Troubleshooting)\n\n| লক্ষণ | মানে কী | কী করবে |\n|---|---|---|\n| `provider 'ollama' has no endpoint configured` | Hermes জানে না ঠিকানা কী | `providers.ollama.base_url` সেট করো |\n| `Connection refused` | ঠিকানায় কেউ নেই, Ollama বন্ধ | Ollama চালু করো |\n| প্রথম উত্তর খুব ধীর | CPU-তে fixed prompt ও tool schema-র prefill (আগে পড়ে নেওয়া) এ কয়েক মিনিট লাগতে পারে | Model লোড রাখো; `~/.hermes/.env`-এ `HERMES_API_TIMEOUT=1800` দাও (অপেক্ষার সীমা); `hermes prompt-size`, `hermes tools`, `hermes skills` দিয়ে prompt ছোট করো |\n| Tool না চালিয়ে raw JSON ছাপছে | JSON হলো কম্পিউটারের জন্য সাজানো লেখা। এটা সাধারণত server configuration-এর সমস্যা, model-এর নয় | server সেটিং দেখো |\n| Context window error | জায়গা কম | `num_ctx` বাড়াও (ধাপ ৬) |\n\n## খরচ\n\nLocal চালালে API খরচ **$0**। পাতার হিসাবে daily cloud ব্যবহারে মাসে প্রায় $18–24। Local-এ প্রতি session-এ বিদ্যুৎ খরচ আনুমানিক $0.01–0.05।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "ছোট model দিয়ে agent চলবে না",
+      "markdown": "`llama3.2:3b` ও `gemma2` tool call করতে পারে না। Hermes-এর কাজ (file, terminal, web) tool-নির্ভর, তাই model বাছাই-ই সাফল্যের চাবি।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "প্রথম উত্তর ধীর হলে ঘাবড়িও না",
+      "markdown": "CPU-তে প্রথম prefill ধীর হয়। Model লোড রেখে আর `HERMES_API_TIMEOUT=1800` দিয়ে সামলাও।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Ollama default-এ কত token context ব্যবহার করে, আর Hermes-এর অন্তত কত লাগে?",
+      "options": [
+        "২০৪৮ ও ৬৪,০০০",
+        "৬৪,০০০ ও ২০৪৮",
+        "৮,০০০ ও ১২,০০০",
+        "কোনো সীমা নেই ও ১,০০০"
+      ],
+      "answerIndex": 0,
+      "explanation": "Ollama-র default ছোট টেবিলের মতো (২০৪৮), Hermes-এর লাগে বড় টেবিল (কমপক্ষে ৬৪,০০০)।"
+    },
+    {
+      "question": "Hermes-কে Ollama-র সঙ্গে জুড়তে base URL কী?",
+      "options": [
+        "`https://api.openai.com`",
+        "`http://localhost:8080`",
+        "`ollama://default`",
+        "`http://localhost:11434/v1`"
+      ],
+      "answerIndex": 3,
+      "explanation": "localhost মানে নিজের কম্পিউটার, 11434 হলো Ollama-র port (জানালা)।"
+    },
+    {
+      "question": "কোন model গুলো tool call করতে পারে না বলে পাতায় আছে?",
+      "options": [
+        "`gemma4:31b`",
+        "`gemma2` model গুলো ও `llama3.2:3b`",
+        "সব ৩০B+ model",
+        "শুধু cloud model"
+      ],
+      "answerIndex": 1,
+      "explanation": "Tool call করতে না পারলে model file বা terminal ব্যবহার করতে পারে না, তাই Hermes-এর জন্য অচল।"
+    },
+    {
+      "question": "Ollama idle model কতক্ষণ পর unload করে, আর কীভাবে ঠেকানো যায়?",
+      "options": [
+        "১ ঘণ্টা; কিছু করা যায় না",
+        "৫ সেকেন্ড; `ollama stop`",
+        "৫ মিনিট; `keep_alive` 24h বা `OLLAMA_KEEP_ALIVE=24h`",
+        "কখনোই না"
+      ],
+      "answerIndex": 2,
+      "explanation": "৫ মিনিট কাজ না করলে model নামিয়ে দেয়। `keep_alive` 24h দিলে ধরে রাখে।"
+    },
+    {
+      "question": "`Connection refused` পেলে প্রথমে কী করবে?",
+      "options": [
+        "API key বদলাবে",
+        "Ollama চালু করবে",
+        "Hermes uninstall করবে",
+        "`num_ctx` কমাবে"
+      ],
+      "answerIndex": 1,
+      "explanation": "ঠিকানায় কেউ সাড়া দিচ্ছে না মানে Ollama বন্ধ।"
+    },
+    {
+      "question": "Local model fail করলে paid cloud call কীভাবে সীমিত রাখা যায়?",
+      "options": [
+        "`ollama ps` চালিয়ে",
+        "Gateway বন্ধ করে",
+        "`/compress` দিয়ে",
+        "`fallback_providers`-এ OpenRouter দিয়ে"
+      ],
+      "answerIndex": 3,
+      "explanation": "Fallback মানে বদলি। শুধু local ব্যর্থ হলেই cloud ডাকা হয়।"
+    },
+    {
+      "question": "GPU layer offloading হচ্ছে কিনা কোন কমান্ডে দেখবে?",
+      "options": [
+        "`hermes tools`",
+        "`hermes skills`",
+        "`ollama ps`",
+        "`hermes gateway`"
+      ],
+      "answerIndex": 2,
+      "explanation": "`ollama ps` এখন কোন model চলছে আর GPU ব্যবহার হচ্ছে কি না তা দেখায়।"
+    },
+    {
+      "question": "Local Ollama ব্যবহার করলে API key নিয়ে কী করা যায়?",
+      "options": [
+        "খালি রাখা যায়",
+        "OpenAI key দিতেই হয়",
+        "প্রতিদিন নতুন বানাতে হয়",
+        "Docker key লাগে"
+      ],
+      "answerIndex": 0,
+      "explanation": "নিজের কম্পিউটারের ঘরে কোনো পাসওয়ার্ড লাগে না, তাই API key খালি রাখা যায়।"
+    }
+  ],
+  "recap": [
+    "Ollama হলো নিজের কম্পিউটারের রান্নাঘর; Hermes তার সঙ্গে base URL `http://localhost:11434/v1` দিয়ে কথা বলে।",
+    "সব model tool call পারে না; `gemma4:31b` নির্ভরযোগ্য বলা আছে, `gemma2` ও `llama3.2:3b` অচল।",
+    "Ollama-র default context ২০৪৮ token, Hermes-এর লাগে কমপক্ষে ৬৪,০০০; Modelfile-এ `num_ctx` বাড়াও।",
+    "`keep_alive` 24h দিয়ে model মেমরিতে ধরে রাখো আর `ollama ps` দিয়ে GPU দেখো।",
+    "`fallback_providers`-এ cloud দিয়ে রাখলে local ব্যর্থ হলে তবেই খরচ হয়।"
+  ]
+}

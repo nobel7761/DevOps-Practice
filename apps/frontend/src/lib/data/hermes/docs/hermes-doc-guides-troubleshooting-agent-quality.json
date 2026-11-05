@@ -1,0 +1,185 @@
+{
+  "contentId": "hermes-doc-guides-troubleshooting-agent-quality",
+  "title": "Troubleshooting: My Agent Feels Dumber",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/guides/troubleshooting-agent-quality",
+  "oneLiner": "এই lesson শেষে তুমি Hermes দুর্বল লাগলে সাত ধাপে কারণ খুঁজে ঠিক করতে পারবে এবং model, context window, compression, memory snapshot-এর মতো শব্দ বুঝবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: ঝিমিয়ে পড়া গাইড\n\nবন্ধু তোমাকে শহর ঘুরিয়ে দেখাচ্ছিল। আজ হঠাৎ সে কিছু ভুলে যাচ্ছে। কেন?\n\n- হয়তো আজ অন্য একজন গাইড এসেছে (**model বদল**)।\n- হয়তো সে সারাদিন এত কথা বলেছে যে মাথা ভরে গেছে (**context পূর্ণ**)।\n- হয়তো তার ছোট নোটবইয়ের জায়গা শেষ (**memory সীমা**)।\n- হয়তো ম্যাপটা বাড়িতে ফেলে এসেছে (**skill/tool লোড হয়নি**)।\n- অথবা সে পুরনো কথা সারাংশ করে ফেলেছে (**compression**)।\n\n\"Hermes আজ বোকা লাগছে\", এই guide-এর সাত ধাপের চেকলিস্ট ঠিক এই সন্দেহগুলো এক এক করে যাচাই করে। প্রায় সব সময় agent আসলে \"বোকা\" হয়নি। কোনো একটা সেটিং বা সীমা কাজ করছে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n- **Model (মডেল):** AI-র মগজ। বিভিন্ন model-এর বুদ্ধি ও গতি আলাদা। বদলালে আচরণ বদলায়।\n- **Provider:** যে সেবা ওই model চালিয়ে দেয়।\n- **Token (টোকেন):** AI যে লেখা পড়ে, তার ছোট টুকরো। খরচ আর জায়গা দুটোই token দিয়ে মাপা হয়।\n- **Context window:** AI একসাথে কতটা লেখা মনে রাখতে পারে তার সীমা। টেবিলের মতো: বই (কথা) রাখতে রাখতে জায়গা ফুরোয়। ভরে গেলে পুরোনো জিনিস সরাতে হয়, তখন গাইড ভুলতে শুরু করে।\n- **Session:** Hermes-এর সাথে একটা আলাদা আলাপ। নতুন session মানে পরিষ্কার টেবিল।\n- **System prompt:** AI-কে প্রতিবার আগে পড়ানো গোপন নির্দেশ-খাতা। Memory, skill-এর তালিকা সব এখানে ঢোকে।\n- **Prompt cache:** আগে পড়া অংশ মনে রেখে সস্তায় আবার ব্যবহার করার ব্যবস্থা। মাঝপথে system prompt বা model বদলালে এটা রিসেট হয়, ফলে খরচ বাড়ে।\n- **Compression (কম্প্রেশন):** লম্বা আলাপ সারাংশ করে ছোট করা, যাতে জায়গা বাঁচে। উপকার: জায়গা বাঁচে। দাম: খুঁটিনাটি হারায়।\n- **Memory (মেমোরি):** Hermes-এর ছোট স্থায়ী খাতা (`MEMORY.md` ও `USER.md`)। বাছাই-করা দরকারি তথ্য রাখে।\n- **Snapshot:** একটা মুহূর্তের জমানো ছবি। Memory session শুরুতে একবার তোলা হয়, মাঝে বদলায় না।\n- **Skill ও tool:** Skill হলো রেসিপি-কার্ড, tool হলো হাতিয়ার (ফাইল খোলা, command চালানো)। **Toolset** হলো হাতিয়ারের গোষ্ঠী।\n- **Slash command:** chat-এ `/` দিয়ে শুরু ছোট হুকুম, যেমন `/model`।\n- **Config (`config.yaml`) ও YAML:** সেটিংসের নথি। YAML হলো `নাম: মান` সাজানো লেখার ধরন।\n- **Endpoint:** সেবার ইন্টারনেট ঠিকানা। **Custom endpoint** মানে নিজের বসানো ঠিকানা।\n- **Full-text search:** লেখার ভেতরের শব্দ ধরে খোঁজা। **SQLite** হলো একটা ছোট ডেটাবেস (তথ্য-ভাণ্ডার)।\n- **Gateway:** Hermes-কে chat app-এর সঙ্গে জোড়া চলতে-থাকা প্রোগ্রাম।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "সাত ধাপের চেকলিস্ট, ক্রমানুসারে।",
+        "steps": [
+          {
+            "title": "১. কোন model?",
+            "body": "`/model` (বা `/status`) দিয়ে দেখো।"
+          },
+          {
+            "title": "২. context কতটা ভরা?",
+            "body": "`/usage`, `/context`; দরকারে `/compress` বা `/new`।"
+          },
+          {
+            "title": "৩. context length ঠিক ধরা পড়েছে?",
+            "body": "startup লাইন আর `config.yaml` দেখো।"
+          },
+          {
+            "title": "৪. memory snapshot জমাট",
+            "body": "এই session-এ সেভ করা তথ্য system prompt-এ আসে পরের session-এ।"
+          },
+          {
+            "title": "৫. memory ছোট ও বাছাই-করা",
+            "body": "`MEMORY.md` ২,২০০, `USER.md` ১,৩৭৫ অক্ষর।"
+          },
+          {
+            "title": "৬. skill ও tool লোড?",
+            "body": "`/skills`, `/reload-skills`, `/tools list`।"
+          },
+          {
+            "title": "৭. compression-এর পার্শ্বপ্রভাব",
+            "body": "পুরনো ইতিহাস সারাংশ হয়ে গেছে।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ১: সক্রিয় model দেখো\n\n**কেন আগে?** সবচেয়ে সহজ কারণ: তুমি হয়তো ভুল model-এ আছো।\n\n```text\n/model          # বর্তমান model\n/status         # model, provider, profile\n/model <name>   # শুধু এই session-এর জন্য\n/model <name> --global   # config.yaml-এ সেভ\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `/model` | এখন কোন model চলছে দেখাও | \"দুর্বল\" লাগলে সবার আগে |\n| `/status` | model, provider, profile একসাথে | পুরো ছবি দেখতে |\n| `/model <name>` | বদলাও, শুধু এই আলাপের জন্য | সাময়িক পরীক্ষায় |\n| `--global` | সেটিংসে সেভ, সবসময়ের জন্য | স্থায়ীভাবে বদলাতে |\n\n(Profile মানে আলাদা আলাদা Hermes সেটআপ। `<name>` জায়গায় model-এর নাম বসাও।)\n\n- সাধারণ `/model <name>` শুধু session-এর জন্য, যদি না `model.persist_switch_by_default: true` থাকে।\n- Dashboard-এর Models পাতায় main model বদলালে তা শুধু **নতুন** session-এ। খোলা chat পুরনো model-এই থাকে।\n- **খরচের ফাঁদ:** session-এর মাঝখানে model বদলালে prompt cache রিসেট হয়, পরের turn পুরো input দামে বিল হয়। লম্বা session হলে নতুন করে শুরু করা সস্তা হতে পারে।\n\n## ধাপ ২: context কত ভরেছে\n\n```text\n/usage                       # token ও context window\n/context                     # context-এর ভিজ্যুয়াল ভাগ\n/compress                    # ইতিহাস সারাংশ\n/compress here 5             # শেষ ৫ আদান-প্রদান হুবহু রাখো\n/compress focus <topic>      # সারাংশ নির্দিষ্ট বিষয়ের দিকে ঝুঁকিয়ে\n/new                         # নতুন session\n```\n\n| কমান্ড | মানে | উপমা |\n|---|---|---|\n| `/usage` | কত token খরচ, context কতটা ভরা | টেবিলের কতটা জায়গা ভর্তি |\n| `/context` | কী কী জায়গা নিচ্ছে তার ভাগ | টেবিলে কোন বই কতটা জায়গা নিয়েছে |\n| `/compress` | পুরোনো কথা সারাংশ করে জায়গা বানাও | পুরোনো খাতার সারকথা লিখে খাতা সরানো |\n| `/compress here 5` | শেষ ৫ আদান-প্রদান যেমন আছে তেমন রাখো | সাম্প্রতিক কথাগুলো টেবিলেই থাক |\n| `/compress focus <topic>` | সারাংশে নির্দিষ্ট বিষয়ে জোর দাও | সারকথায় দরকারি অংশ বেশি রাখা |\n| `/new` | একদম নতুন session | পরিষ্কার টেবিল |\n\nটিপ: সমস্যা হওয়ার অপেক্ষা না করে নিয়মিত compress করো।\n\n## ধাপ ৩: context length ঠিক ধরা পড়েছে কি?\n\nHermes নিজে আন্দাজ করে তোমার model কতটা context ধরে। ভুল ধরলে সে আগেই জায়গা ফুরিয়েছে ভেবে compress শুরু করে, বা ধরে নেয় বেশি আছে আর হোঁচট খায়।\n\nCLI চালুর লাইনে দেখায়: `Context limit: 128000 tokens`। ভুল হলে `~/.hermes/config.yaml`-এ ঠিক করো:\n\n```yaml\nmodel:\n  default: your-model\n  context_length: 131072\n```\n\nCustom endpoint হলে `providers` এন্ট্রির নিচে (`api` URL সহ) প্রতি model-এ `context_length`, যেমন `qwen3.5:27b` এর জন্য ৬৪০০০। **Ollama** (নিজের কম্পিউটারে model চালানোর টুল): নিজে `num_ctx` ঠিক করলে Hermes-এও একই মান দাও। Ollama-র `/api/show` model-এর সর্বোচ্চ বলে, তোমার সেট করা মান নয়। চলমান gateway-তে `model.context_length` বা যেকোনো `compression.*` key বদলালে পরের message থেকেই কার্যকর, restart লাগে না।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## ধাপ ৪: Memory snapshot জমাট\n\nMemory session শুরুতে একবার system prompt-এ ঢোকে আর মাঝপথে বদলায় না (prefix cache বাঁচাতে, মানে আগে পড়া অংশ সস্তায় ব্যবহারের সুবিধা ধরে রাখতে)। সকালে তোলা ছবি দুপুরে বদলায় না, সেটাই।\n\nsession-এর মাঝে সেভ করলে তা ডিস্কে সঙ্গে সঙ্গে লেখা হয়, কিন্তু system prompt-এ আসে **পরের session**-এ। Tool-এর উত্তর live অবস্থা দেখায়, তাই সেভ সত্যিই হয়েছে। এই session-এ তথ্যটা কথোপকথন-ইতিহাসে থাকে, compression তা সরিয়ে না দেওয়া পর্যন্ত।\n\n## ধাপ ৫: Memory ছোট ও বাছাই-করা\n\n- `MEMORY.md`: ২,২০০ অক্ষর (~৮০০ token)\n- `USER.md`: ১,৩৭৫ অক্ষর (~৫০০ token)\n- হেডারে ব্যবহার দেখায়, যেমন `[67% - 1,474/2,200 chars]`।\n\n**কেন সীমা?** Memory প্রতিটা আলাপে system prompt-এ যায়। বড় হলে প্রতিবার টেবিলের জায়গা খেত আর খরচ বাড়াত।\n\nMemory-তে রাখো পছন্দ, environment-এর তথ্য, convention (নিয়ম), সংশোধন। transcript (পুরো কথোপকথন) নয়। `hermes journey list` সব সেভ করা memory ও skill দেখায়। পুরনো আলোচনার জন্য `session_search` (SQLite-এ full-text search): \"search our past sessions for the deploy discussion\"। দরকারি বাক্য: \"remember this for next time\" (মনে রাখো), \"clean up your memory\" (প্রায় ভরলে একত্র করে)।\n\n## ধাপ ৬: Skill ও tool\n\n```text\n/skills             # installed skill\n/reload-skills      # ~/.hermes/skills/ আবার স্ক্যান\n/tools list         # উপলব্ধ tool\n/tools enable ...   # এই session-এর জন্য চালু\n/tools disable ...  # এই session-এর জন্য বন্ধ\n/context all        # skill ও toolset-ভিত্তিক খরচ\n```\n\n| কমান্ড | মানে | কখন লাগে |\n|---|---|---|\n| `/skills` | কোন skill বসানো আছে | কোনো skill কাজ না করলে |\n| `/reload-skills` | skill-ফোল্ডার আবার পড়ে নাও | নতুন skill যোগ করার পর |\n| `/tools list` | কোন হাতিয়ার চালু | কোনো ক্ষমতা হারালে |\n| `/tools enable/disable` | এই আলাপে হাতিয়ার চালু/বন্ধ | সাময়িকভাবে |\n| `/context all` | skill ও toolset কত জায়গা নিচ্ছে | বেশি ভারী কি না দেখতে |\n\n`hermes chat -t \"terminal\"` দিয়ে শুরু করলে toolset কম থাকে। Skill লোড হচ্ছে কি না দেখতে নাম ধরে ডাকো, যেমন `/github-pr-workflow`।\n\n## ধাপ ৭: Compression-এর পার্শ্বপ্রভাব\n\n- Default: শেষ ২০টা message অসংকুচিত (`protect_last_n`), শুরুর অংশ পিন করা (`protect_first_n: 3`)। (পিন করা মানে আটকে রাখা, সারাংশ হয় না।)\n- `compression.in_place: true` (default): একটাই স্থায়ী session ID। compaction-এর আগের turn \"soft-archive\" হয় (নরমভাবে সরিয়ে রাখা), তখনও খোঁজা ও পুনরুদ্ধারযোগ্য।\n- `compression.in_place: false` (পুরনো ধরন): প্রতি compaction নতুন যুক্ত session বানায়: \"my project\" -> \"my project #2\" -> \"#3\"। `hermes -c \"my project\"` সবচেয়ে সাম্প্রতিকটা চালু করে।\n- হারানো খুঁটিনাটি ফেরাতে agent-কে `session_search` করতে বলো (archived turn-ও পৌঁছায়) অথবা মূল তথ্য আবার পেস্ট করো।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "compare",
+        "caption": "'মনে নেই' দু'রকম: session-এর ভেতরে আর session-এর মাঝে।",
+        "beforeTitle": "এই session-এ এইমাত্র সেভ করা",
+        "before": "Memory snapshot জমাট, তাই system prompt-এ পরের session-এ আসে। তবে তথ্য কথোপকথনে আছে (compression সরানো পর্যন্ত)।",
+        "afterTitle": "গত সপ্তাহের আলোচনা",
+        "after": "Memory-তে শুধু বাছাই-করা তথ্য থাকে। `session_search` চাও। সেটা পুরনো session খোঁজে।"
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## দ্রুত সূচি\n\n| লক্ষণ | প্রথম command | সম্ভাব্য কারণ |\n|---|---|---|\n| সবকিছু দুর্বল লাগছে | `/model` | প্রত্যাশার চেয়ে ভিন্ন model |\n| লম্বা session-এ মান পড়ছে | `/usage` | context চাপ: compress বা নতুন session |\n| সীমা আগেভাগে ঠেকছে | startup লাইন, `/usage` | context length ভুল ধরা |\n| এই session-এর তথ্য ভুলে গেল | (নেই, নকশাই এমন) | জমাট snapshot, পরের session-এ কাজ করবে |\n| গত সপ্তাহের কথা ভুলে গেল | `session_search` চাও | Memory-তে শুধু বাছাই-করা তথ্য |\n| কোনো ক্ষমতা হারিয়েছে | `/skills`, `/tools list` | skill/toolset লোড হয়নি |\n| লম্বা session-এ পুরনো খুঁটিনাটি গায়েব | `/usage`, `/context` | compression সারাংশ করেছে |"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "নিয়ম করে করো",
+      "markdown": "সমস্যার অপেক্ষায় না থেকে নিয়মিত `/compress` করো। জরুরি তথ্য memory-তে সেভ করো আর মাঝপথে model বদলানো এড়াও।"
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "title": "Memory সীমা মনে রাখো",
+      "markdown": "`MEMORY.md` ২,২০০ ও `USER.md` ১,৩৭৫ অক্ষর। প্রায় ভরে গেলে 'clean up your memory' বলো।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "'Hermes হঠাৎ দুর্বল', প্রথমে কোন command?",
+      "options": [
+        "`/compress`",
+        "`/model` (বা `/status`)",
+        "`/tools disable`",
+        "`/new`"
+      ],
+      "answerIndex": 1,
+      "explanation": "সবচেয়ে সহজ কারণ হলো ভুল model-এ থাকা, তাই আগে এটা দেখো।"
+    },
+    {
+      "question": "Session-এর মাঝখানে model বদলালে কী খরচ?",
+      "options": [
+        "কিছুই না",
+        "Memory মুছে যায়",
+        "Skill মুছে যায়",
+        "Prompt cache রিসেট হয়, পরের turn পুরো input দামে বিল হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "মাঝপথে model বদলালে আগে-পড়া অংশ সস্তায় ব্যবহারের সুবিধা (cache) হারায়।"
+    },
+    {
+      "question": "`/compress here 5` কী করে?",
+      "options": [
+        "প্রথম ৫টা মুছে দেয়",
+        "৫ মিনিট থামে",
+        "শেষ ৫ আদান-প্রদান হুবহু রাখে",
+        "৫টা skill লোড করে"
+      ],
+      "answerIndex": 2,
+      "explanation": "সাম্প্রতিক ৫টা আদান-প্রদান সারাংশ না করে যেমন আছে তেমন রাখে।"
+    },
+    {
+      "question": "এই session-এ এইমাত্র memory-তে সেভ করা তথ্য system prompt-এ কখন আসে?",
+      "options": [
+        "সঙ্গে সঙ্গে",
+        "কখনোই না",
+        "compress-এর পর",
+        "পরের session-এ"
+      ],
+      "answerIndex": 3,
+      "explanation": "Memory snapshot session শুরুতে একবার তোলা হয়, মাঝে বদলায় না।"
+    },
+    {
+      "question": "`MEMORY.md`-এর সীমা কত?",
+      "options": [
+        "৫০০ অক্ষর",
+        "২,২০০ অক্ষর (~৮০০ token)",
+        "১,৩৭৫ অক্ষর",
+        "কোনো সীমা নেই"
+      ],
+      "answerIndex": 1,
+      "explanation": "`USER.md`-এর সীমা ১,৩৭৫। দুটো গুলিয়ে ফেলো না।"
+    },
+    {
+      "question": "গত সপ্তাহের deploy আলোচনা মনে করাতে কী চাইবে?",
+      "options": [
+        "`/new`",
+        "`session_search`, পুরনো session খোঁজা",
+        "`/model`",
+        "`/tools enable`"
+      ],
+      "answerIndex": 1,
+      "explanation": "Memory-তে শুধু বাছাই-করা তথ্য থাকে। পুরোনো আলাপ খুঁজতে `session_search`।"
+    },
+    {
+      "question": "`compression.in_place: true`-তে কী হয়?",
+      "options": [
+        "প্রতিবার নতুন নামের session",
+        "ইতিহাস স্থায়ীভাবে মোছে",
+        "compression বন্ধ",
+        "একটাই স্থায়ী session ID; পুরনো turn soft-archive, খোঁজা যায়"
+      ],
+      "answerIndex": 3,
+      "explanation": "এক আলাপ একই ID-তে চলে, পুরোনো অংশ সরানো হলেও খোঁজা যায়।"
+    },
+    {
+      "question": "চলমান gateway-তে `compression.*` key বদলালে?",
+      "options": [
+        "gateway restart লাগে",
+        "পরের message থেকেই কার্যকর",
+        "কখনো কার্যকর হয় না",
+        "নতুন profile লাগে"
+      ],
+      "answerIndex": 1,
+      "explanation": "চলমান gateway-তে এই বদল পরের message থেকেই খাটে, restart লাগে না।"
+    }
+  ],
+  "recap": [
+    "Hermes \"বোকা\" লাগলে সাত ধাপ ধরে খোঁজো: model, context, context length, memory snapshot, memory সীমা, skill/tool, compression।",
+    "`/model` ও `/usage` দিয়ে শুরু করো; মাঝপথে model বদলালে prompt cache রিসেট হয় ও খরচ বাড়ে।",
+    "Memory সেভ করলে তা system prompt-এ আসে পরের session-এ; সীমা `MEMORY.md` ২,২০০, `USER.md` ১,৩৭৫ অক্ষর।",
+    "গত সপ্তাহের কথা মনে করাতে `session_search`; নিয়মিত `/compress` করো।",
+    "`/skills`, `/tools list` দিয়ে skill ও tool লোড হয়েছে কি না দেখো।"
+  ]
+}

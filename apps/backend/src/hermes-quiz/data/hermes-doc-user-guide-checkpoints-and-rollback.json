@@ -1,0 +1,365 @@
+{
+  "contentId": "hermes-doc-user-guide-checkpoints-and-rollback",
+  "questions": [
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q01",
+      "difficulty": "easy",
+      "question": "Checkpoint বলতে Hermes-এ কী বোঝায়?",
+      "options": [
+        "ফাইল বদলানোর আগে নেওয়া একটা snapshot, মানে save point",
+        "agent-এর উত্তর শেষ হলে পাঠানো একটা notification বার্তা",
+        "আসল project-এর `.git` ফোল্ডারের একটা নতুন branch",
+        "model-এর নাম ঠিক করে রাখা একটা config সেটিং"
+      ],
+      "correctIndex": 0,
+      "explanation": "Checkpoint হলো ভিডিও গেমের save-এর মতো: ফাইল বদলানোর ঠিক আগে নেওয়া ফাইলগুলোর ছবি (snapshot)।",
+      "whyWrong": {
+        "1": "Checkpoint কোনো notification নয়।",
+        "2": "Hermes তোমার আসল `.git` ছোঁয় না, আলাদা shadow repo ব্যবহার করে।",
+        "3": "Model-এর নাম config-এর অন্য অংশ, checkpoint-এর সাথে সম্পর্কহীন।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q02",
+      "difficulty": "easy",
+      "question": "Checkpoint feature-এর default অবস্থা কী?",
+      "options": [
+        "default-এ চালু, নিজে বন্ধ করতে হয়",
+        "default-এ বন্ধ, নিজে চালু করতে হয়",
+        "শুধু container backend-এ নিজে চালু থাকে",
+        "শুধু git repo থাকলে নিজে চালু হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "v2 থেকে checkpoint opt-in, কারণ snapshot জমতে জমতে জায়গা খায়।",
+      "whyWrong": {
+        "0": "এটা default-এ বন্ধ, চালু নয়।",
+        "2": "Container backend-এ তো checkpoint চলেই না।",
+        "3": "git থাকা চালুর শর্ত নয়, নিজে চালু করতে হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q03",
+      "difficulty": "easy",
+      "question": "`/rollback` কমান্ড কী কাজ করে?",
+      "options": [
+        "নতুন checkpoint বানিয়ে আগেরগুলো একসাথে মুছে দেয়",
+        "Hermes-কে একদম নতুন করে install করে আবার চালায়",
+        "পুরনো checkpoint-এ ফিরে ফাইলের আগের অবস্থা ফেরায়",
+        "আসল project-এর git history থেকে commit সরিয়ে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "`/rollback` হলো \"আগের save থেকে লোড করো\": ভুল ফাইল-বদল ফেরানোর command।",
+      "whyWrong": {
+        "0": "মোছার কাজ `hermes checkpoints prune/clear`-এর।",
+        "1": "Install-এর সাথে rollback-এর সম্পর্ক নেই।",
+        "3": "Rollback আসল git history ছোঁয় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q04",
+      "difficulty": "easy",
+      "question": "Shadow repo কী?",
+      "options": [
+        "তোমার project-এর `.git`-এর একটা backup কপি-ফোল্ডার, যা নিজে নিজে sync হয়",
+        "শুধু container-এর ভেতরে চলা একটা অস্থায়ী repo",
+        "GitHub-এ আপলোড হওয়া একটা private remote repo",
+        "Hermes-এর আলাদা গোপন git repo, যেখানে snapshot জমে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Shadow repo থাকে `~/.hermes/checkpoints/store/`-এ, তাই তোমার আসল commit-ইতিহাস নোংরা হয় না।",
+      "whyWrong": {
+        "0": "এটা তোমার `.git`-এর কপি নয়, পুরো আলাদা repo।",
+        "1": "Container backend-এ checkpoint-ই তৈরি হয় না।",
+        "2": "এটা লোকাল, GitHub-এ যায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q05",
+      "difficulty": "easy",
+      "question": "Checkpoint চালু করার একবারের (শুধু এই session-এর) উপায় কোনটা?",
+      "options": [
+        "`hermes checkpoints enable`",
+        "`hermes chat --checkpoints`",
+        "`hermes chat --rollback`",
+        "`/checkpoints on`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`hermes chat --checkpoints` শুধু ওই session-এর জন্য চালু করে; সবসময়ের জন্য `config.yaml`-এ `checkpoints.enabled: true`।",
+      "whyWrong": {
+        "0": "এমন subcommand lesson-এ নেই।",
+        "2": "`--rollback` নামে কোনো flag নেই।",
+        "3": "এমন slash command নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q06",
+      "difficulty": "easy",
+      "question": "Hash (যেমন `4270a8c`) কী?",
+      "options": [
+        "একটা checkpoint-এর পাসওয়ার্ড, যেটা দিলে restore হয়",
+        "ফাইলের সাইজ বোঝানোর একটা সংক্ষিপ্ত সংখ্যা, যেমন মেগাবাইটে",
+        "জিনিসের অনন্য ছাপ-নাম; একই বিষয়, একই hash",
+        "agent-এর turn-সংখ্যা গোনার একটা counter"
+      ],
+      "correctIndex": 2,
+      "explanation": "Hash দিয়ে commit চেনা যায়, আর একই বিষয়বস্তুর hash একই হওয়ায় ডুপ্লিকেট ধরা সহজ।",
+      "whyWrong": {
+        "0": "Hash পাসওয়ার্ড নয়, পরিচয়-ছাপ।",
+        "1": "সাইজ আলাদা জিনিস।",
+        "3": "Turn গোনার সাথে hash-এর সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q07",
+      "difficulty": "easy",
+      "question": "Prune মানে কী?",
+      "options": [
+        "একটা ফাইলকে আরেক জায়গায় কপি করে রাখা",
+        "দুটো checkpoint জুড়ে একটা বানিয়ে ফেলা",
+        "একটা checkpoint-এ ফিরে গিয়ে চলা শুরু করা",
+        "পুরনো, অপ্রয়োজনীয় জিনিস ছেঁটে ফেলা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Prune হলো গাছের ডাল ছাঁটার মতো: পুরনো snapshot ছেঁটে জায়গা বাঁচানো।",
+      "whyWrong": {
+        "0": "কপি করা prune নয়।",
+        "1": "Checkpoint জোড়া লাগানোর কিছু নেই।",
+        "2": "ফিরে যাওয়া হলো rollback।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q08",
+      "difficulty": "medium",
+      "question": "কোন কাজের আগে Hermes automatic snapshot নেয়?",
+      "options": [
+        "`write_file`, `patch` ও `rm`/`mv`/`sed -i`",
+        "শুধু `read_file`, `ls` ও `cat` ধরনের শুধু-পড়ার command",
+        "শুধু তুমি যে message পাঠাও, প্রতিটার আগে",
+        "শুধু `hermes update` বা `hermes install` চালানোর আগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "ফাইল বদলাতে পারে এমন কাজের আগে snapshot তোলা হয়: file tool আর ধ্বংসাত্মক terminal command।",
+      "whyWrong": {
+        "1": "শুধু-পড়ার command কিছু বদলায় না, তাই snapshot লাগে না।",
+        "2": "প্রতি message-এর আগে নয়, বদলের আগে।",
+        "3": "Update/install এর trigger নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q09",
+      "difficulty": "medium",
+      "question": "প্রতি directory-তে প্রতি turn-এ কয়টা checkpoint নেওয়া যায়, আর কিছু না বদলালে কী হয়?",
+      "options": [
+        "যতগুলো tool চলে ততগুলো; কিছু না বদলালেও একটা হয়",
+        "সর্বোচ্চ দুটো, একটা আগে আর একটা পরে",
+        "সর্বোচ্চ একটা; কিছু না বদলালে নতুন checkpoint-ই হয় না",
+        "সর্বোচ্চ বিশটা, কারণ `max_snapshots` প্রতি turn-এর সীমা"
+      ],
+      "correctIndex": 2,
+      "explanation": "সীমা হলো প্রতি directory-তে প্রতি turn-এ একটাই; বদল না থাকলে checkpoint তৈরি হয় না।",
+      "whyWrong": {
+        "0": "প্রতি tool-এ আলাদা checkpoint হয় না, আর বদল না থাকলে হয়ই না।",
+        "1": "আগে-পরে দুটো নেওয়ার নিয়ম নেই।",
+        "3": "`max_snapshots: 20` হলো প্রতি project-এ মোট সীমা, turn-এর নয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q10",
+      "difficulty": "medium",
+      "question": "`/rollback 1` চালানোর সময় Hermes আগে একটা pre-rollback snapshot নেয় কেন?",
+      "options": [
+        "যাতে checkpoint-এর hash ছোট করে দেখানো যায়",
+        "যাতে আসল project-এর `.git` সাফ হয়ে যায়",
+        "যাতে size cap-এর হিসাব নতুন করে শুরু হয়",
+        "যাতে restore নিজেও পরে undo করা যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ফেরার আগের বর্তমান অবস্থাও save হয়, তাই ভুল ফেরাও ফেরানো যায়।",
+      "whyWrong": {
+        "0": "Hash ছোট দেখানোর সাথে এর সম্পর্ক নেই।",
+        "1": "Hermes আসল `.git` ছোঁয়ই না।",
+        "2": "Size cap আলাদা ব্যাপার।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q11",
+      "difficulty": "medium",
+      "question": "`/rollback <N>` চালালে তোমার নিজের হাতে করা edit-এর কী হয়?",
+      "options": [
+        "ledger দেখে হাতের edit বাদ রাখা হয়, আর সেটা জানানো হয়",
+        "সব edit মুছে যায়, তাই আগে git commit করতে হয়",
+        "শুধু সবচেয়ে নতুন হাতের edit-টা মুছে যায়",
+        "আগে তোমাকে প্রতিটা ফাইলের জন্য আলাদা করে জিজ্ঞেস করা হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "agent-write ledger প্রতিটা `write_file`/`patch`-এর content hash রাখে; ফাইলের বর্তমান বিষয়বস্তু আলাদা হলে সেটা তোমার edit, তাই বাদ পড়ে।",
+      "whyWrong": {
+        "1": "`--all` ছাড়া হাতের edit রক্ষা পায়।",
+        "2": "সবচেয়ে নতুন বলে আলাদা নিয়ম নেই।",
+        "3": "প্রতিটা ফাইলে প্রশ্ন করা হয় না, ledger দিয়ে নিজে ঠিক হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q12",
+      "difficulty": "medium",
+      "question": "restore-এর আগে কোন command দিয়ে পার্থক্য দেখে নেওয়া ভালো?",
+      "options": [
+        "`/rollback list <N>`",
+        "`/rollback diff <N>`",
+        "`hermes checkpoints diff`",
+        "`/rollback <N> --all`"
+      ],
+      "correctIndex": 1,
+      "explanation": "`/rollback diff <N>` N নম্বর checkpoint আর এখনকার অবস্থার পার্থক্য দেখায়, restore করে না।",
+      "whyWrong": {
+        "0": "এমন রূপ lesson-এ নেই।",
+        "2": "`hermes checkpoints`-এর subcommand-এ diff নেই।",
+        "3": "`--all` সরাসরি পুরো restore করে ফেলে, শুধু দেখায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q13",
+      "difficulty": "medium",
+      "question": "`hermes checkpoints prune` আর `hermes checkpoints clear`-এর পার্থক্য কী?",
+      "options": [
+        "prune পুরো base মোছে, clear শুধু পুরনো entry ছাঁটে",
+        "দুটোই পুরোপুরি একই কাজ করে, শুধু নামটা আলাদা রাখা হয়েছে",
+        "prune শুধু v1-এর `legacy-*` archive মোছে",
+        "prune বাছাই করে ছাঁটে, clear পুরো base মোছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "prune হলো বাছাই করে পরিষ্কার (GC ও size cap সহ); clear হলো সব শূন্য করা, নিশ্চিতকরণ চায়।",
+      "whyWrong": {
+        "0": "ভূমিকা উল্টে গেছে।",
+        "1": "দুটো আলাদা কাজ করে।",
+        "2": "`legacy-*` মোছে `clear-legacy`।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q14",
+      "difficulty": "medium",
+      "question": "কেন auto-prune background-এ চলে?",
+      "options": [
+        "কারণ `git gc` কয়েক দশ সেকেন্ড নিতে পারে",
+        "কারণ prune শুধু রাতে চালানোর নিয়ম আছে, দিনে নয়",
+        "কারণ prune চলার সময় checkpoint চালু রাখা যায় না",
+        "কারণ background-এ চললে size cap প্রযোজ্য হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "CLI-তে helper thread আর gateway-তে housekeeping tick-এ চলে, যেন prompt বা startup না আটকায়।",
+      "whyWrong": {
+        "1": "রাতের নিয়ম lesson-এ নেই।",
+        "2": "Checkpoint চালু রাখা নিয়ে এমন সমস্যা বলা নেই।",
+        "3": "Size cap সবসময় প্রযোজ্য।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q15",
+      "difficulty": "hard",
+      "question": "তুমি docker backend-এ Hermes চালাচ্ছ। `/rollback` চালালে কী হবে?",
+      "options": [
+        "তালিকা, diff ও restore সবই স্বাভাবিক চলবে, কোনো বাধা ছাড়াই",
+        "তালিকা দেখাবে, diff ও restore অস্বীকার",
+        "কোনো তালিকাই দেখাবে না, command-ই কাজ করবে না",
+        "শুধু restore চলবে, তবে diff অস্বীকার করবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Container backend-এ path sandbox-এর, তাই checkpoint বা ledger entry বানানো হয় না; Local ও SSH backend ঠিক থাকে।",
+      "whyWrong": {
+        "0": "Container-এ কিছুই স্বাভাবিক নয়।",
+        "2": "তালিকা দেখানো হয়, একদম নীরব নয়।",
+        "3": "Restore-ও অস্বীকার করা হয়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q16",
+      "difficulty": "hard",
+      "question": "তোমার project-এ একটা nested git repo আছে। সেই checkpoint-এ `/rollback 1 --all` চালালে কী হবে?",
+      "options": [
+        "`--all` থাকায় nested repo-সহ সব ঠিকঠাক ফেরে",
+        "nested repo-র ভেতরের সব ফাইল নিজে নিজে commit হয়ে যায়",
+        "পুরো rollback অস্বীকার; আলাদা ফাইল ফেরানো যায়",
+        "শুধু nested repo বাদ দিয়ে বাকিটা চুপচাপ ফেরানো হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Nested repo gitlink হিসেবে থাকে, ভেতরের uncommitted বিষয়বস্তু ধরা পড়ে না; তাই কোনো ফাইল বদলানোর আগেই পুরো rollback অস্বীকার হয়।",
+      "whyWrong": {
+        "0": "`--all` এই সীমা এড়াতে পারে না।",
+        "1": "Auto-commit হয় না।",
+        "3": "চুপচাপ আংশিক restore করা হয় না, স্পষ্ট অস্বীকার।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q17",
+      "difficulty": "hard",
+      "question": "Hermes একটা ফাইল লিখল, তুমি সেটা বদলালে। শুধু ওই ফাইলকেও Hermes-এর লেখা অবস্থায় ফেরাতে কোনটা ঠিক?",
+      "options": [
+        "`/rollback 1 --all` দিয়ে পুরোপুরি ফেরানো",
+        "`/rollback 1` দিলেই হাতের edit-সহ ফেরে",
+        "`/rollback diff 1` দিলেই ফাইল ফিরে আসে",
+        "`hermes checkpoints prune` দিলে ফাইল আগের অবস্থায় আসে"
+      ],
+      "correctIndex": 0,
+      "explanation": "`/rollback <N>` হাতের edit রাখে; জোর করে সব ফেরাতে `--all`।",
+      "whyWrong": {
+        "1": "`--all` ছাড়া হাতের edit বাদ পড়ে থাকে।",
+        "2": "diff শুধু দেখায়, ফেরায় না।",
+        "3": "prune পরিষ্কার করে, ফেরায় না।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q18",
+      "difficulty": "hard",
+      "question": "`/rollback` তালিকার ২ নম্বর বাদে বাকি সব ঠিক, শুধু `src/broken_file.py` নষ্ট। সবচেয়ে সরাসরি উপায় কোনটা?",
+      "options": [
+        "`/rollback 1 --all` চালানো",
+        "`/rollback 1 src/broken_file.py`",
+        "`hermes checkpoints clear` চালানো",
+        "`/rollback diff 1 src/broken_file.py` চালানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "`/rollback <N> <file>` শুধু ওই একটা ফাইল ফেরায়, বাকি কিছু ছোঁয় না।",
+      "whyWrong": {
+        "0": "`--all` সব ফাইল ফেরায়।",
+        "2": "clear সব checkpoint মুছে দেয়, ফেরায় না।",
+        "3": "diff শুধু পার্থক্য দেখায়।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q19",
+      "difficulty": "hard",
+      "question": "store ৫০০ MB-র cap ছাড়ালে Hermes কী করে?",
+      "options": [
+        "সবচেয়ে বড় project-টা পুরোপুরি মুছে ফেলে",
+        "নতুন snapshot নেওয়া নিঃশব্দে চিরতরে বন্ধ করে দেয় এবং কিছু জানায় না",
+        "পালা করে পুরনো commit ফেলে, প্রতি project-এ একটা রেখে",
+        "সব project-এর সব commit একসাথে মুছে store শূন্য করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Size cap প্রয়োগে round-robin করে পুরনো commit ফেলা হয়, কিন্তু প্রতিটা project অন্তত একটা snapshot রাখে।",
+      "whyWrong": {
+        "0": "পুরো project মোছা হয় না।",
+        "1": "Snapshot বন্ধ করার নিয়ম নেই।",
+        "3": "সব মুছে ফেলা হয় না, অন্তত একটা থাকে।"
+      }
+    },
+    {
+      "id": "hermes-doc-user-guide-checkpoints-and-rollback-q20",
+      "difficulty": "hard",
+      "question": "তুমি `max_snapshots: 20`, `retention_days: 7` রেখেছ। কোন ফাইল snapshot থেকে বাদ যায়?",
+      "options": [
+        "`.py` ও `.md`-এর মতো সব ছোট text ফাইল, কোনো ব্যতিক্রম ছাড়া",
+        "যে ফাইল ৭ দিনের চেয়ে নতুন",
+        "যে ফাইল `write_file` দিয়ে লেখা হয়েছে",
+        "১০ MB-র বড় ফাইল, যেমন dataset"
+      ],
+      "correctIndex": 3,
+      "explanation": "`max_file_size_mb: 10`-এর চেয়ে বড় ফাইল ছবিতে নেওয়া হয় না, dataset/model weight/media থেকে বাঁচতে।",
+      "whyWrong": {
+        "0": "Text ফাইল সাধারণত ছোট, বাদ যায় না।",
+        "1": "retention পুরনো snapshot ফেলার নিয়ম, নতুন ফাইল বাদ দেওয়ার নয়।",
+        "2": "`write_file`-এর ফাইলই তো snapshot হয়।"
+      }
+    }
+  ]
+}

@@ -1,0 +1,215 @@
+{
+  "contentId": "hermes-doc-user-guide-git-worktrees",
+  "title": "Git Worktrees",
+  "sourceUrl": "https://hermes-agent.nousresearch.com/docs/user-guide/git-worktrees",
+  "oneLiner": "এই lesson শেষে তুমি git worktree দিয়ে একাধিক Hermes agent নিরাপদে চালানো বুঝবে এবং git, branch, commit, worktree, sweep-এর মতো শব্দ চিনবে।",
+  "blocks": [
+    {
+      "type": "markdown",
+      "markdown": "## একটা গল্প: একই খাতায় দুজন লিখলে\n\nতুমি আর তোমার বন্ধু একই খাতায় একই পাতায় একসঙ্গে লিখছো। তুমি একটা লাইন কাটলে, ও সেটাই বদলে দিল। হুলুস্থুল! কে কী করল বোঝাই যায় না।\n\nসমাধান: প্রত্যেককে **আলাদা খাতার কপি** দাও, শেষে মিলিয়ে নাও। Git-এ এই কপির নাম **worktree**।\n\nHermes বর্তমান working directory-কেই project root ধরে (CLI-তে যেখানে `hermes` চালাও; messaging gateway-তে `terminal.cwd`)। একই checkout-এ একাধিক agent চালালে ফাইল-সংঘাত হয়, আর কে কী বদলাল বোঝা কঠিন। Worktree দিলে প্রতিটা agent পায় নিজের branch, নিজের working directory আর `/rollback`-এর জন্য নিজের Checkpoint Manager history।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## আগে কয়েকটা শব্দ চিনে নিই\n\n### ১) Git ও repo\n**Git** হলো কোডের সংস্করণ মনে রাখার টুল, যেন ভিডিও গেমের save point: যেকোনো আগের অবস্থায় ফেরা যায়। **Repo** (repository) হলো যে ফোল্ডারে Git কাজ করছে, মানে প্রজেক্টের সব ফাইল আর তাদের ইতিহাস।\n\n### ২) Commit\nGit-এ একটা save point। \"এই সময়ে সব ফাইল এমন ছিল\" এই ছবি তুলে রাখা।\n\n### ৩) Branch\nপ্রজেক্টের একটা আলাদা সমান্তরাল রাস্তা। মূল রাস্তা (main) না ভেঙে নতুন রাস্তায় পরীক্ষা করা যায়। ভালো হলে পরে মূল রাস্তায় জোড়া লাগাও (**merge**)।\n\n### ৪) Working directory ও checkout\n**Working directory** = এখন যে ফোল্ডারে কাজ করছো। **Checkout** = Git যে অবস্থার ফাইলগুলো ওই ফোল্ডারে সাজিয়ে দিয়েছে।\n\n### ৫) Worktree\nএকই repo-র আরেকটা আলাদা ফোল্ডারে আরেকটা branch খুলে রাখা। একই খাতার জেরক্স-কপি, কিন্তু ইতিহাস একই।\n\n### ৬) Uncommitted ও unpushed\n**Uncommitted** = এখনও save point না করা কাজ। **Unpushed** = save করা কিন্তু অনলাইনে (remote) পাঠানো হয়নি।\n\n### ৭) Checkpoint ও `/rollback`\nHermes-এর নিজস্ব ছোট save point, আর সেখানে ফিরে যাওয়ার কমান্ড। (পরের দিকে আলাদা lesson আছে।)\n\n### ৮) Cron ও sweep\n**Cron** = ঘড়ি ধরে নিজে নিজে চলা কাজ। **Sweep** = ঝাড়ু দেওয়া, মানে পুরনো অব্যবহৃত জিনিস পরিষ্কার করা।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "architecture",
+        "caption": "একটা repo, দুটো worktree: প্রতিটায় আলাদা branch আর আলাদা Hermes।",
+        "nodes": [
+          {
+            "id": "repo",
+            "kind": "database",
+            "label": "মূল repo",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "id": "wa",
+            "kind": "server",
+            "label": "worktree A",
+            "x": 220,
+            "y": 0
+          },
+          {
+            "id": "wb",
+            "kind": "server",
+            "label": "worktree B",
+            "x": 220,
+            "y": 120
+          },
+          {
+            "id": "ha",
+            "kind": "user",
+            "label": "hermes (A)",
+            "x": 440,
+            "y": 0
+          },
+          {
+            "id": "hb",
+            "kind": "user",
+            "label": "hermes (B)",
+            "x": 440,
+            "y": 120
+          }
+        ],
+        "edges": [
+          {
+            "from": "repo",
+            "to": "wa",
+            "label": "git worktree add"
+          },
+          {
+            "from": "repo",
+            "to": "wb",
+            "label": "git worktree add"
+          },
+          {
+            "from": "wa",
+            "to": "ha",
+            "label": "চালাও"
+          },
+          {
+            "from": "wb",
+            "to": "hb",
+            "label": "চালাও"
+          }
+        ]
+      }
+    },
+    {
+      "type": "simulator",
+      "id": "worktree-sweep"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## বানানোর দুই পথ\n\n**১. session-এর ভেতরে: `/worktree new [name]`**\n- `.worktrees/<name>/` বানায়, branch হয় `hermes/<name>`।\n- Branch ভিত্তি করে সদ্য fetch করা (অনলাইন থেকে টেনে আনা) remote tip-এ (যদি না `worktree_sync: false`)।\n- Terminal ও file tool সঙ্গে সঙ্গে নতুন tree-তে চলে যায়, restart লাগে না।\n- নাম না দিলে র‍্যান্ডম `hermes-<id>`।\n- `/worktree` সক্রিয়টা, `/worktree list` সবগুলো দেখায়।\n\n**২. নিজে git দিয়ে:**\n\n```bash\ncd /path/to/your/repo\ngit worktree add ../repo-feature feature/hermes-experiment\ncd ../repo-feature\nhermes\n```\n\n| লাইন | মানে |\n|---|---|\n| `cd /path/to/your/repo` | প্রজেক্টের ফোল্ডারে ঢোকো |\n| `git worktree add ../repo-feature feature/hermes-experiment` | পাশের ফোল্ডারে `repo-feature` নামে একটা কপি-ঘর বানাও, আর নতুন branch `feature/hermes-experiment` খোলো |\n| `cd ../repo-feature` | ওই নতুন ঘরে ঢোকো |\n| `hermes` | এই ঘরে Hermes চালাও |\n\nHermes ওই ডিরেক্টরিকে project root ধরে এবং তার আলাদা `/rollback` checkpoint history রাখে।\n\n**সমান্তরাল agent:**\n\n```bash\ngit worktree add ../repo-experiment-a feature/hermes-a\ngit worktree add ../repo-experiment-b feature/hermes-b\n```\n\nদুই terminal-এ দুই ডিরেক্টরিতে `hermes`। প্রতিটা নিজের branch-এ কাজ করে, checkpoint লেখে এমন shadow repo-তে (আড়ালে রাখা একটা গোপন কপি-repo) যার hash (এক ধরনের অনন্য ছাপ-নাম) worktree পথ থেকে আসে, আর আলাদা `/rollback` করতে পারে। কাজে লাগে: batch refactor (অনেক জায়গার কোড একসঙ্গে গোছানো), একই কাজের দুই পদ্ধতি তুলনা, একই upstream repo-তে CLI ও gateway একসঙ্গে।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## `hermes -w`: স্বয়ংক্রিয় worktree\n\nহাতে git কমান্ড না লিখে শুধু `-w` flag দিলেই হয়। `hermes -w` repo-র ভেতর `.worktrees/`-এ ফেলে-দেওয়া worktree বানায় (branch `hermes/hermes-<hash>`) আর সেখানে পুরো CLI session চালায়। এক প্রশ্নের জন্য: `hermes -w -z \"Fix issue #123\"`। সমান্তরালে চালাতে প্রতি `hermes -w`-র জন্য আলাদা terminal। Checkout-এ repo-র hook, `core.fsmonitor`, clean/smudge filter এড়ানো হয় (নিরাপত্তার জন্য, অজানা repo-র স্বয়ংক্রিয় কমান্ড না চালাতে)। Git LFS repo-তে (বড় ফাইলের বিশেষ ব্যবস্থা) শুধু pointer ফাইল আসে; আসল content লাগলে worktree-র ভেতরে `git lfs pull`।\n\n**কাজ অসমাপ্ত রেখে বের হলে** (uncommitted বা unpushed থাকলে) তিন বিকল্প:\n\n| বিকল্প | কী হয় | কখন বাছবে |\n|---|---|---|\n| **Keep** (ডিফল্ট; Enter বা Esc) | কিছু বদলায় না | নিশ্চিত না হলে |\n| **Archive and remove** | পুরো অবস্থা archive করে tree সরায় এবং `hermes worktree restore` কমান্ড ছাপে; archive ব্যর্থ হলে tree থাকে | জায়গা খালি করতে কিন্তু কাজ বাঁচিয়ে রাখতে |\n| **Remove and discard** | সব মুছে যায়; শুধু স্পষ্টভাবে বাছলে | কাজটা সত্যিই লাগবে না |\n\nকখনও প্রশ্ন আসে না: one-shot (`-q`, `-z`), cron, gateway session, terminal ছাড়া exit। এগুলোতে tree sweep-এর জন্য রাখা হয়। পরিষ্কার ও pushed tree প্রশ্ন ছাড়াই সরে।"
+    },
+    {
+      "type": "diagram",
+      "diagram": {
+        "kind": "steps",
+        "caption": "`hermes -w` session শেষে tree-র ভাগ্য।",
+        "steps": [
+          {
+            "title": "পরিষ্কার ও pushed",
+            "body": "প্রশ্ন ছাড়াই সরে যায়।"
+          },
+          {
+            "title": "uncommitted/unpushed কাজ আছে",
+            "body": "Keep / Archive and remove / Remove and discard, তিন বিকল্প।"
+          },
+          {
+            "title": "one-shot, cron, gateway",
+            "body": "প্রশ্ন নেই; tree থাকে, পরে sweep দেখবে।"
+          },
+          {
+            "title": "পরে",
+            "body": "`hermes worktree restore <name>` দিয়ে archive থেকে ফেরানো যায়।"
+          }
+        ]
+      }
+    },
+    {
+      "type": "markdown",
+      "markdown": "## Stale worktree sweep\n\n**Stale** মানে বাসি, অনেকদিন ধরে কেউ ছোঁয়নি। **সমস্যা:** `hermes -w` দিয়ে একের পর এক worktree বানালে ডিস্কে ডজন ডজন ফেলে-যাওয়া ফোল্ডার জমবে। তাই একটা স্বয়ংক্রিয় ঝাড়ুদার (sweep) আছে।\n\nযে repo-তে Hermes worktree বানায় সেটা profile-ভিত্তিক `<HERMES_HOME>/worktree_repos.json`-এ লেখা থাকে। Sweep চলে `hermes -w` শুরুতে আর প্রতি ৬ ঘণ্টায় cron ticker থেকে।\n\n| Tree-র অবস্থা | সিদ্ধান্ত |\n|---|---|\n| নিষ্ক্রিয় (`hermes-*`/`subagent-*`: ২৪ ঘণ্টা; নামকরা: ৭২ ঘণ্টা), পরিষ্কার, merged/pushed | সরানো হয় |\n| নিষ্ক্রিয়, dirty (অসংরক্ষিত বদল) বা unpushed | Archive, তারপর সরানো |\n| চলমান hermes lock বা ভেতরে live process | কখনও ছোঁয়া হয় না |\n| সাম্প্রতিক activity (ফাইল, HEAD, reflog) | ছোঁয়া হয় না |\n| Kanban task tree (`t_<hex>`) | ছোঁয়া হয় না (Kanban GC-র, মানে ওদের নিজস্ব ঝাড়ুদারের) |\n| Submodule (repo-র ভেতরের repo) আছে | রাখা হয় (`keep-submodule-work`) |\n| ভেতরে embedded repo | রাখা হয় (`keep-unarchivable`) |\n| `keep-large-untracked`: `archive_max_file_mb`-এর চেয়ে বড় untracked ফাইল | রাখা হয় |\n\nIgnored ফাইল (`.env` কপি, cache, build output) archive হয় না, tree-র সঙ্গে মুছে যায়।\n\n**Archive:** `refs/hermes/archive/<tree>`-এ একটা commit, যাতে `HEAD`, staged, unstaged ও untracked ফাইল থাকে (`node_modules/`, `.venv/` নয়)। অস্থায়ী index দিয়ে বানানো, তাই tree বদলায় না; বানাতে না পারলে tree থাকে। Remote-এ থাকা branch (যেমন খোলা PR) রাখা হয়; নইলে archive-এ commit থাকে আর local branch মোছে।\n\n```bash\nhermes worktree list                          # tree ও archive: নাম, বয়স, branch, কারণ\nhermes worktree prune --dry-run               # সব সিদ্ধান্ত দেখায়, বদলায় না\nhermes worktree restore lane-x                # .worktrees/lane-x আবার তৈরি\nhermes worktree restore lane-x --path ../lane-x-review\n```\n\n| কমান্ড | কাজ | কখন |\n|---|---|---|\n| `list` | সব tree ও archive দেখাও | কী জমেছে জানতে |\n| `prune --dry-run` | মহড়া: কী সরবে দেখাও, আসলে কিছু করে না | মোছার আগে |\n| `restore lane-x` | archive থেকে tree আবার বানাও | ভুলে সরানো কাজ ফেরাতে |\n| `restore lane-x --path ...` | অন্য জায়গায় ফেরাও | review-র জন্য আলাদা ফোল্ডারে |\n\n```yaml\nworktrees:\n  archive_dirty: true              # false = dirty/unpushed tree কখনও সরানো হবে না\n  archive_max_file_mb: 50\n  archive_retention_days: 30       # 0 = archive চিরকাল\n  max_total_gb: 0                  # ঐচ্ছিক বাজেট; পুরনোটা আগে\n  install_state_retention_days: 14\n```\n\n**Subagent worktree:** (subagent = Hermes-এর ছোট সহকারী।) `delegation.worktree_isolation: true` দিলে child কাজ শেষে পরিষ্কার tree সরে; commit/edit থাকলে archive হয়ে সরে এবং branch parent-এর merge-এর জন্য থাকে। Tree-র সংখ্যায় কোনো সীমা নেই।"
+    },
+    {
+      "type": "markdown",
+      "markdown": "## হাতে পরিষ্কার করা ও ভালো অভ্যাস\n\nকাজ রাখতে চাইলে branch merge করো, তারপর `git worktree remove ../repo-feature` (uncommitted থাকলে জোর না করলে প্রত্যাখ্যান; branch মুছে না, তার জন্য সাধারণ `git branch` কমান্ড)। `~/.hermes/checkpoints/`-এর checkpoint data নিজে থেকে ছাঁটা হয় না, তবে সাধারণত ছোট।\n\n**ভালো অভ্যাস:**\n- প্রতি experiment-এ একটা worktree: diff (পরিবর্তনের তালিকা) ছোট, PR (পরিবর্তন জমা দেওয়ার অনুরোধ) review-যোগ্য।\n- Branch-এর নাম experiment অনুযায়ী, যেমন `feature/hermes-refactor-tests`।\n- Milestone-এ git commit; commit-এর মাঝে `/rollback` নিরাপত্তা জাল।\n- Worktree ব্যবহার করলে bare repo root (কাজের ফাইল ছাড়া শুধু ইতিহাসওয়ালা repo) থেকে Hermes চালিও না।"
+    },
+    {
+      "type": "callout",
+      "tone": "warning",
+      "title": "বড় ফাইল ও submodule",
+      "markdown": "`archive_max_file_mb` (ডিফল্ট ৫০)-এর চেয়ে বড় untracked ফাইল archive-এ যায় না, তাই tree রাখা হয়; submodule-ওয়ালা tree-ও সহজে সরানো হয় না। Sweep ভুল করে তোমার কাজ মুছে ফেলবে, এ ভয় কম, কারণ প্রতিটা বিপজ্জনক ক্ষেত্রে সে 'রাখা'র দিকে ঝোঁকে।"
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "title": "UI project হলে node_modules",
+      "markdown": "`ui-tui/` ও `apps/desktop/`-এ প্রতি worktree-তে `npm ci` করলে `node_modules` (প্রয়োজনীয় লাইব্রেরির ভাণ্ডার) দ্বিগুণ হয়। `htui` ও `hgui` helper symlink (শর্টকাট-ফাইল) দিয়ে একটা install ভাগ করে (developer page দেখো)।"
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Worktree কেন দরকার?",
+      "options": [
+        "একই checkout-এ একাধিক agent চালালে সংঘাত এড়াতে; প্রত্যেকে নিজের branch ও directory পায়",
+        "Hermes দ্রুত করতে",
+        "internet বাঁচাতে",
+        "repo মুছতে"
+      ],
+      "answerIndex": 0,
+      "explanation": "আলাদা খাতার কপির মতো; একজনের বদল অন্যজনের ফাইল নষ্ট করে না।"
+    },
+    {
+      "question": "`/worktree new fix` কোন branch বানায়?",
+      "options": ["`fix`", "`main`", "`hermes/fix`", "`worktree/fix`"],
+      "answerIndex": 2,
+      "explanation": "branch হয় `hermes/<name>`, আর tree থাকে `.worktrees/fix/`-এ।"
+    },
+    {
+      "question": "কোন ক্ষেত্রে বের হওয়ার সময় keep/archive/remove প্রশ্ন আসে না?",
+      "options": [
+        "সবসময় আসে",
+        "one-shot, cron, gateway, বা terminal ছাড়া exit-এ",
+        "শুধু Windows-এ",
+        "কখনও না"
+      ],
+      "answerIndex": 1,
+      "explanation": "ওই ক্ষেত্রে কেউ উত্তর দেওয়ার নেই, তাই tree রাখা হয় sweep-এর জন্য।"
+    },
+    {
+      "question": "Archive কোথায় জমে?",
+      "options": [
+        "`/tmp`-এ",
+        "`.env`-এ",
+        "remote server-এ",
+        "`refs/hermes/archive/<tree>`-এ একটা commit-এ"
+      ],
+      "answerIndex": 3,
+      "explanation": "HEAD, staged, unstaged ও untracked ফাইলসহ একটা commit।"
+    },
+    {
+      "question": "`hermes-*` নামের নিষ্ক্রিয় tree কত ঘণ্টা পর sweep-যোগ্য?",
+      "options": ["১", "৭২", "২৪", "১৬৮"],
+      "answerIndex": 2,
+      "explanation": "`hermes-*`/`subagent-*` ২৪ ঘণ্টা; নামকরা tree ৭২ ঘণ্টা।"
+    },
+    {
+      "question": "`git worktree remove ../repo-feature` সম্পর্কে ঠিক কোনটা?",
+      "options": [
+        "uncommitted থাকলে জোর না করলে প্রত্যাখ্যান, branch মোছে না",
+        "branch-ও মুছে দেয়",
+        "সবসময় archive করে",
+        "remote-এ push করে"
+      ],
+      "answerIndex": 0,
+      "explanation": "branch মুছতে আলাদা সাধারণ git কমান্ড লাগে।"
+    },
+    {
+      "question": "Archive করতে না পারলে (যেমন বড় untracked ফাইল) কী হয়?",
+      "options": [
+        "tree মুছে যায়",
+        "কাজ বাতিল হয়",
+        "Hermes বন্ধ হয়",
+        "tree রাখা হয়"
+      ],
+      "answerIndex": 3,
+      "explanation": "বিপদের ক্ষেত্রে sweep সবসময় 'রাখা'র দিকে ঝোঁকে।"
+    }
+  ],
+  "recap": [
+    "Worktree প্রতিটা agent-কে আলাদা branch, directory ও `/rollback` history দেয়।",
+    "`/worktree new`, `git worktree add` বা `hermes -w`, তিন পথে বানানো যায়।",
+    "বের হওয়ার সময় অসমাপ্ত কাজ থাকলে Keep / Archive / Discard বেছে নিতে হয়।",
+    "Sweep ২৪/৭২ ঘণ্টা নিষ্ক্রিয় tree পরিষ্কার করে, বিপদ হলে রেখে দেয়; archive থেকে restore যায়।",
+    "এক experiment = এক worktree; commit milestone আর `/rollback` safety net।"
+  ]
+}
