@@ -4,6 +4,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CcdvChapterContent, CcdvExam } from "@/lib/data/ccdv/types";
+import QuizDeck from "./flashcards/quiz/QuizDeck";
+import { hasInteractiveFlashcards } from "@/lib/data/ccdv/schedule";
 import ExamIntro from "./exam/ExamIntro";
 import LabPanel from "./lesson/LabPanel";
 import LessonPanel from "./lesson/LessonPanel";
@@ -29,7 +31,10 @@ describe("CCDV chapters render", () => {
   it.each(list("chapters"))("%s lesson, lab and MCQs render", (file) => {
     const chapter = read<CcdvChapterContent>("chapters", file);
     const lesson = renderToStaticMarkup(
-      createElement(LessonPanel, { lesson: chapter.lesson }),
+      createElement(LessonPanel, {
+        chapterId: file.replace(/\.json$/, ""),
+        lesson: chapter.lesson,
+      }),
     );
     expect(lesson.length).toBeGreaterThan(1000);
     expect(
@@ -95,4 +100,22 @@ describe("CCDV exams render", () => {
       ),
     ).toContain("Unanswered");
   });
+});
+
+describe("CCDV interactive flashcards (Milestone 1)", () => {
+  it("is enabled for Week 1 chapters only", () => {
+    expect(["ch00", "ch01", "ch06"].every(hasInteractiveFlashcards)).toBe(true);
+    expect(["ch07", "ch14"].some(hasInteractiveFlashcards)).toBe(false);
+  });
+  it.each(["ch00", "ch01", "ch02", "ch03", "ch04", "ch05", "ch06"])(
+    "%s quiz deck renders",
+    (id) => {
+      const chapter = read<CcdvChapterContent>("chapters", `${id}.json`);
+      const html = renderToStaticMarkup(
+        createElement(QuizDeck, { chapterId: id, cards: chapter.flashcards }),
+      );
+      expect(html).toContain(`Card 1 / ${chapter.flashcards.length}`);
+      expect(html).toContain("Validate");
+    },
+  );
 });

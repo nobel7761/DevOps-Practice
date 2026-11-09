@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/shared/shadcn";
-import { isAnswerCorrect } from "@/lib/ccdv/scoring";
-import { saveMcqBest } from "@/lib/ccdv/storage";
 import type { CcdvMcq } from "@/lib/data/ccdv/types";
 import QuestionBody from "../question/QuestionBody";
-import { toggleSelection } from "../question/toggle-selection";
 import PracticeSummary from "./PracticeSummary";
+import { useMcqSession } from "./useMcqSession";
 
 export default function McqPractice({
   chapterId,
@@ -16,69 +14,52 @@ export default function McqPractice({
   chapterId: string;
   mcqs: CcdvMcq[];
 }) {
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<number[]>([]);
-  const [revealed, setRevealed] = useState(false);
-  const [correct, setCorrect] = useState(0);
-  const finished = index >= mcqs.length;
+  const session = useMcqSession(chapterId, mcqs);
+  if (!session.ready) return null;
 
-  useEffect(() => {
-    if (finished && mcqs.length > 0) {
-      saveMcqBest(chapterId, { correct, total: mcqs.length });
-    }
-  }, [finished, chapterId, correct, mcqs.length]);
-
-  const restart = () => {
-    setIndex(0);
-    setSelected([]);
-    setRevealed(false);
-    setCorrect(0);
-  };
-
-  if (finished) {
+  if (session.finished) {
     return (
       <PracticeSummary
-        correct={correct}
-        total={mcqs.length}
-        onRestart={restart}
+        mcqs={mcqs}
+        answers={session.answers}
+        history={session.history}
+        onReset={session.reset}
       />
     );
   }
 
-  const question = mcqs[index];
-  const check = () => {
-    setRevealed(true);
-    if (isAnswerCorrect(question, selected)) setCorrect((value) => value + 1);
-  };
-  const next = () => {
-    setIndex((value) => value + 1);
-    setSelected([]);
-    setRevealed(false);
-  };
-
+  const { question, index, selected, revealed } = session;
+  const resumed = !revealed && session.answers.length > 0;
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">
-        প্রশ্ন {index + 1} / {mcqs.length}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          প্রশ্ন {index + 1} / {mcqs.length}
+          {resumed &&
+            " · আগের উত্তরগুলো সংরক্ষিত ছিল, সেখান থেকেই চালিয়ে যাচ্ছ"}
+        </p>
+        {session.answers.length > 0 && (
+          <Button size="sm" variant="outline" onClick={session.reset}>
+            <RotateCcw className="size-4" /> Reset
+          </Button>
+        )}
+      </div>
       <QuestionBody
         question={question}
-        selected={selected}
-        revealed={revealed}
-        onToggle={(i) =>
-          setSelected((prev) =>
-            toggleSelection(prev, i, question.answerIndexes.length),
-          )
+        selected={
+          revealed ? (session.answers[index]?.selected ?? selected) : selected
         }
+        revealed={revealed}
+        onToggle={session.toggle}
       />
       {revealed ? (
-        <Button onClick={next}>
+        <Button onClick={session.next}>
           {index + 1 === mcqs.length ? "Result দেখো" : "পরের প্রশ্ন"}
         </Button>
       ) : (
         <Button
           disabled={selected.length !== question.answerIndexes.length}
-          onClick={check}
+          onClick={session.check}
         >
           উত্তর যাচাই করো
         </Button>

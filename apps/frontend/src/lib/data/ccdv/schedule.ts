@@ -304,3 +304,17 @@ export function parseExamContentId(contentId: string): number | null {
   const match = /^ccdv-exam-(\d{2})$/.exec(contentId);
   return match ? Number(match[1]) : null;
 }
+
+/** Last study day of Milestone 1 (Week 1). The interactive flashcard quiz is rolled out milestone by milestone. */
+export const INTERACTIVE_FLASHCARDS_LAST_DAY = 6;
+
+/** True for chapters whose flashcards use the typed-answer + AI-validation quiz deck (Milestone 1 only for now). */
+export function hasInteractiveFlashcards(chapterId: string): boolean {
+  const chapter = getChapter(chapterId);
+  return !!chapter && chapter.day <= INTERACTIVE_FLASHCARDS_LAST_DAY;
+}
+
+/** Sort-game simulators use "pick everything, then Submit" with saved answers (Milestone 1 only for now). */
+export function hasSubmitSimulators(chapterId: string): boolean {
+  return hasInteractiveFlashcards(chapterId);
+}

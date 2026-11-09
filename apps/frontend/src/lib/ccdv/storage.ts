@@ -31,6 +31,7 @@ const ATTEMPTS_KEY = "ccdv:attempts";
 const draftKey = (examNumber: number) => `ccdv:draft:${examNumber}`;
 const cardsKey = (chapterId: string) => `ccdv:cards:${chapterId}`;
 const mcqKey = (chapterId: string) => `ccdv:mcq:${chapterId}`;
+const cardResultsKey = (chapterId: string) => `ccdv:cardresults:${chapterId}`;
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -98,4 +99,22 @@ export function saveMcqBest(chapterId: string, best: McqBest): void {
   const previous = loadMcqBest(chapterId);
   if (!previous || best.correct >= previous.correct)
     write(mcqKey(chapterId), best);
+}
+
+export interface CardResult {
+  answer: string;
+  verdict: "correct" | "incorrect";
+  feedback: string;
+}
+
+/** Last validated typed answer per flashcard index. */
+export function loadCardResults(chapterId: string): Record<number, CardResult> {
+  return read<Record<number, CardResult>>(cardResultsKey(chapterId), {});
+}
+
+export function saveCardResults(
+  chapterId: string,
+  results: Record<number, CardResult>,
+): void {
+  write(cardResultsKey(chapterId), results);
 }

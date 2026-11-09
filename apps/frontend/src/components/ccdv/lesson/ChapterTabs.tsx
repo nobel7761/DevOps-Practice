@@ -66,7 +66,7 @@ export default function ChapterTabs({
       </TabsList>
       <TabsContent value="lesson">
         <PartPanel title={PART_LABELS.lesson} contentId={id("lesson")}>
-          <LessonPanel lesson={content.lesson} />
+          <LessonPanel chapterId={chapterId} lesson={content.lesson} />
         </PartPanel>
       </TabsContent>
       <TabsContent value="lab">

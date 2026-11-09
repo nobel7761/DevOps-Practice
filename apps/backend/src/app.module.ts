@@ -13,6 +13,8 @@ import { InterviewModule } from './interview/interview.module';
 import { NotesModule } from './notes/notes.module';
 import { TranslateModule } from './translate/translate.module';
 import { AskModule } from './ask/ask.module';
+import { CcdvFlashcardModule } from './ccdv-flashcard/ccdv-flashcard.module';
+import { CcdvStudyModule } from './ccdv-study/ccdv-study.module';
 import { ProgressModule } from './progress/progress.module';
 import { PoridhiSyncModule } from './poridhi-sync/poridhi-sync.module';
 import { HermesQuizModule } from './hermes-quiz/hermes-quiz.module';
@@ -91,6 +93,8 @@ if (!existsSync(envPath)) {
     NotesModule,
     TranslateModule,
     AskModule,
+    CcdvFlashcardModule,
+    CcdvStudyModule,
     ProgressModule,
     PoridhiSyncModule,
     SystemDesignQuizModule,

@@ -5,7 +5,9 @@ import SimulatorFrame from "@/components/hermes/simulators/SimulatorFrame";
 import { Button } from "@/components/shared/shadcn";
 import { LessonBox } from "@/components/shared/simulator";
 import { asArray, type SimulatorBase } from "../types";
+import { useSimContext } from "../SimContext";
 import ItemCard from "./ItemCard";
+import SubmitSortGame from "./SubmitSortGame";
 
 export interface SortBucket {
   id: string;
@@ -25,7 +27,21 @@ interface Props extends SimulatorBase {
 export default function SortGameSimulator(props: Props) {
   const buckets = asArray<SortBucket>(props.buckets);
   const items = asArray<SortItem>(props.items);
+  const simContext = useSimContext();
   const [choices, setChoices] = useState<Record<number, string>>({});
+  if (simContext) {
+    return (
+      <SubmitSortGame
+        chapterId={simContext.chapterId}
+        simKey={simContext.simKey}
+        title={props.title ?? "Sort"}
+        hint={props.hint ?? ""}
+        takeaway={props.takeaway}
+        buckets={buckets}
+        items={items}
+      />
+    );
+  }
   const answered = Object.keys(choices).length;
   const correct = items.filter((item, i) => choices[i] === item.bucket).length;
 
