@@ -1,0 +1,17 @@
+{
+  "type": "company",
+  "text": "একটা command-এ একটা ভুল input, আর AWS S3-এর একটা পুরো region কয়েক ঘণ্টা request নিতে পারল না। কেন?\nDay 6/100 · Availability\n\nআজ পড়লাম AWS-এর প্রকাশিত \"Summary of the Amazon S3 Service Disruption\" (২৮ ফেব্রুয়ারি ২০১৭, US-EAST-1 region)।\n\nকী হয়েছিল:\n1. S3 team billing system-এর একটা ধীরগতি debug করছিল। একজন অনুমোদিত team member প্রতিষ্ঠিত playbook মেনে অল্প কিছু server সরানোর command চালান।\n2. Command-এর একটা input ভুল ছিল, তাই উদ্দেশ্যের চেয়ে অনেক বেশি server সরে যায়, যার মধ্যে ছিল S3-এর **index** আর **placement** subsystem-এর server।\n3. দুটো subsystem-কেই পুরো restart করতে হয়। অনেক বছর পুরো restart হয়নি, ততদিনে S3 অনেক বড়, তাই restart-এ প্রত্যাশার চেয়ে বেশি সময় লাগে।\n4. S3-এর উপর নির্ভরশীল ওই region-এর অন্য service-ও (যেমন নতুন EC2 instance চালু করা, Lambda) প্রভাবিত হয়। এমনকি AWS-এর নিজের Service Health Dashboard-ও শুরুতে update করা যায়নি, কারণ সেটাও S3-এর উপর নির্ভর করত।\n\nAWS যা বদলায়: tool এখন ধীরে capacity সরায় আর কোনো subsystem-কে ন্যূনতম capacity-র নিচে নামতে দেয় না; index-কে ছোট ছোট **cell**-এ ভাগ করার কাজ এগিয়ে আনে; আর dashboard একাধিক region-এ চালায়।\n\nআমার জন্য শিক্ষা:\n- **Shared dependency** সবার পথে series-এ বসে। সেটা পড়লে নিজের ঘরের redundancy কাজে আসে না।\n- **Recovery** অনুশীলন না করলে MTTR নীরবে বাড়তে থাকে।\n- **Blast radius** ছোট রাখতে হয়, যাতে একটা ভুল সবকিছু ছুঁতে না পারে।\n- Monitoring যেন যে জিনিস monitor করছে তার উপরই নির্ভর না করে।\n\nঅনেকটা একটা বাজারের মতো, যেখানে সব দোকান একই transformer-এ চলে: প্রত্যেক দোকানে দুটো করে বাল্ব রাখলেও transformer পুড়লে পুরো বাজার অন্ধকার।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার system-এর কোন shared dependency (database, auth, DNS, storage) পড়লে প্রায় সবকিছু বন্ধ হয়ে যায়?]\n\nআপনার system-এ সবচেয়ে বড় single point of failure কোনটা বলে মনে হয়, আর সেটা সরাতে প্রথমে কী করতেন? 👇",
+  "personalPrompt": "আপনার system-এর কোন shared dependency (database, auth, DNS, storage) পড়লে প্রায় সবকিছু বন্ধ হয়ে যায়?",
+  "firstComment": "পুরো lesson, nines-এর হিসাব, series/parallel availability-র অঙ্ক আর NGINX দিয়ে নিজে failover করে দেখার lab এখানে: {link}\n\nউৎস: AWS, \"Summary of the Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region\" (aws.amazon.com/message/41926/)",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#HighAvailability",
+    "#SiteReliabilityEngineering",
+    "#AWS"
+  ],
+  "visual": "day-006-main",
+  "sources": [
+    "AWS — \"Summary of the Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region\" (aws.amazon.com/message/41926/), প্রকাশ মার্চ ২০১৭: ২৮ ফেব্রুয়ারি ২০১৭ সকালে billing system debug করার সময় একজন অনুমোদিত S3 team member প্রতিষ্ঠিত playbook মেনে command চালান; একটা input ভুল থাকায় উদ্দেশ্যের চেয়ে বেশি server সরে যায়; index ও placement subsystem পুরো restart লাগে, সেই সময় S3 request সামলাতে পারেনি; বড় region-এ এগুলো অনেক বছর পুরো restart হয়নি, তাই প্রত্যাশার চেয়ে বেশি সময় লাগে; S3-নির্ভর অন্য service (S3 console, নতুন EC2 instance launch, EBS-এর কিছু volume, Lambda) প্রভাবিত হয়; Service Health Dashboard-এর admin console S3-নির্ভর হওয়ায় শুরুতে update করা যায়নি; পরিবর্তন: tool ধীরে capacity সরায় ও ন্যূনতম capacity-র নিচে নামতে দেয় না, index subsystem-কে cell-এ ভাগ করার কাজ এগিয়ে আনা, SHD একাধিক region-এ চালানো।"
+  ]
+}

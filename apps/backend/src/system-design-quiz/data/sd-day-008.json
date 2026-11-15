@@ -1,0 +1,1085 @@
+{
+  "topicId": "sd-day-008",
+  "questions": [
+    {
+      "id": "sd-day-008-q01",
+      "difficulty": "easy",
+      "question": "CAP Theorem-এর প্রশ্নটা কোন অবস্থায় আসে?",
+      "options": [
+        "একটা মাত্র database server-এ অনেক বেশি user একসাথে read আর write করতে থাকে",
+        "একই data-র কপি কয়েকটা node-এ, আর তারা network দিয়ে update পাঠায়",
+        "Transaction ছাড়া একসাথে অনেকগুলো table update করায় data-র নিয়ম ভেঙে যায়",
+        "Server-এর CPU আর memory শেষ হয়ে request-এর latency হঠাৎ বাড়তে থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "CAP-এর পুরো আলোচনা replicated data নিয়ে: একাধিক node-এ একই data, মাঝে network। Network ভাঙলে কপিগুলো একে অপরের খবর পায় না, তখনই C আর A-র মধ্যে বাছাই আসে। একটা machine-এ সব data থাকলে এই প্রশ্ন ওঠে না।",
+      "whyWrong": {
+        "0": "একটা machine-এ সব read-write একই কপিতে হয়, তাই partition বা কপি অমিলের প্রশ্নই নেই; এটা load-এর সমস্যা।",
+        "2": "এটা ACID transaction-এর প্রসঙ্গ, replica-দের মধ্যে network ভাগ হওয়ার প্রসঙ্গ না।",
+        "3": "Resource শেষ হওয়া scalability-র প্রশ্ন; CAP-এর প্রশ্ন কপিগুলোর মাঝের network ভাঙা নিয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q02",
+      "difficulty": "easy",
+      "question": "CAP Theorem-এ C (Consistency) বলতে ঠিক কী বোঝায়?",
+      "options": [
+        "প্রতিটা transaction-এর পরে database-এর নিয়ম, যেমন balance ঋণাত্মক না, ঠিক থাকবে",
+        "সব node একই version-এর software আর একই configuration দিয়ে চালু থাকবে",
+        "প্রতিটা request-এর response time সবসময় প্রায় একই থাকবে, হঠাৎ বাড়বে না",
+        "প্রতিটা read সর্বশেষ সফল write দেখবে, যেন data-র একটাই কপি আছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "CAP-এর C মানে linearizability: write সফল হওয়ার পরে যে-ই যেখান থেকে পড়ুক, সেই মান বা আরও নতুন মান দেখবে। System বাইরে থেকে এমন আচরণ করে যেন data-র একটাই কপি। এটা ACID-এর C থেকে পুরো আলাদা ধারণা।",
+      "whyWrong": {
+        "0": "এটা ACID-এর C; CAP-এর C হলো replica-দের মধ্যে সর্বশেষ মান দেখার নিশ্চয়তা (linearizability)।",
+        "1": "Software version মেলানো operations-এর বিষয়, data-র কোন মান read-এ দেখা যাবে তার সাথে সম্পর্ক নেই।",
+        "2": "এটা latency-র স্থিরতা, consistency না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q03",
+      "difficulty": "easy",
+      "question": "CAP Theorem-এ A (Availability) বলতে কী বোঝায়?",
+      "options": [
+        "বছরের অন্তত 99.9% সময় system চালু থাকবে, এর বেশি downtime হবে না",
+        "অন্তত একটা node সবসময় চালু থাকবে, যাতে কোনো না কোনো user সেবা পায়",
+        "সচল প্রতিটা node তার কাছে আসা প্রতিটা request-এ non-error উত্তর দেবে",
+        "প্রতিটা request একটা নির্দিষ্ট সময়সীমার, যেমন ১০০ms-এর, মধ্যে উত্তর পাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Gilbert ও Lynch-এর সংজ্ঞায়, non-failing node-এ আসা প্রতিটা request-এর একটা উত্তর আসতে হবে, আর সেটা error হলে চলবে না। 'পরে চেষ্টা করুন' বা চিরকাল ঝুলে থাকা A ভাঙে। এটা হ্যাঁ/না শর্ত, percentage না।",
+      "whyWrong": {
+        "0": "এটা uptime percentage, Day 6-এর মাপ; CAP-এর A হলো partition-এর সময়ও প্রতিটা সচল node-এর উত্তর দেওয়ার শর্ত।",
+        "1": "CAP-এর A প্রতিটা সচল node-এর কথা বলে, শুধু একটা node চালু থাকলেই A হয় না।",
+        "3": "Theorem-এর A-তে কোনো নির্দিষ্ট সময়সীমা নেই; শর্ত হলো error ছাড়া উত্তর আসবে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q04",
+      "difficulty": "easy",
+      "question": "CAP-এর P (Partition tolerance) কী বোঝায়?",
+      "options": [
+        "Node-দের মাঝের message হারালেও system কাজ চালিয়ে যায়",
+        "Data-কে ছোট ছোট ভাগে (partition) ভাগ করে আলাদা server-এ রাখা হয়",
+        "Disk-কে কয়েকটা partition-এ ভাগ করা, যাতে একটা ভরলে অন্যটা চলে",
+        "কোনো node crash করলে তার data নিজে থেকে অন্য node-এ কপি হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Network partition মানে node-গুলোর মাঝের message হারানো বা আটকে যাওয়া। P মানে এমন অবস্থাতেও system ভেঙে না পড়ে কোনো নির্দিষ্ট আচরণ করে। 'Partition' শব্দটা এখানে data ভাগ করা অর্থে না।",
+      "whyWrong": {
+        "1": "এটা sharding/data partitioning; CAP-এর P হলো network partition সহ্য করা।",
+        "2": "Disk partition-এর সাথে CAP-এর কোনো সম্পর্ক নেই।",
+        "3": "এটা re-replication বা recovery; P বলে network message হারানো অবস্থাতেও system-এর আচরণের কথা।"
+      }
+    },
+    {
+      "id": "sd-day-008-q05",
+      "difficulty": "easy",
+      "question": "নিচের কোন ঘটনাটা network partition-এর উদাহরণ?",
+      "options": [
+        "একটা server-এর power supply নষ্ট হয়ে সেটা পুরো বন্ধ, অন্য server-গুলো ঠিক আছে",
+        "একটা table অনেক বড় হওয়ায় সেটাকে দুটো আলাদা server-এর দুটো table-এ ভাগ করা হয়েছে",
+        "দুই data center-এর server চালু, কিন্তু fiber কাটায় একে অপরকে পাচ্ছে না",
+        "নতুন deploy-এর একটা bug-এর কারণে সব server একসাথে একই error দিচ্ছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Partition-এ node-গুলো বেঁচে থাকে আর request নিতে পারে, কিন্তু দলে ভাগ হয়ে যায়: দলের বাইরে message পৌঁছায় না। কাটা fiber, ভুল firewall rule বা নষ্ট switch-এ এমন হয়। Node নিজে মারা যাওয়া আলাদা ধরনের failure।",
+      "whyWrong": {
+        "0": "এটা node crash; partition-এ node-গুলো চালু থাকে, শুধু মাঝের যোগাযোগ কাটে।",
+        "1": "এটা data ভাগ করা (sharding), network partition না।",
+        "3": "এটা software bug, node-দের মাঝের যোগাযোগ বিচ্ছিন্ন হওয়া না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q06",
+      "difficulty": "easy",
+      "question": "CAP Theorem অনুযায়ী network partition হলে আসলে কোন দুটোর মধ্যে বাছতে হয়?",
+      "options": [
+        "Consistency আর Partition tolerance, কারণ availability তখনও নিশ্চিত থাকে",
+        "Availability আর Partition tolerance, কারণ consistency তখন নিজে থেকেই থাকে",
+        "Latency আর Throughput, কারণ partition-এ network-এর গতি অনেক কমে যায়",
+        "Consistency আর Availability, পিছিয়ে থাকা পাশে আসা request-এর জন্য"
+      ],
+      "correctIndex": 3,
+      "explanation": "Partition হলে বিচ্ছিন্ন পাশের node সর্বশেষ data জানে না। উত্তর দিলে পুরনো data যেতে পারে (C যায়), উত্তর না দিলে A যায়। P বাছাইয়ের জিনিস না, কারণ partition ঘটে গেছে।",
+      "whyWrong": {
+        "0": "Partition তখন ঘটছেই, তাই P ছাড়ার উপায় নেই; বাছাই C আর A-র মধ্যে।",
+        "1": "Partition-এর সময় consistency নিজে থাকে না; তার জন্য availability ছাড়তে হয়।",
+        "2": "Latency বনাম throughput Day 7-এর trade-off; CAP-এর বাছাই C আর A-র মধ্যে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q07",
+      "difficulty": "easy",
+      "question": "Network-এ কোনো partition না থাকলে CAP Theorem কী বলে?",
+      "options": [
+        "তখনও তিনটার মধ্যে যেকোনো দুটো বাছতে হয়, তৃতীয়টা সবসময় ছাড়তে হয়",
+        "তখন consistency আর availability দুটোই একসাথে পাওয়া সম্ভব",
+        "তখন availability পাওয়া যায়, কিন্তু consistency কখনো পুরোপুরি পাওয়া যায় না",
+        "তখন consistency পাওয়া যায়, কিন্তু availability কমে প্রায় অর্ধেক হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "CAP-এর বাছাই শুধু partition-এর জানালায়। Network ঠিক থাকলে replica-রা একে অপরের সাথে কথা বলে সর্বশেষ data নিশ্চিত করতে পারে, আর উত্তরও দিতে পারে। তবে এর দাম latency, যেটা PACELC-এর আলোচনা।",
+      "whyWrong": {
+        "0": "এটা প্রচলিত 'pick any two' ভুল; বাছাই শুধু partition চলাকালীন।",
+        "2": "Partition না থাকলে linearizable consistency আর availability দুটোই সম্ভব।",
+        "3": "Partition না থাকলে availability কমার কোনো কারণ theorem দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q08",
+      "difficulty": "easy",
+      "question": "Network-এ যুক্ত একটা distributed database-কে 'CA system' বলা কেন বিভ্রান্তিকর?",
+      "options": [
+        "CA বানানো সম্ভব, কিন্তু অনেক দামি hardware আর বিশেষ network ছাড়া চলে না",
+        "Partition এড়ানো যায় না, আর partition হলে C আর A একসাথে রাখা অসম্ভব",
+        "CA শব্দটা শুধু relational database-এর জন্য, NoSQL database-এর জন্য না",
+        "CA system-এ write করা যায় কিন্তু read করা যায় না, তাই বাস্তবে কাজে লাগে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Distributed system-এ node-গুলো network দিয়ে যুক্ত, আর network একদিন ভাঙবেই। তখন বিচ্ছিন্ন node উত্তর দিলে C যায়, না দিলে A যায়। তাই 'CA' আসলে বলে 'partition হবে না ধরে নিয়েছি', যেটা design না, আশা।",
+      "whyWrong": {
+        "0": "সমস্যা দামের না; partition হলে C আর A একসাথে রাখা যুক্তিগতভাবেই অসম্ভব।",
+        "2": "CAP database-এর ধরন নিয়ে না, replicated data আর network partition নিয়ে।",
+        "3": "CA বলতে এমন কিছু বোঝায় না; ভুলটা হলো partition হবে না ধরে নেওয়া।"
+      }
+    },
+    {
+      "id": "sd-day-008-q09",
+      "difficulty": "easy",
+      "question": "CP আচরণের একটা system-এ partition হলে বিচ্ছিন্ন (minority) node-এর কাছে আসা read-এর কী হয়?",
+      "options": [
+        "সর্বশেষ মান নিশ্চিত করতে না পেরে node-টা error দেয় বা অপেক্ষা করায়",
+        "Node-টা নিজের কাছের মান সাথে সাথে দেয়, network ফিরলে পরে মিলিয়ে নেয়",
+        "Node-টা request-টা অন্য পাশের majority-র কাছে পাঠিয়ে উত্তর এনে দেয়",
+        "Node-টা সবচেয়ে কাছের পুরনো version বেছে দেয়, যাতে user খালি হাতে না ফেরে"
+      ],
+      "correctIndex": 0,
+      "explanation": "CP মানে consistency আগে। বিচ্ছিন্ন node জানে সে সর্বশেষ data নিশ্চিত করতে পারছে না, তাই ভুল উত্তর না দিয়ে error দেয় বা অপেক্ষা করায়। এতে ওই node-এর availability যায়, কিন্তু data ঠিক থাকে।",
+      "whyWrong": {
+        "1": "এটা AP আচরণ; CP পুরনো হতে পারে এমন মান দেয় না।",
+        "2": "Partition-এর মানেই অন্য পাশে message পৌঁছায় না, তাই forward করাও সম্ভব না।",
+        "3": "CP কখনো নিশ্চিত না হয়ে মান দেয় না; পুরনো মান দেওয়াই তো consistency ভাঙা।"
+      }
+    },
+    {
+      "id": "sd-day-008-q10",
+      "difficulty": "easy",
+      "question": "AP আচরণের একটা system-এ partition চলাকালীন কী ঘটে?",
+      "options": [
+        "প্রতিটা পাশ নিজের কপি থেকে উত্তর দেয়, network ফিরলে কপিগুলো মেলায়",
+        "প্রতিটা পাশ সব request reject করে, যতক্ষণ না network আবার জোড়া লাগে",
+        "শুধু majority পাশ উত্তর দেয়, minority পাশ সব request চুপচাপ ফেলে দেয়",
+        "System partition-এর সময়ও সব কপিকে নিজে থেকে সর্বশেষ মানে এনে রাখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "AP মানে availability আগে: সচল প্রতিটা node উত্তর দেয়, write-ও নিতে পারে। দাম হলো উত্তর পুরনো হতে পারে আর দুই পাশে আলাদা write হলে পরে conflict মেটাতে হয়। Like counter বা cart-এর মতো জায়গায় এটা মানায়।",
+      "whyWrong": {
+        "1": "সব reject করা availability ছেড়ে দেওয়া, যেটা AP-র উল্টো।",
+        "2": "এটা quorum-ভিত্তিক CP আচরণ; AP-তে সচল প্রতিটা node উত্তর দেয়।",
+        "3": "Partition-এ কপিগুলোর মাঝে message যায় না, তাই সব কপি সর্বশেষ রাখা অসম্ভব।"
+      }
+    },
+    {
+      "id": "sd-day-008-q11",
+      "difficulty": "easy",
+      "question": "নিচের কোন operation-এর জন্য partition-এর সময় CP আচরণ সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "একটা post-এ কতজন like দিয়েছে, যেটা কয়েক সেকেন্ড পুরনো হলেও চলে",
+        "Friend-এর 'last seen' বা online status দেখানো, যেটা প্রায়ই বদলায়",
+        "Product-এর review আর rating-এর তালিকা দেখানো, যেটা ধীরে ধীরে বদলাতে থাকে",
+        "Wallet থেকে টাকা পাঠানো, যেখানে পুরনো balance দেখে টাকা ছাড়া বিপদ"
+      ],
+      "correctIndex": 3,
+      "explanation": "টাকা পাঠানোর সময় পুরনো balance দেখে সিদ্ধান্ত নিলে একই টাকা দুবার খরচ হতে পারে, যেটা ফেরানো কঠিন আর ব্যয়বহুল। তাই সেখানে কিছুক্ষণ error দেখানো সস্তা। বাকি তিনটায় একটু পুরনো data-র ক্ষতি সামান্য।",
+      "whyWrong": {
+        "0": "Like counter একটু পুরনো হলে ক্ষতি নেই, তাই AP এখানে বেশি মানায়।",
+        "1": "Status কিছুক্ষণ পুরনো হলে ক্ষতি সামান্য; error দেখানো বরং খারাপ অভিজ্ঞতা।",
+        "2": "Review তালিকা একটু পুরনো দেখালে কারও বড় ক্ষতি নেই, তাই AP চলে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q12",
+      "difficulty": "easy",
+      "question": "নিচের কোন feature-এর জন্য partition-এর সময় AP আচরণ বেশি মানানসই?",
+      "options": [
+        "নতুন account খোলার সময় username আগে কেউ নিয়েছে কিনা যাচাই করা",
+        "Online bus ticket-এ একটা নির্দিষ্ট seat বিক্রি হয়ে গেছে কিনা নিশ্চিত করা",
+        "একটা video-র view count, যেটা কিছুক্ষণ একটু ভুল দেখালেও ক্ষতি নেই",
+        "Distributed lock দিয়ে নিশ্চিত করা যে একটা job একসাথে একজনই চালাচ্ছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "View count কিছুক্ষণ পুরনো থাকলে বা partition-এর পরে যোগ করে নিলে কোনো বড় ক্ষতি নেই, তাই উত্তর দিতে থাকাই ভালো। বাকি তিনটায় দুই পাশে আলাদা সিদ্ধান্ত হলে পরে মেটানো কঠিন, তাই সেগুলো CP।",
+      "whyWrong": {
+        "0": "দুই পাশে একই username দুজনকে দিলে পরে মেটানো কঠিন, তাই CP মানায়।",
+        "1": "একই seat দুজনকে বিক্রি বড় ক্ষতি, তাই এখানে CP দরকার।",
+        "3": "Lock-এর পুরো উদ্দেশ্যই consistency; দুই পাশে দুজন lock পেলে উদ্দেশ্য নষ্ট।"
+      }
+    },
+    {
+      "id": "sd-day-008-q13",
+      "difficulty": "easy",
+      "question": "CAP-এর C আর ACID-এর C-এর মধ্যে সম্পর্ক কী?",
+      "options": [
+        "দুটো একই জিনিস, শুধু CAP distributed system-এ আর ACID একটা machine-এ ব্যবহার হয়",
+        "ACID-এর C থাকলে CAP-এর C নিজে থেকেই পাওয়া যায়, আলাদা করে ভাবতে হয় না",
+        "নাম এক, অর্থ আলাদা: একটা replica-দের মিল, অন্যটা database-এর নিয়ম রক্ষা",
+        "CAP-এর C হলো ACID-এর C-এর একটা দুর্বল রূপ, যেটা NoSQL database ব্যবহার করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "ACID-এর C বলে transaction-এর আগে-পরে application-এর নিয়ম (যেমন balance ঋণাত্মক না) ঠিক থাকবে, যেটা একটা machine-এও প্রযোজ্য। CAP-এর C বলে সব replica মিলে একটা কপির মতো আচরণ করবে। একটা থাকলেই অন্যটা আসে না।",
+      "whyWrong": {
+        "0": "দুটো আলাদা ধারণা; ACID-এর C নিয়ম (invariant) রক্ষা, CAP-এর C linearizability।",
+        "1": "Async replica থাকলে transaction ঠিক থাকলেও replica পুরনো থাকতে পারে, তাই একটা আরেকটার নিশ্চয়তা দেয় না।",
+        "3": "CAP-এর C (linearizability) আসলে খুব শক্ত গ্যারান্টি, কোনো দুর্বল রূপ না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q14",
+      "difficulty": "easy",
+      "question": "একটা company বলছে 'আমাদের uptime 99.99%, তাই আমরা CAP-এর A পূরণ করি।' কথাটার সমস্যা কী?",
+      "options": [
+        "কোনো সমস্যা নেই, 99.99% uptime থাকলে CAP-এর A আপনা আপনিই পূরণ হয়ে যায়",
+        "সমস্যা হলো CAP-এর A পূরণ করতে অন্তত 99.999% uptime লাগে, 99.99% যথেষ্ট না",
+        "সমস্যা হলো uptime database-এর মাপ, আর CAP-এর A শুধু load balancer-এর মাপ",
+        "Uptime পরিসংখ্যান; CAP-এর A partition-এও প্রতিটা সচল node-এর উত্তরের শর্ত"
+      ],
+      "correctIndex": 3,
+      "explanation": "Day 6-এর availability মাপে কত ভাগ সময় বা request সফল হলো। CAP-এর A একটা কঠোর শর্ত: partition হলেও সচল কোনো node error দিতে পারবে না। একটা CP system বাস্তবে উঁচু uptime দিতে পারে, তবু theorem-এর অর্থে A না।",
+      "whyWrong": {
+        "0": "উঁচু uptime থাকা CP system-ও partition-এ minority node থেকে error দেয়, তাই CAP-এর A পূরণ হয় না।",
+        "1": "CAP-এর A কোনো percentage দিয়ে মাপা হয় না, তাই কোনো সংখ্যাই যথেষ্ট বা অপর্যাপ্ত না।",
+        "2": "দুটোর কোনোটাই এভাবে নির্দিষ্ট component-এর সাথে বাঁধা না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q15",
+      "difficulty": "easy",
+      "question": "CAP-এর ধারণাটা প্রথম কে, কোথায় উপস্থাপন করেন?",
+      "options": [
+        "Eric Brewer, ২০০০ সালের PODC conference-এর keynote-এ, conjecture হিসেবে",
+        "Seth Gilbert আর Nancy Lynch, ২০০২ সালে, প্রথমবারের মতো ধারণাটা প্রস্তাব করে",
+        "Daniel Abadi, ২০১২ সালে IEEE Computer-এ PACELC-এর সাথে একসাথে প্রস্তাব করেন",
+        "Amazon-এর engineer-রা, ২০০৭ সালের Dynamo paper-এ shopping cart-এর উদাহরণে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Eric Brewer PODC 2000-এর keynote 'Towards Robust Distributed Systems'-এ ধারণাটা দেন। তখন এটা ছিল অনুমান। পরে Gilbert ও Lynch নির্দিষ্ট সংজ্ঞা দিয়ে প্রমাণ করেন।",
+      "whyWrong": {
+        "1": "Gilbert ও Lynch ২০০২-এ ধারণাটা প্রমাণ করেন; প্রস্তাব করেছিলেন Brewer, ২০০০ সালে।",
+        "2": "Abadi ২০১২-এ PACELC দেন, যেটা CAP-এর পরের সম্প্রসারণ।",
+        "3": "Dynamo paper CAP-এর অনেক পরে, AP-ধাঁচের একটা design দেখায়।"
+      }
+    },
+    {
+      "id": "sd-day-008-q16",
+      "difficulty": "easy",
+      "question": "Gilbert ও Lynch-এর ২০০২ সালের কাজ CAP-এর ইতিহাসে কী ভূমিকা রাখে?",
+      "options": [
+        "তারা দেখান CAP ভুল, আর ভালো engineering-এ তিনটাই একসাথে পাওয়া যায়",
+        "তারা PACELC প্রস্তাব করে partition না থাকা সময়ের latency trade-off যোগ করেন",
+        "তারা প্রথম distributed database বানিয়ে CP আর AP দুটো mode চালিয়ে দেখান",
+        "C, A, P-কে নির্দিষ্ট সংজ্ঞা দিয়ে তারা Brewer-এর conjecture প্রমাণ করেন"
+      ],
+      "correctIndex": 3,
+      "explanation": "Brewer-এর ধারণাটা ছিল অনানুষ্ঠানিক। Gilbert ও Lynch consistency-কে atomic/linearizable, availability-কে 'প্রতিটা request-এর উত্তর' হিসেবে নির্দিষ্ট করে প্রমাণ দেন। Theorem-টা ঠিক এই সংজ্ঞাগুলোর জন্যই প্রমাণিত।",
+      "whyWrong": {
+        "0": "তারা উল্টোটা প্রমাণ করেন: partition-এ linearizability আর availability একসাথে অসম্ভব।",
+        "1": "PACELC Abadi-র, ২০১২ সালের।",
+        "2": "তাদের কাজটা একটা তাত্ত্বিক প্রমাণ, কোনো database product না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q17",
+      "difficulty": "easy",
+      "question": "PACELC-এর 'ELC' অংশটা কী বোঝায়?",
+      "options": [
+        "Partition হলে latency কমিয়ে consistency বাড়াতে হয়, এটাই PACELC-এর নিয়ম",
+        "Error হলে log আর counter রাখতে হয়, যাতে পরে সহজে debug করা যায়",
+        "Partition না থাকলে (Else) latency আর consistency-র মধ্যে বাছাই",
+        "সব node সমান (Equal) Load নিলে consistency নিজে থেকেই পাওয়া যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "PACELC: if Partition, choose A or C; Else, choose Latency or Consistency। স্বাভাবিক সময়েও সর্বশেষ data নিশ্চিত করতে অন্য replica-র সাথে round trip লাগে, তাই latency বাড়ে। দ্রুত উত্তর চাইলে পুরনো data-র ঝুঁকি নিতে হয়।",
+      "whyWrong": {
+        "0": "ELC partition না থাকা সময়ের কথা, আর এটা নিয়ম না, একটা বাছাই।",
+        "1": "এখানে E মানে Else, L মানে Latency, C মানে Consistency।",
+        "3": "Load সমান ভাগের সাথে consistency-র এমন কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-008-q18",
+      "difficulty": "easy",
+      "question": "Data-র একাধিক কপি (replica) রাখা হয় মূলত কেন, যার ফলেই CAP-এর প্রশ্ন আসে?",
+      "options": [
+        "Data encrypt রাখার জন্য, কারণ কপি অনেক থাকলে hacker সবগুলো পড়তে পারে না",
+        "একটা machine পড়লেও data পাওয়া যায়, আর read-এর ভার ভাগ করা যায়",
+        "Schema বদলানো সহজ করার জন্য, যাতে migration-এ কোনো downtime না লাগে",
+        "Disk-এর জায়গা বাঁচাতে, কারণ ছোট কপিগুলো একটা বড় কপির চেয়ে কম জায়গা নেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Day 6-এ দেখেছি একটা machine মানে single point of failure, আর Day 5-এ দেখেছি ভার বাড়লে machine বাড়াতে হয়। তাই data-র কপি রাখা হয়। কিন্তু কপিগুলো network দিয়ে মেলাতে হয়, আর network ভাঙলেই CAP-এর প্রশ্ন।",
+      "whyWrong": {
+        "0": "কপি বাড়ালে security বাড়ে না; replication-এর উদ্দেশ্য availability আর scale।",
+        "2": "Schema migration replication-এর মূল উদ্দেশ্য না।",
+        "3": "Replica মানে পুরো কপি, তাই জায়গা বরং বেশি লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q19",
+      "difficulty": "easy",
+      "question": "৩টা node-এর একটা etcd cluster সর্বোচ্চ কয়টা node হারিয়েও write নিতে পারে?",
+      "options": [
+        "২টা, কারণ একটা node বেঁচে থাকলেই সে নিজে write নিয়ে নিতে পারে",
+        "০টা, কারণ etcd-তে প্রতিটা write-এ তিনটা node-এরই নিশ্চয়তা লাগে",
+        "১টা, কারণ write commit হতে majority, অর্থাৎ ২টা node লাগে",
+        "৩টা, কারণ etcd প্রতিটা write disk-এ লেখে, তাই চালু node লাগেই না"
+      ],
+      "correctIndex": 2,
+      "explanation": "etcd Raft consensus ব্যবহার করে, যেখানে write commit হয় majority node লিখলে। ৩ node-এ majority ২, তাই ১টা node হারানো সয়। ৫ node-এ majority ৩, তাই ২টা হারানো সয়।",
+      "whyWrong": {
+        "0": "একা একটা node majority না, তাই সে write commit করতে পারে না।",
+        "1": "Raft-এ write-এর জন্য majority লাগে, সবগুলো না।",
+        "3": "Disk-এ লেখা durability দেয়, কিন্তু commit করতে চালু node-এর majority লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q20",
+      "difficulty": "easy",
+      "question": "Quorum-ভিত্তিক store-এ R + W > N শর্তটা কী নিশ্চিত করে?",
+      "options": [
+        "Read-এর replica দল আর write-এর replica দল অন্তত একটা replica-তে মিলবে",
+        "প্রতিটা write সব N replica-তে সাথে সাথে পৌঁছাবে, কেউ পিছিয়ে থাকবে না",
+        "Partition হলেও প্রতিটা read আর write সবসময় সফল হবে, কোনো error আসবে না",
+        "Read-এর latency সবসময় write-এর latency-র চেয়ে কম থাকবে, যত load-ই আসুক"
+      ],
+      "correctIndex": 0,
+      "explanation": "N কপির মধ্যে W-টায় write আর R-টা থেকে read হলে, R + W > N মানে দুই দলের মোট সদস্য N-এর বেশি, তাই অন্তত একটা replica দুই দলেই আছে। সেই replica সর্বশেষ write জানে, তাই read সেটা দেখতে পায়।",
+      "whyWrong": {
+        "1": "W < N হলে কিছু replica পিছিয়ে থাকতে পারে; শর্তটা শুধু overlap নিশ্চিত করে।",
+        "2": "Partition-এ R বা W সংখ্যক replica না পেলে request fail করে।",
+        "3": "R + W > N latency নিয়ে কিছু বলে না, শুধু replica দলের overlap নিয়ে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q21",
+      "difficulty": "medium",
+      "question": "ঈদের আগে bus ticket app-এর ঢাকা আর চট্টগ্রামের node-এর মাঝে link কাটা। ঢাকায় seat A1 বিক্রি হয়েছে, চট্টগ্রাম সেটা জানে না। চট্টগ্রামের একজন user A1 কিনতে চাইছে। কোন আচরণ ঠিক?",
+      "options": [
+        "চট্টগ্রাম A1 বিক্রি করে দেবে, পরে দুজনকে একই seat দেওয়ার সমস্যা মেটাবে (AP)",
+        "চট্টগ্রাম বিক্রি না করে 'এখন নিশ্চিত করা যাচ্ছে না, পরে চেষ্টা করুন' বলবে (CP)",
+        "চট্টগ্রাম request-টা ঢাকার node-এ forward করে সেখান থেকে উত্তর এনে দেবে",
+        "চট্টগ্রাম চুপচাপ request drop করবে, user-কে কোনো উত্তরই দেবে না, যাতে ভুল না হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Seat বিক্রি এমন একটা সিদ্ধান্ত যেটা ভুল হলে ফেরানো কঠিন। তাই সর্বশেষ অবস্থা নিশ্চিত না হলে বিক্রি না করাই ঠিক, যদিও কিছু user সাময়িক error দেখবে। স্পষ্ট error দিলে user জানে কী হচ্ছে।",
+      "whyWrong": {
+        "0": "একই seat দুজনকে বিক্রি পরে মেটানো কঠিন আর ব্যয়বহুল, তাই এখানে AP ভুল পছন্দ।",
+        "2": "Link কাটা, তাই ঢাকায় forward করার কোনো পথ নেই।",
+        "3": "উত্তর না দিয়ে ঝুলিয়ে রাখা খারাপ অভিজ্ঞতা; CP-তেও স্পষ্ট error দেওয়া ভালো।"
+      }
+    },
+    {
+      "id": "sd-day-008-q22",
+      "difficulty": "medium",
+      "question": "একটা chat app-এ partition চলাকালীন user-দের 'online/offline' status দেখানোর জন্য কোন আচরণ ঠিক?",
+      "options": [
+        "Status নিশ্চিত না হলে পুরো contact list-এর জায়গায় error দেখাবে",
+        "প্রতিটা node নিজের জানা status দেখাবে, কিছুটা পুরনো হলেও",
+        "সব status majority-র কাছে যাচাই না হওয়া পর্যন্ত chat পাঠানোও বন্ধ থাকবে",
+        "Partition চলাকালীন সবাইকে offline দেখাবে, যাতে কেউ ভুল তথ্য না পায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Online status প্রায়ই বদলায় আর কয়েক সেকেন্ড পুরনো হলে ক্ষতি সামান্য। তাই উত্তর দিতে থাকা (AP) ভালো, network ফিরলে status ঠিক হয়ে যাবে। CP এখানে শুধু error বাড়াবে, কোনো বড় ক্ষতি ঠেকাবে না।",
+      "whyWrong": {
+        "0": "Status-এর মতো কম গুরুত্বের জিনিসের জন্য পুরো list error করা অপ্রয়োজনীয় ক্ষতি।",
+        "2": "Status-এর জন্য chat বন্ধ করা মানে কম গুরুত্বের feature-এর জন্য মূল feature হারানো।",
+        "3": "সবাইকে offline দেখানোও ভুল তথ্য, আর এতে availability-ও যায়।"
+      }
+    },
+    {
+      "id": "sd-day-008-q23",
+      "difficulty": "medium",
+      "question": "Amazon-এর Dynamo paper-এ shopping cart-এ 'add to cart' কখনো fail না করার লক্ষ্য ছিল। Partition-এ দুই পাশে একই cart-এ আলাদা item যোগ হলে কী হতো?",
+      "options": [
+        "Cart-এর দুটো version হতো, পরে merge হতো; কখনো মোছা item ফিরে আসত",
+        "একটা পাশের write reject হতো, তাই user-কে আবার item যোগ করতে বলা হতো",
+        "যে পাশের timestamp বড় সেই cart থাকত, অন্য পাশের item চুপচাপ মুছে যেত",
+        "Network ফেরা পর্যন্ত দুই পাশের cart lock থাকত, কেউ কিছু যোগ করতে পারত না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Dynamo AP-ধাঁচের design: partition-এও cart-এ লেখা চলে। ফলে একই cart-এর concurrent version তৈরি হয়, যেগুলো version (vector clock) দিয়ে ধরা হয় আর merge হয়। Paper নিজেই স্বীকার করে এতে মুছে ফেলা item আবার দেখা দিতে পারে।",
+      "whyWrong": {
+        "1": "Reject করা মানে availability ছাড়া, যেটা Dynamo-র 'always writeable' লক্ষ্যের উল্টো।",
+        "2": "Paper-এ cart-এর জন্য version ধরে merge করার কথা বলা, অন্ধ last-write-wins না।",
+        "3": "Lock করা CP-র মতো আচরণ; Dynamo cart-এ write চালু রাখতে চেয়েছিল।"
+      }
+    },
+    {
+      "id": "sd-day-008-q24",
+      "difficulty": "medium",
+      "question": "একটা store-এ N = 3, W = 2, R = 2। নিচের কোনটা সত্য?",
+      "options": [
+        "4 > 3, তাই read সর্বশেষ write দেখে; একটা node পড়লেও read-write চলে",
+        "4 > 3, কিন্তু একটা node পড়লেই write বন্ধ, কারণ W-এর জন্য তিনটা replica লাগে",
+        "R + W = 4, যেটা 2N-এর কম, তাই read মাঝে মাঝে পুরনো data দেখতে পারে",
+        "4 > 3, আর দুটো node একসাথে পড়লেও read আর write স্বাভাবিকভাবে চলবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "N = 3-এ W = 2, R = 2 হলে 2 + 2 = 4 > 3, তাই overlap নিশ্চিত। একটা node পড়লে দুটো থাকে, যা W আর R দুটোর জন্যই যথেষ্ট। এজন্যই QUORUM/QUORUM সাধারণ একটা পছন্দ।",
+      "whyWrong": {
+        "1": "W = 2, তাই দুটো চালু replica-তেই write সফল হয়।",
+        "2": "শর্তটা R + W > N, 2N না; 4 > 3 পূরণ হয়।",
+        "3": "দুটো node পড়লে মাত্র একটা থাকে, R = 2 বা W = 2 কোনোটাই পূরণ হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q25",
+      "difficulty": "medium",
+      "question": "N = 3, W = 1, R = 1 setting-এ কোন সমস্যা হতে পারে?",
+      "options": [
+        "1 + 1 = 2, যেটা 3-এর বেশি না, তাই read পুরনো replica থেকে আসতে পারে",
+        "একটা node পড়লেই সব write বন্ধ হবে, কারণ W = 1 খুব কড়া একটা শর্ত",
+        "R + W < N, তাই system কোনো read-ই করতে পারবে না, সব read fail করবে",
+        "Latency অনেক বাড়বে, কারণ প্রতিটা request-এ সব replica-র উত্তর লাগবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "W = 1, R = 1 খুব দ্রুত আর খুব available, কিন্তু write এক replica-তে আর read হয়তো আরেকটা থেকে। 1 + 1 = 2, যেটা N = 3-এর বেশি না, তাই overlap-এর নিশ্চয়তা নেই। এটা AP/EL-এর দিকের setting।",
+      "whyWrong": {
+        "1": "W = 1 সবচেয়ে ঢিলা শর্ত; একটা replica চালু থাকলেই write সফল।",
+        "2": "Read চলে, শুধু সর্বশেষ মান দেখার নিশ্চয়তা নেই।",
+        "3": "R = 1, W = 1 মানে একটা replica-র উত্তরই যথেষ্ট, তাই latency সবচেয়ে কম।"
+      }
+    },
+    {
+      "id": "sd-day-008-q26",
+      "difficulty": "medium",
+      "question": "N = 5 replica, W = 3, R = 3। R + W > N কি পূরণ হয়, আর সর্বোচ্চ কয়টা node পড়লেও read আর write দুটোই চলবে?",
+      "options": [
+        "হ্যাঁ, 6 > 5; আর ৩টা node পড়লেও চলবে, কারণ বাকি ২টা majority-র সমান",
+        "হ্যাঁ, 6 > 5; আর ২টা node পড়লেও চলবে, কারণ বাকি ৩টাই যথেষ্ট",
+        "না, কারণ R + W-কে N-এর দ্বিগুণ হতে হয়; আর ১টা পড়লেই সমস্যা শুরু",
+        "হ্যাঁ, 6 > 5; কিন্তু ১টা node পড়লেই read বন্ধ, কারণ R = 3 মানে সবকটা লাগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "3 + 3 = 6 > 5, তাই overlap নিশ্চিত। প্রতিটা request-এ ৩টা replica লাগে, তাই ৫টার মধ্যে ২টা পড়লেও ৩টা থাকে আর চলে। তিনটা পড়লে আর চলে না।",
+      "whyWrong": {
+        "0": "৩টা পড়লে ২টা থাকে, W = 3 বা R = 3 কোনোটাই পূরণ হয় না।",
+        "2": "শর্তটা R + W > N; 6 > 5 পূরণ হয়।",
+        "3": "R = 3 মানে ৫টার মধ্যে ৩টা, সবকটা না; ১টা পড়লে ৪টা থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q27",
+      "difficulty": "medium",
+      "question": "N = 3, W = 3, R = 1 setting সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "4 > 3, আর একটা replica পড়লেও write চলবে, শুধু read একটু ধীর হয়ে যাবে",
+        "4 > 3 হলেও read পুরনো data দেখতে পারে, কারণ R = 1 খুবই ছোট একটা সংখ্যা",
+        "4 > 3, তাই এটাই N = 3-এর জন্য সবচেয়ে available setting, read-write দুটোতেই",
+        "4 > 3 আর read দ্রুত, কিন্তু একটা replica পড়লেই কোনো write সফল হবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "W = 3 মানে প্রতিটা write তিন replica-তেই যায়, তাই যেকোনো একটা থেকে read সর্বশেষ মান দেখে, আর read দ্রুত। কিন্তু write-এর জন্য তিনটাই চালু থাকতে হয়, তাই একটা node বা partition-এ write বন্ধ। Read-heavy আর কম write-এর জায়গায় এটা বিবেচনা করা যায়।",
+      "whyWrong": {
+        "0": "W = 3 মানে তিনটা replica-ই লাগে; একটা পড়লে write অসম্ভব।",
+        "1": "W = 3 হওয়ায় প্রতিটা replica-তে সর্বশেষ write আছে, তাই R = 1-ও সর্বশেষ দেখে।",
+        "2": "Write-এর জন্য সব replica লাগায় এটা write-এর দিক থেকে সবচেয়ে কম available।"
+      }
+    },
+    {
+      "id": "sd-day-008-q28",
+      "difficulty": "medium",
+      "question": "৩-node etcd cluster-এ একটা follower-কে network থেকে আলাদা করা হলো। সেই follower-এর ভেতরে `etcdctl --command-timeout=5s put key v` চালালে কী হবে?",
+      "options": [
+        "সাথে সাথে OK আসবে; write follower-এ জমা থাকবে, পরে leader-এর কাছে চলে যাবে",
+        "Follower নিজেকে নতুন leader ঘোষণা করে write নেবে, কারণ সে কাউকে দেখছে না",
+        "Write সফল হবে, আর পরে বাকি দুটো node-এর মান মুছে follower-এর মানটাই থাকবে",
+        "প্রায় ৫ সেকেন্ড পরে 'context deadline exceeded', majority না পাওয়ায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Raft-এ write commit হতে majority লাগে। বিচ্ছিন্ন follower leader-এর কাছে পৌঁছাতে পারে না, তাই request timeout হয়। এটাই CP আচরণ: এই node-এর availability যায়, কিন্তু ভুল data লেখা হয় না।",
+      "whyWrong": {
+        "0": "etcd minority-তে write গ্রহণ করে না; সেটা করলে consistency ভাঙত।",
+        "1": "একা node majority পায় না, তাই leader হতে পারে না।",
+        "2": "Partition-এ minority-র write commit-ই হয় না, তাই এমন কিছু ঘটে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q29",
+      "difficulty": "medium",
+      "question": "একই partition-এ (৩-node etcd, একটা follower বিচ্ছিন্ন) বাকি দুই node-এর পাশে কী ঘটে?",
+      "options": [
+        "তারাও সব write বন্ধ রাখে, যতক্ষণ না তৃতীয় node আবার ফিরে আসে",
+        "তারা শুধু read চালায়, write বন্ধ রাখে, যাতে তৃতীয় node পিছিয়ে না পড়ে",
+        "তারা majority, তাই স্বাভাবিকভাবে read আর write চালিয়ে যায়",
+        "তারা দুটো আলাদা cluster হয়ে যায়, প্রত্যেকে নিজের আলাদা leader নিয়ে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Majority পাশ পুরো cluster-এর মতোই চলে, দরকারে নতুন leader বাছে। বিচ্ছিন্ন node network ফিরলে leader-এর কাছ থেকে মিস করা entry নিয়ে নেয়। Lab-এ ঠিক এটাই দেখা যায়।",
+      "whyWrong": {
+        "0": "দুটো node ৩-এর majority, তাই তারা write commit করতে পারে।",
+        "1": "পিছিয়ে পড়া node পরে leader-এর কাছ থেকে ধরে ফেলে, তাই write বন্ধের দরকার নেই।",
+        "3": "দুটো node মিলে একটাই majority; দুই leader হলে split-brain হতো, Raft সেটা ঠেকায়।"
+      }
+    },
+    {
+      "id": "sd-day-008-q30",
+      "difficulty": "medium",
+      "question": "বিচ্ছিন্ন etcd follower-এ `etcdctl get key --consistency=s` চালালে কী আশা করবেন?",
+      "options": [
+        "Linearizable read-এর মতোই timeout, কারণ etcd কোনো read-ই leader ছাড়া দেয় না",
+        "সাথে সাথে সর্বশেষ মান, কারণ serializable মানে linearizable-এর চেয়েও শক্ত গ্যারান্টি",
+        "Error আসবে যে serializable read শুধু leader-এ চালানো যায়, follower-এ যায় না",
+        "সাথে সাথে উত্তর, তবে সেটা ওই node-এর নিজের কপি, তাই পুরনো হতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "etcd-র serializable read leader-এর সাথে নিশ্চিত না হয়ে local কপি থেকে দেয়। তাই partition-এও উত্তর আসে, কিন্তু পুরনো হতে পারে: query-র option বদলে C থেকে A-র দিকে সরা। Lab-এ minority node 500 দেয়, যদিও সর্বশেষ মান 300।",
+      "whyWrong": {
+        "0": "Serializable read local কপি থেকে দেওয়া হয়, leader-এর অনুমতি লাগে না।",
+        "1": "etcd-তে serializable read দ্রুত কিন্তু পুরনো হতে পারে; linearizable-এর চেয়ে দুর্বল।",
+        "2": "Serializable read যেকোনো member-এ চলে, এটাই তার সুবিধা।"
+      }
+    },
+    {
+      "id": "sd-day-008-q31",
+      "difficulty": "medium",
+      "question": "Teammate বলছে, 'সব database node একই data center-এ, তাই partition হবে না, আমরা CA।' সবচেয়ে ভালো জবাব কোনটা?",
+      "options": [
+        "ঠিক বলেছেন, একই data center-এ partition অসম্ভব, তাই CA design পুরোপুরি নিরাপদ",
+        "Partition হতে পারে, তবে তখন system নিজে থেকেই সব কপি মিলিয়ে রাখবে, চিন্তা নেই",
+        "CA শুধু তখনই ভুল যখন node-গুলো আলাদা দেশে, একই শহরে থাকলে ঠিক আছে",
+        "Data center-এর ভেতরেও partition হয়; তাই প্রতিটা operation-এর আচরণ ঠিক করুন"
+      ],
+      "correctIndex": 3,
+      "explanation": "Partition শুধু দূরের link কাটা না: নষ্ট switch, ভুল firewall rule, ভরা network queue, GC pause, সবকিছুতে message সময়মতো পৌঁছায় না। 'CA' বললে partition-এর দিন system-এর আচরণ অনির্ধারিত থাকে। ভালো design আগে থেকে ঠিক করে রাখে কোন operation error দেবে আর কোনটা পুরনো data।",
+      "whyWrong": {
+        "0": "Data center-এর ভেতরের network-ও ভাঙে (নষ্ট switch, ভুল config, লম্বা pause), শুধু কম ঘটে।",
+        "1": "Partition-এ কপিগুলোর মাঝে message যায় না, তাই নিজে থেকে মিলিয়ে রাখা অসম্ভব।",
+        "2": "দূরত্ব partition-এর সম্ভাবনা বাড়ায়, কিন্তু কাছাকাছি থাকলেও partition হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q32",
+      "difficulty": "medium",
+      "question": "Cassandra-তে একটা query-র consistency level ONE থেকে QUORUM করলে (RF = 3) কী বদলায়?",
+      "options": [
+        "শুধু latency কমে, কারণ QUORUM-এ সবচেয়ে কাছের একটা replica-ই উত্তর দেয়",
+        "২টা replica-র উত্তর লাগে: সর্বশেষ দেখার নিশ্চয়তা বাড়ে, latency-ও বাড়ে",
+        "Replication factor 3 থেকে বেড়ে 5 হয়ে যায়, যাতে data-র বেশি কপি থাকে",
+        "Availability বাড়ে, কারণ বেশি replica জড়িত থাকলে request fail করার সুযোগ কমে"
+      ],
+      "correctIndex": 1,
+      "explanation": "RF = 3-এ QUORUM মানে ২টা replica। ONE-এর চেয়ে বেশি replica-র অপেক্ষা, তাই ধীর, কিন্তু read আর write দুটোই QUORUM হলে overlap নিশ্চিত। আর পর্যাপ্ত replica না পেলে request fail করে: CP-র দিকে সরা।",
+      "whyWrong": {
+        "0": "QUORUM মানে একাধিক replica-র উত্তরের অপেক্ষা, তাই latency সাধারণত বাড়ে।",
+        "2": "Consistency level replication factor বদলায় না, শুধু কয়টা replica-র উত্তর লাগবে তা বদলায়।",
+        "3": "বেশি replica-র উত্তর লাগলে partition বা node পড়লে request fail-এর সুযোগ বরং বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q33",
+      "difficulty": "medium",
+      "question": "৪টা node দিয়ে একটা consensus cluster বানালে ৩টা node-এর তুলনায় fault tolerance-এ কী লাভ হয়?",
+      "options": [
+        "লাভ নেই: ৪-এ majority ৩, তাই ৩-node-এর মতোই ১টা হারানো সয়",
+        "২টা node হারানো সয়, কারণ ৪-এর অর্ধেক ২, আর অর্ধেক থাকলেই majority হয়",
+        "৩টা node হারানো সয়, কারণ শুধু leader বেঁচে থাকলেই write চলতে থাকে",
+        "৩-node-এর চেয়েও কম সয়, কারণ জোড় সংখ্যায় consensus একেবারেই কাজ করে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Majority = floor(n/2) + 1। ৩ node-এ ২, ৪ node-এ ৩, তাই দুটোতেই ১টা হারানো সয়। ৪ node-এ খরচ আর write-এর latency বাড়ে, কিন্তু নিরাপত্তা বাড়ে না; তাই বিজোড় সংখ্যা রাখা হয়।",
+      "whyWrong": {
+        "1": "Majority মানে অর্ধেকের বেশি; ৪-এ সেটা ৩, তাই ২টা হারালে চলবে না।",
+        "2": "Leader একা majority না, তাই একা write commit করতে পারে না।",
+        "3": "জোড় সংখ্যায়ও consensus চলে, শুধু বাড়তি node-এ fault tolerance বাড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q34",
+      "difficulty": "medium",
+      "question": "৫-node consensus cluster network-এ ২টা আর ৩টা node-এর দুই দলে ভাগ হলো। কোন পাশ write নিতে পারবে?",
+      "options": [
+        "দুই পাশই নেবে, আর network ফিরলে দুই পাশের write মিলিয়ে নেওয়া হবে",
+        "যে পাশে পুরনো leader আছে সেই পাশ নেবে, দলের আকার যত ছোটই হোক",
+        "কোনো পাশই নেবে না, কারণ ৫টার সবগুলো একসাথে না থাকলে write হয়ই না",
+        "শুধু ৩টার পাশ, কারণ সেটাই ৫-এর majority; ২টার পাশ error দেবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "৫-এর majority ৩। তিনজনের দল নিজেদের মধ্যে leader রেখে বা নতুন বেছে কাজ চালায়। দুজনের দল majority পায় না, তাই write commit করতে পারে না, ফলে কখনো দুই রকম ইতিহাস তৈরি হয় না।",
+      "whyWrong": {
+        "0": "দুই পাশে write নিলে split-brain হতো; consensus শুধু majority-কে সিদ্ধান্ত নিতে দেয়।",
+        "1": "Leader minority-তে পড়লে সে আর commit করতে পারে না; majority নতুন leader বাছে।",
+        "2": "Write-এর জন্য majority (৩) যথেষ্ট, সব ৫টা লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q35",
+      "difficulty": "medium",
+      "question": "আপনার service একটা CP database-এ টাকা transfer-এর write পাঠাল, আর timeout পেল। এখন সঠিক ধারণা কোনটা?",
+      "options": [
+        "অজানা ফল; idempotency key দিয়ে retry, বা আগে অবস্থা পড়ে নেওয়া",
+        "Timeout মানে write নিশ্চিত হয়নি, তাই একই request সাথে সাথে আবার পাঠানো নিরাপদ",
+        "Timeout মানে write নিশ্চিত হয়েছে, কারণ CP database কখনো কোনো write হারায় না",
+        "Timeout হলে database নিজে থেকেই rollback করে, তাই client-এর কিছু করার নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "Timeout-এর পরে client জানে না request পৌঁছেছে কিনা বা commit হয়েছে কিনা। তাই retry-কে idempotent বানাতে হয়, সাধারণত idempotency key দিয়ে, যাতে দ্বিতীয়বার একই ফল আসে। প্রয়োজনে আগে transfer-এর অবস্থা পড়ে নিশ্চিত হতে হয়।",
+      "whyWrong": {
+        "1": "Write commit হয়ে উত্তরটা হারিয়ে যেতে পারে; অন্ধ retry দুবার transfer করাতে পারে।",
+        "2": "Request database-এ পৌঁছায়ইনি, এমনও হতে পারে; timeout কোনো দিকের নিশ্চয়তা দেয় না।",
+        "3": "Client-এর timeout database-এর rollback-এর নিশ্চয়তা দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q36",
+      "difficulty": "medium",
+      "question": "একটা AP store-এ partition চলাকালীন দুই পাশে একই product-এর দাম আলাদাভাবে বদলানো হলো। Network ফিরলে last-write-wins (LWW) দিয়ে মেলালে ঝুঁকি কী?",
+      "options": [
+        "দুটো দামই একসাথে রাখা হবে, আর user-কে পাশাপাশি দুটো দাম দেখিয়ে বাছতে দেওয়া হবে",
+        "System merge করতে না পেরে product-টাই catalog থেকে পুরোপুরি মুছে ফেলবে",
+        "দুটো দামের গড় নিয়ে নতুন দাম বসাবে, যাতে কোনো পক্ষের ক্ষতি না হয়",
+        "ছোট timestamp-এর write নীরবে হারাবে; ঘড়ি না মিললে পরের write-ও হারতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "LWW সহজ: বড় timestamp জেতে। কিন্তু হেরে যাওয়া write নীরবে হারায়, আর আলাদা machine-এর ঘড়ি পুরোপুরি মেলে না বলে বাস্তবে পরে হওয়া write-ও হারতে পারে। দামের মতো জিনিসে এটা মেনে নেওয়া যায় কিনা আগে ভাবতে হয়।",
+      "whyWrong": {
+        "0": "এটা version/sibling পদ্ধতি; LWW একটাকেই রাখে, অন্যটা ফেলে দেয়।",
+        "1": "LWW কিছু মোছে না, বড় timestamp-এর মান রেখে দেয়।",
+        "2": "LWW কোনো গড় করে না; একটা মান জেতে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q37",
+      "difficulty": "medium",
+      "question": "'Partition তো বছরে একবার হয়, তাই এ নিয়ে design-এ ভাবার দরকার নেই।' এই যুক্তির মূল ভুল কোনটা?",
+      "options": [
+        "সেদিন আচরণ অনির্ধারিত থাকবে, আর লম্বা pause-ও partition-এর মতোই দেখায়",
+        "ভুল নেই, partition এত কম হয় যে এর জন্য design-এ সময় দেওয়াটাই অর্থহীন",
+        "ভুল হলো partition আসলে প্রতিদিন কয়েকবার হয়, তাই সবসময় AP বাছতে হয়",
+        "ভুল হলো partition শুধু cloud-এ হয়, নিজের data center-এ কখনোই হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Partition-এর দিন যে design আগে সিদ্ধান্ত নেয়নি, সে ঘটনাক্রমে কোনো একটা আচরণ করে, প্রায়ই সবচেয়ে খারাপটা। আর timeout-ভিত্তিক detection-এ ধীর node আর বিচ্ছিন্ন node আলাদা করা যায় না। Brewer-এর ২০১২-র পরামর্শ: partition ধরুন, operation সীমিত করুন, পরে মেলানোর পরিকল্পনা রাখুন।",
+      "whyWrong": {
+        "1": "Partition কম হলেও সেদিন double-sell বা data হারানোর মতো বড় ক্ষতি হতে পারে।",
+        "2": "Partition কতবার হয় সেটা পরিবেশের উপর নির্ভর করে, আর সবসময় AP বাছার কোনো নিয়ম নেই।",
+        "3": "নিজের data center-এও network ভাঙে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q38",
+      "difficulty": "medium",
+      "question": "একটা database node-এ ১৫ সেকেন্ডের garbage collection pause হলো, আর অন্য node-রা এর মধ্যে তার heartbeat পেল না। অন্যদের দৃষ্টিতে এটা কী?",
+      "options": [
+        "এটা নিশ্চিতভাবে crash, কারণ GC pause-এ node-এর memory-র সব data মুছে যায়",
+        "এটা কোনো failure-ই না, কারণ node চালু ছিল আর network-ও পুরো ঠিক ছিল",
+        "অন্যরা ওই node-এর GC log পড়ে বুঝে যায় এটা pause, তাই কিছুই করে না",
+        "Partition বা crash থেকে আলাদা করা যায় না; শুধু জানে উত্তর আসেনি"
+      ],
+      "correctIndex": 3,
+      "explanation": "Distributed system-এ অন্য node-এর অবস্থা জানার একমাত্র উপায় message। ধীর, মৃত আর বিচ্ছিন্ন, তিনটাই বাইরে থেকে 'উত্তর নেই' হিসেবে দেখায়। তাই partition শুধু তার কাটা না, যেকোনো বড় দেরিও।",
+      "whyWrong": {
+        "0": "GC pause-এ data মোছে না; node কিছুক্ষণ থেমে আবার চলে।",
+        "1": "অন্যদের কাছে উত্তর না আসাটাই failure-এর মতো দেখায়, ভেতরে কী হয়েছে তারা জানে না।",
+        "2": "অন্য node-রা অন্য machine-এর GC log দেখতে পায় না; তারা শুধু উত্তরের অভাব দেখে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q39",
+      "difficulty": "medium",
+      "question": "নতুন account খোলার সময় username unique রাখা জরুরি। Partition-এর সময় এই check-এর জন্য কোন আচরণ বাছবেন?",
+      "options": [
+        "AP: দুই পাশেই নাম দিয়ে দেওয়া, পরে একজনের username চুপচাপ বদলে দেওয়া",
+        "AP: প্রতিটা পাশ নিজের মতো নাম দেবে, কারণ এই check-এ consistency লাগে না",
+        "Partition-এ সব user-এর login বন্ধ রাখা, যাতে কেউ নতুন account না খোলে",
+        "CP: majority-র কাছে নিশ্চিত না হলে নাম বরাদ্দ না করে error দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Unique constraint একটা global সিদ্ধান্ত: দুই পাশে আলাদাভাবে নেওয়া গেলে duplicate হবেই, আর পরে মেটানো কঠিন। তাই এখানে CP, আর শুধু account খোলার এই operation সাময়িক আটকায়। বাকি app চালু থাকতে পারে।",
+      "whyWrong": {
+        "0": "কারও username চুপচাপ বদলানো খারাপ অভিজ্ঞতা আর login ভাঙতে পারে।",
+        "1": "Uniqueness-এর পুরো অর্থই সব পাশের একমত হওয়া, তাই consistency দরকার।",
+        "2": "Username check-এর জন্য সব login বন্ধ করা অপ্রয়োজনীয় ক্ষতি।"
+      }
+    },
+    {
+      "id": "sd-day-008-q40",
+      "difficulty": "medium",
+      "question": "Dhaka আর Singapore-এ replica আছে, আর একটা analytics dashboard-এ পণ্যের view count দেখানো হয়। Partition নেই। PACELC অনুযায়ী এখানে কোনটা যুক্তিসঙ্গত?",
+      "options": [
+        "EC: প্রতিটা view count দেখানোর আগে দুই region-এর quorum থেকে নিশ্চিত হওয়া",
+        "PC: dashboard বন্ধ রাখা, কারণ দুই region-এ data থাকা মানেই একটা partition",
+        "EL: কাছের replica থেকে দ্রুত দেখানো, কারণ সামান্য পুরনো count-এ ক্ষতি নেই",
+        "PA: partition না থাকলেও partition-এর নিয়ম মানা, কারণ PACELC-এ Else অংশ নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "Partition না থাকলে PACELC-এর প্রশ্ন latency বনাম consistency। View count-এ সামান্য পুরনো data চলে, তাই কাছের replica থেকে দ্রুত উত্তর (EL) ভালো আর দূরের round trip বাঁচে। টাকা বা stock হলে উল্টোটা।",
+      "whyWrong": {
+        "0": "View count-এর জন্য প্রতিবার দূরের round trip দেওয়া অপ্রয়োজনীয় latency।",
+        "1": "দুই region-এ data থাকা মানে partition না; এখানে partition নেই।",
+        "3": "PACELC-এর পুরো নতুনত্বই Else অংশ, partition না থাকা সময়ের trade-off।"
+      }
+    },
+    {
+      "id": "sd-day-008-q41",
+      "difficulty": "hard",
+      "question": "একটা database-এ read default-ভাবে eventually consistent, কিন্তু request-এ 'strongly consistent read' চাওয়া যায়, যেটা বেশি latency আর খরচ নেয়। PACELC-এর দৃষ্টিতে এটা কী দেখায়?",
+      "options": [
+        "EL বনাম EC বাছাই প্রতিটা request-এ হয়, তাই পুরো system-কে এক label দেওয়া ভুল",
+        "System-টা PC/EC, কারণ strongly consistent option থাকা মানেই এটা সবসময় consistency আগে রাখে",
+        "System-টা PA/EL, কারণ default eventually consistent; strong option শুধু marketing-এর কথা",
+        "PACELC এখানে খাটে না, কারণ PACELC শুধু partition চলাকালীন আচরণের কথা বলে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Strongly consistent read-এ leader বা বেশি replica-র সাথে নিশ্চিত হতে হয়, তাই latency বাড়ে: EC। Default eventually consistent read কাছের কপি থেকে দ্রুত: EL। একই system query অনুযায়ী দুই দিকেই যেতে পারে, এজন্য operation ধরে ভাবা দরকার।",
+      "whyWrong": {
+        "1": "Default read eventually consistent, তাই option থাকা মানেই সবসময় EC না।",
+        "2": "Option-টা আসল আচরণ বদলায়: সর্বশেষ write দেখার নিশ্চয়তা দেয়, বেশি latency-তে।",
+        "3": "PACELC-এর Else অংশ ঠিক partition না থাকা সময়ের latency/consistency trade-off।"
+      }
+    },
+    {
+      "id": "sd-day-008-q42",
+      "difficulty": "hard",
+      "question": "Abadi-র ২০১২ সালের PACELC প্রবন্ধে default setting-এ Dynamo, Cassandra আর Riak-এর মতো system-কে কোথায় রাখা হয়েছে?",
+      "options": [
+        "PC/EC: partition-এ consistency, আর স্বাভাবিক সময়েও consistency আগে",
+        "PA/EL: partition-এ availability, আর স্বাভাবিক সময়ে কম latency",
+        "PA/EC: partition-এ availability, কিন্তু স্বাভাবিক সময়ে consistency আগে",
+        "PC/EL: partition-এ consistency, কিন্তু স্বাভাবিক সময়ে কম latency আগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Dynamo-ধাঁচের design-এর লক্ষ্য সবসময় লিখতে পারা আর দ্রুত উত্তর, তাই default-ভাবে PA/EL। Abadi নিজেই মনে করিয়ে দেন, setting (যেমন consistency level) বদলালে অবস্থানও বদলায়। তাই এগুলো product-এর স্থায়ী label না।",
+      "whyWrong": {
+        "0": "PC/EC তিনি পুরোপুরি ACID replicated system-এর জন্য বলেছেন, Dynamo-ধাঁচের system-এর জন্য না।",
+        "2": "Dynamo-ধাঁচের system default-ভাবে স্বাভাবিক সময়েও কম latency বেছে নেয়।",
+        "3": "Dynamo-ধাঁচের system partition-এ write চালু রাখতে চায়, তাই PC না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q43",
+      "difficulty": "hard",
+      "question": "৫-node etcd cluster network-এ ২, ২ আর ১ node-এর তিনটা দলে ভাগ হলো। কী ঘটবে?",
+      "options": [
+        "কোনো দলে ৩টা node নেই, তাই partition না সারা পর্যন্ত write commit হবে না",
+        "দুটো ২-node দল মিলে majority, তাই তাদের যেকোনো একটা দল write নিতে থাকবে",
+        "সবচেয়ে বড় দলগুলোর একটা leader হয়ে write নেবে, কারণ সেটা relative majority",
+        "প্রতিটা দল নিজের leader বেছে write নেবে, পরে network ফিরলে Raft মিলিয়ে নেবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Write commit-এর জন্য ৫-এর majority, অর্থাৎ একই দলে অন্তত ৩টা node লাগে। ২-২-১ ভাগে কারও কাছে তা নেই, তাই পুরো cluster linearizable write-এর জন্য unavailable। এটাই CP-র দাম: ভুল data-র বদলে কোনো data না।",
+      "whyWrong": {
+        "1": "দুটো দল একে অপরের সাথে কথা বলতে পারছে না, তাই তাদের যোগফল কোনো একটা দলের হাতে নেই।",
+        "2": "Raft-এ দরকার মোট cluster-এর majority (৩), সবচেয়ে বড় দল হওয়া যথেষ্ট না।",
+        "3": "এটা split-brain, যেটা consensus ঠিক ঠেকানোর জন্যই বানানো।"
+      }
+    },
+    {
+      "id": "sd-day-008-q44",
+      "difficulty": "hard",
+      "question": "একটা store-এ R + W > N পূরণ হয়। তবু একজন developer দেখলেন কখনো কখনো read একটা সফল write-এর আগের মান দেখাচ্ছে। নিচের কোন ব্যাখ্যা সম্ভাব্য?",
+      "options": [
+        "R + W > N পূরণ হলে stale read গাণিতিকভাবে অসম্ভব, তাই monitoring tool-ই ভুল",
+        "Concurrent বা আংশিক সফল write-এর মতো কোণার ঘটনায় শুধু এই শর্ত যথেষ্ট না",
+        "R + W > N শুধু partition চলাকালীন কাজ করে, স্বাভাবিক সময়ে overlap থাকে না",
+        "R + W > N হলে প্রতিটা write সব N replica-তে যায়, তাই সমস্যা disk-এর হবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "R + W > N নিশ্চিত করে read-এর দলে অন্তত একটা replica সর্বশেষ সফল write জানে। কিন্তু একসাথে দুটো write, বা কিছু replica-তে লেখা হয়ে fail হওয়া write থাকলে, ফলাফল linearizable নাও হতে পারে। Quorum-এর এসব সূক্ষ্মতা Day 49-এ।",
+      "whyWrong": {
+        "0": "Overlap থাকলেও concurrent আর আংশিক write-এ অস্বাভাবিক ফল আসতে পারে; শর্তটা একা পুরো গ্যারান্টি না।",
+        "2": "Overlap সংখ্যার হিসাব, partition থাকুক বা না থাকুক একই।",
+        "3": "W < N হলে write সব replica-তে যায় না; সমস্যাটা disk-এর না, protocol-এর।"
+      }
+    },
+    {
+      "id": "sd-day-008-q45",
+      "difficulty": "hard",
+      "question": "Brewer ২০১২ সালের 'CAP Twelve Years Later'-এ partition সামলানোর জন্য মূলত কী পরামর্শ দেন?",
+      "options": [
+        "একটা নির্দিষ্ট দিক (CP বা AP) বেছে নিয়ে পুরো system-কে সবসময় সেভাবেই চালান",
+        "Partition এত কম হয় যে design-এ উপেক্ষা করে CA system বানানোই যুক্তিসঙ্গত",
+        "Partition ধরুন, তখন কিছু operation সীমিত করুন, পরে মেলানোর পরিকল্পনা রাখুন",
+        "C, A, P তিনটাকে সমান গুরুত্ব দিয়ে যেকোনো দুটো বাছাই করাই সবচেয়ে নিরাপদ পথ"
+      ],
+      "correctIndex": 2,
+      "explanation": "Brewer-এর মূল কথা: partition কদাচিৎ, তাই স্বাভাবিক সময়ে C আর A দুটোই রাখুন। Partition হলে সেটা চিহ্নিত করুন, ঝুঁকিপূর্ণ operation সীমিত বা বিলম্বিত করুন। Partition শেষে কী মেলাতে হবে আর ভুল কিভাবে শোধরাবেন, আগে থেকেই ঠিক রাখুন।",
+      "whyWrong": {
+        "0": "তিনি বরং বলেন বাছাইটা সূক্ষ্ম, operation অনুযায়ী আর শুধু partition-এর সময়।",
+        "1": "তিনি partition উপেক্ষা করতে বলেন না, বরং সেটা ধরা আর পরে মেলানোর পরিকল্পনা রাখতে বলেন।",
+        "3": "তিনি নিজেই '2 of 3' ধারণাটাকে বিভ্রান্তিকর বলেছেন।"
+      }
+    },
+    {
+      "id": "sd-day-008-q46",
+      "difficulty": "hard",
+      "question": "একটা AP store version vector ব্যবহার করে। Partition-এর সময় একই key-তে দুই পাশে দুটো write হলো, কোনোটাই অন্যটার কথা জানত না। Network ফিরলে কী হওয়া উচিত?",
+      "options": [
+        "Version vector-এর বড় সংখ্যাটা জেতে, তাই যে replica বেশি write নিয়েছে তার মান থাকে",
+        "যে write-এর wall-clock time বড়, সেটা রেখে অন্যটা ফেলে দেওয়া হয়",
+        "দুটো concurrent ধরা পড়ে, তাই দুটোই (sibling) রেখে পরে merge করা হয়",
+        "দুটো write-ই বাতিল করে key-টা partition-এর আগের মানে ফিরিয়ে নেওয়া হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Version vector-এ প্রতিটা replica-র counter থাকে, তাই বোঝা যায় একটা write আরেকটার পরে নাকি concurrent। Concurrent হলে কোনোটা বাতিল না করে দুটোই রাখা হয়, আর application বা merge function মেলায়। Dynamo-র shopping cart এভাবেই কাজ করত; বিস্তারিত Day 50-এ।",
+      "whyWrong": {
+        "0": "Concurrent হলে কোনো vector অন্যটার চেয়ে 'বড়' না; সেজন্যই দুটো রাখা হয়।",
+        "1": "এটা last-write-wins; version vector-এর উদ্দেশ্যই এই অন্ধ বাছাই এড়ানো।",
+        "3": "এতে দুই পাশের সফল write-ই হারায়, কোনো version-ভিত্তিক store এটা করে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q47",
+      "difficulty": "hard",
+      "question": "Partition সেরে ওঠার পরে হাজার হাজার client একসাথে জমে থাকা failed request retry করল, আর cluster আবার ভেঙে পড়ল। কোন পরিবর্তন সবচেয়ে বেশি সাহায্য করবে?",
+      "options": [
+        "Retry-র timeout কমিয়ে দেওয়া, যাতে client-রা আরও তাড়াতাড়ি আবার চেষ্টা করে",
+        "Retry-তে exponential backoff আর jitter, সাথে idempotency key",
+        "Cluster-কে AP mode-এ বদলে দেওয়া, যাতে সব request সাথে সাথে গ্রহণ হয়",
+        "Client-কে সীমাহীন retry দেওয়া, যাতে কোনো request কখনো হারিয়ে না যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Partition-এর পরে সবাই একসাথে retry করলে সেরে ওঠা node-এর উপর হঠাৎ বিশাল চাপ পড়ে। Exponential backoff প্রতিবার অপেক্ষা বাড়ায়, jitter সবাইকে আলাদা সময়ে ছড়িয়ে দেয়। আর idempotency key নিশ্চিত করে retry-তে একই কাজ দুবার হয় না।",
+      "whyWrong": {
+        "0": "দ্রুত retry মানে আরও বেশি একসাথে চাপ, সমস্যা বাড়বে।",
+        "2": "Consistency-র প্রয়োজন বদলায়নি; সমস্যা retry-র ঢেউ, CP/AP বাছাই না।",
+        "3": "সীমাহীন আর একসাথে retry ঠিক এই ঢেউটাই তৈরি করে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q48",
+      "difficulty": "hard",
+      "question": "৩-node etcd cluster-এ leader-কেই network থেকে আলাদা করা হলো। কয়েক সেকেন্ড পরে কী অবস্থা হবে?",
+      "options": [
+        "পুরনো leader leadership ধরে রেখে একাই write commit করবে, কারণ সে এখনো leader",
+        "বাকি দুটো node leader ছাড়া থাকবে, পুরনো leader না ফেরা পর্যন্ত cluster থেমে থাকবে",
+        "বাকি দুজন নতুন term-এ নতুন leader বেছে write চালাবে; পুরনো leader commit করতে পারবে না",
+        "দুই পাশেই leader থাকবে আর দুজনেই commit করবে; network ফিরলে Raft দুই ইতিহাস মিলিয়ে নেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Majority পাশ heartbeat না পেয়ে election করে, term বাড়ে, নতুন leader আসে। পুরনো leader-এর কাছে আসা write majority পায় না বলে commit হয় না। Network ফিরলে সে বড় term দেখে follower হয়ে যায়। Lab-এর ঐচ্ছিক ধাপে RAFT TERM বাড়তে দেখা যায়।",
+      "whyWrong": {
+        "0": "Leader-ও commit করতে majority-র নিশ্চয়তা লাগে, যেটা সে একা পায় না।",
+        "1": "দুটো node majority, তাই তারা নতুন leader বাছতে পারে।",
+        "3": "পুরনো leader commit করতে পারে না, তাই দুই পাশে commit হওয়া write তৈরি হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q49",
+      "difficulty": "hard",
+      "question": "একটা ৩-replica CP store-এ ২টা replica Singapore-এ আর ১টা Dhaka-তে। Leader Dhaka-তে, আর Dhaka-Singapore round trip ~৭০ms। প্রতিটা write-এ অন্তত কত অতিরিক্ত latency আশা করবেন?",
+      "options": [
+        "প্রায় ০ms, কারণ leader Dhaka-তে, সে নিজে লিখেই সাথে সাথে OK দিতে পারে",
+        "প্রায় ৭০ms, কারণ majority-র জন্য Singapore-এর একটার নিশ্চয়তা লাগে",
+        "প্রায় ১৪০ms, কারণ Singapore-এর দুটো replica-কে একটার পর একটা জিজ্ঞেস করতে হয়",
+        "প্রায় ৩৫ms, কারণ শুধু Singapore পর্যন্ত যাওয়ার সময় লাগে, ফেরার সময় লাগে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "৩-এর majority ২: leader নিজে আর অন্তত একটা Singapore replica। Request পাঠিয়ে উত্তর ফেরত আসতে এক round trip, প্রায় ৭০ms। এটাই PACELC-এর EC-র দাম, প্রতিটা write-এ, partition না থাকলেও।",
+      "whyWrong": {
+        "0": "Leader একা majority না; commit-এর আগে Singapore থেকে একটা নিশ্চয়তা লাগবে।",
+        "2": "দুটোকে একসাথে পাঠানো হয়, আর একটার উত্তরই majority-র জন্য যথেষ্ট।",
+        "3": "Leader-কে Singapore-এর নিশ্চয়তা ফেরত পেতে হয়, তাই পুরো round trip লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q50",
+      "difficulty": "hard",
+      "question": "N = 5 replica-র একটা store-এ আপনি চান read আর write দুটোই ২টা replica হারানো সয়, আর R + W > N থাকুক। কোন (W, R) বেছে নেবেন?",
+      "options": [
+        "W = 2, R = 3: write সবচেয়ে দ্রুত, আর 5 > 5 বলে শর্তও পূরণ হয়",
+        "W = 3, R = 3: বাকি ৩টাই দুটোর জন্য যথেষ্ট, আর 6 > 5",
+        "W = 4, R = 2: read দ্রুত, আর 6 > 5, তাই দুটো শর্তই পূরণ হয়",
+        "W = 5, R = 1: read সবচেয়ে দ্রুত আর 6 > 5, তাই এটাই সেরা পছন্দ"
+      ],
+      "correctIndex": 1,
+      "explanation": "২টা হারিয়েও চলতে হলে প্রতিটা request-এ সর্বোচ্চ ৩টা replica লাগতে পারে, তাই W ≤ 3 আর R ≤ 3। আবার R + W > 5 লাগবে, তাই R + W ≥ 6। দুটো শর্ত একসাথে পূরণ হয় শুধু W = 3, R = 3-এ।",
+      "whyWrong": {
+        "0": "5 > 5 সত্য না; R + W = N হলে overlap-এর নিশ্চয়তা নেই।",
+        "2": "W = 4 হলে ২টা replica পড়লে মাত্র ৩টা থাকে, write fail করবে।",
+        "3": "W = 5 মানে একটা replica পড়লেই write বন্ধ।"
+      }
+    },
+    {
+      "id": "sd-day-008-q51",
+      "difficulty": "hard",
+      "question": "N = 5 আর W = 4 হলে R + W > N রাখতে সবচেয়ে ছোট R কত, আর এই setting-এর একটা দুর্বলতা কী?",
+      "options": [
+        "R = 1 (4 + 1 = 5, N-এর সমান হলেই চলে); দুর্বলতা: read ধীর",
+        "R = 2 (4 + 2 = 6 > 5); দুর্বলতা: ১টা replica পড়লেই read বন্ধ",
+        "R = 2 (4 + 2 = 6 > 5); দুর্বলতা: ২টা replica পড়লেই write বন্ধ",
+        "R = 3 (quorum মানেই অর্ধেকের বেশি); দুর্বলতা: write দ্রুত কিন্তু অনিরাপদ"
+      ],
+      "correctIndex": 2,
+      "explanation": "R + W > N মানে R > 5 − 4 = 1, তাই সবচেয়ে ছোট R = 2। W = 4 মানে ৫টার মধ্যে ৪টা চালু থাকতে হবে, তাই ২টা পড়লে write বন্ধ। Read-heavy workload-এ এমন setting দেখা যায়, কিন্তু write-এর availability কম।",
+      "whyWrong": {
+        "0": "শর্ত R + W > N, সমান হলে চলবে না; আর R = 1 read-কে ধীর না, দ্রুত করে।",
+        "1": "R = 2-এর জন্য ২টা replica যথেষ্ট, তাই ১টা পড়লে read চলে; দুর্বলতা write-এর দিকে।",
+        "3": "R = 2-ই যথেষ্ট, কারণ W = 4 ইতিমধ্যে বেশিরভাগ replica-য় লেখে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q52",
+      "difficulty": "hard",
+      "question": "Gilbert ও Lynch-এর প্রমাণ সম্পর্কে নিচের কোন কথাটা সঠিক?",
+      "options": [
+        "এটা প্রমাণ করে partition-এ কোনো ধরনের consistency-ই রাখা যায় না, eventual-ও না",
+        "এটা প্রমাণ করে relational database কখনো partition tolerant হতে পারে না, NoSQL পারে",
+        "এটা linearizability-র জন্য প্রমাণিত; eventual-এর মতো দুর্বল guarantee-তে A সম্ভব",
+        "এটা প্রমাণ করে partition-এ latency অসীম হয়ে যায়, তাই timeout ছাড়া system চলে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Theorem-এর জোর তার নির্দিষ্ট সংজ্ঞায়: atomic/linearizable consistency আর প্রতিটা request-এর উত্তর। এর চেয়ে দুর্বল guarantee নিলে partition-এও available থাকা সম্ভব, যেটা AP system-গুলো করে। তাই 'consistency' শব্দটা ঢিলেঢালাভাবে টেনে theorem প্রয়োগ করা ভুল।",
+      "whyWrong": {
+        "0": "Eventual consistency-র সাথে partition-এ availability রাখা যায়; theorem শুধু linearizability নিয়ে।",
+        "1": "Theorem database-এর ধরন নিয়ে কিছু বলে না, শুধু সংজ্ঞায়িত guarantee নিয়ে।",
+        "3": "Theorem latency-র মান নিয়ে কিছু প্রমাণ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q53",
+      "difficulty": "hard",
+      "question": "Brewer ২০১৭ সালে Google Spanner নিয়ে লেখায় Spanner-এর CAP অবস্থান কিভাবে বর্ণনা করেন?",
+      "options": [
+        "Spanner theorem ভেঙে CA হয়েছে, কারণ TrueTime partition-এর সমস্যাটাই দূর করেছে",
+        "Spanner AP, কারণ global scale-এ consistency অসম্ভব, তাই eventual consistency দেয়",
+        "প্রযুক্তিগতভাবে CP, তবে Google-এর network-এ বাস্তবে প্রায় সবসময় available",
+        "Spanner-এর উপর CAP খাটে না, কারণ এটা আসলে একটা বিশাল single machine-এ চলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Brewer-এর ব্যাখ্যায় Spanner partition হলে consistency রাখে, তাই theorem-এর অর্থে CP। কিন্তু Google-এর নিজস্ব network-এ partition এত কম যে availability বাস্তবে খুব উঁচু, user-রা প্রায় CA-র মতো অভিজ্ঞতা পায়। শিক্ষা: partition কমানো আর partition-এ কী করবেন, দুটো আলাদা কাজ।",
+      "whyWrong": {
+        "0": "TrueTime ঘড়ির অনিশ্চয়তা সামলায়, partition দূর করে না; theorem ভাঙা হয়নি।",
+        "1": "Spanner partition-এ consistency বাছে, AP না।",
+        "3": "Spanner বহু data center-এ ছড়ানো distributed system।"
+      }
+    },
+    {
+      "id": "sd-day-008-q54",
+      "difficulty": "hard",
+      "question": "দুই region-এ replicated একটা like counter-এ partition চলাকালীন region A-তে ৩০টা আর region B-তে ২০টা like এল (আগে ছিল ১০০)। Network ফিরলে পুরো মানের উপর last-write-wins দিলে কী হবে, আর ভালো উপায় কী?",
+      "options": [
+        "LWW দুই region-এর মান যোগ করে ২৫০ দেবে, তাই কোনো like হারাবে না",
+        "LWW ১৩০ বা ১২০ রাখবে, অন্যটার like হারাবে; per-region গোনা যোগ করলে ১৫০",
+        "LWW ঠিকঠাক ১৫০ দেবে, কারণ শেষ write-এর ভেতরেই সব like-এর হিসাব থাকে",
+        "LWW দুই মানের গড় ১২৫ নেবে; ভালো উপায় হলো partition-এ like নেওয়াই বন্ধ রাখা"
+      ],
+      "correctIndex": 1,
+      "explanation": "পুরো counter-কে একটা মান হিসেবে LWW দিয়ে মেলালে একটা region-এর গোনা হারায়। প্রতিটা replica নিজের increment আলাদা রাখলে মেলানোর সময় যোগ করা যায়: ১০০ + ৩০ + ২০ = ১৫০। এটাই counter CRDT-র মূল ধারণা, যেটা AP-তে conflict ছাড়াই মেলে (Day 55)।",
+      "whyWrong": {
+        "0": "LWW যোগ করে না, একটা মান রাখে; আর ১৩০ + ১২০-এ পুরনো ১০০ দুবার গোনা হয়।",
+        "2": "শেষ write শুধু তার নিজের region-এর হিসাব জানে, অন্য region-এর না।",
+        "3": "LWW গড় করে না; আর like-এর মতো জিনিসে CP-তে গেলে অপ্রয়োজনে availability হারায়।"
+      }
+    },
+    {
+      "id": "sd-day-008-q55",
+      "difficulty": "hard",
+      "question": "একটা service ZooKeeper-এ config লেখে, তারপর অন্য একটা process ভিন্ন ZooKeeper server-এর সাথে যুক্ত থেকে সাথে সাথে config পড়ে, আর কখনো পুরনো মান পায়। কারণ আর সমাধান কী?",
+      "options": [
+        "ZooKeeper-এর write majority পায় না বলে হারায়; সমাধান সব server-এ আলাদা করে লেখা",
+        "Read আসে যুক্ত server-এর local কপি থেকে; সর্বশেষ চাইলে আগে sync দিন",
+        "ZooKeeper AP system, তাই এর কোনো read-এ ভরসা চলে না; সমাধান অন্য database",
+        "দুই process-এর ঘড়ি আলাদা বলে পুরনো মান দেখায়; সমাধান NTP দিয়ে ঘড়ি মেলানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "ZooKeeper-এ write leader হয়ে quorum-এ commit হয়, কিন্তু read client যে server-এ যুক্ত সেটার local অবস্থা থেকে দেয়। সেই server সর্বশেষ commit এখনো apply না করলে পুরনো মান আসে। Documentation অনুযায়ী read-এর আগে sync দিলে সর্বশেষ অবস্থা পাওয়া যায়।",
+      "whyWrong": {
+        "0": "Write quorum-এ commit হয়েছে; সমস্যা read-এর, write হারানোর না।",
+        "2": "ZooKeeper write-এ quorum নেয়; read-এর সূক্ষ্মতা জেনে sync ব্যবহার করলেই চলে।",
+        "3": "ZooKeeper-এর read ঘড়ির উপর নির্ভর করে না, server-এর কপি কতটা হালনাগাদ তার উপর করে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q56",
+      "difficulty": "hard",
+      "question": "একটা AP-ধাঁচের service-এ user profile-এর নাম বদলে save দিল, তারপর refresh করে পুরনো নাম দেখল আর ভাবল save হয়নি। সম্ভাব্য কারণ আর একটা যুক্তিসঙ্গত সমাধান কী?",
+      "options": [
+        "Write আসলে হারিয়ে গেছে, কারণ AP-তে write টেকে না; সমাধান CP database-এ চলে যাওয়া",
+        "Browser cache পুরনো page দেখাচ্ছে; সমাধান সব user-এর জন্য cache পুরো বন্ধ করা",
+        "Database-এর ঘড়ি পিছিয়ে, তাই নতুন নাম ভবিষ্যতের মনে হচ্ছে; সমাধান প্রতি write-এ delay",
+        "Read পিছিয়ে থাকা replica-তে গেছে; কিছুক্ষণ ওই user-কে leader থেকে পড়ানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "AP system-এ write প্রথমে কিছু replica-তে যায়, বাকিগুলোতে পরে। পরের read পিছিয়ে থাকা replica-তে গেলে user নিজের লেখাই দেখে না। Read-your-writes guarantee (যেমন sticky routing বা লেখার পরে কিছুক্ষণ leader থেকে পড়া) এটা সারায়; বিস্তারিত Day 48-এ।",
+      "whyWrong": {
+        "0": "AP-তে write টেকে, শুধু সব replica-তে পৌঁছাতে সময় লাগে।",
+        "1": "সমস্যাটা replica-র পিছিয়ে থাকা, আর সবার cache বন্ধ করা অতিরিক্ত দাম।",
+        "2": "Replica lag-এর সমস্যাকে clock সমস্যা ভাবা ভুল; delay দিলে শুধু latency বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q57",
+      "difficulty": "hard",
+      "question": "একটা AP store-এ partition চলাকালীন বিচ্ছিন্ন node X-এ আসল সময় ১০:০০:০৫-এ price = 50 লেখা হলো, আর majority পাশে ১০:০০:০৬-এ price = 70। Node X-এর ঘড়ি ৩ সেকেন্ড এগিয়ে। Network ফিরলে timestamp-ভিত্তিক last-write-wins কোন মান রাখবে?",
+      "options": [
+        "50, কারণ X-এর write-এর timestamp ১০:০০:০৮, যেটা ১০:০০:০৬-এর চেয়ে বড়",
+        "70, কারণ বাস্তবে সেটাই পরে লেখা, আর LWW সবসময় আসল সময়টা জানে",
+        "70, কারণ majority পাশের write সবসময় minority পাশের write-কে হারায়",
+        "দুটোই থাকবে, কারণ timestamp আলাদা হলে LWW conflict ধরে sibling বানায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "X-এর ঘড়ি ৩ সেকেন্ড এগিয়ে, তাই আসল ১০:০০:০৫-এর write-এ timestamp পড়ে ১০:০০:০৮। LWW শুধু timestamp তুলনা করে, তাই বাস্তবে আগে হওয়া 50 জেতে আর পরে হওয়া 70 নীরবে হারায়। ঘড়ির অমিলের এই বিপদ Day 50-এ বিস্তারিত।",
+      "whyWrong": {
+        "1": "LWW machine-এর লেখা timestamp দেখে, আসল সময় জানার উপায় তার নেই।",
+        "2": "LWW দলের আকার দেখে না, শুধু timestamp দেখে।",
+        "3": "Sibling বানানো version vector-এর কাজ; LWW সবসময় একটা মান রাখে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q58",
+      "difficulty": "hard",
+      "question": "একজন বলছে, 'Database X তো AP, তাই partition-এ কখনো error দেয় না।' কিন্তু আপনার query-গুলো QUORUM consistency level-এ চলছে আর partition-এ error দিচ্ছে। কোন ব্যাখ্যা ঠিক?",
+      "options": [
+        "Database X-এ bug আছে, কারণ AP database কোনো অবস্থাতেই error দিতে পারে না",
+        "Partition-এ X নিজে থেকেই CP mode-এ চলে যায়, query-র setting যা-ই থাকুক",
+        "QUORUM শুধু write-এর জন্য, read-এ এর প্রভাব নেই, তাই error অন্য কোনো কারণে",
+        "আচরণ query-র consistency level ঠিক করে; QUORUM-এ replica কম পেলে fail করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Tunable consistency-র system-এ প্রতিটা query নিজের অবস্থান বাছে: ONE দিলে AP-র কাছাকাছি, QUORUM বা ALL দিলে CP-র দিকে। তাই product-এর একক label প্রায়ই বিভ্রান্ত করে। সঠিক প্রশ্ন: এই query-টা partition-এ কী করে?",
+      "whyWrong": {
+        "0": "এটা bug না, QUORUM-এর প্রত্যাশিত আচরণ; 'X AP' label-টাই অতি সরল।",
+        "1": "আচরণ query-র consistency level ঠিক করে, X নিজে থেকে mode বদলায় না।",
+        "2": "Read আর write দুটোতেই consistency level দেওয়া যায় আর প্রভাব ফেলে।"
+      }
+    },
+    {
+      "id": "sd-day-008-q59",
+      "difficulty": "hard",
+      "question": "Kubernetes-এর জন্য ৫-member etcd cluster চালাবেন, হাতে ৩টা availability zone (AZ)। কোন বিন্যাসে যেকোনো একটা পুরো AZ বিচ্ছিন্ন হলেও cluster write নিতে পারবে?",
+      "options": [
+        "২-২-১ ভাগে তিন AZ-এ; যেকোনো AZ গেলে অন্তত ৩টা থাকে, যেটা majority",
+        "৩-২ ভাগে দুই AZ-এ, তৃতীয়টা খালি; ৩-এর AZ গেলেও বাকি ২টা চালিয়ে নেবে",
+        "৫টাই একটা AZ-এ, কারণ একই AZ-এ latency কম আর partition হয় না বললেই চলে",
+        "৪-১ ভাগে; ১-এর AZ গেলে ৪টা থাকে, ৪-এর AZ গেলে বাকি ১টাই leader হয়ে চালাবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Write-এর জন্য ৫-এর majority ৩ লাগে। ২-২-১ বিন্যাসে যেকোনো AZ হারালে সর্বোচ্চ ২টা যায়, অন্তত ৩টা থাকে। অন্য বিন্যাসে কোনো একটা AZ-এ ৩ বা বেশি member থাকায় সেটা বিচ্ছিন্ন হলে majority হারায়।",
+      "whyWrong": {
+        "1": "৩-member-এর AZ বিচ্ছিন্ন হলে বাকি ২টা majority না, তাই write বন্ধ।",
+        "2": "ওই AZ বিচ্ছিন্ন বা নষ্ট হলে পুরো cluster যাবে।",
+        "3": "একা ১টা member majority পায় না, তাই leader হয়ে write নিতে পারে না।"
+      }
+    },
+    {
+      "id": "sd-day-008-q60",
+      "difficulty": "hard",
+      "question": "Partition নেই, সব ঠিক আছে। তবু etcd-তে default (linearizable) read `--consistency=s` (serializable) read-এর চেয়ে ধীর কেন?",
+      "options": [
+        "Linearizable read প্রতিবার পুরো database disk থেকে নতুন করে memory-তে load করে, তাই ধীর",
+        "Linearizable read data encrypt করে পাঠায়, serializable plain text-এ পাঠায়",
+        "সর্বশেষ নিশ্চিত করতে leader/quorum-এর সাথে round trip লাগে; serializable local পড়ে",
+        "Linearizable read সব member-এর কাছ থেকে মান এনে গড় করে, তাই বেশি সময় লাগে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Linearizable read-এ etcd নিশ্চিত হয় যে উত্তরটা cluster-এর সর্বশেষ committed অবস্থা থেকে আসছে, যার জন্য leader আর majority-র সাথে যোগাযোগ লাগে। Serializable read শুধু local কপি দেখে, তাই দ্রুত কিন্তু পুরনো হতে পারে। Partition না থাকলেও এটাই PACELC-এর EL বনাম EC।",
+      "whyWrong": {
+        "0": "পার্থক্যটা network-এ নিশ্চিত হওয়ার round trip, disk থেকে পুরো load না।",
+        "1": "Encryption TLS-এর setting, consistency option-এর সাথে এর সম্পর্ক নেই।",
+        "3": "কোনো গড় করা হয় না; leader নিশ্চিত করে তার কাছে সর্বশেষ committed অবস্থা আছে।"
+      }
+    }
+  ]
+}

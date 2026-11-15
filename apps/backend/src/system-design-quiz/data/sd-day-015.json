@@ -1,0 +1,1065 @@
+{
+  "topicId": "sd-day-015",
+  "questions": [
+    {
+      "id": "sd-day-015-q01",
+      "difficulty": "easy",
+      "question": "Forward proxy আর reverse proxy-র মূল পার্থক্য কোনটা?",
+      "options": [
+        "Forward proxy শুধু HTTP সামলায়, reverse proxy শুধু HTTPS সামলায়",
+        "Forward proxy সবসময় cache করে, reverse proxy কখনো cache করে না",
+        "Forward proxy internet-এ বসে, reverse proxy client-এর laptop-এ বসে",
+        "Forward proxy client-এর হয়ে কাজ করে, reverse proxy server-এর হয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "পার্থক্যটা কার প্রতিনিধি সেখানে। Forward proxy client-দের (যেমন অফিসের কর্মীদের) হয়ে বাইরে যায়, reverse proxy একটা website-এর server-গুলোর হয়ে সামনে দাঁড়ায়। Protocol, cache বা অবস্থান দিয়ে এদের আলাদা করা যায় না।",
+      "whyWrong": {
+        "0": "দুই ধরনের proxy-ই HTTP আর HTTPS দুটোই সামলাতে পারে।",
+        "1": "দুটোই cache করতে পারে; reverse proxy-তে caching খুবই প্রচলিত।",
+        "2": "Reverse proxy বসে website-এর server-গুলোর সামনে, client-এর machine-এ না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q02",
+      "difficulty": "easy",
+      "question": "একটা website-এর সামনে NGINX reverse proxy বসানো আছে। সাধারণ একজন user কি জানে যে মাঝে একটা proxy আছে?",
+      "options": [
+        "না, DNS তাকে proxy-র IP দেয় আর সে proxy-কেই server ভাবে",
+        "হ্যাঁ, browser-এর proxy setting-এ NGINX-এর address দিতে হয়",
+        "হ্যাঁ, কারণ প্রতিটা response-এ proxy-র IP আলাদা করে দেখানো হয়",
+        "না, কারণ reverse proxy শুধু server-এর ভেতরের traffic দেখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Reverse proxy-র ক্ষেত্রে client-এর কিছু configure করতে হয় না। Domain-এর DNS record proxy-র IP দেয়, তাই browser proxy-কেই আসল server হিসেবে দেখে। পেছনের server-গুলো client-এর কাছে অদৃশ্য।",
+      "whyWrong": {
+        "1": "Browser-এ proxy setting দেওয়া forward proxy-র বৈশিষ্ট্য, reverse proxy-র না।",
+        "2": "Response-এ proxy নিজের IP আলাদা করে দেখায় না; client শুধু proxy-র সাথেই কথা বলে।",
+        "3": "Reverse proxy বাইরের client-এর request-ই নেয়, শুধু ভেতরের traffic না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q03",
+      "difficulty": "easy",
+      "question": "অফিসের network admin চান কর্মীরা কাজের সময় কিছু নির্দিষ্ট site-এ যেতে না পারুক আর কে কোথায় গেল তার log থাকুক। কোনটা সবচেয়ে মানানসই?",
+      "options": [
+        "প্রতিটা website-এর সামনে একটা reverse proxy বসানো",
+        "অফিসের বের হওয়ার পথে একটা forward proxy বসানো",
+        "অফিসের সব laptop-এ আলাদা load balancer চালানো",
+        "অফিসের DNS server-এর TTL অনেক বাড়িয়ে দেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "বাইরে যাওয়া (egress) নিয়ন্ত্রণ আর audit forward proxy-র কাজ। সব কর্মীর request proxy দিয়ে গেলে সেখানেই domain block আর log করা যায়।",
+      "whyWrong": {
+        "0": "বাইরের website অফিসের নিয়ন্ত্রণে নেই; তাদের সামনে proxy বসানো অফিসের পক্ষে সম্ভব না।",
+        "2": "Load balancer server-এর দিকে request ভাগ করে, কর্মীদের বাইরে যাওয়া নিয়ন্ত্রণ করে না।",
+        "3": "TTL বাড়ালে শুধু DNS উত্তর বেশিক্ষণ cache হয়, site block বা log হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q04",
+      "difficulty": "easy",
+      "question": "Reverse proxy বসালে ভেতরের app server-গুলো কেন বেশি নিরাপদ হয়?",
+      "options": [
+        "কারণ app server private network-এ, বাইরে শুধু proxy দেখা যায়",
+        "কারণ proxy app server-এর সব code-এর bug নিজে থেকে ঠিক করে দেয়",
+        "কারণ proxy থাকলে app server-এ আর login বা password লাগে না",
+        "কারণ proxy সব request-এর body মুছে দিয়ে তবে app-কে পাঠায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Reverse proxy থাকলে app server-গুলোর public IP লাগে না; internet থেকে শুধু proxy পৌঁছানো যায়। Attacker ভেতরের server-এ সরাসরি port scan বা আক্রমণ করতে পারে না, আর সব traffic একটা নিয়ন্ত্রিত দরজা দিয়ে আসে।",
+      "whyWrong": {
+        "1": "Proxy app-এর code-এর bug ঠিক করে না; code-এর নিরাপত্তা app-এরই দায়িত্ব।",
+        "2": "Authentication আগের মতোই লাগে; proxy থাকলেই password অপ্রয়োজনীয় হয় না।",
+        "3": "Proxy request-এর body মুছে দেয় না, তাহলে app কাজই করতে পারত না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q05",
+      "difficulty": "easy",
+      "question": "Forward proxy দিয়ে একটা HTTPS site খুললে browser proxy-কে প্রথমে কোন HTTP method পাঠায়?",
+      "options": ["GET", "OPTIONS", "UPGRADE", "CONNECT"],
+      "correctIndex": 3,
+      "explanation": "HTTPS-এর জন্য browser proxy-কে CONNECT host:443 পাঠিয়ে একটা tunnel চায়। Proxy 200 Connection established বললে browser সেই tunnel দিয়ে সরাসরি server-এর সাথে TLS করে।",
+      "whyWrong": {
+        "0": "Proxy দিয়ে GET পাঠানো হয় সাধারণ HTTP-তে, পুরো URL সহ; HTTPS-এ আগে tunnel লাগে।",
+        "1": "OPTIONS CORS preflight-এর মতো কাজে লাগে, proxy-তে tunnel খুলতে না।",
+        "2": "UPGRADE কোনো HTTP method না; Upgrade একটা header, যেমন WebSocket-এ।"
+      }
+    },
+    {
+      "id": "sd-day-015-q06",
+      "difficulty": "easy",
+      "question": "অফিসের সাধারণ forward proxy (TLS interception ছাড়া) দিয়ে আপনি https://bank.example/account খুললেন। Proxy কী জানতে পারে?",
+      "options": [
+        "পুরো URL, অর্থাৎ /account path সহ সবকিছু",
+        "শুধু hostname bank.example আর port 443",
+        "Account-এর balance, কারণ response proxy দিয়ে আসে",
+        "কিছুই না, এমনকি কোন site-এ গেলেন তাও না"
+      ],
+      "correctIndex": 1,
+      "explanation": "CONNECT line-এ hostname আর port খোলা থাকে, তাই proxy জানে কোন site-এ গেলেন। কিন্তু path, header, body tunnel-এর ভেতরে end-to-end encrypted, তাই সেগুলো proxy দেখে না।",
+      "whyWrong": {
+        "0": "Path tunnel-এর ভেতরে encrypted, তাই interception ছাড়া proxy /account দেখে না।",
+        "2": "Response-ও encrypted, proxy শুধু bytes পার করে।",
+        "3": "CONNECT line-এই hostname থাকে, তাই কোন site-এ গেলেন proxy জানে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q07",
+      "difficulty": "easy",
+      "question": "Reverse proxy-র পেছনে app-এর log-এ সব request-এর IP একই দেখাচ্ছে। কারণ কী?",
+      "options": [
+        "Browser-গুলো privacy-র জন্য সবাই একটা নির্দিষ্ট সাধারণ IP পাঠায়",
+        "DNS সব user-কে একই IP দেয়, তাই log-এ সবার একটাই IP",
+        "App server-এর clock ভুল থাকলে log-এর IP-গুলো মিলে যায়",
+        "App-এর TCP connection আসে proxy থেকে, তাই peer IP proxy-র"
+      ],
+      "correctIndex": 3,
+      "explanation": "Proxy client-এর connection শেষ করে নিজে নতুন connection খোলে app-এর সাথে। তাই app-এর চোখে peer হলো proxy। আসল IP জানতে X-Forwarded-For বা X-Real-IP-এর মতো header লাগে।",
+      "whyWrong": {
+        "0": "Browser নিজের IP বদলায় না; IP আসে network connection থেকে।",
+        "1": "DNS user-কে server-এর IP দেয়, user-এর নিজের IP বদলায় না।",
+        "2": "Clock-এর সাথে IP-র কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-015-q08",
+      "difficulty": "easy",
+      "question": "X-Forwarded-For header-এর কাজ কী?",
+      "options": [
+        "Response কোন URL-এ forward বা redirect করতে হবে, তা browser-কে বলা",
+        "Request কোন কোন IP পেরিয়ে এসেছে, client থেকে শুরু করে",
+        "Client কোন ভাষায় response চায় তা proxy আর server-কে জানানো",
+        "Proxy-র login-এর username আর password বহন করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রতিটা proxy XFF-এর ডানে নিজের দেখা peer IP যোগ করে, তাই এটা client থেকে শুরু করে পথের IP-গুলোর তালিকা। এ দিয়ে পেছনের app আসল client IP জানতে পারে।",
+      "whyWrong": {
+        "0": "Redirect-এর জন্য Location header, XFF না।",
+        "2": "ভাষার জন্য Accept-Language header।",
+        "3": "Proxy login-এর জন্য Proxy-Authorization header।"
+      }
+    },
+    {
+      "id": "sd-day-015-q09",
+      "difficulty": "easy",
+      "question": "Proxy-র পেছনের app জানতে চায় client আসলে https দিয়ে এসেছিল নাকি http দিয়ে। কোন header দেখবে?",
+      "options": [
+        "X-Real-IP",
+        "Via",
+        "Content-Security-Policy",
+        "X-Forwarded-Proto"
+      ],
+      "correctIndex": 3,
+      "explanation": "TLS proxy-তে খুললে app সাধারণ HTTP দেখে। X-Forwarded-Proto জানায় client-এর দিকের scheme কী ছিল, যাতে app সঠিক redirect আর Secure cookie ঠিক করতে পারে।",
+      "whyWrong": {
+        "0": "X-Real-IP শুধু client-এর IP বলে, scheme না।",
+        "1": "Via বলে কোন proxy পেরিয়েছে, client-এর scheme না।",
+        "2": "Content-Security-Policy browser-কে বলে কোন script/resource চালানো যাবে, scheme না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q10",
+      "difficulty": "easy",
+      "question": "Via header কী তথ্য দেয়?",
+      "options": [
+        "Client-এর browser আর operating system-এর নাম ও version",
+        "Response কতক্ষণ cache-এ রাখা যাবে তার সময়",
+        "Request বা response কোন কোন proxy পেরিয়ে এসেছে",
+        "Server কোন programming language-এ লেখা হয়েছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা proxy Via-তে নিজের protocol version আর নাম যোগ করে, যেমন 1.1 squid। এটা পথ বোঝায়, আর একটা proxy নিজের নাম আবার দেখলে request loop ধরতে পারে।",
+      "whyWrong": {
+        "0": "Browser আর OS-এর তথ্য দেয় User-Agent।",
+        "1": "Cache-এর সময় বলে Cache-Control।",
+        "3": "Via server-এর ভাষা জানায় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q11",
+      "difficulty": "easy",
+      "question": "Transparent proxy কোনটা?",
+      "options": [
+        "যে proxy-র সব log আর নিয়ম সবার জন্য খোলা থাকে",
+        "যে proxy HTTPS-এর ভেতরের content পরিষ্কার দেখতে পায় সব সময়",
+        "যে proxy client-এর setting ছাড়াই traffic ঘুরিয়ে নেয়",
+        "যে proxy server-এর ভেতরের code দেখতে পায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Transparent proxy-তে client কিছু configure করে না; router বা firewall traffic চুপচাপ proxy-তে পাঠায়। Client ভাবে সরাসরি যাচ্ছে, তাই 'transparent', মানে চোখে পড়ে না।",
+      "whyWrong": {
+        "0": "'Transparent' এখানে log খোলা থাকা বোঝায় না।",
+        "1": "Transparent proxy HTTPS-এ সাধারণত শুধু IP আর SNI দেখে, content না।",
+        "3": "কোনো proxy server-এর code দেখে না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q12",
+      "difficulty": "easy",
+      "question": "NGINX, HAProxy আর Envoy সাধারণত কোন ভূমিকায় সবচেয়ে বেশি দেখা যায়?",
+      "options": [
+        "Server-এর সামনে reverse proxy হিসেবে",
+        "অফিসের কর্মীদের forward proxy হিসেবে",
+        "Database-এর storage engine হিসেবে",
+        "Browser-এর ভেতরের extension হিসেবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "তিনটাই মূলত server-এর সামনে বসা reverse proxy ও load balancer হিসেবে পরিচিত। অফিসের forward proxy হিসেবে বেশি প্রচলিত Squid-এর মতো tool।",
+      "whyWrong": {
+        "1": "এরা forward proxy-র কাজ কিছুটা পারলেও মূল পরিচিতি reverse proxy হিসেবে; মূল NGINX CONNECT সামলায় না।",
+        "2": "এরা database-এর অংশ না।",
+        "3": "এরা server-side software, browser extension না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q13",
+      "difficulty": "easy",
+      "question": "Proxy server-এর মৌলিক বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "Client-এর সব data স্থায়ীভাবে নিজের database-এ জমা রেখে দেয়",
+        "সব request-এর latency সবসময় কমিয়ে দেয়",
+        "Client আর server-এর মাঝে একটার বদলে দুটো connection হয়",
+        "শুধু একই local network-এর ভেতরে কাজ করতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Proxy client-এর connection নিজে নেয়, তারপর নিজে server-এর সাথে নতুন connection খোলে। এই মাঝে বসার কারণেই সে দেখতে, বদলাতে, আটকাতে আর cache করতে পারে।",
+      "whyWrong": {
+        "0": "Proxy চাইলে cache করে, কিন্তু সব data স্থায়ীভাবে রাখা তার মৌলিক কাজ না।",
+        "1": "Proxy একটা বাড়তি hop, তাই cache ছাড়া সাধারণত latency সামান্য বাড়ে।",
+        "3": "Proxy internet-জুড়েও কাজ করে, যেমন CDN edge।"
+      }
+    },
+    {
+      "id": "sd-day-015-q14",
+      "difficulty": "easy",
+      "question": "Squid-এর access log-এ HTTPS request-এর জন্য কী ধরনের লাইন দেখা যায়?",
+      "options": [
+        "GET https://site.com/path/to/page, পুরো path সহ",
+        "TCP_MEM_HIT/200 POST site.com/login",
+        "শুধু client-এর IP, কোনো hostname ছাড়া",
+        "TCP_TUNNEL/200 CONNECT site.com:443"
+      ],
+      "correctIndex": 3,
+      "explanation": "HTTPS-এ Squid একটা tunnel বানায়, তাই log-এ থাকে TCP_TUNNEL আর শুধু host:port। Path tunnel-এর ভেতরে encrypted, তাই log-এ আসে না।",
+      "whyWrong": {
+        "0": "Path দেখা যায় শুধু HTTP-তে বা interception থাকলে।",
+        "1": "Encrypted tunnel-এর ভেতরের response Squid cache করতে পারে না, আর path-ও দেখে না।",
+        "2": "Hostname CONNECT line থেকে জানা থাকে, তাই log-এ আসে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q15",
+      "difficulty": "easy",
+      "question": "Client proxy দিয়ে একটা request পাঠাল, কিন্তু proxy login চাইছে। Proxy কোন status code ফেরত দেবে?",
+      "options": [
+        "401 Unauthorized",
+        "403 Forbidden",
+        "407 Proxy Authentication Required",
+        "511 Network Authentication Required"
+      ],
+      "correctIndex": 2,
+      "explanation": "407 মানে proxy নিজে authentication চাইছে; client পরের বার Proxy-Authorization header পাঠায়। 401 হলো server-এর নিজের authentication চাওয়া।",
+      "whyWrong": {
+        "0": "401 আসে origin server authentication চাইলে, proxy না।",
+        "1": "403 মানে অনুমতি নেই; login দিলেও হবে না এমন অবস্থা।",
+        "3": "511 captive portal-এর মতো network-এ login চাওয়ার জন্য, proxy-র নিজের authentication-এর জন্য 407।"
+      }
+    },
+    {
+      "id": "sd-day-015-q16",
+      "difficulty": "easy",
+      "question": "Reverse proxy থেকে 502 Bad Gateway এলো। সাধারণত এর মানে কী?",
+      "options": [
+        "Client-এর পাঠানো request-এর syntax বা header ভুল ছিল",
+        "Proxy upstream server থেকে ঠিকঠাক উত্তর পায়নি",
+        "Client-এর login-এর মেয়াদ শেষ হয়ে গেছে",
+        "Requested page-টা server-এ কখনো ছিলই না"
+      ],
+      "correctIndex": 1,
+      "explanation": "502 proxy নিজে বানায় যখন upstream connection refuse করে, crash করে বা অবৈধ উত্তর দেয়। Debug-এর প্রথম প্রশ্ন: app চালু আছে কি, proxy কি তার কাছে পৌঁছাতে পারছে।",
+      "whyWrong": {
+        "0": "Syntax ভুলের জন্য সাধারণত 400 Bad Request।",
+        "2": "Login-এর মেয়াদ শেষ হলে সাধারণত 401।",
+        "3": "না থাকা page-এর জন্য 404।"
+      }
+    },
+    {
+      "id": "sd-day-015-q17",
+      "difficulty": "easy",
+      "question": "NGINX-কে reverse proxy হিসেবে বসিয়ে gzip চালু করলে কী লাভ হয়?",
+      "options": [
+        "Server-এর database query-গুলো দ্রুত চলে আর কম lock নেয়",
+        "Text response ছোট হয়ে network-এ দ্রুত পৌঁছায়",
+        "ছবি আর video-র আকার প্রায় অর্ধেক হয়ে যায়",
+        "TLS handshake-এর দরকার আর থাকে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "HTML, JSON, CSS-এর মতো text ভালো compress হয়, তাই ধীর network-এ কম byte যায়। App-কে কিছু বদলাতে হয় না, proxy পথে compress করে।",
+      "whyWrong": {
+        "0": "Compression database-এর গতি বদলায় না।",
+        "2": "JPEG, MP4 আগে থেকেই compressed, আবার gzip করলে প্রায় ছোট হয় না।",
+        "3": "Compression-এর সাথে TLS-এর প্রয়োজনের সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-015-q18",
+      "difficulty": "easy",
+      "question": "Forward proxy-তে cache থাকলে অফিসের জন্য সবচেয়ে সরাসরি লাভ কোনটা?",
+      "options": [
+        "একই file বারবার বাইরে থেকে আনতে হয় না, bandwidth বাঁচে",
+        "অফিসের সব laptop-এর CPU আর RAM প্রায় দ্বিগুণ দ্রুত কাজ করে",
+        "সব HTTPS site-এর content নিজে থেকে cache হয়ে যায়",
+        "বাইরের website-গুলোর server আর down হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "অনেক কর্মী একই জিনিস চাইলে proxy একবার এনে বাকিদের নিজের কাছ থেকে দেয়। ২০০ জন একই ১ GB file নামালে ২০০ GB-র বদলে ১ GB।",
+      "whyWrong": {
+        "1": "Proxy cache laptop-এর CPU বদলায় না।",
+        "2": "CONNECT tunnel-এ proxy HTTPS-এর content দেখে না, তাই interception ছাড়া cache করতে পারে না।",
+        "3": "অফিসের cache বাইরের server-এর availability বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q19",
+      "difficulty": "easy",
+      "question": "Reverse proxy, load balancer আর API gateway-র সম্পর্ক নিয়ে কোন কথাটা ঠিক?",
+      "options": [
+        "তিনটাই server-এর সামনে বসা proxy, পার্থক্য মূল কাজের জোরে",
+        "তিনটা সম্পূর্ণ আলাদা, একটার কাজ আরেকটা কখনো করতে পারে না",
+        "API gateway হলো client-এর laptop-এ চলা একটা forward proxy",
+        "Load balancer শুধু database-এর সামনে বসে, অন্য কোথাও না"
+      ],
+      "correctIndex": 0,
+      "explanation": "L7 load balancer আর API gateway দুটোই আসলে বিশেষ জোর দেওয়া reverse proxy: একটার জোর ভাগ করায়, আরেকটার API-র নিয়মে। একই NGINX তিনটার কাজই কিছুটা করতে পারে।",
+      "whyWrong": {
+        "1": "একই software একাধিক ভূমিকায় চলে, তাই 'কখনো পারে না' ভুল।",
+        "2": "API gateway server-এর দিকে বসে, client-এর laptop-এ না।",
+        "3": "Load balancer সাধারণত app server-এর সামনেই বসে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q20",
+      "difficulty": "easy",
+      "question": "একটা microservice-এর পাশে একই pod-এ চলা ছোট proxy, যার মধ্য দিয়ে service-এর সব traffic যায়, তাকে কী বলে?",
+      "options": [
+        "Forward cache",
+        "Edge router",
+        "Sidecar proxy",
+        "Bastion host"
+      ],
+      "correctIndex": 2,
+      "explanation": "Sidecar proxy প্রতিটা service instance-এর পাশে বসে, retry, timeout, mTLS আর metrics দেয়। অনেক sidecar আর তাদের নিয়ন্ত্রণকারী control plane মিলে service mesh।",
+      "whyWrong": {
+        "0": "Forward cache কোনো প্রচলিত নাম না, আর এটা service-এর পাশে বসা proxy বোঝায় না।",
+        "1": "Edge router network-এর সীমানায় থাকে, প্রতিটা service-এর পাশে না।",
+        "3": "Bastion host হলো ভেতরের network-এ SSH করে ঢোকার নিয়ন্ত্রিত machine।"
+      }
+    },
+    {
+      "id": "sd-day-015-q21",
+      "difficulty": "medium",
+      "question": "App-এ login-attempt limit IP অনুযায়ী: প্রতি IP-তে ৫ বার ভুল password-এর পরে lock। Attacker প্রতিটা request-এ আলাদা `X-Forwarded-For` header পাঠিয়ে হাজারবার চেষ্টা করছে, lock হচ্ছে না। App সম্ভবত কী করছে?",
+      "options": [
+        "XFF-এর ডানের শেষ IP-কে client ধরছে, যেটা proxy নিজে যোগ করেছে",
+        "TCP peer IP-কে client ধরছে, যেটা proxy-র address",
+        "X-Real-IP header-কে client ধরছে, যেটা NGINX নিজে লিখেছে",
+        "XFF-এর বামের প্রথম IP-কে client ধরছে, যা attacker লিখছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Client যা XFF পাঠায় proxy তা রেখে ডানে আসল IP যোগ করে, তাই বামের অংশ client-নিয়ন্ত্রিত। প্রথম IP নিলে attacker প্রতি request-এ নতুন IP বানাতে পারে। ডান থেকে চেনা proxy বাদ দিয়ে প্রথম অচেনা IP নিলে এটা ঘটত না।",
+      "whyWrong": {
+        "0": "ডানের শেষ IP proxy-র দেখা peer, attacker বদলাতে পারে না; তাহলে সবাই একই IP পেত, lock হতো।",
+        "1": "TCP peer proxy-র IP হলে সব user একই IP পেত, attacker নয়, সবাই lock হতো।",
+        "2": "NGINX X-Real-IP নিজের দেখা $remote_addr থেকে লেখে, client তা বদলাতে পারে না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q22",
+      "difficulty": "medium",
+      "question": "Setup: Cloudflare → NGINX → app। NGINX-এর কাছে TCP peer একটা Cloudflare IP, আর `X-Forwarded-For: 192.0.2.99, 198.51.100.23`। Cloudflare ছাড়া আর কোনো trusted proxy নেই। আসল client IP কোনটা?",
+      "options": [
+        "192.0.2.99, কারণ তালিকার প্রথম IP-ই সবসময় client",
+        "Cloudflare-এর IP, কারণ TCP connection সেখান থেকে",
+        "198.51.100.23, ডান থেকে প্রথম অচেনা IP",
+        "নিশ্চিত বলা যায় না, তাই request বাতিল করতে হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Peer Cloudflare, যা trusted, তাই তার যোগ করা ডানের IP বিশ্বাসযোগ্য। ডান থেকে প্রথম IP 198.51.100.23 কোনো চেনা proxy না, তাই সেটাই client। 192.0.2.99 client নিজে লিখতে পারে।",
+      "whyWrong": {
+        "0": "প্রথম IP client-নিয়ন্ত্রিত, নকল হতে পারে।",
+        "1": "Cloudflare একটা trusted proxy, তার IP client না।",
+        "3": "Trusted proxy-র যোগ করা অংশ নির্ভরযোগ্য, তাই client বের করা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-015-q23",
+      "difficulty": "medium",
+      "question": "TLS NGINX-এ terminate হয়, app পায় সাধারণ HTTP। App-এ নিয়ম আছে: 'HTTP request এলে https-এ redirect করো'। Deploy-এর পরে browser 'too many redirects' দেখাচ্ছে। সবচেয়ে সম্ভাব্য সমাধান কী?",
+      "options": [
+        "NGINX-এ gzip বন্ধ করে দেওয়া, যাতে response-এর header বদলে না যায়",
+        "NGINX থেকে X-Forwarded-Proto পাঠানো, app সেটা মানবে",
+        "App-এ redirect নিয়ম পুরো বাদ দিয়ে সবসময় HTTP চালানো",
+        "Certificate-এর মেয়াদ বাড়িয়ে নতুন করে issue করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "App প্রতিটা request-কে HTTP দেখে redirect করে, browser https-এ আসে, NGINX আবার HTTP পাঠায়, তাই অসীম loop। X-Forwarded-Proto: https দেখে app বুঝবে client আসলে https-এই আছে।",
+      "whyWrong": {
+        "0": "gzip-এর সাথে redirect loop-এর সম্পর্ক নেই।",
+        "2": "Redirect পুরো বাদ দিলে আসল HTTP user-রা https-এ যাবে না, সমস্যা লুকানো হয়।",
+        "3": "Certificate ঠিক থাকলেও app scheme না জানলে loop থাকবে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q24",
+      "difficulty": "medium",
+      "question": "Python app-এর প্রতিটা server-এ ১৬টা worker। ধীর mobile network-এ ছাত্ররা ছবি upload করে, প্রতিটা upload-এর body আসতে ~৩০ সেকেন্ড লাগে, যদিও save করতে লাগে ৫০ms। সামনে কী বসালে সবচেয়ে বেশি লাভ?",
+      "options": [
+        "Request buffering-ওয়ালা একটা reverse proxy, যেমন NGINX",
+        "App server-এর সামনে একটা forward proxy, যেমন Squid, যা cache করবে",
+        "আরও বেশি RAM, কিন্তু worker সংখ্যা একই রেখে",
+        "Database-এ একটা নতুন index, যাতে save দ্রুত হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Event-driven reverse proxy ধীর body নিজে নিয়ে নেয়, তারপর ভেতরের দ্রুত network-এ একবারে app-কে দেয়। ফলে worker ৩০ সেকেন্ডের বদলে ৫০ms ব্যস্ত থাকে।",
+      "whyWrong": {
+        "1": "Forward proxy client-এর দিকে কাজ করে, বাইরের user-এর upload থেকে app-কে বাঁচায় না।",
+        "2": "Worker সংখ্যা একই থাকলে ধীর upload তবুও worker আটকাবে।",
+        "3": "Save ইতিমধ্যে ৫০ms; সমস্যা ধীর body পড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-015-q25",
+      "difficulty": "medium",
+      "question": "উপরের মতো worker-প্রতি একটা request: একটা worker ৫০ms-এর কাজ সেকেন্ডে কয়টা করতে পারত, আর ৩০ সেকেন্ডের ধীর upload-এ কার্যকর ক্ষমতা কত ভাগ কমে?",
+      "options": [
+        "সেকেন্ডে ৫০টা; ক্ষমতা কমে প্রায় ১,৫০০ ভাগের এক ভাগে",
+        "সেকেন্ডে ২০টা; ক্ষমতা কমে প্রায় ৬০০ ভাগের এক ভাগে",
+        "সেকেন্ডে ২০টা; ক্ষমতা কমে প্রায় ৩০ ভাগের এক ভাগে",
+        "সেকেন্ডে ৫টা; ক্ষমতা কমে প্রায় ১৫০ ভাগের এক ভাগে"
+      ],
+      "correctIndex": 1,
+      "explanation": "১,০০০ms ÷ ৫০ms = সেকেন্ডে ২০টা। ধীর upload-এ ৩০ সেকেন্ডে একটা, মানে সেকেন্ডে ১/৩০। ২০ ÷ (১/৩০) = ৬০০, তাই ক্ষমতা ৬০০ ভাগের এক ভাগ।",
+      "whyWrong": {
+        "0": "৫০ms-এর কাজ সেকেন্ডে ২০টা হয়, ৫০টা না; আর অনুপাতও ভুল।",
+        "2": "প্রতি সেকেন্ডের হিসাব ঠিক, কিন্তু ২০ × ৩০ = ৬০০, ৩০ না।",
+        "3": "৫০ms-এ সেকেন্ডে ২০টা হয়, ৫টা না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q26",
+      "difficulty": "medium",
+      "question": "NGINX-এর পেছনে একটা LLM chat endpoint token-by-token উত্তর stream করে (Server-Sent Events)। User অভিযোগ করছে উত্তর পুরোটা একবারে আসে, অনেকক্ষণ পরে। কী বদলাবেন?",
+      "options": [
+        "ওই location-এ gzip_min_length অনেক বাড়িয়ে দেওয়া",
+        "upstream-এর keepalive সংখ্যা দ্বিগুণ করা",
+        "ওই location-এ proxy_buffering বন্ধ করা",
+        "client_max_body_size বাড়িয়ে 100m করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Response buffering চালু থাকলে NGINX upstream-এর উত্তর জমিয়ে পাঠায়, তাই streaming-এর টুকরোগুলো client পায় না। proxy_buffering off (বা X-Accel-Buffering: no) দিলে প্রতিটা টুকরো সাথে সাথে যায়।",
+      "whyWrong": {
+        "0": "gzip_min_length শুধু ছোট response compress হবে কিনা ঠিক করে, buffering না।",
+        "1": "Keepalive connection reuse-এর জন্য, streaming আটকানোর কারণ না।",
+        "3": "client_max_body_size request body-র সীমা, response streaming-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-015-q27",
+      "difficulty": "medium",
+      "question": "একটা NGINX keep-alive ছাড়া একটা upstream-এ সেকেন্ডে ৫০০ request পাঠায়। প্রতিটা বন্ধ connection Linux-এ ৬০ সেকেন্ড TIME_WAIT-এ থাকে। যেকোনো মুহূর্তে মোটামুটি কয়টা socket TIME_WAIT-এ?",
+      "options": ["৫০০টা", "৩০,০০০টা", "৮,৩৩৩টা", "৩,০০,০০০টা"],
+      "correctIndex": 1,
+      "explanation": "প্রতি সেকেন্ডে ৫০০টা নতুন TIME_WAIT, প্রতিটা ৬০ সেকেন্ড থাকে: ৫০০ × ৬০ = ৩০,০০০। এটা এক upstream ip:port-এর জন্য Linux-এর default ~২৮,০০০ ephemeral port-এর চেয়েও বেশি।",
+      "whyWrong": {
+        "0": "এটা শুধু এক সেকেন্ডের সংখ্যা, ৬০ সেকেন্ড ধরে জমাটা গোনা হয়নি।",
+        "2": "এটা ৫০০ ÷ ৬০, গুণের জায়গায় ভাগ করা হয়েছে।",
+        "3": "এটা ১০ গুণ বেশি; ৫০০ × ৬০ = ৩০,০০০।"
+      }
+    },
+    {
+      "id": "sd-day-015-q28",
+      "difficulty": "medium",
+      "question": "Upstream keep-alive চালু করতে NGINX-এ `upstream { keepalive 16; }` দিলেন, কিন্তু connection reuse হচ্ছে না। আর কোন দুটো setting সাধারণত লাগে?",
+      "options": [
+        "gzip on আর gzip_types application/json text/plain text/css",
+        "proxy_http_version 1.1 আর proxy_set_header Connection \"\"",
+        "proxy_cache rp আর proxy_cache_valid 200 1m",
+        "set_real_ip_from আর real_ip_recursive on"
+      ],
+      "correctIndex": 1,
+      "explanation": "NGINX default-এ upstream-এ HTTP/1.0 পাঠায়, যেখানে connection প্রতি request-এ বন্ধ হয়। HTTP/1.1 আর খালি Connection header দিলে connection খোলা থেকে reuse হয়।",
+      "whyWrong": {
+        "0": "gzip compression-এর setting, connection reuse-এর না।",
+        "2": "এগুলো caching-এর setting।",
+        "3": "এগুলো আসল client IP বের করার setting।"
+      }
+    },
+    {
+      "id": "sd-day-015-q29",
+      "difficulty": "medium",
+      "question": "App server-এর idle keep-alive timeout ৫ সেকেন্ড, আর সামনের proxy অলস upstream connection ৬০ সেকেন্ড পর্যন্ত reuse করে। মাঝে মাঝে কোনো কারণ ছাড়া 502 আসছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Proxy-র gzip level খুব বেশি, তাই মাঝে মাঝে CPU শেষ হয়ে যাচ্ছে",
+        "Client-এর browser keep-alive বোঝে না বলে request ভাঙছে",
+        "App আগে connection বন্ধ করছে, আর proxy ঠিক তখন সেটায় পাঠাচ্ছে",
+        "DNS TTL খুব ছোট বলে প্রতিবার নতুন IP আসছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "App ৫ সেকেন্ডে অলস connection বন্ধ করে, কিন্তু proxy সেটাকে তখনো ব্যবহারযোগ্য ভাবে। দুটো ঘটনা একসাথে হলে request বন্ধ connection-এ যায় আর 502 আসে। App-এর timeout proxy-র চেয়ে বেশি রাখলে এটা কমে।",
+      "whyWrong": {
+        "0": "CPU শেষ হলে ধীরগতি বা timeout হয়, এমন অনিয়মিত 502-এর মূল কারণ এটা না।",
+        "1": "Client-এর দিকের keep-alive proxy আর app-এর মাঝের connection-কে প্রভাবিত করে না।",
+        "3": "Upstream এখানে একটা নির্দিষ্ট server; DNS TTL এই race-এর কারণ না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q30",
+      "difficulty": "medium",
+      "question": "অফিসে TLS interception চালু করা হলো। এক কর্মীর ব্যক্তিগত laptop-এ (অফিসের root CA বসানো নেই) bank site খুললে কী হবে?",
+      "options": [
+        "Browser certificate error দেখাবে, কারণ CA-টা অচেনা",
+        "Site স্বাভাবিকভাবে খুলবে, আর proxy নীরবে সব content পড়তে পারবে",
+        "Proxy আসল bank-এর private key দিয়ে certificate দেখাবে",
+        "Browser নিজে থেকে HTTP-তে নেমে site খুলবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Interception-এ proxy নিজের CA দিয়ে নকল certificate বানায়। সেই CA trust store-এ না থাকলে browser সেটা বিশ্বাস করে না, তাই সতর্কবার্তা দেখায়। এজন্য interception-এর পূর্বশর্ত হলো device-এ CA আগে থেকে বসানো।",
+      "whyWrong": {
+        "1": "অচেনা CA-র certificate browser বিশ্বাস করে না, তাই স্বাভাবিকভাবে খুলবে না।",
+        "2": "Bank-এর private key proxy-র কাছে থাকে না।",
+        "3": "Browser নিরাপত্তা নষ্ট করে নিজে থেকে HTTP-তে নামে না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q31",
+      "difficulty": "medium",
+      "question": "TLS interception চালুর পরে অফিসে একটা mobile banking app কাজ করছে না, অথচ browser-এ সব site খুলছে। কারণ কী হতে পারে?",
+      "options": [
+        "Proxy HTTPS-এ gzip চালু করেছে, তাই app response বুঝতে পারছে না",
+        "App-টা CONNECT method সমর্থন করে না, তাই tunnel হয় না",
+        "Proxy app-এর DNS request আটকে দিচ্ছে, তাই IP পায় না",
+        "App-টা certificate pinning করে, অফিসের CA মানে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Pinning করা app শুধু নির্দিষ্ট certificate বা key মানে, device-এর trust store-এ যা-ই থাকুক। Proxy-র বানানো certificate সেখানে মেলে না, তাই connection ভাঙে। সমাধান: এই domain-কে interception থেকে বাদ দেওয়া।",
+      "whyWrong": {
+        "0": "Compression থাকলে app header দেখে খুলে নেয়; এটা এই সমস্যার কারণ না।",
+        "1": "Interception-এ app-কে CONNECT বুঝতে হয় না; proxy মাঝে TLS-এ বসে।",
+        "2": "Browser কাজ করছে মানে DNS ঠিক আছে, আর এখানে সমস্যা শুধু interception চালুর পরে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q32",
+      "difficulty": "medium",
+      "question": "অফিস চায় শুধু `youtube.com/shorts` বন্ধ করতে, কিন্তু বাকি YouTube খোলা থাকুক। TLS interception নেই, শুধু সাধারণ forward proxy। এটা কি সম্ভব?",
+      "options": [
+        "না, proxy শুধু hostname দেখে; path encrypted থাকে",
+        "হ্যাঁ, proxy CONNECT line-এ host-এর সাথে পুরো path দেখতে পায়",
+        "হ্যাঁ, Via header-এ path লেখা থাকে বলে proxy জানে",
+        "না, কারণ forward proxy কোনো domain-ই block করতে পারে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "CONNECT-এ শুধু youtube.com:443 থাকে। /shorts path TLS-এর ভেতরে, তাই interception ছাড়া proxy path অনুযায়ী আলাদা করতে পারে না; পুরো domain block বা allow-ই সম্ভব।",
+      "whyWrong": {
+        "1": "CONNECT line-এ শুধু host:port, path না।",
+        "2": "Via proxy-র নাম বহন করে, path না; আর HTTPS-এ সেটাও encrypted অংশে।",
+        "3": "Domain block forward proxy খুব সহজেই পারে, hostname খোলা থাকে বলে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q33",
+      "difficulty": "medium",
+      "question": "কোম্পানির production server-গুলোকে শুধু payment gateway আর একটা SMS API-তে যেতে দেওয়া হবে, আর সব বাইরের call-এর log চাই। কোন design?",
+      "options": [
+        "প্রতিটা production server-এর সামনে একটা reverse proxy আর WAF বসানো",
+        "Payment gateway-কে আমাদের network-এর ভেতরে load balancer দিয়ে আনা",
+        "সব server-এর DNS cache বন্ধ করে দেওয়া",
+        "Egress-এ allowlist-ওয়ালা forward proxy, সব call তার মাধ্যমে"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা egress control: ভেতরের machine-এর বাইরে যাওয়া নিয়ন্ত্রণ। Forward proxy-তে allowlist রাখলে শুধু অনুমোদিত domain-এ যাওয়া যায়, আর সব call এক জায়গায় log হয়। Firewall-এ সরাসরি বাইরে যাওয়া বন্ধ রাখলে proxy পাশ কাটানো যায় না।",
+      "whyWrong": {
+        "0": "Reverse proxy আসা traffic সামলায়, বাইরে যাওয়া না।",
+        "1": "বাইরের payment gateway-কে নিজের network-এ আনা যায় না, আর এটা egress নিয়ন্ত্রণও করে না।",
+        "2": "DNS cache বন্ধ করলে বাইরে যাওয়া নিয়ন্ত্রিত হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q34",
+      "difficulty": "medium",
+      "question": "একটা public API-র server-এর IP ফাঁস হয়ে গেছে। Attacker CDN আর NGINX পাশ কাটিয়ে সরাসরি app-এ নকল `X-Forwarded-For` সহ request পাঠাচ্ছে। সবচেয়ে কার্যকর পদক্ষেপ কোনটা?",
+      "options": [
+        "App-এ XFF-এর প্রথম IP-র বদলে দ্বিতীয় IP পড়া, যাতে নকলটা বাদ যায়",
+        "Firewall-এ app server শুধু proxy-র IP থেকে traffic নেবে",
+        "XFF-এর বদলে Via header দিয়ে client IP পড়া",
+        "NGINX-এ gzip বন্ধ করে দেওয়া যাতে header পরিষ্কার থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সরাসরি আসা request-এ কোনো trusted proxy নেই, তাই header-এর কিছুই বিশ্বাসযোগ্য না। Origin-কে শুধু proxy-র IP থেকে পৌঁছানো যায় এমন করলে এই পথটাই বন্ধ হয়।",
+      "whyWrong": {
+        "0": "Attacker যেকোনো সংখ্যক IP লিখতে পারে, তাই অবস্থান বদলালে লাভ নেই।",
+        "2": "Via-তে IP থাকে না, আর সেটাও client লিখতে পারে।",
+        "3": "gzip-এর সাথে header বিশ্বাসযোগ্যতার সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-015-q35",
+      "difficulty": "medium",
+      "question": "পথ: Client → CDN → Edge LB → NGINX → app। NGINX-এ CDN আর Edge LB দুটোর IP range-ই `set_real_ip_from`-এ আছে, `real_ip_header X-Forwarded-For`, কিন্তু `real_ip_recursive off`। NGINX কোন IP-কে client ধরবে?",
+      "options": [
+        "XFF-এর সবচেয়ে ডানের IP, অর্থাৎ CDN-এর",
+        "সবসময় XFF-এর সবচেয়ে বামের IP",
+        "TCP peer-এর IP, header পুরো উপেক্ষা করে",
+        "XFF থেকে এলোমেলোভাবে একটা IP"
+      ],
+      "correctIndex": 0,
+      "explanation": "recursive off হলে real_ip module XFF-এর শুধু শেষ (ডানের) IP নেয়। CDN → Edge → NGINX পথে সেই শেষ IP হলো CDN-এর, client-এর না। recursive on দিলে trusted IP-গুলো বাদ দিয়ে প্রথম অচেনাটা নেয়।",
+      "whyWrong": {
+        "1": "বামের IP real_ip module নেয় না; সেটা client-নিয়ন্ত্রিত।",
+        "2": "Peer trusted হলে header থেকে IP নেওয়া হয়, উপেক্ষা না।",
+        "3": "এখানে কোনো এলোমেলো বাছাই নেই, নিয়ম নির্দিষ্ট।"
+      }
+    },
+    {
+      "id": "sd-day-015-q36",
+      "difficulty": "medium",
+      "question": "একটা খুব জনপ্রিয় ফলাফল page সেকেন্ডে ২,০০০ বার চাওয়া হয়, data প্রতি কয়েক মিনিটে বদলায়। NGINX-এ ১ সেকেন্ডের micro-cache দিলে app-এ সেকেন্ডে মোটামুটি কয়টা request যাবে?",
+      "options": [
+        "প্রায় ১,০০০টা (অর্ধেক request cache থেকে যায়)",
+        "প্রায় ২,০০০টা, cache-এ কোনো লাভ হবে না",
+        "প্রায় ১টা (প্রতি সেকেন্ডে একবার নবায়ন)",
+        "প্রায় ২০০টা (১০% miss ধরে)"
+      ],
+      "correctIndex": 2,
+      "explanation": "১ সেকেন্ডের cache মানে প্রতি সেকেন্ডে একবার miss হয়ে app-এ যায়, বাকি সব HIT। ২,০০০ req/s থেকে app-এ ~১ req/s, আর user সর্বোচ্চ ১ সেকেন্ড পুরনো data দেখে। (একসাথে miss ঠেকাতে proxy_cache_lock কাজে লাগে।)",
+      "whyWrong": {
+        "0": "Cache key একই হলে এক সেকেন্ডে শুধু প্রথমটা miss, অর্ধেক না।",
+        "1": "১ সেকেন্ডও এখানে বিশাল লাভ, কারণ সেকেন্ডে ২,০০০ request।",
+        "3": "Miss হার কোনো নির্দিষ্ট শতাংশ না; TTL-প্রতি একবার।"
+      }
+    },
+    {
+      "id": "sd-day-015-q37",
+      "difficulty": "medium",
+      "question": "Corporate proxy দিয়ে অফিসের সব traffic যায়, আর proxy একটাই machine। এটা down হলে কর্মীরা যাতে কাজ চালাতে পারে কিন্তু নিরাপত্তা-নীতি ঠিক থাকে, এই দুটোর মধ্যে মূল সিদ্ধান্ত কী?",
+      "options": [
+        "Proxy-র cache size বাড়ানো নাকি কমানো, যাতে বেশি hit আসে",
+        "HTTP/1.1 নাকি HTTP/2 ব্যবহার করা",
+        "Fail-open (সরাসরি যেতে দেওয়া) নাকি fail-closed (বন্ধ)",
+        "gzip level ১ নাকি ৯ রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Fail-open-এ কাজ চলে কিন্তু সেই সময় filtering আর log থাকে না; fail-closed-এ নিরাপদ কিন্তু সবাই internet-ছাড়া। যেটাই বাছুন, proxy-কে জোড়ায় চালানোই আসল সমাধান।",
+      "whyWrong": {
+        "0": "Cache size availability-র প্রশ্নের উত্তর দেয় না।",
+        "1": "Protocol version proxy down হওয়ার পরের আচরণ ঠিক করে না।",
+        "3": "Compression level এখানে অপ্রাসঙ্গিক।"
+      }
+    },
+    {
+      "id": "sd-day-015-q38",
+      "difficulty": "medium",
+      "question": "একই NGINX config-এ TLS termination, `/api` আর `/static` আলাদা upstream-এ পাঠানো, আর `limit_req` দিয়ে rate limit করা হচ্ছে। এটাকে কী বলা সবচেয়ে সঠিক?",
+      "options": [
+        "এটা forward proxy, কারণ সব request এক জায়গা দিয়ে যায়",
+        "এটা service mesh, কারণ একাধিক upstream আছে",
+        "এটা transparent proxy, কারণ client কিছু configure করেনি",
+        "এটা reverse proxy, সাথে LB আর gateway-র কিছু কাজ"
+      ],
+      "correctIndex": 3,
+      "explanation": "Server-এর সামনে বসে সে reverse proxy। Routing আর ভাগ করা LB-র কাজ, rate limit API gateway-ধাঁচের কাজ। ভূমিকাগুলো একে অপরের সাথে মিশে যায়, তাই 'কোন কাজ দরকার' প্রশ্নটাই আসল।",
+      "whyWrong": {
+        "0": "Forward proxy client-এর হয়ে বাইরে যায়; এটা server-এর সামনে বসেছে।",
+        "1": "Service mesh মানে প্রতিটা service-এর পাশে sidecar আর control plane, একটা সামনের proxy না।",
+        "2": "Transparent proxy মানে network traffic চুপচাপ ঘোরানো forward proxy; reverse proxy-তে client কিছু configure না করাটা স্বাভাবিক।"
+      }
+    },
+    {
+      "id": "sd-day-015-q39",
+      "difficulty": "medium",
+      "question": "Developer laptop-এ `HTTPS_PROXY` set করা আছে অফিসের proxy-তে। এখন local `http://localhost:4000`-এ চলা service-কে call করলেও request proxy-তে যাচ্ছে আর fail করছে। কী ঠিক করবেন?",
+      "options": [
+        "HTTPS_PROXY-র বদলে HTTP_PROXY-তে একই address দেওয়া",
+        "Proxy-তে localhost-এর জন্য cache চালু করা",
+        "Local service-এ gzip বন্ধ করা",
+        "NO_PROXY-তে localhost আর ভেতরের domain যোগ করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "NO_PROXY বলে দেয় কোন host proxy ছাড়া সরাসরি যাবে। localhost বা .internal-এর মতো ভেতরের address সেখানে না থাকলে tool সেগুলোও proxy দিয়ে পাঠাতে চায়, আর proxy সেগুলোতে পৌঁছাতে পারে না।",
+      "whyWrong": {
+        "0": "Variable-এর নাম বদলালে localhost-এর call তবুও proxy-তে যাবে।",
+        "1": "Proxy নিজের localhost-এ যাবে, developer-এর laptop-এ না; cache সমাধান না।",
+        "2": "Compression-এর সাথে কোন host proxy দিয়ে যাবে তার সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-015-q40",
+      "difficulty": "medium",
+      "question": "একজন engineer ভাবলেন, \"compression তো ভালো\", তাই NGINX-এর gzip_types-এ image/jpeg আর video/mp4 যোগ করলেন। Traffic-এর বড় অংশ ছবি আর video। কী আশা করবেন?",
+      "options": [
+        "আকার প্রায় একই থাকবে, কিন্তু proxy-র CPU খরচ বাড়বে",
+        "ছবি আর video প্রায় অর্ধেক ছোট হবে, bandwidth বিল কমবে",
+        "Browser compressed JPEG খুলতে পারবে না, ছবি ভেঙে যাবে",
+        "Cache কাজ করা বন্ধ হবে, কারণ compressed file cache হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "JPEG আর MP4 নিজেরাই compressed format, তাই gzip তাদের প্রায় ছোট করতে পারে না। লাভ ছাড়াই প্রতিটা response-এ CPU খরচ হয়। এজন্য gzip_types-এ শুধু text-ধর্মী type রাখা হয়।",
+      "whyWrong": {
+        "1": "আগে থেকে compressed data-তে gzip-এর আর তেমন কিছু করার থাকে না।",
+        "2": "Browser Content-Encoding: gzip দেখে আগে খুলে নেয়, ছবি ভাঙে না।",
+        "3": "Compressed response-ও NGINX cache করতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q41",
+      "difficulty": "hard",
+      "question": "NGINX-এ `set_real_ip_from 10.0.0.0/8; real_ip_header X-Forwarded-For; real_ip_recursive on;`। একটা request-এর TCP peer 10.0.2.4, আর `X-Forwarded-For: 203.0.113.50, 198.51.100.8, 10.0.1.9`। $remote_addr কী হবে?",
+      "options": ["198.51.100.8", "203.0.113.50", "10.0.1.9", "10.0.2.4"],
+      "correctIndex": 0,
+      "explanation": "Peer 10.0.2.4 trusted, তাই header দেখা হয়। ডান থেকে: 10.0.1.9 trusted (10/8), বাদ; 198.51.100.8 trusted না, তাই এটাই client। 203.0.113.50 তার বামে, client-নিয়ন্ত্রিত হতে পারে।",
+      "whyWrong": {
+        "1": "এটা সবচেয়ে বামের IP; client নিজে লিখে থাকতে পারে, recursive নিয়মে পৌঁছানো হয় না।",
+        "2": "10.0.1.9 trusted range-এ, তাই বাদ যায়।",
+        "3": "Peer trusted হওয়ায় header থেকে IP নেওয়া হয়, peer নিজে client না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q42",
+      "difficulty": "hard",
+      "question": "উপরের একই config, কিন্তু এবার TCP peer 198.51.100.77 (internet-এর একটা IP), আর `X-Forwarded-For: 10.0.0.5`। $remote_addr কী হবে, আর কেন?",
+      "options": [
+        "10.0.0.5, কারণ এটা trusted range-এর ভেতরের একটা IP",
+        "198.51.100.77, কারণ peer untrusted, header উপেক্ষিত",
+        "দুটোই না; NGINX request বাতিল করে 400 দেবে",
+        "10.0.0.5, কারণ real_ip_recursive সবসময় header মানে"
+      ],
+      "correctIndex": 1,
+      "explanation": "real_ip module header মানে শুধু peer trusted হলে। এখানে peer internet থেকে সরাসরি, তাই XFF-এ যা-ই লেখা থাকুক উপেক্ষিত। নইলে যে কেউ নিজেকে ভেতরের 10.x IP দেখিয়ে allowlist পার হতো।",
+      "whyWrong": {
+        "0": "Header-এর IP trusted range-এ থাকা যথেষ্ট না; peer trusted হতে হয়।",
+        "2": "NGINX এই অবস্থায় request বাতিল করে না, শুধু header উপেক্ষা করে।",
+        "3": "recursive শুধু ঠিক করে কিভাবে পড়বে, peer untrusted হলে header পড়াই হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q43",
+      "difficulty": "hard",
+      "question": "একটা NGINX একই upstream ip:port-এ keep-alive ছাড়া প্রতি সেকেন্ডে R request পাঠায়। Linux-এ TIME_WAIT ৬০ সেকেন্ড, ephemeral port range 32768-60999। মোটামুটি কোন R-এর উপরে port শেষ হওয়ার ঝুঁকি শুরু হয়?",
+      "options": [
+        "প্রায় ২৮,০০০ req/s",
+        "প্রায় ৪৭০ req/s",
+        "প্রায় ১,০০০ req/s",
+        "প্রায় ৬০ req/s"
+      ],
+      "correctIndex": 1,
+      "explanation": "Port আছে 60999 − 32768 + 1 = ২৮,২৩২টা। প্রতিটা বন্ধ connection ৬০ সেকেন্ড port ধরে রাখে, তাই টেকসই হার ২৮,২৩২ ÷ ৬০ ≈ ৪৭০ নতুন connection/s। Keep-alive ছাড়া প্রতিটা request একটা নতুন connection।",
+      "whyWrong": {
+        "0": "এটা মোট port সংখ্যা, TIME_WAIT-এর ৬০ সেকেন্ড দিয়ে ভাগ করা হয়নি।",
+        "2": "১,০০০ req/s-এ ৬০,০০০ TIME_WAIT লাগত, সীমা তার অনেক আগেই পেরিয়ে যায়।",
+        "3": "৬০ শুধু TIME_WAIT-এর সেকেন্ড, port-এর সংখ্যা দিয়ে ভাগ করার ফল না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q44",
+      "difficulty": "hard",
+      "question": "Keep-alive চালুর পরে একটা upstream connection গড়ে ২৫০টা request বয়ে নেয়। ১,০০০ req/s-এ এখন TIME_WAIT-এ মোটামুটি কয়টা socket থাকবে (TIME_WAIT ৬০ সেকেন্ড)?",
+      "options": [
+        "প্রায় ৬০,০০০টা",
+        "প্রায় ২৪০টা",
+        "প্রায় ৪টা",
+        "প্রায় ১৫,০০০টা"
+      ],
+      "correctIndex": 1,
+      "explanation": "নতুন connection লাগে ১,০০০ ÷ ২৫০ = সেকেন্ডে ৪টা। প্রতিটা ৬০ সেকেন্ড TIME_WAIT-এ, তাই ৪ × ৬০ = ২৪০। Keep-alive ছাড়া এটা হতো ৬০,০০০।",
+      "whyWrong": {
+        "0": "এটা keep-alive ছাড়া প্রতিটা request-এ নতুন connection ধরে হিসাব।",
+        "2": "এটা শুধু প্রতি সেকেন্ডের নতুন connection, ৬০ সেকেন্ড ধরে জমা গোনা হয়নি।",
+        "3": "১৫,০০০ = ৬০,০০০ ÷ ৪, ভুল সংখ্যা দিয়ে ভাগ।"
+      }
+    },
+    {
+      "id": "sd-day-015-q45",
+      "difficulty": "hard",
+      "question": "একটা bank-এর security team চায় TLS interception দিয়ে malware ধরতে। নিচের কোন ঝুঁকিটা interception-এর কারণে **নতুন করে** তৈরি হয়, যা আগে ছিল না?",
+      "options": [
+        "কর্মীরা কোন কোন domain-এ যাচ্ছে proxy তা জেনে যায়, যেটা আগে সে কোনোভাবেই জানতে পারত না",
+        "বাইরের server কর্মীদের আসল IP দেখতে পায়",
+        "Root CA-র private key চুরি হলে যেকোনো site-এর বিশ্বাসযোগ্য নকল certificate বানানো যায়",
+        "HTTP site-এর content proxy পড়তে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Interception-এর জন্য প্রতিটা device প্রতিষ্ঠানের CA-কে বিশ্বাস করে, তাই সেই key এখন সবার সব HTTPS-এর চাবি। এটা একটা নতুন ও বিশাল আক্রমণ-লক্ষ্য। Domain দেখা আর HTTP পড়া interception ছাড়াই সম্ভব ছিল।",
+      "whyWrong": {
+        "0": "Domain CONNECT line থেকে interception ছাড়াও জানা যেত।",
+        "1": "Forward proxy থাকলে বাইরের server proxy-র IP দেখে, কর্মীর না; interception এটা বদলায় না।",
+        "3": "HTTP-র content সাধারণ forward proxy আগেই পড়তে পারত।"
+      }
+    },
+    {
+      "id": "sd-day-015-q46",
+      "difficulty": "hard",
+      "question": "Interception-ওয়ালা proxy আসল server-এর সাথে TLS করার সময় certificate যাচাই ঢিলেঢালা রেখেছে (expired বা ভুল নামের certificate-ও মেনে নেয়)। এর ফল কী?",
+      "options": [
+        "কোনো ক্ষতি নেই, কারণ browser নিজেই সবসময় আসল server-এর certificate যাচাই করে",
+        "Browser সব site-এ certificate error দেখাতে থাকবে",
+        "Proxy-র cache কাজ করা বন্ধ করে দেবে",
+        "নকল server-এর সামনেও কর্মীর browser কোনো সতর্কবার্তা দেখাবে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "Interception-এ browser আর আসল certificate দেখে না, দেখে proxy-র বানানো বিশ্বাসযোগ্য certificate। তাই আসল server যাচাইয়ের পুরো দায়িত্ব proxy-র। Proxy ঢিলে হলে attacker-এর নকল server-ও কর্মীর কাছে 'সবুজ তালা' নিয়ে আসবে।",
+      "whyWrong": {
+        "0": "Browser এখন proxy-র certificate দেখে, আসলটা না; তাই নিজে যাচাই করতে পারে না।",
+        "1": "Browser proxy-র CA বিশ্বাস করে, তাই সতর্কবার্তা আসবে না, সেটাই বিপদ।",
+        "2": "Upstream যাচাই আর cache আলাদা বিষয়।"
+      }
+    },
+    {
+      "id": "sd-day-015-q47",
+      "difficulty": "hard",
+      "question": "Hotel-এর Wi-Fi-তে transparent proxy আছে। একজন অতিথি HTTPS-এ একটা site খুলছেন, client-এ কোনো proxy setting নেই, CA-ও বসানো নেই। Proxy সর্বোচ্চ কী দেখতে পারে, আর ECH (Encrypted Client Hello) চালু থাকলে কী বদলায়?",
+      "options": [
+        "IP আর SNI-র hostname দেখে; ECH থাকলে SNI-ও লুকায়",
+        "পুরো URL দেখে; ECH চালু থাকলে শুধু path লুকায়, hostname আর query খোলা থাকে",
+        "কিছুই দেখে না; ECH চালু থাকলে proxy পুরো content দেখতে পায়",
+        "শুধু port দেখে; ECH চালু থাকলে client-এর password দেখা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Transparent proxy-তে CONNECT নেই, তাই hostname জানার উপায় TLS ClientHello-র SNI আর destination IP। ECH ClientHello-র সংবেদনশীল অংশ (SNI সহ) encrypt করে, তখন proxy শুধু IP (আর সাধারণত shared front-end-এর নাম) দেখে।",
+      "whyWrong": {
+        "1": "HTTPS-এ path সবসময় encrypted, transparent proxy-ও দেখে না।",
+        "2": "IP আর SNI খোলা থাকে, তাই 'কিছুই না' ভুল; ECH গোপনীয়তা বাড়ায়, কমায় না।",
+        "3": "Destination IP-ও দেখা যায়, আর ECH কখনো password খোলে না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q48",
+      "difficulty": "hard",
+      "question": "একটা পুরনো CGI-ধাঁচের app outbound HTTP call-এর জন্য `HTTP_PROXY` environment variable মানে। Attacker request-এ `Proxy: http://evil.example:8080` header পাঠাল। কী ঘটতে পারে?",
+      "options": [
+        "কিছুই না, কারণ Proxy নামে কোনো header server বা app কখনো পড়ে না",
+        "Browser attacker-এর proxy দিয়ে যাবে, server-এর কিছু হবে না",
+        "Header-টা HTTP_PROXY হয়ে app-এর outbound call ঘুরিয়ে দিতে পারে",
+        "Server ভুল header পেয়ে সাথে সাথে 407 ফেরত দেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা httpoxy সমস্যা: CGI নিয়মে প্রতিটা request header HTTP_<নাম> variable হয়, তাই Proxy header হয়ে যায় HTTP_PROXY। App-এর library সেটা proxy setting ভেবে নিজের outbound request (হয়তো secret সহ) attacker-এর কাছে পাঠায়। সমাধান: Proxy header ছেঁটে ফেলা।",
+      "whyWrong": {
+        "0": "CGI পরিবেশে প্রতিটা header variable-এ রূপ নেয়, নাম যা-ই হোক।",
+        "1": "Header server-এ পৌঁছায়, browser-এর আচরণ বদলায় না।",
+        "3": "407 proxy authentication-এর জন্য, এই header-এ server 407 দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q49",
+      "difficulty": "hard",
+      "question": "Front-end proxy একটা request-এর শেষ ঠিক করে `Content-Length` দিয়ে, কিন্তু পেছনের app server একই request-এ `Transfer-Encoding: chunked` মানে। Attacker দুটো header একসাথে পাঠাচ্ছে। এটা কোন ধরনের আক্রমণের দরজা খোলে?",
+      "options": [
+        "Slowloris, কারণ দুটো header-এর মাঝে অনেক সময় নিয়ে ধীরে আসে",
+        "Cache stampede, কারণ একই key-তে অনেক miss",
+        "DNS spoofing, কারণ host header বদলে যায়",
+        "HTTP request smuggling, request-এর সীমানা নিয়ে অমিল"
+      ],
+      "correctIndex": 3,
+      "explanation": "Proxy আর app request কোথায় শেষ তা নিয়ে একমত না হলে attacker একটা request-এর body-তে আরেকটা request লুকাতে পারে। Proxy সেটা দেখে না, কিন্তু app সেটাকে আলাদা request হিসেবে চালায়, proxy-র নিয়ম পাশ কাটিয়ে। সমাধান: অস্পষ্ট request প্রত্যাখ্যান, দুই পাশ হালনাগাদ।",
+      "whyWrong": {
+        "0": "Slowloris সময় নিয়ে connection আটকায়, header-এর অর্থের অমিল না।",
+        "1": "Stampede cache miss-এর সমস্যা, request সীমানার না।",
+        "2": "DNS spoofing নামের ঠিকানা জালিয়াতি, এখানে প্রাসঙ্গিক না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q50",
+      "difficulty": "hard",
+      "question": "Slowloris attack-এ attacker ৮,০০০টা connection খুলে প্রতি ১০ সেকেন্ডে একটা header লাইন পাঠায়। App server thread-প্রতি-connection, সর্বোচ্চ ৫১২ thread। সামনে NGINX আছে, `client_header_timeout 15s`। কোন বক্তব্য সবচেয়ে সঠিক?",
+      "options": [
+        "App নিরাপদ; পুরো header ১৫s-এ না এলে NGINX 408 দিয়ে কাটে, তবে বারবার নতুন connection ঠেকাতে limit_conn লাগে",
+        "App-এর ৫১২ thread শেষ হয়ে যাবে, কারণ NGINX প্রতিটা আসা connection সাথে সাথে সরাসরি app server-এ খুলে দেয়",
+        "১০s বিরতি ১৫s timeout ছোঁয় না, কারণ timeout শুধু দুই লাইনের মাঝের নীরবতা মাপে; তাই NGINX-এ connection জমতেই থাকবে",
+        "Attack ব্যর্থ হবেই, কারণ ৮,০০০ connection একসাথে চালাতে attacker-এর বিশাল bandwidth আর অনেক শক্তিশালী machine লাগে"
+      ],
+      "correctIndex": 0,
+      "explanation": "NGINX পুরো header না পাওয়া পর্যন্ত upstream-এ কিছু পাঠায় না, তাই app-এর thread আটকায় না। client_header_timeout পুরো header পড়ার মোট সময় মাপে: ১৫s-এর মধ্যে header শেষ না হলে 408, তাই প্রতি ১০s-এ এক লাইন পাঠিয়ে connection অনন্তকাল ধরে রাখা যায় না। তবু attacker বারবার নতুন connection খুলতে পারে, তাই IP-প্রতি limit_conn-ও দরকার।",
+      "whyWrong": {
+        "1": "Reverse proxy পুরো request header হাতে না পেলে upstream connection খোলে না, তাই app thread খরচ হয় না।",
+        "2": "এটা client_body_timeout-এর নিয়ম। client_header_timeout পুরো header-এর মোট সময় মাপে, তাই ১৫s পরে connection কাটে।",
+        "3": "Slowloris খুব কম bandwidth-এ চলে, একটা সাধারণ machine থেকেই হাজার connection ধরে রাখা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-015-q51",
+      "difficulty": "hard",
+      "question": "আপনি একটা internal API-র সামনে NGINX-এ `proxy_cache` চালু করলেন। Cache key default (`$scheme$proxy_host$request_uri`)। `/api/me` endpoint user-এর cookie দেখে profile ফেরত দেয়, Cache-Control header দেয় না, আর `proxy_cache_valid 200 5m` আছে। কী ঘটবে?",
+      "options": [
+        "প্রতিটা user নিজের cookie অনুযায়ী আলাদা cache entry পাবে, কোনো সমস্যা নেই",
+        "NGINX cookie দেখে নিজে থেকেই cache বন্ধ রাখে, তাই কখনো HIT হবে না",
+        "Cache শুধু HTTPS-এ কাজ করে, তাই এখানে কিছুই cache হবে না",
+        "প্রথম user-এর profile ৫ মিনিট ধরে সবাই দেখতে পারে, কারণ key-তে cookie নেই"
+      ],
+      "correctIndex": 3,
+      "explanation": "Key-তে cookie না থাকায় সব user-এর /api/me একই key। Origin Cache-Control না দিলে proxy_cache_valid অনুযায়ী ৫ মিনিট রাখে। ফলে একজনের ব্যক্তিগত তথ্য আরেকজন পায়। সমাধান: এমন endpoint-এ Cache-Control: private/no-store, আর cache শুধু নির্দিষ্ট path-এ।",
+      "whyWrong": {
+        "0": "Default key-তে cookie নেই, তাই user অনুযায়ী আলাদা entry হয় না।",
+        "1": "Request-এ cookie থাকলেই NGINX cache এড়ায় না; response-এ Set-Cookie থাকলে default-এ cache করে না, কিন্তু এখানে তা বলা নেই।",
+        "2": "proxy_cache HTTP আর HTTPS দুটোতেই কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-015-q52",
+      "difficulty": "hard",
+      "question": "Kubernetes-এ ৪০টা service, প্রতিটার ১০টা pod। Service mesh-এর sidecar প্রতি pod-এ ৫০ MB memory নেয়। শুধু sidecar-এর জন্য মোট কত memory, আর একটা request A → B → C পথে গেলে sidecar কয়বার পেরোয়?",
+      "options": ["২ GB; ২ বার", "২০ GB; ৪ বার", "২০ GB; ২ বার", "২ GB; ৪ বার"],
+      "correctIndex": 1,
+      "explanation": "৪০ × ১০ = ৪০০ pod, × ৫০ MB = ২০,০০০ MB ≈ ২০ GB। প্রতিটা hop-এ দুটো sidecar (পাঠানোর আর নেওয়ার): A→B-তে A আর B-র sidecar, B→C-তে আবার B আর C-র, মোট ৪ বার।",
+      "whyWrong": {
+        "0": "Pod সংখ্যা ৪০০, ৪০ না; আর প্রতিটা hop-এ দুটো করে sidecar।",
+        "2": "Memory ঠিক, কিন্তু প্রতিটা hop-এ দুই প্রান্তের sidecar পেরোয়, তাই ৪ বার।",
+        "3": "পেরোনোর সংখ্যা ঠিক, কিন্তু ৪০০ × ৫০ MB = ২০ GB, ২ GB না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q53",
+      "difficulty": "hard",
+      "question": "একটা web app-এর সামনে Cloudflare, তারপর AWS ALB, তারপর NGINX, তারপর app। App-এর rate limiter X-Real-IP মানে, যেটা NGINX `$remote_addr` থেকে লেখে। NGINX-এ real_ip সেটআপ নেই। Rate limiter আসলে কোন IP অনুযায়ী গুনছে?",
+      "options": [
+        "ALB node-গুলোর IP, তাই অল্প কয়েকটা 'user'",
+        "প্রতিটা visitor-এর আসল IP, কারণ ALB আর Cloudflare দুজনেই XFF দেয়",
+        "Cloudflare-এর edge IP, কারণ প্রথম proxy সেটা",
+        "NGINX-এর নিজের IP"
+      ],
+      "correctIndex": 0,
+      "explanation": "real_ip না থাকলে NGINX-এর $remote_addr হলো TCP peer, মানে ALB node। তাই হাজার visitor অল্প কয়েকটা IP-তে জমা হয়, আর একজনের বাড়াবাড়িতে বাকিরাও block হয়। সমাধান: Cloudflare আর ALB-র range trusted করে recursive real_ip।",
+      "whyWrong": {
+        "1": "আসল IP পেতে real_ip বা header parse লাগে, এখানে নেই।",
+        "2": "NGINX-এর সরাসরি peer ALB, Cloudflare না।",
+        "3": "$remote_addr হলো যে NGINX-কে call করেছে তার IP, NGINX নিজের না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q54",
+      "difficulty": "hard",
+      "question": "NGINX-এর পেছনে app HTTP/1.1 keep-alive দিচ্ছে। Monitoring-এ দেখা যাচ্ছে প্রতি request-এ upstream connection নতুন খুলছে। Config-এ `upstream { keepalive 32; }` আর `proxy_http_version 1.1` আছে, কিন্তু `proxy_set_header Connection` নেই, আর client-রা `Connection: close` পাঠায়। সমস্যা কোথায়?",
+      "options": [
+        "keepalive ৩২ খুব কম, ৩২০ করলে প্রতিটা request নিজের connection পাবে",
+        "Client-এর Connection: close upstream-এ যাচ্ছে, app বন্ধ করছে",
+        "HTTP/1.1-এ keep-alive সমর্থিত না, HTTP/2 লাগবে",
+        "App-এর worker সংখ্যা বেশি, তাই connection ভাগ হচ্ছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Connection একটা hop-by-hop header, upstream-এ যাওয়া উচিত না। proxy_set_header Connection \"\" না দিলে client-এর close নির্দেশ app পর্যন্ত যায়, app উত্তর দিয়ে connection বন্ধ করে, pool অর্থহীন। খালি Connection header দিলে এটা ঠিক হয়।",
+      "whyWrong": {
+        "0": "Pool আকার যা-ই হোক, প্রতিটা connection বন্ধ হয়ে গেলে reuse হবে না।",
+        "2": "HTTP/1.1-এ keep-alive default আচরণ।",
+        "3": "Worker সংখ্যা connection প্রতিবার বন্ধ হওয়ার কারণ না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q55",
+      "difficulty": "hard",
+      "question": "একটা SSE endpoint-এ `proxy_buffering off` দেওয়া হলো। আর কোন setting না বদলালে প্রায় এক মিনিট পরে stream কেটে যেতে পারে, যদি app লম্বা সময় কিছু না পাঠায়?",
+      "options": [
+        "gzip_min_length",
+        "client_max_body_size",
+        "proxy_cache_valid",
+        "proxy_read_timeout"
+      ],
+      "correctIndex": 3,
+      "explanation": "proxy_read_timeout (default ৬০s) মাপে upstream থেকে দুটো read-এর মাঝের নীরবতা। SSE-তে বিরতি এর বেশি হলে NGINX connection বন্ধ করে। Timeout বাড়ানো বা app থেকে নিয়মিত heartbeat পাঠানো দরকার।",
+      "whyWrong": {
+        "0": "এটা compression-এর ন্যূনতম আকার, stream কাটে না।",
+        "1": "এটা request body-র সীমা।",
+        "2": "এটা cache-এর মেয়াদ, buffering off-এ প্রাসঙ্গিক না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q56",
+      "difficulty": "hard",
+      "question": "একটা অফিস PAC file-এ লিখেছে `return \"PROXY p1:3128; PROXY p2:3128\";` (শেষে DIRECT নেই)। দুটো proxy-ই down। কী ঘটবে, আর এটা কোন নীতি?",
+      "options": [
+        "Browser বাইরে যেতে পারবে না; fail-closed",
+        "Browser সরাসরি internet-এ যাবে; fail-open",
+        "Browser p1-এর cache থেকে সব পাবে; fail-safe",
+        "PAC file নিজে থেকে DIRECT যোগ করবে; auto-failover"
+      ],
+      "correctIndex": 0,
+      "explanation": "PAC-এর তালিকা ক্রমে চেষ্টা হয়; DIRECT না থাকলে সব proxy fail হলে বাইরে যাওয়ার পথ নেই। এটা fail-closed: নিরাপদ, কিন্তু proxy down মানে সবার কাজ বন্ধ, তাই proxy-র redundancy জরুরি।",
+      "whyWrong": {
+        "1": "Fail-open-এর জন্য তালিকায় DIRECT লাগত।",
+        "2": "Proxy down হলে তার cache-ও পৌঁছানো যায় না।",
+        "3": "PAC file শুধু যা লেখা তাই ফেরত দেয়, নিজে কিছু যোগ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q57",
+      "difficulty": "hard",
+      "question": "একটা payment API-র সামনে reverse proxy upstream error-এ request অন্য server-এ retry করে। `POST /charge` upstream-এ পৌঁছে টাকা কাটল, তারপর উত্তর পাঠানোর আগে connection কাটল। Proxy-র কোন আচরণ নিরাপদ?",
+      "options": [
+        "সব error-এ সব method retry করা, যাতে user কখনো কোনো error না দেখে আর payment সফল হয়",
+        "POST-কে GET-এ বদলে retry করা, কারণ GET নিরাপদ",
+        "Retry-র আগে response cache থেকে দেওয়া",
+        "পাঠানো হয়ে গেলে POST retry না করা, idempotency key ছাড়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Proxy জানে না প্রথম server কাজটা করেছিল কিনা। POST আবার পাঠালে টাকা দুবার কাটতে পারে। NGINX-ও default-এ পাঠানো হয়ে যাওয়া non-idempotent request পরের server-এ retry করে না; নিরাপদ retry-র জন্য idempotency key লাগে।",
+      "whyWrong": {
+        "0": "সব retry করলে duplicate charge-এর ঝুঁকি।",
+        "1": "Method বদলালে request-এর অর্থই বদলে যায়, আর server ভুল কাজ করবে।",
+        "2": "Payment-এর response cache থেকে দেওয়া অর্থহীন ও বিপজ্জনক।"
+      }
+    },
+    {
+      "id": "sd-day-015-q58",
+      "difficulty": "hard",
+      "question": "একটা SaaS-এর API সব customer-এর জন্য একটা reverse proxy দিয়ে চলে। Product team চায়: প্রতি API key-তে মাসিক quota, key অনুযায়ী আলাদা rate limit, request validation আর developer portal। Platform team কী সুপারিশ করবে?",
+      "options": [
+        "Forward proxy বসানো, কারণ client-রা প্রতিটা request-এ API key পাঠায়",
+        "Service mesh-এর sidecar-কে সব customer-এর laptop-এ বসানো",
+        "এই কাজগুলোর জন্য একটা API gateway বিবেচনা করা",
+        "শুধু L4 load balancer দিয়ে key অনুযায়ী ভাগ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Key-ভিত্তিক quota, validation আর developer portal হলো API gateway-র মূল জোর। Reverse proxy-তে কিছু হাতে লিখে করা যায়, কিন্তু এই পরিমাণ API-কেন্দ্রিক নিয়মে gateway-ই মানানসই। (বিস্তারিত Day 16।)",
+      "whyWrong": {
+        "0": "Forward proxy client-এর দিকে কাজ করে, API মালিকের নিয়ম চাপায় না।",
+        "1": "Sidecar ভেতরের service-এর পাশে বসে, customer-এর machine-এ না।",
+        "3": "L4 LB HTTP header বা API key দেখতেই পায় না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q59",
+      "difficulty": "hard",
+      "question": "Squid-এ caching চালু থাকা একটা অফিসে log দেখা গেল বেশিরভাগ লাইন TCP_TUNNEL, cache hit ratio প্রায় শূন্য। সবচেয়ে সম্ভাব্য ব্যাখ্যা কী?",
+      "options": [
+        "Squid-এর cache disk ভর্তি হয়ে গেছে, তাই নতুন কিছু রাখতে পারছে না",
+        "Client-রা gzip চায়, তাই proxy cache করে না",
+        "বেশিরভাগ traffic HTTPS tunnel, যার ভেতর proxy দেখে না",
+        "Squid শুধু POST request cache করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "TCP_TUNNEL মানে CONNECT tunnel: Squid encrypted bytes পার করছে, URL বা response দেখছে না, তাই cache করার কিছু নেই। আজকের web প্রায় পুরোটা HTTPS, তাই interception ছাড়া forward proxy caching-এর লাভ খুব সীমিত।",
+      "whyWrong": {
+        "0": "Disk ভর্তি হলে পুরনো entry সরে যায়; log-এ TCP_TUNNEL-এর আধিক্য এর লক্ষণ না।",
+        "1": "gzip-যুক্ত response-ও cache করা যায়।",
+        "3": "Squid মূলত GET response cache করে, POST সাধারণত না।"
+      }
+    },
+    {
+      "id": "sd-day-015-q60",
+      "difficulty": "hard",
+      "question": "RFC 7239-এর `Forwarded` header-এ একটা IPv6 client কিভাবে লেখা হয়?",
+      "options": [
+        "Forwarded: for=2001:db8:cafe::17",
+        "Forwarded: ipv6=2001:db8:cafe::17",
+        "Forwarded: for=\"[2001:db8:cafe::17]\"",
+        "Forwarded: client=[2001:db8:cafe::17]"
+      ],
+      "correctIndex": 2,
+      "explanation": "RFC 7239 অনুযায়ী IPv6 address square bracket-এর ভেতরে আর পুরো মান quote-এর ভেতরে লিখতে হয়, কারণ ':' ছাড়া এটা parse করা অস্পষ্ট হয়ে যায়। Parameter-এর নাম for (এছাড়া by, host, proto)।",
+      "whyWrong": {
+        "0": "Bracket আর quote ছাড়া colon-যুক্ত মান অবৈধ।",
+        "1": "ipv6 নামে কোনো parameter নেই; for ব্যবহার হয়।",
+        "3": "client নামে parameter নেই, আর quote ছাড়া bracket-ও বৈধ না।"
+      }
+    }
+  ]
+}

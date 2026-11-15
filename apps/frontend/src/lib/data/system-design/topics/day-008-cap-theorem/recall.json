@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-008",
+  "points": [
+    {
+      "term": "Network Partition",
+      "prompt": "Network partition কী, আর কেন একে 'এড়ানো যায় না' বলা হয়?",
+      "answer": "Partition মানে node-গুলো দলে ভাগ হয়ে গেছে: দলের ভেতরে কথা চলে, দলের বাইরে message হারায় বা খুব দেরি করে। কাটা fiber, নষ্ট switch, ভুল firewall rule বা লম্বা pause, যেকোনো কারণে হতে পারে। Network দিয়ে যুক্ত যেকোনো system-এ এটা একদিন ঘটবেই, তাই P বেছে নেওয়ার জিনিস না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Consistency (Linearizability)",
+      "prompt": "CAP-এর C ঠিক কী বোঝায়, আর এটা ACID-এর C থেকে কিভাবে আলাদা?",
+      "answer": "CAP-এর C মানে linearizability: প্রতিটা read সর্বশেষ সফল write-এর মান দেখে, যেন data-র একটাই কপি আছে। ACID-এর C মানে database-এর নিয়ম (যেমন balance ঋণাত্মক না) সবসময় ঠিক থাকা, যেটা একটা machine-এও প্রযোজ্য। নাম এক, অর্থ পুরো আলাদা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Availability (CAP অর্থে)",
+      "prompt": "CAP-এর A কী, আর এটা 99.9% uptime থেকে কেন আলাদা?",
+      "answer": "CAP-এর A মানে প্রতিটা সচল node তার কাছে আসা প্রতিটা request-এ শেষমেশ non-error উত্তর দেবে, partition চলাকালীনও। Uptime percentage একটা পরিসংখ্যান (কত ভাগ সময় সফল), আর CAP-এর A একটা হ্যাঁ/না শর্ত। একটা CP system-ও বাস্তবে খুব উঁচু uptime দিতে পারে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Partition-এ C না A",
+      "prompt": "CAP Theorem আসলে কী বলে? 'তিনটা থেকে যেকোনো দুটো' কেন ভুল পড়া?",
+      "answer": "Partition হলে, যে পাশে সর্বশেষ data নেই সেখানে উত্তর দিলে C যায়, না দিলে A যায়; তাই partition-এর সময় C আর A-র একটা বাছতে হয়। Partition না থাকলে দুটোই পাওয়া যায়। P বাছাইয়ের জিনিস না, তাই 'CA distributed system' মানে আসলে partition হবে না ধরে নেওয়া।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "CP বনাম AP আচরণ",
+      "prompt": "CP আর AP আচরণে partition-এর সময় user কী দেখে? কোনটা কোথায় মানায়?",
+      "answer": "CP-তে বিচ্ছিন্ন পাশ error দেয় বা অপেক্ষা করায়, পুরনো data দেয় না: payment, balance, শেষ seat/stock, lock-এ মানায়। AP-তে বিচ্ছিন্ন পাশ নিজের কপি থেকে উত্তর দেয়, পরে মেলায়: like counter, cart-এ item যোগ, feed-এ মানায়। সিদ্ধান্তের প্রশ্ন: ভুল উত্তর বেশি ক্ষতিকর, নাকি উত্তর না দেওয়া?",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "প্রতিটা Operation-এর সিদ্ধান্ত",
+      "prompt": "'এই database CP' বা 'আমাদের system AP', এভাবে বলা কেন বিভ্রান্তিকর?",
+      "answer": "একই app-এ ticket বিক্রি CP আর 'কতজন দেখছে' AP হতে পারে। আর অনেক database-এ consistency level বা read option দিয়ে প্রতিটা query-তে আচরণ বদলানো যায় (Cassandra ONE বনাম QUORUM, etcd linearizable বনাম serializable)। তাই প্রশ্ন করা উচিত: partition হলে এই নির্দিষ্ট read বা write-এর কী হয়?",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Quorum ও R + W > N",
+      "prompt": "R + W > N মানে কী, আর N = 3-এ W = 2, R = 2 কেন জনপ্রিয়?",
+      "answer": "N কপি থাকলে W replica-র নিশ্চয়তায় write আর R replica থেকে read; R + W > N হলে দুই দল অন্তত একটা replica-তে মেলে, তাই read সর্বশেষ write দেখে। N = 3-এ W = 2, R = 2 মানে 4 > 3, আর একটা node পড়লেও read-write দুটোই চলে। R, W বাড়ালে CP-র দিকে আর বেশি latency, কমালে AP-র দিকে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Majority ও Split-brain",
+      "prompt": "etcd-র মতো consensus system partition-এ কিভাবে আচরণ করে, আর কেন split-brain হয় না?",
+      "answer": "Write commit হতে majority node লাগে, তাই partition-এ majority পাশ চলতে থাকে (দরকারে নতুন leader বাছে), আর minority পাশ linearizable read/write-এ error বা timeout দেয়। দুই পাশে একসাথে majority থাকা অসম্ভব, তাই দুজন leader হয়ে দুই রকম data লেখা (split-brain) হয় না। ৩ node-এ ১টা, ৫ node-এ ২টা node হারানো সয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "PACELC",
+      "prompt": "PACELC কী যোগ করে, যেটা CAP বলে না?",
+      "answer": "PACELC (Abadi, 2012): Partition হলে A না C, আর Else (স্বাভাবিক সময়ে) Latency না Consistency। সর্বশেষ data নিশ্চিত করতে leader বা quorum-এর সাথে round trip লাগে, তাই partition না থাকলেও consistency-র দাম latency হিসেবে প্রতিদিন দিতে হয়। যেমন etcd-র linearizable read serializable read-এর চেয়ে ধীর।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Conflict Resolution",
+      "prompt": "AP system-এ partition শেষে দুই পাশের আলাদা write কিভাবে মেলানো হয়, আর last-write-wins-এর বিপদ কী?",
+      "answer": "উপায়: last-write-wins (বড় timestamp জেতে), version vector (concurrent write ধরে দুটোই রেখে application merge করে, Dynamo-র shopping cart), বা CRDT (নিজে মিলে যায় এমন data type)। LWW-তে হেরে যাওয়া write নীরবে হারায়, আর machine-এর ঘড়ি না মেলায় আসলে পরের write-ও হারতে পারে।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

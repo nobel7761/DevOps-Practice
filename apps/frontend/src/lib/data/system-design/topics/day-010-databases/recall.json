@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-010",
+  "points": [
+    {
+      "term": "কেন File না, Database",
+      "prompt": "Data সরাসরি JSON file-এ রাখলে কোন পাঁচ ধরনের সমস্যা হয়, আর database প্রতিটার জন্য কী দেয়?",
+      "answer": "একসাথে দুটো request read-modify-write করলে একজনের লেখা হারায় (database দেয় concurrency control), লেখার মাঝে crash-এ file ভাঙে (log আর crash recovery), প্রতিটা প্রশ্নে পুরো file পড়তে হয় (SQL আর index), ভুল data চুপচাপ ঢোকে (constraint), আর অর্ধেক কাজ থেকে যায় (transaction)। নিজে এগুলো বানানো মানে একটা খারাপ database বানানো।",
+      "lessonLink": "#problem"
+    },
+    {
+      "term": "Primary Key ও Foreign Key",
+      "prompt": "Primary key আর foreign key কী কাজ করে? orders.customer_id-এ FK থাকলে database কী কী আটকায়?",
+      "answer": "Primary key প্রতিটা row-এর অনন্য, ফাঁকা-না-হওয়া পরিচয়। Foreign key অন্য table-এর PK-র দিকে ইশারা করে, আর database নিশ্চিত করে সেই row সত্যিই আছে: তাই অস্তিত্বহীন customer-এর order ঢোকানো যায় না, আর যে customer-এর order আছে তাকে মোছাও যায় না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Normalization",
+      "prompt": "Normalization মানে কী, কোন সমস্যা ঠেকায়, আর এর দাম কী?",
+      "answer": "প্রতিটা তথ্য একবারই এক জায়গায় রাখা, বাকিরা id দিয়ে সেটার দিকে ইশারা করে; যেমন customer-এর ঠিকানা শুধু customers-এ, order-এ শুধু customer_id। এতে ঠিকানা বদলালে এক জায়গায় বদলালেই হয়, দুই জায়গায় দুই মান হয় না। দাম হলো পড়ার সময় JOIN লাগে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Transaction",
+      "prompt": "Transaction কী? Transfer-এর মাঝপথে একটা CHECK constraint ভাঙলে আগের সফল UPDATE-টার কী হয়?",
+      "answer": "BEGIN থেকে COMMIT পর্যন্ত কয়েকটা কাজ, যেগুলো database একটা অবিভাজ্য একক হিসেবে দেখে: হয় সব, নয় কিছুই না। মাঝপথে কোনো statement fail করলে পুরো transaction aborted হয়, আগের সফল UPDATE-ও বাতিল হয়; PostgreSQL-এ তখন COMMIT লিখলেও উত্তর আসে ROLLBACK।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "ACID",
+      "prompt": "ACID-এর চারটা অক্ষর কী, আর প্রতিটা কোন বিপদ ঠেকায়? ACID-এর C আর CAP-এর C কি এক?",
+      "answer": "Atomicity অর্ধেক কাজ ঠেকায়, Consistency database-এর নিয়ম (যেমন balance ঋণাত্মক না) ভাঙতে দেয় না, Isolation একসাথে চলা transaction-এর গোলমাল (যেমন lost update) ঠেকায়, Durability COMMIT-এর পরে crash-এ data হারানো ঠেকায়। ACID-এর C মানে নিয়ম ঠিক থাকা, CAP-এর C মানে সব replica একটা কপির মতো আচরণ করা; দুটো আলাদা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Write-Ahead Log (WAL)",
+      "prompt": "COMMIT OK পাওয়ার মুহূর্তে data কোথায় থাকে? Crash-এর পরে database কিভাবে committed data ফিরে পায়?",
+      "answer": "বদল আগে memory-র buffer cache-এ হয় আর তার record WAL-এ যোগ হয়; COMMIT-এ WAL disk-এ fsync হয়, তারপরই OK আসে, data file হালনাগাদ হয় পরে checkpoint-এ। Crash-এর পরে database শেষ checkpoint থেকে WAL replay (redo) করে, ফলে committed বদল ফিরে আসে আর commit record না থাকা transaction অদৃশ্য থাকে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Lost Update",
+      "prompt": "Transaction থাকা সত্ত্বেও দুটো একসাথের বিক্রিতে stock কেন একবার কমে? তিনটা সমাধান কী?",
+      "answer": "Read Committed-এ দুটো transaction-ই একই পুরনো মান (১০) পড়ে, app-এ হিসাব করে, দুজনেই ৯ লেখে; একজনের update হারায়। সমাধান: হিসাব database-কে দেওয়া (SET stock = stock - 1), পড়ার সময় SELECT ... FOR UPDATE দিয়ে row lock, অথবা version column দিয়ে optimistic check।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "NoSQL-এর চার পরিবার",
+      "prompt": "Key-value, document, wide-column আর graph database-এর একটা করে উদাহরণ আর বাস্তব ব্যবহার বলুন।",
+      "answer": "Key-value (Redis): session, cache, counter। Document (MongoDB): আলাদা আলাদা field-এর product catalog। Wide-column (Cassandra): chat message বা sensor data-র মতো বিশাল write, partition key দিয়ে অনেক machine-এ ছড়ানো। Graph (Neo4j): বন্ধুর বন্ধু বা fraud ring, যেখানে সম্পর্ক ধরে অনেক ধাপ হাঁটতে হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Connection Pool",
+      "prompt": "প্রতি request-এ নতুন connection খোলা কেন খারাপ? Little's Law দিয়ে pool-এর আকার কিভাবে আন্দাজ করবেন, আর বিশাল pool কেন ক্ষতিকর?",
+      "answer": "প্রতিটা connection-এ TCP, TLS, authentication, আর PostgreSQL-এ একটা নতুন process লাগে, আর max_connections সীমা দ্রুত শেষ হয়; pool আগে খোলা connection ধার দেয়। ব্যস্ত connection = query/s × প্রতিটা কতক্ষণ connection ধরে রাখে, যেমন ২০০০ × ০.০০৫s = ১০। বিশাল pool database-এর সীমিত core আর disk-এ বেশি কাজ ঠেলে context switch আর lock contention বাড়ায়, latency খারাপ করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "N+1 Query",
+      "prompt": "N+1 query problem কী, ২০০টা order-এর page-এ কয়টা query যায়, আর কিভাবে ঠিক করবেন?",
+      "answer": "একটা query দিয়ে তালিকা আনা, তারপর তালিকার প্রতিটার জন্য আলাদা query, যেমন প্রতিটা order-এর customer আলাদাভাবে: ২০০ order-এ ১ + ২০০ = ২০১টা query, প্রতিটায় network round trip। ঠিক করার উপায় JOIN (১টা query) বা IN/ANY দিয়ে batch (২টা query), ORM-এ eager loading।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

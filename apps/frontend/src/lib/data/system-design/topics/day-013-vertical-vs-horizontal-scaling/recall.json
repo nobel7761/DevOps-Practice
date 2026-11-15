@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-013",
+  "points": [
+    {
+      "term": "Vertical Scaling (Scale Up)",
+      "prompt": "Scale up মানে ঠিক কী বড় করা, আর এর তিনটা বড় সীমা কী?",
+      "answer": "একটা machine-এর CPU, RAM, disk IOPS বা network বাড়ানো; code সাধারণত বদলাতে হয় না, কিন্তু আগে জানতে হয় কোন resource ফুরাচ্ছে। সীমা: সবচেয়ে বড় machine-এর ছাদ (আর তার আগেই efficiency-র বাঁক), machine একটাই বলে single point of failure, আর cloud-এ resize সাধারণত stop/start মানে downtime।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Horizontal Scaling (Scale Out)",
+      "prompt": "Scale out-এর শর্ত কী, আর এর দাম কোথায়?",
+      "answer": "একই রকম আরও machine যোগ করে সামনে load balancer বা queue দিয়ে কাজ ভাগ করা; একটা মরলে শুধু 1/N ক্ষমতা যায়, চলন্ত অবস্থায় বাড়ানো-কমানো যায়। শর্ত হলো app stateless হতে হবে; দাম হলো network hop, partial failure, local cache-এর অমিল আর বেশি অংশ চালানোর জটিলতা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Tier অনুযায়ী সিদ্ধান্ত",
+      "prompt": "কোন tier সাধারণত scale out হয় আর কোনটা আগে scale up, কেন?",
+      "answer": "Stateless web/API server আর worker scale out হয়, কারণ নতুন copy মানেই নতুন ক্ষমতা। Database state রাখে, data ভাগ করলে join, transaction আর consistency কঠিন, তাই আগে বড় machine, তারপর read replica, শেষে sharding।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Diagonal Scaling",
+      "prompt": "Diagonal scaling কী, আর প্রতি req/s-এর খরচের U-বাঁকের সাথে এর সম্পর্ক কী?",
+      "answer": "আগে প্রতিটা machine-কে একটা মিষ্টি size পর্যন্ত বড় করা, তারপর সেই size-এর machine সংখ্যায় বাড়ানো। খুব ছোট machine-এ প্রতি machine-এর স্থির খরচ (OS, agent, runtime) খায়, খুব বড়তে efficiency আর license-এর দাম; মাঝের size-এ প্রতি req/s সবচেয়ে সস্তা, যেটা load test করে বের করতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Blast Radius",
+      "prompt": "একটা machine মরলে scale up আর scale out-এ কতটা ক্ষমতা যায়, আর redundancy-র দাম কিভাবে বদলায়?",
+      "answer": "N-টা সমান machine-এ একটা মরলে 1/N ক্ষমতা যায়: দুটোয় ৫০%, দশটায় ১০%। একটা বড় machine হলে সব যায়, তাই সমান বড় standby লাগে, মানে ১০০% বাড়তি hardware; ছোট অনেক machine-এ redundancy অনেক সস্তা।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "N+1 / N+2 Headroom",
+      "prompt": "Peak 6,000 req/s আর প্রতি server নিরাপদে 700 req/s হলে কয়টা server লাগবে, আর বাড়তির সূত্র কী?",
+      "answer": "6,000 ÷ 700 ≈ ৮.৬, তাই ৯টা (N); একটা failure সহ্য করতে ১০টা (N+1), deploy-এর সময় আরেকটা failure ধরলে ১১টা (N+2)। k-টা failure সহ্য করতে বাড়তি ক্ষমতা = k ÷ (N − k)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Single-thread ও NUMA-র সীমা",
+      "prompt": "বড় machine কেন সবসময় linear বেশি কাজ দেয় না?",
+      "answer": "Single-threaded runtime (Node.js-এর event loop, CPython-এর GIL, Redis-এর command execution) একটা core-এর বেশি কাজ পায় না, তাই প্রতি core-এ process লাগে। আর অনেক core-এ lock contention, cache coherency আর NUMA-র remote memory access খরচ যোগ করে; USL core-এর জন্যও খাটে, একসময় core বাড়ালেও throughput বাড়ে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Weighted LB (অসমান fleet)",
+      "prompt": "মিশ্র আকারের server-এর fleet-এ traffic কিভাবে ভাগ করবেন?",
+      "answer": "Weight দিন load test-এ মাপা ক্ষমতা অনুযায়ী, vCPU গুনে না, কারণ CPU generation আর single-thread-এর কারণে আসল ক্ষমতা আলাদা। Least connections নিজে মানিয়ে নেয়, নতুন server-এ slow start দিন, আর গড় না দেখে per-group metric দেখুন, কারণ ছোট machine-ই p99 খারাপ করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Database Scale Up আগে",
+      "prompt": "Database-এ vertical scaling কী লাভ দেয়, আর কখন থামবেন?",
+      "answer": "বেশি RAM-এ working set memory-তে ধরে, ফলে disk read আর latency হঠাৎ কমে; বেশি IOPS আর core-এ write আর query বাড়ে (connection pooler সহ)। থামবেন যখন সবচেয়ে বড় সাশ্রয়ী machine-এও working set বা write ধরে না, পরের size-এ লাভ কম, বা blast radius আর মানা যায় না; তখন replica আর sharding।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Resize ও Auto Scaling Group",
+      "prompt": "Cloud-এ scale up আর scale out দেখতে কেমন, আর database resize-এ downtime কিভাবে কমান?",
+      "answer": "Scale up: EBS-backed EC2-এর মতো VM-এ stop → type বদল → start, কয়েক মিনিট downtime। Scale out: Auto Scaling group একই template থেকে min/desired/max সংখ্যায় machine রাখে, অসুস্থটা বদলায়, চলন্ত অবস্থায় বাড়ায়-কমায়। Database-এ আগে replica বড় করে failover করলে downtime কয়েক সেকেন্ডে নামে।",
+      "lessonLink": "#core"
+    }
+  ]
+}

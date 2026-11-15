@@ -1,0 +1,13 @@
+{
+  "type": "mistakes",
+  "text": "Distributed system-এর সবচেয়ে বেশি ভুল উদ্ধৃত theorem নিয়ে ৩টা ধারণা আমি এতদিন ভুল জানতাম।\nDay 8/100 · CAP Theorem\n\n**CAP Theorem** বলে: data কয়েকটা node-এ কপি থাকলে আর তাদের মাঝের network ভাগ হয়ে গেলে (**partition**), প্রতিটা request-এ হয় সর্বশেষ data দেবেন, নয়তো সবসময় উত্তর দেবেন। দুটো একসাথে না।\n\n❌ ভুল ১: \"C, A, P থেকে যেকোনো দুটো বেছে নাও। আমরা CA নেব।\"\n✅ ঠিক উপায়: Network থাকলে partition একদিন হবেই, তাই P বাছাইয়ের জিনিস না। আসল প্রশ্ন: partition হলে C না A? আর partition না থাকলে দুটোই পাওয়া যায়।\n\n❌ ভুল ২: \"আমাদের 99.99% uptime, তাই CAP-এর হিসাবে আমরা Available।\"\n✅ ঠিক উপায়: CAP-এর A মানে partition চলাকালীনও প্রতিটা সচল node error ছাড়া উত্তর দেবে। এটা হ্যাঁ/না শর্ত, uptime-এর percentage না। একইভাবে CAP-এর C মানে ACID-এর C না; এর অর্থ প্রতিটা read সর্বশেষ write দেখবে (**linearizability**)।\n\n❌ ভুল ৩: \"এই database CP, ওইটা AP।\"\n✅ ঠিক উপায়: সিদ্ধান্তটা প্রতিটা operation-এর। একই app-এ টাকা পাঠানো CP (পুরনো balance দেখে টাকা ছাড়ার চেয়ে error ভালো), কিন্তু like counter AP (একটু পুরনো সংখ্যায় কারও ক্ষতি নেই)। অনেক database-এ consistency level বা read option দিয়ে প্রতিটা query-তেই এটা বদলানো যায়।\n\nনিজে Docker-এ ৩-node **etcd** cluster-এর একটা node আলাদা করে দেখলাম: একা পড়া node-টা ৫ সেকেন্ড ঝুলে থেকে \"context deadline exceeded\" দিল, আর বাকি দুজন দিব্যি লিখছে-পড়ছে।\n\nবোনাস শিক্ষা: partition না থাকলেও দাম আছে। সর্বশেষ data নিশ্চিত করতে অন্য node-কে জিজ্ঞেস করতে হয়, তাই প্রতিদিনের latency বাড়ে। এটাই **PACELC**-এর \"Else\" অংশ।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এর কোন operation-এ পুরনো data দেখানো চলে, আর কোনটায় একদমই চলে না?]\n\nআর কোন CAP ভুল ধারণা এই list-এ থাকা উচিত? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এর কোন operation-এ পুরনো data দেখানো চলে, আর কোনটায় একদমই চলে না?",
+  "firstComment": "পুরো lesson, partition-এর ধাপে ধাপে diagram, PACELC decision tree আর Docker-এ ৩-node etcd cluster ভেঙে নিজে দেখার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#DistributedSystems",
+    "#CAPTheorem"
+  ],
+  "visual": "day-008-main"
+}

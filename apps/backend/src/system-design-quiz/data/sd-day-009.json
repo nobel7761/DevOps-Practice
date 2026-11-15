@@ -1,0 +1,1085 @@
+{
+  "topicId": "sd-day-009",
+  "questions": [
+    {
+      "id": "sd-day-009-q01",
+      "difficulty": "easy",
+      "question": "একটা web app-এর সামনে load balancer বসানোর মূল উদ্দেশ্য কোনটা?",
+      "options": [
+        "Load balancer প্রতিটা request-এর code নিজে চালায়, তাই পেছনে কম server লাগে",
+        "User-রা একটাই ঠিকানায় আসে, আর load balancer request-গুলো সুস্থ server-দের মধ্যে ভাগ করে দেয়",
+        "Load balancer database query-র ফল জমিয়ে রাখে, তাই এটা মূলত একটা cache, যেটা server-এর কাজ কমায়",
+        "Load balancer প্রতিটা নতুন user-এর জন্য নিজে থেকে একটা আলাদা server চালু করে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Load balancer client আর কয়েকটা একই রকম server-এর মাঝে বসে। Client চেনে শুধু তার ঠিকানা, আর সে algorithm দিয়ে প্রতিটা request কোন সুস্থ server-এ যাবে ঠিক করে। এতে capacity বাড়ে আর একটা server পড়লেও site চলে।",
+      "whyWrong": {
+        "0": "Load balancer request ভাগ করে, আসল business logic চালায় backend server।",
+        "2": "Cache আলাদা component; load balancer-এর কাজ ভাগ করা আর অসুস্থ server বাদ দেওয়া।",
+        "3": "নতুন server চালু করা autoscaling-এর কাজ; load balancer শুধু চালু server-দের মধ্যে ভাগ করে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q02",
+      "difficulty": "easy",
+      "question": "সব traffic একটা মাত্র server-এ গেলে কোন দুটো সমস্যা সবচেয়ে বড়?",
+      "options": [
+        "Capacity একটা machine-এর সমান থাকে, আর সেটা পড়লে পুরো site বন্ধ (single point of failure)",
+        "Server-এর IP address বারবার বদলায়, আর browser প্রতিবার নতুন DNS lookup করতে বাধ্য হয়",
+        "একটা server-এ HTTPS চালানো যায় না, আর database-ও একই machine-এ রাখতে হয়",
+        "একটা server থাকলে user-দের request-গুলো ক্রমানুসারে আসে না, তাই উত্তরগুলো উল্টাপাল্টা হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "একটা machine-এর CPU, memory, network-এর একটা ছাদ আছে, তাই ভিড় বাড়লে সেটা ডুবে যায়। আর সব কিছু তার উপর নির্ভর করে বলে সেটাই single point of failure। Load balancer-এর পেছনে কয়েকটা server রাখলে দুটো সমস্যাই কমে।",
+      "whyWrong": {
+        "1": "একটা server থাকলে IP বদলানোর কোনো বাধ্যবাধকতা নেই; সমস্যা capacity আর SPOF।",
+        "2": "একটা server-এ HTTPS দিব্যি চলে, আর database আলাদা machine-এ রাখা যায়।",
+        "3": "Request-এর ক্রম server সংখ্যার উপর নির্ভর করে না; সমস্যা ভার আর failure।"
+      }
+    },
+    {
+      "id": "sd-day-009-q03",
+      "difficulty": "easy",
+      "question": "Load balancer-এর health check আসলে কী করে?",
+      "options": [
+        "প্রতিটা user-এর password ঠিক আছে কিনা যাচাই করে, তারপর তবেই request-টা নির্দিষ্ট backend server-এ পাঠিয়ে দেয়",
+        "Server-এর disk-এ কতটা জায়গা বাকি আছে মেপে admin-কে প্রতিদিন email পাঠায়",
+        "নিয়মিত প্রতিটা server-কে জিজ্ঞেস করে সে ঠিক আছে কিনা, আর বারবার fail করলে rotation থেকে বাদ দেয়",
+        "প্রতিটা request-এর body পরীক্ষা করে ক্ষতিকর code আছে কিনা, থাকলে block করে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Health check-এ LB কয়েক সেকেন্ড পরপর প্রতিটা server-এ একটা probe (যেমন GET /health) পাঠায়। পরপর কয়েকবার fail করলে সেই server-কে আর request দেয় না, সেরে উঠলে ফিরিয়ে আনে। এভাবেই মরা server-এ user-এর request যাওয়া বন্ধ হয়।",
+      "whyWrong": {
+        "0": "Password যাচাই authentication-এর কাজ, health check server-এর অবস্থা দেখে।",
+        "1": "Disk monitoring আলাদা কাজ; health check-এর ফল সরাসরি traffic পাঠানোর সিদ্ধান্তে লাগে।",
+        "3": "ক্ষতিকর request ধরা WAF-এর কাজ, health check server সুস্থ কিনা দেখে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q04",
+      "difficulty": "easy",
+      "question": "তিনটা server S1, S2, S3-এ round robin চলছে, প্রথম request S1-এ গেছে। ৭ নম্বর request কোথায় যাবে?",
+      "options": [
+        "S3-এ, কারণ ৭ সংখ্যাটা ৩ দিয়ে ভাগ করলে সবচেয়ে কাছের গুণিতক ৬, যেটা S3-এর পালা",
+        "S2-তে, কারণ round robin প্রতি চক্রে একটা server বাদ রেখে এগোয়",
+        "যে server-এ সবচেয়ে কম চলমান request, সেখানে, কারণ round robin ভার দেখে",
+        "S1-এ, কারণ ক্রমটা S1, S2, S3 করে ঘোরে আর ৭ নম্বর তৃতীয় চক্রের প্রথম request"
+      ],
+      "correctIndex": 3,
+      "explanation": "Round robin পালা করে পাঠায়: ১→S1, ২→S2, ৩→S3, ৪→S1, ৫→S2, ৬→S3, ৭→S1। অর্থাৎ (৭ − ১) mod ৩ = ০, তাই S1। Round robin server কতটা ব্যস্ত দেখে না।",
+      "whyWrong": {
+        "0": "৬ নম্বর request S3-এ যায়, ৭ নম্বর নতুন চক্র শুরু করে S1-এ।",
+        "1": "Round robin কোনো server বাদ দেয় না, প্রতিটাকে ক্রমে একবার করে দেয়।",
+        "2": "চলমান request দেখে বাছা least connections, round robin না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q05",
+      "difficulty": "easy",
+      "question": "একটা L4 load balancer সিদ্ধান্ত নেওয়ার সময় কী দেখতে পায়?",
+      "options": [
+        "শুধু IP address, port আর protocol (TCP/UDP)",
+        "HTTP-এর path আর Host header, কিন্তু cookie না",
+        "পুরো HTTP request, কারণ সে সবসময় TLS খুলে নেয়",
+        "শুধু user-এর login করা account-এর নাম আর role"
+      ],
+      "correctIndex": 0,
+      "explanation": "L4 (transport layer) load balancer বাইরের খাম পড়ে: source/destination IP, port আর protocol। ভেতরের HTTP অংশ খোলে না, তাই দ্রুত আর সস্তা, কিন্তু path, header বা cookie দেখে সিদ্ধান্ত নিতে পারে না।",
+      "whyWrong": {
+        "1": "Path আর Host HTTP-এর অংশ, এগুলো দেখতে L7 লাগে।",
+        "2": "L4 TLS খোলে না, তাই HTTP request তার কাছে শুধু encrypted bytes।",
+        "3": "Account বা role application-এর তথ্য, L4 তা জানার কোনো উপায় নেই।"
+      }
+    },
+    {
+      "id": "sd-day-009-q06",
+      "difficulty": "easy",
+      "question": "আপনি চান /api/... request এক দল server-এ আর /images/... আরেক দল server-এ যাক। কোন ধরনের load balancer লাগবে?",
+      "options": [
+        "L4 load balancer, কারণ সে port দেখে path-ও বুঝে নিতে পারে",
+        "DNS round robin, কারণ DNS প্রতিটা URL path আলাদাভাবে resolve করে",
+        "L7 load balancer, কারণ সে HTTP request পড়ে path অনুযায়ী route করতে পারে",
+        "যেকোনো load balancer, কারণ path-based routing সব ধরনের LB-র একটা মৌলিক feature"
+      ],
+      "correctIndex": 2,
+      "explanation": "Path HTTP request-এর ভেতরে থাকে, তাই সেটা পড়তে load balancer-কে HTTP বুঝতে হয়, অর্থাৎ L7। L7 LB rule দিয়ে /api/* এক pool-এ আর /images/* আরেক pool-এ পাঠাতে পারে।",
+      "whyWrong": {
+        "0": "Port দুটো request-এ একই (443), path দেখার ক্ষমতা L4-এর নেই।",
+        "1": "DNS শুধু hostname resolve করে, URL-এর path DNS-এ যায়ই না।",
+        "3": "L4 LB path দেখতে পায় না, তাই এটা সব LB-র feature না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q07",
+      "difficulty": "easy",
+      "question": "\"Load balancer-এ TLS termination হচ্ছে\" কথাটার মানে কী?",
+      "options": [
+        "Load balancer HTTPS connection বন্ধ করে দিয়ে user-কে HTTP-তে redirect করে",
+        "Load balancer-এ certificate আছে, সে TLS খুলে request পড়ে, তারপর backend-এ পাঠায়",
+        "TLS-এর মেয়াদ শেষ হলে load balancer নিজে থেকে নতুন certificate কিনে নেয়",
+        "Load balancer encrypted bytes না খুলেই সরাসরি backend-এর নিজের TLS-এ পার করে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "TLS termination মানে client-এর TLS connection load balancer-এ শেষ হয়: certificate আর key সেখানে, সে decrypt করে HTTP পড়ে। এতে L7 routing সম্ভব হয় আর certificate এক জায়গায় manage করা যায়।",
+      "whyWrong": {
+        "0": "Termination মানে user-কে HTTP-তে নামানো না; user-এর দিকে connection HTTPS-ই থাকে।",
+        "2": "Certificate renew করা আলাদা কাজ, termination-এর অর্থ এটা না।",
+        "3": "না খুলে পার করাকে বলে TLS passthrough, termination-এর উল্টো।"
+      }
+    },
+    {
+      "id": "sd-day-009-q08",
+      "difficulty": "easy",
+      "question": "Sticky session (session affinity) চালু করলে কী হয়?",
+      "options": [
+        "প্রতিটা request-এ load balancer user-কে নতুন করে login করতে বলে",
+        "সব user-এর session একটা কেন্দ্রীয় Redis-এ নিজে থেকে কপি হয়ে যায়",
+        "Load balancer প্রতিটা request-এ এলোমেলো server বাছে যাতে ভার সমান হয়",
+        "একই user-এর পরের request-গুলো আগের সেই একই server-এ পাঠানো হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Sticky session-এ load balancer মনে রাখে কোন user কোন server-এ গিয়েছিল (cookie বা IP দিয়ে), আর পরের request সেখানেই পাঠায়। Server-এর memory-তে session থাকলে এটা কাজ চালায়, কিন্তু server মরলে session যায়।",
+      "whyWrong": {
+        "0": "Stickiness login চায় না, শুধু একই server-এ পাঠায়।",
+        "1": "Session shared store-এ রাখা stateless design, sticky session তার বিকল্প হিসেবে ব্যবহার হয়।",
+        "2": "এলোমেলো বাছা random algorithm, stickiness ঠিক উল্টো কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q09",
+      "difficulty": "easy",
+      "question": "কোন পরিস্থিতিতে সাধারণ round robin-এর বদলে weighted round robin বেশি উপযুক্ত?",
+      "options": [
+        "যখন পেছনের server-গুলোর ক্ষমতা আলাদা, যেমন একটা ১৬ core আর বাকিগুলো ৪ core",
+        "যখন সব server হুবহু একই আর প্রতিটা request প্রায় একই সময় নেয়",
+        "যখন একই user-কে সবসময় একই server-এ পাঠানো জরুরি",
+        "যখন load balancer নিজেই একমাত্র server হিসেবে সব request নিজের ভেতরে process করে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Weight দিয়ে বড় server-কে তার ক্ষমতার অনুপাতে বেশি পালা দেওয়া হয়। সব server সমান হলে weight অর্থহীন, round robin-ই যথেষ্ট।",
+      "whyWrong": {
+        "1": "সব সমান হলে weight লাগে না, সাধারণ round robin-ই সমান ভাগ করে।",
+        "2": "একই server-এ পাঠানো stickiness-এর প্রশ্ন, weight-এর না।",
+        "3": "Load balancer request ভাগ করে, নিজে আসল কাজ process করে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q10",
+      "difficulty": "easy",
+      "question": "কোন ধরনের traffic-এ least connections round robin-এর চেয়ে ভালো কাজ করে?",
+      "options": [
+        "যখন সব request প্রায় একই সময় নেয় আর সব server হুবহু এক",
+        "যখন traffic খুবই কম, সেকেন্ডে মাত্র এক-দুটো request, আর server-রা প্রায় সারাক্ষণ বসে থাকে",
+        "যখন কিছু request ৫০ms আর কিছু কয়েক সেকেন্ড নেয়, অর্থাৎ ভার খুব অসমান",
+        "যখন একই user-কে সবসময় একই server-এ রাখতে হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "ভারী request যে server-এ যায়, তার connection অনেকক্ষণ খোলা থাকে। Least connections তাকে নতুন কাজ কম দেয়, তাই ভার নিজে থেকে সমান হয়। Round robin শুধু সংখ্যা সমান করে, ভার না।",
+      "whyWrong": {
+        "0": "সব সমান হলে দুটো প্রায় একই ফল দেয়, round robin সরল বলে যথেষ্ট।",
+        "1": "খুব কম traffic-এ কোনো server-এ জমা হয় না, পার্থক্য চোখে পড়ে না।",
+        "3": "একই server-এ রাখা stickiness-এর কাজ, least connections-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q11",
+      "difficulty": "easy",
+      "question": "দুটো app server রাখার পরও একটা মাত্র load balancer থাকলে কী ঝুঁকি থেকে যায়?",
+      "options": [
+        "Load balancer থাকলে app server-গুলো একে অপরের data দেখতে পায় না",
+        "Load balancer নিজেই single point of failure; সেটা পড়লে পুরো site বন্ধ",
+        "দুটো app server সবসময় একই সময়ে crash করবে, কারণ তারা একই load balancer-এর পেছনে বসে",
+        "একটা load balancer একসাথে দুটোর বেশি server-কে request দিতে পারে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "সব traffic load balancer দিয়ে যায়, তাই সেটা একটা হলে সেটাই নতুন SPOF। সমাধান হলো LB-কে জোড়ায় চালানো (floating IP সহ active-passive) বা active-active, অথবা redundant managed LB।",
+      "whyWrong": {
+        "0": "Data দেখা না-দেখা LB-র সাথে সম্পর্কিত না; ঝুঁকিটা availability-র।",
+        "2": "একই LB-র পেছনে থাকলেই server একসাথে crash করে না।",
+        "3": "একটা LB অনেক server-এ ভাগ করতে পারে, সংখ্যা সমস্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q12",
+      "difficulty": "easy",
+      "question": "Deploy-এর সময় connection draining চালু রাখার উদ্দেশ্য কী?",
+      "options": [
+        "Server বন্ধ করার আগে তার disk-এর সব log মুছে জায়গা খালি করা",
+        "Deploy চলাকালীন সব user-কে একটা maintenance page দেখানো",
+        "নতুন version চালু হওয়ার আগে database-এর সাথে থাকা সব connection একসাথে বন্ধ করে দেওয়া",
+        "সরানো হচ্ছে এমন server-এ নতুন request না পাঠানো, কিন্তু চলমানগুলো শেষ হতে দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Draining-এ LB একটা server-কে আর নতুন request দেয় না, কিন্তু যেগুলো চলছে (payment, upload) সেগুলো একটা সর্বোচ্চ সময় পর্যন্ত শেষ হতে দেয়। তারপর server বন্ধ হয়। এতে কেউ মাঝপথে কাটা পড়ে না।",
+      "whyWrong": {
+        "0": "Log মোছার সাথে draining-এর সম্পর্ক নেই; লক্ষ্য চলমান request বাঁচানো।",
+        "1": "Draining-এর উদ্দেশ্যই হলো user যেন কিছু টের না পায়, maintenance page না।",
+        "2": "Database connection বন্ধ করলে চলমান request উল্টো ভাঙবে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q13",
+      "difficulty": "easy",
+      "question": "Load balancer থাকলে backend server-গুলো সাধারণত private network-এ রাখা হয়। এর একটা বড় সুবিধা কী?",
+      "options": [
+        "Private network-এ server-এর CPU বেশি দ্রুত চলে, তাই latency কমে",
+        "Client server-দের সরাসরি চেনে না, তাই server যোগ, বাদ বা বদল client টের না পেয়েই করা যায়",
+        "Private network-এ থাকলে server-গুলোর আর কোনো health check লাগে না, কারণ বাইরের কেউ তাদের ক্ষতি করতে পারে না",
+        "Private network-এ server-গুলো নিজেরাই নিজেদের মধ্যে request ভাগ করে নেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Client শুধু load balancer-এর ঠিকানা জানে। পেছনের server-দের IP, সংখ্যা, version সব লুকানো, তাই deploy আর scale পেছনে চুপচাপ হয়। সাথে internet থেকে server-এ সরাসরি পৌঁছানোর পথও বন্ধ থাকে।",
+      "whyWrong": {
+        "0": "Network private হলেই CPU দ্রুত হয় না।",
+        "2": "Private network-এও server crash করতে পারে, health check লাগবেই।",
+        "3": "ভাগ করার কাজ load balancer-এর, server-রা নিজেরা ভাগ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q14",
+      "difficulty": "easy",
+      "question": "L7 load balancer-এর পেছনের server সব request-এ LB-র IP দেখে। User-এর আসল IP জানার প্রচলিত উপায় কী?",
+      "options": [
+        "Server user-এর browser-কে সরাসরি ping করে IP বের করে নেয়",
+        "Load balancer প্রতিটা user-কে একটা আলাদা port দেয়, আর backend সেই port নম্বর থেকে user-এর IP বুঝে নেয়",
+        "Load balancer আসল client IP একটা header-এ (যেমন X-Forwarded-For) লিখে পাঠায়",
+        "DNS server-এর log থেকে প্রতিটা request-এর IP মিলিয়ে নেওয়া হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "L7 LB client-এর connection নিজে শেষ করে আর backend-এর সাথে নতুন connection খোলে, তাই backend LB-র IP দেখে। LB আসল IP-টা X-Forwarded-For (বা অনুরূপ) header-এ যোগ করে দেয়।",
+      "whyWrong": {
+        "0": "Server-এর কাছে user-এর IP-ই নেই, ping করার উপায় নেই; আর এটা নির্ভরযোগ্যও না।",
+        "1": "Port দিয়ে client IP পাঠানোর কোনো প্রচলিত ব্যবস্থা নেই।",
+        "3": "DNS lookup আর HTTP request আলাদা, আর resolver-এর IP user-এর IP না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q15",
+      "difficulty": "easy",
+      "question": "Passive health check কিভাবে কাজ করে?",
+      "options": [
+        "আলাদা probe না পাঠিয়ে আসল request-এর ফল দেখে; বারবার fail করলে server-কে কিছুক্ষণ বাদ রাখে",
+        "Server নিজে প্রতি সেকেন্ডে load balancer-কে জানায় সে ঠিক আছে, আর না জানালে সাথে সাথে বাদ পড়ে",
+        "Admin dashboard থেকে হাতে server-কে unhealthy চিহ্নিত করতে হয়",
+        "Load balancer রাতে একবার সব server-এ পুরো test suite চালিয়ে দেখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Passive check আসল traffic থেকে শেখে: যেমন NGINX open source-এ max_fails আর fail_timeout, বা Envoy-এর outlier detection। আলাদা probe লাগে না, তবে কোনো request না এলে মরা server ধরা পড়ে না, তাই active check-এর সাথে মিলিয়ে ব্যবহার ভালো।",
+      "whyWrong": {
+        "1": "Server নিজে জানানো heartbeat-এর ধারণা; passive check আসল request দেখে।",
+        "2": "হাতে চিহ্নিত করা health check-ই না, সেটা manual operation।",
+        "3": "দিনে একবার test চালালে failure ধরতে ঘণ্টা লাগবে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q16",
+      "difficulty": "easy",
+      "question": "DNS-এ তিনটা server-এর IP দিয়ে 'load balancing' করলে একটা server মরে গেলে কী সমস্যা হয়?",
+      "options": [
+        "DNS সাথে সাথে মরা server-এর IP মুছে দেয় আর সব resolver-কে তখনই জানিয়ে দেয়, তাই কোনো সমস্যাই হয় না",
+        "DNS মরা server-এর কথা জানে না, আর resolver ও app-এর cache-এ IP থেকে যায়, তাই কিছু user error দেখে",
+        "DNS তিনটা IP-ই বন্ধ করে দেয়, তাই পুরো site একসাথে বন্ধ হয়ে যায়",
+        "Browser নিজে থেকে মরা IP-কে load balancer-এ redirect করে দেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "সাধারণ DNS server-দের health জানে না, আর উত্তরগুলো TTL পর্যন্ত (কখনো তার বেশিও) cache-এ থাকে। তাই মরা server-এর IP কিছুক্ষণ ধরে user-দের কাছে যেতে থাকে। এজন্য region-এর ভেতরে health check সহ load balancer লাগে।",
+      "whyWrong": {
+        "0": "সাধারণ DNS health check করে না, আর cache থাকায় মোছা হলেও সাথে সাথে কাজ হয় না।",
+        "2": "একটা server মরলে DNS বাকি IP বন্ধ করে না।",
+        "3": "Browser কোনো load balancer-এর কথা জানে না, redirect করার উপায় নেই।"
+      }
+    },
+    {
+      "id": "sd-day-009-q17",
+      "difficulty": "easy",
+      "question": "তিনটা server-এর weight ২, ১, ১। মোট ৪০০টা request এলে weighted round robin-এ প্রথম server কয়টা পাবে?",
+      "options": [
+        "১৩৩টা, কারণ তিনটা server-এ সমান ভাগ হয়",
+        "২৬৭টা, কারণ weight ২ মানে বাকিদের মোটের দ্বিগুণ",
+        "১০০টা, কারণ weight বেশি মানে server বেশি ব্যস্ত, তাই কম পায়",
+        "২০০টা, কারণ মোট weight ৪-এর মধ্যে তার ভাগ ২"
+      ],
+      "correctIndex": 3,
+      "explanation": "মোট weight ২ + ১ + ১ = ৪। প্রথম server পায় ৪০০ × ২/৪ = ২০০, বাকি দুটো ১০০ করে।",
+      "whyWrong": {
+        "0": "সমান ভাগ সাধারণ round robin-এর ফল, weight সেটা বদলায়।",
+        "1": "Weight ২ মানে প্রতিটা ১-weight server-এর দ্বিগুণ, বাকিদের মোটের দ্বিগুণ না।",
+        "2": "বেশি weight মানে বেশি ক্ষমতা, তাই বেশি request পায়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q18",
+      "difficulty": "easy",
+      "question": "Active-passive load balancer জোড়ায় 'floating IP' (virtual IP) কী কাজ করে?",
+      "options": [
+        "প্রতিটা user-কে আলাদা IP দেয়, যাতে IP hash ঠিকমতো কাজ করে",
+        "Backend server-গুলোর IP প্রতি ঘণ্টায় বদলে দেয় নিরাপত্তার জন্য",
+        "Client যে IP-তে আসে সেটা কোনো নির্দিষ্ট machine-এর না; active LB মরলে standby সেটা নিজের করে নেয়",
+        "দুটো LB-কে একই সময়ে একই IP থেকে traffic নিতে দেয়, তাই প্রতিটার ভার অর্ধেক হয়ে যায় আর failover লাগে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Floating IP যে LB active, তার কাছে থাকে। Keepalived/VRRP heartbeat থামলে standby IP-টা নিয়ে নেয়, আর client-রা একই ঠিকানায় এসে নতুন LB-তে পৌঁছায়, DNS বদলানো ছাড়াই।",
+      "whyWrong": {
+        "0": "Floating IP LB-র ঠিকানা, user-দের IP দেয় না।",
+        "1": "Backend IP বদলানো floating IP-র কাজ না।",
+        "3": "Active-passive-এ এক সময়ে একজনই IP ধরে রাখে; দুজন একসাথে দাবি করলে সেটা split brain।"
+      }
+    },
+    {
+      "id": "sd-day-009-q19",
+      "difficulty": "easy",
+      "question": "Health check-এ একবার fail হলেই server-কে বাদ না দিয়ে পরপর কয়েকবার fail-এর অপেক্ষা করা হয় কেন?",
+      "options": [
+        "একটা হারানো packet বা ছোট pause-এ সুস্থ server বারবার বাদ পড়া-ফেরা (flapping) এড়াতে",
+        "যাতে মরা server-এর উপর আরও কিছুক্ষণ traffic গিয়ে সে নিজে থেকে সেরে ওঠার একটা সুযোগ পায়",
+        "Health check-এর নিয়মে প্রথম fail সবসময় উপেক্ষা করা বাধ্যতামূলক",
+        "যাতে server-এর CPU কমাতে load balancer ইচ্ছা করে কম check পাঠাতে পারে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Network-এ মাঝে মাঝে packet হারায়, GC pause হয়। একবারেই বাদ দিলে সুস্থ server আসা-যাওয়া করবে, connection ভাঙবে আর বাকিদের ভার লাফাবে। তাই unhealthy threshold (যেমন ৩) আর healthy threshold (যেমন ২) রাখা হয়।",
+      "whyWrong": {
+        "1": "মরা server-এ traffic পাঠালে সে সেরে ওঠে না, শুধু request fail করে।",
+        "2": "এমন কোনো বাধ্যতামূলক নিয়ম নেই; threshold configure করা যায়।",
+        "3": "Threshold check-এর সংখ্যা কমায় না, শুধু সিদ্ধান্তের আগে কয়টা ফল লাগবে ঠিক করে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q20",
+      "difficulty": "easy",
+      "question": "AWS documentation অনুযায়ী কোন load balancer layer 7-এ কাজ করে আর HTTP path দেখে route করতে পারে?",
+      "options": [
+        "Network Load Balancer (NLB)",
+        "Application Load Balancer (ALB)",
+        "Gateway Load Balancer (GWLB)",
+        "Route 53-এর weighted DNS record"
+      ],
+      "correctIndex": 1,
+      "explanation": "AWS-এর documentation অনুযায়ী Application Load Balancer layer 7-এ কাজ করে, আর path, host, header দেখে rule অনুযায়ী আলাদা target group-এ পাঠাতে পারে। Network Load Balancer layer 4-এ TCP/UDP/TLS connection ভাগ করে।",
+      "whyWrong": {
+        "0": "NLB layer 4-এ connection ভাগ করে, HTTP path দেখে না।",
+        "2": "Gateway Load Balancer firewall-এর মতো network appliance-এর সামনে traffic দেওয়ার জন্য, HTTP path routing-এর জন্য না।",
+        "3": "DNS record শুধু নাম resolve করে, URL path দেখতে পায় না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q21",
+      "difficulty": "medium",
+      "question": "আপনার একটা server-এ ১৬ core, বাকি দুটোয় ৪ core করে। Round robin চালু, peak-এ ছোট দুটোর CPU 100% আর বড়টা ৪০%-এ। সবচেয়ে সরাসরি সমাধান কী?",
+      "options": [
+        "ছোট দুটো server বাদ দিয়ে শুধু বড়টা রাখা, কারণ সেটার CPU এখনো অনেকটা খালি পড়ে আছে",
+        "Health check interval কমিয়ে দেওয়া, যাতে ছোট server দ্রুত বাদ পড়ে",
+        "Sticky session চালু করা, যাতে user-রা বড় server-এ আটকে থাকে",
+        "Weighted round robin চালু করে core অনুপাতে weight দেওয়া, যেমন ৪:১:১"
+      ],
+      "correctIndex": 3,
+      "explanation": "Round robin সবাইকে সমান request দেয়, অথচ ক্ষমতা অসমান। Weight ৪:১:১ দিলে বড়টা প্রায় ৬৭% আর ছোট দুটো প্রায় ১৭% করে পায়, ক্ষমতার সাথে মিলে যায়।",
+      "whyWrong": {
+        "0": "শুধু বড়টা রাখলে capacity কমে যাবে আর সেটাই SPOF হবে।",
+        "1": "ছোট server-গুলো মরেনি, ব্যস্ত; বাদ দিলে বাকিদের উপর আরও চাপ।",
+        "2": "Stickiness ভার ক্ষমতা অনুযায়ী ভাগ করে না, বরং আরও অসমান করে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q22",
+      "difficulty": "medium",
+      "question": "আপনার API-তে বেশিরভাগ request ৫০ms-এর, কিন্তু কিছু 'report export' ৮ সেকেন্ড নেয়। Round robin-এ মাঝে মাঝে একটা server-এ কয়েকটা report জমে আর তার সব user ধীর। কোন algorithm-এ গেলে এটা কমবে?",
+      "options": [
+        "Least connections, কারণ report চলা server-এর connection খোলা থাকে আর সে নতুন কাজ কম পায়",
+        "IP hash, কারণ একই user-এর report একই server-এ গেলে সেখানকার local cache আরও ভালো কাজ করে",
+        "Random, কারণ এলোমেলো বাছলে report-গুলো নিজে থেকেই সমানভাবে ছড়িয়ে যায়",
+        "Round robin-ই রাখা, কিন্তু server-গুলোর weight সমান করে দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "Report চলাকালীন server-এর connection ৮ সেকেন্ড খোলা থাকে, তাই least connections তাকে ব্যস্ত দেখে নতুন request অন্যদের দেয়। Round robin আর random কাজের সময় দেখে না।",
+      "whyWrong": {
+        "1": "IP hash ভার দেখে না; একই user-এর ভারী কাজ এক server-এ জমিয়ে সমস্যা বাড়াতে পারে।",
+        "2": "Random-ও চলমান কাজ দেখে না, এক server-এ কয়েকটা report পড়ার সম্ভাবনা থেকেই যায়।",
+        "3": "Weight আগে থেকেই সমান; সমস্যা request-এর ভার, server-এর ক্ষমতা না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q23",
+      "difficulty": "medium",
+      "question": "NGINX-এ least_conn চলছে, যেটা server-এর weight-ও হিসাবে ধরে। A-তে ১০টা active connection (weight ১), B-তে ১৮টা (weight ২), C-তে ১১টা (weight ১)। পরের request কোথায় যাবে?",
+      "options": [
+        "A-তে, কারণ শুধু active connection সংখ্যা দেখলে ১০-ই সবচেয়ে কম",
+        "C-তে, কারণ সে সবচেয়ে সম্প্রতি একটা request শেষ করেছে",
+        "B-তে, কারণ weight অনুযায়ী তার ভার ১৮/২ = ৯, যা সবচেয়ে কম",
+        "এলোমেলো যেকোনো একটায়, কারণ তিনটার সংখ্যা কাছাকাছি"
+      ],
+      "correctIndex": 2,
+      "explanation": "Weight হিসাবে নিলে তুলনা হয় connection ÷ weight দিয়ে: A ১০, B ৯, C ১১। B-র ক্ষমতা দ্বিগুণ, তাই ১৮টা connection তার জন্য আসলে কম ভার। NGINX-এর least_conn documentation অনুযায়ী weight বিবেচনা করে।",
+      "whyWrong": {
+        "0": "শুধু সংখ্যা দেখলে A হতো, কিন্তু weight ২-এর B-র কাছে ১৮টা অর্ধেক ভারের সমান।",
+        "1": "সম্প্রতি কে শেষ করল তা least connections দেখে না।",
+        "3": "Least connections নিয়মমতো সবচেয়ে কম ভারের server বাছে, এলোমেলো না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q24",
+      "difficulty": "medium",
+      "question": "Health check প্রতি ৫ সেকেন্ডে, unhealthy threshold ৩। একটা server হঠাৎ মরে গেলে load balancer মোটামুটি কতক্ষণে তাকে বাদ দেবে?",
+      "options": [
+        "প্রায় ৫ সেকেন্ডে, কারণ প্রথম fail-এই বাদ দেওয়া হয়",
+        "প্রায় ৩ সেকেন্ডে, কারণ threshold সংখ্যাটাই সেকেন্ড বোঝায়",
+        "প্রায় ৮ সেকেন্ডে, কারণ interval আর threshold যোগ করলেই detection-এর সময় পাওয়া যায়",
+        "প্রায় ১৫ সেকেন্ডে, কারণ পরপর ৩টা check fail হতে হয়, প্রতিটা ৫ সেকেন্ড পরপর"
+      ],
+      "correctIndex": 3,
+      "explanation": "Detection ≈ interval × unhealthy threshold = ৫ × ৩ = ১৫ সেকেন্ড, সবচেয়ে খারাপ ক্ষেত্রে শেষ check-এর timeout যোগ হয়। এই সময়ে মরা server-এ যাওয়া request retry না থাকলে fail করে।",
+      "whyWrong": {
+        "0": "Threshold ৩ মানে একবার fail-এ বাদ না, পরপর তিনবার লাগে।",
+        "1": "Threshold হলো fail-এর সংখ্যা, সময় না।",
+        "2": "Interval আর threshold গুণ হয়, যোগ না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q25",
+      "difficulty": "medium",
+      "question": "আপনার app-এর বেশিরভাগ user mobile data-য়। Stickiness-এর জন্য ip_hash দিয়েছেন। Sale-এর দিন ১০টা server-এর একটায় CPU 100%, বাকিরা প্রায় ফাঁকা। সম্ভাব্য কারণ কী?",
+      "options": [
+        "ip_hash প্রতি মিনিটে hash বদলায়, তাই সব user একসাথে একটা server-এ সরে যায়",
+        "Mobile operator-এর CGNAT-এ হাজার হাজার user একই public IP নিয়ে আসে, তাই সবাই এক server-এ hash হয়",
+        "Mobile user-দের request ছোট, তাই load balancer সেগুলো একটা server-এ জমিয়ে পাঠায়",
+        "ip_hash প্রথম server-কেই ব্যবহার করে যতক্ষণ না সেটা পুরো ভর্তি হয়, তারপর তবেই দ্বিতীয় server-এ যায়, তাই বাকিরা ফাঁকা থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Carrier-grade NAT-এ অনেক গ্রাহক একই public IP শেয়ার করে। IP hash IP দেখে, তাই সেই পুরো ভিড় এক server-এ যায়। NGINX-এর ip_hash IPv4-এর প্রথম তিন অংশ নেয় বলে একই /24-এর সবাই আরও ঘন জমে।",
+      "whyWrong": {
+        "0": "ip_hash স্থির; একই IP সবসময় একই server-এ, বদলায় না।",
+        "2": "Request-এর আকার দেখে ip_hash সিদ্ধান্ত নেয় না।",
+        "3": "ip_hash IP-র hash দিয়ে server বাছে, প্রথম server ভরানোর নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "sd-day-009-q26",
+      "difficulty": "medium",
+      "question": "Round robin চালুর পর user-দের cart হারাচ্ছে, কারণ cart server-এর memory-তে থাকে। Long-term-এ সবচেয়ে ভালো সমাধান কোনটা?",
+      "options": [
+        "Sticky session চালু করে প্রতিটা user-কে সারাজীবন একই server-এ রাখা",
+        "Server সংখ্যা কমিয়ে একটায় নামিয়ে আনা, যাতে cart সবসময় এক জায়গায় থাকে",
+        "Cart একটা shared store-এ (যেমন Redis বা database) রাখা, যাতে যেকোনো server যেকোনো request নিতে পারে",
+        "Load balancer-এর নিজের memory-তে সব user-এর cart কপি করে রাখা, যাতে যেকোনো server সেখান থেকে পড়তে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "সমস্যার মূল হলো state একটা server-এর memory-তে। Shared store-এ রাখলে server stateless হয়: যেকোনো server cart পড়তে পারে, server মরলেও cart থাকে, আর LB স্বাধীনভাবে ভাগ করতে পারে। Sticky session শুধু সমস্যা ঢাকে।",
+      "whyWrong": {
+        "0": "Sticky session-এ server মরলে cart যায়, ভারও অসমান হয়।",
+        "1": "একটা server মানে আবার capacity-র ছাদ আর SPOF।",
+        "3": "LB state রাখার জায়গা না; সেটা মরলে সব cart যাবে, আর সেটাই bottleneck হবে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q27",
+      "difficulty": "medium",
+      "question": "আপনার gRPC service NLB (layer 4)-এর পেছনে চারটা server-এ। Client-রা কয়েকটা লম্বা HTTP/2 connection-এ সব request পাঠায়। একটা server-এ ভার বাকিদের কয়েক গুণ। কারণ কী?",
+      "options": [
+        "L4 connection ভাগ করে, request না; একটা ব্যস্ত client-এর পুরো connection একটা server-এই থাকে",
+        "HTTP/2 প্রতিটা request-এর জন্য নতুন একটা TCP connection খোলে, তাই L4 load balancer গুলিয়ে ফেলে",
+        "NLB gRPC বোঝে, তাই ইচ্ছা করে সব ভারী call একটা server-এ পাঠায়",
+        "চারটা server-এর মধ্যে একটার port আলাদা, তাই সব traffic সেখানে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "HTTP/2 আর gRPC অনেক request একটাই লম্বা connection-এ multiplex করে। L4 load balancer connection-স্তরে সিদ্ধান্ত নেয়, তাই একটা connection-এর সব request একই server-এ যায়। সমাধান request-level (L7) balancing বা client-side balancing।",
+      "whyWrong": {
+        "1": "HTTP/2 উল্টো, একটা connection-এ অনেক request পাঠায়।",
+        "2": "L4 NLB request-এর ভেতর দেখে না, তাই gRPC call আলাদা করে চিনতে পারে না।",
+        "3": "Port আলাদা হলে সেটা অন্য service হতো; এখানে সমস্যা connection-level balancing।"
+      }
+    },
+    {
+      "id": "sd-day-009-q28",
+      "difficulty": "medium",
+      "question": "আপনার site-এ /video request-এর জন্য শক্তিশালী server দরকার, বাকি সব হালকা। একই domain রাখতে চান। কী করবেন?",
+      "options": [
+        "DNS-এ video-র জন্য আলাদা IP দিয়ে browser-কে path অনুযায়ী resolve করতে বলা",
+        "সব server-কে video-র মতো শক্তিশালী বানিয়ে ফেলা, যাতে যেকোনো server যেকোনো ধরনের request নিতে পারে",
+        "IP hash চালু করা, যাতে video দেখা user-রা একই server-এ থাকে",
+        "L7 load balancer-এ path-based rule: /video/* → শক্তিশালী video pool, বাকিরা সাধারণ pool-এ"
+      ],
+      "correctIndex": 3,
+      "explanation": "L7 LB path পড়ে আলাদা pool-এ পাঠাতে পারে। এতে কাজ অনুযায়ী server-এর আকার ঠিক করা যায়, আর video pool-এর সমস্যা বাকি site-কে ছোঁয় না। Simulator-এর 'Video-র জন্য আলাদা pool' challenge ঠিক এটাই।",
+      "whyWrong": {
+        "0": "DNS path দেখে না, শুধু hostname resolve করে।",
+        "1": "সব server বড় করলে অপ্রয়োজনে খরচ বাড়ে, আর blast radius আলাদা হয় না।",
+        "2": "IP hash user অনুযায়ী ভাগ করে, request-এর ধরন অনুযায়ী না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q29",
+      "difficulty": "medium",
+      "question": "আপনার /health endpoint database-এ একটা query চালায়। একদিন database ২০ সেকেন্ড ধীর হলো, আর load balancer সব app server বাদ দিয়ে দিল, পুরো site 503। ভবিষ্যতে কী করবেন?",
+      "options": [
+        "Health check একেবারে বন্ধ করে দেওয়া, যাতে কোনো server কখনো বাদ না পড়ে",
+        "Health check শুধু server-এর নিজের অবস্থা দেখুক; shared database-এর সমস্যা আলাদা monitoring-এ ধরুন",
+        "Health check interval ১ সেকেন্ডে নামানো, যাতে database ঠিক হলেই server দ্রুত ফেরে",
+        "Database-এর সামনেও আরেকটা load balancer বসানো, যাতে health check-এর query দ্রুত উত্তর পায় আর timeout না হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Shared dependency health check-এ থাকলে সেটা ধীর হলে সব server একসাথে fail করে, আর LB নিজেই পুরো outage বানায়। Health check শুধু সেই জিনিস দেখুক যা এই server-এর নিজের সমস্যা। অনেক LB-তে সব unhealthy হলে fail open বা panic threshold-ও এই ঝুঁকি কমায়।",
+      "whyWrong": {
+        "0": "Health check বন্ধ করলে সত্যি মরা server-এও traffic যাবে।",
+        "2": "Interval কমালে database ধীর থাকাকালীন সমস্যা কমে না, flapping বাড়ে।",
+        "3": "Database ধীর হওয়া health check-এর ডিজাইনের সমস্যা মেটায় না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q30",
+      "difficulty": "medium",
+      "question": "প্রতিটা deploy-এর সময় কিছু user-এর ছবি upload মাঝপথে কেটে যায়। Server সরাসরি stop করা হয়। কোন পরিবর্তন সবচেয়ে বেশি সাহায্য করবে?",
+      "options": [
+        "Upload-এর জন্য round robin বাদ দিয়ে least connections চালু করা, যাতে ব্যস্ত server-এ নতুন upload না যায়",
+        "Deploy শুধু রাত ৩টায় করা, যাতে কম মানুষ upload করে",
+        "আগে LB থেকে deregister করে connection draining, আর app-এ SIGTERM ধরে চলমান কাজ শেষ করে বের হওয়া",
+        "প্রতিটা server-এর health check interval বাড়িয়ে দেওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "Draining নতুন request বন্ধ করে চলমানগুলো শেষ হতে দেয়, আর graceful shutdown নিশ্চিত করে app মাঝপথে মরে না। দুটো মিলে deploy-এ কেউ কাটা পড়ে না।",
+      "whyWrong": {
+        "0": "Algorithm বদলালে চলমান upload বন্ধ হওয়া আটকায় না।",
+        "1": "রাতে কম মানুষ, কিন্তু সমস্যা থেকেই যায়; এটা সমাধান না, এড়ানো।",
+        "3": "Interval বাড়ালে মরা server ধরতে আরও দেরি হয়, upload বাঁচে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q31",
+      "difficulty": "medium",
+      "question": "Least connections চলছে। Server 3-এর database connection ভাঙা, তাই সে প্রতিটা request-এ ১ms-এ 500 দেয়। Dashboard-এ দেখা গেল Server 3 বাকিদের চেয়ে অনেক বেশি request পাচ্ছে। কেন, আর কী করবেন?",
+      "options": [
+        "Server 3-এর CPU সবচেয়ে বেশি খালি, তাই least connections তাকে বেশি দেয়; তার weight কমিয়ে দিলেই ভাগটা নিজে থেকে ঠিক হয়ে যাবে",
+        "দ্রুত error দেয় বলে তার connection প্রায় শূন্য, তাই LB তাকেই বাছে; error দেখে বাদ দেওয়া (outlier detection) চালু করুন",
+        "Least connections নতুন যোগ হওয়া server-কে সবসময় বেশি দেয়; কিছুক্ষণ পর ভাগ নিজে থেকেই সমান হয়ে আসবে",
+        "Server 3 হয়তো অন্যদের চেয়ে দ্রুত; তাকে আরও request দেওয়াই ঠিক কাজ"
+      ],
+      "correctIndex": 1,
+      "explanation": "Least connections কাজের মান দেখে না, শুধু চলমান সংখ্যা। ভাঙা server তাৎক্ষণিক error দিয়ে connection ছেড়ে দেয়, তাই সবচেয়ে 'খালি' দেখায় আর বেশি traffic টানে (black hole)। Error rate দেখে তাকে বাদ দেওয়া লাগবে।",
+      "whyWrong": {
+        "0": "Error দেওয়া server-এর CPU কম, আর weight সমস্যার মূল না।",
+        "2": "Server 3 নতুন না, আর এটা নিজে থেকে ঠিক হবে না যতক্ষণ সে error দিচ্ছে।",
+        "3": "দ্রুত উত্তর মানে সফল উত্তর না; ৫০০ পাওয়া user-দের কাছে এটা failure।"
+      }
+    },
+    {
+      "id": "sd-day-009-q32",
+      "difficulty": "medium",
+      "question": "Compliance-এর নিয়ম: data কোথাও unencrypted অবস্থায় network-এ যাবে না। অথচ আপনার L7 path routing আর cookie stickiness দরকার। কোন TLS পদ্ধতি?",
+      "options": [
+        "TLS passthrough, কারণ এতে data শেষ পর্যন্ত encrypted থাকে আর LB তবুও path পড়তে পারে",
+        "LB-তে TLS termination, তারপর backend-এ সাধারণ HTTP",
+        "TLS একেবারে বাদ দিয়ে private network-এ সব চালানো",
+        "Re-encryption: LB TLS খুলে request পড়ে, তারপর backend-এর সাথে নতুন TLS-এ পাঠায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Re-encryption-এ LB request পড়তে পারে (L7 সুবিধা), আর LB থেকে backend-ও encrypted। দাম দুইবার TLS-এর CPU আর দুই জায়গায় certificate।",
+      "whyWrong": {
+        "0": "Passthrough-এ LB TLS খোলে না, তাই path বা cookie দেখতে পায় না।",
+        "1": "Termination-এর পরে LB থেকে backend data খোলা যায়, নিয়ম ভাঙে।",
+        "2": "TLS বাদ দিলে নিয়ম সরাসরি ভাঙে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q33",
+      "difficulty": "medium",
+      "question": "আপনার load balancer TLS passthrough-এ চলছে। নিচের কোনটা সে এখনো করতে পারে?",
+      "options": [
+        "TLS handshake-এর SNI field থেকে hostname দেখে আলাদা backend-এ পাঠানো",
+        "URL path দেখে /api আর /static request আলাদা দুটো server pool-এ পাঠিয়ে দেওয়া",
+        "Response-এ নিজের একটা cookie বসিয়ে sticky session চালু করা",
+        "Backend 503 দিলে সেটা দেখে request-টা অন্য server-এ retry করা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Passthrough-এ HTTP অংশ encrypted থাকে, তাই path, cookie বা status code LB দেখতে পায় না। কিন্তু TLS handshake-এর শুরুতে SNI-তে hostname খোলা থাকে, তাই অনেক LB hostname দেখে route করতে পারে।",
+      "whyWrong": {
+        "1": "Path encrypted HTTP-এর ভেতরে, passthrough-এ দেখা যায় না।",
+        "2": "Cookie বসাতে HTTP response বদলাতে হয়, যেটা encrypted।",
+        "3": "Status code encrypted response-এর ভেতরে, LB তা পড়তে পারে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q34",
+      "difficulty": "medium",
+      "question": "Peak-এ ৬,০০০ request/s আশা করছেন। প্রতিটা server সর্বোচ্চ ১,০০০ request/s নিতে পারে, কিন্তু আপনি প্রতিটাকে ৬০%-এর বেশি চালাতে চান না, আর একটা server মরলেও এই সীমা রাখতে চান। কয়টা server লাগবে?",
+      "options": [
+        "৬টা, কারণ ৬,০০০ ÷ ১,০০০ = ৬, আর তখন প্রতিটা server পুরো ক্ষমতায় চলবে",
+        "১০টা, কারণ ৬,০০০ ÷ ৬০০ = ১০, আর এতে ৬০% সীমা ঠিকঠাক থাকে",
+        "১১টা, কারণ ৬০% সীমায় ১০টা লাগে, আর একটা মরার জায়গা হিসেবে আরও একটা",
+        "৭টা, কারণ ৬টার সাথে একটা বাড়তি রাখলেই যথেষ্ট headroom হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "৬০% সীমায় প্রতিটা server ৬০০ request/s নেয়, তাই ৬,০০০ ÷ ৬০০ = ১০টা। একটা মরলেও ১০টা থাকতে হবে, তাই N+1 = ১১টা।",
+      "whyWrong": {
+        "0": "৬টা মানে প্রতিটা ১০০%-এ চলবে, কোনো headroom নেই।",
+        "1": "১০টায় ৬০% সীমা ঠিক থাকে, কিন্তু একটা মরলে বাকি ৯টা প্রায় ৬৭%-এ যাবে।",
+        "3": "৭টায় প্রতিটা প্রায় ৮৬% চালাতে হবে, ৬০% সীমা ভাঙে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q35",
+      "difficulty": "medium",
+      "question": "চারটা server-এর weight ৪, ২, ২, ১। মোট ৯০০ request/s এলে weight ৪-এর server কত request/s পাবে?",
+      "options": [
+        "২২৫, কারণ চারটা server-এ সমান ভাগ",
+        "৩৬০, কারণ weight ৪ মানে মোটের ৪০%",
+        "৪৫০, কারণ বাকিদের মোট weight ৫-এর প্রায় সমান",
+        "৪০০, কারণ মোট weight ৯-এর মধ্যে তার ভাগ ৪"
+      ],
+      "correctIndex": 3,
+      "explanation": "মোট weight ৪ + ২ + ২ + ১ = ৯। Weight ৪-এর server পায় ৯০০ × ৪/৯ = ৪০০ request/s। বাকিরা ২০০, ২০০ আর ১০০।",
+      "whyWrong": {
+        "0": "সমান ভাগ weight ছাড়া round robin-এর ফল।",
+        "1": "৪০% হিসাবটা ভুল, ৪/৯ ≈ ৪৪%।",
+        "2": "৪৫০ মানে অর্ধেক, কিন্তু তার ভাগ ৪/৯, ১/২ না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q36",
+      "difficulty": "medium",
+      "question": "আপনার team open source NGINX ব্যবহার করে, আর চায় load balancer নিয়মিত probe পাঠিয়ে (active) মরা server ধরুক। কোন কথাটা ঠিক?",
+      "options": [
+        "Open source NGINX-এ upstream-এ max_fails লিখলেই প্রতি সেকেন্ডে probe যায়",
+        "Open source NGINX passive check দেয় (max_fails, fail_timeout); নিয়মিত probe-এর health_check NGINX Plus-এ, বা HAProxy-র check-এ",
+        "Health check শুধু hardware load balancer-এ সম্ভব; NGINX, HAProxy-র মতো software LB-তে নিয়মিত probe পাঠানোর কোনো ব্যবস্থাই আসলে নেই",
+        "Active health check-এর জন্য backend server-কেই নিয়মিত load balancer-এ heartbeat পাঠাতে হয়, LB নিজে থেকে কিছু পাঠায় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "NGINX documentation অনুযায়ী open source version আসল request-এর ফল দেখে (passive) server বাদ দেয়, আর নিয়মিত probe পাঠানো health_check directive NGINX Plus-এর। HAProxy-র open source version-এ server-এর পাশে check লিখলে active check চালু হয়।",
+      "whyWrong": {
+        "0": "max_fails passive, আসল request fail গোনে; probe পাঠায় না।",
+        "2": "HAProxy, Envoy, NGINX Plus সবই software, আর সবগুলোতে health check আছে।",
+        "3": "Active check-এ LB নিজে probe পাঠায়; server-এর heartbeat আলাদা ধারণা।"
+      }
+    },
+    {
+      "id": "sd-day-009-q37",
+      "difficulty": "medium",
+      "question": "দুটো region-এর মধ্যে DNS-based failover রেখেছেন, TTL ৬০ সেকেন্ড। একটা region বন্ধ হওয়ার পর কিছু user ১০ মিনিট ধরে error দেখল। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "DNS server ১০ মিনিট পরপর নিজের health check চালায়, তার আগে কোনো region-এর IP সে একদমই বদলায় না",
+        "TTL ৬০ সেকেন্ড মানে আসলে ৬০ মিনিট, কারণ TTL মিনিটে গোনা হয়",
+        "কিছু resolver আর app DNS উত্তর TTL-এর চেয়ে বেশিক্ষণ cache-এ রাখে, তাই পুরনো IP-তে যেতে থাকে",
+        "বন্ধ region-এর load balancer নিজে user-দের ১০ মিনিট ধরে নিজের কাছে আটকে রাখে"
+      ],
+      "correctIndex": 2,
+      "explanation": "DNS-based load balancing-এর বড় সীমা হলো cache: অনেক resolver, OS আর app (বিশেষ করে লম্বা connection রাখা app) TTL মানে না বা IP ধরে রাখে। এজন্য দ্রুত failover-এ anycast বা region-এর ভেতরে LB বেশি নির্ভরযোগ্য।",
+      "whyWrong": {
+        "0": "Health check-এর সময় DNS-এর ধরন অনুযায়ী configure করা যায়; মূল সমস্যা client-দের cache।",
+        "1": "TTL সেকেন্ডে গোনা হয়।",
+        "3": "বন্ধ region-এর LB কাউকে আটকে রাখতে পারে না, সে নিজেই বন্ধ।"
+      }
+    },
+    {
+      "id": "sd-day-009-q38",
+      "difficulty": "medium",
+      "question": "চারটা cache server-এ key রাখা হয় hash(key) % 4 দিয়ে। পঞ্চম server যোগ করে % 5 করলেন, আর হঠাৎ database-এ ভার কয়েক গুণ বেড়ে গেল। কেন, আর কী এটা কমাত?",
+      "options": [
+        "নতুন server খালি তাই সব request সেখানে যায়; weight কমালেই হতো",
+        "% 5-এ hash function নিজেই ধীর হয়ে যায়, তাই প্রতিটা lookup দেরি করে; দ্রুত কোনো hash function দিলেই এটা হতো না",
+        "Cache server যোগ করলে সবসময় database-এ ভার বাড়ে; কিছুই করার নেই",
+        "N বদলালে প্রায় সব key-র server বদলায়, তাই প্রায় সব cache miss; consistent hashing-এ মোটামুটি ১/N অংশ সরে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Modulo-তে N বদলালে বেশিরভাগ key-র ভাগশেষ বদলায়, ফলে নতুন server-এ খোঁজা key পাওয়া যায় না আর সব database-এ যায়। Consistent hashing-এ শুধু নতুন server-এর পাশের অংশের key সরে।",
+      "whyWrong": {
+        "0": "সমস্যা নতুন server-এ ভিড় না, বরং প্রায় সব key-র জায়গা বদলে যাওয়া।",
+        "1": "Hash function-এর গতি এখানে কারণ না।",
+        "2": "Consistent hashing দিয়ে এই ধাক্কা অনেক কমানো যায়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q39",
+      "difficulty": "medium",
+      "question": "keepalived দিয়ে active-passive LB জোড়া চলছে। Active LB-র power চলে গেল, standby কয়েক সেকেন্ডে floating IP নিল। ঠিক সেই মুহূর্তে চলমান user connection-গুলোর কী হয়?",
+      "options": [
+        "সাধারণত কেটে যায়, কারণ standby সেগুলোর কথা জানে না; নতুন connection সাথে সাথে কাজ করে",
+        "কোনো প্রভাব পড়ে না, কারণ VRRP floating IP-র সাথে চলমান TCP connection-এর অবস্থাও কপি করে রাখে",
+        "সবগুলো স্থায়ীভাবে আটকে থাকে যতক্ষণ না পুরনো LB ফিরে আসে",
+        "Standby পুরনো connection-গুলো নিজে থেকে নতুন server-এ redirect করে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Floating IP সরে, কিন্তু active LB-র connection-এর অবস্থা (state) standby-র কাছে থাকে না, তাই চলমান connection ভাঙে আর client-কে আবার connect করতে হয়। নতুন connection standby-তেই যায়।",
+      "whyWrong": {
+        "1": "VRRP শুধু কে IP রাখবে ঠিক করে, connection state কপি করে না।",
+        "2": "Client timeout হয়ে নতুন connection খোলে, পুরনো LB-র জন্য অপেক্ষা করে না।",
+        "3": "যে connection-এর কথা standby জানে না, সেটা redirect করার উপায় তার নেই।"
+      }
+    },
+    {
+      "id": "sd-day-009-q40",
+      "difficulty": "medium",
+      "question": "আপনার ৫০টা load balancer node আছে, প্রত্যেকে আলাদাভাবে least connections চালায় আর অন্যদের সর্বশেষ গোনা জানে না। মাঝে মাঝে একটা server-এ হঠাৎ ঢল নামে। কোন algorithm এটা কমাবে?",
+      "options": [
+        "Round robin, কারণ সব LB একই ক্রমে পালা দেবে",
+        "IP hash, কারণ একই client সবসময় একই server-এ যাবে",
+        "Power of two choices: প্রতিটা LB এলোমেলো দুটোর মধ্যে কম ব্যস্তটা নেয়, তাই সবাই একই server-এ ঝাঁপায় না",
+        "Least connections-ই রাখা, শুধু সব LB node-কে প্রতিটা সিদ্ধান্তের আগে একটা global lock নিয়ে সবার সর্বশেষ গোনা পড়তে বলা"
+      ],
+      "correctIndex": 2,
+      "explanation": "সবাই 'সবচেয়ে কম ব্যস্ত' খুঁজলে পুরনো তথ্যে সবাই একই server বেছে herd বানায়। Power of two choices প্রতিবার ভিন্ন এলোমেলো জোড়া দেখে, তাই সিদ্ধান্ত ছড়িয়ে থাকে, অথচ ভারের তথ্যও কাজে লাগে।",
+      "whyWrong": {
+        "0": "আলাদা আলাদা LB-র round robin একসাথে একই server-এ পড়তে পারে, আর ভার দেখে না।",
+        "1": "IP hash ভার দেখে না, CGNAT-এ hot spot বানাতে পারে।",
+        "3": "Global lock প্রতিটা request-কে ধীর করবে আর নিজেই bottleneck হবে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q41",
+      "difficulty": "hard",
+      "question": "Request যায় edge LB → API service → order service → database। প্রতিটা স্তর fail হলে মোট ৩ বার পর্যন্ত চেষ্টা করে। Database পুরো ধীর হলে একটা user request সবচেয়ে খারাপ ক্ষেত্রে database-এ কতবার পৌঁছাতে পারে?",
+      "options": [
+        "৯ বার, কারণ শুধু ভেতরের দুই স্তরের retry গুণ হয়",
+        "২৭ বার, কারণ তিন স্তরের ৩ × ৩ × ৩",
+        "৩ বার, কারণ শুধু সবচেয়ে ভেতরের স্তরের retry database-এ যায়",
+        "১২ বার, কারণ প্রতিটা স্তরের ৩টা চেষ্টা যোগ হয়ে আরও ৩টা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Edge প্রতিটা চেষ্টায় API-কে ডাকে (৩), API প্রতিটায় order service-কে (৩), order service প্রতিটায় database-কে (৩)। মোট ৩ × ৩ × ৩ = ২৭। এটাই retry storm: ধীর database-এর উপর ২৭ গুণ ভার। সমাধান: এক স্তরে retry, retry budget, backoff, circuit breaker।",
+      "whyWrong": {
+        "0": "Edge-এর retry-ও API-কে নতুন করে ডাকে, তাই তিন স্তরই গুণ হয়।",
+        "2": "বাইরের স্তরের প্রতিটা retry ভেতরের পুরো retry চক্র আবার চালায়।",
+        "3": "Retry স্তরে স্তরে যোগ না, গুণ হয়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q42",
+      "difficulty": "hard",
+      "question": "LB-তে `proxy_next_upstream error timeout` আর read timeout ৫ সেকেন্ড, আর আপনি `non_idempotent` যোগ করেছেন। POST /payments-এ backend ৬ সেকেন্ড নিয়ে টাকা কাটল, LB timeout দেখে অন্য server-এ পাঠাল। কিছু customer-এর টাকা দুবার কাটা হলো। সঠিক সমাধান কী?",
+      "options": [
+        "Read timeout ৬০ সেকেন্ড করে দেওয়া, তাহলে আর কখনো timeout হবে না",
+        "Least connections চালু করা, যাতে ধীর server-এ payment কম যায়",
+        "পৌঁছানোর পরের fail-এ POST retry বন্ধ রাখা (non_idempotent সরানো), আর payment-এ idempotency key দেওয়া",
+        "Payment-এর জন্য sticky session চালু করা, যাতে LB-র retry সবসময় আগের সেই একই server-এই যায় আর duplicate না হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "LB জানে না প্রথম backend কাজটা করেছে কিনা, তাই পৌঁছানোর পরের retry non-idempotent request-এ duplicate বানায়। NGINX default-এ এজন্যই POST-কে পরের server-এ পাঠায় না। Idempotency key থাকলে backend একই key-র দ্বিতীয় অনুরোধ চিনে আগের ফল ফেরত দেয়।",
+      "whyWrong": {
+        "0": "Timeout বড় করলে সমস্যা কম ঘটবে, কিন্তু network ভাঙলে আবার হবে; মূল কারণ অনিরাপদ retry।",
+        "1": "Algorithm বদলালে duplicate retry বন্ধ হয় না।",
+        "3": "একই server-এ retry করলেও কাজটা দুবার হয়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q43",
+      "difficulty": "hard",
+      "question": "keepalived-এ VRRP advertisement interval ২ সেকেন্ড। VRRP-তে standby মোটামুটি তিনটা advertisement interval (সাথে সামান্য skew) অপেক্ষা করে active-কে মৃত ধরে। Active LB মরলে নতুন connection মোটামুটি কতক্ষণ পর আবার সফল হবে?",
+      "options": [
+        "প্রায় ২ সেকেন্ড, কারণ একটা advertisement miss হলেই standby সাথে সাথে দায়িত্ব নিয়ে নেয়",
+        "প্রায় ৬ সেকেন্ড, আর তারপর IP সরানোর ঘোষণা (gratuitous ARP) ছড়াতে সামান্য সময়",
+        "প্রায় ৬০ সেকেন্ড, কারণ VRRP সবসময় এক মিনিট অপেক্ষা করে",
+        "সাথে সাথে, কারণ দুটো LB সবসময় একসাথে active থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Master down ধরা ≈ ৩ × ২ = ৬ সেকেন্ড (আর সামান্য skew)। তারপর standby floating IP নিয়ে network-কে জানায়। তাই কয়েক সেকেন্ডের downtime, আর চলমান connection সাধারণত কাটে।",
+      "whyWrong": {
+        "0": "একটা miss-এ failover দিলে সামান্য network সমস্যায় বারবার failover হতো।",
+        "2": "VRRP-এর অপেক্ষা advertisement interval থেকে হিসাব হয়, স্থির এক মিনিট না।",
+        "3": "Active-passive-এ এক সময়ে একজনই active; দুজন একসাথে মানে split brain।"
+      }
+    },
+    {
+      "id": "sd-day-009-q44",
+      "difficulty": "hard",
+      "question": "আপনার site-এ ৪০০ request/s, ৫টা server-এ সমান ভাগ। Health check interval ৫s, unhealthy threshold ৪, retry বন্ধ। একটা server হঠাৎ মরলে detection-এর সময়ে মোটামুটি কতগুলো request fail করবে?",
+      "options": [
+        "প্রায় ১,৬০০টা, কারণ ২০ সেকেন্ড ধরে মরা server-এর ভাগে প্রতি সেকেন্ডে ৮০টা যায়",
+        "প্রায় ৮,০০০টা, কারণ ওই ২০ সেকেন্ড ধরে পুরো ৪০০ request/s-ই একসাথে fail করতে থাকে",
+        "প্রায় ৪০০টা, কারণ শুধু প্রথম ৫ সেকেন্ডের request fail করে",
+        "একটাও না, কারণ health check মরা server-এ যাওয়া request আটকে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Detection ≈ ৫ × ৪ = ২০ সেকেন্ড। মরা server-এর ভাগ ৪০০ ÷ ৫ = ৮০ request/s। তাই ২০ × ৮০ = ১,৬০০টা request fail। এজন্যই detection-এর ফাঁক ঢাকতে নিরাপদ retry দরকার।",
+      "whyWrong": {
+        "1": "শুধু মরা server-এর ভাগ fail করে, বাকি ৪টা ঠিকই উত্তর দেয়।",
+        "2": "Threshold ৪ মানে ২০ সেকেন্ড ধরে request যায়, শুধু ৫ সেকেন্ড না।",
+        "3": "Health check বাদ দেওয়ার আগ পর্যন্ত request মরা server-এ যেতেই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q45",
+      "difficulty": "hard",
+      "question": "৩০টা load balancer node, প্রত্যেকে ১০০টা backend-কে প্রতি ২ সেকেন্ডে active health check পাঠায়। Backend fleet সব মিলিয়ে প্রতি সেকেন্ডে কতগুলো health check সামলায়?",
+      "options": [
+        "৬,০০০টা, কারণ ৩০ × ১০০ × ২",
+        "৩,০০০টা, কারণ ৩০ × ১০০",
+        "৫০টা, কারণ ১০০ ÷ ২",
+        "১,৫০০টা, কারণ ৩০ × ১০০ ÷ ২"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতি ২ সেকেন্ডে ৩০ × ১০০ = ৩,০০০টা check, তাই প্রতি সেকেন্ডে ১,৫০০টা। প্রতিটা backend সেকেন্ডে ১৫টা পায়। বড় fleet-এ health check নিজেই উল্লেখযোগ্য ভার, তাই interval আর check-এর খরচ ভেবে ঠিক করতে হয়।",
+      "whyWrong": {
+        "0": "প্রতি ২ সেকেন্ডে একবার মানে ২ দিয়ে ভাগ, গুণ না।",
+        "1": "৩,০০০টা প্রতি ২ সেকেন্ডের হিসাব, প্রতি সেকেন্ডের না।",
+        "2": "এখানে LB node-এর সংখ্যা ৩০ বাদ পড়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q46",
+      "difficulty": "hard",
+      "question": "১০টা server-এ ip_hash চলছে, মোট ২৪,০০০ সক্রিয় user। এক mobile operator-এর একটা CGNAT IP-র পেছনে ৬,০০০ user। (ধরি user প্রতি request সমান।) ওই IP যে server-এ hash হয়েছে, সে ন্যূনতম মোট traffic-এর কত অংশ পাবে?",
+      "options": [
+        "১০%, কারণ ১০টা server-এ hash সবসময় সমান ভাগ করে",
+        "৩,০০০টা, কারণ ৩০ × ১০০, প্রতিটা LB প্রতিটা backend-কে একবার করে",
+        "৫০টা, কারণ প্রতিটা backend-এ ১০০ ÷ ২ করে, LB যতই থাকুক",
+        "১,৫০০টা, কারণ ৩০ × ১০০ ÷ ২"
+      ],
+      "correctIndex": 2,
+      "explanation": "একটা IP-র সব user একই server-এ যায়, তাই শুধু সেই IP থেকেই ৬,০০০ ÷ ২৪,০০০ = ২৫%। অন্য IP-রাও সেখানে hash হলে আরও বেশি। ন্যায্য ভাগ ১০%, তাই এই server অন্তত আড়াই গুণ ভার নেয়।",
+      "whyWrong": {
+        "0": "Hash IP সংখ্যা সমান ভাগ করে, user সংখ্যা না; এক IP-র পেছনে হাজার user থাকলে ভাগ অসমান।",
+        "1": "মোট user ২৪,০০০, ১,০০,০০০ না।",
+        "3": "ভাগ হিসাব করতে হয় মোট user ২৪,০০০ দিয়ে, server-প্রতি user দিয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q47",
+      "difficulty": "hard",
+      "question": "১২টা server-এ rolling deploy, একসাথে একটা। প্রতিটায় deregistration delay ৩০০ সেকেন্ড (default)। আপনার সবচেয়ে লম্বা স্বাভাবিক request ২০ সেকেন্ড নেয়। কোন সিদ্ধান্ত সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "১০%, কারণ ১০টা server-এ hash সবসময় traffic সমান ভাগ করে, IP-র পেছনে কতজন তা ব্যাপার না",
+        "Delay ৩০০ সেকেন্ডেই রাখা, কারণ deploy-তে শুধু অপেক্ষা ৬০ মিনিট হলেও নিরাপদ",
+        "একসাথে সব ১২টা server deregister করা, যাতে অপেক্ষা একবারই হয়",
+        "২৫%: শুধু ওই IP-ই ৬,০০০ ÷ ২৪,০০০, আর অন্য IP-ও সেখানে hash হলে আরও বেশি"
+      ],
+      "correctIndex": 3,
+      "explanation": "Default-এ শুধু অপেক্ষায় ১২ × ৩০০ = ৩,৬০০ সেকেন্ড বা ৬০ মিনিট লাগে, যদিও কোনো request ২০ সেকেন্ডের বেশি চলে না। Delay সবচেয়ে লম্বা স্বাভাবিক request-এর একটু বেশি রাখলে নিরাপত্তা একই থাকে, deploy অনেক দ্রুত।",
+      "whyWrong": {
+        "0": "শূন্য দিলে চলমান request কাটে, আর POST-এর মতো request retry নিরাপদ না।",
+        "1": "নিরাপদ, কিন্তু অকারণে এক ঘণ্টা; এতে deploy কম হয়, ঝুঁকি বাড়ে।",
+        "2": "সব একসাথে সরালে সেবা দেওয়ার মতো কোনো server থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q48",
+      "difficulty": "hard",
+      "question": "Active-passive LB জোড়ার heartbeat link ছিঁড়ে গেল, দুটো machine-ই সুস্থ। কিছুক্ষণ পর কিছু user অদ্ভুত connection reset দেখছে। সবচেয়ে সম্ভাব্য ব্যাখ্যা আর প্রতিকার কী?",
+      "options": [
+        "Delay ৩০ সেকেন্ডের মতো করা: সবচেয়ে লম্বা request-এর একটু বেশি, তাই অপেক্ষা ১২ × ৩০ = ৬ মিনিট",
+        "Standby LB-র CPU বেশি গরম হয়ে গেছে; তাকে বড় machine-এ সরানো",
+        "Delay শূন্য করে দেওয়া, কারণ ২০ সেকেন্ডের request মাঝপথে কাটলেও client নিজেই আবার retry করে নেবে",
+        "Backend server-গুলো দুটো LB-কে চেনে না; backend restart করা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Heartbeat না পেলে standby ভাবে active মৃত, অথচ active-ও চালু। দুজনেই IP দাবি করলে network-এ packet কখনো এক machine-এ, কখনো আরেকটায় যায়, connection ভাঙে। প্রতিকার: আলাদা heartbeat পথ, বাইরের witness, আর ঠিকমতো fencing।",
+      "whyWrong": {
+        "1": "CPU গরম হওয়া connection reset-এর এই ধরনের লক্ষণ ব্যাখ্যা করে না।",
+        "2": "Floating IP DNS record না, তার কোনো TTL নেই।",
+        "3": "Backend-এর দিকে সমস্যা না; সমস্যা দুজনের একসাথে IP দাবি।"
+      }
+    },
+    {
+      "id": "sd-day-009-q49",
+      "difficulty": "hard",
+      "question": "Least connections চালু, ১০টা গরম server। Sale-এর মাঝে ১১ নম্বর নতুন server যোগ হলো, ঠান্ডা cache নিয়ে। প্রথম কয়েক সেকেন্ডে তার latency খুব খারাপ, কিছু timeout। কেন, আর কী সাহায্য করবে?",
+      "options": [
+        "নতুন server-এর IP DNS-এ ছড়াতে দেরি হচ্ছে; DNS TTL কমালেই হবে",
+        "নতুন server-এর health check fail করছে; threshold বাড়ালেই হবে",
+        "Least connections নতুন server-কে কখনো request দেয় না যতক্ষণ না তার cache গরম হয়; round robin চালু করা দরকার",
+        "নতুন server-এর connection শূন্য, তাই least connections তাকে একসাথে অনেক request দেয়; slow start বা warm-up"
+      ],
+      "correctIndex": 3,
+      "explanation": "নতুন server-এর চলমান connection শূন্য, তাই least connections ধরে নেয় সে সবচেয়ে খালি, আর একটা ঢল পাঠায়, অথচ তার cache ঠান্ডা। Slow start-এ নতুন server-এর ভাগ কয়েক সেকেন্ড ধরে ধীরে বাড়ে, বা আগে warm-up request দিয়ে গরম করা হয়।",
+      "whyWrong": {
+        "0": "Server LB-র পেছনে যোগ হয়, DNS-এ না; সমস্যা ভাগের ধরনে।",
+        "2": "Least connections উল্টো নতুন server-কেই সবচেয়ে বেশি দেয়।",
+        "1": "Timeout হচ্ছে ঠান্ডা অবস্থায় ভিড় থেকে; threshold বাড়ালে সমস্যা থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q50",
+      "difficulty": "hard",
+      "question": "একটা bad config push-এ সব backend-এর /health 500 দিতে লাগল, যদিও আসল request ঠিকঠাক চলছিল। আপনার AWS ALB target group-এর সব target unhealthy। AWS documentation অনুযায়ী ALB তখন কী করে?",
+      "options": [
+        "সব request-এ সাথে সাথে 503 দেয়, কারণ কোনো সুস্থ target নেই",
+        "সবচেয়ে কম unhealthy target বেছে নিয়ে শুধু তাকেই সব traffic দেয়, যাতে বাকিরা নিশ্চিন্তে সেরে ওঠার সময় পায়",
+        "Target group-এর সব target-এ request পাঠায় (fail open), কারণ 'সবাই মৃত' প্রায়ই health check-এর ভুল",
+        "নিজে থেকে নতুন target চালু করে পুরনোগুলো মুছে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "AWS-এর documentation অনুযায়ী target group-এ শুধু unhealthy target থাকলে load balancer সবার কাছেই request পাঠায়। Envoy-তে একই ধারণা panic threshold। তাই health check-এর ভুলে পুরো site বন্ধ হয় না।",
+      "whyWrong": {
+        "0": "এটা হলে health check-এর একটা ভুলই পুরো outage বানাত; ALB fail open করে।",
+        "1": "এমন কোনো 'কম unhealthy' বাছাইয়ের নিয়ম নেই।",
+        "3": "নতুন target চালু করা autoscaling-এর কাজ, load balancer-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q51",
+      "difficulty": "hard",
+      "question": "Sale-এর আগে NLB (L4)-এর পেছনে ৪টা থেকে ৮টা server করলেন। Mobile app কয়েকটা লম্বা HTTP/2 connection খুলে রাখে। এক ঘণ্টা পরেও নতুন ৪টা প্রায় ফাঁকা, পুরনো ৪টার CPU 90%। সবচেয়ে কার্যকর পরিবর্তন কী?",
+      "options": [
+        "নতুন server-গুলোর weight বাড়িয়ে দেওয়া, তাহলে NLB চলমান connection-গুলোও ধীরে ধীরে নতুনদের দিকে সরিয়ে দেবে",
+        "Health check interval কমানো, যাতে NLB নতুন server-দের দ্রুত চেনে",
+        "NLB-তে sticky session চালু করা",
+        "Request-level (L7) balancing, অথবা connection-এর সর্বোচ্চ বয়স বেঁধে দিয়ে client-কে নিয়মিত reconnect করানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "L4 connection একবার একটা server-এ বসলে সেখানেই থাকে; নতুন server শুধু নতুন connection পায়। লম্বা connection থাকলে তাই scale-out-এর সুফল আসে না। L7 প্রতিটা request ভাগ করে, আর connection-এর বয়সসীমা দিলে client reconnect করে নতুন server-এও যায়।",
+      "whyWrong": {
+        "0": "Weight শুধু নতুন connection-এর ভাগ বদলায়, চলমান connection সরায় না।",
+        "1": "NLB নতুন server চেনে; সমস্যা পুরনো connection সরে না।",
+        "2": "Stickiness ভার আরও আটকে রাখবে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q52",
+      "difficulty": "hard",
+      "question": "Edge LB-র timeout ৫ সেকেন্ড আর সে একবার retry করে। ভেতরের service database call-এ ১০ সেকেন্ড পর্যন্ত অপেক্ষা করে। Database ধীর হলে কী ঘটে, আর কী ঠিক করবেন?",
+      "options": [
+        "কিছুই হয় না, কারণ ভেতরের বড় timeout বাইরের ছোট timeout-কে ঢেকে দেয়",
+        "Edge ৫ সেকেন্ডে হাল ছেড়ে retry করে অথচ প্রথম চেষ্টা ভেতরে চলছে, তাই কাজ দুবার; ভেতরের timeout ছোট রাখুন",
+        "Database নিজে থেকে দ্বিতীয় query বাতিল করে, তাই duplicate হয় না; কিছু বদলানোর দরকার নেই",
+        "Edge-এর timeout বাড়িয়ে ৬০ সেকেন্ড করে দেওয়া, তাহলে ভেতরের ১০ সেকেন্ড সহজেই ঢাকা পড়বে আর সব সমস্যা মিটে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "বাইরের স্তর আগে timeout হলে user error পায় বা retry হয়, অথচ ভেতরে আগের কাজ চলছেই। ফলে ধীর database-এ বাড়তি ভার আর duplicate কাজ। নিয়ম: ভেতরের timeout বাইরের চেয়ে ছোট, যাতে ভেতরের স্তর আগে হাল ছাড়ে।",
+      "whyWrong": {
+        "0": "ভেতরের বড় timeout বাইরের timeout বন্ধ করে না; দুটো আলাদা চলে।",
+        "2": "Database জানে না কোন query কোন user-এর retry, সে দুটোই চালায়।",
+        "3": "বড় timeout-এ user বেশিক্ষণ বসে থাকে আর connection আটকে থাকে, মূল অসামঞ্জস্য থেকেই যায়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q53",
+      "difficulty": "hard",
+      "question": "User-রা error-এর অভিযোগ করছে। LB metrics-এ backend (target) থেকে আসা 5xx প্রায় শূন্য, কিন্তু load balancer নিজে অনেক 503 দিচ্ছে। প্রথমে কোথায় খুঁজবেন?",
+      "options": [
+        "Health check আর target-এর অবস্থা: পাঠানোর মতো সুস্থ backend নেই কেন",
+        "Client-এর browser cache, কারণ 503 সাধারণত পুরনো cache থেকে আসে",
+        "Backend-এর application log-এ exception খোঁজা, কারণ 503 সবসময় backend-এর code থেকেই আসে",
+        "DNS-এর TTL, কারণ 503 মানে DNS resolve হয়নি"
+      ],
+      "correctIndex": 0,
+      "explanation": "Backend-এর 5xx শূন্য মানে request backend-এ পৌঁছায়ইনি। LB-র নিজের 503 সাধারণত মানে পাঠানোর মতো সুস্থ backend নেই। তাই health check-এর ফল, target-এর registration আর capacity আগে দেখতে হয়। LB-generated আর backend-generated 5xx আলাদা দেখার এটাই সুবিধা।",
+      "whyWrong": {
+        "1": "503 server-এর উত্তর, browser cache থেকে তৈরি হয় না।",
+        "3": "DNS resolve না হলে request LB-তে পৌঁছাতই না, LB 503 দিতে পারত না।",
+        "2": "Backend-এর 5xx প্রায় শূন্য, তাই সমস্যা backend-এর code-এ পৌঁছানোর আগেই।"
+      }
+    },
+    {
+      "id": "sd-day-009-q54",
+      "difficulty": "hard",
+      "question": "একটা internal service-এর ৪টা cache node-এ key ভাগ হয় hash(key) % 4 দিয়ে। একটা node স্থায়ীভাবে সরিয়ে % 3 করলে, মোটামুটি কত শতাংশ key নিজের node-এ থেকে যাবে (key সমানভাবে ছড়ানো ধরে)?",
+      "options": [
+        "প্রায় ৭৫%, কারণ শুধু সরানো node-এর key সরে, বাকি সব key নিজের node-এই থেকে যায়",
+        "প্রায় ২৫%, কারণ ১২ দিয়ে চক্রে শুধু ০, ১, ২ এই তিনটা ভাগশেষেই % 4 আর % 3 মেলে",
+        "প্রায় ৫০%, কারণ অর্ধেক key-র ভাগশেষ দুই ক্ষেত্রে মেলে",
+        "১০০%, কারণ hash function একই থাকে, শুধু node সংখ্যা বদলায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "k % 4 আর k % 3 প্রতি ১২টা সংখ্যায় একবার চক্র পূর্ণ করে, আর শুধু k = ০, ১, ২-এ দুটো সমান। তাই ১২-তে ৩টা, প্রায় ২৫% থাকে, ৭৫% সরে। Consistent hashing-এ শুধু সরানো node-এর অংশ, মোটামুটি ২৫%, সরত আর ৭৫% থাকত।",
+      "whyWrong": {
+        "0": "৭৫% থাকা consistent hashing-এর ফল; modulo-তে উল্টো, ৭৫% সরে।",
+        "2": "হিসাব করলে মেলে ১২-এ মাত্র ৩টা, অর্ধেক না।",
+        "3": "Hash একই থাকলেও ভাগশেষ N-এর উপর নির্ভর করে, তাই বেশিরভাগ বদলায়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q55",
+      "difficulty": "hard",
+      "question": "Google-এর Maglev paper (NSDI 2016) অনুযায়ী router ECMP দিয়ে packet কয়েকটা Maglev machine-এ ছড়ায়, আর Maglev consistent hashing দিয়ে backend বাছে। Consistent hashing এখানে কেন জরুরি?",
+      "options": [
+        "যাতে প্রতিটা packet-এর payload encrypt করা যায়",
+        "যাতে প্রতিটা request-এর URL path দেখে আলাদা service-এ পাঠানো যায়",
+        "যাতে Maglev machine-গুলো কোনো health check ছাড়াই চলতে পারে",
+        "Node বদলালেও একই connection-এর packet যেন একই backend-এ পৌঁছায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ECMP-তে Maglev machine বদলালে একটা চলমান connection-এর packet অন্য machine-এ যেতে পারে। সব machine একই consistent hash ব্যবহার করলে তারা আলাদাভাবে হিসাব করেও একই backend বাছে, তাই connection ভাঙে না, আর backend বদলালেও সামান্য অংশ সরে।",
+      "whyWrong": {
+        "0": "Encryption hashing-এর কাজ না; Maglev L4, payload খোলে না।",
+        "1": "Maglev L4 load balancer, URL path দেখে না।",
+        "2": "Maglev backend-এর health দেখে; consistent hashing সেটার বিকল্প না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q56",
+      "difficulty": "hard",
+      "question": "একটা chat app-এ HTTP API আর WebSocket একই server pool-এ, least connections দিয়ে। Server A-তে ৫,০০০টা প্রায় নিষ্ক্রিয় WebSocket, server B-তে ২০০টা ব্যস্ত HTTP request। B-র CPU 95%, A-র 20%। সবচেয়ে ভালো পরিবর্তন কী?",
+      "options": [
+        "WebSocket আর HTTP আলাদা pool-এ রাখা (L7 routing), প্রতিটায় তার উপযোগী balancing",
+        "সব user-কে IP hash দিয়ে stickiness দেওয়া, যাতে ভার সমান হয়",
+        "Least connections-ই রাখা, শুধু server A-র weight কমিয়ে দেওয়া",
+        "WebSocket connection-এর health check বন্ধ করে দেওয়া, যাতে A-র connection-গুলো আর গোনায় না ধরা হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Connection সংখ্যা এখানে ভারের ভুল ছবি দেয়: A-র হাজার connection চুপচাপ, B-র অল্প connection ব্যস্ত। Least connections তাই নতুন HTTP-ও B-তে পাঠায়। দুই ধরনের traffic আলাদা pool-এ রাখলে প্রত্যেকটার ভার আলাদাভাবে মাপা ও ভাগ করা যায়।",
+      "whyWrong": {
+        "1": "IP hash ভার দেখে না, আর CGNAT-এ আরও অসমান হতে পারে।",
+        "2": "A-র weight কমালে A আরও কম request পাবে, B-র উপর চাপ আরও বাড়বে।",
+        "3": "Health check বন্ধ করলে connection গোনা বদলায় না, শুধু মরা server ধরা বন্ধ হয়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q57",
+      "difficulty": "hard",
+      "question": "Black Friday sale-এর আগে cookie-ভিত্তিক sticky session চালু ছিল। Sale-এ autoscaling ৬টা থেকে ১২টা server করল, কিন্তু পুরনো ৬টার CPU 95%-এ, নতুনগুলো 20%-এ। কেন?",
+      "options": [
+        "Cookie expire না হওয়া পর্যন্ত পুরনো user-রা পুরনো server-এই যাচ্ছে; শুধু নতুন session নতুন server পায়",
+        "Autoscaling নতুন server-গুলোকে ছোট আকারে বানিয়েছে",
+        "নতুন server-গুলোর health check এখনো pass হয়নি, তাই load balancer তাদের প্রায় কোনো traffic-ই দিচ্ছে না",
+        "Load balancer-এর algorithm sale-এর সময় নিজে থেকে round robin-এ বদলে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Stickiness-এ চলমান user-রা তাদের server-এ আটকে থাকে, তাই নতুন server শুধু নতুন session পায়, আর পুরনো server-এর ভিড় কমে না। এটা sticky session-এর বড় দাম; stateless server হলে LB সঙ্গে সঙ্গে সবাইকে সমানভাবে ভাগ করতে পারত।",
+      "whyWrong": {
+        "1": "আকার ছোট হলে তাদের CPU বেশি হতো, কম না।",
+        "3": "Algorithm নিজে থেকে বদলায় না; আর round robin হলে ভার বরং ছড়াত।",
+        "2": "নতুনগুলো 20% CPU-তে, অর্থাৎ কিছু traffic পাচ্ছে, health check pass হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-009-q58",
+      "difficulty": "hard",
+      "question": "Server 3-এর /health আলাদা thread-এ চলে আর সবসময় 200 দেয়। কিন্তু তার আসল request-এর ৩০% 500 দিচ্ছে, কারণ একটা connection pool আটকে গেছে। Active health check সফল দেখাচ্ছে। কিভাবে ধরবেন?",
+      "options": [
+        "Health check interval ১ সেকেন্ডে নামানো, যাতে আরও ঘন ঘন /health ডাকা হয়",
+        "Passive check / outlier detection: আসল response-এ পরপর 5xx দেখলে server-কে কিছুক্ষণ বাদ রাখা",
+        "Server 3-এর weight বাড়ানো, যাতে সে বেশি request পেয়ে নিজের সমস্যা নিজেই দেখায়",
+        "Round robin বাদ দিয়ে IP hash চালু করা, যাতে একই user-রা বারবার আলাদা server-এ গিয়ে error না পায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Active check শুধু /health দেখে, যেটা এখানে মিথ্যা বলছে। Passive check আসল request-এর ফল দেখে, তাই 'চালু কিন্তু ভুল উত্তর দিচ্ছে' server ধরতে পারে। দুটো মিলিয়ে চালানোই ভালো।",
+      "whyWrong": {
+        "0": "ঘন ঘন ডাকলেও /health 200-ই দেবে, সমস্যা ধরা পড়বে না।",
+        "2": "বেশি request দিলে বেশি user error দেখবে।",
+        "3": "IP hash-এ যারা Server 3-এ hash হবে তারা সবসময় error পাবে, সমস্যা লুকানো হয়।"
+      }
+    },
+    {
+      "id": "sd-day-009-q59",
+      "difficulty": "hard",
+      "question": "আপনার service ১,০০০ request/s পায়, আর LB-তে ১০% retry budget আছে। Downstream সমস্যায় ৪০% request প্রথম চেষ্টায় fail করছে। প্রতি সেকেন্ডে সর্বোচ্চ কতগুলো retry হবে, আর budget না থাকলে (প্রতিটা fail একবার retry হলে) কতগুলো হতো?",
+      "options": [
+        "Budget-এ ১০০টা; budget ছাড়া ৪০০টা",
+        "Budget-এ ৪০টা; budget ছাড়া ১০০টা",
+        "Budget-এ ৪০০টা; budget ছাড়া ১,০০০টা",
+        "Budget-এ ১০টা; budget ছাড়া ৪০টা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Budget মোট request-এর ১০%, তাই সর্বোচ্চ ১০০টা retry/s। Budget না থাকলে ৪০% × ১,০০০ = ৪০০টা fail, প্রতিটা একবার retry মানে ৪০০টা বাড়তি request, ঠিক যখন downstream কষ্টে আছে। Budget retry-কে সীমিত রেখে retry storm ঠেকায়।",
+      "whyWrong": {
+        "1": "Budget ১,০০০-এর ১০% = ১০০, fail সংখ্যার ১০% না।",
+        "2": "Budget ১০%, ৪০% না; আর budget ছাড়া retry fail হওয়া request-এর সমান, মোট request না।",
+        "3": "১০% হিসাব মোট ১,০০০ request-এর উপর, ফলে ১০০, ১০ না।"
+      }
+    },
+    {
+      "id": "sd-day-009-q60",
+      "difficulty": "hard",
+      "question": "সব backend health check-এ সুস্থ। তবু dashboard-এ load balancer-এর 504 বাড়ছে, আর ঠিক একই সময়ে একটা backend-এর p99 latency ২ সেকেন্ড থেকে উঠে ১২ সেকেন্ড হয়েছে। LB-র backend read timeout ১০ সেকেন্ড। কী ঘটছে?",
+      "options": [
+        "Backend-গুলো মরে গেছে কিন্তু health check সেটা ধরতে পারছে না, তাই LB 504 দিচ্ছে",
+        "LB-র নিজের CPU শেষ হয়ে গেছে, তাই সে request backend-এ পাঠাতেই পারছে না আর gateway timeout দিচ্ছে",
+        "ওই backend-এর কিছু request ১০ সেকেন্ডের বেশি নিচ্ছে, তাই LB অপেক্ষা ছেড়ে 504 দিচ্ছে",
+        "DNS-এ backend-এর নাম resolve হচ্ছে না, তাই LB gateway timeout দেখাচ্ছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "504 মানে LB backend-এর কাছে পৌঁছেছে কিন্তু সময়মতো উত্তর পায়নি। Backend সুস্থ (health check pass), কিন্তু তার p99 timeout ছাড়িয়েছে, তাই ধীর request-গুলো 504 হচ্ছে। Per-backend latency দেখলে কোন server দায়ী তা সাথে সাথে বোঝা যায়।",
+      "whyWrong": {
+        "0": "Health check pass করছে আর backend-এর latency মাপা যাচ্ছে, তাই সে মরেনি, ধীর।",
+        "1": "LB পাঠাতেই না পারলে সাধারণত 502/503 বা connection error হতো, আর backend-এর p99 বাড়ার সাথে মিলত না।",
+        "3": "নাম resolve না হলে request backend-এ পৌঁছাতই না, p99 মাপাও যেত না।"
+      }
+    }
+  ]
+}

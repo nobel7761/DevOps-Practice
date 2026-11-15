@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-015",
+  "points": [
+    {
+      "term": "Forward Proxy",
+      "prompt": "Forward proxy কার হয়ে কাজ করে, আর অফিস বা campus এটা দিয়ে কী কী করে?",
+      "answer": "Forward proxy client-এর হয়ে বাইরের server-এ যায়; client নিজে (setting, env variable বা PAC file দিয়ে) জানে proxy আছে, আর বাইরের server দেখে proxy-র IP। অফিস এটা দিয়ে egress control (domain block), audit log, caching আর একটাই বের হওয়ার IP পায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Reverse Proxy",
+      "prompt": "Reverse proxy কার হয়ে কাজ করে, client কি জানে সে আছে? এর প্রধান কাজগুলো কী?",
+      "answer": "Reverse proxy server-এর হয়ে সামনে দাঁড়ায়; client জানে না, কারণ DNS তাকে proxy-র IP দেয়। কাজ: TLS termination, buffering, compression, caching, routing/load balancing, origin লুকানো, আর rate limit বা auth বসানোর একটা দরজা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Transparent Proxy",
+      "prompt": "Transparent proxy অন্য forward proxy থেকে কোথায় আলাদা, আর HTTPS-এ এটা কী দেখে?",
+      "answer": "Client-এ কোনো setting ছাড়াই router বা firewall traffic চুপচাপ proxy-তে ঘুরিয়ে দেয় (যেমন iptables REDIRECT), তাই client জানে না। HTTPS-এ এটা শুধু destination IP আর TLS handshake-এর SNI (hostname) দেখে, ভেতরের content না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "CONNECT Tunnel",
+      "prompt": "Forward proxy দিয়ে HTTPS request কিভাবে যায়, আর proxy কতটুকু দেখে?",
+      "answer": "Browser CONNECT host:443 পাঠায়, proxy নিয়ম দেখে server-এর সাথে TCP খোলে আর '200 Connection established' বলে, তারপর না বুঝে bytes পার করে। TLS handshake আর আসল request tunnel-এর ভেতরে end-to-end encrypted, তাই proxy শুধু hostname, port, সময় আর bytes দেখে; path, header, body দেখে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "TLS Interception",
+      "prompt": "অফিসের proxy কিভাবে HTTPS-এর ভেতর পড়তে পারে, আর তার শর্ত ও দাম কী?",
+      "answer": "Proxy নিজেই client-এর সাথে TLS করে আর প্রতিষ্ঠানের root CA দিয়ে sign করা নকল certificate দেখায়, তারপর আসল server-এর সাথে আলাদা TLS করে। শর্ত: সেই root CA client-এর trust store-এ আগে থেকে থাকতে হবে, নইলে certificate error। দাম: certificate pinning করা app ভাঙে, CA key-র বিশাল ঝুঁকি, আর গোপনীয়তার প্রশ্ন।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "X-Forwarded-For",
+      "prompt": "X-Forwarded-For, X-Forwarded-Proto আর Via কেন লাগে, আর XFF কিভাবে তৈরি হয়?",
+      "answer": "Proxy-র পেছনে app-এর TCP peer হলো proxy, তাই আসল client IP জানাতে প্রতিটা proxy XFF-এর ডানে নিজের দেখা peer IP যোগ করে। X-Forwarded-Proto জানায় client আসলে https-এ এসেছিল কিনা (না মানলে redirect loop), Via জানায় কোন proxy পেরিয়েছে আর loop ধরতে কাজে লাগে। Standard সংস্করণ হলো Forwarded (RFC 7239)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Trusted Proxy (real_ip)",
+      "prompt": "XFF থেকে আসল client IP কিভাবে নিরাপদে বের করবেন? প্রথম IP নিলে কী সমস্যা?",
+      "answer": "Client নিজেই XFF পাঠাতে পারে, তাই বামের প্রথম IP নকল হতে পারে আর IP-ভিত্তিক rate limit পার হয়ে যায়। ডান থেকে পড়ে নিজের চেনা proxy-র IP বাদ দিয়ে প্রথম অচেনা IP-কে client ধরতে হয়; NGINX-এ set_real_ip_from, real_ip_header X-Forwarded-For আর real_ip_recursive on দিয়ে, আর origin-এ সরাসরি আসা বন্ধ রেখে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Request Buffering",
+      "prompt": "Reverse proxy ধীর client আর slowloris থেকে app server-কে কিভাবে বাঁচায়? কখন buffering বন্ধ করবেন?",
+      "answer": "Event-driven proxy পুরো request body আগে নিজে নিয়ে তারপর একবারে app-কে দেয়, আর response দ্রুত নিয়ে ধীর client-কে নিজের গতিতে পাঠায়, তাই app-এর worker আটকায় না। Header/body timeout, limit_conn আর body size limit slowloris ঠেকায়। SSE বা token-by-token streaming-এ buffering বন্ধ করতে হয়, নইলে client কিছুই পায় না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Upstream Keep-alive",
+      "prompt": "Proxy থেকে upstream-এ connection reuse না করলে বেশি traffic-এ কী ঘটে? হিসাবটা বলুন।",
+      "answer": "প্রতিটা request-এ নতুন connection মানে বন্ধ socket TIME_WAIT-এ জমে (Linux-এ ৬০ সেকেন্ড); ১,০০০ req/s-এ প্রায় ৬০,০০০ socket, অথচ এক upstream ip:port-এর জন্য ephemeral port মাত্র ~২৮,০০০, তাই port শেষ হয়ে 502। NGINX-এ upstream keepalive, proxy_http_version 1.1 আর Connection \"\" দিয়ে connection pool বানালে সমাধান হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Sidecar Proxy",
+      "prompt": "Sidecar proxy কী, service mesh-এ এর ভূমিকা কী, আর এর দাম কী?",
+      "answer": "প্রতিটা service instance-এর পাশে (একই pod-এ) বসা একটা proxy, যার মধ্য দিয়ে service-এর সব আসা-যাওয়া traffic যায়; সব sidecar মিলে data plane, আর control plane তাদের নিয়ম দেয় (mTLS, retry, timeout, metrics)। দাম: প্রতি call-এ দুটো বাড়তি hop, প্রতিটা pod-এ বাড়তি CPU/memory আর চালানোর জটিলতা।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

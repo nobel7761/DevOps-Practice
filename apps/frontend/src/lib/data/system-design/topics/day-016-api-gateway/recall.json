@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-016",
+  "points": [
+    {
+      "term": "Single Entry Point",
+      "prompt": "API Gateway-কে 'single entry point' বলা হয় কেন? Client সরাসরি service ডাকলে কী সমস্যা হয়?",
+      "answer": "সব বাইরের API request একটা ঠিকানা দিয়ে ঢোকে, পেছনে কয়টা service কোথায় চলে সেটা শুধু gateway জানে। Client সরাসরি service ডাকলে ভেতরের গঠন বাইরে খোলা থাকে, তাই service ভাঙা-জোড়া করলে পুরনো app ভেঙে যায়, আর mobile-কে অনেক আলাদা host-এ call করতে হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Cross-cutting Concerns",
+      "prompt": "Cross-cutting concern কী? উদাহরণ দিন, আর এগুলো gateway-তে রাখলে কী লাভ?",
+      "answer": "যে কাজ প্রতিটা service-কেই করতে হয় কিন্তু কারো আসল কাজ না: auth, rate limit, log, CORS, TLS। প্রতিটা service-এ আলাদা লিখলে নিয়ম অসমান হয় আর কেউ ভুলে গেলে ফাঁক তৈরি হয়; gateway-তে একবার রাখলে সবখানে একই নিয়ম আর service team business logic-এ মন দিতে পারে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Path-based Routing",
+      "prompt": "Gateway কিভাবে ঠিক করে request কোন service-এ যাবে? Prefix কাটা (strip path) কেন কাজের?",
+      "answer": "Route-এর নিয়ম দেখে: path (/orders → Order service), host বা header। Prefix কাটলে service নিজের ছোট path পায় (/orders/42 → /42), ফলে service জানে না বাইরে সে কোন path-এ আছে, আর gateway-তে route বদলালেই client-এর URL একই রেখে ভেতরে service সরানো যায়।",
+      "lessonLink": "#lab"
+    },
+    {
+      "term": "Plugin Chain Ordering",
+      "prompt": "Gateway-র plugin chain-এ একটা request কোন ক্রমে এগোয়? Auth rate limit-এর আগে থাকলে কোন অপ্রত্যাশিত ফল হয়?",
+      "answer": "সাধারণত route match → auth → rate limit → transform → upstream → response → log, আর যেকোনো ধাপ আগেই 404/401/429 দিয়ে থামাতে পারে। Kong-এ key-auth (priority 1250) rate-limiting (910)-এর আগে চলে, তাই ভুল key-এর request গোনাই হয় না; key আন্দাজ করা থামাতে আলাদা IP-ভিত্তিক limit লাগে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Edge Auth ও Zero Trust",
+      "prompt": "Gateway-তে auth হলে service-এ আর কী যাচাই লাগে? Header spoofing কিভাবে ঘটে?",
+      "answer": "Gateway মোটা দাগে token-এর বৈধতা দেখে, কিন্তু 'এই user কি এই order দেখতে পারে' service-কেই দেখতে হয়। Service অন্য পথে reachable হলে কেউ নিজে X-User-Id header বসিয়ে ঢুকে পড়তে পারে; তাই gateway বাইরের identity header মুছবে, service শুধু gateway থেকে reachable থাকবে, আর সম্ভব হলে service JWT বা mTLS নিজে যাচাই করবে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Per-consumer Rate Limit ও Quota",
+      "prompt": "Gateway-তে rate limit কী ধরে গোনা উচিত, আর কয়েকটা gateway node-এ local counter রাখলে কী হয়?",
+      "answer": "সাধারণত consumer বা tenant (API key) ধরে, যাতে একজনের বাড়াবাড়ি অন্যদের ভাগ না খায়; rate মানে গতি, quota মানে মোট পরিমাণ। প্রতিটা node নিজে গুনলে load balancer request ভাগ করায় আসল সীমা node-এর সংখ্যার গুণ হয়ে যায়, তাই কঠোর সীমায় Redis-এর মতো shared counter লাগে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Aggregation ও BFF",
+      "prompt": "Request aggregation আর BFF কী সমস্যা মেটায়? Fan-out-এ tail latency কেন বাড়ে?",
+      "answer": "ধীর mobile network-এ ৫টা call-এর বদলে ১টা; BFF প্রতিটা client-এর জন্য আলাদা পাতলা backend, সেই frontend team-এর মালিকানায়। Parallel call-এ সবচেয়ে ধীরটাই ঠিক করে, আর পাঁচটা call-এর প্রত্যেকটা ১% ধীর হলে প্রায় ৫% response ধীর হয়; তাই প্রতি call-এ timeout আর ঐচ্ছিক অংশ বাদ দেওয়ার ব্যবস্থা লাগে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Gateway as SPOF ও Extra Hop",
+      "prompt": "Gateway কেন single point of failure হতে পারে, আর latency-তে কী যোগ করে? কিভাবে সামলাবেন?",
+      "answer": "সব traffic এক দরজা দিয়ে যায়, তাই একটা instance পড়লে পুরো API পড়ে; আর প্রতিটা request-এ একটা বাড়তি hop আর plugin-এর কাজ যোগ হয়। Gateway stateless রেখে কয়েকটা instance আলাদা zone-এ চালাতে হয় সামনে load balancer সহ, আর শুধু দরকারি plugin রেখে latency মাপতে হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "God Gateway",
+      "prompt": "'God gateway' কী, আর gateway-তে কোন ধরনের নিয়ম রাখা ঠিক না?",
+      "answer": "যখন gateway-তে দাম হিসাব, discount বা order বৈধতার মতো business logic জমে, তখন সেটা সবার ভাগের নতুন monolith হয়ে যায়: প্রতিটা change-এ gateway deploy, এক ভুলে সব API বন্ধ। Gateway-র নিয়ম শুধু 'কে, কতবার, কোথায়, কোন আকারে'; বাকিটা service-এ বা client-ভিত্তিক BFF-এ।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Gateway vs Service Mesh",
+      "prompt": "API Gateway আর service mesh-এর পার্থক্য কী? ভেতরের service-to-service call gateway দিয়ে পাঠালে কী সমস্যা?",
+      "answer": "Gateway বাইরের (north-south) traffic সামলায় আর API-র ধারণা বোঝে: consumer, key, quota, version। Mesh ভেতরের (east-west) service-to-service call-এ mTLS, retry, timeout দেয়। ভেতরের call gateway দিয়ে ঘুরালে অকারণ hop যোগ হয় আর gateway সব ভেতরের traffic-এর bottleneck হয়ে যায়।",
+      "lessonLink": "#trade-offs"
+    }
+  ]
+}

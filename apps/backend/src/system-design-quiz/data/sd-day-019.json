@@ -1,0 +1,915 @@
+{
+  "topicId": "sd-day-019",
+  "questions": [
+    {
+      "id": "sd-day-019-q01",
+      "difficulty": "easy",
+      "question": "Napkin math-এ একদিনের সেকেন্ড সংখ্যা (৮৬,৪০০) মাথায় হিসাবের জন্য সাধারণত কত ধরা হয়?",
+      "options": [
+        "প্রায় 10⁵, মানে এক লাখ",
+        "প্রায় 10⁴, কারণ ৮৬,৪০০ পাঁচ অঙ্কের সংখ্যা",
+        "প্রায় 3.6 × 10³, এক ঘণ্টার সেকেন্ড",
+        "প্রায় 10⁶, যাতে হিসাব নিরাপদ থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "৮৬,৪০০ এক লাখের (10⁵) কাছাকাছি, তাই দিনের মোট request-কে 10⁵ দিয়ে ভাগ করলেই গড় QPS মোটা দাগে পাওয়া যায়। এতে উত্তর ~১৪% কম আসে, যেটা order-of-magnitude হিসাবে গ্রহণযোগ্য।",
+      "whyWrong": {
+        "1": "10⁴ = ১০,০০০, ৮৬,৪০০-এর প্রায় ৯ ভাগের এক ভাগ, তাই QPS প্রায় ৯ গুণ বেশি আসবে।",
+        "2": "৩,৬০০ এক ঘণ্টার সেকেন্ড, পুরো দিনের না।",
+        "3": "10⁶ নিলে QPS দশ গুণ কম আসবে, যা নিরাপদ না, বিপজ্জনকভাবে কম।"
+      }
+    },
+    {
+      "id": "sd-day-019-q02",
+      "difficulty": "easy",
+      "question": "একটা service দিনে ১ কোটি (10⁷) request পায়। গড় QPS মোটা দাগে কত?",
+      "options": ["~১০ QPS", "~১০০ QPS", "~১,০০০ QPS", "~১০,০০০ QPS"],
+      "correctIndex": 1,
+      "explanation": "10⁷ ÷ 10⁵ = 10² = ~১০০ QPS (আসলে ~১১৬)। দিনের request-কে এক লাখ দিয়ে ভাগ করাই সবচেয়ে দ্রুত শর্টকাট।",
+      "whyWrong": {
+        "0": "এটা 10⁶ দিয়ে ভাগ করার ফল, দশ গুণ কম।",
+        "2": "এটা 10⁴ দিয়ে ভাগ করলে আসে, দশ গুণ বেশি।",
+        "3": "এটা ঘণ্টার মতো 10³ দিয়ে ভাগ করার ফল।"
+      }
+    },
+    {
+      "id": "sd-day-019-q03",
+      "difficulty": "easy",
+      "question": "একটা 1 Gbps network link দিয়ে সর্বোচ্চ সেকেন্ডে কত MB data পাঠানো যায় (overhead বাদে)?",
+      "options": ["~১,২৫০ MB/s", "~১,০০০ MB/s", "~৮ MB/s", "~১২৫ MB/s"],
+      "correctIndex": 3,
+      "explanation": "1 Gbps = ১,০০০ Mbit/s, আর ১ byte = ৮ bit, তাই ১,০০০ ÷ ৮ = ১২৫ MB/s। Network bit-এ মাপা হয়, file byte-এ, এই পার্থক্যই ৮ গুণের।",
+      "whyWrong": {
+        "0": "এখানে ৮ দিয়ে ভাগ না করে ৮-এর বদলে ০.৮ ধরা হয়েছে, ১০ গুণ বেশি।",
+        "1": "এটা bit আর byte-কে একই ধরার ভুল।",
+        "2": "৮ দিয়ে গুণ-ভাগ উল্টো দিকে আর একক ভুল করলে এমন আসে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q04",
+      "difficulty": "easy",
+      "question": "2³⁰ byte মোটা দাগে কোন এককের সমান?",
+      "options": ["১ MB", "১ TB", "১ GB", "১ KB"],
+      "correctIndex": 2,
+      "explanation": "2¹⁰ ≈ 10³, তাই 2³⁰ ≈ 10⁹ byte = ১ GB। প্রতি ১০টা ঘাতে একক এক ধাপ বাড়ে: KB, MB, GB, TB।",
+      "whyWrong": {
+        "0": "১ MB হলো 2²⁰।",
+        "1": "১ TB হলো 2⁴⁰।",
+        "3": "১ KB হলো 2¹⁰।"
+      }
+    },
+    {
+      "id": "sd-day-019-q05",
+      "difficulty": "easy",
+      "question": "গড় traffic ৫০০ QPS, আর সন্ধ্যার peak গড়ের ৪ গুণ। Design কোন সংখ্যার জন্য করবেন?",
+      "options": [
+        "৫০০ QPS, কারণ দিনের বেশিরভাগ সময় এটাই",
+        "১,২৫০ QPS, গড় আর peak-এর মাঝামাঝি",
+        "১২৫ QPS, কারণ রাতে traffic কম",
+        "২,০০০ QPS, কারণ peak-এই system ভাঙে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Peak = ৫০০ × ৪ = ২,০০০ QPS। System সবচেয়ে ভিড়ের মুহূর্তে ভাঙে, আর সেটাই সাধারণত সবচেয়ে বেশি বিক্রি বা ব্যবহারের সময়, তাই design peak-এর জন্য।",
+      "whyWrong": {
+        "0": "গড় দিয়ে design করলে প্রতিদিন সন্ধ্যায় system overload হবে।",
+        "1": "মাঝামাঝি সংখ্যায় peak-এর সময় এখনো ৭৫০ QPS বাড়তি থেকে যায়।",
+        "2": "রাতের কম traffic capacity ঠিক করে না, খরচ কমানোর প্রশ্ন।"
+      }
+    },
+    {
+      "id": "sd-day-019-q06",
+      "difficulty": "easy",
+      "question": "Capacity estimation (napkin math)-এর মূল লক্ষ্য কী?",
+      "options": [
+        "প্রতিটা সংখ্যা দশমিক পর্যন্ত নিখুঁত করা, যাতে মাসের শেষে cloud-এর বিলের সাথে হুবহু মেলে",
+        "Load test-এর বদলে চিরকালের জন্য একটা সূত্র পাওয়া",
+        "সঠিক মাত্রা (order of magnitude) পাওয়া, যাতে design-এর সিদ্ধান্ত নেওয়া যায়",
+        "Interviewer-কে জটিল অঙ্ক দেখিয়ে মুগ্ধ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "১০০ QPS আর ১ লাখ QPS আলাদা architecture চায়, কিন্তু ৯,০০০ আর ১১,০০০ একই। Assumption-ই অনিশ্চিত, তাই লক্ষ্য ঠিক ঘরটা খুঁজে design-এর সিদ্ধান্ত নেওয়া।",
+      "whyWrong": {
+        "0": "Assumption ±৫০% অনিশ্চিত হলে দশমিকের নির্ভুলতা মিথ্যা নির্ভুলতা।",
+        "1": "Estimation load test-এর বদলি না; server-এর capacity মাপতে load test লাগে।",
+        "3": "Interviewer দেখতে চান সংখ্যা থেকে সিদ্ধান্তে যাওয়ার ক্ষমতা, জটিলতা না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q07",
+      "difficulty": "easy",
+      "question": "দিনে ১ লাখ (10⁵) নতুন order আসে, প্রতিটা ~১KB। দিনে কত নতুন data জমে?",
+      "options": ["~১০ MB", "~১ GB", "~১০০ MB", "~১০০ GB"],
+      "correctIndex": 2,
+      "explanation": "10⁵ × 10³ byte = 10⁸ byte = ১০০ MB/দিন। বছরে ~৩৬.৫ GB, যেটা একটা database-এর জন্য খুবই ছোট।",
+      "whyWrong": {
+        "0": "এটা একটা শূন্য কম গোনা।",
+        "1": "এটা ১০KB প্রতি order ধরলে আসে।",
+        "3": "এটা প্রতি order ১MB ধরলে আসে, হাজার গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q08",
+      "difficulty": "easy",
+      "question": "১০TB data-র replication factor ৩ হলে মোট কত disk জায়গা লাগবে (index বাদে)?",
+      "options": [
+        "১০TB, কারণ replica শুধু backup",
+        "৩.৩TB, কারণ data তিন ভাগ হয়",
+        "১৩TB, কারণ ৩TB বাড়তি",
+        "৩০TB, কারণ প্রতিটা কপি পূর্ণ"
+      ],
+      "correctIndex": 3,
+      "explanation": "Replication factor ৩ মানে একই data-র তিনটা পূর্ণ কপি, তাই ১০ × ৩ = ৩০TB। Storage estimate-এ এই গুণ ভুলে যাওয়া খুব প্রচলিত।",
+      "whyWrong": {
+        "0": "Replica-ও পূর্ণ data রাখে, তাই জায়গা নেয়।",
+        "1": "Replication ভাগ করে না, কপি করে; ভাগ করা হলো sharding।",
+        "2": "প্রতিটা কপি পুরো ১০TB, ১TB না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q09",
+      "difficulty": "easy",
+      "question": "একটা app-এ ১,০০০ QPS, read:write = ৯:১। প্রতি সেকেন্ডে কত write?",
+      "options": ["১০০টা", "৯০০টা", "১১১টা", "৯টা"],
+      "correctIndex": 0,
+      "explanation": "৯:১ মানে প্রতি ১০টা request-এ ১টা write, তাই ১,০০০-এর ১০% = ১০০ write/s, বাকি ৯০০ read।",
+      "whyWrong": {
+        "1": "৯০০ হলো read-এর সংখ্যা।",
+        "2": "এটা ১,০০০ ÷ ৯, ratio-কে ভুলভাবে পড়া।",
+        "3": "Ratio-কে শতাংশ ধরে নিয়ে এমন আসে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q10",
+      "difficulty": "easy",
+      "question": "Load test-এ এক server p99 ঠিক রেখে ৫০০ QPS নেয়। Peak ৫,০০০ QPS। Headroom ছাড়া একদম ন্যূনতম কয়টা server?",
+      "options": ["১০টা", "২০টা", "৫টা", "৫০টা"],
+      "correctIndex": 0,
+      "explanation": "৫,০০০ ÷ ৫০০ = ১০টা। এটা শুধু শুরুর সংখ্যা; বাস্তবে target utilization আর N+1 যোগ করে এর চেয়ে বেশি রাখতে হয়।",
+      "whyWrong": {
+        "1": "এটা ২৫% utilization ধরলে আসে, প্রশ্নটা ন্যূনতম।",
+        "2": "৫টায় প্রতিটায় ১,০০০ QPS, ক্ষমতার দ্বিগুণ।",
+        "3": "এটা ১০ গুণ বেশি, ভাগে একটা শূন্য বাড়তি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q11",
+      "difficulty": "easy",
+      "question": "Cache sizing-এ \"80/20 নিয়ম\" দিয়ে সাধারণত কী বোঝানো হয়?",
+      "options": [
+        "প্রায় ২০% data-তে ৮০% read পড়ে, তাই সেটুকু cache-এ রাখা",
+        "Cache-এর ৮০% memory খালি রাখতে হয়",
+        "Cache-এ ৮০% data রাখতে হয়, database-এ ২০%",
+        "Cache প্রতি ১০০টা request-এ ঠিক ৮০টা hit আর ২০টা miss হতেই হবে, কম-বেশি না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Pareto ধাঁচে অল্প কিছু item-এ বেশিরভাগ read পড়ে, তাই পুরো data না রেখে hot ২০% রাখলেই বেশিরভাগ read cache থেকে হয়। এটা শুরুর ধারণা, access log থেকে মেপে নেওয়া ভালো।",
+      "whyWrong": {
+        "1": "Overhead-এর জন্য কিছু জায়গা লাগে, কিন্তু ৮০% খালি রাখা নিয়ম না।",
+        "2": "সব data cache-এ রাখার দরকার নেই, আর source of truth database-ই।",
+        "3": "Hit ratio নির্ভর করে access pattern-এর উপর, ৮০% কোনো বাধ্যতামূলক সংখ্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q12",
+      "difficulty": "easy",
+      "question": "Decimal হিসাবে ১ TB = কত GB?",
+      "options": ["১,০২৪ GB, সবসময়", "১০০ GB", "১০,০০০ GB", "১,০০০ GB"],
+      "correctIndex": 3,
+      "explanation": "Decimal (SI) এককে ১ TB = 10¹² byte = ১,০০০ GB। Binary এককে (TiB) ১,০২৪ GiB, পার্থক্য napkin math-এ সাধারণত উপেক্ষা করা যায়।",
+      "whyWrong": {
+        "0": "১,০২৪ হলো binary একক TiB/GiB-এর হিসাব, decimal-এর না।",
+        "1": "এটা দশ গুণ কম।",
+        "2": "এটা দশ গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q13",
+      "difficulty": "easy",
+      "question": "ISP-এর package \"100 Mbps\"। একটা বড় file download-এ সর্বোচ্চ গতি কত MB/s দেখার আশা করবেন?",
+      "options": ["~১০০ MB/s", "~১.২৫ MB/s", "~৮০০ MB/s", "~১২.৫ MB/s"],
+      "correctIndex": 3,
+      "explanation": "100 Mbit/s ÷ ৮ = ১২.৫ MB/s। Download manager byte-এ দেখায়, ISP bit-এ বিক্রি করে, তাই সংখ্যা ৮ গুণ ছোট দেখায়।",
+      "whyWrong": {
+        "0": "এটা bit আর byte একই ধরা।",
+        "1": "এটা ৮০ দিয়ে ভাগ, একটা শূন্য বাড়তি।",
+        "2": "এটা ৮ দিয়ে ভাগের বদলে গুণ করা।"
+      }
+    },
+    {
+      "id": "sd-day-019-q14",
+      "difficulty": "easy",
+      "question": "একটা service-এ সেকেন্ডে ১০০টা request আসে, প্রতিটা ০.২ সেকেন্ড চলে। Little's Law অনুযায়ী গড়ে কয়টা request একসাথে চলছে?",
+      "options": ["৫০০টা", "১০০টা", "২০টা", "০.০০২টা"],
+      "correctIndex": 2,
+      "explanation": "L = λ × W = ১০০ × ০.২ = ২০টা। Concurrency-ই ঠিক করে কত thread, memory বা connection লাগবে।",
+      "whyWrong": {
+        "0": "এটা λ ÷ W, সূত্র উল্টো।",
+        "1": "এটা শুধু λ, কতক্ষণ থাকে সেটা ভুলে যাওয়া।",
+        "3": "এটা W ÷ λ, অর্থহীন একক।"
+      }
+    },
+    {
+      "id": "sd-day-019-q15",
+      "difficulty": "easy",
+      "question": "এক server কত QPS সামলাতে পারে, এই সংখ্যাটা সবচেয়ে নির্ভরযোগ্যভাবে কোথা থেকে নেবেন?",
+      "options": [
+        "নিজের app-এ load test করে, latency-র লক্ষ্য রেখে",
+        "Framework-এর জনপ্রিয় benchmark blog post-এ দেওয়া সংখ্যা থেকে",
+        "Cloud provider-এর vCPU সংখ্যা থেকে সরাসরি",
+        "আগের কোম্পানির একটা app-এর অভিজ্ঞতা থেকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা app-এর query, response-এর আকার আর dependency আলাদা, তাই নিজের app-এ মাপতে হয়। আর মাপতে হয় p99-এর শর্তে, কারণ CPU ১০০%-এর সংখ্যা ভাঙনের বিন্দু।",
+      "whyWrong": {
+        "1": "Benchmark সাধারণত \"hello world\" ধরনের, আপনার আসল কাজের সাথে মেলে না।",
+        "2": "vCPU সংখ্যা ক্ষমতা নির্দেশ করে না; single-thread app অনেক core কাজেই লাগায় না।",
+        "3": "অন্য app-এর workload আলাদা, সংখ্যা সরাসরি খাটে না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q16",
+      "difficulty": "easy",
+      "question": "Database-এ ১০০GB data, index-এর জন্য ৫০% বাড়তি ধরলে replication ছাড়া কত জায়গা লাগবে?",
+      "options": ["১০০GB", "১৫০GB", "৫০GB", "২০০GB"],
+      "correctIndex": 1,
+      "explanation": "১০০ × (১ + ০.৫) = ১৫০GB। Index আলাদা data structure, তাই নিজেও disk নেয়।",
+      "whyWrong": {
+        "0": "Index-ও জায়গা নেয়, শুধু data না।",
+        "2": "Index বাড়তি যোগ হয়, data-কে কমায় না।",
+        "3": "এটা ১০০% overhead ধরলে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q17",
+      "difficulty": "easy",
+      "question": "Peak-এ ১,০০০ QPS, গড় response ১০০KB। Peak egress কত?",
+      "options": ["~১০ MB/s", "~১০০ KB/s", "~১ GB/s", "~১০০ MB/s"],
+      "correctIndex": 3,
+      "explanation": "১,০০০ × ১০০KB = ১০⁵ KB/s = ১০০ MB/s, bit-এ ~৮০০ Mbps। Bandwidth = হার × আকার।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম।",
+        "1": "এটা শুধু একটা request-এর আকার, হার দিয়ে গুণ করা হয়নি।",
+        "2": "এটা ১MB response ধরলে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q18",
+      "difficulty": "easy",
+      "question": "\"N+1\" headroom বলতে কী বোঝায়?",
+      "options": [
+        "সব server-কে ১০০%-এ চালিয়ে একটাকে সবসময় বন্ধ রাখা, দরকার হলে হাতে চালু করার জন্য",
+        "প্রতি বছর একটা করে নতুন server কেনা",
+        "Database-এ প্রতি query-র সাথে একটা বাড়তি query",
+        "Peak সামলাতে যতগুলো লাগে তার চেয়ে একটা বাড়তি, যাতে একটা মরলেও চলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "N-টা server peak সামলায়, আর একটা বাড়তি থাকে যাতে একটা fail করলে বা deploy-এ বের করলেও ক্ষমতা কম না পড়ে।",
+      "whyWrong": {
+        "0": "১০০%-এ চালানো মানেই latency ভেঙে পড়া; বাড়তিটা চালু থেকে load ভাগ করে।",
+        "1": "N+1 growth পরিকল্পনা না, failure সহ্য করার বাড়তি।",
+        "2": "এটা ORM-এর \"N+1 query\" সমস্যার সাথে নাম মিলে গুলিয়ে ফেলা।"
+      }
+    },
+    {
+      "id": "sd-day-019-q19",
+      "difficulty": "easy",
+      "question": "\"দিনে ১০ লাখ request\" মোটা দাগে সেকেন্ডে কতটা?",
+      "options": ["~১টা", "~১২০টা", "~১২টা", "~১,২০০টা"],
+      "correctIndex": 2,
+      "explanation": "10⁶ ÷ ৮৬,৪০০ ≈ ১১.৬, অর্থাৎ ~১২/s। এই শর্টকাট মনে রাখলে যেকোনো দৈনিক সংখ্যা দ্রুত QPS-এ বদলানো যায়।",
+      "whyWrong": {
+        "0": "এটা প্রায় দশ গুণ কম।",
+        "1": "এটা ঘণ্টার মতো ছোট সময় দিয়ে ভাগ করলে আসে।",
+        "3": "এটা ১০০ গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q20",
+      "difficulty": "easy",
+      "question": "Payment বা ride-location-এর মতো system-কে কেন \"write-heavy\" বলা হয়, আর তাতে estimate-এ কোন দিকে নজর যায়?",
+      "options": [
+        "Read অনেক বেশি হয়, তাই estimate-এ শুধু cache-এর আকার আর hit ratio-তেই সব মনোযোগ দেওয়া",
+        "Response বড়, তাই শুধু bandwidth-এ নজর",
+        "Write-এর হার বেশি, তাই primary database বা storage-এর write ক্ষমতায় নজর",
+        "User কম, তাই estimate-এর দরকারই নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "এই system-এ প্রায় প্রতিটা কাজই নতুন data লেখে (লেনদেন, location update)। Read-এর মতো cache দিয়ে write কমানো যায় না, তাই primary-র write ক্ষমতা, write amplification আর sharding-এর প্রশ্ন আগে আসে।",
+      "whyWrong": {
+        "0": "Cache read কমায়, write না; এটা read-heavy system-এর কৌশল।",
+        "1": "Location update ~১০০ byte, payment response ছোট; bandwidth এখানে নগণ্য।",
+        "3": "User সংখ্যা কম না, আর write-heavy হলে estimate আরও জরুরি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q21",
+      "difficulty": "medium",
+      "question": "একটা wallet app-এ ১ কোটি DAU, প্রতি জন দিনে ২টা লেনদেন, peak factor ১০। মোটা দাগে peak TPS কত?",
+      "options": ["~২,০০০ TPS", "~২০০ TPS", "~২০,০০০ TPS", "~২০ TPS"],
+      "correctIndex": 0,
+      "explanation": "দিনে 2 × 10⁷ লেনদেন ÷ 10⁵ = ~২০০ TPS গড়, × ১০ = ~২,০০০ TPS peak। Design এই সংখ্যার জন্য।",
+      "whyWrong": {
+        "1": "এটা শুধু গড়, peak factor ভুলে যাওয়া।",
+        "2": "এটা peak factor দুবার বা ভাগে একটা শূন্য কম।",
+        "3": "এটা গড়কে আবার ১০ দিয়ে ভাগ করা।"
+      }
+    },
+    {
+      "id": "sd-day-019-q22",
+      "difficulty": "medium",
+      "question": "দিনে ২ কোটি লেনদেন, প্রতিটায় সব row মিলিয়ে ~১KB। এক বছরে raw data মোটা দাগে কত?",
+      "options": ["~৭৩০ GB", "~৭.৩ TB", "~৭৩ TB", "~২০ GB"],
+      "correctIndex": 1,
+      "explanation": "2 × 10⁷ × 1KB = ২০GB/দিন, × ৩৬৫ ≈ ৭,৩০০GB = ~৭.৩TB। এটা index আর replica ছাড়া raw সংখ্যা।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম, ১০০ byte প্রতি লেনদেন ধরলে আসে।",
+        "2": "এটা দশ গুণ বেশি, একটা শূন্য বাড়তি।",
+        "3": "২০GB শুধু একদিনের, বছরের না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q23",
+      "difficulty": "medium",
+      "question": "বছরে raw data ৭.৩TB। Index overhead ৫০% আর replication factor ৩ ধরলে মোট storage কত?",
+      "options": ["~১১ TB", "~২২ TB", "~৩৩ TB", "~৭.৩ TB"],
+      "correctIndex": 2,
+      "explanation": "৭.৩ × ১.৫ × ৩ ≈ ৩২.৯, অর্থাৎ ~৩৩TB। Raw সংখ্যার সাড়ে চার গুণ, তাই raw দেখে disk কেনা বিপজ্জনক।",
+      "whyWrong": {
+        "0": "এখানে শুধু index ধরা হয়েছে, replication ভুলে গেছে।",
+        "1": "এখানে শুধু replication ধরা হয়েছে, index ভুলে গেছে।",
+        "3": "এটা raw সংখ্যা, কোনো overhead নেই।"
+      }
+    },
+    {
+      "id": "sd-day-019-q24",
+      "difficulty": "medium",
+      "question": "11.11-এ ১.৫ কোটি DAU, প্রতি জন ~৪০টা API request। সারাদিনের গড় QPS মোটা দাগে কত?",
+      "options": ["~৬,০০০ QPS", "~৬০০ QPS", "~৬০,০০০ QPS", "~১৫,০০০ QPS"],
+      "correctIndex": 0,
+      "explanation": "1.5 × 10⁷ × ৪০ = 6 × 10⁸/দিন, ÷ 10⁵ = ~৬,০০০ QPS। কিন্তু sale-এ traffic সারাদিনে সমান না, তাই peak আলাদা হিসাব করতে হবে।",
+      "whyWrong": {
+        "1": "এটা দশ গুণ কম।",
+        "2": "এটা দশ গুণ বেশি, 10⁴ দিয়ে ভাগ।",
+        "3": "এটা DAU-কে সরাসরি request হিসেবে ধরে ভুল ভাগ।"
+      }
+    },
+    {
+      "id": "sd-day-019-q25",
+      "difficulty": "medium",
+      "question": "Sale-এর দিনে মোট 6 × 10⁸ request, তার ১০% আসে মধ্যরাতের প্রথম এক ঘণ্টায়। ওই ঘণ্টার গড় QPS কত?",
+      "options": ["~৬,০০০ QPS", "~১৭,০০০ QPS", "~১,৭০০ QPS", "~১,৬৭,০০০ QPS"],
+      "correctIndex": 1,
+      "explanation": "6 × 10⁷ ÷ ৩,৬০০ ≈ ১৬,৭০০, মোটা দাগে ~১৭,০০০ QPS, সারাদিনের গড়ের প্রায় ৩ গুণ। আর প্রথম মিনিট এর চেয়েও উঁচু হতে পারে।",
+      "whyWrong": {
+        "0": "এটা সারাদিনের গড়, ভিড়ের ঘণ্টা না।",
+        "2": "এটা দশ গুণ কম, ভাগে একটা শূন্য বাড়তি।",
+        "3": "এটা ৩,৬০০-এর বদলে ৩৬০ দিয়ে ভাগ, দশ গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q26",
+      "difficulty": "medium",
+      "question": "Catalog-এ ১ কোটি product, প্রতিটা ~৫KB। সবচেয়ে বেশি দেখা ২০% cache-এ রাখলে raw cache কত লাগবে?",
+      "options": ["~৫০ GB", "~১ GB", "~১০০ GB", "~১০ GB"],
+      "correctIndex": 3,
+      "explanation": "10⁷ × 5KB = ৫০GB পুরো catalog, এর ২০% = ১০GB। তারপর key-এর overhead আর replica-র জন্য বাস্তবে এর কয়েক গুণ memory লাগবে।",
+      "whyWrong": {
+        "0": "এটা পুরো catalog, hot অংশ না।",
+        "1": "এটা দশ গুণ কম।",
+        "2": "এটা পুরো catalog-এর দ্বিগুণ।"
+      }
+    },
+    {
+      "id": "sd-day-019-q27",
+      "difficulty": "medium",
+      "question": "৫০,০০০ read QPS, cache hit ratio ৯০% থেকে ৯৫% হলো। Database-এর read load কী হয়?",
+      "options": [
+        "৫,০০০ থেকে ২,৫০০, অর্ধেক",
+        "৫,০০০ থেকে ৪,৭৫০, ৫% কম",
+        "৪৫,০০০ থেকে ৪৭,৫০০",
+        "কোনো পার্থক্য নেই, hit ratio শুধু latency বদলায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Database দেখে miss: ৫০,০০০ × ০.১ = ৫,০০০ আর ৫০,০০০ × ০.০৫ = ২,৫০০। Hit ratio-র কয়েক শতাংশ বাড়ানো miss অর্ধেক করে দেয়।",
+      "whyWrong": {
+        "1": "এখানে hit ratio-র পরিবর্তনকে miss-এর উপর শতাংশ ছাড় ভাবা হয়েছে।",
+        "2": "এগুলো cache-এর hit সংখ্যা, database-এর load না।",
+        "3": "Miss কমলে database-এ যাওয়া request সরাসরি কমে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q28",
+      "difficulty": "medium",
+      "question": "Peak ৫০,০০০ QPS। এক server p99 ঠিক রেখে ১,০০০ QPS পারে, target utilization ৬০%, আর N+1। মোট কয়টা server?",
+      "options": ["৫১টা", "৬০টা", "৮৫টা", "১০০টা"],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা ৬০%-এ = ৬০০ QPS; ৫০,০০০ ÷ ৬০০ = ৮৩.৩ → ৮৪টা, N+1-এ ৮৫টা।",
+      "whyWrong": {
+        "0": "এটা ১০০% utilization ধরে +১, latency ভাঙবে।",
+        "1": "এখানে ৬০% দিয়ে গুণ করে ভাগ করার বদলে ভুল দিকে হিসাব।",
+        "3": "এটা ৫০% ধরে আরও কিছু বাড়তি যোগ, প্রশ্নের শর্তের সাথে মেলে না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q29",
+      "difficulty": "medium",
+      "question": "একটা ride app-এ peak-এ ১ লাখ driver online, প্রতিটা প্রতি ৪ সেকেন্ডে location পাঠায়। Write rate কত?",
+      "options": ["~৪,০০,০০০/s", "~২,৫০০/s", "~১ লাখ/s", "~২৫,০০০/s"],
+      "correctIndex": 3,
+      "explanation": "10⁵ ÷ ৪ = ২৫,০০০ update/s। প্রতিটা driver সেকেন্ডে ০.২৫টা পাঠায়।",
+      "whyWrong": {
+        "0": "এটা ভাগের বদলে গুণ করা।",
+        "1": "এটা দশ গুণ কম।",
+        "2": "এটা ধরে নেয় সবাই প্রতি সেকেন্ডে পাঠায়।"
+      }
+    },
+    {
+      "id": "sd-day-019-q30",
+      "difficulty": "medium",
+      "question": "২৫,০০০ location update/s, প্রতিটা ~১০০ byte। এই stream-এর bandwidth bit-এ কত?",
+      "options": ["~২.৫ Mbps", "~২ Gbps", "~২০০ Mbps", "~২০ Mbps"],
+      "correctIndex": 3,
+      "explanation": "২৫,০০০ × ১০০ = ২.৫MB/s, × ৮ = ২০ Mbps। অর্থাৎ bandwidth এখানে নগণ্য, আসল চ্যালেঞ্জ write-এর হার।",
+      "whyWrong": {
+        "0": "এটা MB/s-কে bit-এ নেওয়ার সময় ৮ দিয়ে গুণ না করে ভাগ করা।",
+        "1": "এটা হাজার গুণের কাছাকাছি বেশি, একক গুলিয়ে ফেলা।",
+        "2": "এটা দশ গুণ বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q31",
+      "difficulty": "medium",
+      "question": "১ লাখ driver-এর সবার শুধু সর্বশেষ location (প্রতিটা ~১০০ byte) রাখতে কত memory, আর এর অর্থ কী?",
+      "options": [
+        "~১০ GB, তাই আলাদা cluster লাগবে",
+        "~১০ MB, তাই memory সমস্যা না, সমস্যা write-এর হার",
+        "~১০০ KB, তাই disk-এ রাখাই ভালো",
+        "~১ TB, তাই শুরু থেকেই একাধিক machine-এ sharding বাধ্যতামূলক"
+      ],
+      "correctIndex": 1,
+      "explanation": "10⁵ × ১০০ byte = 10⁷ byte = ১০MB; geo-index-এর জন্য দশ গুণ ধরলেও ১০০MB, একটা Redis-এ আঁটে। তাই design-এর মনোযোগ যাবে ২৫,০০০ write/s সামলানোয়।",
+      "whyWrong": {
+        "0": "এটা হাজার গুণ বেশি গোনা।",
+        "2": "এটা একশ গুণ কম, আর memory-তে রাখাই দ্রুত।",
+        "3": "এটা লাখ গুণ বেশি; এই data ছোট।"
+      }
+    },
+    {
+      "id": "sd-day-019-q32",
+      "difficulty": "medium",
+      "question": "একটা short video app-এ দিনে ১ লাখ video upload, প্রতিটা সব resolution মিলিয়ে ~৩০MB। দিনে কত নতুন storage (replication ছাড়া)?",
+      "options": ["~৩০০ GB", "~৩ TB", "~৩০ TB", "~৩০ GB"],
+      "correctIndex": 1,
+      "explanation": "10⁵ × ৩০MB = ৩ × 10⁶ MB = ৩TB/দিন, বছরে ~১.১PB। এরপর replication বা erasure coding যোগ হবে।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম।",
+        "2": "এটা দশ গুণ বেশি।",
+        "3": "এটা হাজার গুণ কম, MB আর GB গুলিয়ে ফেলা।"
+      }
+    },
+    {
+      "id": "sd-day-019-q33",
+      "difficulty": "medium",
+      "question": "Payment service-এ ২,০০০ TPS, প্রতিটা request app-এ ~১৫০ms থাকে। গড়ে কয়টা request একসাথে in-flight?",
+      "options": ["~১৩টা", "~৩,০০০টা", "~২,০০০টা", "~৩০০টা"],
+      "correctIndex": 3,
+      "explanation": "Little's Law: L = ২,০০০ × ০.১৫ = ৩০০। ১০টা server-এ ভাগ করলে প্রতিটায় ~৩০টা, তাই thread বা worker সেই হিসাবে লাগবে।",
+      "whyWrong": {
+        "0": "এটা ২,০০০ ÷ ১৫০, একক না মিলিয়ে ভাগ।",
+        "1": "এটা ১.৫ সেকেন্ড ধরলে আসে, ms-কে ভুল রূপান্তর।",
+        "2": "এটা শুধু λ, W ধরা হয়নি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q34",
+      "difficulty": "medium",
+      "question": "Database-এ ২,০০০ query/s, প্রতিটা connection ধরে রাখে ~২০ms। গড়ে কয়টা connection ব্যস্ত, আর pool কেমন রাখবেন?",
+      "options": [
+        "~১টা; query দ্রুত, তাই একটাই যথেষ্ট",
+        "~১০০টা; প্রতিটা server-এ ১০০টা করে, মোট ১,০০০টা connection",
+        "~২,০০০টা; প্রতিটা query-র জন্য একটা",
+        "~৪০টা; burst সহ ~৮০, ১০টা server-এ প্রতিটায় ৮-১০"
+      ],
+      "correctIndex": 3,
+      "explanation": "L = ২,০০০ × ০.০২ = ৪০। Burst-এর জন্য দ্বিগুণ ধরে ~৮০, ১০টা server-এ ভাগ। বড় pool database-এ অপ্রয়োজনীয় connection আর memory-র বোঝা বাড়ায়।",
+      "whyWrong": {
+        "0": "একটা connection সেকেন্ডে সর্বোচ্চ ৫০টা ২০ms-এর query করতে পারে, ২,০০০ না।",
+        "1": "প্রয়োজনের ২৫ গুণ connection database-এর memory আর context switch বাড়ায়।",
+        "2": "প্রতিটা query মাত্র ২০ms connection ধরে, তাই একই connection অনেক query সামলায়।"
+      }
+    },
+    {
+      "id": "sd-day-019-q35",
+      "difficulty": "medium",
+      "question": "সরল queue model-এ R = S ÷ (1 − ρ)। কাজের সময় S = ১০ms, utilization ৯০% হলে গড় response time কত?",
+      "options": ["~১০০ms", "~১৯ms", "~৯০ms", "~১১.১ms"],
+      "correctIndex": 0,
+      "explanation": "১০ ÷ (১ − ০.৯) = ১০ ÷ ০.১ = ১০০ms, কাজের সময়ের ১০ গুণ। এজন্যই server ৬০-৭০%-এ রাখা হয়।",
+      "whyWrong": {
+        "1": "এটা ১০ + ৯ যোগ করা, queue-এর প্রভাব রৈখিক ধরা।",
+        "2": "এটা ১০ × ৯, সূত্রের ভুল প্রয়োগ।",
+        "3": "এটা ১০ ÷ ০.৯, সূত্রে (1 − ρ) না নিয়ে ρ নেওয়া।"
+      }
+    },
+    {
+      "id": "sd-day-019-q36",
+      "difficulty": "medium",
+      "question": "Team হিসাব করল peak egress ১২০MB/s, আর বলল \"আমাদের 1 Gbps link, অনেক জায়গা আছে।\" ঠিক কি?",
+      "options": [
+        "ঠিক, ১২০ ১,০০০-এর মাত্র ১২%",
+        "ঠিক না, ১২০MB/s = ৯৬০ Mbps, link-এর ~৯৬%",
+        "ঠিক না, ১২০MB/s = ১৫ Mbps, link অনেক বড়",
+        "ঠিক, কারণ link-এর গতি byte-এ মাপা হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "১২০ × ৮ = ৯৬০ Mbps, প্রায় পুরো 1 Gbps। Bit আর byte গুলিয়ে ফেলায় \"১২%\" মনে হয়েছিল, আসলে প্রায় শেষ সীমা।",
+      "whyWrong": {
+        "0": "এখানে MB/s আর Mbps একই ধরা হয়েছে।",
+        "2": "এটা ৮ দিয়ে গুণের বদলে ভাগ করা।",
+        "3": "Network link সবসময় bit/s-এ মাপা হয়।"
+      }
+    },
+    {
+      "id": "sd-day-019-q37",
+      "difficulty": "medium",
+      "question": "hey দিয়ে একটা container মাপলেন: c=4-এ ১৩৪ req/s, p99 ৪১ms; c=16-এ ১৩২ req/s, p99 ১৬০ms। এর মানে কী?",
+      "options": [
+        "c=16-এ throughput বেশি পাওয়া উচিত ছিল, তাই hey নিশ্চয়ই ভুল মাপছে",
+        "Capacity ~১৩০ req/s; বাড়তি concurrency শুধু লাইন লম্বা করছে",
+        "Container-এর CPU বাড়ালেই p99 কমবে, req/s একই থাকবে",
+        "c=16-ই আসল capacity, কারণ সেখানে বেশি request একসাথে চলছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Concurrency চার গুণ করেও req/s একই, কিন্তু latency প্রায় চার গুণ। এটাই knee: server-এর ছাদ ~১৩০ req/s, বাকি request লাইনে দাঁড়াচ্ছে।",
+      "whyWrong": {
+        "0": "এটা সঠিক মাপ; ছাদে পৌঁছানোর পর throughput আর বাড়ে না।",
+        "2": "CPU বাড়ালে ছাদ উঁচু হতে পারে, তাই req/s বাড়ার কথা, একই থাকার না।",
+        "3": "একসাথে বেশি request মানে বেশি অপেক্ষা, বেশি কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q38",
+      "difficulty": "medium",
+      "question": "Load test-এ c=16, ১৩২ req/s, গড় latency ০.১২s। Little's Law দিয়ে মেলালে কী পান?",
+      "options": [
+        "Little's Law load test-এ খাটে না, শুধু queue-তে",
+        "১৩২ ÷ ০.১২ ≈ ১,১০০, মানে hey ভুল",
+        "১৩২ × ০.১২ ≈ ১.৬, মানে বেশিরভাগ request হারাচ্ছে",
+        "১৩২ × ০.১২ ≈ ১৬, concurrency-র সাথে মেলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "L = λ × W = ১৩২ × ০.১২ ≈ ১৫.৮, ঠিক hey-এর ১৬টা concurrent worker। সূত্রটা যেকোনো স্থিতিশীল system-এ গড়ের হিসাবে খাটে।",
+      "whyWrong": {
+        "0": "Server আর তার লাইন মিলে একটা queue system, তাই খাটে।",
+        "1": "এটা λ ÷ W, সূত্র উল্টো।",
+        "2": "গুণে দশমিকের ভুল; আসলে ~১৫.৮।"
+      }
+    },
+    {
+      "id": "sd-day-019-q39",
+      "difficulty": "medium",
+      "question": "১ TB (10¹² byte) আর ১ TiB (2⁴⁰ byte)-এর পার্থক্য প্রায় কত, আর napkin math-এ এটা নিয়ে কী করবেন?",
+      "options": [
+        "~০.১%; সবসময় উপেক্ষা",
+        "~১০%; সাধারণত উপেক্ষা, তবে চুক্তি বা বিলে খেয়াল",
+        "~২৪%; সবসময় 1024 দিয়ে হিসাব",
+        "~৫০%; তাই TB আর TiB-এর আলাদা আলাদা হিসাব সবসময় বাধ্যতামূলক"
+      ],
+      "correctIndex": 1,
+      "explanation": "2⁴⁰ ≈ 1.0995 × 10¹², প্রায় ১০% বড়। Order-of-magnitude হিসাবে এটা ছোট, কিন্তু disk কেনা বা storage চুক্তির মতো জায়গায় কোন একক বলা আছে খেয়াল রাখা ভালো।",
+      "whyWrong": {
+        "0": "KB-তে পার্থক্য ~২.৪%, TB-তে বেড়ে ~১০%, ০.১% না।",
+        "2": "১০২৪ ÷ ১০০০ = ২.৪% KB-এ; TB পর্যায়ে ~১০%, ২৪% না।",
+        "3": "পার্থক্য এত বড় না; ৫০% মানে একক পুরো ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-019-q40",
+      "difficulty": "medium",
+      "question": "একটা লেনদেনে ৪টা row লেখা হয়, প্রতিটা row primary key আর ২টা secondary index-এ যায়। ১,০০০ TPS-এ প্রতি সেকেন্ডে কতগুলো tree-write (একটা node-এ, WAL বাদে)?",
+      "options": ["১২,০০০", "৮,০০০", "৪,০০০", "৩৬,০০০"],
+      "correctIndex": 0,
+      "explanation": "৪ row × ৩টা tree (PK + ২ index) = ১২ write প্রতি লেনদেন, × ১,০০০ = ১২,০০০/s। এটাই write amplification-এর প্রথম স্তর।",
+      "whyWrong": {
+        "1": "এখানে primary key-র tree বাদ দেওয়া, শুধু ২টা index।",
+        "2": "এখানে index ভুলে শুধু row গোনা।",
+        "3": "এটা তিনটা replica মিলিয়ে cluster-এর হিসাব, প্রশ্ন একটা node-এর।"
+      }
+    },
+    {
+      "id": "sd-day-019-q41",
+      "difficulty": "hard",
+      "question": "Peak সামলাতে ৮৪টা server-এর ক্ষমতা লাগে। Server ৩টা AZ-এ সমানভাবে ছড়ানো, আর পুরো একটা AZ হারালেও চলতে হবে। মোট কয়টা?",
+      "options": ["৮৫টা", "১২৬টা", "১৬৮টা", "২৫২টা"],
+      "correctIndex": 1,
+      "explanation": "একটা AZ গেলে বাকি ২টায় ৮৪টা লাগবে, তাই প্রতি AZ-এ ৪২, মোট ৪২ × ৩ = ১২৬ (১.৫ গুণ)। এজন্যই তিনটা AZ দুটোর চেয়ে সস্তা redundancy।",
+      "whyWrong": {
+        "0": "N+1 একটা server-এর failure ঢাকে, পুরো AZ-এর ২৮টা না।",
+        "2": "এটা ২টা AZ-এর হিসাব, যেখানে প্রতিটায় পুরো ৮৪।",
+        "3": "এটা প্রতি AZ-এ পুরো ৮৪, অর্থাৎ দুটো AZ হারানো সহ্য করা।"
+      }
+    },
+    {
+      "id": "sd-day-019-q42",
+      "difficulty": "hard",
+      "question": "একই ৮৪টা server-এর ক্ষমতা, কিন্তু মাত্র ২টা AZ, আর একটা AZ হারালেও চলতে হবে। মোট কয়টা, আর কেন এটা দামি?",
+      "options": [
+        "১৬৮টা; প্রতিটা AZ-কে একাই পুরো peak নিতে হয়",
+        "৮৫টা; একটা বাড়তি যথেষ্ট",
+        "১২৬টা; ৩ AZ-এর মতোই",
+        "১০৫টা; মোটের উপর ২৫% বাড়তি রাখলেই সব failure ঢাকা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "২টা AZ-এ একটা গেলে বাকিটাকে একাই ৮৪ নিতে হবে, তাই প্রতিটায় ৮৪, মোট ১৬৮ (২ গুণ)। Failure domain যত কম, redundancy-র দাম তত বেশি, Day 13-এর k ÷ (N − k)।",
+      "whyWrong": {
+        "1": "একটা AZ-এ ৪২টা server একসাথে যায়, একটা বাড়তিতে ঢাকে না।",
+        "2": "১.৫ গুণ শুধু ৩টা AZ-এ খাটে।",
+        "3": "২৫% বাড়তি ৫টা AZ-এর কাছাকাছি হিসাব, ২টার না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q43",
+      "difficulty": "hard",
+      "question": "বছরে ১.১PB raw video। ৩ গুণ replication বনাম RS(6,3) erasure coding-এ মোট storage কত, আর erasure coding-এর দাম কী?",
+      "options": [
+        "৩.৩PB বনাম ~৩.৩PB; শুধু durability বেশি",
+        "৩.৩PB বনাম ~১.১PB; আর কোনো বাড়তি CPU বা network-এর দাম নেই",
+        "৩.৩PB বনাম ~১.৬৫PB; পড়তে ও মেরামতে বেশি CPU ও network",
+        "১.১PB বনাম ~০.৫৫PB; data অর্ধেক হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "RS(6,3)-এ ৬টা data + ৩টা parity টুকরো, খরচ ৯/৬ = ১.৫ গুণ: ১.১ × ১.৫ ≈ ১.৬৫PB। কিন্তু হারানো টুকরো ফেরাতে অন্য টুকরো পড়ে হিসাব করতে হয়, তাই এটা সাধারণত কম-পড়া data-র জন্য।",
+      "whyWrong": {
+        "0": "Erasure coding-এর মূল লাভই কম জায়গা।",
+        "1": "Parity টুকরোও জায়গা নেয়, তাই ১.৫ গুণ, ১ গুণ না।",
+        "3": "Raw data কখনো কমে না; এখানে replication-এর গুণ ভুলে গিয়ে ভাগ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q44",
+      "difficulty": "hard",
+      "question": "Short video app: ১ কোটি DAU, প্রতি জন দিনে ৫০টা video × ~৫MB দেখে। দিনের egress কত, আর বছরের নতুন storage (raw ~১.১PB)-এর সাথে তুলনা কী বলে?",
+      "options": [
+        "~২৫TB/দিন; তাই storage-ই এই app-এর সবচেয়ে বড় খরচ থাকবে",
+        "~২.৫PB/দিন; একদিনের egress বছরের storage-এর চেয়েও বড়",
+        "~২৫PB/দিন; CDN ছাড়া অসম্ভব",
+        "~২৫০TB/দিন; দুটো প্রায় সমান"
+      ],
+      "correctIndex": 1,
+      "explanation": "10⁷ × ২৫০MB = 2.5 × 10⁹ MB = ২.৫PB/দিন। একদিনেই বছরের নতুন storage-এর দ্বিগুণের বেশি, তাই এই app-এর বিল আর design ঠিক করবে egress আর CDN।",
+      "whyWrong": {
+        "0": "এটা শত গুণ কম, MB থেকে TB-তে যেতে এক ধাপ বেশি ভাগ।",
+        "2": "এটা দশ গুণ বেশি।",
+        "3": "এটা দশ গুণ কম।"
+      }
+    },
+    {
+      "id": "sd-day-019-q45",
+      "difficulty": "hard",
+      "question": "দিনে ২.৫PB egress, আর ধরি GB প্রতি $০.০২ (উদাহরণের দাম)। দিনে egress-এর খরচ কত?",
+      "options": ["~$৫,০০০", "~$৫,০০,০০০", "~$৫০,০০০", "~$৫০০"],
+      "correctIndex": 2,
+      "explanation": "২.৫PB = 2.5 × 10⁶ GB, × ০.০২ = $৫০,০০০/দিন। Storage-এর মাসিক বিল এর পাশে ছোট, তাই CDN-এর দাম নিয়ে দর কষাকষিই বড় সিদ্ধান্ত।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম, PB থেকে GB-তে একটা শূন্য কম।",
+        "1": "এটা দশ গুণ বেশি।",
+        "3": "এটা একশ গুণ কম।"
+      }
+    },
+    {
+      "id": "sd-day-019-q46",
+      "difficulty": "hard",
+      "question": "Origin থেকে ৮ Gbps traffic যায়। CDN দিলে hit ratio ৯৫%। Origin-এর egress কত হবে?",
+      "options": ["~০.৪ Gbps", "~৪ Gbps", "~৭.৬ Gbps", "~০.০৫ Gbps"],
+      "correctIndex": 0,
+      "explanation": "Origin egress = মোট × (1 − hit) = ৮ × ০.০৫ = ০.৪ Gbps, বিশ ভাগের এক ভাগ। ছবি আর video-ভারী app-এ এজন্য CDN প্রায় বাধ্যতামূলক।",
+      "whyWrong": {
+        "1": "এটা ৫০% hit ধরলে আসে।",
+        "2": "এটা ৫% কমানো, hit ratio-কে ছাড় ভাবা।",
+        "3": "এটা ৯৯.৪% hit ধরার মতো, একক ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-019-q47",
+      "difficulty": "hard",
+      "question": "Payment service: ১০টা server × ২০০ thread, ২,০০০ TPS। Bank gateway-র latency ১৫০ms থেকে ৩s হলো। সর্বোচ্চ throughput কোথায় নামবে?",
+      "options": [
+        "২,০০০ TPS-ই থাকবে, শুধু latency বাড়বে",
+        "~১,০০০ TPS, অর্ধেক",
+        "~৬৬৭ TPS, কারণ ২,০০০ thread ÷ ৩s",
+        "~১৩৩ TPS, কারণ ২০০ ÷ ১.৫"
+      ],
+      "correctIndex": 2,
+      "explanation": "Little's Law: λ = L ÷ W = ২,০০০ thread ÷ ৩s ≈ ৬৬৭ TPS। দরকার ছিল ২,০০০ × ৩ = ৬,০০০ thread; বাকি request লাইনে দাঁড়িয়ে timeout হবে। এজন্যই timeout আর circuit breaker।",
+      "whyWrong": {
+        "0": "Thread সীমিত, তাই W বাড়লে λ-কে নামতেই হবে।",
+        "1": "অর্ধেক হওয়ার কোনো হিসাব নেই; latency ২০ গুণ বেড়েছে।",
+        "3": "এখানে মোট thread না নিয়ে শুধু একটা server-এর thread আর ভুল W নেওয়া হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q48",
+      "difficulty": "hard",
+      "question": "একটা API-র কাজের সময় S = ২০ms, আর লক্ষ্য গড় response ≤ ৫০ms। R = S ÷ (1 − ρ) ধরে সর্বোচ্চ কত utilization-এ চালাবেন?",
+      "options": ["৪০%", "৬০%", "৭০%", "৮০%"],
+      "correctIndex": 1,
+      "explanation": "৫০ ≥ ২০ ÷ (1 − ρ) → 1 − ρ ≥ ০.৪ → ρ ≤ ০.৬। এভাবে latency-র লক্ষ্য থেকেই target utilization বের হয়, মুখস্থ সংখ্যা থেকে না।",
+      "whyWrong": {
+        "0": "এটা ২০ ÷ ৫০ = ০.৪-কে ρ ধরে নেওয়া, আসলে ওটা 1 − ρ।",
+        "2": "৭০%-এ R ≈ ৬৭ms, লক্ষ্যের উপরে।",
+        "3": "৮০%-এ R = ২০ ÷ ০.২ = ১০০ms, লক্ষ্যের দ্বিগুণ।"
+      }
+    },
+    {
+      "id": "sd-day-019-q49",
+      "difficulty": "hard",
+      "question": "Peak ১০,০০০ QPS, এক server ১,০০০ মাপা, target utilization ৫০%। ৩টা AZ-এ একটা হারানো সহ্য করতে হবে, আর ৬ মাসে traffic দ্বিগুণ হওয়ার কথা। ৬ মাস পরের জন্য মোট কয়টা?",
+      "options": ["২০টা", "৬০টা", "৪০টা", "৩০টা"],
+      "correctIndex": 1,
+      "explanation": "১০,০০০ ÷ ৫০০ = ২০; ৩ AZ-এ ১.৫ গুণ = ৩০; growth ২ গুণ = ৬০। প্রতিটা গুণকের পেছনে আলাদা কারণ আছে, তাই এটা দ্বিগুণ গোনা না।",
+      "whyWrong": {
+        "0": "এটা শুধু utilization ধরে, AZ আর growth বাদ।",
+        "2": "এখানে AZ-এর গুণক বাদ দিয়ে শুধু growth ধরা।",
+        "3": "এখানে growth বাদ পড়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q50",
+      "difficulty": "hard",
+      "question": "একটা estimate-এ লেখা: peak factor ১০ (flash sale-এর সবচেয়ে খারাপ মিনিট), utilization ৫০%, N+2, আর শেষে \"নিরাপদে থাকতে আরও ×২\"। কোনটা সমস্যা?",
+      "options": [
+        "Peak factor ১০, কারণ peak কখনো গড়ের ৩ গুণের বেশি হয় না",
+        "Utilization ৫০%, কারণ server সবসময় ৯০%-এ চালানো উচিত",
+        "শেষের কারণহীন ×২, কারণ সবচেয়ে খারাপ মিনিট আগেই ধরা হয়েছে",
+        "N+2, কারণ N+1-এর বেশি বাড়তি কখনোই কোনো system-এ দরকার হয় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা গুণকের একটা আলাদা ঝুঁকি থাকা উচিত। Peak factor সবচেয়ে খারাপ মিনিট ধরেছে, utilization latency রক্ষা করে, N+2 failure আর deploy একসাথে ঢাকে; কিন্তু শেষের ×২ একই ঝুঁকি আবার গুনছে, শুধু খরচ দ্বিগুণ করে।",
+      "whyWrong": {
+        "0": "Flash sale-এর প্রথম মিনিটে ১০ গুণ বা বেশি হতে পারে।",
+        "1": "৯০%-এ queue-এর কারণে latency কাজের সময়ের ১০ গুণ।",
+        "3": "Deploy চলার সময় আরেকটা failure ঢাকতে অনেক team N+2 রাখে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q51",
+      "difficulty": "hard",
+      "question": "মাথার হিসাবে ৮৬,৪০০-এর বদলে 10⁵ দিয়ে ভাগ করলে গড় QPS কোন দিকে কতটা ভুল হয়, আর এর প্রতিকার কী?",
+      "options": [
+        "~১৪% কম আসে; তাই অন্য জায়গায় উপরের দিকে গোল করুন",
+        "~১৪% বেশি আসে; তাই অন্য জায়গায় নিচের দিকে গোল করুন",
+        "কোনো ভুল নেই, দুটো সমান",
+        "~৫০% কম আসে; তাই এই শর্টকাট ব্যবহার করবেন না"
+      ],
+      "correctIndex": 0,
+      "explanation": "10⁵ সেকেন্ড ৮৬,৪০০-এর চেয়ে বেশি, তাই ভাগফল ছোট: ২,০০০ বনাম ২,৩১৫, প্রায় ১৪% কম। Capacity-র ক্ষেত্রে কম বলা বিপজ্জনক দিক, তাই peak factor বা আকারে একটু উপরের দিকে গোল করা যায়।",
+      "whyWrong": {
+        "1": "বড় সংখ্যা দিয়ে ভাগ করলে ফল ছোট হয়, বড় না।",
+        "2": "১,০০,০০০ আর ৮৬,৪০০ সমান না; ~১৬% পার্থক্য।",
+        "3": "ভুল মাত্র ~১৪%, order-of-magnitude হিসাবে চলে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q52",
+      "difficulty": "hard",
+      "question": "৫০ কোটি row × ২০০ byte, index overhead ১০০%, প্রতি node disk ৭০%-এর বেশি ভরাবেন না। প্রতিটা replica node-এ কত disk লাগবে?",
+      "options": ["~১০০ GB", "~২০০ GB", "~২৯০ GB", "~৬০০ GB"],
+      "correctIndex": 2,
+      "explanation": "5 × 10⁸ × 200B = ১০০GB, index সহ ২০০GB, ÷ ০.৭ ≈ ২৮৬GB, অর্থাৎ ~২৯০GB প্রতি node। ৩টা node-এ মোট ~৮৬০GB।",
+      "whyWrong": {
+        "0": "এটা শুধু raw data, index আর খালি জায়গা বাদ।",
+        "1": "এটা index সহ, কিন্তু disk ১০০% ভরানো ধরা।",
+        "3": "এটা তিনটা replica-র মোট (৩ × ২০০), প্রতি node না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q53",
+      "difficulty": "hard",
+      "question": "Video app-এ প্রতিদিন ৩TB নতুন data জমে, কিছু মোছা হয় না, আর storage-এর দাম ধরি TB-মাস প্রতি $২০। Traffic স্থির থাকলেও ১২তম মাসের storage বিল মোটা দাগে কত?",
+      "options": [
+        "~$১,৮০০, প্রথম মাসের মতোই",
+        "~$২২,০০০, কারণ জমা data প্রতি মাসে বাড়ে",
+        "~$৭২০, কারণ প্রতিদিন শুধু ৩TB",
+        "~$২.৬ লাখ, কারণ ১২ মাসের বিল যোগ হয়ে এক মাসেই আসে"
+      ],
+      "correctIndex": 1,
+      "explanation": "১২ মাস শেষে জমা ~৩ × ৩৬৫ ≈ ১,০৯৫TB, × $২০ ≈ $২১,৯০০। Storage-এর বিল traffic না, জমা পরিমাণ দিয়ে চলে, তাই retention policy estimation-এর অংশ।",
+      "whyWrong": {
+        "0": "এটা প্রথম মাসের বিল (~৯০TB); data জমতেই থাকে।",
+        "2": "এটা মাত্র ৩৬TB, ১২ দিনের data।",
+        "3": "এটা ১২ মাসের বিলের মোট যোগফলের কাছাকাছি, একটা মাসের বিল না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q54",
+      "difficulty": "hard",
+      "question": "Ride app-এ সারাদিনে গড়ে ১০,০০০ location update/s, প্রতিটা ~১০০ byte। বছরে history কত, আর প্রতিটা update indexed SQL table-এ লেখার বদলে কী করবেন?",
+      "options": [
+        "~৩০TB/বছর; সর্বশেষটা memory-তে, history log-এ batch করে সস্তা storage-এ",
+        "~৩TB/বছর; প্রতিটা update সরাসরি indexed SQL table-এ",
+        "~৩০০TB/বছর; এত history রাখা অসম্ভব, তাই কোনো history-ই না রেখে সব মুছে ফেলা",
+        "~৩০GB/বছর; সব এক Redis-এ চিরকাল"
+      ],
+      "correctIndex": 0,
+      "explanation": "10⁴ × ৮৬,৪০০ × ১০০B ≈ ৮৬GB/দিন, বছরে ~৩১TB। ২৫,০০০ peak write/s-এ প্রতিটা indexed row লেখা দামি, তাই সর্বশেষ অবস্থান memory-তে আর history log-এ জমিয়ে batch-এ লেখা হয়।",
+      "whyWrong": {
+        "1": "এটা দশ গুণ কম, আর প্রতিটা update index-সহ লেখা write amplification বাড়ায়।",
+        "2": "এটা দশ গুণ বেশি, আর ~৩০TB রাখা বাস্তবসম্মত।",
+        "3": "এটা হাজার গুণ কম, আর বছরের history memory-তে রাখা অনেক দামি।"
+      }
+    },
+    {
+      "id": "sd-day-019-q55",
+      "difficulty": "hard",
+      "question": "Ride tracking-এ প্রতি সেকেন্ডে ৫০টা নতুন WebSocket session, গড়ে ২০ মিনিট চলে। এক server ২০,০০০ connection মাপা, ৬০%-এ রাখবেন, N+1। কয়টা server?",
+      "options": ["৬টা", "৪টা", "৩টা", "১০টা"],
+      "correctIndex": 0,
+      "explanation": "L = ৫০ × ১,২০০ = ৬০,০০০ খোলা connection। প্রতি server ৬০%-এ ১২,০০০, তাই ৬০,০০০ ÷ ১২,০০০ = ৫, N+1-এ ৬টা।",
+      "whyWrong": {
+        "1": "এটা ১০০% ধরে +১।",
+        "2": "এটা ১০০% ক্ষমতা ধরে, N+1 ছাড়া।",
+        "3": "এটা ৩০% utilization বা ভুল সময় ধরলে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q56",
+      "difficulty": "hard",
+      "question": "১,০০০ TPS, প্রতি লেনদেনে ৪টা row, প্রতিটা ৩টা tree-তে (PK + ২ index), replication factor ৩। Cluster-জুড়ে প্রতি সেকেন্ডে কত tree-write (WAL বাদে)?",
+      "options": ["১২,০০০", "১,০৮,০০০", "৪,০০০", "৩৬,০০০"],
+      "correctIndex": 3,
+      "explanation": "৪ × ৩ × ৩ = ৩৬ প্রতি লেনদেন, × ১,০০০ = ৩৬,০০০/s। \"মাত্র ১,০০০ TPS\" disk-এর স্তরে ৩৬ গুণ, আর WAL ধরলে আরও বেশি।",
+      "whyWrong": {
+        "0": "এখানে replication ভুলে গেছে।",
+        "1": "এখানে replication দুবার গুণ করা হয়েছে।",
+        "2": "এখানে শুধু row গোনা, index আর replica বাদ।"
+      }
+    },
+    {
+      "id": "sd-day-019-q57",
+      "difficulty": "hard",
+      "question": "Cache-এর hot set ১০GB raw। Key-এর overhead আর fragmentation মিলিয়ে ×২, আর প্রতিটা cache node-এর একটা replica। মোট cache memory কত পরিকল্পনা করবেন?",
+      "options": ["১০GB", "৪০GB", "৩০GB", "২০GB"],
+      "correctIndex": 1,
+      "explanation": "১০ × ২ (overhead) = ২০GB, × ২ (replica) = ৪০GB। তারপর machine-এর RAM-এর পুরোটা না, maxmemory তার নিচে রাখতে হয়।",
+      "whyWrong": {
+        "0": "এটা শুধু raw data, overhead আর replica বাদ।",
+        "2": "এখানে overhead বা replica একটাকে ১.৫ ধরা, শর্তের সাথে মেলে না।",
+        "3": "এখানে replica বাদ পড়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-019-q58",
+      "difficulty": "hard",
+      "question": "একটা chat app-এর estimate এলো \"দিনে ৫PB নতুন data\", অথচ DAU মাত্র ১০ লাখ। কোন sanity check সবচেয়ে দ্রুত ভুলটা ধরে?",
+      "options": [
+        "Server-গুলোর CPU utilization কত, সেটা dashboard খুলে দেখে তুলনা করা",
+        "Replication factor ৩ থেকে ২ করা",
+        "উল্টো দিক থেকে প্রতি user-এ ভাগ করা: দিনে ৫GB প্রতি জন, অবাস্তব",
+        "Peak factor কমিয়ে দেখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "৫PB ÷ 10⁶ = ৫GB প্রতি user প্রতিদিন, chat-এর জন্য অসম্ভব রকম বেশি। উল্টো দিক থেকে প্রতি user বা প্রতি item-এ ভাগ করলে এককের ভুল (KB বনাম MB) সাথে সাথে চোখে পড়ে।",
+      "whyWrong": {
+        "0": "CPU দেখে storage-এর এককের ভুল ধরা যায় না।",
+        "1": "Replication বদলালে উত্তর মাত্র দেড় গুণ বদলায়, হাজার গুণের ভুল থেকে যায়।",
+        "3": "Peak factor storage-এর মোট পরিমাণ বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-019-q59",
+      "difficulty": "hard",
+      "question": "Load test-এর ফল: ৬০০ req/s-এ p99 ১২০ms; ৮০০ req/s-এ CPU ১০০%, p99 ২s। SLO p99 ≤ ২০০ms। Capacity কত ধরবেন, আর peak ১২,০০০-এ ৬০% utilization ও N+1-এ কয়টা server?",
+      "options": [
+        "৮০০ ধরে ১২,০০০ ÷ ৪৮০ = ২৫ → ২৬টা",
+        "৬০০ ধরে ১২,০০০ ÷ ৬০০ = ২০ → N+1-এ মোট ২১টা server",
+        "৬০০ ধরে ১২,০০০ ÷ ৩৬০ ≈ ৩৩.৩ → ৩৪, N+1-এ ৩৫টা",
+        "৮০০ ধরে ১২,০০০ ÷ ৮০০ = ১৫ → ১৬টা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Capacity সেই হার যেখানে p99 এখনো SLO-র মধ্যে, তাই ৬০০; ৮০০ ভাঙনের বিন্দু। ৬০০ × ০.৬ = ৩৬০, ১২,০০০ ÷ ৩৬০ ≈ ৩৩.৩ → ৩৪, +১ = ৩৫টা।",
+      "whyWrong": {
+        "0": "৮০০-তে p99 ২s, SLO ভাঙা; ওটা capacity না।",
+        "1": "Capacity ঠিক, কিন্তু ৬০% utilization প্রয়োগ করা হয়নি।",
+        "3": "ভাঙনের বিন্দুতে ১০০% চালানো, utilization-এর কোনো বাড়তি নেই।"
+      }
+    },
+    {
+      "id": "sd-day-019-q60",
+      "difficulty": "hard",
+      "question": "ISP 95th percentile billing করে: মাসে প্রতি ৫ মিনিটে হার মাপে, সবচেয়ে উঁচু ৫% নমুনা বাদ দেয়। ৩০ দিনের মাসে 11.11-এর ২ ঘণ্টার বিশাল spike বিলে কতটা প্রভাব ফেলবে?",
+      "options": [
+        "পুরোটা, কারণ বিল সবসময় মাসের সর্বোচ্চ হার দিয়েই করা হয়",
+        "Spike-এর সময়ের দ্বিগুণ হারে চার্জ হয়",
+        "অর্ধেক, কারণ গড় নেওয়া হয়",
+        "প্রায় না, কারণ ২ ঘণ্টা মাসের ৫%-এর (~৩৬ ঘণ্টা) অনেক কম"
+      ],
+      "correctIndex": 3,
+      "explanation": "৩০ দিনে ৭২০ ঘণ্টা, তার ৫% = ৩৬ ঘণ্টার নমুনা বাদ যায়। ২ ঘণ্টার spike পুরোটাই বাদের ভেতরে পড়ে, তাই বিলে প্রায় প্রভাব নেই। কিন্তু link-কে সেই spike সামলাতেই হবে, তাই link-এর আকার peak দিয়ে।",
+      "whyWrong": {
+        "0": "এটা max-rate billing, 95th percentile না।",
+        "1": "এই পদ্ধতিতে spike-এর জন্য আলাদা গুণক চার্জ হয় না।",
+        "2": "95th percentile গড় নেয় না, উঁচু ৫% বাদ দিয়ে বাকিগুলোর সর্বোচ্চ নেয়।"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "type": "story",
+  "text": "১১.১১ sale-এ site ধীর হলে আরও server কিনলেই কি সমাধান?\nDay 5/100 · Scalability\n\nধরুন ঈদের আগে ফেরিঘাট। ভিড় সামলাতে কর্তৃপক্ষ নতুন ৫টা ফেরি নামাল।\n\nকিন্তু গাড়ি ওঠার ঘাট (ramp) একটাই। প্রতিটা গাড়ি উঠতে ২ মিনিট। ফেরি ১টা হোক বা ১০টা, ঘণ্টায় ৩০টার বেশি গাড়ি উঠবে না।\n\nফল: ফেরি খালি দাঁড়িয়ে, আর ঘাটে ১০ কিলোমিটার জ্যাম।\n\nসমাধান এলো ঘাটে: আরও দুটো ramp, আর আগে থেকে টিকিট কেটে রাখা, যাতে ঘাটে দাঁড়িয়ে সময় নষ্ট না হয়।\n\nআজ **Scalability** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nএকটা e-commerce site-এ ১১.১১ sale-এর রাতে:\n- traffic স্বাভাবিকের ২০-৩০ গুণ\n- টিম তাড়াহুড়ো করে app server ৪ থেকে ১২টা করল\n- তবুও checkout ধীর, কারণ সব server একটাই database-এ লিখছে\n\napp server বাড়ানো হয়েছে, কিন্তু bottleneck ছিল database। এখানেই আসে Scalability: load বাড়লে system কিভাবে বাড়বে, আর কোথায় আগে আটকাবে।\n\n৩টা মূল ধারণা:\n1. **Bottleneck**: যে resource সবার আগে ফুরায়। আগে মাপুন, তারপর server কিনুন\n2. **Horizontal Scaling**: বেশি machine যোগ করা; শর্ত হলো server **Stateless** হতে হবে\n3. **Peak QPS**: গড় না, peak-এর জন্য design। ২০ লাখ user × ২৫ request ÷ ৮৬,৪০০ ≈ ৬০০ গড়, peak-এ ~৩,০০০\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ load বাড়ার পর প্রথম কোন জিনিসটা আটকেছিল, আর কিভাবে বুঝেছিলেন?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম, যার নাম **Amdahl's Law**। কাজের মাত্র ৫% যদি একবারে একজনকেই করতে হয় (একটা lock, একটা shared database), তাহলে হাজার server দিলেও ২০ গুণের বেশি দ্রুত হবে না। ফেরিঘাটের ramp-এর মতোই।\n\nScalability = load বাড়লে resource যোগ করে system-কে বাড়ানোর ক্ষমতা, performance আর খরচ ঠিক রেখে।\n\nআপনার দেখা সবচেয়ে বড় traffic spike-এ কোন জায়গাটা আগে ভেঙেছিল? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ load বাড়ার পর প্রথম কোন জিনিসটা আটকেছিল, আর কিভাবে বুঝেছিলেন?",
+  "firstComment": "পুরো lesson, capacity estimation-এর হিসাব, Amdahl's law আর Docker Compose দিয়ে নিজে scale করে দেখার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Scalability",
+    "#BackendEngineering"
+  ],
+  "visual": "day-005-main"
+}

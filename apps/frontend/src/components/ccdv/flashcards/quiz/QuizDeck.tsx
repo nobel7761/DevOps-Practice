@@ -8,6 +8,7 @@ import {
   saveCardsStudy,
 } from "@/lib/ccdv/study-api";
 import { validateAnswer } from "@/lib/ccdv/validate-answer";
+import { FLASHCARD_TYPED_ANSWERS } from "@/lib/data/ccdv/schedule";
 import type { CcdvFlashcard } from "@/lib/data/ccdv/types";
 import AnswerBox from "./AnswerBox";
 import DeckNav from "./DeckNav";
@@ -97,8 +98,13 @@ export default function QuizDeck({
     }
   };
 
-  const statuses: CardStatus[] = cards.map(
-    (_, i) => results[i]?.verdict ?? "idle",
+  // Typed answers off: the dots simply show which cards you marked "remembered".
+  const statuses: CardStatus[] = cards.map((_, i) =>
+    FLASHCARD_TYPED_ANSWERS
+      ? (results[i]?.verdict ?? "idle")
+      : known.includes(i)
+        ? "correct"
+        : "idle",
   );
   const result = results[index];
   const verdict: VerdictView | null = failed
@@ -112,6 +118,7 @@ export default function QuizDeck({
       <DeckProgress
         statuses={statuses}
         known={known}
+        showAnswerStats={FLASHCARD_TYPED_ANSWERS}
         current={index}
         onJump={jump}
         action={
@@ -126,18 +133,22 @@ export default function QuizDeck({
         index={index}
         total={cards.length}
         flipped={flipped}
-        status={statuses[index]}
+        status={FLASHCARD_TYPED_ANSWERS ? statuses[index] : "idle"}
         known={known.includes(index)}
         onFlip={() => setFlipped((value) => !value)}
       />
-      <AnswerBox
-        key={index}
-        value={drafts[index] ?? ""}
-        validating={validating}
-        onChange={(value) => setDrafts((prev) => ({ ...prev, [index]: value }))}
-        onValidate={validate}
-      />
-      {verdict && <VerdictPanel verdict={verdict} />}
+      {FLASHCARD_TYPED_ANSWERS && (
+        <AnswerBox
+          key={index}
+          value={drafts[index] ?? ""}
+          validating={validating}
+          onChange={(value) =>
+            setDrafts((prev) => ({ ...prev, [index]: value }))
+          }
+          onValidate={validate}
+        />
+      )}
+      {FLASHCARD_TYPED_ANSWERS && verdict && <VerdictPanel verdict={verdict} />}
       <DeckNav
         onPrev={() => go(-1)}
         onAgain={() => {

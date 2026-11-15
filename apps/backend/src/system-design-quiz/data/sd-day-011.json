@@ -1,0 +1,1075 @@
+{
+  "topicId": "sd-day-011",
+  "questions": [
+    {
+      "id": "sd-day-011-q01",
+      "difficulty": "easy",
+      "question": "\"সাজঘর\"-এর origin server আমেরিকার US East-এ, server প্রতিটা ছবি ৫ms-এ দেয়। তবুও ঢাকার user-দের page-এ ছবি আসতে অনেক সময় লাগছে। মূল কারণ কী?",
+      "options": [
+        "দূরের server-এর bandwidth কম থাকে, তাই প্রতিটা ছবি ধীরে ধীরে ছোট টুকরো করে আসে",
+        "ছবিগুলো বড় বলে server-কে প্রতিবার disk থেকে পড়তে কয়েক সেকেন্ড লাগছে",
+        "দূরত্বের কারণে প্রতিটা request-এ ~২৫০ms round trip লাগে, server দ্রুত হলেও",
+        "Browser বিদেশি server-এর file দেখানোর আগে নিরাপত্তার জন্য পুরোটা scan করে নেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Server-এর কাজ মাত্র ৫ms, কিন্তু ঢাকা থেকে US East-এ একবার যাওয়া-আসায় প্রায় ২৫০ms যায়, আর নতুন connection-এ handshake মিলিয়ে কয়েকটা round trip। এটা propagation delay, আলোর গতির সীমা, তাই একমাত্র উপায় content user-এর কাছে আনা। CDN ঠিক এটাই করে।",
+      "whyWrong": {
+        "0": "সমস্যা bandwidth-এ না, latency-তে; প্রতিটা ছোট request-ও পুরো round trip-এর সময় নেয়।",
+        "1": "প্রশ্নেই বলা আছে server প্রতিটা ছবি ৫ms-এ দেয়, তাই disk read সমস্যা না।",
+        "3": "Browser এমন কোনো scan করে না; দেরিটা network-এর দূরত্বে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q02",
+      "difficulty": "easy",
+      "question": "CDN-এর \"edge server\" বলতে কী বোঝায়?",
+      "options": [
+        "আপনার origin server-এর একটা backup, যেটা শুধু origin down হলে চালু হয়ে request নেয়",
+        "User-এর browser-এর ভেতরের cache, যেটা আগে দেখা ছবি আর JS জমা রেখে দেয়",
+        "Database-এর একটা read replica, যেখানে শুধু ছবি আর video-র মতো বড় file রাখা হয়",
+        "User-এর কাছে বসানো CDN-এর server, যে cache থেকে দেয়, না থাকলে origin থেকে আনে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Edge server CDN-এর অংশ, user-এর কাছের শহর বা data center-এ বসানো। এটা reverse proxy-র মতো request নেয়, cache-এ থাকলে সাথে সাথে দেয়, না থাকলে origin থেকে এনে রেখে দেয়।",
+      "whyWrong": {
+        "0": "Edge সবসময় চালু থাকে আর প্রতিটা request নেয়; এটা failover backup না।",
+        "1": "Browser cache user-এর নিজের computer-এ থাকে; edge হলো CDN-এর shared server।",
+        "2": "Read replica database-এর কপি, HTTP content cache করা edge server না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q03",
+      "difficulty": "easy",
+      "question": "CDN-এর response-এ \"Cache HIT\" লেখা থাকলে তার মানে কী?",
+      "options": [
+        "Edge-এর কাছে file-এর তাজা কপি ছিল, তাই origin-এ না গিয়েই উত্তর দেওয়া হয়েছে",
+        "Origin request পেয়ে সফলভাবে উত্তর দিয়েছে, আর edge সেটা user-কে পৌঁছে দিয়েছে",
+        "Edge-এ কপি ছিল কিন্তু মেয়াদ শেষ, তাই origin থেকে নতুন কপি এনে দেওয়া হয়েছে",
+        "User-এর browser file-টা আগেই রেখে দিয়েছিল বলে CDN পর্যন্ত কোনো request-ই যায়নি"
+      ],
+      "correctIndex": 0,
+      "explanation": "HIT মানে edge নিজের cache থেকে তাজা কপি দিয়েছে, origin কিছুই জানে না। এটাই CDN-এর লাভের উৎস: কাছ থেকে দ্রুত উত্তর, আর origin-এর উপর কোনো চাপ নেই।",
+      "whyWrong": {
+        "1": "Origin-এ যাওয়া মানে MISS, HIT না।",
+        "2": "মেয়াদ শেষে নতুন কপি আনা হলে সেটা EXPIRED/MISS বা revalidation, HIT না।",
+        "3": "Browser cache থেকে দিলে CDN-এ request-ই পৌঁছায় না, তাই CDN HIT বা MISS কিছুই বলে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q04",
+      "difficulty": "easy",
+      "question": "একটা file প্রথমবার চাওয়া হলো, edge-এর cache-এ নেই (MISS)। Edge সাধারণত কী করে?",
+      "options": [
+        "User-কে origin-এর ঠিকানায় redirect করে দেয়, নিজে কোনো কপি রাখে না",
+        "Origin থেকে file এনে user-কে দেয়, আর নির্দেশ অনুযায়ী একটা কপি রেখে দেয়",
+        "অন্য সব PoP-কে একে একে জিজ্ঞেস করে, কোথাও না পেলে user-কে 404 Not Found পাঠায়",
+        "User-কে একটা error পাঠায় যাতে browser কিছুক্ষণ পরে নিজে আবার চেষ্টা করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "MISS-এ edge user-এর হয়ে origin থেকে file আনে (origin fetch), user-কে দেয়, আর Cache-Control অনুযায়ী কপি রেখে দেয়। ফলে ওই PoP-এ পরের request-গুলো HIT হয়।",
+      "whyWrong": {
+        "0": "Redirect করলে user আবার দূরের origin-এ যাবে, CDN-এর পুরো লাভ হারাবে।",
+        "2": "MISS মানে file নেই এমন না; edge origin থেকে আনে, 404 দেয় না।",
+        "3": "MISS কোনো error না, এটা স্বাভাবিক প্রথম request।"
+      }
+    },
+    {
+      "id": "sd-day-011-q05",
+      "difficulty": "easy",
+      "question": "CDN-এর আলোচনায় \"PoP (Point of Presence)\" কী?",
+      "options": [
+        "একটা শহর বা data center-এ CDN-এর edge server-গুলোর একটা দল",
+        "CDN-এর কেন্দ্রীয় server, যেখানে সব file-এর মূল কপি সবসময় থাকে",
+        "Edge থেকে origin পর্যন্ত CDN-এর নিজের বসানো বিশেষ fiber cable",
+        "CDN-এর DNS server, যে শুধু কাছের IP বলে দেয় কিন্তু কোনো file রাখে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "PoP হলো কোনো একটা জায়গায় CDN-এর উপস্থিতি, সেখানে বসানো edge server-গুলো। User যত কাছের PoP পায়, round trip তত কম।",
+      "whyWrong": {
+        "1": "মূল কপি থাকে origin-এ; PoP-এ থাকে cache করা কপি।",
+        "2": "PoP একটা জায়গা আর সেখানকার server, cable না।",
+        "3": "PoP-এর edge server file cache করে দেয়; শুধু DNS উত্তর দেওয়া PoP-এর কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q06",
+      "difficulty": "easy",
+      "question": "CDN ব্যবহার করলেও \"origin\" বলতে কী বোঝায়?",
+      "options": [
+        "User-এর সবচেয়ে কাছের edge server, যেখান থেকে প্রথম উত্তরটা আসে",
+        "যে PoP-এ কোনো file প্রথমবার cache হয়েছিল, পরে অন্য সব PoP সেখান থেকেই নেয়",
+        "আপনার আসল server বা storage, যেখানে file-এর মূল কপি থাকে",
+        "CDN provider-এর প্রধান data center, যেখানে সব PoP-এর log জমা হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Origin হলো সত্যের উৎস: আপনার web server বা S3-এর মতো object storage। Edge-এ MISS হলে বা revalidation লাগলে edge origin-কেই জিজ্ঞেস করে, আর origin-এর Cache-Control ঠিক করে কী কতক্ষণ রাখা যাবে।",
+      "whyWrong": {
+        "0": "কাছের edge server origin না, সেটা cache।",
+        "1": "কোনো PoP-এ প্রথম cache হওয়া কপিও একটা কপি; মূল কপি origin-এ।",
+        "3": "CDN-এর নিজের data center আপনার content-এর origin না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q07",
+      "difficulty": "easy",
+      "question": "CDN-এর প্রসঙ্গে একটা cache করা file-এর \"TTL\" কী ঠিক করে?",
+      "options": [
+        "Request edge থেকে origin-এ পৌঁছাতে সর্বোচ্চ কত সময় নিতে পারবে, না হলে timeout",
+        "Packet সর্বোচ্চ কয়টা router পার হতে পারবে, তারপর network তাকে ফেলে দেবে",
+        "CDN কতদিন পরে file স্থায়ীভাবে মুছে ফেলবে, user চাইতে থাকলেও আর আনবে না",
+        "কপিটা কতক্ষণ তাজা ধরা হবে; তারপর আবার আনতে বা origin-এর সাথে যাচাই করতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "TTL (Time To Live) হলো freshness-এর সময়, সাধারণত Cache-Control-এর max-age বা s-maxage দিয়ে আসে। এর মধ্যে edge নিশ্চিন্তে কপি দেয়; শেষ হলে আবার আনে বা 304 দিয়ে যাচাই করে।",
+      "whyWrong": {
+        "0": "এটা timeout, cache-এর TTL না।",
+        "1": "IP packet-এর TTL নামে আলাদা একটা field আছে, কিন্তু cache-এর TTL সেটা না।",
+        "2": "TTL শেষ হলে কপি পুরনো ধরা হয়, file আর আনা হবে না এমন না; পরের request-এ আবার আনে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q08",
+      "difficulty": "easy",
+      "question": "একটা online shop-এর কোন content CDN-এ cache করার জন্য সবচেয়ে উপযুক্ত?",
+      "options": [
+        "প্রতিটা user-এর cart আর account balance-এর API response",
+        "Product-এর ছবি আর নামের সাথে hash দেওয়া JS ও CSS file",
+        "Login করার পরে প্রতিটা user-এর আলাদা করে বানানো dashboard HTML",
+        "Payment নিশ্চিত করার POST request আর তার success response"
+      ],
+      "correctIndex": 1,
+      "explanation": "ছবি আর versioned static file সবার জন্য একই আর সহজে বদলায় না, তাই লম্বা TTL দিয়ে cache করলে hit ratio অনেক বেশি হয়। Personalised বা টাকা-সংক্রান্ত response shared cache-এ রাখা বিপজ্জনক।",
+      "whyWrong": {
+        "0": "Cart আর balance প্রতিটা user-এর আলাদা; shared cache-এ রাখলে অন্যের তথ্য দেখা যেতে পারে।",
+        "2": "User-ভেদে আলাদা HTML-এ cache-এর লাভ নেই আর ভুল user-কে দেখানোর ঝুঁকি আছে।",
+        "3": "POST আর payment response cache করা হয় না; প্রতিটা নতুন কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-011-q09",
+      "difficulty": "easy",
+      "question": "Origin একটা response-এ `Cache-Control: no-store` পাঠাল। এর মানে কী?",
+      "options": [
+        "রাখা যাবে, কিন্তু প্রতিবার ব্যবহারের আগে origin-এর সাথে যাচাই করতে হবে",
+        "Response কোথাও রাখা যাবে না, browser-এ না, CDN-এও না",
+        "শুধু user-এর browser রাখতে পারবে, CDN-এর মতো shared cache পারবে না",
+        "CDN রাখতে পারবে শুধু memory-তে, disk-এ লেখা যাবে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "no-store সবচেয়ে কঠোর: কোনো cache-ই response জমা রাখবে না। Balance, OTP বা ব্যক্তিগত তথ্যের জন্য এটা ব্যবহার হয়।",
+      "whyWrong": {
+        "0": "এটা no-cache-এর বর্ণনা, no-store-এর না।",
+        "2": "এটা private-এর বর্ণনা।",
+        "3": "no-store memory বা disk কোথাও রাখতে দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q10",
+      "difficulty": "easy",
+      "question": "`Cache-Control: no-cache` সম্পর্কে কোন কথাটা ঠিক?",
+      "options": [
+        "Response কোথাও রাখা যাবে না, প্রতিবার পুরো file নতুন করে আনতে হবে",
+        "CDN রাখতে পারবে না, তবে user-এর browser নিজের cache-এ যতক্ষণ খুশি রাখতে পারবে",
+        "শুধু CDN রাখতে পারবে, user-এর browser একবার দেখিয়েই মুছে ফেলবে",
+        "রাখা যাবে, কিন্তু প্রতিবার ব্যবহারের আগে origin-এর সাথে যাচাই করতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "নামের কারণে বিভ্রান্তি হয়, কিন্তু no-cache মানে 'না জিজ্ঞেস করে দিও না'। ETag থাকলে যাচাইয়ে শুধু 304 আসে, তাই bandwidth বাঁচে আর সবসময় সর্বশেষ version নিশ্চিত হয়। কিছুই রাখতে না চাইলে no-store।",
+      "whyWrong": {
+        "0": "কোথাও না রাখা হলো no-store।",
+        "1": "no-cache browser আর CDN দুজনকেই রাখতে দেয়, কিন্তু প্রতিবার যাচাই করতে বলে।",
+        "2": "no-cache browser-কে রাখতে নিষেধ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q11",
+      "difficulty": "easy",
+      "question": "একটা user-এর profile page-এ origin `Cache-Control: private, max-age=60` পাঠাল। কে এটা cache করতে পারবে?",
+      "options": [
+        "শুধু CDN, user-এর browser না, কারণ private data server-এর কাছে থাকা ভালো",
+        "Browser আর CDN দুজনেই ৬০ সেকেন্ড, কারণ max-age দুজনের জন্যই",
+        "শুধু user-এর নিজের browser, CDN-এর মতো shared cache না",
+        "কেউ না, কারণ private থাকলে max-age উপেক্ষা করা হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "private মানে response একজন user-এর জন্য, তাই শুধু তার browser-এর private cache রাখতে পারে। CDN বা অন্য shared cache রাখলে অন্য user সেটা পেয়ে যেতে পারত।",
+      "whyWrong": {
+        "0": "উল্টো: private shared cache-কেই নিষেধ করে।",
+        "1": "private থাকলে CDN max-age মানলেও রাখতে পারে না।",
+        "3": "Browser-এর জন্য max-age=60 ঠিকই কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q12",
+      "difficulty": "easy",
+      "question": "`Cache-Control`-এর `s-maxage` directive কী করে?",
+      "options": [
+        "শুধু shared cache-এর (CDN, proxy) তাজা থাকার সময়; তারা max-age-এর বদলে এটা মানে",
+        "শুধু browser-এর জন্য সর্বোচ্চ সময়; CDN এটা দেখে না, বরং নিজের default সময় ব্যবহার করে",
+        "Origin down থাকলে মেয়াদ শেষ কপি আরও কত সেকেন্ড দেওয়া যাবে, সেটা বলে",
+        "File-এর সর্বোচ্চ আকার, যার বেশি হলে CDN response cache করবে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "s-maxage দিয়ে browser আর CDN-এর জন্য আলাদা সময় দেওয়া যায়। যেমন max-age=60, s-maxage=3600: browser ১ মিনিট, CDN ১ ঘণ্টা। এতে CDN-এ purge করে নিয়ন্ত্রণ রাখা যায়, browser-এ বেশি সময় পুরনো থাকে না।",
+      "whyWrong": {
+        "1": "উল্টো: s-maxage শুধু shared cache-এর জন্য, browser এটা উপেক্ষা করে।",
+        "2": "এটা stale-if-error-এর কাজ।",
+        "3": "s-maxage সময়ের মাপ, file-এর আকারের না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q13",
+      "difficulty": "easy",
+      "question": "Edge একটা মেয়াদ শেষ কপি নিয়ে origin-কে জিজ্ঞেস করল, আর origin `304 Not Modified` দিল। এর মানে কী?",
+      "options": [
+        "File স্থায়ীভাবে নতুন URL-এ সরে গেছে, edge-কে নতুন ঠিকানা থেকে আনতে হবে",
+        "File পাওয়া যায়নি, তাই edge cache-এ থাকা পুরনো কপি দেবে যতক্ষণ না ঠিক হয়",
+        "Origin এখন ব্যস্ত, edge-কে কিছুক্ষণ পরে আবার জিজ্ঞেস করতে বলা হচ্ছে",
+        "File বদলায়নি, তাই body ছাড়া উত্তর; edge আগের কপিটাই আবার ব্যবহার করবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "304 হলো conditional request-এর উত্তর: 'তোমার কাছে যা আছে সেটাই ঠিক আছে'। কোনো body আসে না, তাই কয়েকশো byte-এই যাচাই শেষ, আর edge কপির মেয়াদ বাড়িয়ে নেয়।",
+      "whyWrong": {
+        "0": "স্থায়ীভাবে সরে যাওয়া হলো 301।",
+        "1": "পাওয়া না গেলে 404; 304-এর অর্থ আলাদা।",
+        "2": "ব্যস্ত বা অচল হলে 503 আসে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q14",
+      "difficulty": "easy",
+      "question": "HTTP response-এর `ETag` header কী কাজে লাগে?",
+      "options": [
+        "Response কোন PoP থেকে এসেছে তার নাম, debugging-এর জন্য",
+        "File-এর একটা fingerprint, যা দিয়ে পরে জানা যায় file বদলেছে কিনা",
+        "কপিটা cache-এ আর কত সেকেন্ড তাজা থাকবে, সেই সময়",
+        "User-এর browser-কে আলাদা করে চেনার জন্য CDN-এর দেওয়া একটা tracking id"
+      ],
+      "correctIndex": 1,
+      "explanation": "ETag file-এর version চিহ্নিত করে। Cache পরে If-None-Match-এ এটা পাঠায়; মিললে origin 304 দেয়, না মিললে নতুন file। ফলে না বদলানো file আবার পুরো নামাতে হয় না।",
+      "whyWrong": {
+        "0": "PoP-এর নাম ETag-এ থাকে না; সেটা CDN-ভেদে অন্য header-এ আসে।",
+        "2": "বাকি তাজা সময় হিসাব হয় max-age আর Age header দিয়ে।",
+        "3": "ETag content-এর সাথে যুক্ত, user-এর সাথে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q15",
+      "difficulty": "easy",
+      "question": "CDN-এর \"cache hit ratio\" বলতে কী বোঝায়?",
+      "options": [
+        "Origin server মোট সময়ের কত শতাংশ চালু ছিল",
+        "Edge কত শতাংশ request-এর উত্তর ১০০ms-এর কম সময়ে দিয়েছে",
+        "মোট request-এর কত অংশ edge-এ cache থেকেই দেওয়া গেছে",
+        "আপনার মোট file-এর কত শতাংশ CDN-এ আগে থেকে upload করা আছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Hit ratio = HIT ÷ মোট request। এটা যত বেশি, origin তত কম request পায় আর user তত বেশি কাছ থেকে উত্তর পায়। আসল প্রভাব বোঝা যায় miss ratio দিয়ে, কারণ origin শুধু miss পায়।",
+      "whyWrong": {
+        "0": "এটা availability-র মাপ।",
+        "1": "এটা latency-র মাপ, hit ratio না।",
+        "3": "Hit ratio request গুনে হিসাব হয়, upload করা file গুনে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q16",
+      "difficulty": "easy",
+      "question": "Build tool JS file-এর নাম দিল `app.3f9a.js`। নামের `3f9a` অংশটা সাধারণত কী?",
+      "options": [
+        "Content থেকে বানানো hash; content বদলালে নামও বদলায়",
+        "CDN-এর কোন PoP-এ file রাখা হবে তার একটা code",
+        "File কতদিন cache-এ থাকবে তার একটা সংকেত, CDN পড়ে নেয়",
+        "Build-এর তারিখ, যাতে CDN পুরনো তারিখের file নিজে থেকেই মুছে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Content hash দিয়ে নাম দিলে নতুন content মানে নতুন URL, তাই নতুন cache key। পুরনো নামের file কখনো বদলায় না, তাই লম্বা TTL নিরাপদ, আর deploy-এ purge লাগে না।",
+      "whyWrong": {
+        "1": "নাম PoP ঠিক করে না; সব PoP একই URL cache করে।",
+        "2": "Cache-এর সময় আসে Cache-Control header থেকে, নাম থেকে না।",
+        "3": "CDN নাম দেখে তারিখ বুঝে file মোছে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q17",
+      "difficulty": "easy",
+      "question": "CDN প্রসঙ্গে \"anycast\" কী?",
+      "options": [
+        "একটা request একসাথে সব PoP-এ পাঠানো হয়, যে আগে উত্তর দেয় সেটাই user পায়",
+        "প্রতিটা user-কে তার শহর অনুযায়ী আলাদা IP দেওয়া হয়, DNS-এর মাধ্যমে",
+        "একই IP অনেক PoP থেকে ঘোষণা করা হয়, routing user-কে কাছেরটায় নেয়",
+        "DNS প্রতিবার random একটা PoP-এর IP দেয়, যাতে load সমানভাবে ভাগ হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Anycast-এ IP একটাই, কিন্তু BGP দিয়ে অনেক জায়গা থেকে announce করা। Internet-এর routing নিজেই packet কাছের PoP-এ পাঠায়, আর একটা PoP বন্ধ হলে traffic পরেরটায় যায়।",
+      "whyWrong": {
+        "0": "Anycast-এ একটা request একটা জায়গাতেই যায়; সবাইকে পাঠানো হয় না।",
+        "1": "শহর অনুযায়ী আলাদা IP দেওয়া হলো DNS-based steering (GeoDNS), anycast না।",
+        "3": "Random IP দেওয়া DNS round-robin-এর মতো, anycast না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q18",
+      "difficulty": "easy",
+      "question": "\"Pull CDN\" কিভাবে কাজ করে?",
+      "options": [
+        "আপনি আগে থেকে সব file CDN-এর storage-এ upload করেন, edge সেখান থেকে দেয়",
+        "User-এর browser নিয়মিত CDN থেকে নতুন file টেনে নেয়, request ছাড়াই",
+        "শুধু origin down হলে CDN কাজ শুরু করে, তখন backup থেকে file টেনে আনে",
+        "File প্রথমবার চাওয়া হলে edge নিজেই origin থেকে টেনে আনে আর রেখে দেয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Pull CDN-এ setup সহজ: শুধু DNS CDN-এর দিকে দেখালেই হয়। প্রতিটা PoP-এ প্রতিটা file-এর প্রথম request MISS হয়, তারপর HIT।",
+      "whyWrong": {
+        "0": "এটা push CDN-এর বর্ণনা।",
+        "1": "Browser নিজে থেকে file টানে না; user চাইলে তবেই request যায়।",
+        "2": "CDN সবসময় সামনে থাকে, শুধু failover-এর জন্য না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q19",
+      "difficulty": "easy",
+      "question": "`/api/me` (user-এর নাম আর balance) কেন CDN-এ public cache করা উচিত না?",
+      "options": [
+        "API response ছোট বলে cache করে কোনো latency-র লাভ পাওয়া যায় না",
+        "একজনের তথ্য shared cache-এ থাকলে পরের অন্য user সেটা পেয়ে যেতে পারে",
+        "JSON response CDN বুঝতে পারে না, তাই cache করলে ভেঙে যায়",
+        "API cache করলে origin-এর CPU বেশি খরচ হয়, কারণ প্রতিবার কপিটা মিলিয়ে দেখতে হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "CDN-এর cache সবার জন্য shared। একটা URL-এর জন্য একটা কপি থাকলে প্রথম user-এর তথ্য পরের সবাই পাবে, এটা গুরুতর data leak। তাই এসব response-এ private বা no-store।",
+      "whyWrong": {
+        "0": "ছোট response-এও RTT বাঁচে; সমস্যাটা নিরাপত্তার, latency-র না।",
+        "2": "CDN JSON-ও অন্য file-এর মতোই cache করতে পারে; সেজন্যই ঝুঁকি।",
+        "3": "HIT হলে origin-এ কোনো কাজই হয় না; CPU বাড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q20",
+      "difficulty": "easy",
+      "question": "\"Origin shield\" কী?",
+      "options": [
+        "PoP আর origin-এর মাঝের একটা cache স্তর, যেখানে সব PoP-এর miss মেলে",
+        "Origin-এর সামনে একটা firewall, যেটা শুধু DDoS attack আটকায়",
+        "Origin-এর একটা পুরো backup কপি, অন্য region-এ চালু রাখা",
+        "Browser-এর একটা নিরাপত্তা setting, যেটা user-এর কাছ থেকে origin-এর IP লুকিয়ে রাখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Origin shield (tiered cache) একটা মাঝের cache। Edge-এ MISS হলে আগে shield-কে জিজ্ঞেস করা হয়, shield-এও না থাকলে তবেই origin। এতে অনেক PoP-এর miss এক জায়গায় মিলে origin-এর load কমায়।",
+      "whyWrong": {
+        "1": "নামে 'shield' থাকলেও এটা মূলত cache স্তর, firewall না।",
+        "2": "এটা backup origin না; content-এর cache রাখে।",
+        "3": "এটা CDN-এর ভেতরের স্তর, browser-এর setting না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q21",
+      "difficulty": "medium",
+      "question": "দিনে ১ কোটি request আসে। Hit ratio ৯৫% থেকে বেড়ে ৯৯% হলো। Origin-এর দিনে request কত থেকে কততে নামল?",
+      "options": [
+        "৫ লাখ থেকে ৪.৮ লাখ, কারণ hit ratio মাত্র ৪% বেড়েছে",
+        "৯৫ লাখ থেকে ৯৯ লাখ, কারণ বেশি request cache-এ গেছে",
+        "৫ লাখ থেকে ১ লাখ, অর্থাৎ পাঁচ ভাগের এক ভাগ",
+        "১০ লাখ থেকে ৫ লাখ, অর্থাৎ ঠিক অর্ধেক"
+      ],
+      "correctIndex": 2,
+      "explanation": "Origin পায় শুধু miss। ৯৫% hit মানে ৫% miss = ১ কোটির ৫% = ৫ লাখ। ৯৯% hit মানে ১% miss = ১ লাখ। তাই 'মাত্র ৪%' বৃদ্ধিতে origin-এর load ৫ গুণ কমে।",
+      "whyWrong": {
+        "0": "৪% কম না, miss ৫% থেকে ১%-এ নামায় origin-এর load পাঁচ ভাগের এক ভাগ হয়েছে।",
+        "1": "এগুলো HIT-এর সংখ্যা; origin পায় miss-গুলো।",
+        "3": "১০ লাখ হতো ৯০% hit-এ; ৯৫%-এ miss ৫ লাখ।"
+      }
+    },
+    {
+      "id": "sd-day-011-q22",
+      "difficulty": "medium",
+      "question": "একটা CDN-এ HIT হলে ২০ms, MISS হলে ৩০০ms লাগে। Hit ratio ৯০% হলে গড় latency মোটামুটি কত?",
+      "options": ["৪৮ms", "১৬০ms", "২০ms", "৩০ms"],
+      "correctIndex": 0,
+      "explanation": "গড় = ০.৯ × ২০ + ০.১ × ৩০০ = ১৮ + ৩০ = ৪৮ms। দেখুন, মাত্র ১০% miss গড়ের বেশিরভাগ অংশ দখল করেছে। Hit ratio ৯৯% হলে গড় নেমে ~২২.৮ms।",
+      "whyWrong": {
+        "1": "এটা দুটো সংখ্যার সাধারণ গড়; ৯০% request যে HIT, সেটা বিবেচনায় নেয়নি।",
+        "2": "এটা শুধু HIT-এর সময়; ১০% miss-এর দেরি বাদ পড়েছে।",
+        "3": "এটা শুধু miss-এর অংশ (০.১ × ৩০০); HIT-এর ১৮ms বাদ।"
+      }
+    },
+    {
+      "id": "sd-day-011-q23",
+      "difficulty": "medium",
+      "question": "Sale-এর banner ছবি (৩০০ KB) দিনে ৫ লাখ বার দেখা হলো, hit ratio ৯৮%। এই ছবির জন্য origin থেকে মোট কত data বের হলো?",
+      "options": [
+        "প্রায় ১৪৭ GB",
+        "প্রায় ১৫০ GB",
+        "প্রায় ৩০ GB",
+        "প্রায় ৩ GB"
+      ],
+      "correctIndex": 3,
+      "explanation": "মোট = ৫ লাখ × ৩০০ KB = ১৫০ GB। Origin শুধু miss দেয়: ২% × ৫ লাখ = ১০,০০০ বার × ৩০০ KB = ৩ GB। বাকি ১৪৭ GB edge থেকে গেছে।",
+      "whyWrong": {
+        "0": "১৪৭ GB edge থেকে গেছে (HIT); origin থেকে না।",
+        "1": "১৫০ GB হলো CDN ছাড়া মোট; CDN থাকায় origin-এর অংশ শুধু miss।",
+        "2": "৩০ GB হতো ২০% miss-এ; এখানে miss মাত্র ২%।"
+      }
+    },
+    {
+      "id": "sd-day-011-q24",
+      "difficulty": "medium",
+      "question": "ঢাকা থেকে origin-এর RTT ২৫০ms, কাছের edge-এর RTT ১০ms। নতুন HTTPS connection-এ প্রথম byte পেতে মোটামুটি ৩টা RTT লাগে (TCP, TLS, request)। Edge-এ HIT হলে সময় কতটা বদলায়?",
+      "options": [
+        "প্রায় ২৫০ms থেকে প্রায় ১০ms, কারণ handshake কোনো round trip নেয় না",
+        "প্রায় ৭৫০ms থেকে প্রায় ৩০ms",
+        "প্রায় ৭৫০ms থেকে প্রায় ৭২০ms, কারণ handshake সবসময় origin-এর সাথে হয়",
+        "কোনো পার্থক্য হয় না, কারণ HTTPS-এ edge কিছু cache করতে পারে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "৩ × ২৫০ = ৭৫০ms বনাম ৩ × ১০ = ৩০ms। TLS edge-এ terminate হয়, তাই handshake-ও কাছের edge-এর সাথে হয়। এজন্যই CDN শুধু data না, round trip-এর খরচও কমায়।",
+      "whyWrong": {
+        "0": "TCP আর TLS handshake-এ round trip লাগে; শুধু ১ RTT ধরা ভুল।",
+        "2": "CDN-এ user-এর TLS edge-এ শেষ হয়, তাই handshake কাছেই হয়।",
+        "3": "Edge TLS terminate করে, তাই HTTPS content-ও cache করতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q25",
+      "difficulty": "medium",
+      "question": "Deploy-এর পরে কিছু user নতুন HTML-এর সাথে পুরনো `app.js` পাচ্ছে, page ভাঙছে। `app.js`-এর max-age এক দিন। দীর্ঘমেয়াদে সবচেয়ে ভালো সমাধান কোনটা?",
+      "options": [
+        "Content hash দিয়ে versioned নাম (app.7c21.js) আর লম্বা TTL; HTML-কে ছোট TTL বা no-cache",
+        "প্রতিটা deploy-এর পরে পুরো CDN purge করা, যাতে সব PoP নতুন app.js আনে",
+        "app.js-এর URL-এ প্রতিটা request-এ ?t=<বর্তমান সময়> জুড়ে দেওয়া, যাতে কখনো পুরনো না আসে",
+        "app.js-এর max-age শূন্য করে দেওয়া, যাতে প্রতিবার origin থেকেই আসে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Versioned নামে নতুন content মানে নতুন key, তাই purge ছাড়াই সবাই নতুনটা পায়, আর পুরনো নাম কখনো বদলায় না বলে লম্বা TTL নিরাপদ। HTML ছোট TTL হলে সেটা দ্রুত নতুন নাম দেখায়।",
+      "whyWrong": {
+        "1": "Purge browser-এর cache ছোঁয় না, সব PoP-এ পৌঁছাতে সময় নেয়, আর origin-এ ঢেউ আনে।",
+        "2": "প্রতি request-এ সময় জুড়লে প্রতিটা URL আলাদা, cache একেবারে অকেজো হয়ে যায়।",
+        "3": "TTL শূন্য করলে সমস্যা মেটে, কিন্তু CDN-এর পুরো লাভ হারায়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q26",
+      "difficulty": "medium",
+      "question": "Facebook আর WhatsApp campaign শুরুর পরে ছবির hit ratio হঠাৎ কমে গেল। Link-গুলোতে `?utm_source=...` জুড়ে দেওয়া। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "utm parameter দেখলে CDN request-টাকে dynamic ধরে নেয় আর cache সবসময় bypass করে",
+        "Facebook থেকে আসা traffic অন্য একটা দূরের PoP-এ যায়, তাই সেখানে cache খালি",
+        "utm parameter থাকলে origin Cache-Control header পাঠানো বন্ধ করে দেয়",
+        "Query string cache key-এর অংশ, তাই প্রতিটা utm মান একই ছবির আলাদা key বানায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Default cache key-তে query string থাকে। একই ছবি `?utm_source=fb` আর `?utm_source=wa`-তে দুটো আলাদা key, দুবার MISS, দুবার জায়গা। সমাধান: cache key থেকে tracking parameter বাদ দেওয়া।",
+      "whyWrong": {
+        "0": "Query string থাকলেই CDN সাধারণত bypass করে না; সে আলাদা key বানায়।",
+        "1": "PoP ঠিক হয় user-এর network অবস্থান দিয়ে, link-এর উৎস দিয়ে না।",
+        "2": "Origin query দেখে header বদলায় না, যদি না আপনি এমন code লেখেন।"
+      }
+    },
+    {
+      "id": "sd-day-011-q27",
+      "difficulty": "medium",
+      "question": "ছবির response-এ origin `Vary: User-Agent` পাঠাচ্ছে। এতে CDN-এ কী হবে?",
+      "options": [
+        "CDN User-Agent দেখে mobile-এর জন্য নিজে ছোট আকারের ছবি বানিয়ে দেবে",
+        "প্রতিটা browser ও version-এর আলাদা কপি হবে, cache টুকরো হয়ে hit ratio কমবে",
+        "একটাই কপি থাকবে, শুধু প্রতিটা browser-কে আলাদা header দেওয়া হবে",
+        "কোনো প্রভাব পড়বে না, কারণ Vary শুধু browser cache-এর জন্য, CDN সেটা মানেই না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Vary বলে 'এই header-এর মান অনুযায়ী আলাদা কপি রাখো'। User-Agent-এর হাজারো রকম মান, তাই একই ছবির হাজার কপি আর প্রায় সব MISS। Vary শুধু সত্যিই দরকারি header-এ, যেমন Accept-Encoding।",
+      "whyWrong": {
+        "0": "Vary শুধু cache কিভাবে আলাদা করবে বলে; ছবি বদলানোর কাজ করে না।",
+        "2": "Vary মানেই আলাদা কপি; একটা কপি থাকলে Vary-র উদ্দেশ্যই থাকে না।",
+        "3": "Shared cache-ও Vary মানে; না মানলে ভুল variant ভুল client-এ যেত।"
+      }
+    },
+    {
+      "id": "sd-day-011-q28",
+      "difficulty": "medium",
+      "question": "Origin পাঠাল `Cache-Control: public, max-age=60, s-maxage=3600`। Browser আর CDN কপি কতক্ষণ তাজা ধরবে?",
+      "options": [
+        "দুজনেই ১ মিনিট, কারণ ছোট মানটাই সবার জন্য জেতে",
+        "দুজনেই ১ ঘণ্টা, কারণ বড় মানটাই সবার জন্য জেতে",
+        "Browser ১ মিনিট, CDN ১ ঘণ্টা",
+        "Browser ১ ঘণ্টা, CDN ১ মিনিট"
+      ],
+      "correctIndex": 2,
+      "explanation": "s-maxage শুধু shared cache-এর জন্য আর max-age-কে override করে; browser s-maxage উপেক্ষা করে max-age মানে। এই জোড়া দিয়ে CDN-এ বেশিক্ষণ রাখা যায় (দরকারে purge), অথচ browser-এ পুরনো কপি বেশিক্ষণ থাকে না।",
+      "whyWrong": {
+        "0": "দুটো আলাদা cache-এর জন্য দুটো আলাদা directive; 'ছোটটা জেতে' নিয়ম নেই।",
+        "1": "Browser s-maxage দেখে না।",
+        "3": "উল্টো বলা হয়েছে: s-maxage CDN-এর, max-age browser-এর।"
+      }
+    },
+    {
+      "id": "sd-day-011-q29",
+      "difficulty": "medium",
+      "question": "CDN-এর ৫০টা PoP, কোনো origin shield নেই। একটা জনপ্রিয় ছবির TTL ৬০ সেকেন্ড, আর সব PoP-এ সারাক্ষণ ভিড়। মিনিটে এই ছবির জন্য origin মোটামুটি কয়টা request পাবে?",
+      "options": [
+        "১টা, কারণ CDN নিজেই সব PoP-এর কপি একসাথে মিলিয়ে রাখে",
+        "প্রতিটা user-এর জন্য একটা, অর্থাৎ হাজার হাজার",
+        "৬০টা, প্রতি সেকেন্ডে একটা করে",
+        "প্রায় ৫০টা, প্রতিটা PoP থেকে একটা করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা PoP-এর cache আলাদা, তাই প্রতি মিনিটে প্রতিটা PoP-এর কপির মেয়াদ শেষ হলে সে আলাদাভাবে origin-কে জিজ্ঞেস করে। ৫০ PoP × ১ = ~৫০। এজন্যই origin shield-এর দরকার।",
+      "whyWrong": {
+        "0": "Shield বা tiered cache না থাকলে PoP-গুলো কপি ভাগ করে না।",
+        "1": "TTL-এর মধ্যে প্রতিটা PoP-এ বাকি request HIT হয়; প্রতিটা user origin-এ যায় না।",
+        "2": "TTL ৬০ সেকেন্ড মানে প্রতি PoP-এ মিনিটে একবার, প্রতি সেকেন্ডে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q30",
+      "difficulty": "medium",
+      "question": "আগের প্রশ্নের ৫০টা PoP-এর সামনে এখন একটা origin shield বসানো হলো। ওই ছবির জন্য origin মিনিটে মোটামুটি কয়টা request পাবে?",
+      "options": [
+        "সাধারণত ১টা: shield-এর কপির মেয়াদ শেষ হলে shield একবার আনে",
+        "এখনো ৫০টা, কারণ shield শুধু latency কমায়, origin-এর request না",
+        "১০০টা, কারণ এখন edge আর shield দুজনেই আলাদা করে origin-কে জিজ্ঞেস করে",
+        "শূন্য, কারণ shield-এর কপি কখনো মেয়াদোত্তীর্ণ হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Edge-এর miss এখন origin-এ না গিয়ে shield-এ যায়। Shield-এর কপি তাজা থাকলে origin কিছুই পায় না; মেয়াদ শেষ হলে shield একবার origin থেকে আনে। ৫০ থেকে ~১।",
+      "whyWrong": {
+        "1": "Shield-এর মূল কাজই origin-এর request কমানো।",
+        "2": "Edge সরাসরি origin-এ যায় না, shield-এর মাধ্যমে যায়।",
+        "3": "Shield-এর কপিও একই Cache-Control মানে, মেয়াদ শেষ হয়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q31",
+      "difficulty": "medium",
+      "question": "Product list API-র উত্তর সব user-এর জন্য একই, আর কয়েক মিনিটে একবার বদলায়। ঈদে এই API-তে খুব ভিড়। কোন header সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "`no-store`, কারণ API response কখনোই CDN-এ রাখা উচিত না",
+        "CDN-এ ছোট TTL, যেমন `public, s-maxage=30`, সাথে stale-while-revalidate",
+        "`public, max-age=31536000, immutable`, যাতে hit ratio সবচেয়ে বেশি হয়",
+        "`private, max-age=300`, যাতে শুধু CDN রাখে আর user-এর browser সবসময় নতুনটা পায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Response সবার জন্য একই, তাই shared cache নিরাপদ; ৩০ সেকেন্ডের TTL-এও ভিড়ের সময় origin-এর load অনেক কমে, আর data বড়জোর কয়েক সেকেন্ড পুরনো। stale-while-revalidate মেয়াদ শেষের মুহূর্তের ঢেউ মসৃণ করে।",
+      "whyWrong": {
+        "0": "Personalised না হলে API-ও নিরাপদে cache করা যায়; no-store অকারণে load বাড়ায়।",
+        "2": "বদলায় এমন URL-এ এক বছর আর immutable দিলে পরিবর্তন দেখাই যাবে না।",
+        "3": "private মানে উল্টো: শুধু browser রাখে, CDN না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q32",
+      "difficulty": "medium",
+      "question": "আপনার সব JS/CSS versioned নামে, এক বছরের TTL-এ। `index.html`-এর জন্য কোন header সবচেয়ে ভালো?",
+      "options": [
+        "`max-age=31536000, immutable`, কারণ সব asset versioned বলে HTML-ও নিরাপদ",
+        "`no-store`, যাতে CDN আর browser কেউ রাখে না আর 304-ও লাগে না",
+        "`no-cache` (ETag সহ) বা খুব ছোট TTL, যাতে deploy-এর পরে নতুন নাম দ্রুত পৌঁছায়",
+        "`private, max-age=86400`, যাতে browser এক দিন রাখে আর CDN-এর উপর কোনো চাপই না পড়ে"
+      ],
+      "correctIndex": 2,
+      "explanation": "HTML-এর URL (`/`) বদলায় না, তাই এটাই 'কোন version চালু' তার সূচক। এটাকে ছোট TTL বা no-cache দিলে deploy-এর পরপরই user নতুন নামগুলো পায়, আর ETag থাকলে না বদলালে শুধু 304।",
+      "whyWrong": {
+        "0": "HTML-এর নাম versioned না; এক বছর রাখলে নতুন deploy এক বছর দেখা যাবে না।",
+        "1": "no-store কাজ করে, কিন্তু প্রতিবার পুরো HTML নামায়; no-cache + ETag একই নিশ্চয়তা কম খরচে দেয়।",
+        "3": "Browser এক দিন পুরনো HTML রাখলে deploy-এর পরে এক দিন পুরনো asset-এর নাম দেখাবে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q33",
+      "difficulty": "medium",
+      "question": "আপনার site-এ browser-এ তালা দেখাচ্ছে, কিন্তু CDN-এর setting এমন যে edge থেকে origin পর্যন্ত সাধারণ HTTP। এর ঝুঁকি কী?",
+      "options": [
+        "Edge থেকে origin অংশ encrypt হয় না, পথে কেউ data দেখতে বা বদলাতে পারে",
+        "কোনো ঝুঁকি নেই, কারণ browser-এর তালা মানে পুরো পথটাই encrypted",
+        "শুধু performance কমে, কারণ origin-এ আরেকবার পুরো TLS handshake করতে হয় প্রতিটা request-এ",
+        "ঝুঁকি শুধু ছবিতে; login আর password CDN কখনো origin-এ পাঠায় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Browser-এর তালা শুধু user থেকে edge পর্যন্ত অংশের কথা বলে। Edge থেকে origin plaintext হলে মাঝের network-এ যে কেউ পড়তে বা বদলাতে পারে। তাই edge → origin-ও TLS, certificate যাচাই সহ (Cloudflare-এর ভাষায় Full (strict))।",
+      "whyWrong": {
+        "1": "তালা শুধু browser আর edge-এর মধ্যের connection দেখে।",
+        "2": "এখানে origin-এ TLS-ই নেই; সমস্যা performance না, নিরাপত্তা।",
+        "3": "Login request-ও edge হয়ে origin-এ যায়, তাই সেটাও খোলা পথে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q34",
+      "difficulty": "medium",
+      "question": "CDN বসানোর পরেও attacker সরাসরি origin-এর IP-তে flood পাঠাচ্ছে। কোনটা সবচেয়ে বেশি সাহায্য করবে?",
+      "options": [
+        "সব file-এর TTL বাড়ানো, যাতে বেশি request cache থেকে আসে",
+        "CDN-এ আরও কয়েকটা PoP যোগ করা, যাতে attack অনেক জায়গায় ভাগ হয়ে দুর্বল হয়",
+        "Cache key থেকে query string বাদ দেওয়া, যাতে hit ratio বাড়ে",
+        "Origin-এ শুধু CDN-এর IP range থেকে traffic নেওয়া, আর IP বদলানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "Attack CDN-কে পাশ কাটিয়ে সরাসরি origin-এ যাচ্ছে, তাই CDN-এর কোনো setting এটাকে ছোঁয় না। Origin-কে শুধু CDN-এর কাছ থেকে traffic নিতে দিলে আর ফাঁস হওয়া IP বদলালে পথটা বন্ধ হয়।",
+      "whyWrong": {
+        "0": "TTL CDN-এর ভেতরের ব্যাপার; সরাসরি origin-এ আসা traffic এতে কমে না।",
+        "1": "PoP বাড়ালেও attacker CDN-এ আসছেই না।",
+        "2": "Hit ratio CDN দিয়ে আসা traffic-এর মাপ; সরাসরি আসা attack-এর সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-011-q35",
+      "difficulty": "medium",
+      "question": "একটা file-এর TTL শেষ, file বদলায়নি, আর origin ETag পাঠায়। Revalidation চালু থাকলে পরের request-এ কী ঘটে?",
+      "options": [
+        "Edge পুরনো কপি মুছে পুরো file আবার origin থেকে নামায়, তারপর user-কে দেয়",
+        "Edge কিছু না জিজ্ঞেস করেই পুরনো কপি আরও এক TTL দেয়, কারণ ETag আছে",
+        "Edge If-None-Match পাঠায়, origin 304 দেয়, edge কপির মেয়াদ বাড়িয়ে দেয়",
+        "Edge user-কে 304 পাঠায়, আর user-এর browser নিজে origin থেকে পুরো file নিয়ে আসে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Conditional request-এ edge জিজ্ঞেস করে 'এই ETag-এর কপি কি এখনো ঠিক?'। না বদলালে origin শুধু 304, body ছাড়া। Edge কপি তাজা ঘোষণা করে দেয়, তাই bandwidth প্রায় লাগে না, শুধু একটা round trip।",
+      "whyWrong": {
+        "0": "পুরো file আবার নামানো হয় revalidation না থাকলে, বা file বদলালে।",
+        "1": "ETag থাকলেও যাচাই না করে মেয়াদ বাড়ানো হয় না।",
+        "3": "User-এর browser-এর কাছে file না থাকলে 304 অর্থহীন; edge নিজেই কপি দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q36",
+      "difficulty": "medium",
+      "question": "একটা বড় ক্রিকেট ম্যাচ HLS দিয়ে live দেখানো হচ্ছে। Playlist (`.m3u8`) আর video segment-এর TTL কিভাবে ঠিক করবেন?",
+      "options": [
+        "Playlist-এ লম্বা TTL, segment-এ খুব ছোট TTL",
+        "Segment-এ লম্বা TTL, playlist-এ খুব ছোট TTL",
+        "দুটোতেই no-store, কারণ live content cache করা যায় না",
+        "দুটোতেই একই মাঝারি TTL, ধরুন ৫ মিনিট"
+      ],
+      "correctIndex": 1,
+      "explanation": "একবার তৈরি হওয়া segment আর বদলায় না, তাই লম্বা TTL নিরাপদ আর সবাই HIT পায়। Playlist প্রতি কয়েক সেকেন্ডে নতুন segment যোগ করে, তাই এর TTL ছোট রাখতে হয়, না হলে দর্শক পিছিয়ে পড়বে।",
+      "whyWrong": {
+        "0": "উল্টো: playlist বারবার বদলায়, segment বদলায় না।",
+        "2": "Live-এর segment দারুণভাবে cache হয়; no-store দিলে লাখো দর্শক সরাসরি origin-এ যাবে।",
+        "3": "৫ মিনিটের playlist TTL-এ দর্শক ৫ মিনিট পুরনো তালিকা দেখবে, live আর live থাকবে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q37",
+      "difficulty": "medium",
+      "question": "রাত ৮টায় একটা game-এর ৫ GB patch release হবে, আর জানেন প্রথম ঘণ্টায় লাখো player একসাথে নামাবে। প্রথম player-দেরও দ্রুত দিতে আর origin বাঁচাতে কী করবেন?",
+      "options": [
+        "Release-এর ঠিক আগে পুরো CDN purge করা, যাতে সবাই নতুন file পায়",
+        "Patch file-এ no-cache দেওয়া, যাতে প্রতিবার সর্বশেষ version-টা origin থেকে যাচাই হয়",
+        "TTL এক বছর করে দেওয়া, তাহলে প্রথম request-ও cache থেকে আসবে",
+        "আগে থেকে file CDN-এ push বা pre-warm করা, যাতে প্রথম request-ও HIT হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Pull CDN-এ প্রতিটা PoP-এ প্রথম request MISS হয়, আর একসাথে লাখো request এলে origin-এ ঢেউ। আগে থেকে জানা বড় release-এর জন্য push বা warm করে রাখাই নিয়ম, ঠিক Netflix যেমন জনপ্রিয় content আগে থেকে ভরে রাখে।",
+      "whyWrong": {
+        "0": "Purge cache খালি করে, ফলে উল্টো আরও বেশি miss।",
+        "1": "no-cache প্রতিবার origin-এ যাচাই পাঠায়, origin-এর চাপ বাড়ায়।",
+        "2": "TTL লম্বা হলেও প্রথম request-এ কপি না থাকলে MISS-ই হবে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q38",
+      "difficulty": "medium",
+      "question": "আপনার CDN-এ request hit ratio ৯৯%, তবুও origin-এর bandwidth bill প্রায় কমছে না। সবচেয়ে সম্ভাব্য ব্যাখ্যা কোনটা?",
+      "options": [
+        "ছোট জনপ্রিয় file-এ HIT বেশি, কিন্তু বড় long-tail file প্রায় সব MISS; byte hit ratio কম",
+        "CDN HIT-এর সময়ও পেছনে origin থেকে file এনে মিলিয়ে দেখে, তাই bandwidth লাগে",
+        "304 response-গুলো পুরো file-এর সমান bandwidth নেয়, শুধু body দেখা যায় না",
+        "Hit ratio ৯৯% হলে origin-এর bandwidth প্রায় শূন্য হওয়ার কথা, তাই নিশ্চয়ই billing-এ ভুল আছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Request গুনলে ছোট icon আর CSS-এর লাখো HIT ratio বাড়িয়ে দেখায়। কিন্তু byte-এর হিসাবে বড় file-গুলোই বেশি, আর long tail হলে সেগুলো MISS। তাই request আর byte দুই hit ratio-ই মাপা দরকার।",
+      "whyWrong": {
+        "1": "HIT-এ origin-এর সাথে কোনো যোগাযোগ হয় না।",
+        "2": "304-এ কোনো body থাকে না, তাই bandwidth খুব কম।",
+        "3": "১% miss-ও বড় file হলে অনেক byte হতে পারে; শূন্য হওয়ার কথা না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q39",
+      "difficulty": "medium",
+      "question": "ঢাকার এক user এমন একটা public DNS resolver ব্যবহার করে যেটা দেশের বাইরে থেকে প্রশ্ন করে। CDN DNS-based steering ব্যবহার করে, আর user একটা দূরের PoP পাচ্ছে। কেন?",
+      "options": [
+        "Anycast সবসময় সবচেয়ে কাছের PoP দেয়, তাই এমন হওয়ার কথাই না",
+        "DNS-based steering user-কে না, resolver-এর অবস্থান দেখে কাছের PoP বাছে",
+        "Public DNS resolver CDN-এর CNAME record মানে না, তাই origin-এর IP দেয়",
+        "User-এর browser-এর DNS cache-এ পুরনো PoP-এর IP আছে বলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Authoritative DNS প্রশ্ন পায় resolver-এর কাছ থেকে, তাই resolver-এর অবস্থান দেখে উত্তর দেয়। Resolver বিদেশে থাকলে বিদেশের কাছের PoP আসে। EDNS Client Subnet এটা কমায়, আর anycast-ভিত্তিক CDN-এ এই সমস্যা কম।",
+      "whyWrong": {
+        "0": "প্রশ্নেই বলা আছে CDN DNS-based steering ব্যবহার করে, anycast না।",
+        "2": "Resolver CNAME ঠিকই অনুসরণ করে; সমস্যা হলো কোন PoP বাছা হচ্ছে।",
+        "3": "পুরনো cache সাময়িক কারণ হতে পারে, কিন্তু এখানে স্থায়ী কারণ resolver-এর অবস্থান।"
+      }
+    },
+    {
+      "id": "sd-day-011-q40",
+      "difficulty": "medium",
+      "question": "Lab-এ NGINX edge response-এ `X-Cache-Status: REVALIDATED` দেখাল। এর মানে কী?",
+      "options": [
+        "File বদলে গিয়েছিল, তাই origin থেকে নতুন পুরো file এনে দেওয়া হয়েছে",
+        "কপি তখনো তাজা ছিল, তাই origin-কে কিছু জিজ্ঞেস না করেই দেওয়া হয়েছে",
+        "মেয়াদ শেষ কপি conditional request-এ যাচাই হয়েছে, origin 304 দিয়েছে",
+        "Response cache-এর অযোগ্য ছিল, তাই cache পাশ কাটিয়ে সরাসরি origin থেকে এসেছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "`proxy_cache_revalidate on` থাকায় মেয়াদ শেষে NGINX If-None-Match পাঠায়। Origin 304 দিলে status হয় REVALIDATED: একটা round trip হয়েছে, কিন্তু body আসেনি।",
+      "whyWrong": {
+        "0": "File বদলালে origin 200 দিত, আর status হতো EXPIRED।",
+        "1": "তাজা কপি থেকে দিলে status HIT।",
+        "3": "Cache পাশ কাটালে status BYPASS বা MISS হয়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q41",
+      "difficulty": "hard",
+      "question": "Sale শুরুর মুহূর্তে banner ছবির TTL শেষ হলো, আর একটা PoP-এ একই সেকেন্ডে ২,০০০ request এলো। Origin ভেঙে পড়ল। কোন জোড়া সমাধান এই সমস্যার মূলে আঘাত করে?",
+      "options": [
+        "TTL কমিয়ে ১ সেকেন্ড করা, যাতে কপি প্রায়ই নতুন হয় আর একসাথে মেয়াদ শেষ না হয়",
+        "Request collapsing আর stale-while-revalidate, যাতে origin একটাই request পায়",
+        "Sale শুরুর ঠিক আগে purge করা, যাতে সব PoP আগে থেকেই নতুন কপি নিয়ে রাখে",
+        "Edge server-এ আরও RAM দেওয়া, যাতে বেশি কপি একসাথে memory-তে রাখা যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা cache stampede: তাজা কপি নেই, তাই একই key-র সব request MISS হয়ে origin-এ যায়। Collapsing একটাকেই origin-এ পাঠায়, বাকিরা সেই উত্তর পায়; stale-while-revalidate মেয়াদ শেষের পরেও পুরনো কপি দিয়ে পেছনে নতুনটা আনে। দুটো মিলে ঢেউটাই তৈরি হয় না।",
+      "whyWrong": {
+        "0": "TTL ছোট করলে মেয়াদ আরও ঘন ঘন শেষ হয়, stampede আরও বেশি।",
+        "2": "Purge-এর পরে cache খালি, ফলে প্রথম ঢেউ আরও বড়।",
+        "3": "সমস্যা জায়গার না; কপির মেয়াদ শেষ আর একসাথে miss।"
+      }
+    },
+    {
+      "id": "sd-day-011-q42",
+      "difficulty": "hard",
+      "question": "৫০টা PoP, ১,০০০টা জনপ্রিয় file, প্রতিটার TTL ৬০ সেকেন্ড, সব PoP-এ সারাক্ষণ ভিড়। Origin shield ছাড়া আর shield সহ origin মিনিটে মোটামুটি কয়টা request পায়?",
+      "options": [
+        "Shield ছাড়া ~৫০,০০০, shield সহ ~১,০০০",
+        "Shield ছাড়া ~১,০০০, shield সহ ~২০",
+        "Shield ছাড়া ~৫০,০০০, shield সহ ~৫০",
+        "Shield ছাড়া ~৬০,০০০, shield সহ ~৫০,০০০"
+      ],
+      "correctIndex": 0,
+      "explanation": "Shield ছাড়া: প্রতি file প্রতি PoP মিনিটে একবার = ৫০ × ১,০০০ = ৫০,০০০। Shield সহ: সব PoP-এর miss shield-এ মেলে, shield প্রতি file মিনিটে একবার আনে = ১,০০০। Origin-এর load ৫০ গুণ কম।",
+      "whyWrong": {
+        "1": "Shield ছাড়া প্রতিটা PoP আলাদাভাবে আনে, তাই ১,০০০ না, ৫০ × ১,০০০।",
+        "2": "Shield-এর পরেও প্রতিটা file মিনিটে একবার আনতে হয়, তাই ১,০০০; ৫০ না।",
+        "3": "৬০,০০০ সেকেন্ড ধরে গোনার ভুল, আর shield load প্রায় কমায়নি বলাটাও ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-011-q43",
+      "difficulty": "hard",
+      "question": "একটা bug-এ `/account` page `public, max-age=300` পেয়ে গেছে, আর user-রা অন্যের নাম দেখছে। এখনই আর স্থায়ীভাবে কী করবেন?",
+      "options": [
+        "TTL কমিয়ে ১০ সেকেন্ড করা, তাহলে অন্যের তথ্য বড়জোর ১০ সেকেন্ড দেখা যাবে",
+        "Cache key-তে session cookie যোগ করা, যাতে প্রতিটা user নিজের আলাদা কপি পায়, আর কিছু বদলানোর দরকার নেই",
+        "এখনই ওই path purge; origin-এ private বা no-store দেওয়া; CDN-এর cache rule থেকে path-টা বাদ দেওয়া",
+        "অপেক্ষা করা, কারণ ৫ মিনিট পরে কপির মেয়াদ নিজেই শেষ হয়ে যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা data leak, তাই প্রথমে purge করে ইতিমধ্যে cache-এ থাকা ব্যক্তিগত কপি সরাতে হবে। তারপর মূল কারণ ঠিক: personalised response-এ private/no-store, আর CDN-এ শুধু নির্দিষ্ট static path cache করা, যাতে ভবিষ্যতে একই ভুল header-ও ক্ষতি না করে।",
+      "whyWrong": {
+        "0": "১০ সেকেন্ডেও অন্যের তথ্য ফাঁস হয়; personalised data shared cache-এ যাওয়াই চলবে না।",
+        "1": "ব্যক্তিগত data তখনো shared cache-এ থাকে, cookie-র ভুলে আবার ফাঁস হতে পারে, আর hit ratio-ও শূন্যের কাছে।",
+        "3": "৫ মিনিটে আরও অনেক user অন্যের তথ্য দেখবে, আর নতুন কপি আবার cache হবে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q44",
+      "difficulty": "hard",
+      "question": "ভাষা ঠিক হয় একটা cookie (`lang=bn`) দিয়ে, কিন্তু HTML একই URL-এ CDN-এ cache হয়, আর cache key-তে cookie নেই। বাংলা user-রা মাঝে মাঝে English page পাচ্ছে। সবচেয়ে ভালো সমাধান কোনটা?",
+      "options": [
+        "Response-এ `Vary: Cookie` দেওয়া, যাতে প্রতিটা cookie অনুযায়ী আলাদা কপি থাকে",
+        "HTML-এর TTL কমিয়ে ৫ সেকেন্ড করা, যাতে ভুল কপি তাড়াতাড়ি সরে যায়",
+        "প্রতিবার কেউ ভাষা বদলালে ওই URL purge করা, যাতে নতুন ভাষা cache হয়",
+        "ভাষা URL-এ আনা (/bn/, /en/), অথবা শুধু ভাষার মানটুকু cache key-তে যোগ করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটো আলাদা content একই key পাচ্ছে, তাই যে আগে cache হয় সে সবাইকে যায়। ভাষা URL-এ থাকলে key নিজে থেকেই আলাদা; অথবা key-তে শুধু ভাষার মান রাখলে মাত্র দুটো variant। পুরো Cookie দিয়ে Vary করলে session-সহ প্রতিটা cookie আলাদা variant বানাবে।",
+      "whyWrong": {
+        "0": "Cookie-তে session id-র মতো প্রতি user আলাদা মান থাকে, তাই প্রায় প্রতিটা user-এর আলাদা কপি, hit ratio তলানিতে।",
+        "1": "TTL ছোট করলেও প্রতিটা ৫ সেকেন্ডে আবার ভুল ভাষা cache হতে পারে; মূল সমস্যা key।",
+        "2": "একজনের ভাষা বদল সবার cache মুছে দেবে, origin-এ ঢেউ, আর সমস্যা তবুও থাকবে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q45",
+      "difficulty": "hard",
+      "question": "Checkout API কখনো cache হয় না, তবুও CDN-এর পেছনে বসানোর পরে ঢাকার user-দের কাছে এটা দ্রুত লাগছে। সবচেয়ে সঠিক ব্যাখ্যা কোনটা?",
+      "options": [
+        "CDN dynamic response-ও কয়েক সেকেন্ডের জন্য গোপনে cache করে, তাই বেশিরভাগ request HIT",
+        "CDN response compress করে, তাই origin-এর processing time নিজেই কমে যায়",
+        "CDN origin-এর CPU-র কাজের একটা অংশ নিজের server-এ চালিয়ে দেয়",
+        "Handshake কাছের edge-এর সাথে হয়, আর edge-origin connection আগে থেকেই খোলা থাকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Edge-এ TLS terminate হওয়ায় নতুন connection-এর ২-৩টা round trip ২৫০ms-এর বদলে ১০ms-এ হয়। Edge আর origin-এর মধ্যে connection reuse থাকায় সেখানে নতুন handshake লাগে না, শুধু request-এর একটা round trip।",
+      "whyWrong": {
+        "0": "Cache হয় না বলা আছে; CDN নির্দেশ ছাড়া dynamic response cache করে না।",
+        "1": "Compression transfer-এর সময় কমাতে পারে, কিন্তু origin-এর processing কমায় না।",
+        "2": "সাধারণ CDN origin-এর application code চালায় না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q46",
+      "difficulty": "hard",
+      "question": "Hit ratio বাড়াতে আপনি cache key থেকে সব query parameter বাদ দিলেন। এক সপ্তাহ পরে অভিযোগ: thumbnail চাইলে মাঝে মাঝে বড় ছবি আসে। কেন?",
+      "options": [
+        "Query বাদ দেওয়ায় CDN ছবি resize করা বন্ধ করেছে, তাই origin-এর আসল আকার আসছে",
+        "Key ছোট হওয়ায় cache-এ বেশি জায়গা বেঁচেছে, তাই বড় ছবি বেশি রাখা হচ্ছে",
+        "`?size=thumb` content বদলায়, অথচ key থেকে বাদ পড়ায় ভিন্ন content একই key পাচ্ছে",
+        "Origin query string না পেয়ে ভুল ছবি পাঠাচ্ছে, কারণ CDN parameter-গুলো মুছে দিয়েছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Key থেকে শুধু সেই parameter বাদ দেওয়া উচিত যা content বদলায় না (utm, fbclid)। size বদলালে content বদলায়, তাই key-তে না থাকলে যে আকার প্রথমে cache হয়, সেটাই সবাই পায়। Allow-list করে key বানানো নিরাপদ।",
+      "whyWrong": {
+        "0": "CDN নিজে resize করছিল না; সমস্যা key-র সংঘর্ষ।",
+        "1": "জায়গার সাথে ভুল আকার আসার সম্পর্ক নেই।",
+        "3": "সাধারণত key থেকে বাদ দেওয়া মানে শুধু cache key, origin-এ request পুরো URL নিয়েই যায়; ভুল হয় cache থেকে দেওয়ার সময়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q47",
+      "difficulty": "hard",
+      "question": "একটা PoP-এ একটা object-এর জন্য মিনিটে ৬০০ request আসে, TTL ৬০ সেকেন্ড, request collapsing চালু, shield নেই। এই PoP থেকে এই object-এর জন্য origin মিনিটে মোটামুটি কয়টা request পায়?",
+      "options": ["প্রায় ৬০০টা", "প্রায় ১টা", "প্রায় ১০টা", "প্রায় ৬০টা"],
+      "correctIndex": 1,
+      "explanation": "TTL-এর মধ্যে সব request HIT। মেয়াদ শেষ হলে একই মুহূর্তে কয়েকটা MISS হলেও collapsing তাদের একটায় মেলায়। তাই মিনিটে মোটামুটি একবার origin-এ যায়, request যত বেশিই আসুক।",
+      "whyWrong": {
+        "0": "৬০০ হতো cache একেবারে না থাকলে।",
+        "2": "প্রতি ৬ সেকেন্ডে একবার ধরার কোনো কারণ নেই; TTL ৬০ সেকেন্ড।",
+        "3": "প্রতি সেকেন্ডে একবার যায় না; TTL-এর মধ্যে কপি তাজা।"
+      }
+    },
+    {
+      "id": "sd-day-011-q48",
+      "difficulty": "hard",
+      "question": "একটা marketplace-এ ২০ লাখ product ছবি, বেশিরভাগ মাসে এক-দুবার দেখা হয়। CDN-এর ৫০টা PoP, আর এই ছবিগুলোর hit ratio খুব কম। কোন পদক্ষেপ সবচেয়ে বেশি কাজে আসবে?",
+      "options": [
+        "Origin shield বা tiered cache, যাতে অনেক PoP-এর বিরল request এক জায়গায় মেলে",
+        "ছবিগুলোর TTL এক বছর করা, যাতে একবার আসা কপি অনেক দিন থাকে",
+        "আরও অনেক PoP যোগ করা, যাতে প্রতিটা user আরও কাছের PoP পায় আর বেশি কপি তৈরি হয়",
+        "Purge বন্ধ রাখা, যাতে কোনো কপি অসময়ে মুছে না যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Long tail-এ প্রতিটা PoP-এ একটা ছবি এত কম আসে যে পরের request-এর আগেই কপি evict হয়। Shield-এ ৫০টা PoP-এর request মিলে একই ছবি কয়েকবার আসে, তাই সেখানে HIT হয়, origin বাঁচে।",
+      "whyWrong": {
+        "1": "TTL বাড়ালেও cache ভরে গেলে কম ব্যবহৃত কপি সরিয়ে দেওয়া হয়; সমস্যা eviction।",
+        "2": "PoP বাড়ালে request আরও ছড়ায়, প্রতি PoP-এ hit আরও কমে।",
+        "3": "এখানে purge সমস্যা না; কপি সরে যাচ্ছে কম ব্যবহারের কারণে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q49",
+      "difficulty": "hard",
+      "question": "Netflix-এর Open Connect site অনুযায়ী যোগ্য ISP-রা Netflix-এর cache appliance বিনা খরচে নিজের network-এ বসাতে পারে। ISP-র দিক থেকে এর সবচেয়ে বড় লাভ কোনটা?",
+      "options": [
+        "ISP প্রতিটা Netflix view-এর জন্য Netflix-এর কাছ থেকে একটা নির্দিষ্ট ফি পায়",
+        "Appliance ISP-র সব website-এর traffic-ও cache করে দেয়, তাই পুরো internet দ্রুত হয়",
+        "জনপ্রিয় video-র traffic নিজের network-এ থাকে, দামি আন্তর্জাতিক bandwidth বাঁচে",
+        "ISP তখন গ্রাহকের Netflix ব্যবহারকে বাধ্যতামূলকভাবে free data হিসেবে দেখাতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একই জনপ্রিয় video হাজারো গ্রাহকের জন্য বারবার বাইরের link দিয়ে আনার বদলে appliance থেকে স্থানীয়ভাবে যায়। ISP-র দামি upstream link মুক্ত থাকে, আর গ্রাহক কম buffering পায়।",
+      "whyWrong": {
+        "0": "Netflix-এর public পাতায় এমন প্রতি-view ফির কথা নেই; লাভটা bandwidth-এর।",
+        "1": "Open Connect appliance Netflix-এর content-এর জন্য, সব website-এর জন্য না।",
+        "3": "এটা ISP-র নিজস্ব pricing সিদ্ধান্ত; appliance বসানোর সাথে এর বাধ্যবাধকতা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-011-q50",
+      "difficulty": "hard",
+      "question": "একটা ISP-র ১ লাখ গ্রাহক এক সন্ধ্যায় একটা ৫০০ MB-র episode দেখল। ISP-র ভেতরে কোনো cache না থাকলে এই episode-এর জন্য আন্তর্জাতিক link দিয়ে মোটামুটি কত data এলো?",
+      "options": [
+        "প্রায় ৫ TB",
+        "প্রায় ৫০০ GB",
+        "প্রায় ৫০০ TB",
+        "প্রায় ৫০ TB"
+      ],
+      "correctIndex": 3,
+      "explanation": "১,০০,০০০ × ৫০০ MB = ৫,০০,০০,০০০ MB = ৫০,০০০ GB ≈ ৫০ TB। ISP-র ভেতরে cache থাকলে এর প্রায় সবটা স্থানীয়ভাবে যেত; আন্তর্জাতিক link দিয়ে আসত শুধু cache ভরার কয়েকটা কপি।",
+      "whyWrong": {
+        "0": "এটা ১০ হাজার গ্রাহকের হিসাব; শূন্য একটা কম।",
+        "1": "এটা ১ হাজার গ্রাহকের হিসাব।",
+        "2": "এটা ১০ লাখ গ্রাহকের হিসাব; শূন্য একটা বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-011-q51",
+      "difficulty": "hard",
+      "question": "একটা জরুরি ঠিক করার পরে আপনি পুরো site-এর CDN cache একবারে purge করলেন, আর কয়েক মিনিট origin প্রায় অচল হয়ে রইল। ভবিষ্যতে কী করবেন?",
+      "options": [
+        "Versioned নাম যাতে purge কম লাগে; আর collapsing ও origin shield চালু রাখা",
+        "Purge-এর পরপরই সব file-এর TTL ছোট করে দেওয়া, যাতে নতুন কপি দ্রুত তৈরি হয়",
+        "Origin-এর সামনে আরেকটা load balancer বসানো, কারণ সমস্যাটা ভাগাভাগির",
+        "Purge-এর পরে কিছুক্ষণ CDN বন্ধ রাখা, যাতে user সরাসরি origin থেকে নেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Purge-এর পরে সব PoP একসাথে খালি, তাই প্রতিটা জনপ্রিয় file প্রতিটা PoP থেকে origin-এ যায়, একটা বিশাল stampede। Versioned নাম purge-এর দরকারই কমায়; আর collapsing ও shield থাকলে purge-এর পরের ঢেউও origin-এ পৌঁছানোর আগে মিলে যায়।",
+      "whyWrong": {
+        "1": "TTL ছোট হলে miss আরও বাড়ে, origin-এর চাপ কমে না।",
+        "2": "Origin-এর মোট capacity-ই অতিক্রম হয়েছে; শুধু load balancer যোগ করলে origin server বাড়ে না।",
+        "3": "CDN বন্ধ করলে সব traffic সরাসরি origin-এ, অবস্থা আরও খারাপ।"
+      }
+    },
+    {
+      "id": "sd-day-011-q52",
+      "difficulty": "hard",
+      "question": "Versioned JS file-এ `Cache-Control: public, max-age=31536000, immutable` দেওয়া। এখানে `immutable` আলাদাভাবে কী সুবিধা দেয়?",
+      "options": [
+        "CDN-কে বলে এই file কখনো purge করা যাবে না, এমনকি ভুল কিছু cache হলেও",
+        "মেয়াদের মধ্যে reload-এও revalidate লাগে না, অকারণ 304 বাঁচে",
+        "File কখনো মেয়াদোত্তীর্ণ হবে না, max-age শেষ হয়ে গেলেও",
+        "Origin file মুছে দিলেও CDN বাধ্যতামূলকভাবে কপিটা চিরকাল দিতে থাকবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "User page reload করলে browser সাধারণত cache-এ থাকা file-গুলোর জন্যও revalidation request পাঠায়, প্রতিটায় একটা round trip আর 304। immutable বলে 'এটা কখনো বদলাবে না', তাই browser এগুলো বাদ দেয়। Versioned নামের সাথে এটা নিরাপদ, কারণ বদলালে নামই বদলায়।",
+      "whyWrong": {
+        "0": "immutable purge নিষেধ করে না; CDN-এ purge আলাদা ব্যবস্থা।",
+        "2": "max-age শেষ হলে immutable থাকলেও কপি পুরনো ধরা হয়।",
+        "3": "এটা freshness-এর সংকেত, চিরকাল রাখার বাধ্যবাধকতা না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q53",
+      "difficulty": "hard",
+      "question": "Team edge function-এ প্রতিটা request-এ user-এর permission database থেকে পড়তে চায়; database আছে Singapore-এ, edge ঢাকায়। এতে latency-র লাভ হারানোর মূল কারণ কী?",
+      "options": [
+        "Edge function থেকে কোনো network বা database call করা যায় না, তাই কাজটা চলবেই না",
+        "Edge function সবসময় origin server-এর চেয়ে ধীরে চলে, কারণ CPU কম",
+        "Edge-এ code চললে CDN সেই PoP-এর cache বন্ধ করে দেয়",
+        "প্রতিটা request-এ দূরের database-এ round trip লাগে, তাই কাছে থাকার লাভ মোছে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Edge compute-এর লাভ আসে user-এর কাছেই সিদ্ধান্ত নেওয়া থেকে। কিন্তু সিদ্ধান্তের জন্য প্রতিবার দূরের database লাগলে সেই round trip আবার ফিরে আসে। Edge-এ সেই কাজই ভালো যা নিজের কাছে থাকা তথ্য দিয়ে হয়, যেমন JWT-এর signature যাচাই বা redirect।",
+      "whyWrong": {
+        "0": "Edge function সাধারণত network call করতে পারে; সমস্যা দূরত্ব।",
+        "1": "সাধারণ কাজে edge function-এর গতি সমস্যা না; সমস্যা database-এর দূরত্ব।",
+        "2": "Edge-এ code চালানো cache বন্ধ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q54",
+      "difficulty": "hard",
+      "question": "Attacker প্রতিটা request-এ আলাদা random শব্দ দিয়ে `/search?q=...` পাঠাচ্ছে। CDN থাকা সত্ত্বেও origin চাপে। কেন, আর কী করবেন?",
+      "options": [
+        "প্রতিটা query আলাদা key, তাই সব MISS হয়ে origin-এ যায়; edge-এ rate limit লাগবে",
+        "CDN শুধু UDP-ভিত্তিক attack ঠেকাতে পারে, HTTP request-এর বিরুদ্ধে সে কিছুই করতে পারে না",
+        "Search page HTML হওয়ায় CDN সেটা চিনতে পারে না, তাই সব request-ই block করা উচিত",
+        "Anycast attack traffic-কে একটা PoP-এ জমা করে, তাই সেই PoP-টা বন্ধ করে দিতে হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Cache শুধু একই key-র পুনরাবৃত্তিতে বাঁচায়। Random query মানে প্রতিটা নতুন key, তাই CDN শুধু pass-through। এখানে edge-এ rate limit (Day 18), bot filtering আর WAF rule দিয়ে origin-এর আগেই আটকাতে হয়।",
+      "whyWrong": {
+        "1": "CDN-এর edge HTTP-স্তরের rate limit ও filtering করতে পারে।",
+        "2": "সমস্যা HTML হওয়া না, cache-অযোগ্য unique request; সব search block করলে আসল user-রাও আটকাবে।",
+        "3": "Anycast উল্টো attack-কে বিভিন্ন PoP-এ ছড়িয়ে দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-011-q55",
+      "difficulty": "hard",
+      "question": "Product page-এর TTL ৬০ সেকেন্ড, আর header-এ `stale-if-error=3600`। Origin ১০ মিনিট down থাকল। CDN সমর্থন করলে কী হবে?",
+      "options": [
+        "কিছু বদলাবে না: ৬০ সেকেন্ড পরে কপির মেয়াদ শেষ, তাই user error দেখবে",
+        "Origin ফিরে আসার পরেও এক ঘণ্টা পর্যন্ত CDN নতুন কপি আনবে না, পুরনোটাই দেবে",
+        "Error-এর সময় মেয়াদ শেষ কপি এক ঘণ্টা পর্যন্ত দেওয়া যাবে, user page দেখতে পাবে",
+        "CDN এক ঘণ্টা ধরে প্রতি সেকেন্ডে origin-কে retry করবে, আর user-কে ততক্ষণ অপেক্ষায় রাখবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "stale-if-error বলে, origin error দিলে বা পৌঁছানো না গেলে, মেয়াদ শেষের পরেও এত সেকেন্ড পর্যন্ত পুরনো কপি দেওয়া চলবে। ১০ মিনিটের outage এক ঘণ্টার মধ্যে, তাই cache-এ থাকা page-গুলো দেখা যেতে থাকে। CDN এভাবে availability-ও বাড়ায়।",
+      "whyWrong": {
+        "0": "stale-if-error ঠিক এই পরিস্থিতির জন্যই।",
+        "1": "এটা শুধু error-এর সময় প্রযোজ্য; origin সুস্থ হলে স্বাভাবিক নিয়মে নতুন কপি আসে।",
+        "3": "Stale কপি সাথে সাথে দেওয়া হয়, user-কে অপেক্ষা করানো হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q56",
+      "difficulty": "hard",
+      "question": "Lab-এ একটা নতুন key-তে একসাথে ২০টা request পাঠালেন। `proxy_cache_lock off`-এ ২০টা MISS আর origin-এ ২০টা request; `on`-এ ১টা MISS, ১৯টা HIT আর origin-এ ১টা। এই পরীক্ষা কী দেখায়?",
+      "options": [
+        "Lock চালু করলে TTL বেড়ে যায়, তাই বেশি request HIT হয়",
+        "Request collapsing একই key-র একসাথে আসা miss-গুলোকে একটা origin request-এ মেলায়",
+        "Lock ১৯টা request origin-এর জন্য queue-তে রাখে, তারপর ধীরে ধীরে একে একে পাঠায়",
+        "Lock চালু থাকলে query string cache key থেকে বাদ যায়, তাই সব request একই কপি পায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Lock থাকলে প্রথম MISS origin-এ যায়, বাকিরা একই key-র উত্তরের জন্য অপেক্ষা করে আর cache থেকে সেটাই পায়। ঠিক এভাবেই বাস্তব CDN জনপ্রিয় file-এর মেয়াদ শেষে stampede ঠেকায়।",
+      "whyWrong": {
+        "0": "Lock TTL বদলায় না; শুধু একসাথে আসা miss সামলায়।",
+        "2": "বাকি ১৯টা origin-এ যায়ই না; origin-এ মোট ১টা request গেছে।",
+        "3": "Cache key আগের মতোই; সব request একই key-তে ছিল বলেই কপি ভাগ হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-011-q57",
+      "difficulty": "hard",
+      "question": "`logo.svg` (নাম বদলায় না) `max-age=86400` দিয়ে cache হয়। দুপুর ১২:০০-এ origin-এ নতুন logo দিলেন, purge করলেন না। একটা PoP পুরনো logo ঠিক ১১:৫৯-এ cache করেছিল। সেই PoP সবচেয়ে খারাপ ক্ষেত্রে কতক্ষণ পুরনো logo দেবে?",
+      "options": [
+        "শুধু ১২:০০ পর্যন্ত, কারণ origin বদলালেই CDN জেনে যায়",
+        "পরের দিন প্রায় ১১:৫৯ পর্যন্ত",
+        "পরের দিন ঠিক ১২:০০ পর্যন্ত, কারণ মেয়াদ গোনা শুরু হয় বদলের সময় থেকে",
+        "বড়জোর এক মিনিট, কারণ CDN প্রতি মিনিটে origin-কে জিজ্ঞেস করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "মেয়াদ গোনা শুরু হয় কপি cache হওয়ার সময় থেকে: ১১:৫৯ + ২৪ ঘণ্টা = পরের দিন ১১:৫৯। Origin-এ বদলের খবর CDN পায় না, যতক্ষণ না নিজের কপির মেয়াদ শেষ হয়। ঠিক DNS-এর TTL-এর মতো (Day 3)। তাই যে file-এর নাম বদলায় না তাতে ছোট TTL বা purge, আর পারলে versioned নাম।",
+      "whyWrong": {
+        "0": "Origin CDN-কে নিজে থেকে কিছু জানায় না; TTL বা purge ছাড়া কপি বদলায় না।",
+        "2": "মেয়াদ গোনা হয় cache হওয়ার মুহূর্ত থেকে, origin-এ বদলের সময় থেকে না।",
+        "3": "Revalidation হয় মেয়াদ শেষ হলে, প্রতি মিনিটে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q58",
+      "difficulty": "hard",
+      "question": "Origin `Accept-Encoding` দেখে কাউকে gzip, কাউকে uncompressed response দেয়, কিন্তু `Vary: Accept-Encoding` পাঠাতে ভুলে গেছে। CDN-এ কোন সমস্যা হতে পারে?",
+      "options": [
+        "শুধু hit ratio একটু কমবে, কারণ CDN নিজে থেকেই দুটো আলাদা কপি রাখবে",
+        "CDN সব response থেকে compression তুলে দেবে, তাই bandwidth বাড়বে কিন্তু কোনো ভুল content যাবে না",
+        "প্রথমে cache হওয়া variant-টাই সবাই পায়; gzip না-বোঝা client-ও gzip পেতে পারে",
+        "কোনো সমস্যা নেই, কারণ Vary শুধু একটা ঐচ্ছিক optimization"
+      ],
+      "correctIndex": 2,
+      "explanation": "Vary না থাকলে CDN ধরে নেয় একটা URL-এর একটাই সঠিক response। প্রথম request gzip চাইলে gzip কপি cache হয়, তারপর compression না-বোঝা client-ও সেটা পায় আর ভাঙা data দেখে। Vary: Accept-Encoding এই দুটো variant আলাদা রাখে।",
+      "whyWrong": {
+        "0": "Vary ছাড়া CDN জানেই না যে আলাদা কপি রাখতে হবে।",
+        "1": "CDN নিজে থেকে origin-এর compression মুছে দেয় না।",
+        "3": "Content header অনুযায়ী বদলালে Vary-ই সঠিকতার নিশ্চয়তা, ঐচ্ছিক না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q59",
+      "difficulty": "hard",
+      "question": "Product page-এ ৪০টা ছবি। ধরুন browser একসাথে ৬টা করে ছবি আনে, connection আগে থেকেই খোলা, আর প্রতিটা ছবিতে ১টা round trip লাগে। Origin-এর RTT ৫০ms, কাছের edge-এর RTT ১০ms (সব HIT)। শুধু round trip-এর হিসাবে ছবি আনার সময় মোটামুটি কত থেকে কততে নামে?",
+      "options": [
+        "প্রায় ২,০০০ms থেকে প্রায় ৪০০ms",
+        "প্রায় ৫০ms থেকে প্রায় ১০ms",
+        "প্রায় ৩৫০ms থেকে প্রায় ৩৪০ms",
+        "প্রায় ৩৫০ms থেকে প্রায় ৭০ms"
+      ],
+      "correctIndex": 3,
+      "explanation": "৪০ ÷ ৬ = ৭ দফা (শেষ দফায় ৪টা)। প্রতি দফায় ১ RTT: origin থেকে ৭ × ৫০ = ৩৫০ms, edge থেকে ৭ × ১০ = ৭০ms। বাস্তবে transfer আর render-এর সময় যোগ হয়, কিন্তু round trip-এর অংশ পাঁচ ভাগের এক ভাগ।",
+      "whyWrong": {
+        "0": "এটা ৪০টা ছবি একটার পর একটা ধরার হিসাব; এখানে ৬টা করে একসাথে।",
+        "1": "এটা সবগুলো একসাথে এক দফায় ধরার হিসাব।",
+        "2": "Edge-এর RTT ১০ms হলে প্রতি দফা ১০ms; শুধু ১০ms কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-011-q60",
+      "difficulty": "hard",
+      "question": "Interview-এ প্রশ্ন: 'CDN যোগ করলে আমাদের data consistency-র কী হয়?' কোন উত্তরটা সবচেয়ে সঠিক?",
+      "options": [
+        "TTL চলাকালীন user পুরনো version দেখতে পারে; কোথায় কতটা পুরনো চলবে ঠিক করতে হয়",
+        "কোনো প্রভাব নেই, কারণ origin বদলালে CDN সাথে সাথে সব PoP-এ নতুন কপি পাঠিয়ে দেয়",
+        "CDN থাকলে সব data সবসময় strongly consistent হয়, কারণ সব PoP একই কপি ভাগ করে",
+        "CDN শুধু ছবি রাখে, তাই consistency-র প্রশ্ন কেবল database-এর ক্ষেত্রেই ওঠে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Cache মানেই একটা কপি, আর কপি origin থেকে পিছিয়ে থাকতে পারে। TTL হলো সেই পিছিয়ে থাকার সর্বোচ্চ সীমা। ভালো design প্রতিটা content-এর জন্য আলাদা সিদ্ধান্ত নেয়: asset versioned আর লম্বা TTL, HTML no-cache, personalised data cache-এর বাইরে।",
+      "whyWrong": {
+        "1": "Pull CDN origin-এর বদল নিজে থেকে জানে না; TTL বা purge লাগে।",
+        "2": "PoP-গুলো আলাদা কপি রাখে, আর প্রতিটার মেয়াদ আলাদা সময়ে শেষ হয়।",
+        "3": "CDN HTML, API response, video সবই cache করতে পারে, তাই staleness সব জায়গায় প্রাসঙ্গিক।"
+      }
+    }
+  ]
+}

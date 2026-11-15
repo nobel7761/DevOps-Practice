@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-006",
+  "points": [
+    {
+      "term": "Availability",
+      "prompt": "Availability কী, আর সময় দিয়ে মাপা আর request দিয়ে মাপার মধ্যে পার্থক্য কী? কোনটা বেশি সৎ, কেন?",
+      "answer": "Availability হলো user যখন চায় তখন system কত ভাগ ঠিকমতো কাজ করে, মাপা হয় user-এর চোখে। সময় দিয়ে: uptime ÷ মোট সময়; request দিয়ে: সফল request ÷ মোট request। Request-ভিত্তিক মাপ বেশি সৎ, কারণ ব্যস্ত সময়ের ১০ মিনিট বন্ধ আর রাত ৩টার ১০ মিনিট বন্ধ, user-এর ক্ষতিতে অনেক আলাদা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "The Nines",
+      "prompt": "99.9% আর 99.99% availability মানে বছরে আর মাসে মোটামুটি কত downtime? হিসাবটা কিভাবে করবেন?",
+      "answer": "Downtime = (1 − availability) × মোট সময়। 99.9% মানে বছরে ~8.76 ঘণ্টা, মাসে ~43.8 মিনিট; 99.99% মানে বছরে ~52.6 মিনিট, মাসে ~4.4 মিনিট। প্রতিটা বাড়তি ৯ downtime-কে দশ ভাগের এক ভাগে নামায়, তাই চার-পাঁচ ৯-এ মানুষের হাতে সারানোর সময়ই থাকে না, স্বয়ংক্রিয় failover লাগে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Single Point of Failure (SPOF)",
+      "prompt": "SPOF কী, আর একটা architecture-এ সেটা কিভাবে খুঁজবেন?",
+      "answer": "SPOF এমন একটা অংশ, যেটা একা পড়লেই পুরো system বন্ধ হয়ে যায়, যেমন একমাত্র server বা একমাত্র database। খোঁজার উপায়: request-এর পুরো পথ ধরে (DNS, load balancer, app, database, বাইরের service) প্রতিটা অংশে জিজ্ঞেস করা, 'এটা পড়লে কী হবে?' উত্তর 'সব বন্ধ' হলে সেটাই SPOF।",
+      "lessonLink": "#problem"
+    },
+    {
+      "term": "Active-active vs Active-passive",
+      "prompt": "Active-active আর active-passive redundancy-র পার্থক্য কী, আর কোনটা কোথায় মানায়?",
+      "answer": "Active-active-এ সব কপি একসাথে traffic নেয়, একটা পড়লে বাকিরা ভার নেয়; stateless app server-এ স্বাভাবিক, তবে N+1 capacity রাখতে হয়। Active-passive-এ একজন কাজ করে আর standby অপেক্ষায় থাকে; database primary-র মতো যেখানে লেখার মালিক একজনই হওয়া দরকার সেখানে মানায়, কিন্তু standby-র খরচ আর switch-এর সময় লাগে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Health Check ও Failover",
+      "prompt": "Health check কিভাবে failure ধরে, আর কেন একবার fail হলেই server বাদ দেওয়া হয় না?",
+      "answer": "Load balancer নিয়মিত (যেমন প্রতি ৫ সেকেন্ডে) server-কে জিজ্ঞেস করে, পরপর কয়েকবার fail হলে unhealthy ধরে traffic অন্য কপিতে সরায় (failover)। একবারেই বাদ দিলে একটা হারানো packet বা সাময়িক ধীরতায় সুস্থ server-ও বাদ পড়ত; দ্রুত detection আর false positive-এর মধ্যে এটা trade-off। User-এর দেখা downtime মোটামুটি detection আর switch-এর সময়ের যোগফল।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "MTBF ও MTTR",
+      "prompt": "MTBF আর MTTR দিয়ে availability-র সূত্র কী, আর কেন MTTR কমানো প্রায়ই সস্তা পথ?",
+      "answer": "Availability = MTBF ÷ (MTBF + MTTR)। মাসে একবার failure আর ১ ঘণ্টা সারানো হলে ~99.86%; failure অর্ধেক করলে ~99.93%, কিন্তু সারানো ৬ মিনিটে আনলে ~99.986%। Failure একেবারে ঠেকানো কঠিন ও দামি, কিন্তু ভালো alert, auto-restart, দ্রুত rollback আর runbook দিয়ে MTTR কমানো তুলনায় সহজ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Series vs Parallel Availability",
+      "prompt": "Component series-এ থাকলে আর parallel-এ থাকলে মোট availability কিভাবে হিসাব করবেন? একটা উদাহরণ দিন।",
+      "answer": "Series-এ (সবগুলো লাগবে) গুণ: 99.99% × 99.9% × 99.9% ≈ 99.79%, সবচেয়ে দুর্বল অংশের চেয়েও কম; তাই প্রতিটা নতুন dependency availability কমায়। Parallel-এ (যেকোনো একটা চললেই হবে) 1 − (1 − A)ⁿ: দুটো 99% server মিলে 99.99%। তবে parallel-এর সূত্র শুধু স্বাধীন failure-এ খাটে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Correlated Failure ও Blast Radius",
+      "prompt": "Correlated failure কী, আর redundancy থাকা সত্ত্বেও কেন সব কপি একসাথে পড়তে পারে? Blast radius কিভাবে ছোট রাখবেন?",
+      "answer": "Correlated failure মানে একই কারণে একাধিক কপি একসাথে নষ্ট হওয়া: একই AZ বা rack, একই খারাপ deploy, একই ভুল config, একই shared dependency। তখন parallel-এর অঙ্ক খাটে না। Blast radius ছোট রাখতে কপি আলাদা AZ-এ ছড়ান, deploy ধাপে ধাপে দিন (canary), আর বড় system-কে স্বাধীন cell-এ ভাগ করুন।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Graceful Degradation",
+      "prompt": "Graceful degradation কী? Online shop-এর উদাহরণে বলুন, আর এর জন্য আগে কী ঠিক করতে হয়?",
+      "answer": "আংশিক সমস্যায় পুরো system না ভেঙে কম জরুরি feature বাদ দিয়ে মূল কাজ চালিয়ে যাওয়া। যেমন recommendation service down হলে তার জায়গায় সাধারণ জনপ্রিয় পণ্যের list দেখানো, কিন্তু cart আর checkout চালু রাখা। এর জন্য আগে ঠিক করতে হয় কোন dependency critical আর কোনটা optional, আর optional-গুলোতে timeout ও fallback দিতে হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "SLO ও Error Budget",
+      "prompt": "SLI, SLO আর SLA-র পার্থক্য কী, আর 99.9% SLO-তে ৩০ দিনের error budget কত? 100% কেন ভুল লক্ষ্য?",
+      "answer": "SLI হলো যা মাপছি (যেমন সফল request-এর %), SLO নিজেদের লক্ষ্য, আর SLA customer-এর সাথে জরিমানাসহ চুক্তি। 99.9% SLO-তে ৩০ দিনে budget 0.1% = 43.2 মিনিট; budget থাকলে release, শেষ হলে reliability-র কাজ। 100% ভুল লক্ষ্য কারণ প্রতিটা বাড়তি ৯ অনেক দামি, user-এর নিজের network-ও 100% না, আর release থেমে যায়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

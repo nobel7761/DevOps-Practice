@@ -1,0 +1,1050 @@
+{
+  "topicId": "sd-day-010",
+  "questions": [
+    {
+      "id": "sd-day-010-q01",
+      "difficulty": "easy",
+      "question": "দুটো request একই সময়ে একটা orders.json file পড়ে, প্রতিটা নিজের order যোগ করে পুরো file আবার লেখে। শেষে কী হতে পারে?",
+      "options": [
+        "দুটো order-ই ঠিকমতো থাকবে, কারণ OS file লেখাগুলো নিজে থেকে ক্রমানুসারে মিলিয়ে দেয়",
+        "দুটো order-ই দুবার করে লেখা হবে, কারণ দুই request-ই একে অপরের order দেখে",
+        "দ্বিতীয় request error পাবে, কারণ একটা file একবারে একজনের বেশি খুলতে পারে না",
+        "পরে লেখা request আগেরটার লেখা মুছে দেবে, ফলে একটা order হারিয়ে যাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটো request-ই একই পুরনো file (৪১টা order) পড়ে, তারপর প্রত্যেকে ৪১ + নিজের order লেখে। যে পরে লেখে তার file আগেরটার উপর বসে যায়, তাই আগের order হারায়। এটাই lost update।",
+      "whyWrong": {
+        "0": "OS আলাদা আলাদা write-কে মিলিয়ে দেয় না; পুরো file overwrite হলে আগের লেখা চলে যায়।",
+        "1": "কেউ কারো order দেখে না, দুজনেই পুরনো অবস্থা পড়েছিল; তাই duplicate না, হারানো হয়।",
+        "2": "সাধারণ file একাধিক process একসাথে খুলতে পারে; কেউ lock না নিলে কোনো error আসে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q02",
+      "difficulty": "easy",
+      "question": "PostgreSQL আর আপনার app-এর 'hatbazar' database, এই দুটোর সম্পর্ক কোনটা ঠিকভাবে বলে?",
+      "options": [
+        "দুটো একই জিনিস, শুধু PostgreSQL নামটা বাজারে বিক্রির নাম",
+        "PostgreSQL একটা database, আর hatbazar হলো তার একটা table-এর নাম",
+        "PostgreSQL হলো DBMS (software), আর hatbazar তার ভেতরের একটা database",
+        "hatbazar হলো DBMS, আর PostgreSQL হলো app থেকে সেটার সাথে কথা বলার জন্য একটা driver"
+      ],
+      "correctIndex": 2,
+      "explanation": "DBMS হলো software, যেটা data রাখে আর সামলায় (PostgreSQL, MySQL)। Database হলো সেই software-এর ভেতরে রাখা data-র সংগ্রহ। একটা PostgreSQL server-এ অনেকগুলো database থাকতে পারে।",
+      "whyWrong": {
+        "0": "Software আর তার ভেতরের data আলাদা জিনিস; একটা server-এ অনেক database থাকে।",
+        "1": "hatbazar একটা database, যার ভেতরে অনেক table থাকে; table না।",
+        "3": "Driver app-এর দিকে থাকে (যেমন pg); PostgreSQL নিজেই DBMS।"
+      }
+    },
+    {
+      "id": "sd-day-010-q03",
+      "difficulty": "easy",
+      "question": "customers table-এ id-কে PRIMARY KEY করার মূল উদ্দেশ্য কী?",
+      "options": [
+        "Table-এর row-গুলো disk-এ আর SELECT-এর ফলে সবসময় id অনুযায়ী সাজিয়ে রাখা",
+        "প্রতিটা row-এর একটা অনন্য, ফাঁকা-না-হওয়া পরিচয় নিশ্চিত করা",
+        "id column-এর মান অন্য table থেকে স্বয়ংক্রিয়ভাবে কপি করা",
+        "শুধু admin-রাই যাতে id column বদলাতে পারে তা নিশ্চিত করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Primary key মানে প্রতিটা row-কে আলাদা করে চেনার উপায়: দুটো row-এর একই PK হতে পারবে না, আর PK ফাঁকা (NULL) থাকতে পারে না। অন্য table এই PK দিয়েই row-টার দিকে ইশারা করে।",
+      "whyWrong": {
+        "0": "SELECT-এর ফলের ক্রম ORDER BY ঠিক করে; PK ক্রমের প্রতিশ্রুতি দেয় না।",
+        "2": "অন্য table-এর দিকে ইশারা foreign key-র কাজ, আর কিছু কপি হয় না।",
+        "3": "কে বদলাতে পারবে সেটা permission-এর বিষয়, PK-র না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q04",
+      "difficulty": "easy",
+      "question": "orders.customer_id-এ FOREIGN KEY থাকলে নিচের কোন কাজটা database আটকে দেবে?",
+      "options": [
+        "এমন customer_id দিয়ে order ঢোকানো, যে id customers table-এ নেই",
+        "একই customer-এর জন্য দ্বিতীয় একটা order ঢোকানো",
+        "customers table-এ নতুন একজন customer যোগ করা, যার এখনো কোনো order নেই",
+        "orders table থেকে একটা পুরনো order-এর status বদলানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "Foreign key নিশ্চিত করে যে orders.customer_id যে customer-কে দেখাচ্ছে, সে সত্যিই customers table-এ আছে। ৯৯৯ নম্বর customer না থাকলে সেই order ঢুকবে না। একই customer-এর অনেক order থাকা স্বাভাবিক।",
+      "whyWrong": {
+        "1": "একজন customer-এর অনেক order থাকতে পারে; FK এক-থেকে-অনেক সম্পর্ক দেয়।",
+        "2": "Order ছাড়া customer থাকাতে কোনো সমস্যা নেই; FK শুধু order-এর দিক থেকে যাচাই করে।",
+        "3": "status-এর সাথে FK-র কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-010-q05",
+      "difficulty": "easy",
+      "question": "products table-এ stock কখনো ঋণাত্মক হতে দেওয়া যাবে না। এটা database-এ নিশ্চিত করার সবচেয়ে সরাসরি উপায় কোনটা?",
+      "options": [
+        "stock column-এ UNIQUE constraint দেওয়া",
+        "stock column-কে PRIMARY KEY বানানো",
+        "stock column-এর type TEXT করে দেওয়া, যাতে '-' বসানো না যায়",
+        "stock column-এ CHECK (stock >= 0) constraint দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "CHECK constraint প্রতিটা insert আর update-এ শর্তটা যাচাই করে; শর্ত ভাঙলে statement fail করে। তাই app-এ bug থাকলেও stock ঋণাত্মক হয়ে database-এ বসতে পারে না।",
+      "whyWrong": {
+        "0": "UNIQUE শুধু একই মান দুবার আসা আটকায়; ঋণাত্মক মান আটকায় না।",
+        "1": "PK অনন্য পরিচয়ের জন্য; stock-এর মান নিয়ে কোনো নিয়ম দেয় না।",
+        "2": "TEXT-এ যেকোনো লেখা বসে, '-'ও; এতে হিসাবও কঠিন হয়ে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q06",
+      "difficulty": "easy",
+      "question": "প্রতিটা order-এর row-তে customer-এর নাম আর ঠিকানাও লিখে রাখা হচ্ছে। Normalization-এর দৃষ্টিতে মূল সমস্যা কী?",
+      "options": [
+        "একই নাম দুই জায়গায় থাকলে UNIQUE constraint ভেঙে insert fail করবে",
+        "Order table-এ বেশি column থাকলে PostgreSQL সেই table-এ index বানাতে পারে না",
+        "ঠিকানা বদলালে অনেক row বদলাতে হয়; একটা বাদ পড়লে দুই জায়গায় দুই ঠিকানা",
+        "Order-এর row-তে লেখা থাকলে JOIN আরও বেশি লাগে, তাই query ধীর হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Normalization মানে প্রতিটা তথ্য একবারই রাখা। Customer-এর তথ্য প্রতিটা order-এ কপি থাকলে ঠিকানা বদলাতে সব কপি বদলাতে হয়, একটা বাদ পড়লে data নিজের সাথেই অসঙ্গত। Order-এ শুধু customer_id রাখলে এই সমস্যা থাকে না।",
+      "whyWrong": {
+        "0": "UNIQUE না দিলে একই মান অনেক row-এ থাকতেই পারে; সমস্যাটা হালনাগাদের।",
+        "1": "Column সংখ্যার সাথে index বানানোর সামর্থ্যের এমন কোনো সম্পর্ক নেই।",
+        "3": "উল্টো: কপি রাখলে JOIN কম লাগে; এর দাম হালনাগাদের ঝামেলা।"
+      }
+    },
+    {
+      "id": "sd-day-010-q07",
+      "difficulty": "easy",
+      "question": "customers আর orders table থেকে 'প্রতিটা order-এর পাশে customer-এর নাম' পেতে SQL-এর কোন জিনিসটা লাগবে?",
+      "options": [
+        "GROUP BY, কারণ এটা দুই table-কে একসাথে দলবদ্ধ করে",
+        "JOIN, orders.customer_id = customers.id মিলিয়ে",
+        "WHERE, কারণ এটা দুই table-এর মধ্যে মিল খুঁজে দেয়",
+        "UNION, কারণ এটা দুই table-এর row পাশাপাশি বসায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "JOIN দুই table-এর row জোড়া লাগায় একটা শর্ত দিয়ে, এখানে orders.customer_id = customers.id। ফলে প্রতিটা order-এর row-এর সাথে তার customer-এর column-গুলোও আসে।",
+      "whyWrong": {
+        "0": "GROUP BY একই table-এর row-কে দলে ভাগ করে হিসাব (SUM, COUNT) করে; জোড়া লাগায় না।",
+        "2": "WHERE row ছাঁকে; দুই table জোড়া লাগানোর কাজ JOIN-এর।",
+        "3": "UNION দুই query-র ফল একটার নিচে আরেকটা বসায়, পাশাপাশি জোড়া লাগায় না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q08",
+      "difficulty": "easy",
+      "question": "'শহর অনুযায়ী মোট বিক্রি' বের করতে query-তে কোনটা লাগবে?",
+      "options": [
+        "GROUP BY city আর SUM(...)",
+        "ORDER BY city, যাতে প্রতিটা শহরের row একসাথে আসে",
+        "DISTINCT city, যাতে প্রতিটা শহর একবার আসে",
+        "LIMIT, যাতে প্রতি শহরের একটা row-ই আসে"
+      ],
+      "correctIndex": 0,
+      "explanation": "GROUP BY city একই শহরের row-গুলোকে এক দলে আনে, আর SUM প্রতিটা দলের মোট হিসাব করে। ফলে প্রতি শহরে একটা row, তার মোট বিক্রি সহ।",
+      "whyWrong": {
+        "1": "ORDER BY শুধু সাজায়; প্রতিটা row আলাদাই থাকে, মোট হয় না।",
+        "2": "DISTINCT শহরের তালিকা দেয়, কিন্তু কোনো যোগফল দেয় না।",
+        "3": "LIMIT মোট row সংখ্যা কাটে, শহর অনুযায়ী ভাগ বা যোগ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q09",
+      "difficulty": "easy",
+      "question": "একজন developer production-এ চালাল: UPDATE products SET price = 430; উদ্দেশ্য ছিল শুধু চালের দাম বদলানো। কী হবে?",
+      "options": [
+        "Database error দেবে, কারণ UPDATE-এ WHERE বাধ্যতামূলক",
+        "শুধু প্রথম row-এর দাম বদলাবে, কারণ WHERE না থাকলে একটা row-ই ধরা হয়",
+        "কিছুই বদলাবে না, কারণ কোন row বদলাতে হবে তা বলা হয়নি",
+        "সব product-এর দাম ৪৩০ হয়ে যাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "WHERE ছাড়া UPDATE table-এর প্রতিটা row-এ প্রযোজ্য হয়। তাই সব product-এর দাম ৪৩০ হয়ে যাবে। এজন্যই production-এ UPDATE/DELETE আগে transaction-এর ভেতরে চালিয়ে কয়টা row বদলাল দেখে তারপর COMMIT করা নিরাপদ।",
+      "whyWrong": {
+        "0": "SQL-এ UPDATE-এ WHERE বাধ্যতামূলক না; না থাকলে সব row-এ চলে।",
+        "1": "'প্রথম row' বলে কোনো নিয়ম নেই; WHERE না থাকলে সবগুলো।",
+        "2": "শর্ত না দেওয়া মানে 'কোনোটা না' না, 'সবগুলো'।"
+      }
+    },
+    {
+      "id": "sd-day-010-q10",
+      "difficulty": "easy",
+      "question": "Transaction-এর সবচেয়ে মৌলিক প্রতিশ্রুতি কোনটা?",
+      "options": [
+        "Transaction চলাকালীন অন্য কেউ database-এ কিছুই পড়তে পারবে না",
+        "ভেতরের প্রতিটা statement আলাদাভাবে commit হবে, যাতে কিছু হারায় না",
+        "ভেতরের সব কাজ হয় একসাথে সফল হবে, নয় কোনোটাই কার্যকর হবে না",
+        "Transaction সবসময় সাধারণ query-র চেয়ে দ্রুত চলবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Transaction কয়েকটা কাজকে একটা অবিভাজ্য একক বানায়: হয় সব, নয় কিছুই না (atomicity)। মাঝপথে কিছু fail করলে আগের সফল কাজগুলোও বাতিল হয়।",
+      "whyWrong": {
+        "0": "MVCC-র database-এ অন্যরা পড়তে পারে; শুধু uncommitted বদল দেখে না।",
+        "1": "আলাদা আলাদা commit হলে অর্ধেক কাজ থেকে যেতে পারত; transaction ঠিক এটাই ঠেকায়।",
+        "3": "Transaction গতির জন্য না, নির্ভুলতার জন্য; বরং lock-এর কারণে অপেক্ষাও হতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-010-q11",
+      "difficulty": "easy",
+      "question": "রহিমের wallet থেকে ৫০০ কাটা হলো, কিন্তু করিমের wallet-এ যোগ হওয়ার আগেই server crash করল। ACID-এর কোন অক্ষর নিশ্চিত করে যে রহিমের ৫০০ টাকা হারাবে না?",
+      "options": [
+        "Consistency, কারণ এটা টাকার মোট পরিমাণ সবসময় হিসাব করে রাখে",
+        "Atomicity, কারণ অর্ধেক হওয়া transaction পুরোটাই বাতিল হয়",
+        "Durability, কারণ এটা কাটা ৫০০ টাকা disk-এ স্থায়ী করে রাখে",
+        "Isolation, কারণ এটা অন্য transaction-কে রহিমের balance দেখতে দেয় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Atomicity মানে হয় সব, নয় কিছুই না। Credit-এর আগে crash হলে transaction commit হয়নি, তাই restart-এ debit-ও বাতিল, রহিমের balance আগের মতো।",
+      "whyWrong": {
+        "0": "Database নিজে 'মোট টাকা একই' নিয়ম জানে না; এখানে রক্ষা করছে atomicity।",
+        "2": "Durability committed কাজ রক্ষা করে; এখানে উল্টো, uncommitted debit বাতিল হওয়া দরকার।",
+        "3": "Isolation একসাথে চলা transaction-এর গোলমাল ঠেকায়, crash-এ অর্ধেক কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q12",
+      "difficulty": "easy",
+      "question": "Database 'COMMIT OK' বলার পরে server-এর বিদ্যুৎ গেলেও transfer হারাবে না। এটা ACID-এর কোন বৈশিষ্ট্য?",
+      "options": ["Durability", "Atomicity", "Isolation", "Consistency"],
+      "correctIndex": 0,
+      "explanation": "Durability মানে commit হওয়া data স্থায়ী: crash, বিদ্যুৎ যাওয়া বা restart-এও থাকবে। Database এটা নিশ্চিত করে COMMIT-এর আগে log disk-এ fsync করে।",
+      "whyWrong": {
+        "1": "Atomicity অর্ধেক কাজ ঠেকায়; commit-এর পরে টিকে থাকা durability।",
+        "2": "Isolation একসাথে চলা transaction-দের আলাদা রাখে, crash নিয়ে না।",
+        "3": "Consistency নিয়ম ঠিক রাখে; crash-এর পরে টিকে থাকা তার কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q13",
+      "difficulty": "easy",
+      "question": "একই product-এর stock দুটো transaction একসাথে বদলাচ্ছে। ACID-এর কোন অক্ষর এই দুজনের কাজ একে অপরকে নষ্ট না করার সঙ্গে সবচেয়ে বেশি জড়িত?",
+      "options": ["Consistency", "Durability", "Atomicity", "Isolation"],
+      "correctIndex": 3,
+      "explanation": "Isolation একসাথে চলা transaction-দের এমনভাবে আলাদা রাখে, যাতে তারা একে অপরের অর্ধেক কাজ না দেখে আর একজনের লেখা আরেকজন মুছে না দেয়। কতটা আলাদা, সেটা isolation level ঠিক করে।",
+      "whyWrong": {
+        "0": "Consistency নিয়ম ঠিক রাখে; একসাথে চলার গোলমাল ঠেকানো isolation-এর কাজ।",
+        "1": "Durability crash-এর পরে committed data রাখে, concurrency না।",
+        "2": "Atomicity একটা transaction-এর ভেতরের সব-বা-কিছুই-না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q14",
+      "difficulty": "easy",
+      "question": "Login session রাখতে হবে: key দিয়ে খুব দ্রুত পড়া-লেখা, কিছুক্ষণ পরে নিজে থেকে মুছে যাক। কোন ধরনের database সবচেয়ে মানানসই?",
+      "options": [
+        "Graph database, যেমন Neo4j",
+        "Wide-column database, যেমন Cassandra",
+        "Key-value store, যেমন Redis",
+        "Data warehouse, যেমন একটা OLAP database"
+      ],
+      "correctIndex": 2,
+      "explanation": "Session-এ শুধু key (session id) দিয়ে একটা value পড়া-লেখা হয়, খুব ঘনঘন। Key-value store এর জন্যই, আর Redis-এ key-তে expiry (TTL) দেওয়া যায়।",
+      "whyWrong": {
+        "0": "Graph database সম্পর্কের জাল খোঁজার জন্য; একটা key-র value পড়তে এটা অপ্রয়োজনীয় জটিল।",
+        "1": "Cassandra বিশাল write ছড়ানোর জন্য; সাধারণ session-এর জন্য ভারী।",
+        "3": "OLAP বড় বিশ্লেষণী query-র জন্য, প্রতি request-এর দ্রুত lookup-এর জন্য না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q15",
+      "difficulty": "easy",
+      "question": "একটা marketplace-এ মোবাইলের field (RAM, camera) আর চালের field (ওজন, ধরন) একদম আলাদা। প্রতিটা product একসাথে পুরোটা পড়া হয়। কোন ধরনের database এই আকারের সাথে স্বাভাবিকভাবে মেলে?",
+      "options": [
+        "Key-value store, কারণ সব product একটা key-তে রাখা যায়",
+        "Document database, যেমন MongoDB",
+        "Graph database, কারণ product-গুলো category-র সাথে যুক্ত",
+        "Wide-column database, কারণ field সংখ্যা অনেক"
+      ],
+      "correctIndex": 1,
+      "explanation": "Document database-এ প্রতিটা রেকর্ড একটা JSON-এর মতো document, যার field আলাদা হতে পারে, nested-ও হতে পারে। একসাথে পড়া data এক document-এ থাকায় এক read-এ পুরো product আসে।",
+      "whyWrong": {
+        "0": "সব product এক key-তে রাখলে প্রতিটা আলাদা করে খোঁজা বা filter করা কঠিন।",
+        "2": "Category-র সম্পর্ক থাকলেও এখানে মূল চাহিদা আলাদা আলাদা গঠন, সম্পর্ক ধরে হাঁটা না।",
+        "3": "Wide-column-এর শক্তি বিশাল write আর partition, নমনীয় nested গঠন না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q16",
+      "difficulty": "easy",
+      "question": "'রহিমের বন্ধুর বন্ধুদের মধ্যে কারা একই কোম্পানিতে কাজ করে' এমন প্রশ্ন প্রায়ই চলবে। কোন ধরনের database সবচেয়ে স্বাভাবিক?",
+      "options": [
+        "Graph database, যেমন Neo4j",
+        "Wide-column database, যেমন Cassandra",
+        "Key-value store, যেমন Redis",
+        "Plain CSV file"
+      ],
+      "correctIndex": 0,
+      "explanation": "Graph database-এ data হলো node আর edge, তাই 'সম্পর্ক ধরে কয়েক ধাপ হাঁটা' তার স্বাভাবিক কাজ। Relational database-এ একই কাজে বারবার self-JOIN লাগে, ধাপ বাড়লে জটিল আর ধীর হয়।",
+      "whyWrong": {
+        "1": "Wide-column আগে থেকে ঠিক করা partition key দিয়ে পড়ার জন্য, অনেক ধাপের সম্পর্কের জন্য না।",
+        "2": "Key-value-তে শুধু key দিয়ে value; সম্পর্ক ধরে খোঁজার উপায় নেই।",
+        "3": "CSV-তে প্রতিটা ধাপে পুরো file পড়তে হবে, আর concurrency বা integrity নেই।"
+      }
+    },
+    {
+      "id": "sd-day-010-q17",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা OLAP ধরনের কাজ?",
+      "options": [
+        "একজন customer-এর cart-এ একটা product যোগ করা",
+        "Login-এর সময় users table থেকে একজন user-এর password hash আর role পড়া",
+        "একটা order-এর status 'pending' থেকে 'delivered' করা",
+        "গত দুই বছরের সব order থেকে মাস আর জেলা অনুযায়ী বিক্রির report"
+      ],
+      "correctIndex": 3,
+      "explanation": "OLAP হলো বিশ্লেষণ: অল্প কিছু বড় query, প্রতিটা লাখ লাখ row ঘাঁটে। দুই বছরের সব order থেকে aggregate report ঠিক এমন। বাকিগুলো কয়েকটা row ছোঁয়া দ্রুত কাজ, অর্থাৎ OLTP।",
+      "whyWrong": {
+        "0": "Cart-এ যোগ করা একটা ছোট লেনদেন, OLTP।",
+        "1": "একটা row পড়া, দ্রুত উত্তর দরকার; OLTP।",
+        "2": "একটা row-এর update, দৈনন্দিন লেনদেন; OLTP।"
+      }
+    },
+    {
+      "id": "sd-day-010-q18",
+      "difficulty": "easy",
+      "question": "App-এ connection pool ব্যবহারের মূল কারণ কোনটা?",
+      "options": [
+        "Database-এর বারবার পড়া data app-এর memory-তে কপি রেখে database-এ query-র সংখ্যা কমানো",
+        "সব query-কে একটা connection দিয়ে পাঠিয়ে ক্রম ঠিক রাখা",
+        "আগে খোলা connection বারবার ব্যবহার করে খোলার খরচ বাঁচানো আর মোট সংখ্যা সীমিত রাখা",
+        "Database-এর password app-এর ভেতরে লুকিয়ে রাখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Connection খোলায় TCP, প্রায়ই TLS, authentication আর PostgreSQL-এ একটা নতুন process লাগে। Pool আগে খোলা connection ধার দেয় আর ফেরত নেয়, তাই প্রতি request-এ এই খরচ নেই, আর মোট connection সংখ্যাও সীমিত থাকে।",
+      "whyWrong": {
+        "0": "Data memory-তে রাখা cache-এর কাজ; pool connection রাখে, data না।",
+        "1": "Pool-এ অনেক connection থাকে, একসাথে অনেক query চলে; একটায় সব পাঠানো তার উদ্দেশ্য না।",
+        "3": "Password রাখা configuration বা secret management-এর বিষয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q19",
+      "difficulty": "easy",
+      "question": "SQL-কে 'declarative' বলা হয়। এর মানে কী?",
+      "options": [
+        "SQL-এ প্রতিটা query-র আগে table declare করতে হয়",
+        "আপনি বলেন কোন data চাই; কিভাবে আনবে (কোন index, কোন ক্রম) planner ঠিক করে",
+        "SQL শুধু table বানানো (CREATE) ঘোষণার জন্য, data পড়ার জন্য না",
+        "SQL query সবসময় একই ক্রমে row ফেরত দেয়, তাই ফল কেমন হবে তা আগে থেকেই ঘোষিত থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Declarative মানে 'কী চাই' বলা, 'কিভাবে আনতে হবে' না। Query planner ঠিক করে কোন index ব্যবহার হবে, কোন table আগে পড়া হবে, কোন JOIN পদ্ধতি। তাই index যোগ করলে query না বদলেই দ্রুত হতে পারে।",
+      "whyWrong": {
+        "0": "Table আগে বানাতে হয় ঠিকই, কিন্তু declarative শব্দের অর্থ সেটা না।",
+        "2": "SQL দিয়ে পড়া, লেখা, বদলানো, সবই হয়।",
+        "3": "ORDER BY ছাড়া row-এর ক্রমের কোনো প্রতিশ্রুতি নেই।"
+      }
+    },
+    {
+      "id": "sd-day-010-q20",
+      "difficulty": "easy",
+      "question": "order_items table-এ প্রতিটা line-এর সাথে unit_price আলাদা করে রাখা হয়, অথচ products table-এও price আছে। কেন?",
+      "options": [
+        "Product-এর দাম পরে বদলালেও পুরনো order যে দামে বিক্রি হয়েছিল সেটা ঠিক থাকে",
+        "দুই জায়গায় দাম না রাখলে foreign key তৈরি করা যায় না",
+        "products.price-এ index থাকায় সেটা order-এর হিসাবে ব্যবহার করা যায় না",
+        "Normalization-এর নিয়মে যেসব table-এ পরিমাণ (quantity) থাকে সেখানে price column থাকা বাধ্যতামূলক"
+      ],
+      "correctIndex": 0,
+      "explanation": "products.price হলো আজকের দাম; order_items.unit_price হলো বিক্রির মুহূর্তের দাম, একটা ইতিহাস। দাম বদলালে পুরনো order-এর মোট বদলে যাওয়া উচিত না, তাই এটা ইচ্ছাকৃতভাবে আলাদা রাখা।",
+      "whyWrong": {
+        "1": "Foreign key product_id দিয়ে হয়, price-এর সাথে তার সম্পর্ক নেই।",
+        "2": "Index থাকা বা না থাকা কোনো column-এর ব্যবহার আটকায় না।",
+        "3": "Normalization উল্টো, একই তথ্য একবার রাখতে বলে; এখানে আলাদা তথ্য বলেই দুই জায়গায়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q21",
+      "difficulty": "medium",
+      "question": "PostgreSQL-এ একটা transaction-এ আগে করিমের wallet-এ +৫০০০ সফল হলো, তারপর রহিমের −৫০০০ CHECK (balance >= 0) ভাঙল। এরপর COMMIT লিখলে কী হবে?",
+      "options": [
+        "করিমের +৫০০০ commit হবে, শুধু রহিমের ব্যর্থ UPDATE বাদ যাবে",
+        "Database রহিমের balance ০ করে দিয়ে বাকিটা commit করবে",
+        "COMMIT সফল হবে, কারণ error-টা আগের statement-এ ছিল, COMMIT-এ না",
+        "পুরো transaction বাতিল হবে; COMMIT-এর উত্তরে আসবে ROLLBACK"
+      ],
+      "correctIndex": 3,
+      "explanation": "PostgreSQL-এ transaction-এর ভেতরে কোনো statement fail করলে পুরো transaction aborted অবস্থায় যায়, পরের সব command উপেক্ষিত হয়। তখন COMMIT লিখলেও database ROLLBACK করে আর সেটাই জানায়। তাই করিমের সফল +৫০০০-ও বাতিল।",
+      "whyWrong": {
+        "0": "Atomicity-র কারণে transaction-এর অংশবিশেষ commit হয় না।",
+        "1": "Database নিজে থেকে মান বদলে নিয়ম মেলায় না; সে শুধু নিয়মভঙ্গ আটকায়।",
+        "2": "Aborted transaction-এ COMMIT কার্যকর হয় না, ROLLBACK হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q22",
+      "difficulty": "medium",
+      "question": "customers থেকে Rahim-কে DELETE করার চেষ্টায় error এলো: 'Key (id)=(1) is still referenced from table \"orders\"'। কেন?",
+      "options": [
+        "Rahim-এর phone UNIQUE, তাই তাকে মোছা যায় না",
+        "Primary key থাকা কোনো row কখনো মোছা যায় না",
+        "orders table-এ Rahim-এর order আছে, আর FK ভাঙবে বলে database মুছতে দিচ্ছে না",
+        "DELETE-এর জন্য আগে BEGIN দিয়ে transaction খুলতে হয়, তা খোলা হয়নি বলে database মুছতে দিচ্ছে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "orders.customer_id একটা foreign key, যেটা customers.id-কে দেখায়। Rahim-কে মুছলে তার order-গুলো অস্তিত্বহীন customer-কে দেখাত, তাই database (default NO ACTION) মুছতে দেয় না। আগে order-গুলোর ব্যবস্থা করতে হবে, বা ON DELETE নীতি ঠিক করতে হবে।",
+      "whyWrong": {
+        "0": "UNIQUE শুধু duplicate আটকায়, মোছা আটকায় না।",
+        "1": "PK থাকা row মোছা যায়, যদি অন্য কেউ সেটাকে FK দিয়ে না দেখায়।",
+        "3": "একক DELETE নিজেই একটা transaction-এ চলে; BEGIN বাধ্যতামূলক না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q23",
+      "difficulty": "medium",
+      "question": "একটা admin page আজকের ৫০টা order দেখায়, প্রতিটার customer-এর নাম আলাদা query দিয়ে আনে। এক page load-এ মোট কয়টা query যায়?",
+      "options": ["২টা", "৫১টা", "৫০টা", "১টা"],
+      "correctIndex": 1,
+      "explanation": "এটা N+1: ১টা query order-এর তালিকার জন্য, তারপর ৫০টা order-এর প্রতিটার জন্য ১টা করে, মোট ৫১। JOIN দিলে ১টা, আর IN/ANY দিয়ে batch করলে ২টা।",
+      "whyWrong": {
+        "0": "২টা হতো batch করলে (order-গুলো, তারপর সব customer একসাথে)।",
+        "2": "তালিকা আনার প্রথম query-টা বাদ পড়েছে।",
+        "3": "১টা হতো JOIN দিলে; এখানে প্রতিটা order-এ আলাদা query।"
+      }
+    },
+    {
+      "id": "sd-day-010-q24",
+      "difficulty": "medium",
+      "question": "customers-এ ৪ জন, orders-এ ৬টা order (প্রতিটা একজন বিদ্যমান customer-এর), আর একজন customer-এর কোনো order নেই। SELECT * FROM orders o JOIN customers c ON c.id = o.customer_id কয়টা row দেবে?",
+      "options": ["৬টা", "৪টা", "৭টা", "২৪টা"],
+      "correctIndex": 0,
+      "explanation": "INNER JOIN প্রতিটা order-কে তার একমাত্র customer-এর সাথে জোড়া দেয়। প্রতিটা order-এর ঠিক একটা মিল আছে, তাই ৬টা row। Order ছাড়া customer INNER JOIN-এ আসে না।",
+      "whyWrong": {
+        "1": "Row সংখ্যা customer দিয়ে না, মিলে যাওয়া জোড়া দিয়ে ঠিক হয়।",
+        "2": "৭ হতো customers থেকে LEFT JOIN দিলে (order ছাড়া customer-ও একটা row পেত)।",
+        "3": "২৪ হলো শর্ত ছাড়া cross join (৪ × ৬), ON শর্ত থাকলে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q25",
+      "difficulty": "medium",
+      "question": "ওপরের একই data-য় এবার query: SELECT c.name, COUNT(o.id) FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.name। ফলে কয়টা row আসবে, আর order ছাড়া customer-এর পাশে কী থাকবে?",
+      "options": [
+        "৪টা row; order ছাড়া customer-এর পাশে 1",
+        "৩টা row; order ছাড়া customer বাদ পড়বে",
+        "৬টা row; প্রতিটা order-এর জন্য একটা",
+        "৪টা row; order ছাড়া customer-এর পাশে 0"
+      ],
+      "correctIndex": 3,
+      "explanation": "LEFT JOIN বাম table (customers)-এর সব row রাখে, তাই GROUP BY-র পরে প্রতি customer একটা, মোট ৪। Order ছাড়া customer-এর o.id NULL, আর COUNT(o.id) NULL গোনে না, তাই 0।",
+      "whyWrong": {
+        "0": "COUNT(*) দিলে 1 আসত; COUNT(o.id) NULL গোনে না।",
+        "1": "বাদ পড়ত INNER JOIN-এ; LEFT JOIN সব customer রাখে।",
+        "2": "GROUP BY c.name প্রতি customer-এ একটা row বানায়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q26",
+      "difficulty": "medium",
+      "question": "একটা orders table-এ ১ কোটি row, প্রতিটা row-এর data গড়ে ১০০ byte। শুধু data-র জন্য মোটামুটি কত জায়গা লাগবে (row header, index বাদে)?",
+      "options": ["~১০০ MB", "~১০ GB", "~১ GB", "~১০ MB"],
+      "correctIndex": 2,
+      "explanation": "১ কোটি = ১০⁷ row, × ১০০ byte = ১০⁹ byte ≈ ১ GB। বাস্তবে প্রতিটা row-এর header (PostgreSQL-এ ২৩ byte-এর tuple header আর ৪ byte-এর item pointer), page-এর ফাঁকা জায়গা আর index মিলিয়ে আরও বেশি লাগবে।",
+      "whyWrong": {
+        "0": "১০⁸ byte হতো ১০ লাখ row-এ, ১ কোটিতে না।",
+        "1": "এটা দশ গুণ বেশি; ১০⁷ × ১০০ = ১০⁹।",
+        "3": "এটা একশো গুণ কম; zero গুনতে ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-010-q27",
+      "difficulty": "medium",
+      "question": "Peak-এ app প্রতি সেকেন্ডে ৩,০০০টা query পাঠায়, প্রতিটা গড়ে ৪ms ধরে connection ব্যবহার করে। Little's Law অনুযায়ী গড়ে একসাথে কয়টা connection ব্যস্ত?",
+      "options": ["৭৫০টা", "১২টা", "৩,০০০টা", "১২০টা"],
+      "correctIndex": 1,
+      "explanation": "L = λ × W = ৩০০০/s × ০.০০৪s = ১২। গড়ে ১২টা connection একসাথে ব্যস্ত; spike-এর জন্য কিছু বাড়তি রাখলেই চলে, শত শত না।",
+      "whyWrong": {
+        "0": "৭৫০ আসে ৩০০০ ÷ ৪ করলে; Little's Law-এ গুণ, ভাগ না।",
+        "2": "প্রতিটা query-কে আলাদা connection ধরা হয়েছে, অথচ একটা connection সেকেন্ডে অনেক query চালায়।",
+        "3": "Millisecond-কে সেকেন্ডে রূপান্তরে দশ গুণ ভুল (০.০৪ ধরা হয়েছে)।"
+      }
+    },
+    {
+      "id": "sd-day-010-q28",
+      "difficulty": "medium",
+      "question": "১৫টা app instance, প্রতিটায় ১০-এর pool। PostgreSQL-এ max_connections = 100। Autoscaling-এ instance ১৫ হওয়ার পরে কী হতে পারে?",
+      "options": [
+        "Pool-গুলো মিলে ১৫০টা connection চাইবে; ১০০-র পরে নতুন connection error পাবে",
+        "PostgreSQL বাড়তি connection-গুলো queue-তে রেখে পরে একে একে চালাবে",
+        "কোনো সমস্যা নেই, সব instance-এর pool নিজেরা মিলে মোট সংখ্যা ১০০-র মধ্যে ভাগ করে নেয়",
+        "PostgreSQL নিজে থেকে max_connections ১৫০ করে নেবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রতিটা instance-এর pool জানে না অন্যরা কয়টা নিয়েছে। ১৫ × ১০ = ১৫০ চাইলে ১০০-র পরে database 'too many clients' ধরনের error দেয়। সমাধান: pool ছোট করা, বা PgBouncer-এর মতো আলাদা pooler।",
+      "whyWrong": {
+        "1": "সীমা পার হলে PostgreSQL connection প্রত্যাখ্যান করে, queue-তে রাখে না।",
+        "2": "আলাদা instance-এর pool-রা নিজেদের মধ্যে সমন্বয় করে না।",
+        "3": "max_connections একটা setting, বদলাতে restart লাগে; নিজে থেকে বাড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q29",
+      "difficulty": "medium",
+      "question": "একটা wallet app balance রাখছে DOUBLE PRECISION column-এ। কয়েক মাস পরে হিসাব মিলছে না, কিছু balance-এ ০.০০০০০০০১-এর মতো ভগ্নাংশ। মূল কারণ আর সমাধান কী?",
+      "options": [
+        "Database-এর disk-এ bit নষ্ট হচ্ছে; RAID লাগাতে হবে",
+        "Index না থাকায় ভুল row update হচ্ছে; balance-এ index দিন",
+        "একসাথে অনেক transaction চলায় isolation ভাঙছে আর update মিশে যাচ্ছে; isolation SERIALIZABLE করুন",
+        "Floating point দশমিক ভগ্নাংশ ঠিকঠাক রাখতে পারে না; NUMERIC বা পয়সায় integer ব্যবহার করুন"
+      ],
+      "correctIndex": 3,
+      "explanation": "Float binary-তে রাখা হয়, তাই ০.১-এর মতো দশমিক ঠিকঠাক রাখা যায় না; যোগ-বিয়োগে ছোট ভুল জমে। টাকার জন্য NUMERIC/DECIMAL (ঠিক দশমিক) বা পয়সায় integer ব্যবহার করতে হয়।",
+      "whyWrong": {
+        "0": "Disk নষ্ট হলে এমন সূক্ষ্ম, নিয়মিত ভগ্নাংশ আসে না; এটা float-এর স্বভাব।",
+        "1": "Index গতির বিষয়; কোন row update হবে তা WHERE ঠিক করে।",
+        "2": "Isolation সমস্যা হলে update হারায়, দশমিকের ক্ষুদ্র ভুল না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q30",
+      "difficulty": "medium",
+      "question": "দুটো checkout একসাথে চলছে। দুজনেই SELECT stock করে ১০ পেল, তারপর app-এ ৯ হিসাব করে UPDATE stock = 9 লিখে commit করল। এই সমস্যার নাম কী?",
+      "options": ["Dirty read", "Deadlock", "Lost update", "Phantom read"],
+      "correctIndex": 2,
+      "explanation": "দুই transaction একই পুরনো মান পড়ে, নিজের হিসাবে নতুন মান লেখে; পরেরটা আগেরটার update মুছে দেয়। এটাই lost update। দুটো বিক্রিতে stock কমল একটা।",
+      "whyWrong": {
+        "0": "Dirty read মানে অন্যের uncommitted data দেখা; এখানে দুজনেই committed ১০ পড়েছে।",
+        "1": "Deadlock-এ দুজন একে অপরের lock-এর অপেক্ষায় আটকে যায়; এখানে দুজনেই শেষ করেছে।",
+        "3": "Phantom read মানে একই শর্তে আবার query করলে নতুন row দেখা; এখানে একটা row-এর মান হারিয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-010-q31",
+      "difficulty": "medium",
+      "question": "ওপরের lost update ঠেকাতে কোন একটা statement সবচেয়ে সহজ আর নিরাপদ পরিবর্তন?",
+      "options": [
+        "SELECT-এর আগে SET TRANSACTION READ ONLY দেওয়া",
+        "UPDATE products SET stock = stock - 1 WHERE id = 4 AND stock > 0",
+        "UPDATE-এর পরে আরেকবার SELECT করে মান যাচাই করা, ভুল হলে আবার UPDATE চালানো",
+        "stock column-এ একটা index যোগ করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "হিসাব database-এর ভেতরে, একই statement-এ হলে row lock নিয়ে পড়া আর লেখা একসাথে হয়। দ্বিতীয় UPDATE প্রথমটা commit হওয়া পর্যন্ত অপেক্ষা করে নতুন মানের উপর কাজ করে, তাই দুটো বিক্রিতে ১০ → ৮। stock > 0 শর্ত ঋণাত্মক হওয়াও আটকায়।",
+      "whyWrong": {
+        "0": "READ ONLY transaction-এ UPDATE করাই যাবে না।",
+        "2": "পরে যাচাই করলে হারানো update ফেরত আসে না, শুধু দেরিতে টের পাওয়া যায়।",
+        "3": "Index খোঁজা দ্রুত করে, concurrency-র নির্ভুলতা দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q32",
+      "difficulty": "medium",
+      "question": "Session A: BEGIN; SELECT stock FROM products WHERE id = 4 FOR UPDATE; (commit করেনি)। এখন Session B একই row-এ SELECT ... FOR UPDATE চালাল। কী হবে?",
+      "options": [
+        "B-র SELECT অপেক্ষা করবে, A commit বা rollback করলে তবে মান পাবে",
+        "B সাথে সাথে error পাবে যে row lock করা",
+        "B পুরনো মান সাথে সাথে পেয়ে যাবে, কারণ read কখনো আটকায় না",
+        "Database A-র transaction বাতিল করে B-কে আগে দেবে, কারণ B নতুন request"
+      ],
+      "correctIndex": 0,
+      "explanation": "FOR UPDATE row-টা lock করে। আরেকজন একই row FOR UPDATE চাইলে প্রথম lock ছাড়া পর্যন্ত অপেক্ষা করে। A commit করলে B নতুন মান (যেমন ৯) দেখে, ফলে lost update হয় না।",
+      "whyWrong": {
+        "1": "Default আচরণ অপেক্ষা করা; সাথে সাথে error চাইলে NOWAIT দিতে হয়।",
+        "2": "সাধারণ SELECT আটকায় না (MVCC), কিন্তু FOR UPDATE lock চায়, তাই আটকায়।",
+        "3": "Database lock-এর লাইনে আগে আসা transaction বাতিল করে না; deadlock হলেই কেবল একটা বাতিল হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q33",
+      "difficulty": "medium",
+      "question": "Database data file-এ সরাসরি না লিখে আগে WAL-এ লেখে। লেখার গতির দিক থেকে এর একটা বড় লাভ কী?",
+      "options": [
+        "WAL memory-তে থাকে, তাই disk-এ লেখাই লাগে না",
+        "WAL থাকলে COMMIT-এ fsync লাগে না, তাই disk-এর গতি যাই হোক commit সবসময় তাৎক্ষণিক",
+        "WAL-এ data compress হয়ে থাকে বলে data file আর লাগে না",
+        "WAL-এ শুধু শেষে যোগ হয় (sequential); ছড়ানো page-এর random write পরে একসাথে হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "একটা transaction নানা জায়গার page বদলায়; প্রতিটা সাথে সাথে data file-এ লিখলে random write। WAL-এ শুধু শেষে যোগ হয় (sequential), আর COMMIT-এ শুধু সেটাই flush করতে হয়। Dirty page পরে checkpoint-এ, একাধিক বদল একসাথে, লেখা হয়।",
+      "whyWrong": {
+        "0": "WAL disk-এ থাকে; COMMIT-এ fsync হয় বলেই durability আসে।",
+        "1": "উল্টো: COMMIT-এ WAL fsync হয়, এটাই durability-র ভিত্তি।",
+        "2": "WAL data file-এর বদলি না; data file পরে হালনাগাদ হয়, আর WAL পুরনো অংশ recycle হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q34",
+      "difficulty": "medium",
+      "question": "নিচের কোন data সবচেয়ে কম যুক্তিসঙ্গতভাবে relational database ছেড়ে অন্য কোথাও যায়?",
+      "options": [
+        "Login session, যেটা প্রতি request-এ key দিয়ে পড়া হয়",
+        "সব order-এর দুই বছরের analytics report",
+        "Wallet-এর balance আর transfer, যেখানে debit-credit একসাথে হতে হবে",
+        "লাখো device থেকে প্রতি সেকেন্ডে আসা sensor reading, যা শুধু সময় অনুযায়ী পড়া হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Balance আর transfer-এ সম্পর্ক আছে আর ACID transaction অপরিহার্য; এটা relational database-এর সবচেয়ে শক্ত জায়গা। বাকিগুলো প্রায়ই বিশেষ জায়গায় যায়: session Redis-এ, analytics warehouse-এ, sensor data wide-column বা time-series database-এ।",
+      "whyWrong": {
+        "0": "Session প্রায়ই Redis-এর মতো key-value store-এ যায়, দ্রুত আর expiry সহ।",
+        "1": "বড় analytics প্রায়ই OLTP database থেকে আলাদা warehouse-এ যায়।",
+        "3": "বিশাল write-এর sensor data প্রায়ই wide-column বা time-series database-এ যায়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q35",
+      "difficulty": "medium",
+      "question": "রাত ১২টায় একজন analyst production-এর primary database-এ দুই বছরের order-এর উপর বিশাল GROUP BY query চালাল, তখন checkout ধীর হয়ে গেল। সবচেয়ে উপযুক্ত দীর্ঘমেয়াদি সমাধান কোনটা?",
+      "options": [
+        "Checkout-এর query-গুলোতে LIMIT 1 যোগ করা",
+        "Analytics query replica বা আলাদা warehouse-এ সরানো (OLTP আর OLAP আলাদা)",
+        "Primary database-এর max_connections আর pool size দ্বিগুণ করা, যাতে দুই ধরনের query-ই জায়গা পায়",
+        "Order table থেকে foreign key সরিয়ে দেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "বড় OLAP query disk, CPU আর buffer cache দখল করে দৈনন্দিন OLTP কাজকে ধীর করে। বিশ্লেষণ আলাদা জায়গায় (read replica, বা বড় হলে data warehouse) সরালে দুই কাজ একে অপরকে বিরক্ত করে না।",
+      "whyWrong": {
+        "0": "Checkout-এর query ছোটই; সমস্যা পাশের বড় query-র resource দখল।",
+        "2": "আরও connection মানে আরও একসাথে কাজ, একই CPU আর disk-এ; সমস্যা বাড়তে পারে।",
+        "3": "FK সরালে data-র নিরাপত্তা যায়, বড় query-র খরচ কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q36",
+      "difficulty": "medium",
+      "question": "Checkout-এর transaction-এর ভেতরে (BEGIN আর COMMIT-এর মাঝে) payment gateway-কে HTTP call করা হয়, যেটা কখনো কখনো ৩ সেকেন্ড নেয়। এর সবচেয়ে বড় ঝুঁকি কী?",
+      "options": [
+        "Row lock আর pool-এর connection পুরো ৩ সেকেন্ড আটকে থাকে, ভিড়ে pool শেষ হয়ে সবকিছু ধীর হয়",
+        "HTTP call transaction-এর ভেতরে থাকলে database rollback করলে payment gateway-এর charge-ও নিজে থেকে rollback হয়ে যায়",
+        "PostgreSQL transaction-এর ভেতরে network call চালাতে দেয় না",
+        "এতে durability নষ্ট হয়, কারণ COMMIT দেরিতে হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Transaction খোলা থাকা পর্যন্ত তার নেওয়া row lock আর connection আটকে থাকে। প্রতিটা checkout ৩ সেকেন্ড connection ধরে রাখলে Little's Law-এর W বিশাল, অল্প ভিড়েই pool শেষ, আর একই row-এর অন্যরা lock-এর লাইনে। বাইরের call transaction-এর বাইরে রাখতে হয়।",
+      "whyWrong": {
+        "1": "Database rollback করলে বাইরের service-এর কাজ ফেরত যায় না; এটাই আসলে আরেকটা বিপদ।",
+        "2": "HTTP call app করে, database না; database জানেই না app কী করছে।",
+        "3": "দেরিতে commit হলেও commit-এর পরে durability একই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-010-q37",
+      "difficulty": "medium",
+      "question": "Signup-এর code: 'আগে SELECT করে দেখো phone আছে কিনা, না থাকলে INSERT'। phone column-এ UNIQUE constraint নেই। দুটো একই phone-এর signup একসাথে এলে কী ঘটতে পারে?",
+      "options": [
+        "প্রথম INSERT-এর transaction দ্বিতীয়টাকে deadlock-এ ফেলে বাতিল করবে",
+        "দ্বিতীয় SELECT প্রথম INSERT-এর জন্য নিজে থেকে অপেক্ষা করবে, তাই duplicate হবে না",
+        "Database phone column-এ নিজে থেকে UNIQUE ধরে নিয়ে দ্বিতীয়টা আটকাবে",
+        "দুটো request-ই 'নেই' দেখবে আর দুজনেই INSERT করবে, ফলে duplicate phone"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটো SELECT প্রায় একসাথে চলে, কেউ এখনো INSERT করেনি, তাই দুজনেই 'নেই' দেখে। তারপর দুজনেই INSERT করে। UNIQUE constraint থাকলে দ্বিতীয় INSERT error পেত, যত একসাথেই আসুক; app-এর check একা এটা নিশ্চিত করতে পারে না।",
+      "whyWrong": {
+        "0": "এখানে কেউ কারো lock-এর অপেক্ষায় নেই, তাই deadlock-ও না; দুটোই সফল হয়।",
+        "1": "সাধারণ SELECT অন্যের uncommitted INSERT-এর জন্য অপেক্ষা করে না।",
+        "2": "Constraint ঘোষণা না করলে database কোনো নিয়ম ধরে নেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q38",
+      "difficulty": "medium",
+      "question": "নতুন একটা খাবার delivery startup। Order, payment, restaurant আর rider-এর মধ্যে সম্পর্ক আছে; refund-এ টাকার হিসাব নির্ভুল হতে হবে; শুরুতে দিনে কয়েক হাজার order। প্রথম database হিসেবে সবচেয়ে যুক্তিসঙ্গত কোনটা?",
+      "options": [
+        "Cassandra, কারণ ভবিষ্যতে কোটি order হলে লাগবে",
+        "শুধু Redis, কারণ সবচেয়ে দ্রুত",
+        "একটা relational database (যেমন PostgreSQL), দরকার হলে পাশে cache",
+        "Neo4j, কারণ order, restaurant আর rider সবাই একে অপরের সাথে সম্পর্কে যুক্ত"
+      ],
+      "correctIndex": 2,
+      "explanation": "Data সম্পর্কে ভরা, টাকার হিসাবে ACID transaction লাগবে, আর scale এখনো সাধারণ। Relational database এই প্রশ্নগুলোর উত্তরে মেলে। ভবিষ্যতের অনুমিত scale-এর জন্য আজ জটিলতা কেনা ঠিক না; মেপে দেখে পরে বিশেষ database।",
+      "whyWrong": {
+        "0": "বিশাল write-এর জন্য বানানো, কিন্তু JOIN আর নমনীয় query দুর্বল; আজকের চাহিদার সাথে মেলে না।",
+        "1": "Redis-এর data মূলত memory-তে; জটিল query আর সম্পর্ক রাখার জন্য প্রধান database হিসেবে উপযুক্ত না।",
+        "3": "সম্পর্ক থাকলেই graph database লাগে না; এখানে অনেক ধাপের সম্পর্ক খোঁজা মূল কাজ না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q39",
+      "difficulty": "medium",
+      "question": "lab-এ customer 999-এর order insert FK error-এ ব্যর্থ হয়েছিল। পরের সফল insert-এর id এলো ৬, ৫ না। কেন?",
+      "options": [
+        "PostgreSQL প্রতিবার id দুই করে বাড়ায়",
+        "ব্যর্থ insert-ও sequence থেকে ৫ নিয়েছিল; sequence-এর নম্বর rollback-এ ফেরে না",
+        "Crash recovery-র সময় id ৫ মুছে গেছে",
+        "FK error-এর পরে PostgreSQL table-এর id গণনা নতুন করে শুরু করেছে, আর ৫ সংরক্ষিত রেখেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "SERIAL column-এর মান আসে sequence-এর nextval() থেকে, যেটা insert-এর শুরুতেই নেওয়া হয়। PostgreSQL-এ sequence-এর নম্বর কখনো rollback হয় না, যাতে অনেকে একসাথে নম্বর নিতে পারে। তাই ব্যর্থ বা rollback হওয়া insert id-তে ফাঁক রেখে যায়।",
+      "whyWrong": {
+        "0": "Default increment ১; ফাঁকটা ব্যর্থ insert-এর জন্য।",
+        "2": "Recovery committed row মোছে না; id ৫-এর কোনো row কখনো commit-ই হয়নি।",
+        "3": "Error-এ table বদলায় না; শুধু statement বাতিল হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q40",
+      "difficulty": "medium",
+      "question": "PostgreSQL client-কে 'COMMIT OK' পাঠানোর ঠিক আগে (default setting-এ) কোন কাজটা অবশ্যই শেষ হয়?",
+      "options": [
+        "Transaction-এর commit record সহ WAL disk-এ fsync হয়",
+        "Transaction-এর বদলানো সব data page data file-এ লেখা হয়",
+        "সব replica-তে transaction-টা পৌঁছে যায়",
+        "একটা checkpoint সম্পূর্ণ হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Default-এ (synchronous_commit = on) COMMIT-এর জন্য commit record পর্যন্ত WAL disk-এ flush হওয়াই যথেষ্ট। Data page পরে checkpoint বা background writer লেখে। Crash হলে WAL replay করে বদলগুলো ফেরত আসে।",
+      "whyWrong": {
+        "1": "Data page পরে লেখা হয়; প্রতিটা commit-এ সব page লিখলে খুব ধীর হতো।",
+        "2": "Replica-র জন্য অপেক্ষা আলাদা setting (synchronous replication); default-এ না।",
+        "3": "Checkpoint নিয়মিত বিরতিতে হয়, প্রতিটা commit-এ না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q41",
+      "difficulty": "hard",
+      "question": "একটা transfer COMMIT হলো, client OK পেল। ১ সেকেন্ড পরে বিদ্যুৎ গেল; তখনো কোনো checkpoint হয়নি, তাই data file-এ পুরনো balance। Restart-এর পরে PostgreSQL কী করবে?",
+      "options": [
+        "Data file-ই আসল, তাই পুরনো balance দেখাবে আর transfer হারিয়ে যাবে",
+        "Transfer-টা আবার client-এর কাছ থেকে চেয়ে নেবে, কারণ client OK পেয়েছিল",
+        "Data file আর WAL-এ অমিল দেখে database read-only হয়ে যাবে, admin-কে হাতে মেলাতে হবে",
+        "শেষ checkpoint থেকে WAL replay করবে, ফলে data file-এ transfer-এর বদল ফিরে আসবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "COMMIT OK-এর আগে commit record সহ WAL disk-এ fsync হয়েছিল। Restart-এ crash recovery শেষ checkpoint-এর redo point থেকে WAL পড়ে প্রতিটা বদল আবার প্রয়োগ করে, তাই data file committed অবস্থায় পৌঁছায়। এটাই durability-র কৌশল।",
+      "whyWrong": {
+        "0": "Durability-র মানেই হলো commit হওয়া data crash-এ হারায় না; WAL সেটা নিশ্চিত করে।",
+        "1": "Database client-এর কাছে কিছু চায় না; দরকারি সব তথ্য WAL-এই আছে।",
+        "2": "এই অমিল স্বাভাবিক, আর recovery নিজে থেকেই মেলায়; কোনো হাতের কাজ লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q42",
+      "difficulty": "hard",
+      "question": "একটা transaction দুটো UPDATE করল, COMMIT-এর আগে crash হলো। এর মধ্যে একটা dirty page (একটা UPDATE-এর বদল সহ) data file-এ লেখাও হয়ে গিয়েছিল। Restart-এর পরে PostgreSQL-এ সেই row কী দেখাবে?",
+      "options": [
+        "অর্ধেক অবস্থা: যে UPDATE-এর page লেখা হয়েছে সেটা থাকবে, অন্যটা না",
+        "নতুন মান, কারণ page data file-এ লেখা হয়ে গেছে আর recovery data file-কেই চূড়ান্ত ধরে",
+        "পুরনো মান, কারণ transaction-এর commit record নেই বলে MVCC-তে নতুন version অদৃশ্য",
+        "Database ঐ table-টা corrupt ঘোষণা করে বন্ধ করে দেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "PostgreSQL-এ UPDATE নতুন row version লেখে, যেটায় transaction id থাকে। Transaction commit না হলে সেই id 'aborted' গণ্য হয়, তাই নতুন version কেউ দেখে না আর পুরনো version দৃশ্যমান থাকে। এজন্য PostgreSQL-এ আলাদা undo ধাপ লাগে না; InnoDB একই কাজ undo log দিয়ে করে।",
+      "whyWrong": {
+        "0": "Atomicity-র কারণে transaction-এর কোনো অংশই দৃশ্যমান হয় না।",
+        "1": "Page disk-এ যাওয়া মানেই commit না; দৃশ্যমানতা ঠিক হয় transaction-এর অবস্থা দিয়ে।",
+        "3": "Uncommitted বদল disk-এ থাকা স্বাভাবিক ঘটনা, recovery এটা সামলায়; corruption না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q43",
+      "difficulty": "hard",
+      "question": "গতি বাড়াতে একজন PostgreSQL-এ synchronous_commit = off দিল। Crash হলে সবচেয়ে সঠিক ফল কোনটা?",
+      "options": [
+        "Database-এর data file corrupt হয়ে যেতে পারে, তখন শেষ backup থেকে ফিরতে হবে",
+        "শেষ অল্প সময়ের কিছু commit হারাতে পারে, কিন্তু database consistent থাকবে",
+        "শুধু uncommitted transaction হারাবে, যেটা সবসময়ই হয়",
+        "কিছুই হারাবে না, কারণ WAL তো আছেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "synchronous_commit = off-এ client WAL flush-এর আগেই OK পায়। Crash-এ সেই শেষ অল্প কিছু commit (docs অনুযায়ী wal_writer_delay-এর তিন গুণ পর্যন্ত সময়ের) হারাতে পারে, তবে database-এর গঠন ঠিক থাকে, কোনো অর্ধেক transaction থাকে না। fsync = off-এর সাথে এর বড় পার্থক্য এখানেই।",
+      "whyWrong": {
+        "0": "Corruption-এর ঝুঁকি fsync = off-এ; synchronous_commit = off শুধু শেষ কয়েকটা commit হারানোর ঝুঁকি আনে।",
+        "2": "এখানে client OK পেয়েছিল এমন committed transaction-ও হারাতে পারে; সেটাই নতুন ঝুঁকি।",
+        "3": "WAL লেখা হয়, কিন্তু disk-এ flush হওয়ার আগেই OK দেওয়া হয়, তাই শেষ অংশ হারাতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-010-q44",
+      "difficulty": "hard",
+      "question": "MySQL InnoDB-তে innodb_flush_log_at_trx_commit = 2 দেওয়া। Database process (mysqld) crash করল, কিন্তু OS আর machine ঠিক আছে। পরে পুরো machine-এর বিদ্যুৎ গেলে কী আলাদা?",
+      "options": [
+        "Process crash-এ OS cache-এর log টিকে যায়; বিদ্যুৎ গেলে শেষ ~১ সেকেন্ড হারাতে পারে",
+        "দুই ক্ষেত্রেই কিছু হারাবে না",
+        "দুই ক্ষেত্রেই শেষ প্রায় এক সেকেন্ডের commit হারাবে",
+        "mysqld crash-এ বেশি হারাবে, কারণ তখন InnoDB-র buffer pool আর OS cache দুটোই মুছে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Setting 2-তে প্রতি commit-এ log OS-এ write হয় কিন্তু disk-এ flush হয় মোটামুটি প্রতি সেকেন্ডে। শুধু database process মরলে OS-এর file cache-এ log থেকে যায়, পরে disk-এ যায়। OS বা বিদ্যুৎ গেলে সেই flush-না-হওয়া অংশ হারায়।",
+      "whyWrong": {
+        "1": "বিদ্যুৎ গেলে OS cache-এর flush-না-হওয়া log হারায়।",
+        "2": "Process crash-এ OS cache টিকে থাকে, তাই সেখানে সাধারণত হারায় না।",
+        "3": "Buffer pool-এর বদল redo log থেকে ফিরে আসে; কী হারাবে তা নির্ভর করে log disk-এ গেছে কিনা।"
+      }
+    },
+    {
+      "id": "sd-day-010-q45",
+      "difficulty": "hard",
+      "question": "Database page ৮KB, কিন্তু disk একবারে ৪KB atomic-ভাবে লেখে। Page লেখার মাঝপথে বিদ্যুৎ গেলে page-টা অর্ধেক নতুন, অর্ধেক পুরনো থাকতে পারে। PostgreSQL এর বিরুদ্ধে কী করে?",
+      "options": [
+        "Recovery-র সময় প্রতিটা page দুবার পড়ে checksum মিলিয়ে দেখে, অমিল হলে পুরনোটা রাখে",
+        "Page size ৪KB-তে নামিয়ে আনে যখনই disk ৪KB লেখে",
+        "এমন অবস্থা হলে replica থেকে page কপি করে আনে",
+        "Checkpoint-এর পরে প্রথম বদলে পুরো page-এর ছবি WAL-এ রাখে (full_page_writes)"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা torn page সমস্যা। full_page_writes চালু থাকলে checkpoint-এর পরে প্রথম বদলে পুরো page WAL-এ যায়, তাই recovery-তে ভাঙা page-এর জায়গায় পুরো ছবি বসিয়ে তারপর পরের বদলগুলো প্রয়োগ করা যায়। InnoDB একই কাজ doublewrite buffer দিয়ে করে।",
+      "whyWrong": {
+        "0": "শুধু মিলিয়ে দেখলে ভাঙা page ঠিক হয় না; ঠিক করার মতো পূর্ণ কপি লাগে।",
+        "1": "Page size compile-time-এ ঠিক হয়, চলতি অবস্থায় বদলায় না।",
+        "2": "Replica থাকুক বা না থাকুক, single server-কেই নিজে recover করতে পারতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q46",
+      "difficulty": "hard",
+      "question": "একজন বলছে: 'আমাদের PostgreSQL ACID, তাই async read replica থেকেও সবসময় সর্বশেষ balance পড়ব।' মূল ভুলটা কোথায়?",
+      "options": [
+        "Async replica-তে transaction-ই চলে না, তাই ACID নেই",
+        "ACID শুধু read replica-তে প্রযোজ্য, primary-তে না",
+        "ACID-এর C মানে নিয়ম ঠিক থাকা; replica-রা এক কপির মতো চলবে (CAP-এর C), তা না",
+        "ACID-এর Durability commit-কে replica-তে পৌঁছানো পর্যন্ত নিশ্চিত করে, তাই কথাটা ঠিক"
+      ],
+      "correctIndex": 2,
+      "explanation": "ACID একটা database-এর ভেতরে transaction-এর প্রতিশ্রুতি: সব-বা-কিছুই-না, নিয়ম, isolation, durability। Async replication-এ replica primary-র WAL কিছুটা পরে পায়, তাই replica থেকে পড়লে পুরনো মান আসতে পারে। এটা CAP অর্থে inconsistency, ACID-এর C না।",
+      "whyWrong": {
+        "0": "Replica-তেও read transaction চলে; সমস্যা হলো সে পিছিয়ে থাকতে পারে।",
+        "1": "উল্টো: ACID transaction primary-তে হয়; replica শুধু পরে প্রয়োগ করে।",
+        "3": "Durability primary-র disk-এ স্থায়িত্ব; replica-তে পৌঁছানো তার অংশ না (async-এ)।"
+      }
+    },
+    {
+      "id": "sd-day-010-q47",
+      "difficulty": "hard",
+      "question": "Transfer-এর code debit ৫০০ আর credit ৫৫০ লিখল (bug), দুটো UPDATE একই transaction-এ, কোনো constraint ভাঙেনি। Database কী করবে?",
+      "options": [
+        "মোট টাকা মিলছে না দেখে transaction rollback করবে",
+        "স্বাভাবিকভাবে commit করবে, কারণ 'মোট টাকা একই' নিয়মটা database জানে না",
+        "Isolation level SERIALIZABLE হলে database এই ভুল হিসাব ধরে transaction বাতিল করবে",
+        "Consistency-র কারণে credit-কে ৫০০-তে নামিয়ে আনবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Database শুধু সেই নিয়ম পাহারা দেয়, যেগুলো ঘোষণা করা হয়েছে (CHECK, UNIQUE, FK)। 'Transfer-এ মোট টাকা একই থাকবে' application-এর নিয়ম; সঠিক transaction লেখা app-এর দায়। তাই ACID-এর C-র একটা বড় অংশ আসলে application-এর।",
+      "whyWrong": {
+        "0": "Database মোট টাকার হিসাব রাখে না, যদি না আপনি নিজে কোনো নিয়ম বা trigger বানান।",
+        "2": "Serializable concurrency-র anomaly ঠেকায়; একা চলা ভুল হিসাব ধরে না।",
+        "3": "Database নিজে মান বদলায় না; নিয়ম ভাঙলে শুধু আটকায়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q48",
+      "difficulty": "hard",
+      "question": "PostgreSQL REPEATABLE READ-এ দুটো transaction একই row পড়ে, তারপর দুজনেই UPDATE stock = 9 করে। প্রথমটা commit করার পরে দ্বিতীয়টার UPDATE-এ কী হয়?",
+      "options": [
+        "দ্বিতীয়টা serialization error পায় ('could not serialize access'), retry লাগে",
+        "দ্বিতীয়টা চুপচাপ ৯ লিখে commit করে, ঠিক Read Committed-এর মতো lost update হয়",
+        "দ্বিতীয়টা নিজে থেকে stock = 8 লেখে",
+        "প্রথম transaction-এর commit বাতিল হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "PostgreSQL-এর Repeatable Read-এ একটা transaction যে row বদলাতে চায়, সেটা তার snapshot-এর পরে অন্য কেউ বদলে commit করে থাকলে UPDATE serialization error দেয়। App-কে পুরো transaction retry করতে হয়, তখন নতুন মান দেখে। Read Committed-এ এই error আসে না, তাই সেখানে read-modify-write-এ lost update হয়।",
+      "whyWrong": {
+        "1": "এটা Read Committed-এর আচরণ; Repeatable Read এই অবস্থা ধরে error দেয়।",
+        "2": "Database app-এর হিসাব নিজে আবার করে না; app ৯ লিখতে বলেছিল।",
+        "3": "আগে commit হওয়া transaction কখনো বাতিল হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q49",
+      "difficulty": "hard",
+      "question": "রহিম → করিম আর করিম → রহিম transfer একসাথে চলছে। প্রথমটা রহিমের row lock করে করিমেরটার অপেক্ষায়, দ্বিতীয়টা করিমেরটা lock করে রহিমেরটার অপেক্ষায়। কী ঘটবে আর কিভাবে প্রতিরোধ করবেন?",
+      "options": [
+        "দুটোই চিরকাল আটকে থাকবে, যতক্ষণ না কেউ হাতে বাতিল করে; প্রতিরোধে lock timeout বাড়ান",
+        "দুটোই সফল হবে কারণ MVCC-তে write কখনো আটকায় না",
+        "দ্বিতীয় transaction-টা প্রথমটার lock ভেঙে এগিয়ে যাবে; প্রতিরোধে FOR UPDATE বাদ দিন",
+        "Database একটাকে 'deadlock detected' দিয়ে বাতিল করে; প্রতিরোধে একই ক্রমে lock নিন"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা deadlock: দুজনেই একে অপরের ধরা lock-এর অপেক্ষায়। PostgreSQL কিছুক্ষণ পরে এটা ধরে একটা transaction-কে error দিয়ে বাতিল করে, অন্যটা এগোয়; app-কে বাতিলটা retry করতে হয়। সব transaction একই ক্রমে lock নিলে চক্রই তৈরি হয় না।",
+      "whyWrong": {
+        "0": "Database deadlock ধরে ফেলে; timeout বাড়ালে শুধু বেশিক্ষণ আটকে থাকবে।",
+        "1": "MVCC-তে read write-কে আটকায় না, কিন্তু একই row-এ দুটো write আটকায়।",
+        "2": "কেউ অন্যের lock ভাঙে না; একটা transaction বাতিল হয়।"
+      }
+    },
+    {
+      "id": "sd-day-010-q50",
+      "difficulty": "hard",
+      "question": "Team pool size ২০ থেকে ২০০ করল, database server-এ ৮টা core। Load test-এ throughput প্রায় একই, কিন্তু p99 latency বেড়ে গেল। সবচেয়ে সম্ভাব্য ব্যাখ্যা কী?",
+      "options": [
+        "২০০ connection-এর জন্য network bandwidth কম পড়ছে",
+        "Pool বড় হলে driver প্রতিটা query দুবার পাঠায়",
+        "৮ core-এ অনেক query একসাথে: context switch আর lock-এর প্রতিযোগিতা বেড়েছে",
+        "max_connections ২০০ হওয়ায় PostgreSQL প্রতিটা query-কে ধীর mode-এ চালায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Database একসাথে কতটা কাজ করতে পারে তা core আর disk ঠিক করে। ২০০টা একসাথে ঢুকলে তারা সময় ভাগাভাগি করে, lock-এর লাইন লম্বা হয়, প্রতিটার memory লাগে; মোট কাজ একই, কিন্তু প্রতিটা query-র সময় বাড়ে। ছোট pool-এ অপেক্ষা app-এ হয়, যেটা সস্তা।",
+      "whyWrong": {
+        "0": "এই আকারের query-তে bandwidth সাধারণত সীমা না; সমস্যাটা CPU আর contention-এর।",
+        "1": "Pool-এর আকার query কয়বার যাবে তা বদলায় না।",
+        "3": "PostgreSQL-এর এমন কোনো 'ধীর mode' নেই।"
+      }
+    },
+    {
+      "id": "sd-day-010-q51",
+      "difficulty": "hard",
+      "question": "একটা API-র p99-এ প্রতিটা request connection ধরে রাখে ২০ms, গড়ে ৫ms। Peak-এ ১,০০০ request/s। pool-এর আকার ঠিক করতে কোন হিসাব বেশি নিরাপদ?",
+      "options": [
+        "১,০০০ × ০.০০৫ = ৫, তাই ৫টা connection যথেষ্ট",
+        "১,০০০ × ০.০২০ = ২০, তাই গড় ৫ হলেও tail আর spike-এর জন্য ১৫-২৫-এর মতো রাখা",
+        "১,০০০টা, কারণ প্রতি সেকেন্ডের প্রতিটা request-এর একটা নিজস্ব connection লাগবে",
+        "২০০টা, কারণ ১,০০০ ÷ ৫ = ২০০"
+      ],
+      "correctIndex": 1,
+      "explanation": "Little's Law গড়ের জন্য: ১০০০ × ০.০০৫ = ৫টা গড়ে ব্যস্ত। কিন্তু ধীর request-গুলো জমলে মুহূর্তের চাহিদা বেশি হয়; p99-এর সময় ধরে হিসাব ১০০০ × ০.০২ = ২০ একটা ভালো উপরের সীমা। তাই কয়েকগুণ না, অল্প বাড়তি রেখে load test-এ যাচাই।",
+      "whyWrong": {
+        "0": "শুধু গড় দিয়ে হিসাব করলে tail-এর সময় pool-এ লম্বা অপেক্ষা হবে।",
+        "2": "একটা connection সেকেন্ডে অনেক request সামলায়; ১০০০টা database-কে ডুবিয়ে দেবে।",
+        "3": "ভাগ করে হিসাব Little's Law না; L = λ × W।"
+      }
+    },
+    {
+      "id": "sd-day-010-q52",
+      "difficulty": "hard",
+      "question": "একটা page ৩০০টা product দেখায়, প্রতিটার category আলাদা query-তে আনে। প্রতি query-র round trip ১ms আর execution ০.২ms। শুধু এই অংশে page কত সময় নেয়, আর batch করলে (২টা query) মোটামুটি কত?",
+      "options": [
+        "~৩৬০ms থেকে ~২.৪ms",
+        "~৬০ms থেকে ~০.৪ms",
+        "~৩০০ms থেকে ~৩০০ms, কারণ মোট কাজ একই",
+        "~১.২ms থেকে ~২.৪ms, কারণ batch-এ বেশি data আসে"
+      ],
+      "correctIndex": 0,
+      "explanation": "১ + ৩০০ = ৩০১টা query, প্রতিটা ~১.২ms, একটার পর একটা: ~৩৬০ms। Batch-এ ২টা query, ~২.৪ms (বড় IN list-এ execution একটু বাড়ে, কিন্তু round trip-এর খরচ প্রায় পুরোটা বাঁচে)। N+1-এ বেশিরভাগ সময় যায় যাতায়াতে, কাজে না।",
+      "whyWrong": {
+        "1": "এখানে শুধু execution (০.২ms) গোনা হয়েছে, round trip বাদ।",
+        "2": "Database-এর কাজ প্রায় একই হলেও round trip-এর সংখ্যা ৩০১ থেকে ২-এ নামে।",
+        "3": "এটা একটা query-র সময়; N+1-এ ৩০১টা query।"
+      }
+    },
+    {
+      "id": "sd-day-010-q53",
+      "difficulty": "hard",
+      "question": "orders (১০০টা) আর order_items (প্রতি order-এ গড়ে ৩টা item) JOIN করে report-এ SUM(orders.delivery_charge) দেখানো হলো। প্রতিটা order-এর delivery charge ৬০ টাকা। Report কত দেখাবে, আর কেন?",
+      "options": [
+        "৬,০০০ টাকা, কারণ ১০০টা order × ৬০",
+        "error দেবে, কারণ delivery_charge column order_items table-এ নেই, শুধু orders-এ আছে",
+        "১৮০ টাকা, কারণ SUM প্রতি item-এর জন্য একবার গোনে",
+        "১৮,০০০ টাকা: JOIN-এর পরে প্রতিটা order ৩ row-এ, charge তিনবার যোগ"
+      ],
+      "correctIndex": 3,
+      "explanation": "এক-থেকে-অনেক JOIN row বাড়ায়: প্রতিটা order তার প্রতিটা item-এর সাথে একটা করে row পায়, মোট ~৩০০ row। তারপর order-স্তরের column SUM করলে প্রতিটা order-এর charge তিনবার যোগ হয়, ১৮,০০০। ঠিক উত্তর পেতে আগে order-স্তরে হিসাব করুন বা subquery-তে item-এর যোগফল আলাদা করে আনুন।",
+      "whyWrong": {
+        "0": "এটা সঠিক উত্তর, কিন্তু এই query সেটা দেবে না; JOIN row তিন গুণ করেছে।",
+        "1": "JOIN-এর পরে দুই table-এর সব column পাওয়া যায়, তাই error আসে না।",
+        "2": "SUM সব row-এর মান যোগ করে; ১৮০ শুধু এক order-এর তিন row-এর যোগ।"
+      }
+    },
+    {
+      "id": "sd-day-010-q54",
+      "difficulty": "hard",
+      "question": "একজন ভুল করে production-এ DELETE FROM orders WHERE created_at < now(); চালিয়ে COMMIT করল। Database-এর durability এখানে কী করবে?",
+      "options": [
+        "Durability ভুল DELETE আটকে দেবে, কারণ data স্থায়ী থাকার কথা",
+        "Database restart করে crash recovery চালালেই মোছা row-গুলো WAL থেকে আবার ফিরে আসবে",
+        "DELETE-টা নিজেই durable হবে; ফেরাতে backup বা point-in-time recovery লাগবে",
+        "PostgreSQL ২৪ ঘণ্টা পর্যন্ত DELETE করা row রাখে, UNDO দিয়ে ফেরানো যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Durability মানে committed কাজ স্থায়ী, আর DELETE-ও একটা committed কাজ। Crash recovery committed অবস্থাতেই ফেরায়, তাই মোছা row ফেরে না। ফেরানোর উপায় backup, আর WAL archive থাকলে ভুলের ঠিক আগের মুহূর্তে point-in-time recovery।",
+      "whyWrong": {
+        "0": "Durability কোন কাজ ভালো বা খারাপ বিচার করে না; committed সবকিছুই রাখে।",
+        "1": "Recovery WAL replay করে committed অবস্থায় যায়, যেখানে DELETE-ও আছে।",
+        "3": "এমন কোনো সাধারণ UNDO নেই; ভুলে commit হওয়া কাজ ফেরাতে backup লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-010-q55",
+      "difficulty": "hard",
+      "question": "Primary database async replication-এ একটা replica-তে data পাঠায়। Primary একটা order commit করে client-কে OK দিল, তারপর machine সহ নষ্ট হলো; replica-কে নতুন primary করা হলো। ঐ order-এর কী হতে পারে?",
+      "options": [
+        "নিশ্চিতভাবে থাকবে, কারণ client OK পেয়েছিল",
+        "Replica-তে না পৌঁছে থাকলে order-টা হারাতে পারে",
+        "Replica নিজে থেকে client-এর কাছ থেকে order আবার চেয়ে নেবে",
+        "Primary-র WAL replica-তে আগে যায়, তারপর commit হয়, তাই হারাবে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Async replication-এ primary নিজের disk-এ WAL flush করেই OK দেয়, replica-র জন্য অপেক্ষা করে না। Primary পুরোপুরি হারালে replica-তে না পৌঁছানো শেষ কয়েকটা commit চলে যায়। এটা ঠেকাতে synchronous replication, যার দাম বাড়তি latency; Day 28-এ গভীরে।",
+      "whyWrong": {
+        "0": "OK শুধু primary-র নিজের durability নিশ্চিত করে, সেই disk-ই হারিয়ে গেছে।",
+        "2": "Database client-এর কাছে কিছু চায় না।",
+        "3": "এটা synchronous replication-এর আচরণ; async-এ primary অপেক্ষা করে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q56",
+      "difficulty": "hard",
+      "question": "App একটা transfer-এর COMMIT পাঠাল, কিন্তু উত্তর আসার আগেই network কেটে গেল। App জানে না commit হয়েছে কিনা। নিরাপদ পথ কোনটা?",
+      "options": [
+        "Unique idempotency key রাখুন; retry-তে আগে দেখুন সেই key-র transfer আছে কিনা",
+        "ধরে নিন হয়েছে, user-কে 'সফল' দেখান",
+        "উত্তর না আসায় ধরে নিন হয়নি, আর একই transfer আবার পাঠান",
+        "Database restart করুন, যাতে crash recovery চলে আর transfer-এর অবস্থা পরিষ্কার হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "COMMIT database-এ পৌঁছে সফল হতে পারে, শুধু উত্তর হারিয়েছে; আবার পাঠালে দুবার টাকা যেতে পারে। Idempotency key UNIQUE constraint সহ রাখলে retry নিরাপদ: key আগেই থাকলে দ্বিতীয় insert ব্যর্থ হয়, app বুঝে নেয় আগেরটা হয়েছিল। Day 4 আর Day 57-এর idempotency এখানেই কাজে লাগে।",
+      "whyWrong": {
+        "1": "Commit না-ও হয়ে থাকতে পারে; তখন user ভুল তথ্য পাবে।",
+        "2": "Commit হয়ে গিয়ে থাকলে এটা duplicate transfer বানাবে।",
+        "3": "Restart-এ committed অবস্থা ঠিকই থাকে, কিন্তু app-এর প্রশ্নের উত্তর তাতে আসে না; আর এটা অপ্রয়োজনীয় downtime।"
+      }
+    },
+    {
+      "id": "sd-day-010-q57",
+      "difficulty": "hard",
+      "question": "১০০টা app instance, প্রতিটার নিজস্ব ছোট pool (৫টা), মোট ৫০০ connection লাগবে, অথচ database ১০০-র বেশি সামলাতে কষ্ট পায়। PgBouncer-এর transaction pooling mode এখানে কিভাবে সাহায্য করে?",
+      "options": [
+        "প্রতিটা app connection-কে একটা নিজস্ব database connection স্থায়ীভাবে দেয়, শুধু দ্রুত খোলে",
+        "Query-গুলো একাধিক database-এ ভাগ করে (sharding), তাই প্রতিটায় কম connection",
+        "Query-র ফল cache করে, তাই database-এ কম query যায়",
+        "Server connection শুধু একটা transaction চলাকালীন একজন client-এর, শেষে অন্যজনের"
+      ],
+      "correctIndex": 3,
+      "explanation": "বেশিরভাগ app connection বেশিরভাগ সময় অলস থাকে। Transaction pooling-এ server connection শুধু transaction-এর সময়টুকু একজন client-এর, তারপর আরেকজনের। ফলে ৫০০ client connection মিলে হয়তো ৫০টা server connection-এ চলে। দাম: session-স্তরের কিছু feature (যেমন session-এ রাখা setting) এই mode-এ নির্ভরযোগ্য না।",
+      "whyWrong": {
+        "0": "এটা session pooling-এর কাছাকাছি; তাতে server connection-এর সংখ্যা কমে না।",
+        "1": "PgBouncer sharding করে না; একটা database-এর সামনে connection ভাগ করে।",
+        "2": "PgBouncer query-র ফল cache করে না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q58",
+      "difficulty": "hard",
+      "question": "একটা চ্যাট app-এ প্রতি সেকেন্ডে লাখো message লেখা হয়, পড়া হয় প্রায় সবসময় 'এই chat-এর সর্বশেষ ৫০টা message'। Data অনেক machine-এ ছড়াতে হবে। কোন data model আর design সবচেয়ে মানানসই?",
+      "options": [
+        "Relational database-এ একটা table, প্রতিটা read-এ সব message-কে সময় দিয়ে sort",
+        "Graph database: প্রতিটা message একটা node, আগের message-এর সাথে edge",
+        "Wide-column (যেমন Cassandra): partition key chat_id, ভেতরে সময়ে sorted",
+        "Key-value store-এ একটা key 'all_messages', যার value-তে সব message-এর list"
+      ],
+      "correctIndex": 2,
+      "explanation": "Access pattern পরিষ্কার: chat অনুযায়ী লেখা আর সর্বশেষগুলো পড়া। Wide-column model-এ chat_id-কে partition key করলে একটা chat-এর সব message এক partition-এ, সময় অনুযায়ী sorted, তাই 'শেষ ৫০টা' একটা ক্রমিক read। আর partition-গুলো অনেক machine-এ ছড়িয়ে write-ও ভাগ হয়।",
+      "whyWrong": {
+        "0": "এক machine-এ সব message, প্রতিবার sort করলে এই write আর data-র আকারে ভেঙে পড়বে (index দিলেও ছড়ানোর সমস্যা থাকে)।",
+        "1": "Message-এর মধ্যে সম্পর্ক ধরে হাঁটা মূল কাজ না; graph এখানে অপ্রয়োজনীয় খরচ।",
+        "3": "একটা key-তে সব message মানে একটা বিশাল value, প্রতিটা লেখায় পুরোটা বদলানো; scale হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-010-q59",
+      "difficulty": "hard",
+      "question": "একটা order history page ধীর। Log-এ দেখা গেল প্রতি request-এ ১টা order-এর তালিকা আর প্রতিটা order-এর জন্য আলাদা করে item আর customer আনা হয়। Developer প্রস্তাব দিল database server-এ CPU দ্বিগুণ করা। এর চেয়ে ভালো প্রথম পদক্ষেপ কোনটা?",
+      "options": [
+        "Pool size বাড়ানো, যাতে একটা request-এর সব query-গুলো একসাথে parallel-এ চলে যায়",
+        "N+1 ঠিক করা: JOIN বা IN/ANY দিয়ে batch করে query সংখ্যা ২-৩টায় নামানো",
+        "Database-কে Read Uncommitted-এ চালানো, যাতে lock কম লাগে",
+        "প্রতিটা query-র শেষে LIMIT 1 যোগ করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "সমস্যা query-র সংখ্যা আর round trip, database-এর CPU না। বড় machine দিলে প্রতিটা ছোট query সামান্য দ্রুত হবে, কিন্তু শত শত round trip-এর অপেক্ষা থেকেই যাবে। Batch বা JOIN করলে একই data কয়েকটা query-তে আসে, সবচেয়ে বড় লাভ।",
+      "whyWrong": {
+        "0": "একটা request-এর ভেতরের query-গুলো সাধারণত একটার পর একটা চলে; pool বাড়ালে সেটা বদলায় না, database-এ চাপ বাড়ে।",
+        "2": "PostgreSQL-এ Read Uncommitted আসলে Read Committed-এর মতোই চলে, আর এখানে lock সমস্যাই না।",
+        "3": "প্রতিটা query আগেই একটা row আনছে; সমস্যা query-র সংখ্যা।"
+      }
+    },
+    {
+      "id": "sd-day-010-q60",
+      "difficulty": "hard",
+      "question": "একজন বলছে, 'NoSQL মানে transaction নেই, তাই টাকার কাজে কখনো ব্যবহার করা যায় না।' কথাটার সবচেয়ে সঠিক মূল্যায়ন কোনটা?",
+      "options": [
+        "অতিসরল: MongoDB 4.0 থেকে multi-document ACID transaction দেয়; database অনুযায়ী আলাদা",
+        "পুরোপুরি ভুল, এখন সব NoSQL database relational database-এর মতো একই পূর্ণ ACID transaction দেয়",
+        "পুরোপুরি ঠিক, কোনো NoSQL database কখনো ACID transaction দেয় না",
+        "ঠিক, কারণ NoSQL-এ SQL নেই, আর transaction SQL ছাড়া সম্ভব না"
+      ],
+      "correctIndex": 0,
+      "explanation": "NoSQL একটা বড়, ভিন্ন ভিন্ন database-এর পরিবার। কিছুতে transaction সীমিত, কিছুতে পূর্ণ ACID আছে; MongoDB 4.0 থেকে replica set-এ multi-document transaction এনেছে। তাই সাধারণীকরণ না করে নির্দিষ্ট database-এর documented guarantee দেখতে হয়।",
+      "whyWrong": {
+        "1": "সব NoSQL একই রকম না; অনেকে সীমিত বা ভিন্ন guarantee দেয়।",
+        "2": "কিছু NoSQL database transaction দেয়, যেমন MongoDB।",
+        "3": "Transaction query ভাষার উপর নির্ভর করে না; API দিয়েও transaction চালানো যায়।"
+      }
+    }
+  ]
+}

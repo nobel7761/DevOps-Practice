@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-017",
+  "points": [
+    {
+      "term": "Cache Hit, Miss ও Hit Ratio",
+      "prompt": "Hit ratio কী, আর ৯০% থেকে ৯৯%-এ যাওয়া database-এর জন্য এত বড় ব্যাপার কেন?",
+      "answer": "Hit ratio = hit ÷ (hit + miss), অর্থাৎ কত শতাংশ read cache থেকেই মিটল। Database-এ যায় শুধু miss-গুলো, তাই ৯০% hit-এ ১০% read database-এ যায় আর ৯৯%-এ মাত্র ১%; database load দশ ভাগের এক ভাগ হয়ে যায়, গড় latency-ও কমে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "TTL",
+      "prompt": "TTL কী দুটো কাজ করে, আর ছোট বনাম বড় TTL-এর trade-off কী?",
+      "answer": "TTL হলো cache entry-র মেয়াদ: মেয়াদ শেষে cache নিজেই মুছে দেয়, তাই পুরনো data কতক্ষণ থাকতে পারে তার একটা উপরের সীমা থাকে আর অব্যবহৃত data memory ছেড়ে দেয়। ছোট TTL মানে তাজা data কিন্তু বেশি miss; বড় TTL মানে বেশি hit কিন্তু বেশিক্ষণ stale থাকার ঝুঁকি। Explicit invalidation থাকলেও TTL শেষ রক্ষাকবচ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Cache-aside",
+      "prompt": "Cache-aside-এ read আর write কিভাবে চলে, আর cache down হলে কী হয়?",
+      "answer": "Read-এ app আগে cache দেখে; miss হলে database থেকে পড়ে TTL সহ cache-এ রাখে। Write-এ আগে database-এ লেখে, তারপর cache থেকে key delete করে। Cache down হলে সব read database-এ যায়: system ধীর হয় কিন্তু সঠিক থাকে, যদি database সেই load নিতে পারে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Write-through বনাম Write-behind",
+      "prompt": "Write-through আর write-behind-এর পার্থক্য কী, আর write-behind কোথায় বিপজ্জনক?",
+      "answer": "Write-through-এ প্রতিটা write cache আর database দুটোতেই লেখা শেষ হলে তবে OK, তাই cache তাজা কিন্তু write ধীর। Write-behind-এ শুধু cache-এ লিখে সাথে সাথে OK, database-এ পরে batch-এ; দ্রুত, কিন্তু database-এ পৌঁছানোর আগে cache node মরলে write হারায়। তাই টাকা বা order-এর মতো data-তে write-behind চলে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Eviction Policy (LRU/LFU)",
+      "prompt": "LRU আর LFU কী, LRU কিভাবে O(1)-এ বানানো যায়, আর Redis-এর default policy cache-এর জন্য কেন বিপজ্জনক?",
+      "answer": "LRU সবচেয়ে বেশি সময় অব্যবহৃত key মোছে, LFU সবচেয়ে কম বার ব্যবহৃত key। LRU বানাতে hash map (key থেকে node) আর doubly linked list (ব্যবহারের ক্রম) লাগে, তাতে get, put, evict তিনটাই O(1); Redis নমুনা নিয়ে approximate LRU করে। Redis-এর default noeviction memory ভরলে কিছু মোছে না, নতুন write-এ OOM error দেয়, তাই cache-এ allkeys-lru বা allkeys-lfu দিতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Delete vs Update (Invalidation)",
+      "prompt": "Write-এর পরে cache-এ নতুন মান SET না করে DELETE করা হয় কেন, আর কোন ক্রমে?",
+      "answer": "দুটো concurrent write-এর SET cache-এ উল্টো ক্রমে পৌঁছালে database-এ নতুন আর cache-এ পুরনো মান থেকে যায়; delete idempotent, ক্রম যাই হোক ফল একই। ক্রম হলো আগে database-এ লেখা, তারপর delete; উল্টো করলে মাঝের ফাঁকে একটা read পুরনো মান এনে cache-এ বসিয়ে দিতে পারে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Update Race ও Delayed Double Delete",
+      "prompt": "Delete-on-write থাকলেও cache-এ পুরনো মান কিভাবে বসে যেতে পারে, আর কিভাবে সামলাবেন?",
+      "answer": "একটা ধীর reader miss পেয়ে database থেকে পুরনো মান পড়ল, তারপর writer database update আর delete শেষ করল, আর reader দেরিতে পুরনো মানটা SET করল। প্রতিকার: ছোট TTL, delayed double delete (কিছুক্ষণ পরে আবার delete), বা lease/version, যেখানে মাঝে delete হলে দেরিতে আসা SET প্রত্যাখ্যাত হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Cache Stampede",
+      "prompt": "Cache stampede কী, আর এর তিনটা প্রতিকার বলুন।",
+      "answer": "জনপ্রিয় key-র মেয়াদ শেষ হওয়ার মুহূর্তে অনেক request একসাথে miss পায় আর সবাই database-এ একই দামি query চালায়। প্রতিকার: per-key lock বা single flight (একজন আনে, বাকিরা অপেক্ষা করে), stale-while-revalidate (পুরনো মান দিতে দিতে পেছনে refresh), আর probabilistic early expiration (মেয়াদের আগেই এলোমেলোভাবে একজন refresh করে)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Cache Penetration",
+      "prompt": "Cache penetration কেন cache থাকা সত্ত্বেও database-কে আঘাত করে, আর কিভাবে আটকাবেন?",
+      "answer": "যে key database-এও নেই সেটা কখনো cache-এ ঢোকে না, তাই এমন id দিয়ে বারবার request (bug বা আক্রমণ) সবই database-এ যায়। প্রতিকার: 'নেই' উত্তরটাও ছোট TTL দিয়ে cache করা (negative caching), Bloom filter দিয়ে আগেই নিশ্চিত হওয়া যে id নেই, আর input যাচাই ও rate limiting।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Cache Avalanche ও TTL Jitter",
+      "prompt": "Cache avalanche কেন হয়, আর TTL jitter কিভাবে সাহায্য করে?",
+      "answer": "অনেক key একসাথে হারালে avalanche হয়: সবার একই TTL থাকায় একই মুহূর্তে মেয়াদ শেষ, বা cache cluster restart। TTL jitter মানে TTL-এ একটু এলোমেলো সময় যোগ করা, যাতে মেয়াদ সময়জুড়ে ছড়িয়ে যায়; cluster হারানোর জন্য replication, database-এর সামনে limit আর cache warming লাগে।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

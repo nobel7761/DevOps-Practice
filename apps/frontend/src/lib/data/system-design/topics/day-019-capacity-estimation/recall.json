@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-019",
+  "points": [
+    {
+      "term": "Order of Magnitude",
+      "prompt": "Napkin math-এর লক্ষ্য কেন নিখুঁত সংখ্যা না, order of magnitude? একটা উদাহরণ দিন।",
+      "answer": "Design-এর সিদ্ধান্ত বদলায় মাত্রায়: ১০০ QPS, ১০,০০০ QPS আর ১০ লাখ QPS তিনটা আলাদা architecture, কিন্তু ৯,২০০ আর ১১,৫০০ একই architecture। Assumption-গুলোই ±৫০% অনিশ্চিত, তাই এক-দুই digit-এ গোল করে ঠিক ঘরটা পাওয়াই যথেষ্ট।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "86,400 ≈ 10⁵",
+      "prompt": "দিনের request থেকে QPS মাথায় কিভাবে বের করবেন? দিনে ১০ লাখ request মানে সেকেন্ডে কত?",
+      "answer": "একদিনে ৮৬,৪০০ সেকেন্ড, মাথার হিসাবে 10⁵, তাই গড় QPS ≈ দিনের request ÷ 10⁵। দিনে ১০ লাখ request ≈ সেকেন্ডে ~১২টা। 10⁵ দিয়ে ভাগ করলে উত্তর ~১৪% কম আসে, তাই অন্য জায়গায় উপরের দিকে গোল করা ভালো।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Bit বনাম Byte",
+      "prompt": "Peak egress ১২০MB/s, link 1 Gbps। যথেষ্ট কি? কেন এই ভুলটা এত প্রচলিত?",
+      "answer": "Network-এর গতি bit-এ (Gbps), file-এর আকার byte-এ (MB), আর ১ byte = ৮ bit। ১২০MB/s = ৯৬০ Mbps, অর্থাৎ 1 Gbps link-এর ৯৬%, প্রায় শেষ সীমা। এককের এই ৮ গুণ পার্থক্য চোখে না পড়লে link বা bill দুটোই ভুল হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Peak Factor",
+      "prompt": "Peak factor কী, আর গড় দিয়ে design করলে কী হয়?",
+      "answer": "Peak factor হলো সবচেয়ে ভিড়ের সময়ের traffic গড়ের কত গুণ: সন্ধ্যায় ২-৩ গুণ, flash sale-এর প্রথম মিনিটে ১০ গুণ বা তার বেশি। গড় দেখে server গুনলে ঠিক সেই মুহূর্তে system ভাঙে যখন সবচেয়ে বেশি user আর বিক্রি, তাই design সবসময় peak-এর জন্য।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Estimation Pipeline",
+      "prompt": "একটা পুরো estimate কোন ছয় ধাপে করবেন, আর sanity check কী?",
+      "answer": "Assumption লেখা → traffic (গড় ও peak QPS, read/write) → storage (× index × replica) → bandwidth (× ৮ bit) → cache memory (hot set) → server (মাপা capacity, utilization, N+1)। প্রতিটা ধাপের পরে উল্টো দিক থেকে মেলানো হয়, যেমন বছরের storage ভাগ করে প্রতি transaction-এ কত byte দাঁড়াল তা যুক্তিসঙ্গত কিনা।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Measured Capacity ও Utilization",
+      "prompt": "এক server-এর capacity কোথা থেকে নেবেন, আর কেন তাকে ১০০%-এ চালাবেন না?",
+      "answer": "নিজের app-এ load test করে, সেই req/s যেখানে p99 এখনো লক্ষ্যের মধ্যে; CPU ১০০% আর কয়েক সেকেন্ড p99-এর সংখ্যা ভাঙনের বিন্দু। Queue-এর অঙ্কে R = S ÷ (1 − ρ), তাই ৯০% utilization-এ latency আসল কাজের ১০ গুণ; এজন্য ৬০-৭০% লক্ষ্য রেখে server = peak ÷ (capacity × utilization), তারপর N+1।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Little's Law",
+      "prompt": "L = λ × W দিয়ে connection pool বা WebSocket server কিভাবে গুনবেন?",
+      "answer": "একসাথে চলমান সংখ্যা = আসার হার × প্রতিটা কতক্ষণ থাকে। ২,০০০ query/s × ২০ms = গড়ে ৪০টা connection ব্যস্ত; প্রতি সেকেন্ডে ৫০টা নতুন session × ১,২০০ সেকেন্ড = ৬০,০০০ খোলা WebSocket। Downstream ধীর হলে W বাড়ে, আর thread বা connection ফুরিয়ে throughput ভেঙে পড়ে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Index Overhead ও Replication Factor",
+      "prompt": "Database-এর disk কিভাবে হিসাব করবেন? Raw data-র চেয়ে কত বড় হতে পারে?",
+      "answer": "Disk = row × row-এর আকার × (1 + index overhead) × replication factor ÷ লক্ষ্য ভরাট (~৭০%)। ১০০GB raw data, ১০০% index, ৩টা কপি আর ৭০% ভরাটে মোট ~৮৬০GB, প্রায় ৯ গুণ। Object storage-এ erasure coding (যেমন RS(6,3)) ৩ গুণের বদলে ১.৫ গুণে একই রকম টেকসই রাখে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Write Amplification",
+      "prompt": "Write amplification কী? একটা payment লেনদেন কেন কয়েক ডজন physical write?",
+      "answer": "একটা logical write disk-এ পৌঁছাতে অনেকগুলো physical write হয়: লেনদেনের ৪টা row, প্রতিটা ৩টা index-tree-তে, তারপর ৩টা replica-য় মিলিয়ে ~৩৬টা, WAL আর LSM compaction বাদেই। তাই ১,০০০ TPS cluster-এ ~৩৬,০০০ write/s, আর প্রতিটা নতুন index write-এর দাম বাড়ায়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Egress Cost",
+      "prompt": "View-heavy app-এ খরচের সবচেয়ে বড় অংশ কোনটা হয়, আর কিভাবে কমানো যায়?",
+      "answer": "বাইরে যাওয়া data (egress) সাধারণত GB প্রতি চার্জ হয়, আর short video app-এ একদিনের egress বছরের নতুন storage-এর চেয়েও বড় হতে পারে। CDN offload-এ origin egress = মোট × (1 − CDN hit), আর CDN চুক্তি, compression ও ছোট resolution খরচ কমায়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { domainName } from "@/lib/data/ccdv/blueprint";
-import { CHAPTERS, lessonContentId } from "@/lib/data/ccdv/schedule";
+import {
+  CHAPTERS,
+  chapterLabel,
+  lessonContentId,
+} from "@/lib/data/ccdv/schedule";
 import type { DomainId } from "@/lib/data/ccdv/types";
 
 export default function WeakAreas({ domains }: { domains: DomainId[] }) {
@@ -27,7 +31,7 @@ export default function WeakAreas({ domains }: { domains: DomainId[] }) {
                   className="underline"
                   href={`/ccdv/lesson/${lessonContentId(chapter.id, "lesson")}`}
                 >
-                  {chapter.id}
+                  {chapterLabel(chapter.id)}
                 </Link>
               </span>
             ),

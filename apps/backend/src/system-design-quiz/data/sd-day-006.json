@@ -1,0 +1,1055 @@
+{
+  "topicId": "sd-day-006",
+  "questions": [
+    {
+      "id": "sd-day-006-q01",
+      "difficulty": "easy",
+      "question": "Monitoring বলছে server-এর process সারা মাস একবারও বন্ধ হয়নি। কিন্তু একটা ভুল config-এর কারণে দুই ঘণ্টা ধরে সব user login করতে গিয়ে error পেয়েছে। Availability-র হিসাবে ওই দুই ঘণ্টা কী ধরা উচিত?",
+      "options": [
+        "Downtime, কারণ availability মাপা হয় user আসলে system ঠিকমতো ব্যবহার করতে পারল কিনা তা দিয়ে",
+        "Uptime, কারণ server-এর process একবারও বন্ধ হয়নি, তাই availability-তে কোনো কমতি হয়নি",
+        "অর্ধেক downtime, কারণ server চালু ছিল কিন্তু একটা feature বন্ধ, তাই দুইয়ের গড় নেওয়াই নিয়ম",
+        "Planned downtime, কারণ config বদলানো একটা ইচ্ছাকৃত কাজ, তাই হিসাবের বাইরে রাখা হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Availability-র মাপকাঠি user-এর অভিজ্ঞতা: user যা করতে চেয়েছে তা করতে পেরেছে কিনা। Process চালু থাকলেও login-এ error মানে user-এর কাছে system বন্ধ। তাই user-এর চোখে মাপা SLI (যেমন সফল request-এর হার) দিয়ে হিসাব করাই সঠিক।",
+      "whyWrong": {
+        "1": "Process-এর uptime আর user-এর দেখা availability এক জিনিস না; এখানেই পার্থক্যটা ধরা পড়ে।",
+        "2": "আংশিক বা গড় নেওয়ার কোনো নিয়ম নেই; ব্যর্থ request ব্যর্থই।",
+        "3": "Planned downtime মানে আগে থেকে ঘোষিত maintenance; ভুল config-এর ফল unplanned outage।"
+      }
+    },
+    {
+      "id": "sd-day-006-q02",
+      "difficulty": "easy",
+      "question": "এক মাসে আপনার API মোট 2,000,000 request পেয়েছে, যার মধ্যে 3,000টা 5xx error দিয়েছে। Request-ভিত্তিক availability কত?",
+      "options": ["98.5%", "99.7%", "99.85%", "99.985%"],
+      "correctIndex": 2,
+      "explanation": "Availability = সফল ÷ মোট = (2,000,000 − 3,000) ÷ 2,000,000 = 1,997,000 ÷ 2,000,000 = 0.9985 = 99.85%। Failure-এর হার 3,000 ÷ 2,000,000 = 0.15%।",
+      "whyWrong": {
+        "0": "এটা failure-এর হার 1.5% ধরে হিসাব, কিন্তু আসল হার 0.15%।",
+        "1": "এখানে failure দ্বিগুণ (0.3%) ধরা হয়েছে।",
+        "3": "এখানে failure 0.015% ধরা হয়েছে, দশমিক এক ঘর ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-006-q03",
+      "difficulty": "easy",
+      "question": "99.9% availability মানে এক বছরে মোটামুটি কত downtime গ্রহণযোগ্য?",
+      "options": [
+        "প্রায় 8.76 ঘণ্টা",
+        "প্রায় 87.6 ঘণ্টা",
+        "প্রায় 52.6 মিনিট",
+        "প্রায় 43.8 মিনিট"
+      ],
+      "correctIndex": 0,
+      "explanation": "বছরে 8,760 ঘণ্টা। Downtime = (1 − 0.999) × 8,760 = 0.001 × 8,760 = 8.76 ঘণ্টা। মাসে হিসাব করলে প্রায় 43.8 মিনিট।",
+      "whyWrong": {
+        "1": "87.6 ঘণ্টা (≈ 3.65 দিন) হলো 99%-এর বাৎসরিক downtime, 99.9%-এর দশ গুণ।",
+        "2": "52.6 মিনিট হলো 99.99%-এর বছরে downtime।",
+        "3": "43.8 মিনিট হলো 99.9%-এর মাসিক downtime, বাৎসরিক না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q04",
+      "difficulty": "easy",
+      "question": "আপনার SLO 99.99%। মাস হিসাবে (বছরের ১/১২) মোটামুটি কত downtime-এর জায়গা আছে?",
+      "options": [
+        "প্রায় 43.8 মিনিট",
+        "প্রায় 4.38 মিনিট",
+        "প্রায় 26 সেকেন্ড",
+        "প্রায় 52.6 মিনিট"
+      ],
+      "correctIndex": 1,
+      "explanation": "এক মাস ≈ 730 ঘণ্টা = 43,800 মিনিট। 0.0001 × 43,800 = 4.38 মিনিট। এজন্যই four nines-এ মানুষ alert পেয়ে সারানোর সময় পায় না, স্বয়ংক্রিয় failover লাগে।",
+      "whyWrong": {
+        "0": "43.8 মিনিট হলো 99.9%-এর মাসিক downtime।",
+        "2": "প্রায় 26 সেকেন্ড হলো 99.999%-এর মাসিক downtime।",
+        "3": "52.6 মিনিট হলো 99.99%-এর বছরে downtime, মাসে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q05",
+      "difficulty": "easy",
+      "question": "একটা managed, multi-AZ load balancer-এর পেছনে তিনটা app server আছে, কিন্তু database একটাই instance। এখানে single point of failure কোনটা?",
+      "options": [
+        "তিনটা app server, কারণ server সংখ্যায় বেশি হলে কোনো একটা পড়ার সম্ভাবনাও বেশি",
+        "Load balancer, কারণ request-এর পথে যেকোনো load balancer সবসময় একটা SPOF",
+        "App server আর database-এর মাঝের network, কারণ redundancy থাকলে শুধু network-ই ঝুঁকি",
+        "Database, কারণ সেটা একটাই instance আর সব app server তার উপর নির্ভর করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "SPOF হলো এমন অংশ যেটা একা পড়লেই সব বন্ধ। তিনটা app server-এর একটা পড়লে বাকিরা চালায়, load balancer নিজেই multi-AZ। কিন্তু একমাত্র database পড়লে কোনো app server কাজ করতে পারবে না।",
+      "whyWrong": {
+        "0": "বেশি কপি মানে কোনো একটা পড়ার সম্ভাবনা বাড়ে ঠিকই, কিন্তু একটা পড়লে বাকিরা চালায়, তাই সেটা SPOF না।",
+        "1": "এখানে load balancer managed আর multi-AZ, তাই নিজেই redundant।",
+        "2": "Network-ও ঝুঁকি হতে পারে, কিন্তু প্রশ্নের setup-এ স্পষ্ট একক অংশ হলো database।"
+      }
+    },
+    {
+      "id": "sd-day-006-q06",
+      "difficulty": "easy",
+      "question": "Database-এর একটা primary সব read/write নেয়, আর আরেকটা standby শুধু data কপি করে বসে থাকে; primary পড়লে standby দায়িত্ব নেয়। এটা কোন ধরনের redundancy?",
+      "options": [
+        "Active-active, কারণ দুটো copy-ই সবসময় চালু অবস্থায় আছে",
+        "Graceful degradation, কারণ primary পড়লে কম feature চালু থাকে",
+        "Sharding, কারণ data দুটো আলাদা machine-এ রাখা হয়েছে",
+        "Active-passive, কারণ একজন কাজ করে আর অন্যজন অপেক্ষায় থাকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Active-passive-এ শুধু একটা কপি traffic নেয়, অন্যটা standby হিসেবে প্রস্তুত থাকে আর failover-এ দায়িত্ব নেয়। Database primary-র মতো যেখানে লেখার মালিক একজনই হওয়া দরকার, সেখানে এটা খুব প্রচলিত।",
+      "whyWrong": {
+        "0": "চালু থাকা আর traffic নেওয়া আলাদা; active-active-এ দুটোই একসাথে traffic নেয়।",
+        "1": "Graceful degradation মানে feature কমিয়ে চলা; এটা redundancy-র ধরন না।",
+        "2": "Sharding-এ data ভাগ হয়, প্রতিটা machine-এ আলাদা অংশ; এখানে পুরো data-র কপি।"
+      }
+    },
+    {
+      "id": "sd-day-006-q07",
+      "difficulty": "easy",
+      "question": "দুটো app server load balancer-এর পেছনে একসাথে traffic নিচ্ছে; একটা পড়লে অন্যটা সব traffic নেয়। এই setup কাজ করার জন্য সবচেয়ে জরুরি শর্ত কোনটা?",
+      "options": [
+        "বাকি server-এর একাই পুরো ভার সামলানোর মতো বাড়তি capacity থাকতে হবে",
+        "দুটো server-কে একই rack-এ রাখতে হবে, যাতে তাদের মধ্যে latency কম থাকে",
+        "একটা server-কে সবসময় বন্ধ রাখতে হবে, যাতে দরকারে সেটা তাজা অবস্থায় চালু হয়",
+        "দুটো server-কে আলাদা database-এ লিখতে হবে, যাতে একে অপরের উপর নির্ভর না করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Active-active-এ একটা কপি পড়লে তার ভার বাকিদের ঘাড়ে যায়। বাকিদের যথেষ্ট headroom না থাকলে তারাও overload হয়ে পড়ে (cascading failure)। তাই N+1 capacity রাখা মূল শর্ত।",
+      "whyWrong": {
+        "1": "একই rack মানে একই power আর switch, তাই দুটো একসাথে পড়ার ঝুঁকি বাড়ে।",
+        "2": "একটা বন্ধ রাখলে সেটা active-passive (আর cold standby), active-active না।",
+        "3": "আলাদা database-এ লিখলে data দুই ভাগ হয়ে যায়; redundancy-র শর্ত এটা না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q08",
+      "difficulty": "easy",
+      "question": "Load balancer নিয়মিত প্রতিটা server-এ `GET /health` request পাঠায়। এর মূল উদ্দেশ্য কী?",
+      "options": [
+        "Server-এর cache গরম রাখা, যাতে পরে আসল request এলে দ্রুত উত্তর দেওয়া যায়",
+        "সবচেয়ে ধীর server খুঁজে বের করে তাকে স্থায়ীভাবে বন্ধ করে দেওয়া",
+        "নষ্ট server খুঁজে traffic থেকে বাদ দেওয়া, আর সুস্থ হলে আবার ফিরিয়ে আনা",
+        "User-এর session server-এ জীবিত রাখা, যাতে login হঠাৎ কেটে না যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Health check দিয়ে load balancer জানে কোন server request নেওয়ার মতো অবস্থায় আছে। পরপর কয়েকটা check fail হলে server-কে বাদ দেয় (failover), আর আবার পরপর সফল হলে ফিরিয়ে আনে।",
+      "whyWrong": {
+        "0": "Cache গরম রাখা health check-এর কাজ না; health check হালকা আর দ্রুত হওয়ার কথা।",
+        "1": "Health check সাময়িকভাবে traffic থেকে সরায়, স্থায়ীভাবে বন্ধ করে না।",
+        "3": "Session জীবিত রাখার সাথে health check-এর সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-006-q09",
+      "difficulty": "easy",
+      "question": "একটা service-এর MTBF 99 ঘণ্টা আর MTTR 1 ঘণ্টা। Availability কত?",
+      "options": ["98%", "99.9%", "99%", "90%"],
+      "correctIndex": 2,
+      "explanation": "Availability = MTBF ÷ (MTBF + MTTR) = 99 ÷ (99 + 1) = 99 ÷ 100 = 99%। অর্থাৎ প্রতি 100 ঘণ্টার মধ্যে গড়ে 1 ঘণ্টা বন্ধ।",
+      "whyWrong": {
+        "0": "98% পেতে MTTR 2 ঘণ্টা লাগত।",
+        "1": "99.9% পেতে প্রতি 1,000 ঘণ্টায় মাত্র 1 ঘণ্টা বন্ধ থাকতে হতো।",
+        "3": "90% মানে প্রতি 10 ঘণ্টায় 1 ঘণ্টা বন্ধ; হিসাবে এক ঘর ভুল।"
+      }
+    },
+    {
+      "id": "sd-day-006-q10",
+      "difficulty": "easy",
+      "question": "নিচের কোন পদক্ষেপটা মূলত MTTR কমায়, MTBF বাড়ায় না?",
+      "options": [
+        "আরও দামি আর ভালো মানের hardware কেনা, যাতে disk কম নষ্ট হয়",
+        "Code review আর testing কঠোর করা, যাতে production-এ bug কম যায়",
+        "Server-এর সংখ্যা দ্বিগুণ করা, যাতে ব্যস্ত সময়ে সেকেন্ডে বেশি request সামলানো যায়",
+        "ভালো alert আর এক command-এ rollback, যাতে দ্রুত আগের অবস্থায় ফেরা যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "MTTR মানে failure হলে সেরে উঠতে কত সময়। দ্রুত জানা (alert) আর দ্রুত আগের অবস্থায় ফেরা (rollback) সরাসরি এই সময় কমায়। ভালো hardware বা কঠোর testing failure কম ঘটায়, অর্থাৎ MTBF বাড়ায়।",
+      "whyWrong": {
+        "0": "ভালো hardware failure-এর সংখ্যা কমায়, তাই এটা MTBF-এর দিক।",
+        "1": "কঠোর review bug কম পাঠায়, এটাও failure কমানো, অর্থাৎ MTBF।",
+        "2": "বেশি server throughput বাড়ায় (scalability); সেরে ওঠার সময় এতে নিজে থেকে কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q11",
+      "difficulty": "easy",
+      "question": "একটা storage service এক ঘণ্টা কোনো request নিতে পারেনি, কিন্তু পরে দেখা গেল কারও একটাও file হারায়নি। কোন গুণটা ক্ষতিগ্রস্ত হয়েছে?",
+      "options": [
+        "Durability, কারণ এক ঘণ্টা file পড়া না গেলে সেটাকে হারানো data হিসেবেই ধরা হয়",
+        "Availability, কারণ সেবা পাওয়া যায়নি; data হারায়নি বলে durability ঠিক আছে",
+        "Scalability, কারণ request নিতে না পারা মানে capacity কম ছিল",
+        "Consistency, কারণ ওই এক ঘণ্টায় user-রা আলাদা আলাদা data দেখেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Availability হলো চাইলে পাওয়া যায় কিনা; durability হলো data একবার রাখলে হারায় কিনা। এক ঘণ্টা সেবা বন্ধ মানে availability কমেছে, কিন্তু পরে সব file অক্ষত মানে durability ঠিক আছে। দুটো আলাদা সমস্যা, সমাধানও আলাদা।",
+      "whyWrong": {
+        "0": "সাময়িকভাবে পড়া না যাওয়া আর চিরতরে হারানো আলাদা; প্রথমটা availability।",
+        "2": "Outage-এর কারণ যেকোনো কিছু হতে পারে; capacity কম ছিল এমন কোনো তথ্য নেই।",
+        "3": "কোনো request-ই সফল হয়নি, তাই আলাদা data দেখার প্রশ্নই আসে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q12",
+      "difficulty": "easy",
+      "question": "একটা ATM সারা দিন চালু থাকে, টাকা তোলাও যায়, কিন্তু মাঝে মাঝে ভুল balance দেখায়। এটা মূলত কোন গুণে দুর্বল?",
+      "options": [
+        "Availability, কারণ ভুল balance দেখানো মানে ATM আসলে বন্ধ ছিল",
+        "Durability, কারণ ভুল balance মানে account-এর data চিরতরে হারিয়ে গেছে",
+        "Reliability, কারণ চালু থাকলেও কাজটা সবসময় ঠিকঠাক করছে না",
+        "Scalability, কারণ বেশি user এলে ATM হিসাব মেলাতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "ATM চালু আর ব্যবহারযোগ্য, তাই availability ঠিক আছে। কিন্তু reliability মানে দীর্ঘ সময় ধরে সঠিকভাবে কাজ করা; ভুল balance দেখানো সেই সঠিকতার অভাব।",
+      "whyWrong": {
+        "0": "ATM চালু ছিল আর ব্যবহার করা গেছে, তাই এটা availability-র সমস্যা না।",
+        "1": "Balance ভুল দেখানো মানেই data হারানো না; হিসাব হয়তো ঠিকই আছে, দেখানোয় ভুল।",
+        "3": "প্রশ্নে বেশি user-এর কোনো কথা নেই; সমস্যা সঠিকতার।"
+      }
+    },
+    {
+      "id": "sd-day-006-q13",
+      "difficulty": "easy",
+      "question": "আপনার online shop-এর recommendation service down। নিচের কোন আচরণটা graceful degradation?",
+      "options": [
+        "পুরো product page-এ 503 দেখানো, যাতে user স্পষ্ট বোঝে system-এ সমস্যা চলছে",
+        "Recommendation না আসা পর্যন্ত page load আটকে রাখা, যাতে user সম্পূর্ণ page দেখে",
+        "Checkout সাময়িক বন্ধ রাখা, যাতে recommendation service-এর উপর চাপ কমে",
+        "সুপারিশের জায়গায় সাধারণ জনপ্রিয় পণ্যের list দেখানো, আর checkout চালু রাখা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Graceful degradation মানে কম জরুরি অংশ বাদ বা সরল করে মূল কাজ চালু রাখা। Recommendation optional, তাই fallback দেখিয়ে cart আর checkout চালু রাখলে user কেনাকাটা চালিয়ে যেতে পারে।",
+      "whyWrong": {
+        "0": "একটা optional feature-এর জন্য পুরো page বন্ধ করা উল্টো কাজ।",
+        "1": "অপেক্ষা করালে optional dependency-ই পুরো page-কে আটকে দেয়।",
+        "2": "Checkout critical; optional service বাঁচাতে critical কাজ বন্ধ করা ভুল অগ্রাধিকার।"
+      }
+    },
+    {
+      "id": "sd-day-006-q14",
+      "difficulty": "easy",
+      "question": "একটা request load balancer, app server আর database, তিনটাই পার হয়, আর তিনটাই চালু থাকতে হয়। মোট availability সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "সবচেয়ে দুর্বল অংশের চেয়েও কম, কারণ তিনটার availability গুণ হয়",
+        "সবচেয়ে দুর্বল অংশের ঠিক সমান, কারণ chain তার দুর্বলতম কড়ির সমান",
+        "তিনটার গড়ের সমান, কারণ প্রতিটা অংশ সমান গুরুত্বপূর্ণ",
+        "সবচেয়ে শক্তিশালী অংশের সমান, কারণ বাকিরা তাকে backup দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Series-এ request সফল হতে সব অংশকে একসাথে চালু থাকতে হয়, তাই availability গুণ হয়। 1-এর চেয়ে ছোট সংখ্যা গুণ করলে ফল প্রতিটার চেয়ে ছোট হয়, তাই মোট availability সবচেয়ে দুর্বল অংশের চেয়েও কম।",
+      "whyWrong": {
+        "1": "দুর্বলতম কড়ির উপমা কাছাকাছি, কিন্তু অন্য অংশগুলোর failure-ও যোগ হয়, তাই ফল আরও কম।",
+        "2": "Availability গড় হয় না; একটা অংশ পড়লেই পুরো request fail।",
+        "3": "Series-এ কেউ কাউকে backup দেয় না; সবাইকে লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q15",
+      "difficulty": "easy",
+      "question": "দুটো স্বাধীন server আছে, প্রতিটার availability 99%, আর যেকোনো একটা চালু থাকলেই সেবা চলে। মোট availability কত?",
+      "options": ["98.01%", "99.99%", "99.5%", "99%"],
+      "correctIndex": 1,
+      "explanation": "Parallel-এ সব একসাথে পড়লে তবেই বন্ধ। একটার বন্ধ থাকার সম্ভাবনা 0.01, দুটো একসাথে 0.01 × 0.01 = 0.0001। তাই availability = 1 − 0.0001 = 99.99%, যদি failure-গুলো স্বাধীন হয়।",
+      "whyWrong": {
+        "0": "98.01% হলো 0.99 × 0.99, অর্থাৎ series-এর হিসাব (দুটোই লাগলে)।",
+        "2": "99.5% কোনো সূত্র থেকে আসে না, শুধু আন্দাজ।",
+        "3": "দ্বিতীয় server যোগ করলে availability বাড়ে, একই থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q16",
+      "difficulty": "easy",
+      "question": "Database upgrade-এর জন্য প্রতি মাসে রাত ২টা থেকে ৪টা site বন্ধ রাখা হয়, আগে থেকে ঘোষণা দিয়ে। এ বিষয়ে কোন কথাটা সবচেয়ে ঠিক?",
+      "options": [
+        "এটা planned downtime; অনেক SLA একে হিসাবের বাইরে রাখে, কিন্তু user-এর কাছে site তখন বন্ধই",
+        "রাতে user খুব কম, তাই request-ভিত্তিক হিসাবেও এটা availability-তে একেবারেই কোনো প্রভাব ফেলে না",
+        "Maintenance window থাকলে redundancy-র আর দরকার নেই, কারণ সব সমস্যা তখনই সারানো যায়",
+        "Planned downtime সবসময় unplanned-এর চেয়ে বেশি ক্ষতিকর, কারণ এটা নিয়মিত ঘটে"
+      ],
+      "correctIndex": 0,
+      "explanation": "আগে ঘোষিত maintenance হলো planned downtime। অনেক চুক্তি একে বাদ দিলেও user-এর অভিজ্ঞতায় site বন্ধ। তাই ভালো system rolling deploy বা পাশাপাশি নতুন version চালু করে planned downtime-ও শূন্যে আনার চেষ্টা করে।",
+      "whyWrong": {
+        "1": "রাতে কম হলেও শূন্য না; ওই সময়ের সব request fail করে, তাই প্রভাব আছে।",
+        "2": "Unplanned failure maintenance-এর সময় মেনে আসে না; redundancy তখনও লাগে।",
+        "3": "আগে জানানো থাকায় planned downtime সাধারণত কম ক্ষতিকর, বেশি না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q17",
+      "difficulty": "easy",
+      "question": "কোনটা customer-এর সাথে করা চুক্তি, যেটা না মানলে service credit-এর মতো জরিমানা দিতে হয়?",
+      "options": [
+        "SLO, নিজেদের ভেতরের availability লক্ষ্য",
+        "SLI, যে সংখ্যাটা আসলে মাপা হয়",
+        "SLA, customer-এর সাথে করা চুক্তি",
+        "MTBF, দুটো failure-এর মাঝের গড় সময়"
+      ],
+      "correctIndex": 2,
+      "explanation": "SLA (Service Level Agreement) হলো customer-এর সাথে চুক্তি, যেখানে প্রতিশ্রুত মান না মানলে ক্ষতিপূরণ থাকে। SLO হলো নিজেদের লক্ষ্য, সাধারণত SLA-র চেয়ে কঠোর, যাতে চুক্তি ভাঙার আগেই সতর্ক হওয়া যায়।",
+      "whyWrong": {
+        "0": "SLO ভেতরের লক্ষ্য; এটা না মানলে সরাসরি customer-কে জরিমানা দিতে হয় না।",
+        "1": "SLI শুধু মাপকাঠি, যেমন সফল request-এর %; এটা কোনো প্রতিশ্রুতি না।",
+        "3": "MTBF একটা reliability metric, চুক্তি না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q18",
+      "difficulty": "easy",
+      "question": "আপনার team-এর SLO হলো '30 দিনে 99.9% request সফল হবে'। তাহলে error budget কত?",
+      "options": [
+        "মোট request-এর 0.1%, যেটা fail করার অনুমতি আছে",
+        "মোট request-এর 99.9%, যেটা সফল হতেই হবে",
+        "মোট request-এর 1%, যেটা নিরাপত্তার জন্য রাখা হয়",
+        "মোট request-এর 0.01%, যেটা মাসের শেষে যোগ হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Error budget = 1 − SLO। 99.9% SLO-তে 0.1% request (বা সময়ের হিসাবে 30 দিনে প্রায় 43.2 মিনিট) fail করার জায়গা আছে। এই budget থাকলে team ঝুঁকি নিয়ে release করতে পারে।",
+      "whyWrong": {
+        "1": "99.9% হলো লক্ষ্য নিজে, budget না; budget হলো বাকি অংশটুকু।",
+        "2": "1% হলো 99% SLO-র budget।",
+        "3": "0.01% হলো 99.99% SLO-র budget।"
+      }
+    },
+    {
+      "id": "sd-day-006-q19",
+      "difficulty": "easy",
+      "question": "দুটো app server আছে, কিন্তু দুটোই একই rack-এ, একই power supply-তে চলে। Redundancy থাকা সত্ত্বেও কোন ঝুঁকিটা থেকে যায়?",
+      "options": [
+        "Server দুটো একে অপরের CPU ভাগ করে নেবে, ফলে দুটোই সবসময় ধীর চলবে",
+        "Power supply নষ্ট হলে দুটোই একসাথে বন্ধ হবে, অর্থাৎ correlated failure",
+        "Load balancer ঠিক করতে পারবে না কোন server-এ পাঠাবে, তাই request fail করবে",
+        "একই rack-এ থাকায় network latency এত বাড়বে যে availability অর্ধেক হবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Redundancy কাজ করে যখন কপিগুলো একই কারণে একসাথে নষ্ট হয় না। একই power supply মানে একটা কারণেই দুটো বন্ধ, তখন parallel-এর অঙ্ক খাটে না। তাই কপি আলাদা rack বা AZ-এ রাখা হয়।",
+      "whyWrong": {
+        "0": "আলাদা server আলাদা CPU-তে চলে; একই rack মানে CPU ভাগাভাগি না।",
+        "2": "Load balancer-এর সিদ্ধান্ত server কোথায় রাখা তার উপর নির্ভর করে না।",
+        "3": "একই rack-এ latency বরং কম; সমস্যাটা একসাথে পড়ার ঝুঁকি।"
+      }
+    },
+    {
+      "id": "sd-day-006-q20",
+      "difficulty": "easy",
+      "question": "Load balancer-এর পেছনে দুটো server থাকলে একটা server crash করার পর user মোটামুটি কতক্ষণ সমস্যা দেখে?",
+      "options": [
+        "Server যতক্ষণ বন্ধ থাকে পুরো সময়টা, redundancy থাকলেও এটা বদলায় না",
+        "একেবারেই না, redundancy থাকলে কোনো request কখনো fail করতে পারে না",
+        "Engineer যতক্ষণে server ঠিক করে আবার চালু করে, শুধু ততক্ষণ",
+        "Failure ধরতে (detection) আর traffic সরাতে (switch) যতটুকু সময় লাগে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Redundancy থাকলে user-এর downtime মোটামুটি detection আর switch-এর সময়। Health check failure ধরার আগে নষ্ট server-এ যাওয়া কিছু request fail করতে পারে, তারপর load balancer সব traffic সুস্থটায় পাঠায়। Server সারানোর পুরো সময়টা user আর টের পায় না।",
+      "whyWrong": {
+        "0": "এটা redundancy না থাকার অবস্থা; redundancy-র মূল লাভই এটা বদলানো।",
+        "1": "Detection-এর আগের মুহূর্তে কিছু request fail করতে পারে, যদি না retry থাকে।",
+        "2": "সারানোর সময় redundancy ছাড়া downtime হতো; এখানে অন্য server চালায়।"
+      }
+    },
+    {
+      "id": "sd-day-006-q21",
+      "difficulty": "medium",
+      "question": "একটা request series-এ তিনটা অংশ পার হয়: load balancer 99.99%, app 99.95%, database 99.9%। মোট availability মোটামুটি কত?",
+      "options": ["≈ 99.95%", "≈ 99.99%", "≈ 99.9%", "≈ 99.84%"],
+      "correctIndex": 3,
+      "explanation": "Series-এ গুণ: 0.9999 × 0.9995 × 0.999 ≈ 0.9984, অর্থাৎ প্রায় 99.84%। এটা সবচেয়ে দুর্বল অংশ (99.9%) থেকেও কম, বছরে প্রায় 14 ঘণ্টা downtime।",
+      "whyWrong": {
+        "0": "99.95% হলো মাঝের অংশের মান; series-এ ফল সবচেয়ে দুর্বলটার চেয়েও কম হয়।",
+        "1": "99.99% হলো সবচেয়ে শক্তিশালী অংশ; series-এ এটা কখনো মোট হয় না।",
+        "2": "99.9% হলো সবচেয়ে দুর্বল অংশ; অন্য দুটোর failure-ও যোগ হয়, তাই আরও কম।"
+      }
+    },
+    {
+      "id": "sd-day-006-q22",
+      "difficulty": "medium",
+      "question": "একটা checkout API request-এর পথে 10টা আলাদা internal service synchronously call করে, প্রতিটা 99.9% available আর failure-গুলো স্বাধীন। শুধু এই dependency-গুলোর কারণে checkout-এর availability মোটামুটি কত হবে?",
+      "options": [
+        "≈ 99.9%, কারণ প্রতিটা service-ই 99.9%",
+        "≈ 99.0%, কারণ 0.999¹⁰ ≈ 0.990",
+        "≈ 90%, কারণ 10টা service-এ 10% কমে",
+        "≈ 99.99%, কারণ 10টা service একে অপরকে ঢাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সবগুলো লাগবে, তাই series: 0.999¹⁰ ≈ 0.990, অর্থাৎ প্রায় 99.0%। দশটা three-nines মিলে two-nines। তাই critical path-এ dependency যত কম, তত ভালো; বাকিগুলো async বা optional করা হয়।",
+      "whyWrong": {
+        "0": "প্রতিটার availability মোটের সমান না; series-এ গুণ হয়ে কমে।",
+        "2": "প্রতিটা 0.1% কমায়, 1% না; দশটায় মোটামুটি 1% কমে, 10% না।",
+        "3": "Series-এ কেউ কাউকে ঢাকে না; সেটা parallel-এর ধারণা।"
+      }
+    },
+    {
+      "id": "sd-day-006-q23",
+      "difficulty": "medium",
+      "question": "তিনটা স্বাধীন app server, প্রতিটা 99% available, load balancer-এর পেছনে active-active। যেকোনো একটা চালু থাকলেই চলে। শুধু app অংশের availability কত?",
+      "options": ["99.9700%", "97.0299%", "99.9900%", "99.9999%"],
+      "correctIndex": 3,
+      "explanation": "Parallel: 1 − (1 − 0.99)³ = 1 − (0.01)³ = 1 − 0.000001 = 99.9999%। তবে এটা ধরে নেয় তিনটা একসাথে পড়ে না, আর একটা চালু server-ই পুরো ভার নিতে পারে।",
+      "whyWrong": {
+        "0": "99.97% কোনো সঠিক সূত্র থেকে আসে না।",
+        "1": "97.03% হলো 0.99³, অর্থাৎ series-এর হিসাব (তিনটাই লাগলে)।",
+        "2": "99.99% হলো দুটো server-এর হিসাব; তিনটায় আরও বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-006-q24",
+      "difficulty": "medium",
+      "question": "একটা service-এর MTBF 500 ঘণ্টা আর MTTR 5 ঘণ্টা (≈ 99.01%)। দুটো প্রস্তাব: (ক) failure অর্ধেক করে MTBF 1,000 ঘণ্টা, (খ) automation দিয়ে MTTR 0.5 ঘণ্টা। কোনটায় availability বেশি বাড়ে?",
+      "options": [
+        "(ক) MTBF দ্বিগুণে ≈ 99.90%, আর (খ) MTTR কমালে ≈ 99.50%",
+        "দুটোতেই ≈ 99.50%, কারণ দুটোই downtime-এর ভাগ একদম সমানভাবে কমায়",
+        "(খ) MTTR 0.5 ঘণ্টায় ≈ 99.90%, আর (ক) MTBF দ্বিগুণে ≈ 99.50%",
+        "(ক) MTBF দ্বিগুণে ≈ 99.99%, আর (খ) MTTR-এর কোনো প্রভাব নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "(ক) 1000 ÷ 1005 ≈ 99.50%। (খ) 500 ÷ 500.5 ≈ 99.90%। MTTR দশ গুণ কমানো downtime-কে দশ ভাগের এক ভাগে আনে, আর MTBF দ্বিগুণ শুধু অর্ধেকে। বাস্তবে MTTR কমানো (alert, rollback, auto-restart) প্রায়ই সস্তাও।",
+      "whyWrong": {
+        "0": "সংখ্যা দুটো উল্টে গেছে; MTBF দ্বিগুণে downtime শুধু অর্ধেক হয়।",
+        "1": "MTTR দশ গুণ কমেছে, MTBF মাত্র দ্বিগুণ বেড়েছে; প্রভাব সমান না।",
+        "3": "MTTR সূত্রের সরাসরি অংশ; এর প্রভাব অবশ্যই আছে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q25",
+      "difficulty": "medium",
+      "question": "আপনার SLO হলো 30 দিনে 99.95% সময় চালু থাকা। এই সময়ের মধ্যে মোট কত মিনিট downtime-এর জায়গা আছে?",
+      "options": ["43.2 মিনিট", "21.6 মিনিট", "2.16 মিনিট", "4.32 ঘণ্টা"],
+      "correctIndex": 1,
+      "explanation": "30 দিন = 30 × 24 × 60 = 43,200 মিনিট। Budget = (1 − 0.9995) × 43,200 = 0.0005 × 43,200 = 21.6 মিনিট।",
+      "whyWrong": {
+        "0": "43.2 মিনিট হলো 99.9%-এর 30 দিনের budget।",
+        "2": "2.16 মিনিট হলো দশমিক এক ঘর ভুল (0.00005 ধরা হয়েছে)।",
+        "3": "4.32 ঘণ্টা প্রায় 99.4%-এর budget, অনেক বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-006-q26",
+      "difficulty": "medium",
+      "question": "আপনার API মাসে প্রায় 5 কোটি (50,000,000) request পায়, SLO 99.9% request সফল। মাসের ১০ তারিখের মধ্যেই 30,000 request fail করেছে। Error budget-এর অবস্থা কী?",
+      "options": [
+        "Budget 50,000; এর 60% শেষ, বাকি মাত্র 20,000, তাই ঝুঁকিপূর্ণ release নিয়ে সাবধান হওয়া দরকার",
+        "Budget 5,000; ইতিমধ্যে ছয় গুণ ছাড়িয়ে গেছে, তাই এখনই সব release বন্ধ করতে হবে",
+        "Budget 500,000; মাত্র 6% শেষ, তাই নিশ্চিন্তে যত খুশি release দেওয়া যায়",
+        "Budget 50,000; কিন্তু মাস শেষ না হওয়া পর্যন্ত কতটা খরচ হলো তা হিসাব করা অর্থহীন, তাই আপাতত কিছু করার নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "Budget = 0.1% × 50,000,000 = 50,000 request। 30,000 খরচ মানে 60%, অথচ মাসের মাত্র এক-তৃতীয়াংশ গেছে। খরচের এই গতি (burn rate) চললে মাস শেষের আগেই budget ফুরাবে, তাই এখনই সতর্ক হওয়া দরকার।",
+      "whyWrong": {
+        "1": "0.1%-কে 0.01% ধরে হিসাব করা হয়েছে।",
+        "2": "0.1%-কে 1% ধরে হিসাব করা হয়েছে।",
+        "3": "মাসের মাঝে খরচের গতি দেখাই error budget-এর মূল ব্যবহার, যাতে আগেই ব্যবস্থা নেওয়া যায়।"
+      }
+    },
+    {
+      "id": "sd-day-006-q27",
+      "difficulty": "medium",
+      "question": "Load balancer প্রতি 10 সেকেন্ডে health check পাঠায়, প্রতিটার timeout 5 সেকেন্ড, আর পরপর 3টা fail হলে server-কে unhealthy ধরে। একটা server হঠাৎ crash করলে সেটা ধরা পড়তে মোটামুটি কত সময় লাগবে?",
+      "options": [
+        "প্রায় 5 সেকেন্ড, কারণ প্রথম check-এর timeout শেষ হলেই server বাদ পড়ে",
+        "প্রায় 10 সেকেন্ড, কারণ এক interval পরেই পরের check-এ failure ধরা পড়ে",
+        "প্রায় 25-35 সেকেন্ড, কারণ 10 সেকেন্ড পরপর তিনটা check fail হওয়া লাগে",
+        "প্রায় 150 সেকেন্ড, কারণ interval, timeout আর threshold গুণ করতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Unhealthy ধরতে পরপর 3টা check fail লাগে, আর check আসে 10 সেকেন্ড পরপর। crash কখন হলো তার উপর নির্ভর করে তৃতীয় fail হতে মোটামুটি 20-30 সেকেন্ড, সাথে শেষ check-এর timeout। এই পুরো সময়ে নষ্ট server-এ যাওয়া request fail করতে পারে।",
+      "whyWrong": {
+        "0": "একটা fail-এ বাদ পড়ে না; threshold 3।",
+        "1": "এক interval-এ শুধু একটা check হয়; তিনটা fail লাগে।",
+        "3": "এগুলো গুণ হয় না; detection মোটামুটি interval × threshold, সাথে একটা timeout।"
+      }
+    },
+    {
+      "id": "sd-day-006-q28",
+      "difficulty": "medium",
+      "question": "একটা server crash-restart loop-এ পড়েছে: চালু হয়ে কয়েক সেকেন্ড ঠিক থাকে, তারপর আবার পড়ে যায়। Load balancer-এর healthy threshold 1 (একটা সফল check-এই ফেরত নেয়)। কী ঘটবে, আর কী বদলানো উচিত?",
+      "options": [
+        "Load balancer প্রথমবার বাদ দেওয়ার পর আর কখনো ফেরত নেবে না, তাই কোনো সমস্যা নেই",
+        "Server বারবার traffic পাবে আর বাদ পড়বে (flapping), প্রতিবার কিছু request fail; healthy threshold বাড়ান",
+        "Load balancer server-টাকে নিজে থেকে ঠিক করে দেবে, কারণ health check fail হলে সে নিজেই server restart চালায়",
+        "শুধু health check-এর interval কমালেই হবে, threshold-এর সাথে এর কোনো সম্পর্ক নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "একটা সফল check-এই ফেরত নিলে অস্থির server বারবার traffic পায়, আর প্রতিবার পড়ে যাওয়ার আগে কিছু request নষ্ট করে। পরপর কয়েকটা সফল check (যেমন 2-3) চাইলে সত্যিই স্থির হওয়ার পরই ফেরে।",
+      "whyWrong": {
+        "0": "Health check সুস্থ হলে server-কে ফেরত নেয়; এটাই flapping-এর কারণ।",
+        "2": "Load balancer traffic সরায়, server restart করে না; সেটা orchestrator বা process manager-এর কাজ।",
+        "3": "Interval ছোট করলে আরও দ্রুত আসা-যাওয়া হবে; মূল সমাধান healthy threshold।"
+      }
+    },
+    {
+      "id": "sd-day-006-q29",
+      "difficulty": "medium",
+      "question": "তিনটা app server active-active, প্রতিটা স্বাভাবিক সময়ে 75% CPU-তে চলে। একটা server পড়ে গেলে কী হওয়ার ঝুঁকি, আর লক্ষ্য কী হওয়া উচিত ছিল?",
+      "options": [
+        "বাকি দুটো প্রায় 112% ভারে overload হয়ে পড়তে পারে; প্রতিটাকে মোটামুটি 66%-এর নিচে রাখা উচিত",
+        "বাকি দুটো 75%-এই থাকবে, কারণ load balancer মোট traffic নিজে থেকেই কমিয়ে দেয়",
+        "বাকি দুটো 150% ভারে যাবে; তাই প্রতিটাকে সবসময় 50%-এর নিচে রাখা উচিত, server সংখ্যা যা-ই হোক না কেন",
+        "কোনো ঝুঁকি নেই, কারণ active-active-এ একটা server পড়লেও capacity অপরিবর্তিত থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "মোট ভার 3 × 75% = 225% (এক server-এর হিসাবে)। দুটোয় ভাগ হলে প্রতিটায় ~112%, তাই তারাও পড়ার ঝুঁকি (cascading failure)। N+1-এর জন্য প্রতিটা (N−1)/N-এর নিচে থাকা উচিত: তিনটায় 2/3 ≈ 66%।",
+      "whyWrong": {
+        "1": "Load balancer traffic কমায় না, শুধু ভাগ করে; user-রা আগের মতোই request পাঠায়।",
+        "2": "150% আর 50% সীমা দুটো server-এর হিসাব; তিনটায় ভার তিন ভাগ থেকে দুই ভাগে যায়।",
+        "3": "একটা server গেলে মোট capacity এক-তৃতীয়াংশ কমে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q30",
+      "difficulty": "medium",
+      "question": "আপনার app-এর `/health` endpoint database-এ একটা query চালিয়ে দেখে। একদিন database 4 সেকেন্ডের জন্য ধীর হলো, আর load balancer সব app server-কে একসাথে unhealthy ধরে বাদ দিল। সমস্যাটা কোথায়?",
+      "options": [
+        "Health check-এর interval খুব বড় ছিল, তাই database ধীর হওয়াটা দেরিতে ধরা পড়েছে আর সব server আটকে গেছে",
+        "App server-গুলো যথেষ্ট শক্তিশালী ছিল না, তাই একসাথে সবাই crash করেছে",
+        "Database-এর একটা replica থাকলে health check কখনো fail করত না",
+        "Shared dependency health check-এ থাকায় সব instance একসাথে বাদ পড়ল, health check নিজেই outage বানাল"
+      ],
+      "correctIndex": 3,
+      "explanation": "Health check-এ shared dependency থাকলে সেই dependency-র সমস্যা প্রতিটা instance-এ একসাথে দেখা দেয়, আর load balancer সবাইকে বাদ দেয়। অথচ app server-গুলো হয়তো cache বা degraded mode-এ কিছু request সামলাতে পারত। Readiness check-এ নিজের অবস্থা দেখুন, dependency-র সমস্যা আলাদাভাবে alert আর fallback দিয়ে সামলান।",
+      "whyWrong": {
+        "0": "Interval বড়-ছোট সমস্যার মূল না; ছোট interval-এ আরও দ্রুত সবাই বাদ পড়ত।",
+        "1": "App server crash করেনি; health check fail করায় load balancer বাদ দিয়েছে।",
+        "2": "Replica থাকলেও health check যদি ধীর primary-কে query করে, একই ঘটনা ঘটত।"
+      }
+    },
+    {
+      "id": "sd-day-006-q31",
+      "difficulty": "medium",
+      "question": "আপনার 20টা server-এর সবগুলোতে একসাথে নতুন version deploy করলেন। নতুন version-এ একটা bug-এ সবগুলো server একসাথে crash করল। কোন শিক্ষাটা এখানে সবচেয়ে প্রাসঙ্গিক?",
+      "options": [
+        "Server সংখ্যা 20 থেকে 40 করলে এমন সমস্যা আর হতো না, কারণ তখন redundancy দ্বিগুণ হয়ে যেত",
+        "একই খারাপ deploy সব কপিকে একসাথে মারে (correlated failure); আগে canary-তে দেওয়া উচিত",
+        "Load balancer-এর health check আরও ঘন ঘন চালালে crash এড়ানো যেত",
+        "Bug-এর বিরুদ্ধে কোনো architecture কিছু করতে পারে না, তাই এখানে শেখার কিছু নেই"
+      ],
+      "correctIndex": 1,
+      "explanation": "Redundancy স্বাধীন failure ধরে নেয়, কিন্তু একই code সবখানে একসাথে গেলে সবাই একই কারণে পড়ে। Canary deploy (প্রথমে 1-5% server-এ) আর ধাপে ধাপে rollout blast radius ছোট রাখে, আর সমস্যা দেখা দিলে বাকিরা অক্ষত থাকে।",
+      "whyWrong": {
+        "0": "40টা server-এও একই bug একসাথে চলে যেত; কপি বাড়ালে correlated failure কমে না।",
+        "2": "Health check crash ধরতে পারে, ঠেকাতে পারে না; সব server unhealthy হলে যাওয়ার জায়গা নেই।",
+        "3": "Deploy-এর ধরন বদলে (canary, rollback) ক্ষতির পরিধি অনেক কমানো যায়।"
+      }
+    },
+    {
+      "id": "sd-day-006-q32",
+      "difficulty": "medium",
+      "question": "একটা startup-এর requirement: 'একটা data center-এ আগুন বা power সমস্যা হলেও service চলতে হবে।' Budget সীমিত, database-এ synchronous replication চাই, আর latency কম রাখতে হবে। কোনটা সবচেয়ে মানানসই?",
+      "options": [
+        "Multi-region active-active, কারণ শুধু এটাই একটা data center-এর আগুন বা power সমস্যা সামলাতে পারে",
+        "একটা বড়, শক্তিশালী server, কারণ ভালো hardware-এ আগুন বা power সমস্যা কম হয়",
+        "একই region-এ multi-AZ deployment, কারণ AZ আলাদা data center আর তাদের মাঝে latency কম",
+        "একই data center-এ দুটো আলাদা rack, কারণ rack আলাদা হলেই আগুনের ঝুঁকি আলাদা"
+      ],
+      "correctIndex": 2,
+      "explanation": "AZ-গুলো আলাদা data center (নিজস্ব power ও network সহ), কিন্তু একই region-এ কম latency-র link-এ যুক্ত, তাই synchronous replication চলে। একটা data center-এর সমস্যা সামলাতে multi-AZ-ই যথেষ্ট, আর multi-region-এর খরচ ও জটিলতা লাগে না।",
+      "whyWrong": {
+        "0": "Multi-region data center-এর সমস্যাও সামলায়, কিন্তু খরচ, latency আর জটিলতা এই requirement-এর চেয়ে অনেক বেশি।",
+        "1": "একটা server যত ভালোই হোক, সেটা SPOF, আর data center-এর আগুনে সেটাও যায়।",
+        "3": "একই data center-এর আগুন বা power সমস্যা সব rack-কে একসাথে ছুঁতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q33",
+      "difficulty": "medium",
+      "question": "Product page review service-কে call করে, কোনো timeout ছাড়া। একদিন review service উত্তর দেওয়া বন্ধ করল (hang), আর কিছুক্ষণের মধ্যে পুরো site ধীর হয়ে গেল। মূল সমস্যা আর সমাধান কী?",
+      "options": [
+        "Timeout না থাকায় optional service-এর জন্য অপেক্ষায় thread ফুরিয়েছে; timeout আর fallback দেওয়া উচিত",
+        "Review service-এর database ধীর; তাই product page-এর server সংখ্যা দ্বিগুণ করলেই সমস্যা পুরোপুরি মিটে যাবে",
+        "Load balancer-এর algorithm round-robin থেকে least-connections-এ বদলালেই site আবার দ্রুত হবে",
+        "Review service fail করলে product page-ও fail করা উচিত, যাতে user ভুল তথ্য না দেখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Timeout না থাকলে প্রতিটা request hang হওয়া service-এর জন্য অপেক্ষা করে thread বা connection আটকে রাখে, শেষে নতুন request নেওয়ার জায়গা থাকে না। Review optional, তাই ছোট timeout আর fallback (review অংশ বাদ দিয়ে page) দিলে মূল page চলত। এটাই graceful degradation।",
+      "whyWrong": {
+        "1": "Server বাড়ালে আটকে থাকা thread-ও বাড়বে; অসীম অপেক্ষার সমস্যা থেকেই যাবে।",
+        "2": "Algorithm বদলালে সব server-ই একই hang-এ আটকাবে।",
+        "3": "Optional feature-এর জন্য মূল page ভাঙা ঠিক না; review ছাড়া page দেখানো ভুল তথ্য না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q34",
+      "difficulty": "medium",
+      "question": "আপনার server-এর `/health` সবসময় 200 দেয়, server-এর CPU-ও স্বাভাবিক। কিন্তু একটা ভুল DNS record-এর কারণে user-রা দুই ঘণ্টা site-এ পৌঁছাতে পারেনি। কোন মাপকাঠি এই সমস্যাটা সবচেয়ে ভালোভাবে ধরত?",
+      "options": [
+        "Server-এর CPU আর memory usage-এর graph, কারণ সমস্যা হলে load বদলায়",
+        "Load balancer-এর পেছনে প্রতিটা server-এর নিজস্ব health check-এর ফলাফল",
+        "Database-এর query latency, কারণ বেশিরভাগ outage আসলে database থেকেই শুরু হয়",
+        "বাইরে থেকে user-এর মতো করে domain-এ নিয়মিত request পাঠানো synthetic check"
+      ],
+      "correctIndex": 3,
+      "explanation": "সমস্যাটা server-এর বাইরে, user আর server-এর মাঝের পথে। Server-এর ভেতরের সব metric স্বাভাবিক দেখাবে। বাইরে থেকে আসল domain ধরে request পাঠানো synthetic check user-এর অভিজ্ঞতা মাপে, তাই DNS-এর ভুলও ধরে।",
+      "whyWrong": {
+        "0": "Request না আসায় CPU বরং কমবে, যা সমস্যা হিসেবে চোখে পড়ে না।",
+        "1": "Health check load balancer থেকে server-এ যায়, user-এর DNS পথ দিয়ে না।",
+        "2": "Database ঠিক ছিল; সমস্যাটা user-এর পৌঁছানোর পথে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q35",
+      "difficulty": "medium",
+      "question": "দিনে মোট 1,000,000 request আসে। ব্যস্ততম সময়ে 10 মিনিটের একটা outage-এ 50,000 request fail করল, বাকি দিন সব ঠিক। সময়-ভিত্তিক আর request-ভিত্তিক availability কত?",
+      "options": [
+        "সময়ে ≈ 95%, আর request-এ ≈ 99.31%",
+        "সময়ে ≈ 99.31%, আর request-এ 95%",
+        "দুটোতেই ≈ 99.31%, কারণ দুটো একই জিনিস মাপে",
+        "সময়ে ≈ 99.93%, আর request-এ 99.5%"
+      ],
+      "correctIndex": 1,
+      "explanation": "সময়ে: 1 − 10/1,440 ≈ 99.31%। Request-এ: 1 − 50,000/1,000,000 = 95%। ব্যস্ত সময়ে outage হলে request-ভিত্তিক হিসাব অনেক বেশি ক্ষতি দেখায়, যা user-এর অভিজ্ঞতার কাছাকাছি।",
+      "whyWrong": {
+        "0": "দুটো সংখ্যা উল্টে গেছে।",
+        "2": "Traffic সারা দিন সমান না, তাই দুই হিসাব আলাদা আসে।",
+        "3": "দুটো হিসাবেই এক ঘর করে ভুল; দিনে 1,440 মিনিট আর 50,000 হলো 5%।"
+      }
+    },
+    {
+      "id": "sd-day-006-q36",
+      "difficulty": "medium",
+      "question": "Database primary crash করল, standby replica স্বয়ংক্রিয়ভাবে নতুন primary হলো। Service দ্রুত ফিরল, কিন্তু দেখা গেল crash-এর ঠিক আগের ২ সেকেন্ডের কিছু order নতুন primary-তে নেই। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Replication asynchronous ছিল, তাই primary-র শেষ কিছু লেখা replica-তে পৌঁছানোর আগেই crash হয়েছে",
+        "Failover-এর সময় load balancer order-গুলো ভুল server-এ পাঠিয়ে মুছে দিয়েছে",
+        "Standby replica শুধু read নিতে পারে, তাই promote হওয়ার পরও সে আগের পুরনো লেখাগুলো একেবারেই দেখাতে পারে না",
+        "Health check-এর interval বেশি ছিল, তাই ওই ২ সেকেন্ডের order কোথাও লেখাই হয়নি"
+      ],
+      "correctIndex": 0,
+      "explanation": "Asynchronous replication-এ primary লিখে সাথে সাথে user-কে 'সফল' বলে, replica-তে পরে পাঠায়। মাঝে crash হলে শেষ কিছু লেখা হারায়। Synchronous replication এই ক্ষতি কমায়, কিন্তু প্রতিটা লেখায় latency বাড়ে। এটা availability আর durability-র একটা বাস্তব trade-off।",
+      "whyWrong": {
+        "1": "Load balancer data মোছে না; সে শুধু request পাঠায়।",
+        "2": "Promote হওয়ার পর replica-ই primary, read-write দুটোই নেয়; সমস্যা হলো data পৌঁছায়নি।",
+        "3": "Order primary-তে লেখা হয়েছিল; সমস্যা replica-তে কপি হওয়ার আগে crash।"
+      }
+    },
+    {
+      "id": "sd-day-006-q37",
+      "difficulty": "medium",
+      "question": "Failover-এর সময় load balancer timeout পেলে request অন্য server-এ retry করে। আপনার `POST /payments` endpoint-এ এটা চালু। কোন বিপদটা সবচেয়ে গুরুতর?",
+      "options": [
+        "Retry-র কারণে request-এর latency সামান্য বাড়বে, user সেটা খেয়াল করে অভিযোগ জানাবে, এটাই সবচেয়ে বড় বিপদ",
+        "Retry-র কারণে load balancer-এর CPU বেশি খরচ হবে",
+        "প্রথম server হয়তো টাকা কেটে ফেলেছিল, শুধু উত্তর আসেনি; retry-তে দ্বিতীয়বার টাকা কাটতে পারে",
+        "Retry-র কারণে health check ভুল ফল দেবে, তাই সুস্থ server বাদ পড়বে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Timeout মানে উত্তর আসেনি, কাজ হয়নি এমন না। Payment-এর মতো non-idempotent কাজ retry করলে একই কাজ দুবার হতে পারে। সমাধান: শুধু idempotent request retry করা, অথবা idempotency key দিয়ে server-এ duplicate ধরা।",
+      "whyWrong": {
+        "0": "Latency বাড়ে ঠিকই, কিন্তু দুবার টাকা কাটার চেয়ে তা অনেক ছোট সমস্যা।",
+        "1": "Load balancer-এর সামান্য বাড়তি কাজ এখানে মূল ঝুঁকি না।",
+        "3": "Retry আর health check আলাদা ব্যবস্থা; retry health check-এর ফল বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q38",
+      "difficulty": "medium",
+      "question": "মাসের ১২ তারিখেই আপনার service-এর error budget শেষ। Product manager বড় একটা নতুন feature এই সপ্তাহে release করতে চান। Error budget policy অনুযায়ী কী করা যুক্তিসঙ্গত?",
+      "options": [
+        "Release চালিয়ে যাওয়া, কারণ budget শুধু হিসাবের জন্য, সিদ্ধান্তে এর কোনো ভূমিকা নেই",
+        "SLO 99.9% থেকে 99%-এ নামিয়ে দেওয়া, যাতে budget আবার ফিরে আসে আর নির্ধারিত সময়েই release করা যায়",
+        "Monitoring সাময়িক বন্ধ রাখা, যাতে আর error গোনা না হয়",
+        "ঝুঁকিপূর্ণ release থামিয়ে reliability-র কাজে (মূল কারণ সারানো, rollback সহজ করা) মনোযোগ দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Error budget-এর উদ্দেশ্যই হলো release-এর গতি আর স্থিতিশীলতার মধ্যে একটা সংখ্যাভিত্তিক নিয়ম। Budget থাকলে ঝুঁকি নেওয়া যায়, শেষ হলে আগে reliability ঠিক করতে হয়। সাধারণত জরুরি bug fix বা security patch ছাড়া বড় পরিবর্তন অপেক্ষা করে।",
+      "whyWrong": {
+        "0": "Budget ঠিক এই সিদ্ধান্ত নেওয়ার জন্যই বানানো।",
+        "1": "সুবিধামতো SLO নামালে লক্ষ্যের কোনো অর্থ থাকে না; user-এর অভিজ্ঞতা বদলায় না।",
+        "2": "মাপা বন্ধ করলে সমস্যা চলে যায় না, শুধু চোখের আড়ালে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-006-q39",
+      "difficulty": "medium",
+      "question": "একটা request series-এ load balancer (99.99%), তারপর দুটো app server parallel-এ (প্রতিটা 99.9%), তারপর একটা single database (99.9%)। মোট availability মোটামুটি কত, আর আগে কোথায় redundancy দেবেন?",
+      "options": [
+        "≈ 99.89%; database-এ, কারণ series-এ সবচেয়ে কম availability-র অংশ সেটাই",
+        "≈ 99.9999%; কোথাও না, কারণ app অংশ parallel হওয়ায় পুরো system-ও parallel",
+        "≈ 99.79%; load balancer-এ, কারণ সেটা সবার সামনে থাকে",
+        "≈ 99.99%; app server-এ আরও কপি, কারণ সেখানেই সবচেয়ে বেশি traffic"
+      ],
+      "correctIndex": 0,
+      "explanation": "App অংশ: 1 − (0.001)² = 99.9999%। মোট: 0.9999 × 0.999999 × 0.999 ≈ 99.89%। এখন ফলাফল প্রায় পুরোটাই single database টেনে নামাচ্ছে, তাই পরের redundancy সেখানে (যেমন অন্য AZ-এ standby)।",
+      "whyWrong": {
+        "1": "শুধু app অংশ parallel; LB আর database series-এ থেকে যায়।",
+        "2": "99.79% হলো app-ও single থাকলে; আর LB এখানে সবচেয়ে শক্তিশালী অংশ।",
+        "3": "App অংশ ইতিমধ্যে 99.9999%; আরও কপি দিলে মোট প্রায় বদলাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q40",
+      "difficulty": "medium",
+      "question": "আপনার database-এর standby server সাধারণ সময়ে বন্ধ থাকে। Primary পড়লে কেউ standby চালু করে, সর্বশেষ backup থেকে data restore করে, তারপর traffic সরায়; সব মিলিয়ে প্রায় 40 মিনিট লাগে। এই ব্যবস্থা সম্পর্কে কোনটা ঠিক?",
+      "options": [
+        "এটা hot standby; সবসময় প্রস্তুত থাকায় failover প্রায় তাৎক্ষণিক",
+        "এটা active-active; দুটো server-ই প্রয়োজনে traffic নিতে পারে",
+        "এটা cold standby; খরচ কম, কিন্তু MTTR বড় আর শেষ backup-এর পরের data হারাতে পারে",
+        "এটা redundancy-ই না, কারণ standby বন্ধ থাকলে availability-তে কোনো লাভই হয় না, single server-এর মতোই"
+      ],
+      "correctIndex": 2,
+      "explanation": "বন্ধ থাকা standby যেটা চালু করে data restore করতে হয়, সেটা cold standby। সাধারণ সময়ে খরচ কম, কিন্তু failover-এ অনেক সময় লাগে (বড় MTTR), আর শেষ backup-এর পরের লেখা হারাতে পারে। Hot standby সবসময় চালু আর replication-এ হালনাগাদ থাকে, তাই দ্রুত, কিন্তু দামি।",
+      "whyWrong": {
+        "0": "Hot standby চালু আর হালনাগাদ থাকে; এখানে বন্ধ আর restore লাগে।",
+        "1": "Active-active-এ সব কপি সবসময় traffic নেয়; এখানে একটা বন্ধ।",
+        "3": "Cold standby-ও redundancy; এটা single server-এর চেয়ে MTTR অনেক কমাতে পারে, শুধু hot-এর মতো দ্রুত না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q41",
+      "difficulty": "hard",
+      "question": "দুটো app server, প্রতিটা 99.9% আর একে অপর থেকে স্বাধীন, কিন্তু দুটোই একই Availability Zone-এ, যার নিজের availability 99.95%। Zone পড়লে দুটোই যায়। এই app অংশের বাস্তব availability মোটামুটি কত?",
+      "options": [
+        "≈ 99.9999%, কারণ দুটো server parallel-এ আছে",
+        "≈ 99.85%, কারণ zone আর একটা single server-এর availability গুণ হয়",
+        "≈ 99.95%, কারণ zone series-এ বসে আর সেটাই ছাদ হয়ে দাঁড়ায়",
+        "≈ 99.9%, কারণ server-এর availability-ই সবসময় শেষ কথা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Server জোড়া parallel-এ: 1 − (0.001)² = 99.9999%। কিন্তু দুটো একই zone-এর উপর নির্ভর করে, তাই zone series-এ বসে: 0.9995 × 0.999999 ≈ 99.95%। Shared কারণ (correlated failure) parallel-এর লাভ প্রায় পুরোটা খেয়ে ফেলে।",
+      "whyWrong": {
+        "0": "এটা zone-এর shared ঝুঁকি বাদ দিয়ে হিসাব; বাস্তবে zone-ই ছাদ।",
+        "1": "একটা server-এর সাথে নয়, parallel জোড়ার (99.9999%) সাথে zone গুণ হয়।",
+        "3": "Server জোড়া একা 99.9% না, 99.9999%; সীমা আসছে zone থেকে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q42",
+      "difficulty": "hard",
+      "question": "আপনার SLO মাসে 99.99% (মাসে ~4.4 মিনিট)। প্রতিটা automatic failover-এ detection আর switch মিলে 40 সেকেন্ড user-এর request fail করে, আর মাসে গড়ে 8টা failover হয়। অন্য কোনো downtime না থাকলে কী হবে?",
+      "options": [
+        "SLO মানা যাবে, কারণ automatic failover-এর সময় downtime হিসেবে গোনা হয় না",
+        "মাসে প্রায় 5.3 মিনিট downtime, তাই শুধু failover-এই SLO ভাঙবে",
+        "মাসে প্রায় 53 মিনিট downtime, তাই SLO 99.9%-ও ভাঙবে",
+        "মাসে প্রায় 40 সেকেন্ড downtime, কারণ failover-গুলো একসাথে গোনা হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "8 × 40 = 320 সেকেন্ড ≈ 5.3 মিনিট, যা 99.99%-এর মাসিক budget (~4.4 মিনিট) ছাড়িয়ে যায়। উঁচু লক্ষ্যে detection আর failover-এর প্রতিটা সেকেন্ড গুরুত্বপূর্ণ; failover সংখ্যা কমানো বা প্রতিটা দ্রুত করা দরকার।",
+      "whyWrong": {
+        "0": "User-এর request fail করলে সেটা downtime, failover স্বয়ংক্রিয় হোক বা না হোক।",
+        "2": "320 সেকেন্ডকে দশ গুণ ধরা হয়েছে।",
+        "3": "প্রতিটা failover আলাদা ঘটনা; সময় যোগ হয়, একটায় মেলে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q43",
+      "difficulty": "hard",
+      "question": "Monitoring system আর database primary-র মাঝে network কয়েক সেকেন্ডের জন্য কেটে গেল, primary নিজে ঠিক ছিল। Monitoring replica-কে নতুন primary বানাল। কিছু app server এখনো পুরনো primary-তে লিখছে, কিছু নতুনটায়। এই অবস্থার নাম কী, আর কোনটা এটা ঠেকাতে সাহায্য করে?",
+      "options": [
+        "Split-brain; quorum দিয়ে সিদ্ধান্ত আর fencing দিয়ে পুরনো primary-কে লেখা থেকে আটকানো",
+        "Cascading failure; app server-এর সংখ্যা বাড়ালে ভার ভাগ হয়ে যাবে আর সমস্যা নিজে থেকেই মিটবে",
+        "Graceful degradation; লেখা বন্ধ করে শুধু read চালু রাখাই এর স্বাভাবিক ফল",
+        "Replication lag; replica-কে আরও শক্তিশালী machine-এ সরালেই সমস্যা মিটবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "দুটো node নিজেকে primary ভাবছে আর দুই দিকে আলাদা লেখা হচ্ছে, এটাই split-brain। Quorum থাকলে শুধু সংখ্যাগরিষ্ঠ অংশ নতুন primary বানাতে পারে, আর fencing নতুন primary আসার আগে পুরনোটাকে লেখা থেকে জোর করে আটকায়।",
+      "whyWrong": {
+        "1": "সমস্যাটা ভার না, দুজন লেখার মালিক; server বাড়ালে কিছু বদলায় না।",
+        "2": "এখানে লেখা বন্ধ হয়নি, বরং দুই জায়গায় লেখা হচ্ছে।",
+        "3": "Replication lag আলাদা সমস্যা; machine বড় করলে দুই primary-র সমস্যা মেটে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q44",
+      "difficulty": "hard",
+      "question": "Database cluster-এ automatic failover-এর সিদ্ধান্ত নেওয়ার জন্য একজন বলছে 2টা node-ই যথেষ্ট। কেন সাধারণত 3টা (বা 5টা) node রাখা হয়?",
+      "options": [
+        "2টা node-এ replication চলে না, কারণ যেকোনো replication-এ অন্তত 3টা কপি লাগে, তাই সেখানে failover অসম্ভব",
+        "3টা node-এ write throughput তিন গুণ হয়, যা failover-এর জন্য দরকার",
+        "Network দুভাগ হলে 2টায় কেউ নিশ্চিত হতে পারে না কে মৃত; 3টায় সংখ্যাগরিষ্ঠ (2) সিদ্ধান্ত নিতে পারে",
+        "Odd সংখ্যার node-এ health check দ্রুত চলে, তাই detection-এর সময় কমে"
+      ],
+      "correctIndex": 2,
+      "explanation": "2টা node-এর মাঝে network কাটলে দুজনেই ভাবতে পারে অন্যজন মৃত, আর দুজনেই primary হতে চাইবে (split-brain), অথবা কেউই সিদ্ধান্ত নিতে পারবে না। 3টায় যে দিকে 2টা node আছে, সে দিকই সংখ্যাগরিষ্ঠ (quorum), তাই নিরাপদে সিদ্ধান্ত নিতে পারে।",
+      "whyWrong": {
+        "0": "Primary আর একটা replica, দুটো node-এই replication চলে।",
+        "1": "Failover-এর সিদ্ধান্তের জন্য node বাড়ানো হয়, write throughput-এর জন্য না।",
+        "3": "Node-এর সংখ্যা health check-এর গতি নির্ধারণ করে না; কারণটা সংখ্যাগরিষ্ঠতা।"
+      }
+    },
+    {
+      "id": "sd-day-006-q45",
+      "difficulty": "hard",
+      "question": "আপনার JVM service-এ মাঝে মাঝে 2 সেকেন্ডের GC pause হয়। Failure detector-এর heartbeat timeout 1 সেকেন্ড। কী সমস্যা দেখা দেবে, আর trade-off কী?",
+      "options": [
+        "কোনো সমস্যা নেই, কারণ GC pause-এর সময় heartbeat আলাদা thread থেকে যায়",
+        "GC pause-এর কারণে node-এর data হারাবে, তাই timeout যত ছোট তত ভালো",
+        "Timeout 1 সেকেন্ড থাকায় সব failure খুব দ্রুত ধরা পড়বে, আর এর কোনো খারাপ দিক নেই, তাই এটাই সবচেয়ে আদর্শ setting",
+        "সাময়িক থেমে থাকা সুস্থ node-কে মৃত ধরে অকারণ failover হবে; timeout বাড়ালে কমে, কিন্তু আসল failure ধরতে দেরি"
+      ],
+      "correctIndex": 3,
+      "explanation": "Detector শুধু জানে heartbeat আসেনি; সে 'মৃত' আর 'ধীর' আলাদা করতে পারে না। Timeout pause-এর চেয়ে ছোট হলে false failover হয়, যা নিজেই downtime আর split-brain-এর ঝুঁকি আনে। Timeout বড় করলে ভুল কমে, কিন্তু আসল failure ধরতেও দেরি হয়।",
+      "whyWrong": {
+        "0": "Stop-the-world GC pause-এ সাধারণত application thread-গুলোও থামে, heartbeat-ও আটকে যেতে পারে।",
+        "1": "GC pause data হারায় না; সমস্যা হলো ভুল করে মৃত ধরা।",
+        "2": "দ্রুত detection-এর দাম হলো ভুল detection; খারাপ দিক অবশ্যই আছে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q46",
+      "difficulty": "hard",
+      "question": "আপনার 10 লাখ customer-কে 10টা স্বাধীন cell-এ ভাগ করা, প্রতিটা cell-এর নিজের app server আর database। একটা খারাপ config শুধু একটা cell-এ গেলে কত customer প্রভাবিত হবে, আর কোন অভ্যাস এই সুবিধা নষ্ট করে দেয়?",
+      "options": [
+        "প্রায় 10 লাখ, কারণ cell থাকলেও config সবসময় সবার উপর প্রভাব ফেলে; কোনো অভ্যাসে কিছু বদলায় না",
+        "প্রায় 1 লাখ; কিন্তু একই config একসাথে সব cell-এ push করলে cell-এর সুবিধা হারিয়ে যায়",
+        "প্রায় 10 হাজার; কিন্তু cell-গুলো আলাদা region-এ না রাখলে এটা কাজ করে না",
+        "শূন্য, কারণ cell-এ সমস্যা হলে customer-রা স্বয়ংক্রিয়ভাবে অন্য cell-এ চলে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "10টা সমান cell মানে প্রতিটায় প্রায় 1 লাখ customer, তাই একটা cell-এর সমস্যায় প্রায় 10% প্রভাবিত। কিন্তু config বা deploy একসাথে সব cell-এ দিলে সবাই একই কারণে পড়বে; তাই পরিবর্তনও cell ধরে ধাপে ধাপে দিতে হয়। AWS-এর 2017 S3 summary-তেও blast radius কমাতে index subsystem-কে cell-এ ভাগ করার কথা আছে।",
+      "whyWrong": {
+        "0": "Cell-এর উদ্দেশ্যই হলো একটার সমস্যা অন্যগুলোতে না ছড়ানো।",
+        "2": "10 লাখ ÷ 10 = 1 লাখ; আর cell একই region-এও উপকারী।",
+        "3": "Cell সাধারণত customer-কে স্বয়ংক্রিয়ভাবে সরায় না; ওই cell-এর customer-রা প্রভাবিত হয়।"
+      }
+    },
+    {
+      "id": "sd-day-006-q47",
+      "difficulty": "hard",
+      "question": "আপনার primary region থেকে দ্বিতীয় region-এ asynchronous replication চলে, স্বাভাবিক lag প্রায় 5 সেকেন্ড, আর সেকেন্ডে গড়ে 200টা লেখা হয়। Primary region হঠাৎ পুরো বন্ধ হলে failover-এ সবচেয়ে খারাপ ক্ষেত্রে মোটামুটি কতগুলো লেখা হারাতে পারে?",
+      "options": [
+        "প্রায় 40টা, কারণ 200 ÷ 5",
+        "প্রায় 200টা, কারণ শুধু শেষ সেকেন্ডের লেখা হারায়",
+        "প্রায় 1,000টা, কারণ 200 × 5",
+        "শূন্য, কারণ replication চালু থাকলে কিছু হারায় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Lag 5 সেকেন্ড মানে শেষ ~5 সেকেন্ডের লেখা এখনো দ্বিতীয় region-এ পৌঁছায়নি। 200/s × 5s ≈ 1,000টা লেখা হারাতে পারে। এই 'কতটা data হারানো সহ্য করা যায়' সেটাই RPO, Day 94-এ বিস্তারিত।",
+      "whyWrong": {
+        "0": "ভাগ নয়, গুণ: rate × সময় = সংখ্যা।",
+        "1": "Lag 5 সেকেন্ড, তাই শুধু শেষ সেকেন্ড না, শেষ পাঁচ সেকেন্ড ঝুঁকিতে।",
+        "3": "Asynchronous replication-এ lag-এর ভেতরের লেখা হারাতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q48",
+      "difficulty": "hard",
+      "question": "একটা page-এর একটা core dependency (99.95%) আর তিনটা optional dependency (প্রতিটা 99%) আছে। সব dependency hard হলে (যেকোনোটা fail করলে page fail) আর optional তিনটায় graceful degradation দিলে, page-এর availability মোটামুটি কত?",
+      "options": [
+        "Hard: ≈ 96.98%; degradation দিলে: ≈ 99.95%",
+        "Hard: ≈ 99.95%; degradation দিলে: ≈ 96.98%",
+        "Hard: ≈ 99%; degradation দিলে: ≈ 99.99%",
+        "দুই ক্ষেত্রেই ≈ 99.95%, কারণ optional dependency কখনো availability-তে গোনা হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "সব hard হলে series: 0.9995 × 0.99³ ≈ 0.9995 × 0.9703 ≈ 96.98%। Optional তিনটায় fallback থাকলে তাদের failure-এ page fail করে না, তাই page শুধু core-এর উপর নির্ভর করে: ≈ 99.95%। Dependency-কে optional বানানো availability বাড়ানোর সবচেয়ে সস্তা উপায়গুলোর একটা।",
+      "whyWrong": {
+        "1": "দুটো ফলাফল উল্টে গেছে।",
+        "2": "Hard-এ তিনটা 99% গুণ হয়ে 97%-এর কাছাকাছি নামে; আর degradation core-এর চেয়ে বেশি দিতে পারে না।",
+        "3": "Hard dependency হলে optional-গুলোও series-এ গোনা হয়; এটাই পার্থক্য।"
+      }
+    },
+    {
+      "id": "sd-day-006-q49",
+      "difficulty": "hard",
+      "question": "আপনার incident-গুলোর গড় হিসাব: সমস্যা ধরা পড়তে 25 মিনিট (customer অভিযোগ করলে জানা যায়), কারণ খুঁজতে 20 মিনিট, fix deploy করতে 15 মিনিট। প্রস্তাব (ক): synthetic monitoring ও alert দিয়ে detection 2 মিনিটে আনা। প্রস্তাব (খ): দ্রুত CI দিয়ে deploy 15 থেকে 10 মিনিটে আনা। নতুন MTTR কত হবে?",
+      "options": [
+        "(ক)-তে 37 মিনিট, (খ)-তে 55 মিনিট",
+        "(ক)-তে 55 মিনিট, (খ)-তে 37 মিনিট",
+        "(ক)-তে 23 মিনিট, (খ)-তে 50 মিনিট",
+        "দুটোতেই 60 মিনিট, কারণ detection MTTR-এর অংশ না"
+      ],
+      "correctIndex": 0,
+      "explanation": "এখন MTTR = 25 + 20 + 15 = 60 মিনিট। (ক) detection 25 থেকে 2: 2 + 20 + 15 = 37 মিনিট। (খ) deploy 15 থেকে 10: 25 + 20 + 10 = 55 মিনিট। অনেক সময় সবচেয়ে বড় অংশটা হলো 'জানতে পারা', তাই ভালো alert MTTR-এ সবচেয়ে বড় পার্থক্য আনে।",
+      "whyWrong": {
+        "1": "দুটো প্রস্তাবের ফল উল্টে গেছে।",
+        "2": "(ক)-তে detection কমেছে 23 মিনিট, MTTR 23 মিনিট হয়নি; বাকি ধাপের সময় থেকে যায়।",
+        "3": "MTTR মাপা হয় failure শুরু থেকে সেরে ওঠা পর্যন্ত, তাই detection তার অংশ।"
+      }
+    },
+    {
+      "id": "sd-day-006-q50",
+      "difficulty": "hard",
+      "question": "AWS-এর প্রকাশিত summary অনুযায়ী, ফেব্রুয়ারি 2017-এর S3 (US-EAST-1) disruption-এর সময় AWS নিজের Service Health Dashboard শুরুতে update করতে পারেনি। এই ঘটনা থেকে কোন design নীতিটা সবচেয়ে স্পষ্ট?",
+      "options": [
+        "Status page-কে সবসময় একটা single server-এ রাখা উচিত, যাতে সেটা সরল থাকে",
+        "Dashboard update হাতে না করে সবসময় স্বয়ংক্রিয় হওয়া উচিত, তাহলে এই সমস্যা আর কখনো হতো না",
+        "Monitoring বা status ব্যবস্থা যেন সেই জিনিসের উপরই নির্ভর না করে, যেটা সে monitor করছে",
+        "বড় outage-এ status জানানো জরুরি না, কারণ user আগেই সমস্যা টের পায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Summary-তে বলা হয়, dashboard-এর administration console S3-এর উপর নির্ভর করত, তাই S3-এর সমস্যায় dashboard-ও আটকে যায়। পরে AWS dashboard-কে একাধিক region-এ চালানোর ব্যবস্থা করে। নীতিটা: যা দিয়ে সমস্যা জানাবেন বা ধরবেন, তা যেন সমস্যার একই কারণে না পড়ে।",
+      "whyWrong": {
+        "0": "Single server নিজেই SPOF; এতে সমস্যা বাড়ে।",
+        "1": "সমস্যা ছিল dependency-তে, update হাতে না স্বয়ংক্রিয় তাতে না; স্বয়ংক্রিয় ব্যবস্থাও একই S3-এ আটকাত।",
+        "3": "Outage-এর সময় সঠিক তথ্য জানানো সবচেয়ে জরুরি কাজগুলোর একটা।"
+      }
+    },
+    {
+      "id": "sd-day-006-q51",
+      "difficulty": "hard",
+      "question": "2017-এর S3 ঘটনার পর AWS জানায়, তারা capacity সরানোর tool বদলেছে: এখন ধীরে সরায়, আর কোনো subsystem-কে ন্যূনতম প্রয়োজনীয় capacity-র নিচে নামতে দেয় না। এই পরিবর্তন মূলত কী অর্জন করে?",
+      "options": [
+        "Engineer-দের command চালানোর অনুমতি তুলে নিয়ে মানুষের ভুলের সম্ভাবনা শূন্যে নামায়",
+        "Server-এর hardware-কে আরও টেকসই করে, ফলে MTBF বাড়ে",
+        "Command-এর ভুল input-কে আগে থেকেই শনাক্ত করে স্বয়ংক্রিয়ভাবে ঠিক করে দেয়",
+        "মানুষের ভুল হলেও তার ক্ষতির পরিধি (blast radius) সীমিত রাখার একটা guardrail বসায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "ভুল input মানুষ দেবেই; লক্ষ্য হলো ভুল হলেও যেন সব একসাথে না ভাঙে। ধীরে সরানো ভুল ধরার সময় দেয়, আর ন্যূনতম capacity-র সীমা একটা ভুলকে পুরো subsystem নামাতে দেয় না। এটা blast radius ছোট রাখার guardrail।",
+      "whyWrong": {
+        "0": "অনুমতি তুলে নেওয়ার কথা বলা হয়নি; tool-এর ভেতরে সীমা বসানো হয়েছে।",
+        "1": "এটা software tool-এর পরিবর্তন, hardware-এর না।",
+        "2": "Tool ভুল input 'ঠিক' করে না; ক্ষতিকর মাত্রায় পৌঁছাতে দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q52",
+      "difficulty": "hard",
+      "question": "Kubernetes-এ একটা container-এর জন্য দুটো probe লাগাবেন। Database সাময়িক ধীর হলে কী হওয়া উচিত, সেটা মাথায় রেখে কোন design সবচেয়ে নিরাপদ?",
+      "options": [
+        "দুটো probe-এই database query রাখা, যাতে database-এর যেকোনো সমস্যায় container সাথে সাথে restart হয়ে যায়",
+        "Liveness শুধু process সাড়া দিচ্ছে কিনা দেখবে; readiness নিজের প্রস্তুতি দেখবে, shared database ছাড়া",
+        "শুধু liveness রাখা, কারণ readiness থাকলে pod কখনো traffic পায় না",
+        "Liveness-এ database query রাখা আর readiness বাদ দেওয়া, কারণ restart সব সমস্যা মেটায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Liveness fail করলে container restart হয়; database ধীর হলে সব container restart করা সমস্যা বাড়ায় আর কিছুই সারায় না। Readiness fail করলে pod traffic থেকে সরে; shared dependency সেখানে থাকলে সব pod একসাথে সরে পুরো outage হতে পারে। তাই probe নিজের অবস্থায় সীমিত রাখা আর dependency-র সমস্যা fallback ও alert দিয়ে সামলানো নিরাপদ।",
+      "whyWrong": {
+        "0": "Database ধীর হলে সব container একসাথে restart হবে, যা outage বাড়ায়।",
+        "2": "Readiness probe সফল হলে pod traffic পায়; এটা traffic আটকে রাখে না।",
+        "3": "Restart database-এর ধীরতা সারায় না, উল্টো সবাইকে একসাথে বন্ধ করে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q53",
+      "difficulty": "hard",
+      "question": "একটা server পড়ার পর client-রা প্রতিটা fail হওয়া request সাথে সাথে 3 বার retry করে, কোনো অপেক্ষা ছাড়া। বাকি server-গুলো আগে থেকেই 80% ভারে ছিল। কী হওয়ার ঝুঁকি, আর কী করা উচিত?",
+      "options": [
+        "Retry-র বন্যায় বাকি server-দের ভার কয়েক গুণ বেড়ে তারাও পড়তে পারে; backoff, jitter আর retry-র সীমা দিন",
+        "কোনো ঝুঁকি নেই, কারণ retry সবসময় availability বাড়ায়, আর যত বেশি retry করা হয় তত বেশি request শেষে সফল হয়",
+        "শুধু load balancer-এর algorithm বদলাতে হবে, retry-র সংখ্যা এখানে কোনো ভূমিকা রাখে না",
+        "Retry সংখ্যা 3 থেকে 10 করলে বেশিরভাগ request শেষ পর্যন্ত সফল হবে, তাই সেটাই সমাধান"
+      ],
+      "correctIndex": 0,
+      "explanation": "ব্যর্থতার মুহূর্তে সাথে সাথে বারবার retry মানে বাকি server-গুলোর উপর আসল ভারের কয়েক গুণ চাপ (retry storm), যা cascading failure বানায়। Backoff আর jitter retry ছড়িয়ে দেয়, আর retry budget মোট চাপ সীমিত রাখে। Day 59-এর circuit breaker এই সমস্যার আরেকটা সমাধান।",
+      "whyWrong": {
+        "1": "Retry-রও খরচ আছে; চাপে থাকা system-এ বেশি retry বেশি ব্যর্থতা আনে।",
+        "2": "Algorithm যা-ই হোক, মোট চাপ বাড়লে সবাই overload হয়।",
+        "3": "Retry বাড়ালে চাপ আরও বাড়ে; এটা সমস্যাকে আরও খারাপ করে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q54",
+      "difficulty": "hard",
+      "question": "আপনার 3টা AZ-এ app চলে, peak-এ মোট 600 request/s সামলাতে হয়। লক্ষ্য: যেকোনো একটা পুরো AZ পড়লেও peak সামলানো। প্রতিটা AZ-এ কমপক্ষে কত request/s-এর capacity লাগবে, আর মোট কত?",
+      "options": [
+        "প্রতিটায় 200, মোট 600, কারণ ভার তিন ভাগে সমান ভাগ হয়",
+        "প্রতিটায় 600, মোট 1,800, কারণ যেকোনো একটাকেই সব সামলাতে হতে পারে",
+        "প্রতিটায় 400, মোট 1,200, কারণ নিরাপত্তার জন্য peak-এর দ্বিগুণ রাখতে হয়",
+        "প্রতিটায় 300, মোট 900, কারণ এক AZ পড়লে বাকি দুটো মিলে 600 সামলাতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "একটা AZ পড়লে বাকি দুটোকে মিলে 600 সামলাতে হবে, তাই প্রতিটায় 300। মোট 900, অর্থাৎ peak-এর 1.5 গুণ। AZ যত বেশি, এই বাড়তি খরচ তত কম (N AZ-এ মোট মোটামুটি N/(N−1) গুণ)।",
+      "whyWrong": {
+        "0": "সমান ভাগে স্বাভাবিক সময় চলে, কিন্তু একটা AZ পড়লে বাকিরা overload হবে।",
+        "1": "এটা দুটো AZ একসাথে পড়ার প্রস্তুতি; লক্ষ্য ছিল একটা।",
+        "2": "দ্বিগুণ রাখার নিয়ম নেই; এক AZ পড়লে বাকি দুটোয় দরকার মোট 600, তাই 300 করেই যথেষ্ট।"
+      }
+    },
+    {
+      "id": "sd-day-006-q55",
+      "difficulty": "hard",
+      "question": "দুটো server parallel-এ রেখে team দাবি করছে 99.99%। কিন্তু প্রতি মাসে গড়ে একবার একটা খারাপ deploy দুটোকেই একসাথে 20 মিনিটের জন্য নামিয়ে দেয়। বাস্তব availability-র সবচেয়ে কাছের অনুমান কোনটা?",
+      "options": [
+        "≈ 99.99%, কারণ deploy-জনিত downtime availability-র হিসাবে ধরা হয় না",
+        "≈ 99.95%, কারণ মাসে 20 মিনিট একসাথে বন্ধ থাকা একাই প্রায় 0.05% খায়",
+        "≈ 99.5%, কারণ খারাপ deploy সবসময় availability অর্ধেক করে দেয়",
+        "≈ 99.9999%, কারণ দুটো server থাকায় deploy-এর সমস্যাও ঢাকা পড়ে"
+      ],
+      "correctIndex": 1,
+      "explanation": "মাসে ~43,800 মিনিট; 20 ÷ 43,800 ≈ 0.046%, তাই সর্বোচ্চ ≈ 99.95%, স্বাধীন failure-এর ছোট অংশ যোগ করলে আরও একটু কম। Correlated failure parallel-এর অঙ্ককে অর্থহীন করে দেয়; সমাধান canary deploy আর দ্রুত rollback।",
+      "whyWrong": {
+        "0": "User-এর request fail করলে কারণ যা-ই হোক, সেটা downtime।",
+        "2": "20 মিনিট মাসের প্রায় 0.05%, 0.5% না।",
+        "3": "একই deploy দুটো server-কেই একসাথে মারে, তাই redundancy এখানে কিছু ঢাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q56",
+      "difficulty": "hard",
+      "question": "দুটো region active-active, দুটোতেই একই user-এর account-এ লেখা যায়, আর region-এর মধ্যে replication asynchronous। একই সময়ে দুই region-এ একই account-এর balance বদলালে কী সমস্যা হতে পারে, আর একটা প্রচলিত সমাধান কী?",
+      "options": [
+        "কোনো সমস্যা নেই, কারণ asynchronous replication শেষ পর্যন্ত দুটো লেখাই নিখুঁতভাবে মিলিয়ে একটা সঠিক balance বানায়",
+        "শুধু latency বাড়বে, কারণ দুই region একে অপরের লেখা শেষ হওয়ার জন্য অপেক্ষা করবে",
+        "দুই দিকে পরস্পরবিরোধী লেখা (write conflict) হবে; প্রতিটা user-কে একটা home region-এ লেখানো প্রচলিত সমাধান",
+        "Region দুটো একে অপরকে মৃত ভেবে দুটোই বন্ধ হয়ে যাবে, তাই availability শূন্য হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Asynchronous replication-এ দুই region আলাদাভাবে লেখা গ্রহণ করে, পরে মেলানোর সময় দেখা যায় দুটো আলাদা balance; কোনটা সঠিক তা ঠিক করা কঠিন। একটা user-এর সব লেখা তার home region-এ পাঠালে একই জিনিসের লেখার মালিক একজন থাকে। এখানে availability আর consistency-র টানাপোড়েন, যা Day 8-এর CAP-এর বিষয়।",
+      "whyWrong": {
+        "0": "Asynchronous replication নিজে conflict মেলায় না; আলাদা নিয়ম (যেমন last-write-wins) লাগে, যাতে data হারাতে পারে।",
+        "1": "Asynchronous মানেই অপেক্ষা না করা; latency না, conflict-ই মূল সমস্যা।",
+        "3": "Write conflict-এ region বন্ধ হয় না; দুটোই লেখা নেয়, সেটাই সমস্যা।"
+      }
+    },
+    {
+      "id": "sd-day-006-q57",
+      "difficulty": "hard",
+      "question": "Lab-এর মতো NGINX setup: `max_fails=1 fail_timeout=10s`, `proxy_connect_timeout 1s`, কিন্তু `proxy_next_upstream off` (retry বন্ধ)। একটা backend বন্ধ, অন্যটা চালু, আর প্রতি 0.5 সেকেন্ডে একটা request করে 60 সেকেন্ড পাঠালেন। মোটামুটি কতগুলো request fail করবে?",
+      "options": [
+        "প্রায় 60টা, কারণ round-robin-এ অর্ধেক request সবসময় বন্ধ backend-এ যায়",
+        "শূন্য, কারণ `max_fails` থাকলে NGINX প্রথম request-এর আগেই বন্ধ backend চিনে ফেলে",
+        "মাত্র 1টা, কারণ একবার বাদ পড়লে বন্ধ backend আর কখনো চেষ্টা করা হয় না",
+        "প্রায় 6টা, কারণ প্রতি 10 সেকেন্ডে NGINX বন্ধ backend আবার একবার চেষ্টা করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "প্রথম request বন্ধ backend-এ গিয়ে fail করে, NGINX তাকে 10 সেকেন্ড বাদ রাখে। 10 সেকেন্ড পর আবার একটা request দিয়ে পরীক্ষা করে, সেটাও fail, আবার 10 সেকেন্ড বাদ। 60 সেকেন্ডে মোটামুটি 6টা fail, বাকি 114টার মতো সফল (≈ 95%)। Retry চালু থাকলে এই 6টাও অন্য backend-এ গিয়ে সফল হতো।",
+      "whyWrong": {
+        "0": "Passive health check fail করা backend-কে সাময়িকভাবে বাদ রাখে, তাই অর্ধেক যায় না।",
+        "1": "Passive check আসল request-এর ফল দেখে শেখে, তাই অন্তত প্রথমটা fail করে।",
+        "2": "fail_timeout শেষে NGINX আবার চেষ্টা করে, চিরতরে বাদ দেয় না।"
+      }
+    },
+    {
+      "id": "sd-day-006-q58",
+      "difficulty": "hard",
+      "question": "Region-স্তরের failover DNS দিয়ে করা হয়: primary region পড়লে DNS record দ্বিতীয় region-এর দিকে বদলানো হয়। Record-এর TTL 300 সেকেন্ড। Failover-এ user-রা কী অভিজ্ঞতা পেতে পারে?",
+      "options": [
+        "DNS বদলানোর সাথে সাথেই সব user নতুন region-এ চলে যায়, কারণ DNS প্রতিটা request-এ আবার নতুন করে lookup হয়",
+        "TTL 300 মানে failover-এর পর 300টা request fail করবে, তারপর সব ঠিক",
+        "TTL শুধু প্রথমবার lookup-এর গতি ঠিক করে, তাই failover-এ এর কোনো প্রভাব নেই",
+        "অনেক user cache-এ থাকা পুরনো ঠিকানা ধরে TTL শেষ হওয়া পর্যন্ত (বা আরও বেশি) মৃত region-এ যেতে থাকবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Resolver আর client DNS উত্তর TTL পর্যন্ত cache করে, তাই record বদলালেও অনেকে কিছুক্ষণ পুরনো region-এ যায়। কিছু resolver বা app TTL-এর চেয়ে বেশি সময় ধরে রাখে। তাই DNS-ভিত্তিক failover-এর downtime-এ এই সময় যোগ হয়; আগে থেকে TTL কমিয়ে রাখা বা অন্য routing ব্যবস্থা সাহায্য করে।",
+      "whyWrong": {
+        "0": "DNS উত্তর cache হয়, প্রতিটা request-এ নতুন lookup হয় না (Day 3)।",
+        "1": "TTL সেকেন্ডে মাপা সময়, request-এর সংখ্যা না।",
+        "2": "TTL ঠিক করে উত্তর কতক্ষণ cache থাকবে, তাই failover-এ এর সরাসরি প্রভাব।"
+      }
+    },
+    {
+      "id": "sd-day-006-q59",
+      "difficulty": "hard",
+      "question": "আপনার মাসিক SLO 99.9% (~43.8 মিনিট), আর একটা দৈনিক SLO-ও আছে 99.9% (~1.44 মিনিট)। এক দিনে 40 মিনিটের একটা outage হলো, মাসের বাকি দিন একদম পরিষ্কার। কোন কথাটা ঠিক?",
+      "options": [
+        "মাসিক SLO মানা হলো, কিন্তু সেই দিনের দৈনিক SLO ভাঙল",
+        "মাসিক আর দৈনিক দুটোই মানা হলো, কারণ দুটোর শতাংশ একই 99.9%",
+        "দুটোই ভাঙল, কারণ 40 মিনিট যেকোনো window-এ 0.1%-এর বেশি",
+        "দৈনিক SLO মানা হলো কিন্তু মাসিক ভাঙল, কারণ মাসের window বড়"
+      ],
+      "correctIndex": 0,
+      "explanation": "মাসে 40 মিনিট < 43.8 মিনিট, তাই মাসিক SLO মানা হয়েছে। কিন্তু সেই দিনে 40 মিনিট >> 1.44 মিনিট, তাই দৈনিক SLO ভেঙেছে। একই শতাংশে window ছোট হলে একটা বড় outage অনেক বেশি চোখে পড়ে; কোন window বেছে নেবেন তা user-এর অভিজ্ঞতা ধরে ঠিক করতে হয়।",
+      "whyWrong": {
+        "1": "শতাংশ এক হলেও window আলাদা, তাই budget-ও আলাদা।",
+        "2": "মাসের window-এ 40 মিনিট 0.1%-এর কম।",
+        "3": "উল্টো: বড় window-এ budget বড়, তাই মাসিকটাই মানা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-006-q60",
+      "difficulty": "hard",
+      "question": "আপনার app একটা region-এর তিনটা AZ-এ ছড়ানো, আর সব user upload ওই region-এর object storage-এ রাখা। 2017-এর S3 ঘটনার মতো পুরো region-জুড়ে storage service-এ সমস্যা হলে কী হবে, আর কী সাহায্য করত?",
+      "options": [
+        "কিছুই হবে না, কারণ app তিনটা AZ-এ আছে আর multi-AZ সব ধরনের failure সামলায়",
+        "Upload-নির্ভর অংশ বন্ধ হবে, কারণ dependency region-জুড়ে; অন্য region-এ replica আর graceful degradation সাহায্য করত",
+        "শুধু একটা AZ প্রভাবিত হবে, তাই load balancer বাকি দুই AZ-এ traffic সরিয়ে দিলেই region-এর এই সমস্যা পুরোপুরি মিটে যাবে",
+        "App server-এর সংখ্যা দ্বিগুণ করলে storage-এর সমস্যা ঢাকা পড়বে, কারণ ভার ভাগ হয়ে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Multi-AZ শুধু সেই failure সামলায় যেটা একটা AZ-এ সীমিত। এখানে dependency (storage service) পুরো region-এ সমস্যায়, আর app-এর প্রতিটা কপিই তার উপর series-এ নির্ভর করে, তাই কোন AZ-এ app আছে তাতে কিছু যায় আসে না। অন্য region-এ data-র replica থেকে পড়া, আর upload বন্ধ থাকলেও বাকি app চালু রাখা (graceful degradation) ক্ষতি কমাত।",
+      "whyWrong": {
+        "0": "Multi-AZ region-জুড়ে কোনো service-এর সমস্যা সামলায় না।",
+        "2": "সমস্যাটা একটা AZ-এ না, পুরো region-এর storage service-এ; সব AZ-এর app প্রভাবিত।",
+        "3": "App server বাড়ালে storage-এর উপর নির্ভরতা কমে না; সবাই একই dependency-তে আটকে।"
+      }
+    }
+  ]
+}

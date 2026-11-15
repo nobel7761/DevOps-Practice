@@ -277,6 +277,12 @@ export function getChapter(id: string): ChapterMeta | undefined {
   return CHAPTERS.find((chapter) => chapter.id === id);
 }
 
+/** Human label for a chapter id: "Day 3 · Claude API mechanics" (what the sidebar shows), never the bare "ch03". */
+export function chapterLabel(chapterId: string): string {
+  const chapter = getChapter(chapterId);
+  return chapter ? `Day ${chapter.day} · ${chapter.title}` : chapterId;
+}
+
 export function chaptersOnDay(day: number): ChapterMeta[] {
   return CHAPTERS.filter((chapter) => chapter.day === day);
 }
@@ -305,16 +311,8 @@ export function parseExamContentId(contentId: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-/** Last study day of Milestone 1 (Week 1). The interactive flashcard quiz is rolled out milestone by milestone. */
-export const INTERACTIVE_FLASHCARDS_LAST_DAY = 6;
-
-/** True for chapters whose flashcards use the typed-answer + AI-validation quiz deck (Milestone 1 only for now). */
-export function hasInteractiveFlashcards(chapterId: string): boolean {
-  const chapter = getChapter(chapterId);
-  return !!chapter && chapter.day <= INTERACTIVE_FLASHCARDS_LAST_DAY;
-}
-
-/** Sort-game simulators use "pick everything, then Submit" with saved answers (Milestone 1 only for now). */
-export function hasSubmitSimulators(chapterId: string): boolean {
-  return hasInteractiveFlashcards(chapterId);
-}
+/**
+ * Flashcards with "type your answer + Validate (AI)". Switched off for now: the cards still flip,
+ * show remembered marks and save to the DB. Set to true to bring the typing + AI grading back.
+ */
+export const FLASHCARD_TYPED_ANSWERS = false;

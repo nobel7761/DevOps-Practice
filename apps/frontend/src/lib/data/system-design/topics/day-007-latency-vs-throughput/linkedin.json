@@ -1,0 +1,17 @@
+{
+  "type": "poll",
+  "text": "প্রতিটা server ৯৯% সময় দ্রুত। তবুও অর্ধেকের বেশি user কেন ধীর page পায়?\nDay 7/100 · Latency vs Throughput\n\nবিয়ে বাড়িতে একটা টেবিলের কথা ভাবুন। দশজন বাবুর্চি দশটা পদ আনছে, আর টেবিলে খাওয়া শুরু হয় সব পদ আসার পরে। নয়জন সময়মতো এলেও একজন দেরি করলে পুরো টেবিল অপেক্ষা করে।\n\nআজ **Latency** শিখতে গিয়ে দেখলাম বড় system-এ ঠিক এটাই হয়। একটা search বা feed request পেছনে অনেকগুলো server-এ যায় (**Fan-out**), আর উত্তর তৈরি হয় সবচেয়ে ধীর server-এর উত্তর আসার পরে।\n\nতাই গড় latency দেখে খুশি হওয়া যায় না। দেখতে হয় **p99**: ধীরতম ১% request-এর অবস্থা।\n\nএকটা হিসাব দিই। ধরুন প্রতিটা backend server-এর ১% request ধীর (১ সেকেন্ড)। আপনার একটা page পেছনে ১০০টা server-এ request পাঠায়।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এর কোন page বা API একসাথে অনেকগুলো service বা database call করে, আর তার p99 কখনো মেপেছেন?]\n\nকত % page load ১ সেকেন্ডের বেশি নেবে? আন্দাজে না, হিসাব করে vote দিন, আর কেন বেছে নিলেন comment-এ লিখুন 👇\n\nউত্তর আর ব্যাখ্যা দেব কাল।",
+  "personalPrompt": "আপনার project-এর কোন page বা API একসাথে অনেকগুলো service বা database call করে, আর তার p99 কখনো মেপেছেন?",
+  "firstComment": "Latency, throughput আর bandwidth-এর পার্থক্য, p50/p99, Little's Law, আর Docker-এ নিজে load দিয়ে throughput-এর ছাদ আর latency-র লাফ দেখার lab, পুরো lesson এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Latency",
+    "#BackendEngineering"
+  ],
+  "poll": {
+    "question": "প্রতিটা backend-এর ১% request ধীর। Page ১০০টা backend-এ fan-out করে। কত % page ধীর হবে?",
+    "options": ["~১% (একই থাকবে)", "~১০%", "~৩৭%", "~৬৩%"],
+    "answerComment": "উত্তর: ~৬৩% ✅\n\nPage দ্রুত হতে হলে ১০০টা backend-এর সবাইকেই দ্রুত হতে হবে। একটা backend দ্রুত হওয়ার সম্ভাবনা ০.৯৯, তাই ১০০টাই দ্রুত হওয়ার সম্ভাবনা 0.99¹⁰⁰ ≈ ০.৩৬৬। অন্তত একটা ধীর হওয়ার সম্ভাবনা = 1 − 0.366 ≈ ৬৩%।\n\nকেন অন্যগুলো না:\n- ~১%: এটা একটা backend-এর হিসাব। Fan-out-এ সবচেয়ে ধীরটার জন্য অপেক্ষা করতে হয়, তাই সম্ভাবনা জমতে থাকে।\n- ~১০%: এটা মোটামুটি ১০টা backend-এর উত্তর (1 − 0.99¹⁰ ≈ ৯.৬%), ১০০টার না।\n- ~৩৭%: এটা উল্টো দিক, মানে সব backend দ্রুত হওয়ার সম্ভাবনা (০.৩৬৬)।\n\nশিক্ষা: fan-out বড় হলে প্রতিটা server-এর p99 যথেষ্ট না, দেখতে হয় p99.9 বা তারও বেশি। Google-এর Jeffrey Dean আর Luiz André Barroso-র \"The Tail at Scale\" (Communications of the ACM, 2013) প্রবন্ধে এই হিসাবটা আছে, আর সমাধান হিসেবে hedged request: একটা replica নির্দিষ্ট সময়ে উত্তর না দিলে আরেকটাকে একই request পাঠিয়ে যেটা আগে আসে সেটা নেওয়া।"
+  }
+}

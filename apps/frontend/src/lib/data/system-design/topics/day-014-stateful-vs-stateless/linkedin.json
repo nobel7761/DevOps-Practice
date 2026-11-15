@@ -1,0 +1,22 @@
+{
+  "type": "poll",
+  "text": "Server ১টা থেকে ৩টা করলাম, আর পরদিন সকালে অভিযোগ: \"refresh দিলেই cart খালি!\"\nDay 14/100 · Stateful vs Stateless\n\nধরুন আপনার e-commerce app-এ login **session** আর **cart** রাখা আছে server-এর memory-তে। এক server-এ সব ঠিক ছিল।\n\nSale-এর জন্য **Load Balancer**-এর পেছনে আরও দুটো server বসালেন। এখন একই user-এর এক request যায় Server 1-এ, পরেরটা Server 2-তে। Cart কখনো আছে, কখনো নেই। কেউ কেউ হঠাৎ logout।\n\nকাল রাতে আবার deploy আছে, আর traffic কমলে একটা server বন্ধ করে খরচ বাঁচানোর পরিকল্পনাও আছে।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার কোনো project-এ কি দ্বিতীয় server যোগ করার পরে হঠাৎ logout বা data হারানোর মতো কিছু হয়েছিল? কারণটা কী ছিল?]\n\nআপনি হলে কী করতেন? Poll-এ vote দিন, আর কেন বেছে নিলেন comment-এ লিখুন 👇\n\nউত্তর আর ব্যাখ্যা দেব কাল।",
+  "personalPrompt": "আপনার কোনো project-এ কি দ্বিতীয় server যোগ করার পরে হঠাৎ logout বা data হারানোর মতো কিছু হয়েছিল? কারণটা কী ছিল?",
+  "firstComment": "পুরো lesson, diagram, Docker lab (NGINX + Redis) আর Load Balancer Lab-এর \"Shopping cart হারিয়ে যাচ্ছে\" challenge এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Scalability",
+    "#BackendEngineering"
+  ],
+  "poll": {
+    "question": "৩টা server, session আর cart server-এর memory-তে, user-দের cart হারাচ্ছে। সামনে deploy আর autoscaling। আপনি কী করবেন?",
+    "options": [
+      "LB-তে sticky session চালু",
+      "Session-cart Redis/DB-তে",
+      "সব data JWT-তে ভরে দেওয়া",
+      "আবার এক বড় server-এ ফেরা"
+    ],
+    "answerComment": "উত্তর: Session-cart Redis/DB-তে ✅\n\nকারণ: সমস্যা load balancer-এ না, server-গুলো নিজের memory-তে state রাখছে। Session Redis-এ (TTL সহ) আর logged-in user-এর cart database-এ রাখলে server-গুলো stateless হয়: যেকোনো server যেকোনো request নিতে পারে, deploy বা crash-এ কারও cart হারায় না, আর autoscaling-এ server যোগ-বাদ নির্ভয়ে। দাম: প্রতি request-এ একটা Redis call (সাধারণত ১ms-এর কম), আর Redis-কে replica দিয়ে ভালোভাবে চালাতে হবে।\n\nঅন্যগুলো কেন না:\n- Sticky session: আজকের cart দেখা যাবে, কিন্তু state এখনো এক server-এর memory-তে। কালকের deploy-তে বা server বন্ধ করলে ওই server-এর সবার cart আর login যাবে, আর ব্যস্ত user-রা এক server-এ আটকে ভার অসমান করবে। বড়জোর সাময়িক জোড়াতালি।\n- সব data JWT-তে: login-এর পরিচয়ের জন্য ছোট মেয়াদের token চলে, কিন্তু পুরো cart token-এ ভরলে প্রতি request-এ বড় header, cookie-র ~4KB সীমা, আর logout বা পরিবর্তন exp পর্যন্ত টের পাওয়া যায় না।\n- এক বড় server: আজ কাজ করবে, কিন্তু সেটাই single point of failure, deploy-তে downtime, আর একসময় আর বড় machine পাওয়া যাবে না।\n\nআপনি কোনটা বেছেছিলেন? 👇"
+  }
+}

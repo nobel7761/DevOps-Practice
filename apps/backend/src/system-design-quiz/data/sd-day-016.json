@@ -1,0 +1,1050 @@
+{
+  "topicId": "sd-day-016",
+  "questions": [
+    {
+      "id": "sd-day-016-q01",
+      "difficulty": "easy",
+      "question": "Microservice system-এ API Gateway-র মূল ভূমিকা কী?",
+      "options": [
+        "বাইরের সব API request-এর একমাত্র প্রবেশপথ, যেখানে auth, limit, routing সেরে request service-এ যায়",
+        "Database-এর সামনে বসে query-র ফল cache করা, যাতে service-গুলোকে database-এ কম যেতে হয়",
+        "সব service-এর business logic এক জায়গায় জড়ো করা, যাতে service-গুলো শুধু data রাখে",
+        "Domain name-কে IP address-এ বদলে দেওয়া, যাতে client সঠিক server খুঁজে পায় আর সবচেয়ে কাছের region বাছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "API Gateway client আর service-এর মাঝখানে বসে, সব বাইরের request এখান দিয়ে ঢোকে। এখানে auth, rate limit, log-এর মতো সবার জন্য একই কাজগুলো হয়, তারপর path দেখে request ঠিক service-এ যায়।",
+      "whyWrong": {
+        "1": "Query cache database-এর সামনের cache layer-এর কাজ, gateway-র মূল ভূমিকা না।",
+        "2": "Business logic gateway-তে জড়ো করা হলো 'god gateway' anti-pattern।",
+        "3": "Domain থেকে IP বের করা DNS-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-016-q02",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা একটা 'cross-cutting concern', যেটা gateway-তে রাখা স্বাভাবিক?",
+      "options": [
+        "Order-এর মোট দাম আর delivery charge হিসাব করা",
+        "রেস্টুরেন্টের menu-তে কোন খাবারের দাম কত, সেটা ঠিক করা",
+        "Request-এর authentication আর প্রতিটা request-এর access log",
+        "Payment ফেরত (refund) দেওয়ার নিয়ম আর কত দিনের মধ্যে দেওয়া যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cross-cutting concern হলো যে কাজ প্রতিটা service-কেই লাগে কিন্তু কারো আসল কাজ না, যেমন auth, log, rate limit, CORS। এগুলো এক জায়গায় রাখলে সবখানে একই নিয়ম চলে।",
+      "whyWrong": {
+        "0": "দাম হিসাব Order service-এর business logic।",
+        "1": "Menu-র দাম Menu service-এর নিজস্ব data আর নিয়ম।",
+        "3": "Refund-এর নিয়ম Payment service-এর business rule, gateway-র না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q03",
+      "difficulty": "easy",
+      "question": "Kong-এ key-auth plugin চালু, আর একটা request কোনো API key ছাড়াই এলো। Gateway কী উত্তর দেবে?",
+      "options": [
+        "403 Forbidden",
+        "401 Unauthorized",
+        "429 Too Many Requests",
+        "404 Not Found"
+      ],
+      "correctIndex": 1,
+      "explanation": "Key না থাকা মানে gateway জানে না কে ডাকছে, অর্থাৎ authentication হয়নি, তাই 401। Lab-এ body-তে 'No API key found in request' আর WWW-Authenticate: Key header দেখা যায়।",
+      "whyWrong": {
+        "0": "403 সাধারণত তখন, যখন পরিচয় জানা কিন্তু অনুমতি নেই।",
+        "2": "429 আসে সীমা পেরোলে, এখানে তো পরিচয়ই নেই।",
+        "3": "Route মিলেছে, তাই 404 না; সমস্যা key না থাকা।"
+      }
+    },
+    {
+      "id": "sd-day-016-q04",
+      "difficulty": "easy",
+      "question": "Gateway-র rate limit পেরিয়ে গেলে কোন status code আর কোন header পাঠানো সবচেয়ে উপযুক্ত?",
+      "options": [
+        "503 Service Unavailable, সাথে Retry-After",
+        "401 Unauthorized, সাথে WWW-Authenticate",
+        "408 Request Timeout, সাথে Connection: close",
+        "429 Too Many Requests, সাথে Retry-After"
+      ],
+      "correctIndex": 3,
+      "explanation": "429 মানে client বেশি পাঠাচ্ছে, আর Retry-After বলে কতক্ষণ পরে আবার চেষ্টা করা যাবে। Kong lab-এ ঠিক এটাই দেখা যায়, সাথে RateLimit-Remaining: 0।",
+      "whyWrong": {
+        "0": "503 মানে server নিজের সমস্যায় পড়েছে, client-এর সীমা পেরোনো না।",
+        "1": "401 পরিচয় না থাকার জন্য, সীমার জন্য না।",
+        "2": "408 মানে client request পাঠাতে বেশি সময় নিয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q05",
+      "difficulty": "easy",
+      "question": "API Gateway-তে 'path-based routing' বলতে কী বোঝায়?",
+      "options": [
+        "/orders/* এলে Order service-এ আর /menu/* এলে Menu service-এ পাঠানো",
+        "Client-এর IP দেখে সবচেয়ে কাছের data center বা region-এ request পাঠানো",
+        "Server-গুলোর CPU দেখে সবচেয়ে কম ব্যস্তটায় request পাঠানো",
+        "Response cache-এ থাকলে service-এ না গিয়ে সেখান থেকেই ফেরত দেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "Path-based routing-এ URL-এর path দেখে ঠিক হয় কোন service request পাবে। এতে এক ঠিকানার পেছনে অনেক service রাখা যায়, আর ভেতরে service সরালেও client-এর URL বদলায় না।",
+      "whyWrong": {
+        "1": "IP দেখে কাছের data center বাছা geo-routing, সাধারণত DNS স্তরে।",
+        "2": "CPU দেখে বাছাই load balancing algorithm, routing rule না।",
+        "3": "Cache থেকে উত্তর দেওয়া caching, routing না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q06",
+      "difficulty": "easy",
+      "question": "Gateway থাকলে client (mobile app)-এর সবচেয়ে বড় সুবিধা কোনটা?",
+      "options": [
+        "পেছনের service-গুলো আর কখনো down হয় না, কারণ gateway তাদের রক্ষা করে",
+        "App শুধু একটা ঠিকানা চেনে, ভেতরে service ভাঙা-জোড়া হলেও URL একই থাকে",
+        "Network latency প্রায় শূন্য হয়ে যায়, কারণ gateway পথ ছোট করে দেয়",
+        "App-কে আর কোনো auth token পাঠাতে হয় না, gateway নিজেই user চিনে নেয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Gateway ভেতরের গঠন লুকিয়ে রাখে। Client একটা stable ঠিকানা আর path চেনে, তাই ভেতরে service split বা move করলে শুধু gateway-র route বদলালেই হয়।",
+      "whyWrong": {
+        "0": "Gateway service-কে down হওয়া থেকে বাঁচায় না, শুধু ব্যর্থতা সামলাতে পারে।",
+        "2": "Gateway বরং একটা বাড়তি hop যোগ করে, latency সামান্য বাড়ায়।",
+        "3": "Client-কে এখনো key বা token পাঠাতে হয়, gateway সেটা যাচাই করে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q07",
+      "difficulty": "easy",
+      "question": "API Gateway যোগ করার একটা স্বাভাবিক দাম (trade-off) কোনটা?",
+      "options": [
+        "Gateway থাকলে HTTPS ব্যবহার করা যায় না, শুধু সাধারণ HTTP চলে",
+        "সব service-কে একই programming language-এ লিখতে হয়",
+        "প্রতি request-এ একটা বাড়তি hop, আর একটাই instance হলে SPOF",
+        "Database query-ও gateway দিয়ে যেতে হয়, তাই database ধীর হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "সব request gateway পেরোয়, তাই কয়েক millisecond বাড়তি latency যোগ হয়। আর সব traffic এক দরজায়, তাই একটা instance পড়লে পুরো API পড়ে; সমাধান কয়েকটা instance আর load balancer।",
+      "whyWrong": {
+        "0": "Gateway সাধারণত নিজেই TLS terminate করে, HTTPS খুব ভালোভাবে চলে।",
+        "1": "Gateway HTTP-তে কথা বলে, service কোন language-এ লেখা তাতে কিছু যায় আসে না।",
+        "3": "Service-এর database query gateway দিয়ে যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q08",
+      "difficulty": "easy",
+      "question": "API Gateway আর reverse proxy-র সম্পর্ক সবচেয়ে ভালোভাবে কোনটা বোঝায়?",
+      "options": [
+        "Gateway আসলে forward proxy, যে client-এর পক্ষে বাইরের website-এ request পাঠায় আর client-এর IP লুকায়",
+        "দুটো সম্পূর্ণ আলাদা; gateway HTTP বোঝে না, শুধু TCP connection ভাগ করে",
+        "Reverse proxy gateway-র পেছনে বসে service-গুলোর code চালায়",
+        "Gateway একটা বিশেষ reverse proxy, যে consumer, key, quota আর version-এর মতো API-র ধারণা বোঝে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Reverse proxy server-এর পক্ষে request নিয়ে পেছনে পাঠায়। Gateway সেই কাজটাই করে, সাথে API-র ধারণা: কে ডাকছে, কতবার, কোন version। Day 15-এ reverse proxy বিস্তারিত।",
+      "whyWrong": {
+        "0": "Forward proxy client-এর পক্ষে কাজ করে, gateway server-এর পক্ষে।",
+        "1": "Gateway L7, HTTP পুরোপুরি বোঝে; শুধু TCP ভাগ করা L4 load balancer।",
+        "2": "Reverse proxy service-এর code চালায় না, শুধু request পাঠায়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q09",
+      "difficulty": "easy",
+      "question": "BFF (Backend for Frontend) pattern-এর মূল ধারণা কী?",
+      "options": [
+        "Backend developer-দের জন্য একটা frontend testing framework",
+        "প্রতিটা ধরনের client (mobile, web)-এর জন্য আলাদা পাতলা backend, সেই client-এর মাপে উত্তর বানায়",
+        "সব client-এর জন্য একটাই বড় backend, যেখানে সব business logic আর সব client-এর সব screen-এর data রাখা হয়",
+        "Browser-এর ভেতরে চলা একটা cache layer, যেটা backend-এর চাপ কমায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Mobile, web আর partner-এর চাহিদা আলাদা। BFF প্রতিটার জন্য একটা পাতলা backend, যেটা ভেতরের service ডেকে সেই client-এর দরকারি আকারে data দেয়, আর সাধারণত সেই frontend team-এর মালিকানায় থাকে।",
+      "whyWrong": {
+        "0": "BFF একটা architecture pattern, testing tool না।",
+        "2": "এক বড় backend-এ সব logic রাখা BFF-এর উল্টো, সেটা god gateway বা monolith।",
+        "3": "BFF server-side-এ চলে, browser cache না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q10",
+      "difficulty": "easy",
+      "question": "Mobile app-এর জন্য gateway-তে request aggregation কেন বিশেষভাবে কাজের?",
+      "options": [
+        "ধীর mobile network-এ অনেক round trip-এর বদলে একটা, আর ভেতরের call data center-এ দ্রুত হয়",
+        "Mobile app বড় JSON ঠিকমতো parse করতে পারে না, তাই gateway-কে আগে থেকে HTML বানিয়ে পাঠাতে হয়",
+        "Aggregation করলে server-এ মোট কাজ কমে যায়, কারণ service-গুলো কম call পায়",
+        "Mobile network-এ HTTPS চলে না, তাই gateway মাঝখানে encryption করে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Mobile network-এ প্রতিটা round trip দামি। Gateway বা BFF ভেতরের service-গুলো (যেগুলো একে অপরের কাছে) একসাথে ডেকে এক উত্তরে দিলে client-এর অপেক্ষা অনেক কমে।",
+      "whyWrong": {
+        "1": "Mobile app সহজেই JSON parse করে।",
+        "2": "Service-গুলো একই সংখ্যক call পায়, শুধু ডাকছে gateway; মোট কাজ কমে না।",
+        "3": "Mobile network-এ HTTPS খুব ভালো চলে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q11",
+      "difficulty": "easy",
+      "question": "API Gateway-তে 'protocol translation'-এর একটা সাধারণ উদাহরণ কোনটা?",
+      "options": [
+        "HTTP request-কে HTTPS-এ redirect করা, যাতে সব traffic encrypted পথে যায়",
+        "IPv4 address-কে IPv6 address-এ বদলানো",
+        "JSON response-কে gzip দিয়ে compress করা",
+        "বাইরে REST/JSON, ভেতরের service-কে gRPC-তে ডাকা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Browser আর partner সহজ REST/JSON চায়, ভেতরের service দ্রুত binary gRPC-তে কথা বলে। Gateway মাঝে message রূপান্তর করে (Kong-এ grpc-gateway plugin)। gRPC Day 45-এ।",
+      "whyWrong": {
+        "0": "Redirect একই protocol-এর নিরাপদ সংস্করণে পাঠানো, API protocol বদল না।",
+        "1": "Address family বদল network স্তরের কাজ।",
+        "2": "Compression encoding বদলায়, API protocol না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q12",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা API Gateway-তে রাখা উচিত না?",
+      "options": [
+        "JWT-এর signature আর মেয়াদ যাচাই",
+        "প্রতিটা API key-এর জন্য মিনিটে সর্বোচ্চ request-এর সীমা",
+        "কোন order-এ কত টাকা discount হবে, সেই হিসাব",
+        "প্রতিটা request-এ একটা trace id header বসানো"
+      ],
+      "correctIndex": 2,
+      "explanation": "Discount হিসাব business logic। Gateway-তে এমন নিয়ম জমলে সেটা 'god gateway' হয়ে যায়: প্রতিটা change-এ gateway deploy আর সবার ভাগের monolith। বাকি তিনটা cross-cutting কাজ, gateway-র জন্য স্বাভাবিক।",
+      "whyWrong": {
+        "0": "JWT যাচাই edge-এ করা gateway-র সাধারণ দায়িত্ব।",
+        "1": "Per-key rate limit gateway-র অন্যতম মূল কাজ।",
+        "3": "Trace id বসানো observability-র জন্য gateway-র স্বাভাবিক কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-016-q13",
+      "difficulty": "easy",
+      "question": "Gateway প্রতিটা request-এ একটা request id বা trace id header বসায় কেন?",
+      "options": [
+        "যাতে কয়েকটা service-এর log একই request ধরে মেলানো যায়",
+        "যাতে একই request দুবার এলে idempotency key হিসেবে আটকানো যায়",
+        "যাতে এই id দেখেই client-কে authenticate করা যায়",
+        "যাতে response cache-এর key হিসেবে এটা ব্যবহার করা যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "একটা user request কয়েকটা service পেরোয়। সবাই একই id log করলে একটা সমস্যার পুরো পথ খুঁজে পাওয়া যায়। Kong lab-এ X-Kong-Request-Id এটাই করে।",
+      "whyWrong": {
+        "1": "Idempotency key client দেয়, প্রতিটা request-এ নতুন trace id দিয়ে duplicate ধরা যায় না।",
+        "2": "Trace id কোনো গোপন তথ্য না, এটা দিয়ে পরিচয় প্রমাণ হয় না।",
+        "3": "প্রতিটা request-এ id আলাদা, তাই cache key হিসেবে কোনো কাজে আসবে না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q14",
+      "difficulty": "easy",
+      "question": "Service mesh প্রধানত কোন traffic সামলায়?",
+      "options": [
+        "Browser থেকে CDN-এর static file-এর traffic",
+        "ভেতরে service থেকে service-এর traffic (east-west)",
+        "বাইরের partner থেকে gateway-তে আসা traffic (north-south)",
+        "Database primary থেকে replica-তে replication-এর traffic"
+      ],
+      "correctIndex": 1,
+      "explanation": "Mesh প্রতিটা service-এর পাশে proxy বসিয়ে ভেতরের call-এ mTLS, retry, timeout দেয়। বাইরের (north-south) traffic সামলায় gateway। Service mesh Day 63-এ।",
+      "whyWrong": {
+        "0": "CDN traffic mesh-এর কাজ না।",
+        "2": "বাইরে থেকে আসা traffic gateway-র এলাকা।",
+        "3": "Database replication database নিজে সামলায়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q15",
+      "difficulty": "easy",
+      "question": "Gateway দিয়ে API versioning কিভাবে সহজ হয়?",
+      "options": [
+        "Gateway নিজে পুরনো request-এর business logic নতুন নিয়মে বদলে দেয়",
+        "Versioning মানে gateway software-এর নিজের version নিয়মিত আপডেট রাখা, যাতে নতুন plugin পাওয়া যায়",
+        "প্রতিটা version-এর জন্য আলাদা domain কিনতে হয়, gateway সেগুলো জোড়া দেয়",
+        "/v1/orders পুরনো service-এ আর /v2/orders নতুনটায় route করা যায়, পুরনো app ভাঙে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটো version আলাদা route হিসেবে পাশাপাশি চলতে পারে। পুরনো app /v1 ডাকে, নতুনটা /v2, আর gateway-র metrics দেখে বোঝা যায় কবে /v1 বন্ধ করা নিরাপদ।",
+      "whyWrong": {
+        "0": "Business logic বদলানো service-এর কাজ, gateway-র না।",
+        "1": "এখানে versioning মানে API-র version, gateway software-এর না।",
+        "2": "Path বা header দিয়েই version ভাগ করা যায়, আলাদা domain লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q16",
+      "difficulty": "easy",
+      "question": "Gateway যেন single point of failure না হয়, তার সবচেয়ে সাধারণ উপায় কোনটা?",
+      "options": [
+        "একটা খুব শক্তিশালী machine-এ একটাই gateway চালানো",
+        "Gateway-র timeout অনেক বাড়িয়ে দেওয়া, যাতে কখনো fail না করে",
+        "Gateway stateless রেখে কয়েকটা instance চালানো, সামনে load balancer",
+        "Gateway ব্যর্থ হলে client-কে সরাসরি ভেতরের service ডাকতে দেওয়া, যাতে কাজ না থামে"
+      ],
+      "correctIndex": 2,
+      "explanation": "State (যেমন rate limit counter) বাইরে Redis-এ রাখলে gateway instance-গুলো একে অপরের বদলি হতে পারে। একটা পড়লে load balancer বাকিদের কাছে পাঠায়।",
+      "whyWrong": {
+        "0": "একটা শক্তিশালী machine-ও পড়ে যেতে পারে; এটা এখনো SPOF।",
+        "1": "Timeout বাড়ালে crash বা restart ঠেকে না।",
+        "3": "Service সরাসরি খোলা রাখলে auth এড়িয়ে ঢোকার পথ তৈরি হয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q17",
+      "difficulty": "easy",
+      "question": "CORS-এর নিয়ম gateway-তে রাখার যুক্তি কী?",
+      "options": [
+        "CORS server-কে DDoS আক্রমণ থেকে রক্ষা করে, তাই সবার সামনে gateway-তেই থাকা উচিত",
+        "Browser-এর CORS header-এর নিয়ম সব API-তে এক জায়গায় একই রকম রাখা যায়",
+        "CORS চালাতে database লাগে, যেটা শুধু gateway-র কাছে থাকে",
+        "CORS শুধু mobile app-এর জন্য দরকার, browser-এর জন্য না"
+      ],
+      "correctIndex": 1,
+      "explanation": "CORS browser-এর নিয়ম: কোন origin থেকে API ডাকা যাবে। পাঁচ service-এ পাঁচ রকম CORS config হলে কিছু page কাজ করে, কিছু করে না। Gateway-তে একবার রাখলে নিয়ম একই।",
+      "whyWrong": {
+        "0": "CORS DDoS থামায় না, এটা browser-এর নিরাপত্তা নিয়ম।",
+        "2": "CORS-এর জন্য কোনো database লাগে না।",
+        "3": "CORS browser-এর নিয়ম, native mobile app-এ সাধারণত প্রযোজ্য না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q18",
+      "difficulty": "easy",
+      "question": "Kong-এর DB-less mode মানে কী?",
+      "options": [
+        "Kong database ছাড়া চলে, পুরো config আসে একটা declarative YAML/JSON file থেকে",
+        "Kong কোনো config ছাড়াই network-এ সব service নিজে খুঁজে route বানায়",
+        "পেছনের service-গুলোর database বন্ধ রাখতে হয়, Kong data cache করে",
+        "Admin API দিয়ে যত খুশি service বানানো যায়, শুধু Kong restart হলে সেগুলো মুছে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "DB-less-এ KONG_DATABASE=off, আর KONG_DECLARATIVE_CONFIG file-ই একমাত্র সত্য উৎস। Admin API দিয়ে নতুন entity বানানো যায় না; lab-এ এই error নিজে দেখবেন।",
+      "whyWrong": {
+        "1": "Kong নিজে service খোঁজে না, route config-এ লিখে দিতে হয়।",
+        "2": "Upstream service-এর database-এর সাথে DB-less-এর কোনো সম্পর্ক নেই।",
+        "3": "DB-less-এ Admin API দিয়ে service বানানো যায়ই না, error দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q19",
+      "difficulty": "easy",
+      "question": "Gateway-তে response caching কোন ধরনের API-র জন্য সবচেয়ে উপযুক্ত?",
+      "options": [
+        "প্রতিটা user-এর নিজের order history, যেটা user অনুযায়ী আলাদা",
+        "POST /payments-এর response, যাতে একই payment আবার দ্রুত হয়",
+        "সবার জন্য একই আর কম বদলায় এমন GET, যেমন শহরের তালিকা বা menu",
+        "প্রতিটা user-এর cart, যেটা প্রতি মিনিটে বদলায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Shared cache-এ শুধু এমন জিনিস রাখা নিরাপদ যেটা সবার জন্য একই আর একটু পুরনো হলেও ক্ষতি নেই। Personal বা লেখার (POST) response cache করলে অন্যের data দেখানো বা ভুল ফল দেওয়ার ঝুঁকি।",
+      "whyWrong": {
+        "0": "User-ভিত্তিক data shared cache-এ রাখলে key-তে ভুল হলে অন্যের history দেখা যাবে।",
+        "1": "POST state বদলায়, cache থেকে উত্তর দিলে payment আসলে হবেই না।",
+        "3": "ঘন ঘন বদলানো আর ব্যক্তিগত data cache-এর জন্য খারাপ প্রার্থী।"
+      }
+    },
+    {
+      "id": "sd-day-016-q20",
+      "difficulty": "easy",
+      "question": "Gateway একটা JWT যাচাই করার সময় সাধারণত কী দেখে?",
+      "options": [
+        "User-এর password database-এ মিলিয়ে দেখে",
+        "JWT-এর payload decrypt করে ভেতরের গোপন user data পড়ে নেয়",
+        "Token যথেষ্ট লম্বা কিনা, শুধু সেটা দেখে",
+        "Signature, মেয়াদ (exp) আর audience (aud)"
+      ],
+      "correctIndex": 3,
+      "explanation": "JWT signed, তাই public key দিয়ে signature মিলিয়ে বোঝা যায় token নকল কিনা। সাথে মেয়াদ আর audience দেখা হয়। Password check login-এর সময়, প্রতি request-এ না।",
+      "whyWrong": {
+        "0": "Password login-এর সময় একবার যাচাই হয়, প্রতি request-এ না।",
+        "1": "সাধারণ JWT encrypted না, শুধু signed; payload base64-এ পড়া যায়।",
+        "2": "দৈর্ঘ্য দেখে নকল token ধরা যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q21",
+      "difficulty": "medium",
+      "question": "খাবারবাড়ির পাঁচটা service নিজে নিজে auth করে। Review service-এর নতুন DELETE endpoint-এ auth check দিতে developer ভুলে গেছে। ভবিষ্যতে এমন ফাঁক কমানোর সবচেয়ে কার্যকর design কোনটা?",
+      "options": [
+        "প্রতিটা service-এ code review আরও কড়া করা, আর design আগের মতোই অপরিবর্তিত রাখা",
+        "Gateway-তে কেন্দ্রীয়ভাবে auth বসানো, যাতে প্রতিটা route-এ default-এ চালু থাকে",
+        "Review service-কে আলাদা একটা domain-এ সরিয়ে দেওয়া",
+        "DELETE method বন্ধ করে delete-এর কাজ POST দিয়ে করানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "সমস্যা হলো প্রতিটা team-কে auth মনে রাখতে হয়। Gateway-তে global auth থাকলে নতুন route-ও default-এ সুরক্ষিত; ব্যতিক্রম (public route) ইচ্ছা করে খুলতে হয়। সূক্ষ্ম authorization তবু service-এ থাকবে।",
+      "whyWrong": {
+        "0": "Review সাহায্য করে, কিন্তু মানুষের ভুল থেকেই যায়; default-safe design ভালো।",
+        "2": "Domain বদলালে auth-এর ফাঁক বন্ধ হয় না।",
+        "3": "Method বদলালে auth ছাড়া endpoint তবুও খোলা থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q22",
+      "difficulty": "medium",
+      "question": "Kong-এ route-এর paths: [/orders], strip_path default অবস্থায় আছে। Client পাঠাল GET /orders/42। Upstream service কোন path পাবে?",
+      "options": ["/orders/42", "/orders", "/", "/42"],
+      "correctIndex": 3,
+      "explanation": "strip_path default-এ চালু, তাই মিলে যাওয়া prefix /orders কেটে service পায় /42। Lab-এ whoami-র output-এ 'GET /42' দেখা যায়, আর X-Forwarded-Prefix: /orders।",
+      "whyWrong": {
+        "0": "পুরো path যেত শুধু strip_path: false দিলে।",
+        "1": "Prefix কাটা হয়, বাকি অংশ ফেলে দেওয়া হয় না।",
+        "2": "/42 অংশটা হারায় না, শুধু prefix সরে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q23",
+      "difficulty": "medium",
+      "question": "Kong-এ rate-limiting global, minute: 5, limit_by default। rahim-app একই মিনিটে /orders-এ 2টা আর /users-এ 3টা সফল request পাঠাল। এখন /users-এ আরেকটা পাঠালে কী হবে?",
+      "options": [
+        "429, কারণ counter consumer ধরে, দুই service মিলিয়ে 5 পূর্ণ",
+        "200, কারণ প্রতিটা service-এর আলাদা counter, /users-এ মাত্র 3",
+        "200, কারণ প্রতিটা route-এর আলাদা সীমা, তাই মোট 10টা চলবে",
+        "401, কারণ একই key এক মিনিটে 5 বারের বেশি ব্যবহার করা যায় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "limit_by-এর default consumer, আর plugin global, তাই rahim-app-এর একটাই counter, যেকোনো service-এ পাঠাক। 2 + 3 = 5 পূর্ণ, ষষ্ঠটা 429। Lab-এ এটাই দেখা যায়।",
+      "whyWrong": {
+        "1": "Service ধরে আলাদা counter হতো limit_by service দিলে।",
+        "2": "Global plugin route ধরে আলাদা হয় না।",
+        "3": "Limit পেরোনো 429, auth-এর সমস্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q24",
+      "difficulty": "medium",
+      "question": "Kong-এ key-auth আর rate-limiting দুটোই global। কেউ ভুল key দিয়ে মিনিটে ১০০০ বার চেষ্টা করছে, কিন্তু কখনো 429 পাচ্ছে না, শুধু 401। কেন?",
+      "options": [
+        "Kong-এর rate-limiting শুধু GET request গোনে, আর এই আন্দাজের চেষ্টাগুলো সব POST request",
+        "ভুল key-এর request-কে Kong cache থেকে উত্তর দেয়, তাই গোনা হয় না",
+        "key-auth আগে চলে আর 401-এ থামায়, তাই rate-limiting পর্যন্ত request পৌঁছায় না",
+        "Rate limit চালু হয় প্রথম সফল request-এর এক মিনিট পরে"
+      ],
+      "correctIndex": 2,
+      "explanation": "একই phase-এ plugin চলে PRIORITY অনুযায়ী: key-auth 1250, rate-limiting 910। ভুল key-এ key-auth সাথে সাথে উত্তর দেয়, পেছনের plugin চলে না। Key আন্দাজ ঠেকাতে আলাদা IP-ভিত্তিক limit লাগে।",
+      "whyWrong": {
+        "0": "Rate-limiting method দেখে বাদ দেয় না।",
+        "1": "401 response cache থেকে আসছে না, key-auth নিজেই দিচ্ছে।",
+        "3": "Rate limit প্রথম request থেকেই চালু থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q25",
+      "difficulty": "medium",
+      "question": "Order service-এর log-এ দেখা গেল প্রতিটা request-এ client-এর 'Apikey' header লেখা আছে। Gateway Kong, key-auth ব্যবহার করে। সবচেয়ে সরাসরি সমাধান কোনটা?",
+      "options": [
+        "key-auth-এ hide_credentials: true দেওয়া, যাতে যাচাইয়ের পরে key সরিয়ে ফেলে",
+        "Order service-এর log level কমিয়ে দেওয়া, যাতে header আর কোনো log-এ লেখা না হয়",
+        "Key-কে header-এর বদলে URL-এর query string-এ পাঠানো",
+        "key-auth বাদ দিয়ে শুধু IP whitelist দিয়ে partner চেনা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Kong default-এ credential upstream-এ পাঠিয়ে দেয়। hide_credentials: true দিলে gateway যাচাই করে key সরিয়ে দেয়, service শুধু X-Consumer-Username-এর মতো পরিচয় পায়।",
+      "whyWrong": {
+        "1": "Log level কমালে অন্য কোনো জায়গায় (trace, debug) তবুও key ফাঁস হতে পারে, মূল সমস্যা থেকে যায়।",
+        "2": "Query string-এ key আরও বেশি জায়গায় (access log, browser history) ফাঁস হয়।",
+        "3": "IP whitelist consumer চেনে না আর NAT-এর পেছনে কাজ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q26",
+      "difficulty": "medium",
+      "question": "Gateway-র ৪টা instance, প্রতিটা নিজের memory-তে rate limit গোনে (policy: local), limit মিনিটে 100। Load balancer request সমানভাবে ভাগ করে। একজন client মিনিটে সর্বোচ্চ প্রায় কয়টা request সফলভাবে পাঠাতে পারবে?",
+      "options": ["ঠিক 100", "প্রায় 200", "মাত্র 25", "প্রায় 400"],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা node আলাদা গোনে আর প্রত্যেকে 100 পর্যন্ত ছাড়ে। Request চার ভাগ হওয়ায় মোট প্রায় 4 × 100 = 400। কঠোর সীমা লাগলে shared counter (policy: redis)।",
+      "whyWrong": {
+        "0": "ঠিক 100 হতো যদি সব node একটা shared counter ব্যবহার করত।",
+        "1": "দুই গুণ হওয়ার কোনো কারণ নেই, node চারটা।",
+        "2": "প্রতিটা node 100 পর্যন্ত ছাড়ে, 100 ÷ 4 না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q27",
+      "difficulty": "medium",
+      "question": "Mobile BFF পাঁচটা service parallel-এ ডাকে: 20ms, 80ms, 30ms, 40ms, 60ms। সব শেষ হলে উত্তর যায়। Aggregation-এর মোট সময় প্রায় কত?",
+      "options": ["প্রায় 230ms", "প্রায় 80ms", "প্রায় 46ms", "প্রায় 20ms"],
+      "correctIndex": 1,
+      "explanation": "Parallel call-এ সবাই একসাথে শুরু হয়, তাই সবচেয়ে ধীরটা (80ms) শেষ হলেই সব শেষ। একটার পর একটা ডাকলে হতো 230ms।",
+      "whyWrong": {
+        "0": "230ms হলো sequential-এর যোগফল।",
+        "2": "46ms গড়, কিন্তু সবচেয়ে ধীরটার জন্য অপেক্ষা করতেই হয়।",
+        "3": "20ms-এ শুধু সবচেয়ে দ্রুতটা শেষ হয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q28",
+      "difficulty": "medium",
+      "question": "Gateway ৫টা service parallel-এ ডাকে। প্রতিটা service আলাদাভাবে ১% request-এ ধীর হয় (স্বাধীনভাবে)। মোট কত শতাংশ aggregated response অন্তত একটা ধীর call-এর জন্য আটকাবে?",
+      "options": ["ঠিক 1%", "প্রায় 0.2%", "প্রায় 5%", "প্রায় 50%"],
+      "correctIndex": 2,
+      "explanation": "পাঁচটাই দ্রুত হওয়ার সম্ভাবনা 0.99⁵ ≈ 0.951। তাই প্রায় 4.9% response অন্তত একটা ধীর call পায়। Fan-out চওড়া হলে tail latency বাড়ে।",
+      "whyWrong": {
+        "0": "1% শুধু একটা call-এর জন্য; পাঁচটা হলে সম্ভাবনা বাড়ে।",
+        "1": "0.2% হলো ১%-কে পাঁচ দিয়ে ভাগ, যেটা উল্টো দিকের হিসাব।",
+        "3": "50% অনেক বেশি; ১% করে পাঁচটায় প্রায় ৫%।"
+      }
+    },
+    {
+      "id": "sd-day-016-q29",
+      "difficulty": "medium",
+      "question": "Order service gateway-র বসানো X-User-Id header বিশ্বাস করে। ভুল security group-এর কারণে Order service-এর port internet থেকে সরাসরি reachable। সবচেয়ে বড় ঝুঁকি কোনটা?",
+      "options": [
+        "Gateway-র rate limit দুবার প্রয়োগ হবে, তাই সাধারণ user অনেক দ্রুত 429 পাবে",
+        "Attacker নিজেই X-User-Id বসিয়ে সরাসরি ডেকে যেকোনো user সেজে যাবে",
+        "Browser-এ CORS error আসবে, তাই website কাজ করবে না",
+        "Latency কিছুটা বাড়বে, কারণ request দুই পথে যেতে পারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Service header-কে প্রমাণ হিসেবে নিচ্ছে, কিন্তু gateway এড়িয়ে আসা request-এ header যে কেউ বসাতে পারে (header spoofing)। সমাধান: service শুধু gateway থেকে reachable, আর সম্ভব হলে service নিজে JWT বা mTLS যাচাই করবে।",
+      "whyWrong": {
+        "0": "Gateway এড়িয়ে গেলে limit বরং একবারও প্রয়োগ হয় না।",
+        "2": "CORS browser-এর নিয়ম, সরাসরি curl দিয়ে ডাকলে এর কোনো প্রভাব নেই।",
+        "3": "আসল ঝুঁকি নিরাপত্তার, latency-র না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q30",
+      "difficulty": "medium",
+      "question": "Gateway-র read timeout 2s, কিন্তু Order service database-এর জন্য 5s পর্যন্ত অপেক্ষা করে। চাপের সময় কী ঘটবে?",
+      "options": [
+        "Client 2s-এ 504 পায়, অথচ service আরও প্রায় 3s এমন কাজ করে যার ফল কেউ নেবে না",
+        "Gateway timeout হলে Order service-কে সাথে সাথে থামিয়ে দেয়, কোনো কাজ নষ্ট হয় না",
+        "Client 5s পরে 200 পায়, কারণ gateway service-এর timeout মেনে নেয়",
+        "Gateway timeout-এর পরে নিজেই database-এ query করে উত্তর বানায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "বাইরের timeout ভেতরের চেয়ে ছোট হলে বাইরের স্তর হাল ছেড়ে দেয় কিন্তু ভেতরে কাজ চলতে থাকে। চাপের সময় এই অকারণ কাজ server আরও ভারী করে। নিয়ম: বাইরে থেকে ভেতরে timeout ছোট হতে থাকবে।",
+      "whyWrong": {
+        "1": "Connection বন্ধ হলেও service-এর ভেতরের কাজ সাধারণত চলতে থাকে।",
+        "2": "Gateway নিজের timeout-এই client-কে উত্তর দেয়, service-এরটা না।",
+        "3": "Gateway database ডাকে না, সেটা service-এর কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-016-q31",
+      "difficulty": "medium",
+      "question": "একটা request-এর পথে gateway, service আর service-এর dependency, তিন স্তরেই 'ব্যর্থ হলে মোট 3 বার চেষ্টা' নিয়ম। একদম নিচের dependency পুরো down থাকলে একটা user request থেকে সেটার উপর সর্বোচ্চ কয়টা চেষ্টা পড়বে?",
+      "options": ["9টা", "3টা", "81টা", "27টা"],
+      "correctIndex": 3,
+      "explanation": "প্রতিটা স্তর নিচের স্তরকে 3 বার ডাকে: 3 × 3 × 3 = 27। একে retry amplification বলে; ধীর হয়ে পড়া service এভাবে পুরো ভেঙে পড়ে। তাই retry এক স্তরে রাখুন।",
+      "whyWrong": {
+        "0": "9 হতো মাত্র দুই স্তরে retry থাকলে।",
+        "1": "3 হতো শুধু এক স্তরে retry থাকলে।",
+        "2": "81 হতো চার স্তরে retry থাকলে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q32",
+      "difficulty": "medium",
+      "question": "Mobile team প্রতিটা নতুন screen-এর aggregation বদলানোর জন্য shared gateway team-এর অপেক্ষায় থাকে, আর web-এর চাহিদা আলাদা। কোন পরিবর্তন সবচেয়ে উপযুক্ত?",
+      "options": [
+        "সব client-এর জন্য shared gateway-তে আরও বেশি aggregation logic রাখা",
+        "Gateway সরিয়ে mobile app-কে সরাসরি সব service ডাকতে দেওয়া",
+        "প্রতিটা client-এর জন্য আলাদা BFF, যার মালিক সেই frontend team",
+        "সব response-এ সব field পাঠানো, app নিজে দরকারিগুলো বেছে নিক"
+      ],
+      "correctIndex": 2,
+      "explanation": "BFF প্রতিটা client-এর নিজের পাতলা backend। Mobile team নিজে নিজের aggregation বদলাতে পারে, অন্য team-এর অপেক্ষা ছাড়া। Auth বা limit-এর জন্য shared gateway সামনে থাকতেই পারে।",
+      "whyWrong": {
+        "0": "Shared gateway-তে আরও logic মানে bottleneck আর god gateway।",
+        "1": "সরাসরি ডাকলে আবার অনেক round trip আর ভেতরের গঠন খোলা।",
+        "3": "সব field পাঠালে ধীর mobile network-এ payload অকারণে বড় হয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q33",
+      "difficulty": "medium",
+      "question": "Gateway সব method-এ connection ব্যর্থ হলে বা timeout হলে retry করে। POST /payments-এ upstream সাড়া দিতে দেরি করল, gateway আবার পাঠাল। কী ঝুঁকি, আর কী করবেন?",
+      "options": [
+        "টাকা দুবার কাটতে পারে; non-idempotent route-এ retry বন্ধ বা idempotency key ব্যবহার",
+        "কোনো ঝুঁকি নেই, কারণ দ্বিতীয় request সবসময় প্রথমটা শেষ হওয়ার পরেই upstream-এ পৌঁছায়",
+        "শুধু latency বাড়বে; retry সংখ্যা বাড়িয়ে দিলেই সমস্যা মিটবে",
+        "Payment service দ্বিতীয় request নিজে থেকেই বাতিল করে, তাই চিন্তা নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "Timeout মানে প্রথম request হয়তো সফলই হয়েছিল, শুধু উত্তর আসেনি। আবার পাঠালে দ্বিতীয় payment হতে পারে। শুধু idempotent request retry করুন, অথবা idempotency key দিয়ে service duplicate চিনুক।",
+      "whyWrong": {
+        "1": "ক্রম যাই হোক, দুটো request-ই process হতে পারে।",
+        "2": "Retry বাড়ালে duplicate-এর সম্ভাবনা আরও বাড়ে।",
+        "3": "Idempotency key ছাড়া service জানে না দুটো একই payment।"
+      }
+    },
+    {
+      "id": "sd-day-016-q34",
+      "difficulty": "medium",
+      "question": "Order service Payment service-কে ডাকে public gateway-র URL (api.khabarbari.com/payments) দিয়ে। কোন সমস্যা সবচেয়ে বেশি প্রাসঙ্গিক?",
+      "options": [
+        "Gateway নিজের দিকে ফিরে আসা request handle করতে পারে না, তাই সব fail করবে",
+        "অকারণ বাড়তি hop, আর ভেতরের call বাইরের limit ও gateway-র capacity খায়",
+        "এটা best practice, কারণ ভেতরের call-ও বাইরের মতো নিরাপদ হয়",
+        "কোনো সমস্যা নেই, শুধু DNS lookup একটু বেশি হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "ভেতরের (east-west) call gateway দিয়ে ঘুরালে (hairpin) প্রতিটা call-এ বাড়তি hop, আর gateway ভেতরের সব traffic-এর bottleneck হয়ে যায়। ভেতরের call সরাসরি বা service mesh দিয়ে করা ভালো।",
+      "whyWrong": {
+        "0": "Gateway এমন request সামলাতে পারে; সমস্যা দক্ষতা আর coupling-এর।",
+        "2": "ভেতরের নিরাপত্তা mTLS বা mesh দিয়ে ভালোভাবে হয়, gateway ঘুরিয়ে না।",
+        "3": "বাড়তি hop আর capacity খাওয়া বাস্তব খরচ।"
+      }
+    },
+    {
+      "id": "sd-day-016-q35",
+      "difficulty": "medium",
+      "question": "একজন partner-এর bug-এ তার integration সেকেন্ডে হাজার request পাঠাচ্ছে, আর অন্য partner-রা ধীর উত্তর পাচ্ছে। Gateway-র কোন feature সবচেয়ে সরাসরি সাহায্য করবে?",
+      "options": [
+        "সব partner মিলিয়ে একটা global limit বসানো, যাতে gateway-তে মোট চাপ একটা নির্দিষ্ট সীমায় থাকে",
+        "Gateway-র cache বড় করা, যাতে বারবার একই উত্তর দ্রুত যায়",
+        "আরও gateway instance যোগ করা, পেছনের service অপরিবর্তিত রেখে",
+        "প্রতি consumer (API key) ধরে আলাদা rate limit, যাতে একজনের বাড়াবাড়ি তার ভাগেই থামে"
+      ],
+      "correctIndex": 3,
+      "explanation": "সমস্যা হলো noisy neighbour: একজন সবার ভাগ খাচ্ছে। Consumer ধরে limit দিলে শুধু সেই partner 429 পায়, বাকিরা স্বাভাবিক থাকে।",
+      "whyWrong": {
+        "0": "Global limit-এ নিরীহ partner-রাও bug-ওয়ালার জন্য 429 পাবে।",
+        "1": "Cache ভিন্ন ভিন্ন request বা লেখার request-এ কাজে আসে না।",
+        "2": "Gateway বাড়ালেও পেছনের service-এর উপর চাপ একই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q36",
+      "difficulty": "medium",
+      "question": "পুরনো app version-গুলো এখনো /v1/orders ডাকে। Team /v1 বন্ধ করতে চায়। সবচেয়ে নিরাপদ পদ্ধতি কোনটা?",
+      "options": [
+        "পরের release-এর দিনই /v1 route মুছে ফেলা, কারণ নতুন app তো store-এ এসেই গেছে",
+        "Gateway metrics দেখে /v1-এ কত traffic আর কে, তারপর ধাপে ধাপে বন্ধ",
+        "App store-এ update-এর বিজ্ঞপ্তি দিয়েই /v1 বন্ধ করা",
+        "/v1-এর সব request কোনো রূপান্তর ছাড়াই /v2-তে পাঠিয়ে দেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "Gateway সব request দেখে, তাই /v1 কে কতটা ব্যবহার করছে মাপা যায়। Deprecation header বা নোটিশ দিয়ে, traffic কমে এলে বন্ধ করা নিরাপদ। Versioning Day 46-এ।",
+      "whyWrong": {
+        "0": "অনেক user app update করে না, হঠাৎ বন্ধ করলে তারা ভেঙে পড়বে।",
+        "2": "বিজ্ঞপ্তি দিলেই সবাই update করে না, মাপা দরকার।",
+        "3": "/v2-এর format আলাদা হলে /v1 client ভুল উত্তর পাবে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q37",
+      "difficulty": "medium",
+      "question": "Gateway প্রতি request-এ identity provider-কে call করে token যাচাই করে। Traffic বাড়ায় identity provider overload হচ্ছে। ভালো সমাধান কোনটা, আর তার দাম কী?",
+      "options": [
+        "Token যাচাই বাদ দেওয়া, কারণ token তো client নিজেই পেয়েছে; দাম: কিছু না",
+        "প্রতিটা service নিজে provider-কে call করবে, gateway করবে না; দাম: শুধু code বাড়ে",
+        "JWKS cache করে gateway নিজেই যাচাই করবে; দাম: revoke করা token মেয়াদ পর্যন্ত চলে",
+        "Token-এর মেয়াদ ৩০ দিন করে দেওয়া, যাতে কম যাচাই লাগে; দাম: user-কে কম login করতে হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "JWT signed, তাই public key দিয়ে locally যাচাই করা যায়, provider-এ call লাগে না। দাম: provider-এ token বাতিল করলেও gateway জানে না, তাই access token ছোট মেয়াদের রাখা হয়।",
+      "whyWrong": {
+        "0": "যাচাই না করলে যে কেউ নকল token বানিয়ে ঢুকবে।",
+        "1": "Service-গুলো call করলে provider-এর চাপ আরও বাড়বে।",
+        "3": "মেয়াদ বাড়ালে চুরি হওয়া token অনেক দিন চলবে; এটা যাচাইয়ের সংখ্যাও কমায় না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q38",
+      "difficulty": "medium",
+      "question": "Gateway-তে auth-এর আগে IP ধরে মিনিটে 60 request-এর কড়া limit বসানো হলো। পরদিন একটা mobile operator-এর অনেক user একসাথে 429 পাচ্ছে, যদিও প্রত্যেকে অল্প request পাঠায়। সম্ভাব্য কারণ কী?",
+      "options": [
+        "Operator-এর CGNAT-এর পেছনে হাজার user একই public IP শেয়ার করে",
+        "Mobile app-এ bug, তাই প্রতিটা user মিনিটে শত শত request পাঠাচ্ছে",
+        "Gateway IPv6 বোঝে না, তাই mobile request বাতিল করে",
+        "Mobile network-এ HTTPS ধীর, তাই request জমে 429 হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "অনেক mobile operator CGNAT ব্যবহার করে, ফলে অনেক user একই public IP থেকে আসে। IP ধরে কড়া limit তাদের সবাইকে একসাথে আটকায়। Auth-এর পরে consumer ধরে limit, আর IP limit উদার রাখা ভালো।",
+      "whyWrong": {
+        "1": "প্রত্যেকে অল্প পাঠায় বলা আছে, তাই app-এর bug না।",
+        "2": "IPv6-এর সমস্যা হলে 429 না, connection-এর error হতো।",
+        "3": "ধীর connection 429 তৈরি করে না, 429 আসে counter পেরোলে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q39",
+      "difficulty": "medium",
+      "question": "DB-less Kong-এ Admin API-তে POST /services পাঠালে error এলো: \"cannot create 'services' entities when not using a database\"। নতুন service যোগ করার সঠিক উপায় কোনটা?",
+      "options": [
+        "Kong-এর enterprise license কিনে Admin API-তে লেখার অনুমতি চালু করে তারপর আবার POST পাঠানো",
+        "Admin API-র port ভুল; 8001-এর বদলে 8000-এ একই POST পাঠানো",
+        "প্রতিবার Postgres চালু করে service যোগ করা, তারপর আবার DB-less-এ ফেরা",
+        "YAML file-এ service যোগ করে পুরো config POST /config দিয়ে পাঠানো (বা file বদলে restart)"
+      ],
+      "correctIndex": 3,
+      "explanation": "DB-less-এ declarative file-ই সত্যের উৎস, তাই entity আলাদা করে বানানো যায় না। File বদলে POST /config দিলে পুরো config একসাথে চালু হয় (lab-এ 201 দেখা যায়)। এতে config git-এ রেখে review করা যায়।",
+      "whyWrong": {
+        "0": "এটা license-এর বিষয় না, DB-less mode-এর নকশা।",
+        "1": "8000 proxy port, সেখানে Admin API নেই।",
+        "2": "Mode বারবার বদলানোর দরকার নেই; POST /config-ই নির্ধারিত পথ।"
+      }
+    },
+    {
+      "id": "sd-day-016-q40",
+      "difficulty": "medium",
+      "question": "একটা slow request-এর response header: X-Kong-Proxy-Latency: 2, X-Kong-Upstream-Latency: 480। User অভিযোগ করছে API ধীর। সমস্যা খোঁজা কোথা থেকে শুরু করবেন?",
+      "options": [
+        "Gateway থেকে, কারণ gateway-ই সব request-এর পথে প্রথম বসে",
+        "Rate limiter থেকে, কারণ limit কাছাকাছি এলে Kong ইচ্ছা করে ধীর করে",
+        "Upstream service থেকে, কারণ সময়ের প্রায় পুরোটা service-এই লেগেছে",
+        "Client-এর network থেকে, কারণ upstream latency মানে client-এর দিকের সময়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Proxy latency gateway-র নিজের খরচ (2ms), upstream latency service-এর উত্তর দিতে লাগা সময় (480ms)। তাই bottleneck service-এ। এই header-গুলো gateway-র extra hop মাপারও সহজ উপায়।",
+      "whyWrong": {
+        "0": "Gateway-র নিজের খরচ মাত্র 2ms।",
+        "1": "Kong-এর rate-limiting plugin ধীর করে না, সীমা পেরোলে 429 দেয়।",
+        "3": "Upstream latency gateway থেকে service পর্যন্ত, client-এর network না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q41",
+      "difficulty": "hard",
+      "question": "এক বছর আগে team দাম হিসাব, ১০০০ টাকার বেশি order-এ discount আর বন্ধ রেস্টুরেন্টের order বাতিলের নিয়ম gateway-তে রেখেছিল। এখন প্রতিটা release gateway team-এর অপেক্ষায়, আর গত মাসে discount-এর bug-এ gateway crash করে সব API বন্ধ হয়েছিল। মূল সমস্যা আর সঠিক দিক কোনটা?",
+      "options": [
+        "Gateway instance কম: আরও কয়েকটা instance যোগ করলেই crash আর release-এর অপেক্ষা দুটোই মিটবে",
+        "Gateway ধীর language-এ লেখা: দ্রুত language-এ নতুন করে লিখলেই bug কমবে",
+        "God gateway: business rule service-এ বা BFF-এ সরানো, gateway-তে শুধু cross-cutting কাজ",
+        "Gateway team ছোট: আরও লোক নিলেই release-এর অপেক্ষা থাকবে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Business logic gateway-তে জমায় gateway সবার ভাগের monolith হয়েছে: সব change এক জায়গায় আটকায়, আর এক logic bug সব API ফেলে দেয়। নিয়মগুলো যে service-এর data-র সাথে যুক্ত সেখানে সরান, gateway রাখুন 'কে, কতবার, কোথায়'-এর জন্য।",
+      "whyWrong": {
+        "0": "একই bug সব instance-এ চলে, তাই instance বাড়িয়ে crash ঠেকানো যায় না; coupling-ও থেকে যায়।",
+        "1": "সমস্যা language-এর না, দায়িত্বের ভুল জায়গার।",
+        "3": "লোক বাড়ালেও এক জায়গায় সব change-এর coupling থেকে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q42",
+      "difficulty": "hard",
+      "question": "আপনি চান (ক) API key আন্দাজ করার brute-force থামুক, আর (খ) CGNAT-এর পেছনের নিরীহ user-রা একে অপরের limit না খায়। Gateway-তে কোন সাজানো সবচেয়ে ভালো?",
+      "options": [
+        "Auth-এর আগে IP ধরে উদার limit, আর auth-এর পরে consumer ধরে আসল limit",
+        "শুধু auth-এর আগে IP ধরে কড়া limit; তাহলে consumer limit-এর আর কোনো দরকারই নেই",
+        "শুধু auth-এর পরে consumer ধরে limit, কারণ সেটাই সবচেয়ে ন্যায্য",
+        "Gateway-তে কোনো limit না, প্রতিটা service নিজে নিজে limit করুক"
+      ],
+      "correctIndex": 0,
+      "explanation": "Consumer limit ভুল key-এর request গোনে না (auth আগেই থামায়), তাই brute-force ঠেকাতে auth-এর আগে IP limit লাগে। কিন্তু সেটা কড়া হলে CGNAT user-রা ভোগে, তাই উদার রাখা হয়, আর ন্যায্য ভাগ হয় consumer limit দিয়ে।",
+      "whyWrong": {
+        "1": "কড়া IP limit CGNAT-এর পেছনের অনেক user-কে একসাথে আটকাবে।",
+        "2": "Consumer limit ভুল key-এর চেষ্টা গোনেই না, তাই brute-force থামে না।",
+        "3": "Service-এ limit দিলে খারাপ request ভেতরে ঢুকেই যায়, আর নিয়ম ছড়িয়ে পড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q43",
+      "difficulty": "hard",
+      "question": "Gateway-র rate limit counter Redis-এ। Redis হঠাৎ down। Login endpoint আর public menu listing endpoint-এর জন্য কোন আচরণ সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "দুটোতেই fail-closed, কারণ limit ছাড়া কোনো request ঢুকতে দেওয়া কখনোই নিরাপদ না, endpoint যাই হোক",
+        "দুটোতেই fail-open, কারণ Redis-এর সমস্যা user-এর দোষ না",
+        "Redis ফেরা পর্যন্ত gateway বন্ধ রাখা, যাতে কোনো হিসাব ভুল না হয়",
+        "Login-এ fail-closed বা কড়া local limit; menu listing-এ fail-open, যাতে সাধারণ user না আটকায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "সিদ্ধান্ত endpoint-এর ঝুঁকি অনুযায়ী। Login-এ limit না থাকলে brute-force সহজ হয়, তাই কড়া থাকা ভালো। Menu listing-এ limit ছাড়া কিছুক্ষণ চলা কম ঝুঁকির, আর বন্ধ রাখলে সব user ভোগে। বিস্তারিত Day 18-এ।",
+      "whyWrong": {
+        "0": "সব endpoint বন্ধ করলে Redis-এর সমস্যায় পুরো site অচল।",
+        "1": "Login-এ limit ছাড়া চলা password আন্দাজের সুযোগ খুলে দেয়।",
+        "2": "Gateway বন্ধ রাখা মানে পুরো API outage, limiter-এর জন্য তা অনেক বড় দাম।"
+      }
+    },
+    {
+      "id": "sd-day-016-q44",
+      "difficulty": "hard",
+      "question": "একটা dashboard 10টা service parallel-এ ডাকে, প্রতিটা স্বাধীনভাবে ১% request-এ ধীর। প্রায় কত শতাংশ dashboard load অন্তত একটা ধীর call-এ আটকাবে?",
+      "options": ["ঠিক 1%", "প্রায় 9.6%", "প্রায় 0.1%", "প্রায় 63%"],
+      "correctIndex": 1,
+      "explanation": "সবগুলো দ্রুত হওয়ার সম্ভাবনা 0.99¹⁰ ≈ 0.904, তাই প্রায় 9.6% load অন্তত একটা ধীর call পায়। Fan-out যত চওড়া, tail তত খারাপ; তাই timeout আর ঐচ্ছিক অংশ বাদ দেওয়ার ব্যবস্থা লাগে।",
+      "whyWrong": {
+        "0": "1% শুধু একটা call-এর সম্ভাবনা।",
+        "2": "0.1% হলো ১%-কে ১০ দিয়ে ভাগ, উল্টো হিসাব।",
+        "3": "63% হতো প্রায় ১০০টা call-এ (1 − 0.99¹⁰⁰)।"
+      }
+    },
+    {
+      "id": "sd-day-016-q45",
+      "difficulty": "hard",
+      "question": "Mobile app-এর timeout 3s, gateway-র upstream timeout 5s, আর Order service-এর database timeout 2s। এই সাজানোয় সমস্যা কোথায়?",
+      "options": [
+        "App 3s-এ হাল ছাড়ে, gateway 5s অপেক্ষা করে; timeout বাইরে থেকে ভেতরে ছোট হওয়া উচিত",
+        "Database timeout সবচেয়ে বড় হওয়া উচিত, কারণ database সবচেয়ে ধীর অংশ",
+        "কোনো সমস্যা নেই; প্রতিটা স্তর নিজের মতো timeout রাখতে পারে",
+        "Gateway-র timeout app-এর চেয়ে বড় থাকায় user আগেই error পায়, আর এটাই আসলে কাঙ্ক্ষিত আচরণ"
+      ],
+      "correctIndex": 0,
+      "explanation": "App 3s-এ চলে গেলে gateway আর service বাকি সময় এমন কাজ করে যার উত্তর কেউ নেবে না, আর user হয়তো retry করে চাপ দ্বিগুণ করে। সঠিক ক্রম: client > gateway > service > database।",
+      "whyWrong": {
+        "1": "ভেতরের timeout ছোট হওয়া উচিত, যাতে বাইরের স্তর উত্তর বা error পেয়ে সিদ্ধান্ত নিতে পারে।",
+        "2": "স্তরগুলো যুক্ত, তাই ভুল ক্রম অকারণ কাজ আর retry storm তৈরি করে।",
+        "3": "User দ্রুত error পায় app-এর timeout-এ, কিন্তু পেছনের কাজ চলতেই থাকে; এটা অপচয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q46",
+      "difficulty": "hard",
+      "question": "Gateway JWT যাচাই করে X-User-Id বসায়, কিন্তু config 'header না থাকলে যোগ করো' ধরনের। একজন attacker নিজের বৈধ token দিয়ে request-এ নিজেই X-User-Id: 1 পাঠাল। কী ঘটতে পারে, আর ঠিক করার উপায় কী?",
+      "options": [
+        "কিছু হবে না, কারণ বৈধ token থাকলে gateway request-এর বাকি সব header-ও নিজে যাচাই করে নেয়",
+        "Gateway 400 Bad Request দেবে, কারণ duplicate header HTTP-তে নিষিদ্ধ",
+        "Service attacker-এর 1 দেখতে পারে; gateway-কে বাইরের identity header মুছে নিজে বসাতে হবে",
+        "Service দুটো মান পেয়ে সবসময় শেষেরটা নেবে, তাই gateway-রটাই জিতবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "'না থাকলে যোগ করো' মানে client-এর পাঠানো মান থেকে যায়। Service সেটা পড়লে attacker অন্য user সাজে। Gateway-কে বিশ্বাসযোগ্য header-গুলো আগে মুছে নিজে বসাতে হবে, আর service-এর উচিত শুধু gateway-র বসানো মান মানা।",
+      "whyWrong": {
+        "0": "Token বৈধ মানে শুধু token-এর দাবি সত্য; client-এর বাকি header যাচাই হয় না।",
+        "1": "অনেক header একাধিকবার পাঠানো বৈধ, আর এখানে duplicate-ও নাও হতে পারে।",
+        "3": "কোন মান নেবে framework-ভেদে আলাদা, আর এখানে gateway-র মান হয়তো যোগই হয়নি।"
+      }
+    },
+    {
+      "id": "sd-day-016-q47",
+      "difficulty": "hard",
+      "question": "Kong service-এর retries default 5। POST /orders upstream-এ read timeout হলে Kong আবার চেষ্টা করছে, আর কিছু order দুবার তৈরি হচ্ছে। সবচেয়ে উপযুক্ত সমাধান কোনটা?",
+      "options": [
+        "retries আরও বাড়িয়ে দেওয়া, যাতে upstream ধীর হলেও কোনো order কখনো হারিয়ে না যায়",
+        "read_timeout কমিয়ে দেওয়া, যাতে retry আরও দ্রুত শুরু হয়",
+        "Client-কে বলা প্রতিটা POST দুবার পাঠাতে, যাতে অন্তত একটা সফল হয়",
+        "Order service-এ idempotency key, আর এই route-এর service-এ retries কমানো বা 0 করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Timeout মানে প্রথম চেষ্টা হয়তো সফল হয়েছিল। Non-idempotent request-এ gateway-র automatic retry duplicate তৈরি করে। Service-কে idempotency key দিয়ে duplicate চিনতে দিন, আর এমন route-এ gateway retry সীমিত করুন।",
+      "whyWrong": {
+        "0": "Retry বাড়ালে duplicate আরও বাড়বে।",
+        "1": "Timeout কমালে আরও বেশি request timeout হবে, duplicate বাড়বে।",
+        "2": "দুবার পাঠানো duplicate-এর সমস্যাকে ইচ্ছা করে বাড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q48",
+      "difficulty": "hard",
+      "question": "Partner API-তে tier আছে: Free মিনিটে 100, Pro মিনিটে 1,000। Kong-এ এটা কিভাবে সাজানো স্বাভাবিক?",
+      "options": [
+        "প্রতিটা tier-এর জন্য আলাদা gateway cluster চালানো, partner-কে আলাদা domain দেওয়া",
+        "Consumer বা consumer group অনুযায়ী আলাদা rate-limiting config; বেশি নির্দিষ্টটা জেতে",
+        "IP ধরে limit, আর Pro partner-দের IP-কে whitelist-এ রাখা",
+        "Gateway-তে কিছু না, প্রতিটা service নিজে partner-এর plan database থেকে দেখে limit করবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Kong-এ plugin global, service, route বা consumer স্তরে বসানো যায়, আর একই plugin একাধিক জায়গায় থাকলে বেশি নির্দিষ্টটা চলে। তাই consumer বা group ধরে আলাদা limit দেওয়া স্বাভাবিক পথ।",
+      "whyWrong": {
+        "0": "আলাদা cluster অকারণ খরচ আর জটিলতা; config দিয়েই হয়।",
+        "2": "IP partner চেনে না, আর IP বদলালে plan ভেঙে যায়।",
+        "3": "প্রতিটা service-এ limit মানে নিয়ম ছড়ানো আর অসমান, ঠিক যা gateway এড়াতে চায়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q49",
+      "difficulty": "hard",
+      "question": "৪০টা service, বাইরের partner আর mobile client আছে, আর security team চায় ভেতরের সব service-to-service call mTLS-এ হোক। কোন সাজানো সবচেয়ে মানানসই?",
+      "options": [
+        "বাইরের traffic-এর জন্য API Gateway, আর ভেতরের call-এ mTLS-এর জন্য service mesh",
+        "সব traffic, ভেতরের call সহ, gateway দিয়ে ঘুরিয়ে আনা, যাতে সব এক জায়গায় দেখা যায়",
+        "শুধু service mesh; প্রতিটা sidecar-কে সরাসরি internet-এ খুলে দেওয়া",
+        "শুধু একটা L4 load balancer, কারণ সেটা সব traffic encrypt করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Gateway north-south-এর জন্য (partner key, quota, version), mesh east-west-এর জন্য (প্রতিটা call-এ mTLS, retry)। বড় system-এ দুটো একসাথে চলে, প্রত্যেকে নিজের এলাকায়।",
+      "whyWrong": {
+        "1": "ভেতরের সব call gateway দিয়ে ঘোরালে hairpin hop আর gateway bottleneck।",
+        "2": "Sidecar internet-এ খোলা রাখলে বাইরের API-র key, quota-র ব্যবস্থা থাকে না, ঝুঁকি বাড়ে।",
+        "3": "L4 LB নিজে থেকে service-to-service mTLS দেয় না, API-র ধারণাও বোঝে না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q50",
+      "difficulty": "hard",
+      "question": "Home screen aggregation-এ Offer service down। চলমান order আর restaurant list ঠিকঠাক এসেছে। Aggregator কী করবে?",
+      "options": [
+        "পুরো screen-এর জন্য 500 দেবে, কারণ একটা অংশ না এলে পুরো data অসম্পূর্ণ থেকে যায়",
+        "Offer service না ফেরা পর্যন্ত response আটকে রাখবে, যাতে পূর্ণ data যায়",
+        "Offer service-কে বিরতি ছাড়া বারবার retry করবে যতক্ষণ না সফল হয়",
+        "Offer অংশ ফাঁকা রেখে বাকি screen পাঠাবে, আর metric-এ ব্যর্থতা লিখবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Offer ঐচ্ছিক অংশ; না থাকলেও user order দিতে পারে। Graceful degradation মানে জরুরি অংশ দেখানো আর ঐচ্ছিক অংশ বাদ দেওয়া। জরুরি অংশ (চলমান order) না এলে তখন error দেওয়া যুক্তিসঙ্গত।",
+      "whyWrong": {
+        "0": "একটা ঐচ্ছিক অংশের জন্য পুরো screen ফেলা availability নষ্ট করে।",
+        "1": "অপেক্ষা করলে সব user ধীর বা timeout পায়।",
+        "2": "বিরতিহীন retry ভাঙা service-কে আরও চাপ দেয় (retry storm)।"
+      }
+    },
+    {
+      "id": "sd-day-016-q51",
+      "difficulty": "hard",
+      "question": "একজন user-এর ২৪ ঘণ্টার access token চুরি হয়েছে। Identity provider-এ token revoke করা হলো, কিন্তু gateway cached JWKS দিয়ে locally যাচাই করে। কী ঘটবে, আর দীর্ঘমেয়াদি সমাধান কী?",
+      "options": [
+        "Revoke করার সাথে সাথে gateway token বাতিল করে দেবে, কারণ JWKS-এ বাতিল token-এর তালিকা থাকে",
+        "মেয়াদ শেষ পর্যন্ত token চলবে; ছোট মেয়াদের access token, আর জরুরি ক্ষেত্রে denylist",
+        "JWKS cache মুছে দিলেই চুরি হওয়া token সাথে সাথে বাতিল হবে",
+        "Token-এর signature algorithm বদলালেই শুধু এই একটা token বাতিল হবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Local যাচাই শুধু signature আর exp দেখে; provider-এ revoke করা gateway জানে না। তাই access token ছোট মেয়াদের (মিনিট) রাখা হয়, refresh token দিয়ে নতুন নেওয়া হয়, আর উচ্চ ঝুঁকিতে token id-এর denylist রাখা হয়। JWT Day 77-এ।",
+      "whyWrong": {
+        "0": "JWKS-এ শুধু public key থাকে, বাতিল token-এর তালিকা না।",
+        "2": "Cache মুছলে একই key আবার আসে, token তবুও বৈধ দেখায়।",
+        "3": "Algorithm বা key বদলালে সবার token বাতিল হয়, শুধু একটার না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q52",
+      "difficulty": "hard",
+      "question": "Kong-এ global rate-limiting মিনিটে 5, আর /menu route-এ আলাদা rate-limiting plugin মিনিটে 100। একজন consumer /menu-তে request পাঠালে কোন limit প্রযোজ্য?",
+      "options": [
+        "Global 5/মিনিট, কারণ global plugin সবসময় route-এর plugin-এর উপরে থাকে",
+        "দুটোই একসাথে, তাই কার্যত ছোটটা, 5/মিনিট",
+        "Route-এর 100/মিনিট, কারণ একই plugin-এর বেশি নির্দিষ্ট config জেতে",
+        "দুটোর যোগফল, 105/মিনিট"
+      ],
+      "correctIndex": 2,
+      "explanation": "Kong-এ একই plugin global আর route দুই জায়গায় থাকলে request-এর জন্য বেশি নির্দিষ্ট (route) config-টাই চলে, দুটো একসাথে না। তাই /menu-তে 100।",
+      "whyWrong": {
+        "0": "Global সবচেয়ে কম নির্দিষ্ট, তাই route-এর config থাকলে সেটা পেছনে পড়ে।",
+        "1": "একই plugin দুবার চলে না, একটা config বাছাই হয়।",
+        "3": "Limit যোগ হয় না, একটা config চলে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q53",
+      "difficulty": "hard",
+      "question": "লক্ষ্য p95 ≤ 200ms। এখন: gateway-র নিজের কাজ 15ms, auth plugin প্রতি request-এ identity provider-কে call করে 40ms, upstream 120ms (সব একটার পর একটা)। কোন একটা পরিবর্তনে সবচেয়ে বেশি headroom পাবেন, আর তখন মোট কত হবে?",
+      "options": [
+        "Gateway-র plugin কমিয়ে 15ms থেকে 5ms করা: 5 + 40 + 120 = প্রায় 165ms",
+        "আরও gateway instance যোগ করা: 15 + 40 + 120 = প্রায় 175ms অপরিবর্তিত",
+        "Upstream-এ retry বাড়ানো: 15 + 40 + 120 = প্রায় 175ms, তবে বেশি নির্ভরযোগ্য",
+        "JWKS cache করে auth local করা: 15 + 120 = প্রায় 135ms"
+      ],
+      "correctIndex": 3,
+      "explanation": "এখন মোট 15 + 40 + 120 = 175ms। Auth-এর remote call বাদ দিলে 40ms বাঁচে, সবচেয়ে বড় লাভ (135ms)। নির্ভরশীল ধাপ যোগ হয়, তাই সবচেয়ে বড় বাদ দেওয়া যায় এমন ধাপটা আগে ধরুন (Day 7)।",
+      "whyWrong": {
+        "0": "10ms বাঁচানো যায়, কিন্তু auth call বাদ দেওয়ার চেয়ে কম।",
+        "1": "কম load-এ instance বাড়ালে প্রতি request-এর latency কমে না।",
+        "2": "Retry tail latency বরং বাড়াতে পারে, কমায় না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q54",
+      "difficulty": "hard",
+      "question": "Browser থেকে ভেতরের gRPC service সরাসরি না ডেকে gateway-তে REST/JSON → gRPC transcoding রাখা হয় কেন?",
+      "options": [
+        "Browser-এর fetch gRPC-র HTTP/2 framing চালাতে পারে না, তাই gRPC-Web বা transcoding লাগে",
+        "gRPC JSON-এর চেয়ে সবসময় ধীর, তাই বাইরের browser আর partner-এর জন্য JSON-ই দ্রুত আর সস্তা পথ",
+        "gRPC-তে encryption নেই, তাই বাইরে খোলা অনিরাপদ",
+        "gRPC শুধু UDP-তে চলে, আর browser UDP পাঠাতে পারে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Browser-এর API দিয়ে gRPC-র প্রয়োজনীয় HTTP/2-এর নিচের স্তরের নিয়ন্ত্রণ (যেমন trailers) পাওয়া যায় না, তাই gRPC-Web বা gateway-তে JSON রূপান্তর লাগে। দাম: রূপান্তরের CPU আর gateway-কে proto schema জানতে হয়। Day 45-এ বিস্তারিত।",
+      "whyWrong": {
+        "1": "gRPC সাধারণত binary বলে JSON-এর চেয়ে ছোট আর দ্রুত।",
+        "2": "gRPC সাধারণত TLS-এর উপর চলে।",
+        "3": "gRPC HTTP/2-এর উপর, অর্থাৎ TCP-তে চলে, UDP-তে না।"
+      }
+    },
+    {
+      "id": "sd-day-016-q55",
+      "difficulty": "hard",
+      "question": "Kong-এর rate-limiting minute: 5। একজন client 10:00:59-এ 5টা আর 10:01:00-এ আরও 5টা request পাঠাল, সব সফল। এর সবচেয়ে ভালো ব্যাখ্যা কোনটা?",
+      "options": [
+        "Plugin token bucket ব্যবহার করে, তাই আগে জমানো token দিয়ে দুই সেকেন্ডে 10টা পাস হয়েছে",
+        "policy: local-এ counter কখনো শেয়ার হয় না, তাই limit কাজ করেনি",
+        "Plugin ঘড়ি-ধরা fixed window-এ গোনে; মিনিট বদলাতেই counter শূন্য, তাই দুই সেকেন্ডে 10",
+        "Kong প্রথম মিনিটে warm-up-এর জন্য limit দ্বিগুণ রাখে"
+      ],
+      "correctIndex": 2,
+      "explanation": "RateLimit-Reset দেখায় মিনিট শেষ হতে কত সেকেন্ড বাকি, অর্থাৎ ঘড়ির মিনিট ধরে window। Window-এর কিনারায় দুই window মিলিয়ে limit-এর দ্বিগুণ পাস হতে পারে। Sliding window এর সমাধান; Day 18-এ বিস্তারিত।",
+      "whyWrong": {
+        "0": "Capacity 5-এর token bucket-এ দুই সেকেন্ডে 10টা পাস হতো না।",
+        "1": "এক node-এর ভেতরে counter ঠিকমতো কাজ করে; এখানে কারণ window-এর সীমা।",
+        "3": "Kong-এ এমন কোনো warm-up নিয়ম নেই।"
+      }
+    },
+    {
+      "id": "sd-day-016-q56",
+      "difficulty": "hard",
+      "question": "নতুন একটা global auth plugin config deploy করার পরে সব API-তে সবাই 401 পেতে শুরু করল, ১৫ মিনিট outage। ভবিষ্যতে এমন ঝুঁকি কমানোর সবচেয়ে ভালো পদ্ধতি কোনটা?",
+      "options": [
+        "Deploy-এর সময় auth plugin সাময়িক বন্ধ রাখা, যাতে কেউ 401 না পায়",
+        "Config git-এ রেখে review, আগে একটা route বা একটা gateway node-এ canary, আর দ্রুত rollback-এর পথ",
+        "Production-এ সরাসরি Admin API দিয়ে হাতে বদলানো, যাতে ভুল হলে সাথে সাথে ঠিক করা যায়",
+        "প্রতিটা service-এর সামনে আলাদা আলাদা gateway বসানো, যাতে এক config-এর ভুল সবাইকে একসাথে না ছোঁয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Gateway-র config-এর blast radius পুরো API। তাই gateway config-কে code-এর মতো ব্যবহার করুন: review, ছোট অংশে আগে চালানো (canary), metrics দেখা, আর এক command-এ আগের অবস্থায় ফেরা। DB-less declarative config এতে সাহায্য করে।",
+      "whyWrong": {
+        "0": "Auth বন্ধ রাখা নিরাপত্তার বড় ফাঁক।",
+        "2": "হাতে বদল review ছাড়া আরও ভুল আনে, আর ইতিহাস থাকে না।",
+        "3": "প্রতিটা service-এ আলাদা gateway মানে নিয়ম আবার ছড়িয়ে যাওয়া, gateway-র মূল লাভ হারানো।"
+      }
+    },
+    {
+      "id": "sd-day-016-q57",
+      "difficulty": "hard",
+      "question": "Mobile BFF, Web BFF আর Partner API তিনটাতেই আলাদা করে 'order-এর status কিভাবে দেখাবে' logic লেখা, আর এখন তিন client তিন রকম status দেখাচ্ছে। সঠিক সমাধান কোনটা?",
+      "options": [
+        "Status-এর logic Order service-এ নেওয়া, BFF-গুলো শুধু আকার বদলাবে",
+        "তিনটা BFF মিলিয়ে একটা বড় shared gateway বানিয়ে সব status logic সেখানেই রাখা",
+        "তিন team-কে প্রতি সপ্তাহে বসে নিজেদের code হাতে মিলিয়ে নিতে বলা",
+        "শুধু Mobile BFF-এর logic রেখে বাকি দুটো client-কে সেটা ব্যবহার করতে বাধ্য করা"
+      ],
+      "correctIndex": 0,
+      "explanation": "BFF-এর কাজ জোড়া দেওয়া আর client-এর মাপে আকার বদলানো। Business rule (status কী) এক জায়গায়, data-র মালিক service-এ থাকলে সবাই একই উত্তর পায়। এটা BFF-এর পরিচিত দাম: logic কপি হওয়ার ঝুঁকি।",
+      "whyWrong": {
+        "1": "সব logic shared gateway-তে নিলে god gateway তৈরি হয়।",
+        "2": "হাতে মেলানো টেকে না; logic তিন জায়গায় থাকলে আবার আলাদা হবে।",
+        "3": "একটা client-এর BFF অন্যদের চাহিদা মেটায় না, BFF-এর উদ্দেশ্যই নষ্ট হয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q58",
+      "difficulty": "hard",
+      "question": "Gateway-র log-এ হঠাৎ অনেক 502, আর কিছু 504। দুটোর পার্থক্য থেকে আপনি কী বুঝবেন?",
+      "options": [
+        "502: client-এর request ভুল format-এ এসেছে; 504: client-এর নিজের network খুব ধীর ছিল",
+        "502: rate limit পেরিয়েছে; 504: auth token-এর মেয়াদ শেষ",
+        "502 আর 504 একই অর্থ, শুধু আলাদা gateway আলাদা code দেয়",
+        "502: upstream-এর উত্তর ভাঙা বা connection ব্যর্থ; 504: সময়মতো উত্তর আসেনি"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটোই gateway বলছে 'পেছনের service-এ সমস্যা'। 502 Bad Gateway মানে upstream থেকে বৈধ উত্তর পায়নি (connection refused, crash, ভাঙা response); 504 Gateway Timeout মানে upstream সময়ের মধ্যে উত্তর দেয়নি। প্রথমটায় service চলছে কিনা দেখুন, দ্বিতীয়টায় কেন ধীর।",
+      "whyWrong": {
+        "0": "Client-এর ভুল format 4xx দেয়, 5xx না।",
+        "1": "Rate limit 429, মেয়াদ শেষ token 401।",
+        "2": "দুটো ভিন্ন সমস্যা বোঝায়, তাই আলাদা দিকে খুঁজতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-016-q59",
+      "difficulty": "hard",
+      "question": "একজন engineer Kong-এর Admin API (port 8001) 0.0.0.0-এ bind করে security group-এ internet-এর জন্য খুলে দিয়েছে, Kong database mode-এ চলছে। সবচেয়ে গুরুতর ঝুঁকি কোনটা?",
+      "options": [
+        "Proxy traffic ধীর হয়ে যাবে, কারণ admin আর proxy একই port আর একই worker ভাগ করে",
+        "শুধু gateway-র status দেখা যাবে, তাই তথ্য ফাঁস হলেও বদলানো যাবে না",
+        "যে কেউ route, consumer, plugin বদলাতে পারে, যেমন auth plugin মুছে দিয়ে",
+        "Kong নিজে থেকে admin port বন্ধ করে দেবে, তাই কোনো ঝুঁকি নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "Database mode-এ Admin API দিয়ে পুরো gateway নিয়ন্ত্রণ করা যায়: plugin মুছা, route বদলানো, consumer বানানো। খোলা থাকলে attacker auth বন্ধ করে দিতে পারে। Admin API শুধু localhost বা private network-এ, প্রয়োজনে আলাদা auth সহ রাখুন (lab-এ তাই 127.0.0.1)।",
+      "whyWrong": {
+        "0": "Admin (8001) আর proxy (8000) আলাদা port।",
+        "1": "Database mode-এ Admin API দিয়ে লেখাও যায়, শুধু পড়া না।",
+        "3": "Kong নিজে থেকে কিছু বন্ধ করে না; config যা বলে তাই করে।"
+      }
+    },
+    {
+      "id": "sd-day-016-q60",
+      "difficulty": "hard",
+      "question": "একটা gateway instance target latency-তে সেকেন্ডে প্রায় 5,000 request সামলায়। Peak traffic 18,000 req/s, আর আপনি চান একটা instance পড়ে গেলেও peak সামলানো যাক (N+1)। কমপক্ষে কয়টা instance লাগবে?",
+      "options": ["4টা", "5টা", "3টা", "18টা"],
+      "correctIndex": 1,
+      "explanation": "18,000 ÷ 5,000 = 3.6, তাই peak-এর জন্য অন্তত 4টা। একটা পড়ে গেলেও যেন 4টা থাকে, তাই N+1 = 5টা। একাধিক zone থাকলে প্রতিটা zone হারানোর হিসাবও করতে হয়।",
+      "whyWrong": {
+        "0": "4টা দিয়ে peak চলে, কিন্তু একটা পড়লে 3টা দিয়ে 15,000-এর বেশি সামলানো যাবে না।",
+        "2": "3টা peak-ই সামলাতে পারে না (15,000 < 18,000)।",
+        "3": "18টা অনেক বেশি; হিসাব হাজার request-এ, instance-এ না।"
+      }
+    }
+  ]
+}

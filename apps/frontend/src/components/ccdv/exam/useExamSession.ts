@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pushAttempt, syncAttempts } from "@/lib/ccdv/attempts-api";
 import { scoreAnswers } from "@/lib/ccdv/scoring";
 import {
   clearDraft,
@@ -29,12 +30,21 @@ export function useExamSession(exam: CcdvExam, contentId: string) {
   const [startedAt, setStartedAt] = useState(0);
   const [draft, setDraft] = useState<ExamDraft | null>(null);
   const [attempt, setAttempt] = useState<AttemptRecord | null>(null);
+  const [previous, setPrevious] = useState<AttemptRecord[]>([]);
   const indexRef = useRef(0);
   indexRef.current = index;
   const submittedRef = useRef(false);
 
   useEffect(() => {
     setDraft(loadDraft(exam.number));
+    let cancelled = false;
+    syncAttempts().then((list) => {
+      if (!cancelled)
+        setPrevious(list.filter((a) => a.examNumber === exam.number));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [exam.number]);
 
   const start = useCallback(
@@ -70,6 +80,8 @@ export function useExamSession(exam: CcdvExam, contentId: string) {
         result,
       };
       saveAttempt(record);
+      void pushAttempt(record);
+      setPrevious((list) => [...list, record]);
       clearDraft(exam.number);
       client.post(`/progress/video/${contentId}/complete`).catch(() => {});
       setAttempt(record);
@@ -110,6 +122,16 @@ export function useExamSession(exam: CcdvExam, contentId: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, answers, flagged, index, saveSlot]);
 
+  const viewAttempt = (past: AttemptRecord) => {
+    setAttempt(past);
+    setPhase("result");
+  };
+  const backToIntro = () => {
+    setAttempt(null);
+    setDraft(loadDraft(exam.number));
+    setPhase("intro");
+  };
+
   const toggleOption = (optionIndex: number) => {
     const question = exam.questions[index];
     setAnswers((prev) => ({
@@ -139,6 +161,9 @@ export function useExamSession(exam: CcdvExam, contentId: string) {
     remaining,
     draft,
     attempt,
+    previous,
+    viewAttempt,
+    backToIntro,
     start,
     submit,
     toggleOption,

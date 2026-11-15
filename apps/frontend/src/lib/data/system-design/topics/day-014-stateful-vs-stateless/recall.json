@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-014",
+  "points": [
+    {
+      "term": "State",
+      "prompt": "System design-এ 'state' বলতে কী বোঝায়? একটা web app-এর চারটা উদাহরণ দিন।",
+      "answer": "State মানে এমন data, যেটা এক request শেষ হওয়ার পরেও টিকে থাকতে হয়, যাতে পরের request সেটা ব্যবহার করতে পারে। উদাহরণ: login session, cart, upload করা file, in-memory cache, খোলা WebSocket connection। Request চলার সময়ের local variable state-এর সমস্যা তৈরি করে না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Stateless Server",
+      "prompt": "Stateless server মানে কি state নেই? Load balancer-এর পেছনে এটা কী তিনটা সুবিধা দেয়?",
+      "answer": "না, state আছে, শুধু app server-এর ভেতরে না; Redis, database, object storage বা client-এর token-এ। ফলে যেকোনো server যেকোনো request নিতে পারে, LB যেকোনো algorithm স্বাধীনভাবে বাছতে পারে, server crash মানে শুধু capacity কমা, আর deploy বা autoscale নির্ভয়ে করা যায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Sticky Session",
+      "prompt": "Sticky session কেন সমাধান না, জোড়াতালি? কখন এটা ব্যবহার করা চলে?",
+      "answer": "State তখনো একটা server-এর memory-তে, তাই crash, restart বা deploy-তে ওই server-এর সব session যায়; ব্যস্ত user-রা এক server-এ আটকে ভার অসমান করে, নতুন server ফাঁকা থাকে। চলে শুধু state বাইরে সরানোর আগে সাময়িকভাবে, বা cache hit বাড়ানোর মতো performance-এর জন্য, correctness-এর জন্য না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Session Store (Redis)",
+      "prompt": "Redis-এ session store সাজাতে কোন সিদ্ধান্তগুলো লাগে?",
+      "answer": "Random ≥128-bit session id আর HttpOnly/Secure cookie; প্রতিটা key-তে TTL (idle আর absolute timeout); value ছোট রাখা; cache-এর সাথে মিশিয়ে allkeys-lru না দেওয়া, নইলে session নিঃশব্দে মুছবে; replica আর failover, জেনে যে async replication-এ শেষ কয়েকটা write হারাতে পারে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "JWT / Signed Token",
+      "prompt": "Signed token (JWT) কিভাবে server-কে stateless রাখে, আর payload কি গোপন?",
+      "answer": "Server data-র উপর signature দিয়ে client-কে দেয়; পরের request-এ শুধু signature মিলিয়ে বিশ্বাস করে, কোনো store-এ খুঁজতে হয় না। কেউ data বদলালে signature মেলে না। কিন্তু signed মানে encrypted না, Base64url decode করে যে কেউ payload পড়তে পারে, তাই গোপন কিছু রাখা যাবে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Token Revocation",
+      "prompt": "JWT-তে logout বা ban কেন কঠিন, আর সাধারণ সমাধান কী?",
+      "answer": "Token নিজের মেয়াদ নিজে বয়ে বেড়ায়, server-এর কাছে মোছার মতো কিছু নেই, তাই exp পর্যন্ত বৈধ। সমাধান: ছোট মেয়াদের access token (১০-১৫ মিনিট) আর server-এ রাখা বাতিলযোগ্য refresh token, বা jti deny-list। দুটোতেই কিছু state ফিরে আসে; সাথে kid দিয়ে key rotation পরিকল্পনা লাগে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Object Storage for Uploads",
+      "prompt": "Upload করা file local disk-এ রাখলে কী ভাঙে, আর ঠিক উপায় কী?",
+      "answer": "অন্য server-এ request গেলে file নেই (404), আর container নতুন হলে বা Heroku-র মতো ephemeral filesystem-এ restart-এ file হারায়। ঠিক উপায়: file object storage-এ (S3, MinIO), database-এ শুধু key; বড় file client থেকে pre-signed URL দিয়ে সরাসরি upload।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Soft State ও Cache Coherence",
+      "prompt": "প্রতিটা server-এ local cache রাখা কি stateless-এর নিয়ম ভাঙে? একাধিক server-এ এর সমস্যা কী?",
+      "answer": "না, যদি সেটা soft state হয়: হারালে শুধু ধীর হয়, ভুল না। সমস্যা cache coherence: এক server দাম বদলে নিজের cache মুছলেও অন্যরা TTL পর্যন্ত পুরনো দাম দেখায়। উপায়: ছোট TTL, shared Redis cache, বা invalidation broadcast; আর counter-এর মতো hard state shared store-এ, নইলে ৪ server-এ limit ৪ গুণ হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Stateful Services",
+      "prompt": "কোন service-কে stateful থাকতেই হয়, আর কেন এরা app server-এর মতো সহজে scale হয় না?",
+      "answer": "Database, queue, Redis, search index, আর WebSocket connection ধরে রাখা server। নতুন কপি মানে data কপি, কোন data কোন node-এ জানতে হয় (sharding), স্থির পরিচয় আর নিজস্ব disk লাগে (Kubernetes StatefulSet), আর বন্ধ করলে failover লাগে। তাই নকশা: অনেক stateless compute, অল্প কয়েকটা যত্নে চালানো stateful store।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Graceful Shutdown ও 12-Factor",
+      "prompt": "Graceful shutdown-এর ধাপগুলো কী, আর 12-factor-এর কোন দুটো নীতি এর সাথে যুক্ত?",
+      "answer": "SIGTERM পেলে readiness fail, অল্প অপেক্ষা যাতে LB সরিয়ে নেয়, নতুন connection বন্ধ, চলমান কাজ শেষ, resource ছেড়ে exit, সব grace period-এর ভেতরে (K8s default ৩০s)। 12-factor-এর VI Processes বলে process stateless ও share-nothing, sticky session চলবে না; IX Disposability বলে দ্রুত চালু আর SIGTERM-এ সুন্দরভাবে বন্ধ।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

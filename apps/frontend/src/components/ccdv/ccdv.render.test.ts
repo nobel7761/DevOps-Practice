@@ -5,7 +5,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CcdvChapterContent, CcdvExam } from "@/lib/data/ccdv/types";
 import QuizDeck from "./flashcards/quiz/QuizDeck";
-import { hasInteractiveFlashcards } from "@/lib/data/ccdv/schedule";
 import ExamIntro from "./exam/ExamIntro";
 import LabPanel from "./lesson/LabPanel";
 import LessonPanel from "./lesson/LessonPanel";
@@ -41,6 +40,13 @@ describe("CCDV chapters render", () => {
       outsidePre(lesson).includes("```"),
       `${file} lesson leaked raw fence`,
     ).toBe(false);
+    const hasSortGame = chapter.lesson.blocks.some(
+      (b) => b.type === "simulator" && b.id === "sort-game",
+    );
+    if (hasSortGame)
+      expect(lesson, `${file} sort-game lost its Submit step`).toContain(
+        "Submit করো",
+      );
     const lab = renderToStaticMarkup(
       createElement(LabPanel, { lab: chapter.lab }),
     );
@@ -71,6 +77,8 @@ describe("CCDV exams render", () => {
         createElement(ExamIntro, {
           number: exam.number,
           draftRemaining: null,
+          attempts: [],
+          onView: () => {},
           onStart: () => {},
           onResume: () => {},
         }),
@@ -102,20 +110,17 @@ describe("CCDV exams render", () => {
   });
 });
 
-describe("CCDV interactive flashcards (Milestone 1)", () => {
-  it("is enabled for Week 1 chapters only", () => {
-    expect(["ch00", "ch01", "ch06"].every(hasInteractiveFlashcards)).toBe(true);
-    expect(["ch07", "ch14"].some(hasInteractiveFlashcards)).toBe(false);
+describe("CCDV interactive flashcards", () => {
+  it.each(
+    Array.from({ length: 15 }, (_, i) => `ch${String(i).padStart(2, "0")}`),
+  )("%s quiz deck renders", (id) => {
+    const chapter = read<CcdvChapterContent>("chapters", `${id}.json`);
+    const html = renderToStaticMarkup(
+      createElement(QuizDeck, { chapterId: id, cards: chapter.flashcards }),
+    );
+    expect(html).toContain(`Card 1 / ${chapter.flashcards.length}`);
+    // typed answers are switched off for now (FLASHCARD_TYPED_ANSWERS)
+    expect(html).not.toContain("Validate");
+    expect(html).not.toContain("ccdv-card-answer");
   });
-  it.each(["ch00", "ch01", "ch02", "ch03", "ch04", "ch05", "ch06"])(
-    "%s quiz deck renders",
-    (id) => {
-      const chapter = read<CcdvChapterContent>("chapters", `${id}.json`);
-      const html = renderToStaticMarkup(
-        createElement(QuizDeck, { chapterId: id, cards: chapter.flashcards }),
-      );
-      expect(html).toContain(`Card 1 / ${chapter.flashcards.length}`);
-      expect(html).toContain("Validate");
-    },
-  );
 });

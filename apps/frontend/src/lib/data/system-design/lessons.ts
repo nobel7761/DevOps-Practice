@@ -25,6 +25,45 @@ import day018Recall from "./topics/day-018-rate-limiting/recall.json";
 import { day022Lesson } from "./topics/day-022-database-indexes/lesson";
 import day022Post from "./topics/day-022-database-indexes/linkedin.json";
 import day022Recall from "./topics/day-022-database-indexes/recall.json";
+import { day005Lesson } from "./topics/day-005-scalability/lesson";
+import day005Post from "./topics/day-005-scalability/linkedin.json";
+import day005Recall from "./topics/day-005-scalability/recall.json";
+import { day006Lesson } from "./topics/day-006-availability/lesson";
+import day006Post from "./topics/day-006-availability/linkedin.json";
+import day006Recall from "./topics/day-006-availability/recall.json";
+import { day007Lesson } from "./topics/day-007-latency-vs-throughput/lesson";
+import day007Post from "./topics/day-007-latency-vs-throughput/linkedin.json";
+import day007Recall from "./topics/day-007-latency-vs-throughput/recall.json";
+import { day008Lesson } from "./topics/day-008-cap-theorem/lesson";
+import day008Post from "./topics/day-008-cap-theorem/linkedin.json";
+import day008Recall from "./topics/day-008-cap-theorem/recall.json";
+import { day010Lesson } from "./topics/day-010-databases/lesson";
+import day010Post from "./topics/day-010-databases/linkedin.json";
+import day010Recall from "./topics/day-010-databases/recall.json";
+import { day009Lesson } from "./topics/day-009-load-balancers/lesson";
+import day009Post from "./topics/day-009-load-balancers/linkedin.json";
+import day009Recall from "./topics/day-009-load-balancers/recall.json";
+import { day011Lesson } from "./topics/day-011-cdn/lesson";
+import day011Post from "./topics/day-011-cdn/linkedin.json";
+import day011Recall from "./topics/day-011-cdn/recall.json";
+import { day014Lesson } from "./topics/day-014-stateful-vs-stateless/lesson";
+import day014Post from "./topics/day-014-stateful-vs-stateless/linkedin.json";
+import day014Recall from "./topics/day-014-stateful-vs-stateless/recall.json";
+import { day013Lesson } from "./topics/day-013-vertical-vs-horizontal-scaling/lesson";
+import day013Post from "./topics/day-013-vertical-vs-horizontal-scaling/linkedin.json";
+import day013Recall from "./topics/day-013-vertical-vs-horizontal-scaling/recall.json";
+import { day015Lesson } from "./topics/day-015-proxy-servers/lesson";
+import day015Post from "./topics/day-015-proxy-servers/linkedin.json";
+import day015Recall from "./topics/day-015-proxy-servers/recall.json";
+import { day016Lesson } from "./topics/day-016-api-gateway/lesson";
+import day016Post from "./topics/day-016-api-gateway/linkedin.json";
+import day016Recall from "./topics/day-016-api-gateway/recall.json";
+import { day019Lesson } from "./topics/day-019-capacity-estimation/lesson";
+import day019Post from "./topics/day-019-capacity-estimation/linkedin.json";
+import day019Recall from "./topics/day-019-capacity-estimation/recall.json";
+import { day017Lesson } from "./topics/day-017-caching/lesson";
+import day017Post from "./topics/day-017-caching/linkedin.json";
+import day017Recall from "./topics/day-017-caching/recall.json";
 import { day012Lesson } from "./topics/day-012-message-queues/lesson";
 import day012Post from "./topics/day-012-message-queues/linkedin.json";
 import day012Recall from "./topics/day-012-message-queues/recall.json";
@@ -36,6 +75,71 @@ export interface LessonBundle {
 }
 
 export const LESSONS: Record<string, LessonBundle> = {
+  "sd-day-017": {
+    lesson: day017Lesson,
+    recall: day017Recall as RecallMap,
+    post: day017Post as LinkedInPost,
+  },
+  "sd-day-019": {
+    lesson: day019Lesson,
+    recall: day019Recall as RecallMap,
+    post: day019Post as LinkedInPost,
+  },
+  "sd-day-016": {
+    lesson: day016Lesson,
+    recall: day016Recall as RecallMap,
+    post: day016Post as LinkedInPost,
+  },
+  "sd-day-015": {
+    lesson: day015Lesson,
+    recall: day015Recall as RecallMap,
+    post: day015Post as LinkedInPost,
+  },
+  "sd-day-013": {
+    lesson: day013Lesson,
+    recall: day013Recall as RecallMap,
+    post: day013Post as LinkedInPost,
+  },
+  "sd-day-014": {
+    lesson: day014Lesson,
+    recall: day014Recall as RecallMap,
+    post: day014Post as LinkedInPost,
+  },
+  "sd-day-011": {
+    lesson: day011Lesson,
+    recall: day011Recall as RecallMap,
+    post: day011Post as LinkedInPost,
+  },
+  "sd-day-009": {
+    lesson: day009Lesson,
+    recall: day009Recall as RecallMap,
+    post: day009Post as LinkedInPost,
+  },
+  "sd-day-010": {
+    lesson: day010Lesson,
+    recall: day010Recall as RecallMap,
+    post: day010Post as LinkedInPost,
+  },
+  "sd-day-008": {
+    lesson: day008Lesson,
+    recall: day008Recall as RecallMap,
+    post: day008Post as LinkedInPost,
+  },
+  "sd-day-007": {
+    lesson: day007Lesson,
+    recall: day007Recall as RecallMap,
+    post: day007Post as LinkedInPost,
+  },
+  "sd-day-006": {
+    lesson: day006Lesson,
+    recall: day006Recall as RecallMap,
+    post: day006Post as LinkedInPost,
+  },
+  "sd-day-005": {
+    lesson: day005Lesson,
+    recall: day005Recall as RecallMap,
+    post: day005Post as LinkedInPost,
+  },
   "sd-day-022": {
     lesson: day022Lesson,
     recall: day022Recall as RecallMap,

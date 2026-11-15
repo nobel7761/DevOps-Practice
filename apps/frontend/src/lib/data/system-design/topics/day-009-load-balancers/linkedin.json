@@ -1,0 +1,13 @@
+{
+  "type": "story",
+  "text": "ব্যাংকে ৫টা counter খোলা, অথচ সবাই ১ নম্বরের সামনেই লাইনে। কেন?\nDay 9/100 · Load Balancers\n\nধরুন মাসের শুরুতে একটা ব্যাংকের শাখা। ভিড় সামলাতে ম্যানেজার আরও চারটা counter খুললেন।\n\nকিন্তু দরজা দিয়ে ঢুকেই প্রথম যে counter চোখে পড়ে, সবাই সেখানেই দাঁড়াল। ৪ নম্বরের ক্যাশিয়ার চা খেতে গেছেন, তবু তার সামনেও একটা লাইন।\n\nফল: counter পাঁচটা, কাজ হচ্ছে প্রায় একটার মতো।\n\nতারপর দরজার পাশে বসল একটা token machine। Token নিলে screen-এ লেখা ওঠে \"টোকেন ৪৫ → কাউন্টার ৩\"। যে counter বন্ধ, machine সেখানে কাউকে পাঠায় না।\n\nআজ **Load Balancer** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nভিড় বাড়লে আমরা server বাড়াই। কিন্তু:\n- user তো চেনে শুধু একটা ঠিকানা\n- কোন server মরে গেছে, user জানে না\n\nনতুন server বসে থাকে, পুরনোটা ডোবে। এখানেই আসে Load Balancer। সবাই একটা ঠিকানায় আসে, সে ঠিক করে কে কোন server-এ যাবে।\n\n৩টা মূল ধারণা:\n1. **Algorithm**: পালা করে (Round Robin), নাকি যার হাতে কম কাজ (Least Connections)\n2. **Health Check**: নিয়মিত জিজ্ঞেস করা \"ঠিক আছ?\", উত্তর না দিলে বাদ\n3. **L7 Routing**: request-এর path দেখে আলাদা server দলে পাঠানো\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ load balancer-এর কোন setting (algorithm, health check, sticky session) নিয়ে সবচেয়ে বেশি ঝামেলা হয়েছে?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম। Token machine নিজেই নষ্ট হলে? পুরো ব্যাংক থমকে যায়। Load balancer-ও তাই: একটা থাকলে সেটাই নতুন single point of failure। তাই দুটো রাখা হয়, একটা floating IP সহ; প্রথমটা থামলে দ্বিতীয়টা কয়েক সেকেন্ডে দায়িত্ব নেয়।\n\nLoad Balancer = অনেক server-এর সামনে একটাই দরজা, যে প্রতিটা request-কে সুস্থ server-এ পাঠায়।\n\nআপনার project-এ কোন load balancer ব্যবহার করেন, আর কোন algorithm? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ load balancer-এর কোন setting (algorithm, health check, sticky session) নিয়ে সবচেয়ে বেশি ঝামেলা হয়েছে?",
+  "firstComment": "পুরো lesson, diagram আর নিজে চালিয়ে দেখার Load Balancer Lab (algorithm, health check, sticky session, L7 routing) এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#LoadBalancing",
+    "#BackendEngineering"
+  ],
+  "visual": "day-009-main"
+}

@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent } from "@/components/shared/shadcn";
+import { Badge, Button, Card, CardContent } from "@/components/shared/shadcn";
 import type { AttemptRecord } from "@/lib/ccdv/storage";
 import { PASS_SCALED } from "@/lib/data/ccdv/blueprint";
 import type { CcdvExam } from "@/lib/data/ccdv/types";
@@ -9,13 +9,22 @@ import QuestionReviewList from "./QuestionReviewList";
 export default function ExamResult({
   exam,
   attempt,
+  onBack,
 }: {
   exam: CcdvExam;
   attempt: AttemptRecord;
+  onBack?: () => void;
 }) {
   const { result } = attempt;
   return (
     <div className="flex flex-col gap-4">
+      {onBack && (
+        <div>
+          <Button variant="outline" size="sm" onClick={onBack}>
+            ← সব attempt-এ ফিরে যাও
+          </Button>
+        </div>
+      )}
       <Card>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">

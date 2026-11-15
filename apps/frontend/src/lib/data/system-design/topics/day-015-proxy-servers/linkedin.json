@@ -1,0 +1,14 @@
+{
+  "type": "story",
+  "text": "খাবারের delivery rider কি কখনো আপনার ফ্ল্যাটের দরজা পর্যন্ত আসে?\nDay 15/100 · Proxy Servers\n\nধরুন ধানমন্ডির একটা ১২ তলা apartment। নিয়ম নেই, গেট খোলা। যে কেউ সরাসরি লিফটে উঠে যেকোনো দরজায় বেল দেয়।\n\nRider ভুল তলায় যায়, অচেনা মানুষ ঘোরাঘুরি করে, আর দুপুরে একই ফ্ল্যাটে পাঁচবার বেল। বাসিন্দারা কাজই করতে পারেন না।\n\nতারপর গেটে একজন দারোয়ান বসল। Rider শুধু গেট পর্যন্ত আসে, খাবার দারোয়ানকে দেয়। দারোয়ান intercom-এ জানায়, খাতায় লেখে কে এলো, সন্দেহজনক কাউকে ঢুকতেই দেয় না। Rider জানেও না কোন তলায় কে থাকে।\n\nআজ **Proxy Servers** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nঅনেক app-এ user সরাসরি app server-এ পৌঁছায়:\n- প্রতিটা server-এর IP বাইরে খোলা\n- প্রতিটায় আলাদা TLS certificate\n- ধীর mobile network-এর একটা upload পুরো worker আটকে রাখে\n\nএখানেই আসে **Reverse Proxy**: সামনে একটা NGINX, user শুধু তাকেই দেখে। আর উল্টো দিকের দারোয়ানও আছে, অফিসের **Forward Proxy**, যে কর্মীদের হয়ে বাইরে যায়।\n\n৩টা মূল ধারণা:\n1. **Forward Proxy**: client-এর হয়ে কাজ করে; অফিস এটা দিয়ে domain block করে, log রাখে, cache করে\n2. **Reverse Proxy**: server-এর হয়ে সামনে দাঁড়ায়; TLS, gzip, cache, আর ভেতরের server লুকানো\n3. **X-Forwarded-For**: proxy পেরিয়ে আসল client-এর IP জানানোর header; শুধু চেনা proxy-র লেখাটাই বিশ্বাস করতে হয়\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ NGINX বা অন্য কোনো proxy কোন সমস্যাটা প্রথম সমাধান করেছিল, আর কোন setting-এ আটকে গিয়েছিলেন?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম। অফিসের proxy কি আমার HTTPS-এর ভেতর দেখতে পায়? সাধারণত না। Browser **CONNECT** দিয়ে একটা tunnel চায়, proxy শুধু domain আর port দেখে, ভেতরের সব encrypted। ভেতর পড়তে হলে অফিসকে নিজের root certificate আগে থেকে laptop-এ বসাতে হয়।\n\nProxy = মাঝখানে বসা প্রতিনিধি, যে কারো হয়ে request পাঠায় আর সেই সুযোগে দেখে, আটকায়, মনে রাখে।\n\nআপনার system-এ সামনে কোন proxy বসান, NGINX, HAProxy, Envoy নাকি অন্য কিছু? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ NGINX বা অন্য কোনো proxy কোন সমস্যাটা প্রথম সমাধান করেছিল, আর কোন setting-এ আটকে গিয়েছিলেন?",
+  "firstComment": "পুরো lesson, CONNECT tunnel-এর ধাপে ধাপে diagram আর Squid + NGINX দিয়ে Docker lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#ReverseProxy",
+    "#NGINX",
+    "#BackendEngineering"
+  ],
+  "visual": "day-015-main"
+}

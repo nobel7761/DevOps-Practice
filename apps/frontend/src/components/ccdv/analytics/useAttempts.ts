@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadAttempts, type AttemptRecord } from "@/lib/ccdv/storage";
+import { syncAttempts } from "@/lib/ccdv/attempts-api";
+import type { AttemptRecord } from "@/lib/ccdv/storage";
 
 export function useAttempts(): AttemptRecord[] | null {
   const [attempts, setAttempts] = useState<AttemptRecord[] | null>(null);
   useEffect(() => {
-    setAttempts(loadAttempts());
+    let cancelled = false;
+    syncAttempts().then((list) => {
+      if (!cancelled) setAttempts(list);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return attempts;
 }

@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-009",
+  "points": [
+    {
+      "term": "Load Balancer",
+      "prompt": "Load balancer কোন দুটো সমস্যার সমাধান করে, আর তার চারটা কাজ কী?",
+      "answer": "একটা server-এর capacity-র ছাদ (scalability) আর একটা server পড়লে সব বন্ধ (SPOF), এই দুটো। তার কাজ: সবার জন্য একটাই প্রবেশপথ, algorithm দিয়ে request ভাগ, health check দিয়ে অসুস্থ server বাদ, আর পেছনের server-দের লুকিয়ে রাখা যাতে যোগ-বাদ-deploy client টের না পায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "L4 vs L7",
+      "prompt": "L4 আর L7 load balancer কী দেখতে পায়, আর কোনটা কখন?",
+      "answer": "L4 শুধু IP, port আর protocol দেখে connection ভাগ করে; দ্রুত, কম CPU, যেকোনো TCP/UDP-তে চলে, কিন্তু path বা cookie দেখে না। L7 connection terminate করে HTTP পড়ে, প্রতিটা request আলাদা ভাগ করে, path/host routing, cookie stickiness আর retry করতে পারে, তবে বেশি CPU লাগে। HTTP/2 বা gRPC-র লম্বা connection-এ L4 অসমান ভাগ করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "TLS Termination",
+      "prompt": "TLS termination, passthrough আর re-encryption-এর পার্থক্য কী, আর L7 routing-এর সাথে সম্পর্ক কী?",
+      "answer": "Termination-এ LB TLS খুলে HTTP পড়ে, backend-এ সাধারণ HTTP পাঠায়; passthrough-এ LB না খুলে encrypted bytes পার করে, তাই path দেখতে পায় না (বড়জোর SNI-র hostname); re-encryption-এ LB খুলে পড়ে আবার নতুন TLS-এ backend-এ পাঠায়। L7 সুবিধা চাইলে LB-কে TLS খুলতেই হবে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Weighted Round Robin",
+      "prompt": "Round robin কখন যথেষ্ট, আর কখন weight লাগে? Weight ৩:১:১ হলে ৩০টা request কিভাবে ভাগ হবে?",
+      "answer": "সব server সমান আর request প্রায় সমান হলে round robin যথেষ্ট। Server-দের ক্ষমতা আলাদা হলে weight দিয়ে অনুপাতে ভাগ করতে হয়। ৩:১:১-এ মোট ৫, তাই ১৮, ৬, ৬; NGINX এগুলো smooth ভাবে ছড়িয়ে দেয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Least Connections",
+      "prompt": "Least connections কেন অসমান request-এ ভালো, আর কোথায় এটা ভুল বোঝায়?",
+      "answer": "ভারী request যার কাছে, তার connection অনেকক্ষণ খোলা থাকে, তাই সে নতুন কাজ কম পায়। কিন্তু connection সংখ্যা আসল ভার না: কম connection-এ সব ভারী কাজ থাকতে পারে, idle connection গোনা ভুল করে, আর ১ms-এ error দেওয়া server-এর connection সবসময় কম বলে সে সবচেয়ে বেশি request পায় (black hole)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "IP Hash ও CGNAT",
+      "prompt": "IP hash দিয়ে stickiness দিলে mobile network-এ কী সমস্যা হয়?",
+      "answer": "CGNAT-এ হাজার হাজার গ্রাহক একই public IP নিয়ে আসে, তাই IP hash তাদের সবাইকে একটা server-এ পাঠায় আর hot spot তৈরি হয়। NGINX-এর ip_hash IPv4-এর প্রথম তিন অংশ দিয়ে hash করে, তাই একই /24-এর সবাই একসাথে জমে। Stickiness লাগলে cookie বা user id দিয়ে hash করা ভালো।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Health Check",
+      "prompt": "Active আর passive health check-এর পার্থক্য কী, আর detection-এর সময় কিভাবে হিসাব করবেন?",
+      "answer": "Active-এ LB নিজে নিয়মিত probe পাঠায় (যেমন GET /health), passive-এ আসল request-এর error দেখে বাদ দেয়। Detection মোটামুটি interval × unhealthy threshold, যেমন ১০s × ৩ = ৩০ সেকেন্ড। খুব কড়া করলে flapping, আর health check-এ shared database পরীক্ষা করলে সব server একসাথে বাদ পড়তে পারে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Sticky Session",
+      "prompt": "Sticky session কী সমস্যা ঢাকে, আর আসল সমাধান কী?",
+      "answer": "Server-এর memory-তে রাখা session হারানো ঢাকে, একই user-কে একই server-এ পাঠিয়ে। কিন্তু server মরলে session যায়, ভার অসমান হয়, নতুন server ফাঁকা থাকে, আর deploy কঠিন হয়। আসল সমাধান stateless server: session Redis/database বা token-এ।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Connection Draining",
+      "prompt": "Deploy-এর সময় connection draining আর graceful shutdown কী করে?",
+      "answer": "Draining-এ LB একটা server-কে আর নতুন request দেয় না, কিন্তু চলমান request একটা সর্বোচ্চ সময় পর্যন্ত শেষ হতে দেয় (AWS-এ deregistration delay)। App SIGTERM পেয়ে readiness fail করে, নতুন কাজ বন্ধ করে, চলমান কাজ শেষ করে বের হয়। সময় লম্বা হলে deploy ধীর, ছোট হলে লম্বা request কাটে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "LB Redundancy (Floating IP)",
+      "prompt": "Load balancer নিজে যেন SPOF না হয়, কিভাবে করবেন?",
+      "answer": "দুটো LB-কে active-passive জোড়ায় রাখা, client আসে একটা floating IP-তে; keepalived/VRRP heartbeat থামলে standby IP নিয়ে নেয়, কয়েক সেকেন্ডে failover। অথবা active-active (DNS-এ কয়েকটা IP বা router-এর ECMP)। Region-স্তরে DNS-based GSLB (TTL-এর সীমা আছে) বা anycast।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

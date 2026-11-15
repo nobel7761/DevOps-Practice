@@ -1,0 +1,1010 @@
+{
+  "topicId": "sd-day-007",
+  "questions": [
+    {
+      "id": "sd-day-007-q01",
+      "difficulty": "easy",
+      "question": "Latency বলতে কী বোঝায়?",
+      "options": [
+        "একটা request শুরু থেকে শেষ হতে কত সময় লাগে",
+        "প্রতি সেকেন্ডে server কতগুলো request শেষ করতে পারে",
+        "Network link একসাথে সর্বোচ্চ কত data বহন করতে পারে",
+        "Server-এর CPU কত শতাংশ সময় ব্যস্ত থাকে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Latency হলো একটা কাজ (যেমন একটা request) শুরু থেকে শেষ হতে কত সময় লাগে, সাধারণত ms-এ মাপা হয়। User-এর চোখে এর মধ্যে network, handshake, লাইনে অপেক্ষা আর server-এর কাজ সবই পড়ে।",
+      "whyWrong": {
+        "1": "এটা throughput-এর সংজ্ঞা, latency-র না।",
+        "2": "এটা bandwidth, মানে link-এর ক্ষমতা, সময় না।",
+        "3": "এটা utilization; latency-র উপর প্রভাব ফেলে, কিন্তু latency নিজে না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q02",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা throughput মাপার একক?",
+      "options": [
+        "ms (একটা request শুরু থেকে শেষ হতে কত millisecond লাগে)",
+        "req/s (প্রতি সেকেন্ডে কতগুলো request শেষ হয়)",
+        "p99 (ধীরতম ১% request-এর সীমা)",
+        "RTT (একবার যাওয়া-আসায় কত সময় লাগে)"
+      ],
+      "correctIndex": 1,
+      "explanation": "Throughput মানে প্রতি একক সময়ে কতগুলো কাজ শেষ হয়, তাই এর একক req/s, MB/s বা order/minute-এর মতো 'পরিমাণ ÷ সময়'। ms, RTT আর p99 সবই সময় মাপে।",
+      "whyWrong": {
+        "0": "ms হলো সময়ের একক, latency মাপতে লাগে।",
+        "2": "p99 একটা latency percentile, কাজের হার না।",
+        "3": "RTT হলো round trip-এর সময়, অর্থাৎ latency-র একটা অংশ।"
+      }
+    },
+    {
+      "id": "sd-day-007-q03",
+      "difficulty": "easy",
+      "question": "Bandwidth আর throughput-এর সম্পর্ক নিয়ে কোনটা ঠিক?",
+      "options": [
+        "দুটো আসলে একই জিনিস, শুধু network-এর লোকেরা আর server-এর লোকেরা আলাদা নামে ডাকে",
+        "Throughput সবসময় bandwidth-এর ঠিক সমান থাকে, যতক্ষণ link চালু",
+        "Bandwidth হলো link-এর সর্বোচ্চ ক্ষমতা; throughput কখনো এর বেশি হয় না",
+        "Bandwidth বাড়ালে latency সবসময় একই অনুপাতে কমে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Bandwidth হলো পাইপ কত মোটা, অর্থাৎ সর্বোচ্চ কত data যেতে পারে। Throughput হলো আসলে কতটা যাচ্ছে, যেটা bandwidth-এর সমান বা কম। Bandwidth বাড়ালে latency-র শুধু transmission অংশ কমে।",
+      "whyWrong": {
+        "0": "Bandwidth ক্ষমতা আর throughput আসল ব্যবহার; দুটো সমান হওয়া জরুরি না।",
+        "1": "Link ফাঁকা থাকলে বা TCP window ছোট হলে throughput অনেক কম থাকে।",
+        "3": "Bandwidth শুধু transmission সময় কমায়; propagation আর round trip একই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q04",
+      "difficulty": "easy",
+      "question": "২ TB data-ভরা একটা hard drive কুরিয়ারে পাঠানো হলো, পৌঁছাল ২ দিনে। এই 'network'-এর ব্যাপারে কোনটা ঠিক?",
+      "options": [
+        "Latency খুব বেশি, কিন্তু throughput বেশ ভালো",
+        "Latency কম, কিন্তু throughput-ও কম",
+        "Latency আর throughput দুটোই খুব খারাপ, কারণ ২ দিন লাগে",
+        "Latency ভালো, কিন্তু throughput খারাপ"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রথম byte পৌঁছাতেই ২ দিন, তাই latency ভয়ংকর। কিন্তু একবারে ২ TB যাচ্ছে: ১.৬ × ১০¹³ bit ÷ ১,৭২,৮০০ সেকেন্ড ≈ ৯২ Mbps। এই উদাহরণই দেখায় latency আর throughput আলাদা।",
+      "whyWrong": {
+        "1": "২ দিন অপেক্ষা মোটেও কম latency না।",
+        "2": "২ TB ÷ ২ দিন ≈ ৯২ Mbps, যেটা অনেক internet connection-এর চেয়ে বেশি; throughput খারাপ না।",
+        "3": "এটা উল্টো; দেরি বেশি, কিন্তু একসাথে অনেক data যাচ্ছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q05",
+      "difficulty": "easy",
+      "question": "Latency শুধু গড় (average) দিয়ে report করা কেন বিপজ্জনক?",
+      "options": [
+        "গড় হিসাব করতে অনেক CPU আর memory লাগে, তাই বড় production system-এ চালানো যায় না",
+        "গড় সবসময় p99-এর চেয়ে বড় হয়, তাই সমস্যাকে বাড়িয়ে দেখায়",
+        "গড় ধীরতম কয়েক % request-কে লুকিয়ে ফেলে, অথচ user সেগুলোতেই বিরক্ত হয়",
+        "গড় শুধু throughput মাপতে কাজে লাগে, latency মাপার জন্য না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Latency-র বণ্টনে বেশিরভাগ request দ্রুত আর কয়েকটা অনেক ধীর। গড় সেই কয়েকটাকে মিশিয়ে একটা সংখ্যা দেয় যেটা কারও অভিজ্ঞতার সাথে মেলে না। তাই p50, p95, p99 দেখা হয়।",
+      "whyWrong": {
+        "0": "গড় হিসাব খুব সস্তা; সমস্যা হলো এটা ভুল ছবি দেখায়।",
+        "1": "লম্বা লেজওয়ালা বণ্টনে গড় সাধারণত p99-এর চেয়ে অনেক ছোট, তাই উল্টো সমস্যা হয়।",
+        "3": "গড় latency মাপা যায়, কিন্তু একা যথেষ্ট না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q06",
+      "difficulty": "easy",
+      "question": "একটা API-র p99 latency ৮০০ms। এর মানে কী?",
+      "options": [
+        "৯৯% request ঠিক ৮০০ms করে সময় নেয়, আর বাকি ১% তার চেয়ে কম সময়ে শেষ হয়",
+        "৯৯% request ৮০০ms বা কম সময়ে শেষ হয়, বাকি ১% এর চেয়ে বেশি নেয়",
+        "গড় latency ৮০০ms, আর মাপটা ৯৯% নির্ভুলতায় নেওয়া হয়েছে",
+        "মাত্র ১% request ৮০০ms বা কম সময়ে শেষ হয়, বাকি সব ধীর"
+      ],
+      "correctIndex": 1,
+      "explanation": "p99 = ৮০০ms মানে সব request ছোট থেকে বড় সাজালে ৯৯% এর মধ্যে পড়ে। প্রতি ১০০টায় একটা ৮০০ms-এর বেশি নেয়, আর অনেক request করা user-এর কাছে সেটা প্রায়ই চোখে পড়ে।",
+      "whyWrong": {
+        "0": "Percentile একটা সীমা বলে, সবাই ঠিক ওই সময় নেয় এমন না।",
+        "2": "p99 গড় বা মাপের নির্ভুলতা না, এটা বণ্টনের একটা বিন্দু।",
+        "3": "এটা p1-এর বর্ণনা, p99-এর উল্টো।"
+      }
+    },
+    {
+      "id": "sd-day-007-q07",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা সাধারণত সবচেয়ে বেশি সময় নেয়?",
+      "options": [
+        "RAM থেকে এক টুকরো data পড়া",
+        "SSD থেকে এলোমেলো জায়গায় একবার পড়া",
+        "ঢাকা থেকে আমেরিকার একটা server-এ একবার যাওয়া-আসা",
+        "একই datacenter-এর দুটো server-এর মধ্যে round trip"
+      ],
+      "correctIndex": 2,
+      "explanation": "Latency-র সিঁড়িতে অন্য মহাদেশের round trip (~২৫০ms) সবচেয়ে উপরে। একই datacenter-এ ~০.৫ms, SSD ~১০০µs, RAM ~১০০ns। মোটা দাগের এই ধারণাই design-এর সিদ্ধান্তে সবচেয়ে কাজে লাগে।",
+      "whyWrong": {
+        "0": "RAM থেকে পড়া ~১০০ns-এর ঘরে, দূরের round trip-এর চেয়ে লাখো গুণ দ্রুত।",
+        "1": "SSD read ~১০-১০০µs, দূরের round trip (~২৫০ms) তার কয়েক হাজার গুণ।",
+        "3": "একই datacenter-এ RTT ১ms-এর নিচে; অন্য মহাদেশে শতশত ms।"
+      }
+    },
+    {
+      "id": "sd-day-007-q08",
+      "difficulty": "easy",
+      "question": "ঢাকা থেকে আমেরিকার server-এ ping সবসময় Singapore-এর server-এর চেয়ে বেশি আসে। মূল কারণ কী?",
+      "options": [
+        "দূরত্ব অনেক বেশি, আর fiber-এ আলোর গতি সীমিত (propagation delay)",
+        "আমেরিকার server-গুলোর CPU সাধারণত ধীর হয়",
+        "আমেরিকার দিকের link-এর bandwidth সাধারণত কম থাকে",
+        "আমেরিকার server-এর ক্ষেত্রে প্রতিটা ping-এর আগে DNS lookup অনেক বেশি সময় নেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Fiber-এ আলো ~২,০০,০০০ km/s চলে, তাই প্রতি ১,০০০ km-এ এক দিকে ~৫ms। ঢাকা থেকে আমেরিকা Singapore-এর চার গুণের বেশি দূরে, তাই RTT-র নিচের সীমাও অনেক বেশি। এটা পদার্থবিজ্ঞানের সীমা, ভালো code দিয়ে ভাঙা যায় না।",
+      "whyWrong": {
+        "1": "Ping-এর উত্তর দিতে CPU-র কাজ প্রায় নেই; পার্থক্যটা দূরত্বের।",
+        "2": "ছোট ping packet-এ bandwidth প্রায় কোনো ভূমিকা রাখে না।",
+        "3": "Ping-এর RTT মাপা হয় IP পাওয়ার পরে, DNS-এর সময় এতে নেই।"
+      }
+    },
+    {
+      "id": "sd-day-007-q09",
+      "difficulty": "easy",
+      "question": "একই site-এ পরপর দুবার curl চালালেন। দ্বিতীয়বার DNS-এর সময় প্রায় শূন্য। কেন?",
+      "options": [
+        "DNS-এর উত্তর cache-এ ছিল, তাই আবার resolver-কে জিজ্ঞেস করতে হয়নি",
+        "দ্বিতীয়বার server কাছের একটা datacenter থেকে উত্তর দিয়েছে, তাই সব ধাপ দ্রুত হয়েছে",
+        "দ্বিতীয় request-এ TLS বন্ধ রেখে পাঠানো হয়েছিল",
+        "প্রথম request link-এর bandwidth বাড়িয়ে দিয়েছিল"
+      ],
+      "correctIndex": 0,
+      "explanation": "প্রথম (cold) request-এ নাম থেকে IP খুঁজতে resolver-এর কাছে যেতে হয়। উত্তরটা TTL পর্যন্ত cache-এ থাকে, তাই পরের request-এ DNS-এর সময় প্রায় শূন্য। TCP আর TLS অবশ্য curl-এ প্রতিবার নতুন হয়।",
+      "whyWrong": {
+        "1": "DNS-এর সময় server-এর অবস্থান খোঁজার আগের ধাপ; cache থেকে উত্তর আসায় কমেছে।",
+        "2": "TLS DNS-এর পরের ধাপ; DNS-এর সময়ে এর প্রভাব নেই।",
+        "3": "Request bandwidth বাড়ায় না; DNS-এর উত্তর cache হওয়াই কারণ।"
+      }
+    },
+    {
+      "id": "sd-day-007-q10",
+      "difficulty": "easy",
+      "question": "একটা page তিনটা স্বাধীন API call করে: ১০০ms, ৫০ms আর ১৫০ms। তিনটা একসাথে (parallel) চালালে মোট মোটামুটি কত সময়?",
+      "options": ["৩০০ms", "১০০ms", "৫০ms", "১৫০ms"],
+      "correctIndex": 3,
+      "explanation": "Parallel-এ তিনটাই একসাথে শুরু হয়, আর page তৈরি হয় সবার উত্তর এলে। তাই মোট সময় = সবচেয়ে ধীর call = ১৫০ms। Sequential হলে হতো যোগফল, ৩০০ms।",
+      "whyWrong": {
+        "0": "এটা একটার পর একটা চালালে যোগফল; parallel-এ সময় যোগ হয় না।",
+        "1": "এটা গড়; parallel-এ সবচেয়ে ধীরটার জন্য অপেক্ষা করতে হয়।",
+        "2": "সবচেয়ে দ্রুতটা শেষ হলেও বাকি দুটোর উত্তর তখনো আসেনি।"
+      }
+    },
+    {
+      "id": "sd-day-007-q11",
+      "difficulty": "easy",
+      "question": "Profile আনতে login-এর token লাগে। Login ৮০ms, profile ৬০ms। মোট কত সময় লাগবে, আর কেন?",
+      "options": [
+        "১৪০ms, কারণ profile login-এর ফলের উপর নির্ভর করে, তাই একটার পর একটা",
+        "৮০ms, কারণ দুটো call parallel-এ একসাথে চালালে শুধু বড়টার সময়ই মোট সময় হয়",
+        "৭০ms, কারণ দুটো call-এর গড়ই মোট সময় হয়",
+        "৬০ms, কারণ শেষ call-এর সময়টাই মোট সময় হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "নির্ভরশীল ধাপ একটার পর একটা চলে, তাই সময় যোগ হয়: ৮০ + ৬০ = ১৪০ms। Parallel শুধু স্বাধীন call-এ সম্ভব। এই নির্ভরশীল পথটাই critical path।",
+      "whyWrong": {
+        "1": "Token ছাড়া profile call শুরুই করা যায় না, তাই parallel সম্ভব না।",
+        "2": "গড় কখনো মোট সময় না; নির্ভরশীল ধাপের সময় যোগ হয়।",
+        "3": "শেষ call শুরু হওয়ার আগে login-এর ৮০ms অপেক্ষা করতে হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q12",
+      "difficulty": "easy",
+      "question": "কোন কাজে latency-র চেয়ে throughput বেশি গুরুত্বপূর্ণ?",
+      "options": [
+        "Checkout page-এ user-এর payment authorize করে সাথে সাথে ফল দেখানো",
+        "Login button চাপার পরে উত্তর দেখানো",
+        "Video call-এ অন্যজনের কথা শোনা",
+        "রাতে চলা একটা report job, যেটা লাখো row process করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Report job-এর জন্য কেউ সামনে অপেক্ষা করছে না; দরকার মোট কাজ সময়মতো শেষ হওয়া, অর্থাৎ throughput। এখানে batching আর বড় buffer ভালো। User-facing কাজে latency (percentile) মুখ্য।",
+      "whyWrong": {
+        "0": "User অপেক্ষা করছে, তাই এখানে latency সবচেয়ে গুরুত্বপূর্ণ।",
+        "1": "User সামনে বসে আছে; প্রতিটা request-এর latency-ই আসল।",
+        "2": "Real-time কথোপকথনে দেরি সবচেয়ে বেশি চোখে পড়ে; latency মুখ্য।"
+      }
+    },
+    {
+      "id": "sd-day-007-q13",
+      "difficulty": "easy",
+      "question": "Server-এর bandwidth 100 Mbps থেকে 1 Gbps করা হলো, কিন্তু ছোট JSON API-র গতি প্রায় একই থাকল। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "ছোট response-এ সময় যায় round trip-এ; data তোলার সময় নগণ্য",
+        "নতুন bandwidth পুরোপুরি কাজ করতে কয়েক সপ্তাহ সময় নেয়",
+        "JSON compress করা যায় না, তাই বাড়তি bandwidth কাজে আসে না",
+        "বেশি bandwidth server-এর CPU-কে বেশি ব্যস্ত রেখে উল্টো ধীর করে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "কয়েক KB-এর response 100 Mbps-এ পাঠাতে এক ms-এরও কম লাগে। সময় যায় propagation, handshake আর sequential round trip-এ, যেগুলো bandwidth বদলায় না। সমাধান round trip কমানো আর data কাছে আনা।",
+      "whyWrong": {
+        "1": "Bandwidth বদল সাথে সাথে কার্যকর; সমস্যা অন্য জায়গায়।",
+        "2": "JSON ভালোভাবেই compress হয়; আসল কারণ response ছোট আর RTT বড়।",
+        "3": "Bandwidth বাড়লে CPU ধীর হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q14",
+      "difficulty": "easy",
+      "question": "Little's Law (L = λ × W)-এ λ কী বোঝায়?",
+      "options": [
+        "Latency: প্রতিটা কাজ system-এর ভেতরে গড়ে কত সময় থাকে",
+        "Throughput: প্রতি সেকেন্ডে কতগুলো কাজ system-এ ঢোকে (এবং বের হয়)",
+        "Concurrency: system-এ একসাথে কতগুলো কাজ চলছে",
+        "Bandwidth: link দিয়ে প্রতি সেকেন্ডে সর্বোচ্চ কতগুলো bit পাঠানো যেতে পারে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Little's Law-এ L = গড়ে একসাথে কতগুলো কাজ চলছে, λ = কাজ আসার (স্থিতিশীল অবস্থায় শেষ হওয়ারও) হার, W = প্রতিটা কাজের গড় সময়। অর্থাৎ concurrency = throughput × latency।",
+      "whyWrong": {
+        "0": "এটা W, λ না।",
+        "2": "এটা L, সূত্রের বাম দিক।",
+        "3": "Bandwidth ক্ষমতা; λ হলো আসল কাজের হার।"
+      }
+    },
+    {
+      "id": "sd-day-007-q15",
+      "difficulty": "easy",
+      "question": "System design-এ 'fan-out' বলতে কী বোঝায়?",
+      "options": [
+        "Load balancer-এর আসা request-গুলোকে পালা করে একেকটা server-এ পাঠিয়ে দেওয়া",
+        "Request fail হলে একই server-এ বারবার retry পাঠানো",
+        "একটা server থেকে অনেক user-কে একই response cache থেকে দেওয়া",
+        "একটা user request পেছনে অনেকগুলো server বা service-এ ভাগ হয়ে যাওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Fan-out-এ একটা user request (যেমন search) পেছনে অনেকগুলো server-এ যায়, আর উত্তর তৈরি হয় সবার উত্তর এলে। তাই সবচেয়ে ধীর backend-ই user-এর latency ঠিক করে, আর tail latency বড় হয়ে যায়।",
+      "whyWrong": {
+        "0": "এটা load balancing; প্রতিটা request তখনো একটাই server-এ যায়।",
+        "1": "এটা retry; একটা request অনেক জায়গায় ভাগ হওয়া না।",
+        "2": "এটা caching; এক request-এর অনেক backend-এ যাওয়া না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q16",
+      "difficulty": "easy",
+      "question": "User-facing server-কে কেন ১০০% CPU-র কাছে চালানো হয় না?",
+      "options": [
+        "১০০% CPU-তে চালালে server-এর throughput সবসময় হঠাৎ করে অর্ধেকে নেমে আসে",
+        "Cloud provider-রা কোনো machine-এ ১০০% CPU ব্যবহার করতে দেয় না",
+        "১০০% CPU-তে server-এর network bandwidth শূন্য হয়ে যায়",
+        "Capacity-র কাছে গেলে request লাইনে দাঁড়ায়, আর latency খাড়া উপরে ওঠে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Utilization যত ১০০%-এর কাছে যায়, নতুন request ফাঁকা worker পাওয়ার সম্ভাবনা তত কমে, লাইন লম্বা হয়। Throughput তেমন বাড়ে না, কিন্তু latency (বিশেষ করে p99) লাফ দেয়। তাই headroom রাখা হয় (Day 5-এর knee)।",
+      "whyWrong": {
+        "0": "Throughput ছাদে পৌঁছায়, অর্ধেক হয় না; সমস্যা হলো latency।",
+        "1": "এমন কোনো সাধারণ নিয়ম নেই; কারণটা queuing।",
+        "2": "CPU আর bandwidth আলাদা resource; latency বাড়ে লাইনের কারণে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q17",
+      "difficulty": "easy",
+      "question": "Server-এর log বলছে একটা request ৩০ms-এ শেষ। User-এর অপেক্ষার কোন অংশ এই ৩০ms-এ ধরা পড়ে না?",
+      "options": [
+        "Server-এর ভেতরে database query চালানোর সময়",
+        "DNS, TCP আর TLS handshake, আর network-এ request-response-এর যাওয়া-আসা",
+        "Server-এর ভেতরে application code-এর business logic আর validation চালানোর সময়",
+        "Response-এর জন্য JSON তৈরি করার সময়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Server শুধু request হাতে পাওয়া থেকে উত্তর পাঠানো পর্যন্ত মাপে। এর আগে-পরে DNS, handshake, network-এর যাত্রা আর load balancer-এর লাইন থাকে, যেগুলো user অনুভব করে কিন্তু server-এর log দেখে না।",
+      "whyWrong": {
+        "0": "Database query server-এর কাজের অংশ, তাই log-এর সময়ে ধরা থাকে।",
+        "2": "এটা ঠিক সেই কাজ যেটা server-এর log মাপে।",
+        "3": "JSON বানানো server-এর ভেতরে হয়, তাই ৩০ms-এর মধ্যেই আছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q18",
+      "difficulty": "easy",
+      "question": "Batching (অনেকগুলো item জমিয়ে একসাথে পাঠানো) সাধারণত কী করে?",
+      "options": [
+        "Latency আর throughput দুটোকেই একসাথে সবসময় উন্নত করে, কোনো দাম ছাড়াই",
+        "শুধু latency কমায়, throughput-এ কোনো প্রভাব ফেলে না",
+        "Link-এর bandwidth বাড়িয়ে দেয়, তাই পাইপ আরও চওড়া হয়",
+        "Throughput বাড়ায়, কিন্তু প্রতিটা item-এর latency বাড়াতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Batch-এ প্রতি item-এ overhead (header, round trip, disk write) ভাগ হয়ে যায়, তাই একই resource-এ বেশি item যায়। কিন্তু প্রথম item-কে batch ভরা পর্যন্ত অপেক্ষা করতে হয়। বাস ভরার জন্য দাঁড়িয়ে থাকার মতো।",
+      "whyWrong": {
+        "0": "Batch ভরার অপেক্ষায় প্রতিটা item-এর দেরি বাড়ে, তাই latency-র দাম আছে।",
+        "1": "উল্টো; batching-এর মূল লাভ throughput-এ।",
+        "2": "Bandwidth link-এর ধর্ম; batching শুধু সেটা ভালোভাবে কাজে লাগায়।"
+      }
+    },
+    {
+      "id": "sd-day-007-q19",
+      "difficulty": "easy",
+      "question": "CDN বা edge server user-এর কাছের শহরে content রাখলে মূলত কোন latency কমে?",
+      "options": [
+        "Origin server-এ application code আর database query চালানোর সময়",
+        "Response-এর আকার, অর্থাৎ কত byte পাঠাতে হয়",
+        "Propagation delay, কারণ data-কে অনেক কম দূরত্ব যেতে হয়",
+        "User-এর device-এ page render করার সময়"
+      ],
+      "correctIndex": 2,
+      "explanation": "CDN content user-এর কাছে রাখে, তাই প্রতিটা round trip ছোট হয়, আর handshake-ও কাছের server-এর সাথে হয়। Origin-এর কাজও কমে, তাই throughput-ও বাড়ে। বিস্তারিত Day 11-এ।",
+      "whyWrong": {
+        "0": "CDN origin-এর code দ্রুত করে না; শুধু দূরের যাত্রা বাঁচায়।",
+        "1": "Content একই থাকে; কমে দূরত্ব আর round trip-এর সময়।",
+        "3": "Rendering client-এর কাজ, CDN এটা বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q20",
+      "difficulty": "easy",
+      "question": "১০টা request-এর latency ছোট থেকে বড় সাজানো: ১০, ১২, ১৫, ১৮, ২০, ২২, ২৫, ৩০, ৪০, ২০০ms। Nearest-rank নিয়মে p50 কত?",
+      "options": ["৩৯.২ms", "২২ms", "১৮ms", "২০ms"],
+      "correctIndex": 3,
+      "explanation": "Nearest-rank-এ p-তম percentile = সাজানো তালিকার ⌈p/100 × n⌉-তম মান। এখানে ⌈০.৫ × ১০⌉ = ৫, আর ৫ নম্বর মান ২০ms। গড় (৩৯.২ms) একটা outlier-এর কারণে প্রায় দ্বিগুণ।",
+      "whyWrong": {
+        "0": "এটা গড়, যেটা ২০০ms-এর একটা outlier টেনে বাড়িয়ে দিয়েছে।",
+        "1": "এটা ৬ নম্বর মান; ⌈০.৫ × ১০⌉ = ৫ নম্বর মান নিতে হবে।",
+        "2": "এটা ৪ নম্বর মান; p50-এর জন্য ৫ নম্বর মান লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q21",
+      "difficulty": "medium",
+      "question": "ঢাকা থেকে server-এ RTT ২৫০ms। Connection আগেই খোলা। একটা page ৬টা API call একটার পর একটা করে, প্রতিটায় server-এর কাজ ২০ms। শুধু এই call-গুলোতে মোট কত সময়?",
+      "options": ["~১২০ms", "~২৭০ms", "~১,৬২০ms", "~১,৫০০ms"],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা call = ১ RTT + server-এর কাজ = ২৫০ + ২০ = ২৭০ms। Sequential হওয়ায় ৬ × ২৭০ = ১,৬২০ms। মোটের ৯০%-এর বেশি network-এ যাচ্ছে, server-এ না।",
+      "whyWrong": {
+        "0": "এটা শুধু server-এর কাজ (৬ × ২০ms); প্রতিটা call-এ ২৫০ms network বাদ পড়েছে।",
+        "1": "এটা একটা call-এর সময়; ৬টা একটার পর একটা চলায় সময় যোগ হয়।",
+        "3": "এটা শুধু network (৬ × ২৫০ms); server-এর ২০ms করে বাদ পড়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q22",
+      "difficulty": "medium",
+      "question": "আগের প্রশ্নের ৬টা call পরস্পরের উপর নির্ভর করে না। Latency কমাতে সবচেয়ে বড় উন্নতি কোনটা?",
+      "options": [
+        "Server-এর CPU দ্বিগুণ করা, কারণ প্রতিটা call-এ server-এর কাজই মূল সমস্যা",
+        "Bandwidth দশ গুণ করা, যাতে প্রতিটা call আরও দ্রুত পৌঁছায়",
+        "প্রতিটা call-এর আগে নতুন TCP connection খোলা, যাতে ভিড় না থাকে",
+        "Call-গুলো parallel-এ পাঠানো, তাহলে মোট প্রায় একটা call-এর সময় (~২৭০ms)"
+      ],
+      "correctIndex": 3,
+      "explanation": "স্বাধীন call parallel-এ চালালে মোট সময় যোগফল থেকে সর্বোচ্চে নামে: ১,৬২০ms থেকে প্রায় ২৭০ms। আরও ভালো হতে পারে একটা batch endpoint, যেটা একটা round trip-এ সব data দেয়।",
+      "whyWrong": {
+        "0": "Server-এর কাজ মাত্র ২০ms করে; সময় যাচ্ছে round trip-এ।",
+        "1": "ছোট response-এ bandwidth প্রায় কোনো প্রভাব ফেলে না; RTT একই থাকে।",
+        "2": "নতুন connection মানে প্রতিবার বাড়তি handshake, latency আরও বাড়বে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q23",
+      "difficulty": "medium",
+      "question": "একটা service স্থিতিশীলভাবে ৪০০ req/s সামলায়, গড় latency ২৫০ms। Little's Law অনুযায়ী যেকোনো মুহূর্তে গড়ে কতগুলো request চলছে?",
+      "options": ["১০০টা", "১,৬০০টা", "১.৬টা", "৬৫০টা"],
+      "correctIndex": 0,
+      "explanation": "L = λ × W = ৪০০ req/s × ০.২৫ s = ১০০। অর্থাৎ গড়ে ১০০টা request একসাথে system-এর ভেতরে থাকে। তাই এই load-এর জন্য অন্তত ১০০টা worker বা connection লাগবে।",
+      "whyWrong": {
+        "1": "এটা ৪০০ ÷ ০.২৫; Little's Law-এ গুণ করতে হয়, ভাগ না।",
+        "2": "এটা ৪০০ ÷ ২৫০, মানে ms-কে সেকেন্ডে না বদলে ভাগ করা; সঠিক হলো গুণ: ৪০০ × ০.২৫।",
+        "3": "এটা ৪০০ আর ২৫০ যোগ করা; একক মেলে না, আর সূত্রে গুণ লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q24",
+      "difficulty": "medium",
+      "question": "Server-এ ৫০টা worker thread, আর প্রতিটা request একটা thread-কে ১০০ms ধরে রাখে। এই server-এর সর্বোচ্চ throughput মোটামুটি কত?",
+      "options": ["৫,০০০ req/s", "৫০ req/s", "৫০০ req/s", "৫ req/s"],
+      "correctIndex": 2,
+      "explanation": "λ = L ÷ W = ৫০ ÷ ০.১ s = ৫০০ req/s। প্রতিটা thread সেকেন্ডে ১০টা request শেষ করে, ৫০টা মিলে ৫০০। এর বেশি load এলে request লাইনে জমবে।",
+      "whyWrong": {
+        "0": "এটা ৫০ × ১০০; ms-কে সেকেন্ডে না বদলে গুণ করা হয়েছে।",
+        "1": "এটা ধরে নেয় সব thread মিলে সেকেন্ডে একটাই করে কাজ করে; ১০০ms-এ একটা thread সেকেন্ডে ১০টা করে।",
+        "3": "এটা ৫০ × ০.১; Little's Law উল্টে λ = L ÷ W।"
+      }
+    },
+    {
+      "id": "sd-day-007-q25",
+      "difficulty": "medium",
+      "question": "App সেকেন্ডে ১,০০০টা query করে, প্রতিটা query একটা DB connection ১৫ms ধরে রাখে। গড়ে কয়টা connection ব্যস্ত, আর pool কত রাখা যুক্তিসঙ্গত?",
+      "options": [
+        "গড়ে ১৫টা ব্যস্ত; pool ঠিক ১৫ রাখাই যথেষ্ট, বেশি রাখা অপচয়",
+        "গড়ে ১,০০০টা ব্যস্ত, কারণ প্রতিটা query-র নিজের connection লাগে",
+        "গড়ে ১৫টা ব্যস্ত; headroom রেখে pool ২০-২৫",
+        "গড়ে ৬৭টা ব্যস্ত (১,০০০ ÷ ১৫), তাই pool ৭০ রাখা উচিত"
+      ],
+      "correctIndex": 2,
+      "explanation": "L = ১,০০০ × ০.০১৫ = ১৫টা connection গড়ে ব্যস্ত। ঠিক ১৫ রাখলে utilization ১০০%, তাই অপেক্ষা বাড়বে। ৬০-৭০% লক্ষ্য রেখে ২০-২৫ যুক্তিসঙ্গত, আর database কতগুলো connection নিতে পারে সেটাও দেখতে হবে।",
+      "whyWrong": {
+        "0": "Pool ঠিক গড়ের সমান হলে সেটা ১০০% ব্যস্ত, তাই লাইন আর বাড়তি latency হবে।",
+        "1": "Connection ১৫ms পরে ফেরত আসে আর পুনর্ব্যবহার হয়; গড়ে ব্যস্ত ১,০০০ × ০.০১৫।",
+        "3": "Little's Law-এ গুণ করতে হয় (λ × W), ভাগ না; আর ms-কে সেকেন্ডে বদলাতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-007-q26",
+      "difficulty": "medium",
+      "question": "১০ MB-এর একটা file 100 Mbps link-এ পাঠাতে (propagation বাদ দিয়ে) কত সময় লাগবে?",
+      "options": ["০.১ সেকেন্ড", "১০ সেকেন্ড", "০.৮ সেকেন্ড", "৮ সেকেন্ড"],
+      "correctIndex": 2,
+      "explanation": "১০ MB = ৮০ Mbit (প্রতি byte-এ ৮ bit)। Transmission time = ৮০ ÷ ১০০ = ০.৮ সেকেন্ড। এই অংশটাই bandwidth বাড়ালে কমে; propagation কমে না।",
+      "whyWrong": {
+        "0": "এটা MB আর Mbit এক ধরে নেওয়া; ১০ MB = ৮০ Mbit।",
+        "1": "এটা ১ MB/s ধরে হিসাব; 100 Mbps ≈ ১২.৫ MB/s।",
+        "3": "৮০ Mbit-কে ১০ Mbps দিয়ে ভাগ করা হয়েছে; link 100 Mbps।"
+      }
+    },
+    {
+      "id": "sd-day-007-q27",
+      "difficulty": "medium",
+      "question": "ঢাকা থেকে Singapore সরলরেখায় প্রায় ২,৯০০ km। Fiber-এ আলো ~২,০০,০০০ km/s ধরলে round trip time-এর নিচের সীমা কত?",
+      "options": ["~২৯ms", "~১৪.৫ms", "~২.৯ms", "~৫৮ms"],
+      "correctIndex": 0,
+      "explanation": "এক দিকে ২,৯০০ ÷ ২,০০,০০০ = ০.০১৪৫ s = ১৪.৫ms, যাওয়া-আসা ~২৯ms। বাস্তবে cable ঘুরে যায় আর router আছে, তাই মাপা RTT (~৫০ms) বেশি। কিন্তু ২৯ms-এর নিচে কোনোভাবেই নামবে না।",
+      "whyWrong": {
+        "1": "এটা শুধু এক দিকের সময়; round trip মানে যাওয়া আর আসা।",
+        "2": "দশমিক ভুল; ২,৯০০ ÷ ২,০০,০০০ = ০.০১৪৫ s, অর্থাৎ ১৪.৫ms এক দিকে।",
+        "3": "এটা দুটো round trip-এর সমান; একটা RTT = ২ × ১৪.৫ms।"
+      }
+    },
+    {
+      "id": "sd-day-007-q28",
+      "difficulty": "medium",
+      "question": "২০টা request-এর latency ছোট থেকে বড় সাজানো (ms): ২০, ২১, ২২, ২২, ২৩, ২৪, ২৫, ২৫, ২৬, ২৭, ২৮, ৩০, ৩১, ৩৩, ৩৫, ৪০, ৪৮, ৬০, ৯৫, ৪০০। Nearest-rank নিয়মে p95 কত?",
+      "options": ["৪০০ms", "৯৫ms", "৬০ms", "৫১.৭৫ms"],
+      "correctIndex": 1,
+      "explanation": "p95 = ⌈০.৯৫ × ২০⌉ = ১৯ নম্বর মান = ৯৫ms। লক্ষ্য করুন গড় (৫১.৭৫ms) p50-এর (১০ নম্বর, ২৭ms) প্রায় দ্বিগুণ। মাত্র ২০টা sample-এ p99 অর্থহীন, কারণ সেটা শুধু সবচেয়ে ধীরটা।",
+      "whyWrong": {
+        "0": "এটা ২০ নম্বর, মানে সর্বোচ্চ মান; ⌈০.৯৫ × ২০⌉ = ১৯।",
+        "2": "এটা ১৮ নম্বর মান; p95-এর জন্য ১৯ নম্বর লাগে।",
+        "3": "এটা গড়, percentile না; একটা ৪০০ms outlier গড় বাড়িয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q29",
+      "difficulty": "medium",
+      "question": "Server A-তে ৯০০টা request, p99 = ১০০ms; server B-তে ১০০টা request, p99 = ২,০০০ms। মোট ১,০০০টা request-এর p99 বের করার সঠিক উপায় কী?",
+      "options": [
+        "দুটো p99-এর সরল গড় নেওয়া: (১০০ + ২,০০০) ÷ ২ = ১,০৫০ms",
+        "দুটো server-এর latency histogram যোগ করে, যোগফল থেকে p99 বের করা",
+        "Request সংখ্যা দিয়ে weighted গড়: (৯০০×১০০ + ১০০×২,০০০) ÷ ১,০০০",
+        "দুটোর মধ্যে বড়টা, অর্থাৎ ২,০০০ms-কেই মোট p99 ধরা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Percentile পুরো বণ্টনের একটা বিন্দু, তাই আলাদা জায়গার p99 থেকে যোগ বা গড় করে মোট p99 পাওয়া যায় না। প্রতিটা জায়গায় histogram রাখলে bucket-গুলো যোগ করে তারপর percentile বের করা যায়, Prometheus-এর histogram_quantile ঠিক এটাই করে।",
+      "whyWrong": {
+        "0": "Percentile-এর গড় কোনো percentile না; আসল মান পুরো বণ্টনের উপর নির্ভর করে।",
+        "2": "Weight দিলেও percentile গড় করা যায় না; বণ্টনের আকার হারিয়ে যায়।",
+        "3": "মোট p99 এর চেয়ে অনেক কম হতে পারে; B-র ধীর request মোটের মাত্র একটা অংশ।"
+      }
+    },
+    {
+      "id": "sd-day-007-q30",
+      "difficulty": "medium",
+      "question": "একটা request ১০টা backend-এ fan-out করে, প্রতিটা backend-এর ২% request ধীর। অন্তত একটা ধীর হওয়ার সম্ভাবনা মোটামুটি কত?",
+      "options": ["~২%", "~১৮%", "~২০% (১০ × ২%)", "~৮২%"],
+      "correctIndex": 1,
+      "explanation": "সবাই দ্রুত হওয়ার সম্ভাবনা 0.98¹⁰ ≈ ০.৮১৭। তাই অন্তত একটা ধীর = 1 − 0.817 ≈ ১৮.৩%। প্রতিটা backend-এর জন্য বিরল ঘটনা fan-out-এ প্রায় প্রতি পাঁচটা request-এ একটায় ঘটে।",
+      "whyWrong": {
+        "0": "এটা একটা backend-এর হিসাব; সবার উত্তরের অপেক্ষা করতে হয় বলে সম্ভাবনা জমে।",
+        "2": "সম্ভাবনা সরাসরি যোগ করা যায় না; n বড় হলে যোগফল ১০০%-ও ছাড়াবে।",
+        "3": "এটা সব backend দ্রুত হওয়ার সম্ভাবনা (0.98¹⁰), উল্টো ঘটনা।"
+      }
+    },
+    {
+      "id": "sd-day-007-q31",
+      "difficulty": "medium",
+      "question": "Load test-এ concurrency ১৬ থেকে ৬৪ করলে req/s ১৭৬ থেকে ১৭৭, কিন্তু p50 latency ৮৯ms থেকে ৩৫৭ms। এ থেকে কী বোঝা যায়?",
+      "options": [
+        "Load tool-এ bug আছে, কারণ concurrency বাড়লে throughput-ও সমান হারে বাড়তেই হবে",
+        "Network-এর bandwidth শেষ হয়ে গেছে, তাই latency বাড়ছে",
+        "Server throughput-এর ছাদে পৌঁছেছে; বাড়তি client শুধু লাইনে দাঁড়াচ্ছে",
+        "Server-এর code প্রতি request-এ চার গুণ বেশি কাজ করছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Little's Law: λ স্থির (~১৭৬), L চার গুণ (১৬ → ৬৪), তাই W-ও প্রায় চার গুণ। Throughput বাড়াতে ছাদ উঁচু করতে হবে (বেশি worker বা server); client বাড়ালে শুধু latency বাড়ে।",
+      "whyWrong": {
+        "0": "ছাদে পৌঁছানোর পরে throughput না বাড়াটাই স্বাভাবিক; tool ঠিক আছে।",
+        "1": "ছোট response-এ bandwidth সীমা না; Little's Law দেখায় লাইন বাড়ছে।",
+        "3": "কাজ বাড়লে throughput কমত; এখানে একই কাজ, শুধু অপেক্ষা বেড়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q32",
+      "difficulty": "medium",
+      "question": "Server-side p99 ১২০ms, কিন্তু real user monitoring (RUM)-এ p99 ২.১ সেকেন্ড। প্রথমে কোথায় খুঁজবেন?",
+      "options": [
+        "Server-এর code-এ, কারণ server-side সংখ্যাটা নিশ্চয়ই ভুলভাবে মাপা হচ্ছে আর আসলে আরও বেশি",
+        "Server-এর বাইরের অংশে: network, handshake, load balancer-এর queue আর client-এর কাজ",
+        "Database-এ, কারণ ধীরতার উৎস প্রায় সবসময় database-ই হয়",
+        "কোথাও না, কারণ RUM-এর সংখ্যা সবসময় বাড়িয়ে দেখায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Server শুধু নিজের ভেতরের সময় মাপে। User-এর দিকে যোগ হয় DNS, TCP/TLS, দূরত্ব, mobile network, load balancer-এর লাইন আর client-এর rendering। ১২০ms বনাম ২.১s-এর ফাঁকটা ঠিক এই অংশে।",
+      "whyWrong": {
+        "0": "Server-side সংখ্যা ঠিক হতে পারে; সে শুধু নিজের অংশ মাপে।",
+        "2": "Database server-এর সময়ের ভেতরে পড়ে, যেটা ১২০ms-এই আছে।",
+        "3": "RUM user-এর আসল অভিজ্ঞতা; পার্থক্যটাই সমস্যার সূত্র।"
+      }
+    },
+    {
+      "id": "sd-day-007-q33",
+      "difficulty": "medium",
+      "question": "Payment API স্বাভাবিকভাবে ২০০ms নেয়, আজ নিচ্ছে ২ সেকেন্ড। আপনার service-এর ১০০টা thread, প্রতিটা request payment-এর উত্তরের অপেক্ষা করে। কী ঘটবে?",
+      "options": [
+        "কিছুই হবে না, কারণ thread-গুলো শুধু অপেক্ষা করছে, CPU-র কোনো খরচই হচ্ছে না",
+        "Throughput-এর ছাদ ৫০০ থেকে ৫০ req/s-এ নামবে; CPU অলস থাকলেও request জমবে",
+        "Throughput একই থাকবে, শুধু প্রতিটা request-এর latency ২ সেকেন্ড হবে",
+        "Throughput বাড়বে, কারণ প্রতিটা thread এখন বেশি সময় ধরে কাজ পাচ্ছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সর্বোচ্চ λ = thread ÷ latency: আগে ১০০ ÷ ০.২ = ৫০০, এখন ১০০ ÷ ২ = ৫০ req/s। আগের হারে request এলে লাইন জমবে আর timeout হবে। তাই dependency-তে কড়া timeout আর circuit breaker দরকার।",
+      "whyWrong": {
+        "0": "CPU না লাগলেও thread দখল হয়ে থাকে; Little's Law অনুযায়ী throughput পড়ে।",
+        "2": "Thread সীমিত, তাই latency দশ গুণ হলে সর্বোচ্চ throughput দশ ভাগের এক ভাগ।",
+        "3": "অপেক্ষা কাজ না; থ্রেড ধরে রাখা মানে নতুন request নিতে না পারা।"
+      }
+    },
+    {
+      "id": "sd-day-007-q34",
+      "difficulty": "medium",
+      "question": "একটা page ২০০টা order দেখায়, আর প্রতিটা order-এর customer-এর নাম আনতে আলাদা database query চলে (প্রতিটা ~২ms)। সবচেয়ে ভালো উন্নতি কোনটা?",
+      "options": [
+        "সব customer id দিয়ে একটা query-তে নাম আনা, ২০০টা round trip-এর বদলে একটা",
+        "Database server-এর CPU আর RAM দ্বিগুণ করা, যাতে প্রতিটা আলাদা query আরও দ্রুত চলে",
+        "প্রতিটা query-র জন্য নতুন connection খোলা, যাতে query-গুলো আলাদা থাকে",
+        "২০০টা query রেখে দিয়ে page-এ একটা loading spinner দেখানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটা N+1 query সমস্যা: ২০০ × ২ms = ৪০০ms শুধু round trip-এ। একটা batch query (WHERE id IN (...)) দিলে একটা round trip-এ সব নাম আসে। Memory থেকে network-এ গেলেই হাজার গুণ দাম, তাই round trip-এর সংখ্যা কমানোই বড় লাভ।",
+      "whyWrong": {
+        "1": "প্রতিটা query-র বেশিরভাগ সময় network round trip; CPU বাড়ালে সেটা কমে না।",
+        "2": "নতুন connection মানে আরও handshake, সময় আরও বাড়বে।",
+        "3": "Spinner অপেক্ষা লুকায়, latency কমায় না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q35",
+      "difficulty": "medium",
+      "question": "Load tool ২০টা connection চালায়, প্রতিটা আগের উত্তর পেলে তবেই পরের request পাঠায়। Test-এর মাঝে server ৩ সেকেন্ড আটকে গেল। রিপোর্টের p99-এ কী প্রভাব পড়বে?",
+      "options": [
+        "p99 বাস্তবের চেয়ে খারাপ দেখাবে, কারণ tool আটকে যাওয়ার সময় জমে থাকা আরও বেশি request একসাথে পাঠায়",
+        "কোনো প্রভাব পড়বে না, কারণ প্রতিটা request-এর latency নিজের মতো ঠিকভাবে মাপা হয়",
+        "Tool ওই সময় নতুন request থামিয়ে রাখে, তাই ধীর sample কম আসে আর p99 বাস্তবের চেয়ে ভালো দেখায়",
+        "Tool আটকে যাওয়া request-গুলো বাদ দেয়, তাই p50 আর p99 একই হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "বাস্তবে ওই ৩ সেকেন্ডে নতুন user আসতেই থাকত আর সবাই ধীর উত্তর পেত। Closed-loop tool তখন অপেক্ষায় থাকে, তাই মাত্র ২০টা ধীর sample পায়। একে বলে coordinated omission; সমাধান নির্দিষ্ট arrival rate-এ test (wrk2, k6 constant-arrival-rate)।",
+      "whyWrong": {
+        "0": "Closed-loop tool উত্তর না পেলে নতুন request পাঠায় না, বেশি পাঠানো তো দূরের কথা।",
+        "1": "প্রতিটা মাপ ঠিক, কিন্তু যে request-গুলো পাঠানোই হয়নি সেগুলো বাদ পড়ায় বণ্টন ভুল।",
+        "3": "আটকে যাওয়া ২০টা request রেকর্ড হয়; সমস্যা হলো বাস্তবে আসা বাকিগুলো রেকর্ড হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q36",
+      "difficulty": "medium",
+      "question": "HTTP/1.1-এ একটা connection-এ প্রথম request-এর response ২ সেকেন্ড নিচ্ছে। একই connection-এ পেছনে থাকা তিনটা ছোট request-এর কী হবে?",
+      "options": [
+        "একই connection-এ সাথে সাথে আলাদাভাবে উত্তর পাবে (multiplexing)",
+        "Browser সেগুলো বাতিল করে সাথে সাথে error দেখাবে",
+        "Server সেগুলোর উত্তর আগে পাঠাবে, কারণ ছোট request-এর অগ্রাধিকার বেশি",
+        "সামনেরটা শেষ না হওয়া পর্যন্ত অপেক্ষা করবে (head-of-line blocking)"
+      ],
+      "correctIndex": 3,
+      "explanation": "HTTP/1.1-এ একটা connection-এ একসময়ে একটাই request-response চলে, তাই ধীর সামনেরটা পেছনের সবাইকে আটকে রাখে। Browser এজন্য প্রতি host-এ কয়েকটা connection খোলে, আর HTTP/2 এক connection-এ অনেক stream চালায় (Day 42)।",
+      "whyWrong": {
+        "0": "Multiplexing HTTP/2-এর বৈশিষ্ট্য; HTTP/1.1-এ এক connection-এ একসময়ে একটা।",
+        "1": "অপেক্ষা করা আর বাতিল করা আলাদা; সাধারণত সেগুলো লাইনে থাকে।",
+        "2": "HTTP/1.1-এ response অবশ্যই request-এর ক্রমে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q37",
+      "difficulty": "medium",
+      "question": "একই datacenter-এর দুটো service-এর মধ্যে ২০০ byte-এর response-এ gzip compression চালু করলে কী আশা করবেন?",
+      "options": [
+        "লাভ প্রায় নেই; বরং compress করার CPU সময় latency সামান্য বাড়াতে পারে",
+        "Latency প্রায় অর্ধেক হয়ে যাবে, কারণ network দিয়ে পাঠানোর data সবসময় অর্ধেক হবে",
+        "Throughput দশ গুণ বেড়ে যাবে, কারণ network-এর চাপ কমবে",
+        "কোনো প্রভাবই পড়বে না, কারণ gzip শুধু browser-এর জন্য কাজ করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Compression bytes কমায় কিন্তু CPU-র সময় নেয়। ধীর বা দামি link-এ বড় response-এর জন্য এটা দারুণ; দ্রুত network-এ ছোট response-এ লাভ প্রায় শূন্য, আর gzip header-এর কারণে খুব ছোট data অনেক সময় বড়ও হয়ে যায়।",
+      "whyWrong": {
+        "1": "এত ছোট data-য় transmission সময় নগণ্য; অর্ধেক করলেও প্রায় কিছু বাঁচে না।",
+        "2": "Datacenter-এর দ্রুত network-এ ২০০ byte কোনো চাপই না।",
+        "3": "gzip যেকোনো HTTP client-server-এ কাজ করে; প্রশ্ন হলো লাভ আছে কিনা।"
+      }
+    },
+    {
+      "id": "sd-day-007-q38",
+      "difficulty": "medium",
+      "question": "একটা cold request: DNS ৩০ms, TCP ৫০ms, TLS ৫০ms, request + server + প্রথম byte ৯০ms, বাকি data ৪০ms। Keep-alive আর DNS cache থাকলে পরের request মোটামুটি কত সময় নেবে?",
+      "options": ["~২৬০ms", "~৯০ms", "~১৮০ms", "~১৩০ms"],
+      "correctIndex": 3,
+      "explanation": "খোলা connection আর cache করা DNS-এ প্রথম তিন ধাপ (৩০ + ৫০ + ৫০ = ১৩০ms) বাদ যায়। বাকি থাকে ৯০ + ৪০ = ১৩০ms। Cold request-এর অর্ধেক সময়ই handshake-এ যাচ্ছিল।",
+      "whyWrong": {
+        "0": "এটা cold request-এর পুরো সময়; warm request-এ DNS, TCP, TLS লাগে না।",
+        "1": "শুধু TTFB-র অংশ; বাকি data-র ৪০ms-ও লাগবে।",
+        "2": "এটা TCP বা TLS-এর একটা রেখে দেওয়া; খোলা connection-এ দুটোই বাদ।"
+      }
+    },
+    {
+      "id": "sd-day-007-q39",
+      "difficulty": "medium",
+      "question": "একটা search API-র latency SLO কিভাবে লেখা সবচেয়ে অর্থবহ?",
+      "options": [
+        "গড় latency সবসময় ১০০ms-এর নিচে থাকবে",
+        "সবচেয়ে দ্রুত request ১০ms-এর নিচে শেষ হবে",
+        "Search server-গুলোর CPU সারাদিন ৭০%-এর নিচে থাকবে, যাতে latency ভালো থাকে",
+        "২৮ দিনের জানালায় ৯৯% request ৩০০ms-এর মধ্যে শেষ হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "ভালো latency SLO percentile আর সময়ের জানালা দুটোই বলে, যেমন '২৮ দিনে ৯৯% request ৩০০ms-এর মধ্যে'। এতে ধীরতম অংশও ধরা পড়ে আর মাপার নিয়ম স্পষ্ট থাকে। SLO নিয়ে বিস্তারিত Day 90-এ।",
+      "whyWrong": {
+        "0": "গড় tail লুকায়; ধীরতম user-দের অবস্থা এতে ধরা পড়ে না।",
+        "1": "সবচেয়ে দ্রুত request user-এর খারাপ অভিজ্ঞতা সম্পর্কে কিছুই বলে না।",
+        "2": "এটা resource-এর লক্ষ্য, user-এর অভিজ্ঞতার (latency) SLO না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q40",
+      "difficulty": "medium",
+      "question": "একটা image resize service-এ প্রতিটা ছবিতে ৮০০ms লাগে। Server ৪টা থেকে ১৬টা করা হলো। কী বদলাবে?",
+      "options": [
+        "সেকেন্ডে প্রায় চার গুণ ছবি হবে, কিন্তু একটা ছবির সময় প্রায় ৮০০ms-ই থাকবে",
+        "প্রতিটা ছবি এখন ২০০ms-এ হবে, কারণ কাজ চার ভাগে ভাগ হবে",
+        "Throughput একই থাকবে, কিন্তু প্রতিটা ছবির latency চার ভাগ কমবে",
+        "দুটোই একসাথে চার গুণ ভালো হবে: প্রতিটা ছবির latency ২০০ms আর throughput চার গুণ"
+      ],
+      "correctIndex": 0,
+      "explanation": "বেশি server মানে একসাথে বেশি ছবি (parallelism), তাই throughput বাড়ে। কিন্তু প্রতিটা ছবির কাজ একই, তাই latency প্রায় একই থাকে (load কম থাকলে লাইনের অপেক্ষা অবশ্য কমে)। একটা ছবির সময় কমাতে হলে algorithm বা hardware বদলাতে হবে।",
+      "whyWrong": {
+        "1": "একটা ছবি একটা server-ই করে; বেশি server একটা কাজকে ভাগ করে না।",
+        "2": "উল্টো; বেশি server throughput বাড়ায়, একটা কাজের সময় না।",
+        "3": "Latency কমাতে একটা কাজের ভেতরের সময় কমাতে হয়, server বাড়িয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q41",
+      "difficulty": "hard",
+      "question": "একটা search ১০০টা shard-এ fan-out করে, আর প্রতিটা shard-এর ১% request ১ সেকেন্ডের বেশি নেয়। মোটামুটি কত % search ১ সেকেন্ডের বেশি নেবে?",
+      "options": ["~১%", "~৩৭%", "~১০০%", "~৬৩%"],
+      "correctIndex": 3,
+      "explanation": "সব ১০০টা দ্রুত হওয়ার সম্ভাবনা 0.99¹⁰⁰ ≈ ০.৩৬৬, তাই অন্তত একটা ধীর = 1 − 0.366 ≈ ৬৩%। প্রতিটা shard-এর জন্য যেটা বিরল, fan-out-এ সেটা সাধারণ। এই হিসাব Dean ও Barroso-র 'The Tail at Scale' থেকে বিখ্যাত।",
+      "whyWrong": {
+        "0": "এটা একটা shard-এর হিসাব; search-কে সব shard-এর উত্তরের অপেক্ষা করতে হয়।",
+        "1": "এটা উল্টো ঘটনা, মানে সব shard দ্রুত হওয়ার সম্ভাবনা (0.99¹⁰⁰ ≈ ০.৩৬৬)।",
+        "2": "সম্ভাবনা যোগ করে (১০০ × ১%) পাওয়া; সঠিক হিসাব 1 − 0.99¹⁰⁰।"
+      }
+    },
+    {
+      "id": "sd-day-007-q42",
+      "difficulty": "hard",
+      "question": "১০০-way fan-out-এ আপনি চান মাত্র ১% user request ধীর হোক। প্রতিটা backend-কে মোটামুটি কোন percentile পর্যন্ত লক্ষ্যমাত্রার মধ্যে থাকতে হবে?",
+      "options": [
+        "p99 যথেষ্ট, কারণ user-এর লক্ষ্যও ঠিক ১% ধীর request, তাই backend-এরও তাই",
+        "p99.9 যথেষ্ট, কারণ ১০০টা backend-এ ০.১% করে ধীর হলে মোট ১%",
+        "প্রায় p99.99, অর্থাৎ প্রতি backend-এ মাত্র ~০.০১% request ধীর",
+        "p90 যথেষ্ট, কারণ fan-out-এ ধীর আর দ্রুত উত্তর গড় হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "শর্ত: 1 − (1 − q)¹⁰⁰ = ০.০১, তাই (1 − q)¹⁰⁰ = ০.৯৯ আর q ≈ ০.০০০১, মানে ০.০১%। অর্থাৎ প্রতিটা backend-এর p99.99 লক্ষ্যের মধ্যে থাকতে হবে। Fan-out যত বড়, backend-এর tail তত কঠোর হতে হয়।",
+      "whyWrong": {
+        "0": "প্রতি backend ১% ধীর হলে ১০০-way-তে ~৬৩% request ধীর হয়।",
+        "1": "1 − 0.999¹⁰⁰ ≈ ৯.৫%, ১% না; সম্ভাবনা এভাবে ভাগ হয় না।",
+        "3": "Fan-out-এ গড় হয় না; সবচেয়ে ধীর উত্তরই সময় ঠিক করে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q43",
+      "difficulty": "hard",
+      "question": "Link 100 Mbps, RTT ২০০ms। TCP window ৬৪ KB, window scaling বন্ধ। একটা TCP connection-এ সর্বোচ্চ throughput মোটামুটি কত?",
+      "options": [
+        "100 Mbps, কারণ link-এর bandwidth-ই একমাত্র সীমা",
+        "~৬৪ KB/s",
+        "~৩২০ KB/s (~২.৬ Mbps)",
+        "~৫০ Mbps"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতি round trip-এ সর্বোচ্চ এক window data যায়: ৬৪ KB ÷ ০.২ s = ৩২০ KB/s ≈ ২.৬ Mbps। Link 100 Mbps হলেও এর বেশি যাবে না। এটা Little's Law-এর network রূপ: পথে থাকা data = throughput × RTT।",
+      "whyWrong": {
+        "0": "Ack না আসা পর্যন্ত মাত্র ৬৪ KB পাঠানো যায়, তাই RTT-ই সীমা ঠিক করে।",
+        "1": "এটা ধরে নেয় RTT ১ সেকেন্ড; আসলে প্রতি ০.২ s-এ ৬৪ KB।",
+        "3": "এর জন্য প্রায় ১.২৫ MB data পথে থাকতে হতো, window মাত্র ৬৪ KB।"
+      }
+    },
+    {
+      "id": "sd-day-007-q44",
+      "difficulty": "hard",
+      "question": "1 Gbps link, RTT ১০০ms। Link পুরোপুরি ভরাতে একসাথে কত data 'পথে' (ack-এর অপেক্ষায়) থাকা দরকার?",
+      "options": ["~১০০ MB", "~১.২৫ MB", "~১২৫ KB", "~১২.৫ MB"],
+      "correctIndex": 3,
+      "explanation": "Bandwidth-delay product = ১০⁹ bit/s × ০.১ s = ১০⁸ bit = ১২.৫ MB। এর কম data পথে থাকলে link অলস বসে থাকে। দূরের link-এ এজন্য বড় TCP window বা একাধিক connection লাগে।",
+      "whyWrong": {
+        "0": "১০⁸ bit-কে byte-এ না বদলে MB ধরা হয়েছে; ১০⁸ bit = ১২.৫ MB।",
+        "1": "এটা RTT ১০ms ধরে হিসাব; এখানে RTT ১০০ms।",
+        "2": "এটা RTT ১ms-এর জন্য; দূরত্ব বাড়লে পথে থাকা data-ও বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q45",
+      "difficulty": "hard",
+      "question": "একটা API: gateway ১০ms → auth ২০ms → তারপর তিনটা স্বাধীন call parallel-এ (product ৪০ms, reviews ১০০ms, stock ৩০ms) → শেষে render ২০ms। মোট latency কত?",
+      "options": ["২২০ms", "১৫০ms", "১০০ms", "১৯০ms"],
+      "correctIndex": 1,
+      "explanation": "নির্ভরশীল ধাপ যোগ হয় আর parallel অংশে সর্বোচ্চটা: ১০ + ২০ + max(৪০, ১০০, ৩০) + ২০ = ১৫০ms। Critical path-এ আছে reviews; এটা দ্রুত না করলে বাকিগুলো দ্রুত করে লাভ নেই।",
+      "whyWrong": {
+        "0": "এটা সব ধাপের যোগফল; তিনটা parallel call-এর সময় যোগ হয় না।",
+        "2": "এটা শুধু সবচেয়ে ধীর call; আগের আর পরের নির্ভরশীল ধাপগুলোও যোগ হয়।",
+        "3": "এটা product আর reviews দুটো যোগ করেছে; parallel-এ শুধু সর্বোচ্চটা।"
+      }
+    },
+    {
+      "id": "sd-day-007-q46",
+      "difficulty": "hard",
+      "question": "তিনটা স্বাধীন call parallel-এ চলে। প্রতিটা ৯৫% সময় নিজের p95-এর মধ্যে শেষ হয়। তিনটাই একসাথে নিজের p95-এর মধ্যে শেষ হওয়ার সম্ভাবনা কত?",
+      "options": [
+        "৯৫%, কারণ parallel-এ প্রতিটা call-এর tail বদলায় না",
+        "~৯৯.৯%, কারণ তিনটার মধ্যে অন্তত একটা দ্রুত হবেই",
+        "~৮৬%",
+        "~৫০%, কারণ প্রতিটা নতুন call সম্ভাবনা অর্ধেক করে দেয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "স্বাধীন হলে তিনটাই ভালো থাকার সম্ভাবনা = 0.95³ ≈ ০.৮৫৭। অর্থাৎ ~১৪% ক্ষেত্রে অন্তত একটা call ধীর, আর page সেটার জন্য অপেক্ষা করে। Parallel গড় সময় কমায়, কিন্তু tail-এর ঝুঁকি বাড়ায়।",
+      "whyWrong": {
+        "0": "প্রতিটার tail একই, কিন্তু তিনটাই একসাথে ভালো থাকার সম্ভাবনা গুণ হয়।",
+        "1": "Page-এর দরকার তিনটাই দ্রুত হওয়া, অন্তত একটা না।",
+        "3": "প্রতিটা call ০.৯৫ দিয়ে গুণ করে, অর্ধেক না; 0.95³ ≈ ০.৮৬।"
+      }
+    },
+    {
+      "id": "sd-day-007-q47",
+      "difficulty": "hard",
+      "question": "Hedged request কখন পাঠানো উচিত, আর কেন?",
+      "options": [
+        "প্রতিটা request-এ শুরু থেকেই সাথে সাথে দুটো replica-কে পাঠানো, যাতে tail latency সবসময় সবচেয়ে কম থাকে",
+        "প্রথম request ওই ধরনের request-এর p95 পেরিয়েও উত্তর না দিলে; তাতে মাত্র ~৫% request দুবার যায়",
+        "প্রথম request-এর timeout শেষ হওয়ার পরে, যাতে কোনো বাড়তি load না হয়",
+        "p50 পেরোনোর সাথে সাথে, যাতে অর্ধেক request আরও দ্রুত শেষ হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Hedging-এর মূল কৌশল: অল্প অপেক্ষা (যেমন p95) করে তারপর দ্বিতীয় replica-কে পাঠানো। এতে ধীর ৫%-এর জন্য বিকল্প পথ খোলে, কিন্তু load বাড়ে মাত্র কয়েক %। The Tail at Scale-এ ১০ms পরে hedge পাঠিয়ে বাড়তি ~২% request-এ p99.9 অনেক কমেছিল।",
+      "whyWrong": {
+        "0": "এতে backend-এর load দ্বিগুণ হয়, আর ভিড়ে সবার latency বাড়ে।",
+        "2": "এটা সাধারণ retry; তখন user ইতিমধ্যে পুরো timeout অপেক্ষা করে ফেলেছে।",
+        "3": "অর্ধেক request দুবার গেলে ~৫০% বাড়তি load, লাভের চেয়ে দাম বেশি।"
+      }
+    },
+    {
+      "id": "sd-day-007-q48",
+      "difficulty": "hard",
+      "question": "Downstream service-এর p50 ২০ms, p99 ৮০ms, p99.9 ৩০০ms। আপনার পুরো API-র বাজেট ৫০০ms। Downstream call-এর timeout কত যুক্তিসঙ্গত?",
+      "options": [
+        "~৩০০ms-এর কাছাকাছি: প্রায় সব স্বাভাবিক request ঢাকে, আর বাজেটে fallback-এর জায়গা থাকে",
+        "২০ms, যাতে গড়ের চেয়ে বেশি সময় কোনো request অপেক্ষা না করে",
+        "৩০ সেকেন্ড বা আরও বেশি, যাতে কোনো request অযথা fail না হয় আর ধীর হলেও সবাই শেষ পর্যন্ত উত্তর পায়",
+        "ঠিক ৫০০ms, পুরো বাজেটটাই downstream-কে দিয়ে দেওয়া সবচেয়ে নিরাপদ"
+      ],
+      "correctIndex": 0,
+      "explanation": "Timeout dependency-র tail দেখে ঠিক করা হয়: p99.9-এর আশেপাশে দিলে প্রায় সব স্বাভাবিক request সফল হয়, আর আটকে যাওয়াগুলো দ্রুত ছেড়ে দেওয়া যায়। সাথে পুরো request-এর deadline মাথায় রেখে নিজের কাজ আর fallback-এর জায়গা রাখতে হয়।",
+      "whyWrong": {
+        "1": "p50-এ timeout দিলে অর্ধেক স্বাভাবিক request-ই fail করবে।",
+        "2": "এত বড় timeout thread আটকে রাখে আর পুরো বাজেট শেষ করে দেয়।",
+        "3": "তাহলে নিজের কাজ, retry বা fallback-এর জন্য কোনো সময় থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q49",
+      "difficulty": "hard",
+      "question": "একটা service-এর ২০০টা thread সব endpoint মিলে ব্যবহার করে। ১০% request একটা recommendation API call করে, যেটা আজ ৫০ms থেকে ৪ সেকেন্ডে উঠেছে। বাকি endpoint-গুলোও ধীর বা fail হচ্ছে। কারণ আর সমাধান কী?",
+      "options": [
+        "বাকি endpoint-গুলোতেও নিশ্চয়ই একই bug আছে, তাই সব code আবার পরীক্ষা করে লেখা",
+        "Network bandwidth শেষ হয়ে গেছে; bandwidth বাড়ালে বাকি endpoint ঠিক হয়ে যাবে",
+        "Thread সংখ্যা ২০০ থেকে ২,০০০ করলেই স্থায়ী সমাধান হবে, তখন timeout বা আলাদা pool-এর কোনো দরকারই আর পড়বে না",
+        "ধীর call-গুলো shared thread দখল করে রাখছে; কড়া timeout আর ওই dependency-র জন্য আলাদা সীমিত pool (bulkhead)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Little's Law: recommendation-এর request প্রতিটা thread ৪ s ধরে রাখে, তাই অল্প হারেই অনেক thread আটকে যায় আর বাকিরা thread পায় না। কড়া timeout আর আলাদা pool (bulkhead) দিলে একটা ধীর dependency শুধু নিজের অংশটা নষ্ট করে, পুরো service না (Day 59)।",
+      "whyWrong": {
+        "0": "বাকিরা নিজে ধীর না; thread না পেয়ে লাইনে আটকে আছে।",
+        "1": "Bandwidth না, সীমিত thread হলো আটকে থাকা resource।",
+        "2": "Thread বাড়ালে কিছুক্ষণ টেকে, কিন্তু ধীর dependency সেগুলোও দখল করবে, আর memory শেষ হবে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q50",
+      "difficulty": "hard",
+      "question": "লক্ষ্য ৩,০০০ req/s, প্রতিটা request গড়ে ১২০ms। Load ৪টা server-এ সমান ভাগ হবে। প্রতি server-কে গড়ে একসাথে কতগুলো request সামলাতে পারতে হবে (headroom বাদে)?",
+      "options": ["৩৬০টা", "৯০টা", "৭৫০টা", "২৫টা"],
+      "correctIndex": 1,
+      "explanation": "মোট L = ৩,০০০ × ০.১২ = ৩৬০, প্রতি server-এ ৩৬০ ÷ ৪ = ৯০। অর্থাৎ প্রতিটায় অন্তত ৯০টা concurrent request-এর জায়গা (thread, event loop slot, connection) লাগবে। Headroom আর peak-এর জন্য বাস্তবে আরও বেশি।",
+      "whyWrong": {
+        "0": "এটা পুরো system-এর concurrency; ৪টা server-এ ভাগ হবে।",
+        "2": "এটা প্রতি server-এর throughput (req/s), concurrency না।",
+        "3": "এটা ৩,০০০ ÷ ১২০; ms-কে সেকেন্ডে না বদলে ভাগ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q51",
+      "difficulty": "hard",
+      "question": "একটা job queue-তে গড়ে ৬০০টা job অপেক্ষায় বা চলমান, আর worker-রা স্থিতিশীলভাবে সেকেন্ডে ২০০টা শেষ করে। একটা job queue-তে ঢোকা থেকে শেষ হতে গড়ে কত সময় লাগে?",
+      "options": ["০.৩৩ সেকেন্ড", "১২০ সেকেন্ড", "৬০০ms", "৩ সেকেন্ড"],
+      "correctIndex": 3,
+      "explanation": "Little's Law উল্টে W = L ÷ λ = ৬০০ ÷ ২০০ = ৩ সেকেন্ড। Queue depth আর throughput জানা থাকলে latency মাপা ছাড়াই অনুমান করা যায়। Queue monitoring-এ এটা খুব কাজের (Day 12)।",
+      "whyWrong": {
+        "0": "এটা ২০০ ÷ ৬০০; Little থেকে W = L ÷ λ = ৬০০ ÷ ২০০।",
+        "1": "এটা ৬০০ × ০.২ জাতীয় গুণ; W পেতে L-কে λ দিয়ে ভাগ করতে হয়।",
+        "2": "সংখ্যা ৬০০-কে সরাসরি ms ধরা হয়েছে; এখানে ৬০০ হলো job-এর সংখ্যা।"
+      }
+    },
+    {
+      "id": "sd-day-007-q52",
+      "difficulty": "hard",
+      "question": "Dashboard-এ প্রতি ঘণ্টার p99 latency-গুলোর গড় ১৫০ms। পুরো দিনের p99 সম্পর্কে নিশ্চিতভাবে কী বলা যায়?",
+      "options": [
+        "দিনের p99 ঠিক ১৫০ms, কারণ প্রতি ঘণ্টার p99-এর গড়ই দিনের p99",
+        "দিনের p99 অবশ্যই ১৫০ms-এর কম, কারণ লম্বা সময়ে outlier মিলিয়ে যায়",
+        "নিশ্চিতভাবে কিছুই না; দিনের p99 পেতে পুরো দিনের histogram লাগবে",
+        "দিনের p99 অবশ্যই ১৫০ms-এর বেশি, কারণ দিন ঘণ্টার চেয়ে লম্বা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Percentile পুরো বণ্টনের একটা বিন্দু; ঘণ্টাভিত্তিক p99-এর গড় থেকে দিনের p99 বের হয় না। প্রতি ঘণ্টার histogram রেখে যোগ করলে সঠিক উত্তর পাওয়া যায়। একই কারণে আলাদা server-এর p99-ও গড় করা যায় না।",
+      "whyWrong": {
+        "0": "Percentile গড় করা যায় না; ঘণ্টাভেদে request সংখ্যা আর বণ্টন আলাদা।",
+        "1": "একটা ব্যস্ত ঘণ্টার ধীরতা দিনের p99-কে উপরেও টানতে পারে।",
+        "3": "সময় লম্বা হলেই p99 বাড়ে এমন কোনো নিয়ম নেই; বণ্টনের উপর নির্ভর করে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q53",
+      "difficulty": "hard",
+      "question": "১,০০০টা request-এর মধ্যে ৯৯০টা ২০ms-এ আর ১০টা ৩ সেকেন্ডে শেষ হলো। Nearest-rank নিয়মে গড়, p99 আর p99.9 কত?",
+      "options": [
+        "গড় ২০ms, p99 = ৩ সেকেন্ড, p99.9 = ৩ সেকেন্ড",
+        "গড় ~৫০ms, p99 = ৩ সেকেন্ড, p99.9 = ৩ সেকেন্ড",
+        "গড় ~৫০ms, p99 = ২০ms, p99.9 = ৩ সেকেন্ড",
+        "গড় ~১.৫ সেকেন্ড, p99 = ৩ সেকেন্ড, p99.9 = ৩ সেকেন্ড"
+      ],
+      "correctIndex": 2,
+      "explanation": "গড় = (৯৯০ × ২০ + ১০ × ৩,০০০) ÷ ১,০০০ = ৪৯.৮ms। p99 = ৯৯০ নম্বর মান = ২০ms, আর p99.9 = ৯৯৯ নম্বর মান = ৩ সেকেন্ড। শিক্ষা: ঠিক ১% ধীর হলে p99 সেটা দেখায় না, তাই গুরুত্বপূর্ণ জায়গায় p99.9-ও দেখতে হয়।",
+      "whyWrong": {
+        "0": "গড় ২০ms হতে পারে না; ১০টা ৩ সেকেন্ডের request গড় বাড়ায়।",
+        "1": "p99 হলো ৯৯০ নম্বর মান, যেটা এখনো ২০ms; ধীরগুলো শুরু ৯৯১ থেকে।",
+        "3": "গড় (১৯,৮০০ + ৩০,০০০) ÷ ১,০০০ ≈ ৫০ms, ১.৫ সেকেন্ড না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q54",
+      "difficulty": "hard",
+      "question": "HTTP/2-এ একটা TCP connection-এ ২০টা stream চলছে। একটা TCP packet হারিয়ে গেল। কী ঘটে, আর HTTP/3 এখানে কেন ভালো?",
+      "options": [
+        "TCP ক্রম রাখতে পেছনের সব data আটকে রাখে, তাই সব stream থামে; QUIC-এ প্রতিটা stream আলাদা",
+        "শুধু ওই packet-এর stream থামে, বাকিরা চলতে থাকে; HTTP/3-এর একমাত্র বাড়তি সুবিধা হলো encryption",
+        "কোনো stream থামে না, কারণ HTTP/2 নিজেই হারানো packet আলাদাভাবে resend করে",
+        "পুরো connection বন্ধ হয়ে নতুন TCP handshake লাগে; HTTP/3-এ handshake-ই নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "HTTP/2 HTTP-স্তরের head-of-line blocking দূর করে, কিন্তু নিচে একটাই TCP byte stream; একটা packet হারালে TCP পরের সব data ধরে রাখে, তাই সব stream অপেক্ষা করে। HTTP/3 UDP-র উপর QUIC চালায়, যেখানে প্রতিটা stream-এর ক্রম আলাদা। বিস্তারিত Day 42-এ।",
+      "whyWrong": {
+        "1": "TCP stream চেনে না, পুরো byte ধারা আটকায়; আর HTTP/2-তেও সাধারণত TLS থাকে।",
+        "2": "Resend করে TCP, আর ততক্ষণ পরের data application-এ পৌঁছায় না।",
+        "3": "একটা packet হারালে connection বন্ধ হয় না; আর QUIC-এরও handshake আছে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q55",
+      "difficulty": "hard",
+      "question": "Kafka producer-এ batch ভরার সর্বোচ্চ অপেক্ষা (linger) ৫ms থেকে ৫০ms করা হলো, traffic মাঝারি। কোন প্রভাব আশা করবেন?",
+      "options": [
+        "Batch বড় হয়ে throughput বাড়বে, কিন্তু কিছু message-এর latency ৫০ms পর্যন্ত বাড়তে পারে",
+        "Throughput আর latency দুটোই কমবে, কারণ producer আগের চেয়ে অনেক কম ঘনঘন broker-এ data পাঠাবে",
+        "Message হারানোর ঝুঁকি কমবে, কিন্তু latency-তে কোনো প্রভাবই পড়বে না",
+        "শুধু consumer-এর throughput বাড়বে, producer-এর দিকে কিছুই বদলাবে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Linger মানে batch ভরার জন্য কতক্ষণ অপেক্ষা করা যাবে। বেশি অপেক্ষায় batch বড় হয়, প্রতি message-এ overhead কমে, throughput বাড়ে। দাম হলো প্রতিটা message-এর বাড়তি দেরি: classic batching trade-off।",
+      "whyWrong": {
+        "1": "কম ঘনঘন কিন্তু বড় batch-এ পাঠানো সাধারণত throughput বাড়ায়, কমায় না।",
+        "2": "অপেক্ষা বাড়ানো মানেই message পাঠাতে দেরি; latency-তে সরাসরি প্রভাব।",
+        "3": "Linger producer-এর setting; producer-এর batch আর latency-ই বদলায়।"
+      }
+    },
+    {
+      "id": "sd-day-007-q56",
+      "difficulty": "hard",
+      "question": "একটা server-এর service time ১০ms। সরল queue model-এ (গড় latency W = S ÷ (1 − ρ), ρ = utilization) utilization ৫০% থেকে ৯০% হলে গড় latency কত থেকে কত হবে?",
+      "options": [
+        "দুই ক্ষেত্রেই ১০ms, কারণ service time তো বদলায়নি",
+        "২০ms থেকে ৩৬ms, কারণ load ১.৮ গুণ হলে latency-ও ১.৮ গুণ",
+        "৫ms থেকে ১ms, কারণ ব্যস্ত server আরও দক্ষভাবে কাজ করে",
+        "২০ms থেকে ১০০ms"
+      ],
+      "correctIndex": 3,
+      "explanation": "ρ = ০.৫-এ W = ১০ ÷ ০.৫ = ২০ms; ρ = ০.৯-এ W = ১০ ÷ ০.১ = ১০০ms। Load মাত্র ১.৮ গুণ, কিন্তু latency ৫ গুণ। Day 5-এর knee এই কারণেই, আর বাস্তবে variance বেশি হলে আরও আগে খারাপ হয়।",
+      "whyWrong": {
+        "0": "Service time একই, কিন্তু লাইনে অপেক্ষার সময় utilization-এর সাথে বাড়ে।",
+        "1": "Latency load-এর সাথে সরলরেখায় না, 1 ÷ (1 − ρ) হারে বাড়ে।",
+        "2": "সূত্রে ১০ ÷ ০.৫ = ২০ আর ১০ ÷ ০.১ = ১০০; ব্যস্ততা latency বাড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-007-q57",
+      "difficulty": "hard",
+      "question": "Load balancer-এ মাপা p99 ৯০০ms, কিন্তু app server-এর নিজের মাপা p99 ১০০ms। Network স্বাভাবিক। পার্থক্যের সম্ভাব্য কারণ কী?",
+      "options": [
+        "Load balancer-এর clock ভুল চলছে, তাই server-এর নিজের মাপা সংখ্যাটাই আসল সত্য, আর LB-র সংখ্যা বাদ দেওয়া উচিত",
+        "Request server-এর কাজ শুরুর আগেই LB বা accept queue-তে অপেক্ষা করছে, যেটা server নিজে মাপে না",
+        "Server-এর p99 আসলে গড় দিয়ে বানানো, তাই সংখ্যাটা কৃত্রিমভাবে ছোট দেখায়",
+        "Load balancer প্রতিটা request দুবার পাঠায়, তাই মাপা সময় দ্বিগুণের বেশি হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Server নিজের timer চালু করে request হাতে পাওয়ার পরে। সব worker ব্যস্ত থাকলে request তার আগেই LB-র queue বা OS-এর accept queue-তে অপেক্ষা করে, যেটা শুধু বাইরের মাপে ধরা পড়ে। তাই একাধিক স্তরে মাপা আর queue depth দেখা জরুরি।",
+      "whyWrong": {
+        "0": "দুটো মাপ আলাদা জিনিস মাপে; পার্থক্যটা আসল অপেক্ষা হতে পারে।",
+        "2": "এমন ধরে নেওয়ার কারণ নেই; বেশি সম্ভাব্য হলো server-এর বাইরে লাইন।",
+        "3": "দুবার পাঠালেও ১০০ms থেকে ৯০০ms হয় না; আর LB সাধারণত এমন করে না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q58",
+      "difficulty": "hard",
+      "question": "নতুন release-এর p99 latency যাচাই করতে কোন ধরনের load test সবচেয়ে বিশ্বাসযোগ্য?",
+      "options": [
+        "যত বেশি সম্ভব concurrency দিয়ে চালানো, আর শুধু সর্বোচ্চ req/s সংখ্যাটা দেখে release অনুমোদন করা",
+        "নির্দিষ্ট arrival rate-এ (যেমন ৫০০ req/s) test, যাতে server ধীর হলেও নতুন request আসতে থাকে",
+        "একটা connection দিয়ে পরপর ১,০০০টা request পাঠানো, যাতে কোনো noise না থাকে",
+        "শুধু production-এর গড় latency দেখা, কারণ আলাদা load test অপ্রয়োজনীয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "বাস্তবে user-রা server ধীর হলেও আসতে থাকে (open loop)। নির্দিষ্ট arrival rate-এ test করলে stall-এর সময়ের ধীর request-গুলোও রেকর্ড হয়, coordinated omission এড়ানো যায়। wrk2-এর -R বা k6-এর constant-arrival-rate এই কাজের জন্য।",
+      "whyWrong": {
+        "0": "সর্বোচ্চ throughput আর বাস্তব load-এ p99 আলাদা প্রশ্ন; ছাদের উপরে latency অর্থহীন বড়।",
+        "2": "একটা connection-এ কোনো concurrency বা queue তৈরি হয় না; বাস্তবের মতো না।",
+        "3": "গড় tail লুকায়, আর release-এর আগে সমস্যা ধরা পড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-007-q59",
+      "difficulty": "hard",
+      "question": "ঢাকা অফিস থেকে রোজ ৫০০ GB backup Virginia-র S3-এ যায় (খুব ধীর), আর একই region-এর ছোট API call-গুলোও ধীর লাগে। কোন সমাধান-জোড়া ঠিক?",
+      "options": [
+        "দুটো সমস্যার জন্যই শুধু office-এর internet bandwidth বাড়ানো, কারণ দুটোই আসলে একই network-এর ধীরতা থেকে আসছে",
+        "Backup-এ parallel connection বা বড় TCP window (throughput); API-র জন্য কাছের region বা cache (latency)",
+        "দুটো সমস্যার জন্যই CDN বসানো, কারণ CDN সব ধরনের network ধীরতা দূর করে",
+        "Backup ছোট ছোট sequential request-এ ভাগ করা, আর API response compress করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "দুটো আলাদা সমস্যা: backup-এ throughput (দূরের link-এ একটা connection RTT দিয়ে সীমিত, তাই parallel stream বা বড় window), আর API-তে latency (দূরত্ব, তাই কাছের region, edge বা cache)। একটা ওষুধে দুটো রোগ সারে না।",
+      "whyWrong": {
+        "0": "ছোট API call-এ bandwidth প্রায় প্রভাব ফেলে না; সেখানে RTT-ই সমস্যা।",
+        "2": "CDN পড়ার জন্য cache; অফিস থেকে S3-এ upload-এর throughput সমস্যা মেটায় না।",
+        "3": "ছোট sequential request মানে আরও বেশি round trip; throughput আরও কমবে।"
+      }
+    },
+    {
+      "id": "sd-day-007-q60",
+      "difficulty": "hard",
+      "question": "Lab-এ server-এ ৫০ms network delay যোগ করার পরে ৪টা concurrent client-এ throughput ~১৬৬ থেকে ~৪৯ req/s নামল, আর ১৬টা client দিলে আবার ~১৭৬ হলো। কেন?",
+      "options": [
+        "W বাড়ায় একই L-এ λ = L ÷ W কমেছে; বেশি client মানে পথে বেশি request, তাই throughput ফেরে, latency না",
+        "Delay-এর কারণে packet হারাচ্ছিল, আর ১৬টা client হলে TCP-র retransmit নিজে থেকেই পুরোপুরি বন্ধ হয়ে যায়",
+        "১৬টা client-এ load tool নিজে থেকে network delay বাদ দিয়ে শুধু server-এর সময় মাপে",
+        "Delay link-এর bandwidth কমিয়েছিল, আর বেশি client সেই bandwidth আবার বাড়িয়ে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Little's Law: λ = L ÷ W। ৪টা client আর W ≈ ৮১ms হলে λ ≈ ৪৯। ১৬টা client দিলে পথে বেশি request থাকে, তাই server আবার ছাদে (~১৭৬) পৌঁছায়, কিন্তু প্রতিটার latency ~৯০ms-ই থাকে। দূরত্ব latency বাড়ায়; concurrency দিয়ে throughput ফেরানো যায়, latency না।",
+      "whyWrong": {
+        "1": "Netem এখানে শুধু delay দিয়েছে, loss না; আর retransmit client সংখ্যায় বন্ধ হয় না।",
+        "2": "hey সবসময় end-to-end সময় মাপে; delay বাদ দেয় না।",
+        "3": "Delay bandwidth বদলায় না, আর client বাড়ালে bandwidth বাড়ে না।"
+      }
+    }
+  ]
+}

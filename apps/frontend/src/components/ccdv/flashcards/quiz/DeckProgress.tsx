@@ -7,12 +7,15 @@ import type { CardStatus } from "./QuizCard";
 export default function DeckProgress({
   statuses,
   known,
+  showAnswerStats,
   current,
   onJump,
   action,
 }: {
   statuses: CardStatus[];
   known: number[];
+  /** Typed-answer stats (answered / correct); off when flashcards are plain flip cards. */
+  showAnswerStats: boolean;
   current: number;
   onJump: (index: number) => void;
   action?: ReactNode;
@@ -22,15 +25,19 @@ export default function DeckProgress({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span>
-          উত্তর দেওয়া:{" "}
-          <strong>
-            {answered}/{statuses.length}
-          </strong>
-        </span>
-        <span>
-          সঠিক: <strong>{correct}</strong>
-        </span>
+        {showAnswerStats && (
+          <>
+            <span>
+              উত্তর দেওয়া:{" "}
+              <strong>
+                {answered}/{statuses.length}
+              </strong>
+            </span>
+            <span>
+              সঠিক: <strong>{correct}</strong>
+            </span>
+          </>
+        )}
         <span>
           মনে আছে: <strong>{known.length}</strong>
         </span>

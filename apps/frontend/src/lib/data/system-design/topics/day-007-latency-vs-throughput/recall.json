@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-007",
+  "points": [
+    {
+      "term": "Latency",
+      "prompt": "Latency কী, আর user যে latency অনুভব করে সেটা কোন কোন অংশ দিয়ে তৈরি? Server-এর log-এর সময় দিয়ে কেন এটা বোঝা যায় না?",
+      "answer": "Latency হলো একটা কাজ শুরু থেকে শেষ হতে কত সময় লাগে, সাধারণত ms-এ। User-এর latency = DNS + TCP + TLS handshake + request-এর যাত্রা + server-এ লাইনে অপেক্ষা + server-এর কাজ + data ফেরত আসা। Server-এর log শুধু নিজের কাজের অংশটা দেখে, তাই network আর handshake-এর বড় অংশ বাদ পড়ে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Throughput",
+      "prompt": "Throughput কী, আর latency ভালো হলেও throughput খারাপ (বা উল্টোটা) হয় এমন একটা উদাহরণ দিন।",
+      "answer": "Throughput হলো প্রতি একক সময়ে কতগুলো কাজ শেষ হয়, যেমন req/s বা MB/s। কুরিয়ারে পাঠানো hard drive-এর latency দিন, কিন্তু throughput বিশাল; উল্টো দিকে একটা chat message ৫০ms-এ পৌঁছায় কিন্তু data মাত্র কয়েক byte। User-facing কাজে latency, batch কাজে throughput বেশি গুরুত্বপূর্ণ।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Bandwidth",
+      "prompt": "Bandwidth আর throughput-এর পার্থক্য কী? ছোট API response ধীর হলে bandwidth বাড়ালে কেন লাভ হয় না?",
+      "answer": "Bandwidth হলো link-এর সর্বোচ্চ ক্ষমতা, আর throughput হলো আসলে কতটা যাচ্ছে; throughput কখনো bandwidth-এর বেশি হয় না। ছোট response-এ transmission time (size ÷ bandwidth) এমনিতেই খুব কম, সময় যায় propagation আর round trip-এ, তাই bandwidth বাড়ালে প্রায় কিছুই বদলায় না। লাভ হয় round trip কমিয়ে আর data কাছে এনে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Percentile (p50/p95/p99)",
+      "prompt": "Latency গড় দিয়ে মাপলে কী সমস্যা, আর p50, p95, p99 কী বোঝায়?",
+      "answer": "Latency-র বণ্টন লম্বা লেজওয়ালা, তাই গড় outlier-এ টানে আবার ধীরতম request-গুলোকে লুকিয়েও ফেলে। p50 মানে অর্ধেক request এর চেয়ে দ্রুত (সাধারণ অভিজ্ঞতা), p99 মানে ৯৯% এর মধ্যে, বাকি ১% এর চেয়ে ধীর। একজন user অনেক request করে বলে tail অনেক user-কেই ছোঁয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Tail Latency ও Fan-out",
+      "prompt": "প্রতিটা backend-এর ১% request ধীর হলে ১০০টা backend-এ fan-out করা request-এর কত % ধীর হবে? কেন?",
+      "answer": "User-এর উত্তর আসে সবচেয়ে ধীর backend-এর পরে, তাই অন্তত একটা ধীর হওয়ার সম্ভাবনা = 1 − 0.99¹⁰⁰ ≈ ৬৩%। প্রতিটা server-এর জন্য যেটা বিরল, fan-out-এ সেটা সাধারণ ঘটনা হয়ে যায়। তাই বড় fan-out-এ backend-এর p99.9 বা p99.99 গুরুত্বপূর্ণ (Dean ও Barroso, \"The Tail at Scale\")।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Little's Law",
+      "prompt": "Little's Law কী বলে? ২,০০০ req/s আর ৫০ms latency-র জন্য কতটা concurrency লাগবে?",
+      "answer": "Stable system-এ L = λ × W: একসাথে চলা কাজের গড় সংখ্যা = throughput × গড় latency। ২,০০০ × ০.০৫ = ১০০টা request একসাথে চলবে, তাই অন্তত ১০০টা worker/connection লাগবে, headroom সহ আরও বেশি। এটা গড়ের সূত্র, এ দিয়ে p99 বের করা যায় না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Utilisation ও Queuing",
+      "prompt": "Server-এর throughput-এর ছাদে পৌঁছানোর পরও load বাড়ালে latency-র কী হয়, আর কেন?",
+      "answer": "ছাদের পরে throughput আর বাড়ে না, বাড়তি request শুধু লাইনে দাঁড়ায়, তাই latency খাড়া উপরে ওঠে (Day 5-এর knee)। Little's Law দিয়ে: λ স্থির থাকলে L বাড়লে W বাড়তেই হবে। তাই user-facing server-কে ১০০%-এর কাছে না চালিয়ে headroom রাখা হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Latency Budget",
+      "prompt": "একটা page-এ কয়েকটা service call থাকলে মোট latency কিভাবে হিসাব করবেন? Sequential আর parallel-এ পার্থক্য কী?",
+      "answer": "নির্ভরশীল ধাপের সময় যোগ হয়, আর স্বাধীন call parallel-এ চালালে সময় হয় সবচেয়ে ধীরটার সমান; সবচেয়ে লম্বা নির্ভরশীল পথটাই critical path। ৮০, ২০০ আর ১২০ms-এর তিনটা স্বাধীন call sequential-এ ৪০০ms, parallel-এ ২০০ms। বাজেটে network-এর round trip-ও রাখতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Hedged Request ও Timeout",
+      "prompt": "Hedged request কী, কখন ব্যবহার করবেন, আর timeout ঠিকমতো না রাখলে কী হয়?",
+      "answer": "Hedged request-এ একটা replica নির্দিষ্ট সময়ের (যেমন p95) মধ্যে উত্তর না দিলে একই request আরেকটা replica-কে পাঠিয়ে যেটা আগে আসে সেটা নেওয়া হয়; সামান্য বাড়তি load-এ tail কমে, তবে শুধু idempotent read-এ। Timeout না থাকলে ধীর dependency-র জন্য thread আটকে থাকে আর throughput পড়ে যায়; তাই dependency-র p99/p99.9 দেখে timeout আর পুরো request-এর deadline ঠিক করতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "সঠিকভাবে মাপা",
+      "prompt": "কেন কয়েকটা server-এর p99 গড় করা যায় না, আর coordinated omission কী?",
+      "answer": "Percentile পুরো বণ্টনের উপর নির্ভর করে, তাই আলাদা জায়গার p99 গড় করলে আসল p99 পাওয়া যায় না; histogram যোগ করে তারপর percentile বের করতে হয়। Coordinated omission হলো closed-loop load tool-এর ফাঁদ: server আটকে গেলে tool নিজেও নতুন request পাঠানো থামায়, ফলে ধীর sample কম রেকর্ড হয় আর p99 বাস্তবের চেয়ে ভালো দেখায়; সমাধান নির্দিষ্ট হারে request পাঠানো।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

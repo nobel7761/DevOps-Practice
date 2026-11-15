@@ -1,0 +1,14 @@
+{
+  "type": "mistakes",
+  "text": "API Gateway বসিয়ে নতুনরা যে ৩টা ভুল করে (আমিও করতাম)\nDay 16/100 · API Gateway\n\n**API Gateway** হলো অনেকগুলো service-এর সামনে একটাই দরজা: auth, rate limit, routing আর log এক জায়গায়। বসানো সহজ, ঠিকভাবে বসানো কঠিন।\n\n❌ ভুল ১: \"Gateway-তে auth হয়েছে, তাই service-এ কিছু দেখার দরকার নেই।\"\n✅ ঠিক উপায়: Service অন্য পথে reachable হলে কেউ নিজেই X-User-Id header বসিয়ে ঢুকবে। Gateway বাইরের identity header মুছুক, আর \"এই user কি এই order দেখতে পারে\" check service-এই থাকুক (**Zero Trust**)।\n\n❌ ভুল ২: Gateway-তে discount, দাম হিসাবের মতো business logic রাখা।\n✅ ঠিক উপায়: কিছুদিন পরে প্রতিটা change-এ gateway deploy, আর এক ভুলে সব API বন্ধ। Gateway শুধু \"কে, কতবার, কোথায়\"; বাকিটা service-এ বা আলাদা **BFF**-এ।\n\n❌ ভুল ৩: একটাই gateway instance, আর gateway, service, client সবাই নিজে retry করে।\n✅ ঠিক উপায়: Gateway stateless রেখে কয়েকটা instance, সামনে load balancer। Retry শুধু এক স্তরে আর শুধু idempotent request-এ; নাহলে 3 × 3 × 3 = 27 গুণ চাপ।\n\nLab-এ Kong চালিয়ে একটা বোনাস শিক্ষা: **key-auth** আগে চলে, **rate-limiting** পরে। তাই ভুল key দিয়ে হাজারবার চেষ্টা করলেও শুধু 401 আসে, 429 কখনো না। আর default-এ client-এর API key service পর্যন্ত চলে যায়, hide_credentials না দিলে।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ gateway বা reverse proxy-তে কখনো এমন কোনো নিয়ম ঢুকেছিল, যেটা আসলে কোনো service-এর কাজ ছিল?]\n\nআর কোন API Gateway ভুল এই list-এ থাকা উচিত? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ gateway বা reverse proxy-তে কখনো এমন কোনো নিয়ম ঢুকেছিল, যেটা আসলে কোনো service-এর কাজ ছিল?",
+  "firstComment": "Plugin chain ধাপে ধাপে, BFF আর zero trust-এর ব্যাখ্যা, আর Kong দিয়ে 401/200/429 নিজে দেখার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#APIGateway",
+    "#Microservices",
+    "#BackendEngineering"
+  ],
+  "visual": "day-016-main"
+}

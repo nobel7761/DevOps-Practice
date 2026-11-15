@@ -1,0 +1,1080 @@
+{
+  "topicId": "sd-day-014",
+  "questions": [
+    {
+      "id": "sd-day-014-q01",
+      "difficulty": "easy",
+      "question": "System design-এ একটা web server-এর 'state' বলতে সবচেয়ে ঠিকভাবে কী বোঝায়?",
+      "options": [
+        "Server-এর CPU আর memory এই মুহূর্তে কতটা ব্যবহার হচ্ছে, monitoring-এ দেখা সেই তথ্য",
+        "যে data এক request-এর পরেও টিকে থাকতে হয়, পরের request-এর কাজে লাগে",
+        "একটা request চলার সময় function-এর ভেতরের local variable-গুলো",
+        "Server চালু আছে নাকি বন্ধ, health check যে অবস্থা দেখায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "State মানে request-এর পরেও যা মনে রাখতে হয়: session, cart, upload করা file, cache, খোলা connection। পরের request এগুলোর উপর নির্ভর করে, তাই এগুলো কোথায় থাকে সেটাই stateful বনাম stateless ঠিক করে।",
+      "whyWrong": {
+        "0": "CPU/memory ব্যবহার monitoring-এর metric, request-এর মধ্যে বয়ে যাওয়া data না।",
+        "2": "Request-এর ভেতরের local variable request শেষ হলেই চলে যায়, এটা নিয়ে সমস্যা হয় না।",
+        "3": "Up/down অবস্থা health-এর ব্যাপার; state বলতে user-এর data বোঝানো হচ্ছে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q02",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা stateless server-এর সঠিক বর্ণনা?",
+      "options": [
+        "যে server-এ কোনো database বা Redis connection নেই",
+        "যে server-এর কাছে কোনো data নেই, তাই সে শুধু static HTML page দেখাতে পারে, dynamic কিছু না",
+        "যে server কোনো request-এর পরে নিজের ভেতরে কিছু মনে রাখে না, দরকারি state বাইরে থেকে পড়ে",
+        "যে server নিজের memory-তে session রাখে কিন্তু প্রতি ঘণ্টায় local disk-এ তার backup নিয়ে রাখে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Stateless server request-এর পরে নিজের memory বা disk-এ কিছু রাখে না। দরকারি state request-এর সাথে আসে (token) বা shared store থেকে পড়ে। তাই যেকোনো server যেকোনো request নিতে পারে।",
+      "whyWrong": {
+        "0": "Stateless server সাধারণত Redis/DB ব্যবহার করে; সেখানেই তার state রাখা হয়।",
+        "1": "Stateless server পুরোপুরি dynamic কাজ করতে পারে, শুধু state নিজের ভেতরে রাখে না।",
+        "3": "Memory-তে session রাখাই stateful; local disk-এর backup অন্য server দেখতে পায় না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q03",
+      "difficulty": "easy",
+      "question": "'Stateless মানে system-এ কোনো state নেই।' এই কথাটা কেন ভুল?",
+      "options": [
+        "কারণ stateless server-ও প্রতি request-এর পরে কিছু data memory-তে রেখে দেয়",
+        "কারণ state থাকে, শুধু app server থেকে সরে Redis, database বা client-এর token-এ যায়",
+        "কারণ stateless শুধু HTTP protocol-এর বৈশিষ্ট্য, server-এর সাথে এর সম্পর্ক নেই",
+        "কারণ state শুধু database-এ থাকে, আর database সবসময় app server-এর ভেতরেই চলে, আলাদা না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Cart, login, file এগুলো তো লাগবেই। Stateless design শুধু ঠিক করে এগুলো কোথায় থাকবে: app server-এর বাইরে, বিশেষ store-এ। তাই সেই store-গুলোকে এখন যত্ন করে চালাতে হয়।",
+      "whyWrong": {
+        "0": "Stateless server request-এর পরে কিছু রাখে না, এটাই তার সংজ্ঞা।",
+        "2": "HTTP stateless, কিন্তু server-ও stateful বা stateless হতে পারে; lesson-এর মূল কথা server নিয়ে।",
+        "3": "Database সাধারণত আলাদা machine/service-এ চলে, আর state Redis বা token-এও থাকতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q04",
+      "difficulty": "easy",
+      "question": "Load balancer round robin-এ দুটো server-এ request পাঠাচ্ছে, cart রাখা আছে server-এর memory-তে। User-এর কী অভিজ্ঞতা হবে?",
+      "options": [
+        "Cart সবসময় ঠিক থাকবে, কারণ load balancer cart-এর data দুই server-এ কপি করে দেয়",
+        "প্রথম request-এর পরে load balancer নিজে থেকে user-কে একটা server-এ বেঁধে দেবে",
+        "Cart কখনো থাকবে, কখনো খালি দেখাবে, কারণ request কোন server-এ গেল তার উপর নির্ভর করে",
+        "User-এর প্রতিটা request fail করবে, কারণ দুই server-এ একই session একসাথে থাকতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা server শুধু নিজের memory-র cart দেখে। Round robin পালা করে পাঠালে একই user-এর দুটো আলাদা অর্ধেক cart তৈরি হয়, refresh করলে কখনো এটা, কখনো ওটা। Lab-এর পরীক্ষা ১-এ ঠিক এটাই দেখা যায়।",
+      "whyWrong": {
+        "0": "Load balancer data কপি করে না, শুধু request পাঠায়।",
+        "1": "Stickiness আলাদাভাবে চালু না করলে round robin কাউকে বেঁধে রাখে না।",
+        "3": "Request fail করে না, ভুল (অসম্পূর্ণ) data দেখায়; সেটাই আরও বিভ্রান্তিকর।"
+      }
+    },
+    {
+      "id": "sd-day-014-q05",
+      "difficulty": "easy",
+      "question": "Sticky session (session affinity) কী করে?",
+      "options": [
+        "একই user-এর request সবসময় একই server-এ পাঠায়, যাতে সেই server-এর memory-র session পাওয়া যায়",
+        "User-এর session সব server-এর memory-তে কপি করে রাখে, যাতে যেকোনো server যেকোনো সময় উত্তর দিতে পারে",
+        "Session-কে Redis-এ সরিয়ে দেয়, যাতে server-গুলো stateless হয়",
+        "User inactive থাকলে session-কে আঠার মতো ধরে রেখে কখনো মেয়াদ শেষ হতে দেয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Sticky session load balancer-এর একটা setting: cookie বা IP hash দিয়ে user-কে একই server-এ পাঠায়। State তখনো ওই server-এর memory-তে থাকে, তাই এটা সমস্যা ঢাকে, সমাধান করে না।",
+      "whyWrong": {
+        "1": "Sticky session কিছু কপি করে না; কপি করা হলো session replication, আলাদা জিনিস।",
+        "2": "Redis-এ সরানো হলো আসল stateless সমাধান, sticky session না।",
+        "3": "Stickiness routing-এর ব্যাপার, session-এর মেয়াদের সাথে এর সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-014-q06",
+      "difficulty": "easy",
+      "question": "Sticky session চালু থাকা অবস্থায় একটা server crash করল। তার user-দের কী হবে?",
+      "options": [
+        "Load balancer তাদের অন্য server-এ পাঠাবে, আর session-ও তাদের সাথে সাথে নতুন server-এ চলে যাবে",
+        "কিছুই হবে না, কারণ sticky session session-কে load balancer-এ সংরক্ষণ করে",
+        "Server আবার চালু না হওয়া পর্যন্ত ওই user-দের সব request আটকে থাকবে",
+        "অন্য server-এ যাবে, কিন্তু session আর cart হারাবে, কারণ সেগুলো মরা server-এর memory-তে ছিল"
+      ],
+      "correctIndex": 3,
+      "explanation": "Health check মরা server বাদ দেয়, user অন্য server-এ যায়। কিন্তু session ছিল মরা server-এর memory-তে, তাই আবার login আর খালি cart। Simulator-এর 'Session হারাল' সংখ্যা এটাই গোনে।",
+      "whyWrong": {
+        "0": "Load balancer request সরায়, memory-র data সরাতে পারে না।",
+        "1": "Load balancer শুধু 'কোন server' মনে রাখে, session-এর data না।",
+        "2": "Health check বাদ দেওয়ার পরে LB অন্য server-এ পাঠায়, অনির্দিষ্টকাল আটকে রাখে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q07",
+      "difficulty": "easy",
+      "question": "Login session সব app server-এর জন্য একসাথে রাখতে সবচেয়ে প্রচলিত জায়গা কোনটা?",
+      "options": [
+        "প্রতিটা app server-এর local disk-এর একটা file",
+        "Redis-এর মতো দ্রুত key-value store, প্রতিটা session-এ TTL সহ",
+        "Load balancer-এর config file-এ user অনুযায়ী লিখে রাখা",
+        "CDN-এর edge cache-এ, যাতে session সবসময় user-এর কাছাকাছি থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Session ছোট, প্রতি request-এ পড়তে হয়, আর মেয়াদ শেষে মুছে যাওয়া উচিত। Redis দ্রুত, সব server দেখতে পায়, আর TTL দিয়ে নিজেই মেয়াদ সামলায়।",
+      "whyWrong": {
+        "0": "Local disk অন্য server দেখতে পায় না, তাই এটা আবার stateful।",
+        "2": "LB config user-এর data রাখার জায়গা না, আর প্রতি login-এ config বদলানো অসম্ভব।",
+        "3": "CDN public content cache করে; ব্যক্তিগত session সেখানে রাখা ভুল আর অনিরাপদ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q08",
+      "difficulty": "easy",
+      "question": "User-এর upload করা profile ছবি কোথায় রাখা উচিত, যাতে যেকোনো server সেটা দেখাতে পারে?",
+      "options": [
+        "যে server upload নিল, তার /uploads folder-এ",
+        "User-এর session-এর ভেতরে, Redis-এ",
+        "Object storage-এ (যেমন S3), আর database-এ শুধু ছবির key",
+        "Load balancer-এর memory-তে, যাতে পরের request-এ দ্রুত পাঠানো যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Object storage যেকোনো server থেকে পড়া যায়, নিজেই কপি রাখে, আর container বদলালেও থাকে। Database-এ শুধু key রাখলে app server কিছু মনে রাখে না।",
+      "whyWrong": {
+        "0": "Local folder শুধু ওই server দেখে; অন্য server-এ গেলে 404, container নতুন হলে file হারায়।",
+        "1": "Session ছোট আর অস্থায়ী; ছবির মতো বড় স্থায়ী জিনিস সেখানে রাখা ভুল।",
+        "3": "LB file রাখার জায়গা না, আর restart-এ সব হারাত।"
+      }
+    },
+    {
+      "id": "sd-day-014-q09",
+      "difficulty": "easy",
+      "question": "JWT (JSON Web Token)-এর মূল ধারণা কী?",
+      "options": [
+        "Server-এর database-এ রাখা একটা encrypted session table, যেটা প্রতি request-এ server নিজে খুলে পড়ে",
+        "Client-এর কাছে রাখা signed data; server signature মিলিয়ে বিশ্বাস করে, store-এ খোঁজে না",
+        "একটা random নম্বর, যেটা দিয়ে server Redis-এ session খুঁজে বের করে",
+        "Browser-এর password manager-এ রাখা user-এর password-এর hash"
+      ],
+      "correctIndex": 1,
+      "explanation": "JWT-তে header, payload আর signature থাকে। Server key দিয়ে signature যাচাই করে, তাই data বদলানো ধরা পড়ে, আর lookup ছাড়াই user-কে চেনা যায়।",
+      "whyWrong": {
+        "0": "JWT client-এর কাছে থাকে, server-এর table-এ না।",
+        "2": "এটা opaque session id-র বর্ণনা, JWT-র না।",
+        "3": "JWT-তে password বা তার hash থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q10",
+      "difficulty": "easy",
+      "question": "JWT-এর payload সম্পর্কে কোন কথাটা ঠিক?",
+      "options": [
+        "Payload encrypted থাকে, তাই এতে phone নম্বর বা অন্য গোপন তথ্য নিশ্চিন্তে রাখা যায়",
+        "Payload শুধু server পড়তে পারে, কারণ signature ছাড়া decode করা যায় না",
+        "Payload Base64url-এ, যে কেউ decode করে পড়তে পারে; signature শুধু বদলানো আটকায়",
+        "Payload প্রতিবার random হয়, তাই একই user-এর দুটো token কখনো মেলে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Signed মানে tamper-proof, secret না। Base64url শুধু encoding, তাই payload-এ গোপন কিছু রাখা যাবে না। গোপন রাখতে হলে encrypted token (JWE) লাগে।",
+      "whyWrong": {
+        "0": "সাধারণ JWT (JWS) encrypted না; encryption আলাদা standard।",
+        "1": "Decode করতে কোনো key লাগে না, signature শুধু যাচাইয়ের জন্য।",
+        "3": "Payload user-এর claim; random না, আর এখানে মূল বিষয় পড়া যায় কিনা।"
+      }
+    },
+    {
+      "id": "sd-day-014-q11",
+      "difficulty": "easy",
+      "question": "Redis-এ session রাখার সময় প্রতিটা key-তে TTL দেওয়া কেন জরুরি?",
+      "options": [
+        "TTL না দিলে Redis key-টা অন্য server-কে পড়তে দেয় না",
+        "TTL দিলে key দ্রুত পড়া যায়, কারণ Redis মেয়াদওয়ালা key-গুলো CPU cache-এর কাছাকাছি রাখে",
+        "TTL না দিলে session প্রতিটা request-এ নতুন করে তৈরি হয়",
+        "মেয়াদ শেষ হওয়া session Redis নিজেই মুছে দেয়, নইলে চিরকাল থেকে memory ভরে"
+      ],
+      "correctIndex": 3,
+      "explanation": "TTL দিলে নিষ্ক্রিয় session নিজে থেকে মুছে যায়, cleanup job লাগে না, আর memory নিয়ন্ত্রণে থাকে। TTL ভুলে গেলে প্রতিটা পুরনো session জমতে থাকে।",
+      "whyWrong": {
+        "0": "TTL পড়ার অনুমতি ঠিক করে না, মেয়াদ ঠিক করে।",
+        "1": "TTL speed বাড়ায় না।",
+        "2": "TTL session তৈরির নিয়ম বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q12",
+      "difficulty": "easy",
+      "question": "নিচের কোন protocol-এ একটা connection লম্বা সময় খোলা থাকে আর একটা নির্দিষ্ট server-এ বাঁধা থাকে?",
+      "options": [
+        "WebSocket",
+        "সাধারণ HTTP GET request",
+        "DNS lookup",
+        "REST API-র PUT request"
+      ],
+      "correctIndex": 0,
+      "explanation": "WebSocket-এ connection ঘণ্টার পর ঘণ্টা খোলা থাকে, আর সেটা একটা server process-এর সাথে বাঁধা। Connection নিজেই state, অন্য server-এ সরানো যায় না।",
+      "whyWrong": {
+        "1": "সাধারণ HTTP request-response শেষ হয়ে যায়; প্রতিটা request আলাদা।",
+        "2": "DNS lookup একটা ছোট প্রশ্ন-উত্তর, লম্বা connection না।",
+        "3": "PUT-ও সাধারণ HTTP request, শেষ হলে কিছু খোলা থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q13",
+      "difficulty": "easy",
+      "question": "Stateless server-এর সবচেয়ে বড় সুবিধা কোনটা, load balancer-এর দিক থেকে?",
+      "options": [
+        "Load balancer-এর আর কোনো health check লাগে না",
+        "যেকোনো server যেকোনো request নিতে পারে, তাই LB স্বাধীনভাবে algorithm বাছে",
+        "Server-গুলোর মধ্যে network call কমে যায়, কারণ তারা একে অপরের memory পড়ে",
+        "Load balancer নিজেই session রাখতে পারে, তাই আলাদা Redis বা database আর লাগে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "কোনো server-এর কাছে বিশেষ কিছু না থাকলে 'এই user-কে ওখানেই পাঠাতে হবে' জাতীয় বাধা থাকে না। LB সবচেয়ে কম ব্যস্ত বা সবচেয়ে দ্রুত server বাছতে পারে।",
+      "whyWrong": {
+        "0": "মরা server বাদ দিতে health check তখনো লাগে।",
+        "2": "Stateless server একে অপরের memory পড়ে না, বাইরের store পড়ে।",
+        "3": "LB session রাখে না; session যায় shared store-এ বা token-এ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q14",
+      "difficulty": "easy",
+      "question": "নিচের কোনটা 'soft state'-এর উদাহরণ, যেটা প্রতিটা server-এর memory-তে রাখা চলে?",
+      "options": [
+        "User-এর login session",
+        "Payment সম্পন্ন হয়েছে কিনা সেই চিহ্ন",
+        "Product list-এর local cache, যেটা database থেকে আবার বানানো যায়",
+        "User-এর upload করা invoice PDF, যেটা পরে আবার download করতে হবে, আর কোথাও কপি নেই"
+      ],
+      "correctIndex": 2,
+      "explanation": "Soft state হারালে শুধু ধীর হয়, ভুল না, কারণ আসল উৎস থেকে আবার বানানো যায়। Local cache এমন। Session, payment আর file হারালে ভুল হয়, তাই এগুলো hard state।",
+      "whyWrong": {
+        "0": "Session হারালে user logout হয়, এটা hard state।",
+        "1": "Payment-এর অবস্থা হারানো মানে ভুল, এটা কখনো server-এর memory-তে না।",
+        "3": "Upload করা file আবার বানানো যায় না, এটা hard state।"
+      }
+    },
+    {
+      "id": "sd-day-014-q15",
+      "difficulty": "easy",
+      "question": "Graceful shutdown-এ SIGTERM পেলে একটা app server প্রথমে কী করা উচিত?",
+      "options": [
+        "সাথে সাথে process বন্ধ করে দেওয়া, যাতে deploy দ্রুত শেষ হয় আর নতুন version চালু হয়",
+        "সব চলমান request-কে 500 error দিয়ে শেষ করে দেওয়া",
+        "নতুন version নিজে download করে নিজেকে update করা",
+        "Readiness fail করে LB-কে সরে যেতে দেওয়া, তারপর চলমান কাজ শেষ করে বের হওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Graceful shutdown মানে নতুন কাজ নেওয়া বন্ধ, চলমান কাজ শেষ, তারপর exit। Readiness fail করলে LB তাকে rotation থেকে সরায়, তাই কারও request মাঝপথে কাটে না।",
+      "whyWrong": {
+        "0": "হুট করে বন্ধ করলে চলমান payment, upload মাঝপথে কাটে।",
+        "1": "চলমান request-কে error দেওয়াটাই আমরা এড়াতে চাই।",
+        "2": "Update orchestrator করে নতুন container দিয়ে; process নিজে নিজেকে update করে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q16",
+      "difficulty": "easy",
+      "question": "12-factor app-এর 'Processes' নীতি অনুযায়ী app process কেমন হবে?",
+      "options": [
+        "Stateless ও share-nothing; টেকসই data database বা Redis-এর মতো backing service-এ",
+        "প্রতিটা process নিজের local disk-এ user data রাখবে, যাতে network call না লাগে আর দ্রুত হয়",
+        "সব process একটা shared memory segment ভাগ করে নেবে",
+        "Sticky session দিয়ে প্রতিটা user-কে একটা process-এ বেঁধে রাখবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "12-factor-এর Factor VI বলে process stateless ও share-nothing, টেকসই data backing service-এ। সেখানে স্পষ্ট বলা আছে sticky session এই নীতি ভাঙে।",
+      "whyWrong": {
+        "1": "Local disk-এ user data রাখা ঠিক যা এই নীতি নিষেধ করে।",
+        "2": "Share-nothing মানে process-গুলো memory ভাগ করে না।",
+        "3": "12-factor sticky session-কে সরাসরি লঙ্ঘন বলে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q17",
+      "difficulty": "easy",
+      "question": "Stateless app server আর idempotent API কেন একসাথে কাজের?",
+      "options": [
+        "Idempotent API থাকলে server-কে আর stateless হতে হয় না",
+        "Stateless হলে অন্য server-এ আবার পাঠানো যায়; idempotent হলে আবার পাঠানো নিরাপদ",
+        "দুটোই একই জিনিস, শুধু নাম আলাদা",
+        "Idempotent API session-কে client-এর কাছে রেখে দেয়, তাই server নিজে থেকেই stateless হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Server মাঝপথে মরলে stateless হওয়ায় অন্য যেকোনো server request নিতে পারে। কিন্তু POST /orders আবার পাঠালে duplicate হতে পারে; idempotency ঠিক করে retry নিরাপদ কিনা।",
+      "whyWrong": {
+        "0": "Idempotency retry নিরাপদ করে, কিন্তু server-এর ভেতরের state সমস্যা সমাধান করে না।",
+        "2": "Statelessness হলো state কোথায় থাকে; idempotency হলো একই request বারবার দিলে ফল।",
+        "3": "Session client-এর কাছে রাখে token, idempotency না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q18",
+      "difficulty": "easy",
+      "question": "Database কেন সাধারণত stateful থাকে, আর app server-এর মতো 'stateless' বানানো যায় না?",
+      "options": [
+        "কারণ database-এর কাজই state রাখা; data কোথাও না কোথাও তো থাকতে হবে",
+        "কারণ database HTTP ব্যবহার করে না, তাই stateless হতে পারে না",
+        "কারণ database-কে load balancer-এর পেছনে রাখা যায় না",
+        "কারণ database সবসময় একটা machine-এই চলে, তার একাধিক কপি রাখা সম্ভব না"
+      ],
+      "correctIndex": 0,
+      "explanation": "State বাইরে সরালে শেষে সেটা database, queue বা Redis-এ থাকে। এদের কাজই state রাখা। তাই নকশা হয়: অনেক stateless compute, অল্প কয়েকটা যত্নে চালানো stateful store।",
+      "whyWrong": {
+        "1": "Protocol stateless/stateful হওয়ার কারণ না; data রাখাই মূল কারণ।",
+        "2": "Read replica-র সামনে LB রাখা যায়; সমস্যা হলো data কপি আর consistency।",
+        "3": "Database-এর replica আর shard হয়, কিন্তু সেগুলো আলাদা যত্নে scale হয়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q19",
+      "difficulty": "easy",
+      "question": "একটা app-এ rate limit counter প্রতিটা server-এর memory-তে রাখা। নিয়ম মিনিটে ১০০ request, server আছে ৫টা, round robin। একজন user আসলে মিনিটে প্রায় কতগুলো পাঠাতে পারবে?",
+      "options": ["১০০", "২০", "৫০০", "১০৫"],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা server আলাদা গোনে, আর round robin-এ user-এর request পাঁচজনে ভাগ হয়। প্রতিটা server ১০০ পর্যন্ত মানবে, তাই মোট ৫ × ১০০ = ৫০০। Counter shared store-এ রাখলে সত্যিকারের ১০০ হয়।",
+      "whyWrong": {
+        "0": "এটা হতো counter shared store-এ থাকলে; এখানে প্রতিটা server আলাদা গোনে।",
+        "1": "১০০ ÷ ৫ ধরলে ২০ আসে, কিন্তু কোনো server নিজের limit ভাগ করে না।",
+        "3": "Server সংখ্যা যোগ করলে না, গুণ করলে হিসাব আসে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q20",
+      "difficulty": "easy",
+      "question": "Container-এর ভেতরে local disk-এ লেখা file নিয়ে কোন কথাটা ঠিক?",
+      "options": [
+        "Container restart বা নতুন করে তৈরি হলেও লেখা file সবসময় নিরাপদে থেকে যায়, কিছু করতে হয় না",
+        "Container নতুন করে তৈরি হলে (যেমন প্রতিটা deploy-এ) তার filesystem-এ লেখা file হারায়",
+        "Container-এর file সব server নিজে থেকে sync করে নেয়",
+        "Container-এর disk-এ লেখা file সরাসরি object storage-এ চলে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Container-এর লেখা layer container-এর সাথে থাকে; নতুন container (প্রতিটা deploy) পরিষ্কার শুরু হয়। Heroku-র dyno-ও তাই, ephemeral filesystem। তাই টিকে থাকা file object storage-এ।",
+      "whyWrong": {
+        "0": "নতুন container তৈরি হলে পুরনো লেখা হারায়, volume আলাদা করে না দিলে।",
+        "2": "Container-গুলো নিজেরা file sync করে না।",
+        "3": "Object storage-এ পাঠাতে app-কে নিজে upload করতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q21",
+      "difficulty": "medium",
+      "question": "আপনার Express app-এ default in-memory session store (MemoryStore)। এখন দ্বিতীয় server যোগ করার পরে user-রা এলোমেলোভাবে logout হচ্ছে। সবচেয়ে ঠিক সমাধান কোনটা?",
+      "options": [
+        "দুই server-এর মধ্যে network আরও দ্রুত করা, যাতে session তাড়াতাড়ি পৌঁছায়",
+        "Session timeout ৩০ মিনিট থেকে ১২ ঘণ্টা করা, যাতে কম logout হয়",
+        "Session store Redis-এ সরানো (যেমন connect-redis), যাতে দুই server একই session দেখে",
+        "দ্বিতীয় server-এর memory বাড়ানো, যাতে সে নিজের ভেতরে আরও বেশি session ধরে রাখতে পারে"
+      ],
+      "correctIndex": 2,
+      "explanation": "সমস্যা হলো প্রতিটা server নিজের memory-তে session রাখছে, তাই অন্য server-এ গেলে session নেই। Shared Redis store দিলে দুজনেই একই session পড়ে, server stateless হয়।",
+      "whyWrong": {
+        "0": "Server-গুলো একে অপরকে session পাঠায়ই না, তাই network speed কোনো ভূমিকা রাখে না।",
+        "1": "Timeout বাড়ালেও অন্য server-এ session থাকবে না।",
+        "3": "Memory বাড়ালেও session তো ওই server-এর ভেতরেই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q22",
+      "difficulty": "medium",
+      "question": "Team sticky session চালু করে cart-এর অভিযোগ বন্ধ করেছে। এক মাস পরে কোন সমস্যাটা আসার সম্ভাবনা সবচেয়ে বেশি?",
+      "options": [
+        "প্রতিটা deploy-এর পরে কিছু user-এর cart ও login হারায়, আর নতুন server প্রায় ফাঁকা",
+        "Redis-এর memory ভরে যাচ্ছে, কারণ sticky session প্রতিটা session Redis-এ কপি করে রাখে",
+        "JWT-এর signing key বদলাতে হচ্ছে, কারণ sticky session token নষ্ট করে",
+        "Database-এ deadlock বাড়ছে, কারণ একই user একই server-এ যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Sticky session-এ state তখনো server-এর memory-তে। Deploy মানে restart, তাই ওই server-এর সব session যায়। আর পুরনো user-রা আগের server-এ আটকে থাকে, নতুন server কম ভার পায়।",
+      "whyWrong": {
+        "1": "Sticky session Redis ব্যবহার করে না; সেটা memory-তেই রাখে।",
+        "2": "Sticky session-এর সাথে JWT key-এর সম্পর্ক নেই।",
+        "3": "Routing-এর কারণে database deadlock বাড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q23",
+      "difficulty": "medium",
+      "question": "একটা mobile-heavy app-এ stickiness-এর জন্য NGINX-এর ip_hash ব্যবহার করা হচ্ছে। কোন সমস্যা বেশি দেখা যাবে?",
+      "options": [
+        "ip_hash request encrypt করে দেয়, তাই backend CPU বেশি খরচ করে",
+        "ip_hash শুধু IPv6 বোঝে, তাই বেশিরভাগ mobile user ব্যর্থ হয়",
+        "ip_hash প্রতিটা request-এ নতুন server বাছে, তাই একই user-এর জন্যও stickiness থাকে না",
+        "CGNAT-এর পেছনের হাজার user এক server-এ জমে, আর IP বদলালে stickiness ভাঙে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Mobile operator-রা CGNAT-এ অনেক গ্রাহককে একই public IP দেয়, তাই ip_hash তাদের সবাইকে এক server-এ পাঠায়। Wi-Fi থেকে 4G-তে গেলে IP বদলায়, তখন user অন্য server-এ গিয়ে session হারায়।",
+      "whyWrong": {
+        "0": "ip_hash কিছু encrypt করে না, শুধু server বাছে।",
+        "1": "NGINX ip_hash IPv4-এ কাজ করে (প্রথম তিন অংশ দিয়ে), IPv6-ও সামলায়।",
+        "2": "একই IP হলে ip_hash একই server বাছে, এটাই তার কাজ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q24",
+      "difficulty": "medium",
+      "question": "একই Redis instance-এ session আর product cache দুটোই রাখা, maxmemory-policy allkeys-lru। Sale-এর দিন memory ভরে গেল। কী ঘটতে পারে?",
+      "options": [
+        "Redis নতুন cache write-এ error দেবে, কিন্তু session সবসময় নিরাপদ থাকবে",
+        "Redis স্বয়ংক্রিয়ভাবে পুরনো key disk-এ swap করবে, তাই কিছুই মুছবে না, শুধু একটু ধীর হবে",
+        "Redis কম ব্যবহৃত key মুছে জায়গা করবে, session-ও মুছতে পারে, user নিঃশব্দে logout",
+        "Redis শুধু TTL-ওয়ালা key মুছবে, তাই TTL ছাড়া cache থেকে যাবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "allkeys-lru সব key থেকে কম ব্যবহৃতগুলো মোছে, cache আর session আলাদা করে না। ফলে নিষ্ক্রিয় কিন্তু বৈধ session মুছে যায়, কোনো error log ছাড়াই। তাই session আর cache আলাদা store-এ রাখা ভালো।",
+      "whyWrong": {
+        "0": "Error দেওয়া noeviction-এর আচরণ; allkeys-lru মুছে ফেলে।",
+        "1": "Redis memory-তে data রাখে; maxmemory পেরোলে policy অনুযায়ী মোছে বা error দেয়।",
+        "3": "শুধু TTL-ওয়ালা key মোছা volatile-* policy-র কাজ, allkeys-lru-র না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q25",
+      "difficulty": "medium",
+      "question": "আপনার app ২৪ ঘণ্টা মেয়াদের JWT দেয়, logout মানে শুধু browser থেকে token মুছে ফেলা। একজন user-এর token চুরি হয়েছে, admin তাকে ban করল। সমস্যা কী?",
+      "options": [
+        "Ban করার সাথে সাথে JWT-এর signature বদলে যায়, তাই চুরি করা token আর কাজ করে না",
+        "চুরি হওয়া token মেয়াদ শেষ পর্যন্ত বৈধ থাকে, server-এর কাছে বাতিলের তালিকা নেই",
+        "Browser token মুছে দিলে server-এর সব কপিও মুছে যায়",
+        "JWT প্রতি request-এ database থেকে user-এর অবস্থা পড়ে নেয়, তাই ban সাথে সাথে কাজ করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "JWT নিজের মেয়াদ নিজে বয়ে বেড়ায়, server শুধু signature আর exp দেখে। Server-এ কোনো তালিকা না থাকলে ban বা logout token-কে বাতিল করে না। এজন্য ছোট মেয়াদের access token আর revocable refresh token লাগে।",
+      "whyWrong": {
+        "0": "Signature token-এর data থেকে তৈরি; ban-এ পুরনো token-এর signature বদলায় না।",
+        "2": "Token-এর কপি কার কাছে আছে server জানে না; browser-এ মোছা শুধু ওই browser-এর।",
+        "3": "সাধারণ JWT verify-এ database lookup নেই, এটাই তার মূল বৈশিষ্ট্য।"
+      }
+    },
+    {
+      "id": "sd-day-014-q26",
+      "difficulty": "medium",
+      "question": "JWT revocation-এর সমস্যা কমাতে সবচেয়ে প্রচলিত নকশা কোনটা?",
+      "options": [
+        "Access token-এর মেয়াদ ৩০ দিন করা, যাতে user বারবার login না করে",
+        "Token-এ user-এর password রেখে দেওয়া, যাতে password বদলালেই পুরনো সব token অচল হয়ে যায়",
+        "প্রতি request-এ নতুন signing key দিয়ে token sign করা",
+        "ছোট মেয়াদের access token (যেমন ১৫ মিনিট) আর server-এ রাখা বাতিলযোগ্য refresh token"
+      ],
+      "correctIndex": 3,
+      "explanation": "Access token ছোট হলে চুরি বা ban-এর পরে সর্বোচ্চ ঝুঁকি কয়েক মিনিট। Refresh token server-এর store-এ থাকে, তাই logout বা ban-এ সেটা মুছে দিলে নতুন access token আর পাওয়া যায় না।",
+      "whyWrong": {
+        "0": "লম্বা মেয়াদ revocation-এর সমস্যা আরও বাড়ায়।",
+        "1": "Payload যে কেউ পড়তে পারে; password রাখা ভয়ংকর ভুল।",
+        "2": "প্রতি request-এ key বদলালে আগের সব token অচল, আর verify অসম্ভব।"
+      }
+    },
+    {
+      "id": "sd-day-014-q27",
+      "difficulty": "medium",
+      "question": "আপনি JWT-তে user-এর role (admin/user) রাখেন, মেয়াদ ১ ঘণ্টা। সকাল ১০টায় একজনকে admin থেকে সরানো হলো, তার token ৯:৫০-এ issue হয়েছিল। কতক্ষণ পর্যন্ত সে admin থাকতে পারে?",
+      "options": [
+        "সাথে সাথে admin থাকে না",
+        "সকাল ১০:১০ পর্যন্ত",
+        "সকাল ১০:৫০ পর্যন্ত",
+        "সকাল ১১টা পর্যন্ত"
+      ],
+      "correctIndex": 2,
+      "explanation": "Token ৯:৫০-এ issue, মেয়াদ ১ ঘণ্টা, তাই exp ১০:৫০। Server token-এর claim বিশ্বাস করে, তাই ১০:৫০ পর্যন্ত সে admin। এটাই stale claims সমস্যা; permission-এর মতো দ্রুত বদলানো তথ্য token-এ না রাখাই ভালো।",
+      "whyWrong": {
+        "0": "JWT verify-এ server database দেখে না, তাই বদল সাথে সাথে টের পায় না।",
+        "1": "১০টা থেকে বাকি সময় না, issue-এর সময় থেকে মেয়াদ গুনতে হয়।",
+        "3": "মেয়াদ গোনা হয় issue থেকে (৯:৫০), role বদলের সময় থেকে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q28",
+      "difficulty": "medium",
+      "question": "Signing key rotate করতে চান, কিন্তু সবাইকে একসাথে logout করাতে চান না। ঠিক ক্রম কোনটা?",
+      "options": [
+        "পুরনো key আগে মুছে নতুন key দিয়ে sign শুরু করা, তারপর সময় পেলে নতুন public key প্রকাশ করা",
+        "নতুন public key key-set-এ যোগ, তারপর নতুন key-তে sign, পুরনো token শেষে পুরনো key বাদ",
+        "নতুন আর পুরনো দুটো key দিয়ে প্রতিটা token দুবার sign করা, চিরকাল",
+        "সব user-কে email করে নতুন token নিতে বলা, তারপর key বদলানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "Token-এর kid দেখে verifier key বাছে। আগে নতুন key প্রকাশ করলে কেউ নতুন token verify করতে ব্যর্থ হয় না; পুরনো key রেখে দিলে পুরনো token-ও চলে। শেষ পুরনো token-এর মেয়াদ গেলে পুরনো key সরানো যায়।",
+      "whyWrong": {
+        "0": "পুরনো key আগে মুছলে সব চলমান token সাথে সাথে অচল, আর নতুন key প্রকাশের আগে নতুন token-ও verify হবে না।",
+        "2": "চিরকাল দুই key রাখলে rotation-এর উদ্দেশ্যই নষ্ট।",
+        "3": "Key rotation user-কে না জানিয়েই নির্বিঘ্নে করা যায়; email অপ্রয়োজনীয়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q29",
+      "difficulty": "medium",
+      "question": "একজন developer cart-এর সব item (৪০০ item, ছবির URL সহ) একটা signed cookie-তে রাখতে চায়, যাতে server stateless থাকে। প্রধান সমস্যা কী?",
+      "options": [
+        "Signed cookie শুধু HTTPS-এ কাজ করে না",
+        "Cookie-তে cart রাখলে load balancer বড় request আর পরের server-এ পাঠাতে পারে না",
+        "Signed cookie-র data server পড়তে পারে না, শুধু client পড়ে",
+        "Cookie-র প্রায় ৪KB সীমা পেরোতে পারে, আর প্রতি request-এ বড় header যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Browser সাধারণত একটা cookie-তে প্রায় ৪KB রাখে, আর cookie প্রতিটা request-এ যায়। বড় cart cookie-তে ঠুসলে সীমা পেরিয়ে নিঃশব্দে বাদ পড়তে পারে বা header-এর সীমায় 431/400 error আসে। বড় data database-এ, cookie-তে শুধু id।",
+      "whyWrong": {
+        "0": "Signed cookie HTTPS-এ ঠিকই কাজ করে, আর Secure flag দিয়ে HTTPS-ই চাওয়া হয়।",
+        "1": "LB cookie থাকুক বা না থাকুক request পাঠায়।",
+        "2": "Server-ই signature যাচাই করে data পড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q30",
+      "difficulty": "medium",
+      "question": "আপনার app user-এর video upload নেয়, file app server হয়ে S3-এ যায়। ২০০MB upload-এর সময় app server-এর memory আর bandwidth শেষ হয়ে যাচ্ছে। সবচেয়ে ভালো উন্নতি কোনটা?",
+      "options": [
+        "App server pre-signed URL দেবে, client সরাসরি object storage-এ upload করবে",
+        "Video আগে app server-এর local disk-এ রাখা, পরে রাতের batch job দিয়ে S3-এ পাঠানো",
+        "Upload sticky session দিয়ে একটা নির্দিষ্ট server-এ পাঠানো",
+        "Video-কে Redis-এ রেখে পরে S3-এ সরানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "Pre-signed URL একটা ছোট মেয়াদের অনুমতি; client সরাসরি storage-এ তোলে, app server শুধু অনুমতি দেয় আর শেষে key রাখে। ফলে app server হালকা আর stateless থাকে, upload চলাকালীন restart-ও সমস্যা না।",
+      "whyWrong": {
+        "1": "Local disk-এ রাখা মানে আবার stateful; রাতের আগে server মরলে file হারায়।",
+        "2": "Stickiness bandwidth বা memory-র চাপ কমায় না।",
+        "3": "২০০MB video Redis-এর memory-র জন্য উপযুক্ত না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q31",
+      "difficulty": "medium",
+      "question": "তিনটা server-এ দামের local cache, TTL ১০ মিনিট। Admin দাম বদলাল, request গেল Server 1-এ, সে নিজের cache মুছল। Customer-রা কী দেখবে?",
+      "options": [
+        "সবাই সাথে সাথে নতুন দাম দেখবে, কারণ database বদলেছে",
+        "সবাই পুরনো দাম দেখবে ১০ মিনিট, কারণ Server 1-ও আবার নিজের cache থেকেই পড়বে",
+        "কেউ কেউ ১০ মিনিট পর্যন্ত পুরনো দাম দেখবে, request Server 2 বা 3-এ গেলে",
+        "দাম ভুল দেখানোর বদলে সব request error দেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Server 1-এর cache খালি, সে database থেকে নতুন দাম পড়বে। কিন্তু Server 2 আর 3-এর cache-এ পুরনো দাম TTL শেষ না হওয়া পর্যন্ত থাকবে। এটাই cache coherence সমস্যা।",
+      "whyWrong": {
+        "0": "অন্য server-এর cache database-এর বদল টের পায় না।",
+        "1": "Server 1 নিজের cache মুছেছে, তাই সে নতুন দাম দেখাবে।",
+        "3": "Stale cache error দেয় না, নিঃশব্দে পুরনো data দেয়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q32",
+      "difficulty": "medium",
+      "question": "আগের প্রশ্নের cache coherence সমস্যা কমাতে কোন উপায়টা সবচেয়ে দ্রুত সব server-কে নতুন দাম দেখায়, তবু TTL রাখা উচিত?",
+      "options": [
+        "Invalidation broadcast: দাম বদলালে pub/sub-এ সব server-কে key মুছতে বলা",
+        "TTL বাড়িয়ে ১ ঘণ্টা করা, যাতে cache কম বদলায়",
+        "Sticky session চালু করা, যাতে একই customer সবসময় একই server-এর cache দেখে",
+        "Database-এর replica বাড়ানো, যাতে read দ্রুত হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Broadcast-এ সব server প্রায় সাথে সাথে key মুছে নতুন দাম পড়ে। কিন্তু কোনো server message miss করলে পুরনো দাম ধরে রাখবে, তাই নিরাপত্তার জন্য TTL-ও রাখা হয়।",
+      "whyWrong": {
+        "1": "TTL বাড়ালে পুরনো দাম আরও বেশিক্ষণ দেখা যাবে।",
+        "2": "Stickiness থাকলেও ওই server-এর cache পুরনো হতে পারে; আর আলাদা customer আলাদা দাম দেখবে।",
+        "3": "Replica cache-এর পুরনো data ঠিক করে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q33",
+      "difficulty": "medium",
+      "question": "Session Redis-এ, idle timeout ৩০ মিনিট (প্রতি request-এ EXPIRE দিয়ে নতুন করে)। এর সাথে absolute timeout (যেমন ১২ ঘণ্টা) কেন রাখা ভালো?",
+      "options": [
+        "Idle timeout Redis-এ নির্ভরযোগ্যভাবে কাজ করে না, তাই তার বদলে absolute timeout লাগে",
+        "চুরি হওয়া session-এ চোর নিয়মিত request পাঠালে idle timeout কখনো শেষ হবে না",
+        "Absolute timeout দিলে Redis-এর memory অর্ধেক লাগে",
+        "Absolute timeout ছাড়া session id যথেষ্ট random হয় না, তাই চুরি সহজ হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Sliding timeout প্রতি request-এ বাড়ে, তাই সক্রিয় চোর session চিরকাল চালাতে পারে। Absolute timeout একটা সর্বোচ্চ সীমা দেয়, তারপর আবার login লাগবেই।",
+      "whyWrong": {
+        "0": "EXPIRE দিয়ে idle timeout Redis-এ ভালোভাবেই কাজ করে।",
+        "2": "Absolute timeout মূলত নিরাপত্তার জন্য; memory অর্ধেক হওয়ার কোনো নিয়ম নেই।",
+        "3": "Session id-র randomness তৈরির সময় ঠিক হয়, timeout দিয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q34",
+      "difficulty": "medium",
+      "question": "Session id হিসেবে database-এর auto-increment নম্বর (sess:1001, sess:1002) ব্যবহার করলে কী ঝুঁকি?",
+      "options": [
+        "কেউ পরের নম্বর আন্দাজ করে অন্যের session চুরি করতে পারে",
+        "Redis ক্রমিক key সংরক্ষণ করতে পারে না",
+        "ক্রমিক id-তে TTL বসানো যায় না",
+        "Load balancer ক্রমিক id দেখে সব request এক server-এ পাঠায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Session id-ই পরিচয়ের চাবি। আন্দাজযোগ্য হলে কেউ sess:1002 পাঠিয়ে অন্য user হয়ে যেতে পারে। তাই cryptographically secure random, অন্তত ১২৮ bit।",
+      "whyWrong": {
+        "1": "Redis যেকোনো string key রাখতে পারে।",
+        "2": "TTL যেকোনো key-তে দেওয়া যায়।",
+        "3": "LB session id-র গঠন দেখে routing করে না (stickiness ছাড়া)।"
+      }
+    },
+    {
+      "id": "sd-day-014-q35",
+      "difficulty": "medium",
+      "question": "Redis session store-এ একসাথে প্রায় ৩ লাখ active session, প্রতিটা গড়ে ২ KB। শুধু data-র জন্য মোটামুটি কত memory লাগবে (Redis overhead বাদে)?",
+      "options": [
+        "প্রায় ৬০ MB",
+        "প্রায় ৬০০ MB",
+        "প্রায় ৬ GB",
+        "প্রায় ১৫০ MB"
+      ],
+      "correctIndex": 1,
+      "explanation": "৩,০০,০০০ × ২ KB = ৬,০০,০০০ KB, মানে প্রায় ৬০০ MB। এর উপর Redis-এর নিজের overhead যোগ হবে, তাই একটু বেশি ধরে sizing করতে হয়।",
+      "whyWrong": {
+        "0": "দশ গুণ কম ধরা হয়েছে; ৩ লাখ × ২ KB = ৬ লাখ KB।",
+        "2": "দশ গুণ বেশি ধরা হয়েছে।",
+        "3": "২ KB-র জায়গায় ০.৫ KB ধরলে এই সংখ্যা আসে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q36",
+      "difficulty": "medium",
+      "question": "Kubernetes-এ একটা stateless API আর একটা PostgreSQL চালাবেন। কোনটা কোন resource দিয়ে চালানো স্বাভাবিক?",
+      "options": [
+        "দুটোই Deployment দিয়ে, কারণ সব pod একই রকম",
+        "API StatefulSet দিয়ে আর database Deployment দিয়ে, কারণ API-তে বেশি traffic আসে",
+        "দুটোই StatefulSet দিয়ে, কারণ API-ও database-এ লেখে",
+        "API Deployment দিয়ে, database StatefulSet দিয়ে (স্থির নাম আর নিজস্ব disk)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stateless API-র pod-গুলো বদলযোগ্য, তাই Deployment। Database-এর প্রতিটা pod-এর স্থির পরিচয় (db-0) আর নিজের persistent disk লাগে, ক্রম মেনে চালু-বন্ধ, তাই StatefulSet।",
+      "whyWrong": {
+        "0": "Database pod বদলযোগ্য না; data আর পরিচয় স্থির রাখতে হয়।",
+        "1": "উল্টো বলা হয়েছে।",
+        "2": "Database-এ লেখা API-কে stateful বানায় না; তার নিজের ভেতরে কিছু থাকে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q37",
+      "difficulty": "medium",
+      "question": "Chat app-এ রহিম Server 1-এ WebSocket-এ যুক্ত, সালমা Server 3-এ। রহিমের message সালমার কাছে কিভাবে পৌঁছানো সাধারণ নকশা?",
+      "options": [
+        "Load balancer message-টা পড়ে সালমার server-এ পাঠিয়ে দেয়",
+        "রহিমের connection Server 3-এ সরিয়ে নেওয়া হয়",
+        "Server 1 message pub/sub channel-এ দেয়; registry দেখে Server 3 সালমাকে পাঠায়",
+        "সালমার browser প্রতি সেকেন্ডে সব server-কে জিজ্ঞেস করে, তার জন্য নতুন message আছে কিনা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Connection server-এ বাঁধা, তাই server-গুলোর মধ্যে একটা পথ লাগে: কে কোন server-এ (registry, Redis-এ) আর message পৌঁছানোর জন্য pub/sub বা broker। Business data database-এ, যাতে reconnect-এ কিছু হারায় না।",
+      "whyWrong": {
+        "0": "LB message-এর বিষয়বস্তু দেখে user খুঁজে routing করে না।",
+        "1": "খোলা TCP/WebSocket connection অন্য server-এ সরানো যায় না।",
+        "3": "সব server-কে polling অপচয় আর ধীর; WebSocket-এর উদ্দেশ্যই এটা এড়ানো।"
+      }
+    },
+    {
+      "id": "sd-day-014-q38",
+      "difficulty": "medium",
+      "question": "আপনার Docker image-এ CMD হলো 'sh start.sh', আর script-এর ভেতরে 'python app.py' (exec ছাড়া)। প্রতিটা docker stop ১০ সেকেন্ড নিচ্ছে। কারণ কী?",
+      "options": [
+        "Python ধীরে চালু হয়, তাই বন্ধ হতেও ১০ সেকেন্ড লাগে",
+        "SIGTERM যায় sh-এ, app পর্যন্ত পৌঁছায় না; ১০ সেকেন্ড পরে Docker SIGKILL দেয়",
+        "Docker সবসময় বন্ধ করার আগে ১০ সেকেন্ড অপেক্ষা করে, app যা-ই করুক",
+        "app.py বন্ধ হওয়ার আগে নিজের সব session Redis-এ লিখে রাখছে, তাই এতটা সময় লাগছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Container-এর মূল process (PID 1) এখানে sh, সংকেত সেখানেই যায়, আর sh সেটা child-কে পাঠায় না। App কিছুই টের পায় না, grace period শেষে SIGKILL। exec দিয়ে বা exec-form CMD-তে app চালালে app নিজে SIGTERM পায়।",
+      "whyWrong": {
+        "0": "চালু হওয়ার গতির সাথে বন্ধ হওয়ার অপেক্ষার সম্পর্ক নেই।",
+        "2": "App SIGTERM পেয়ে বের হলে docker stop সাথে সাথে শেষ হয় (lab-এ ১ সেকেন্ডের কম)।",
+        "3": "Stateless app বন্ধের আগে session লেখে না; session আগে থেকেই Redis-এ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q39",
+      "difficulty": "medium",
+      "question": "Order-এর ১০ মিনিট পরে reminder SMS পাঠাতে app process-এর ভেতরে একটা timer চালানো হয়। Stateless design-এর দিক থেকে সমস্যা কী?",
+      "options": [
+        "Timer CPU বেশি খরচ করে, তাই server ধীর হয়",
+        "Timer SMS duplicate করে, কারণ load balancer-এর পেছনের সব server একই timer চালায়",
+        "Timer-এর কারণে load balancer health check fail করে",
+        "Deploy বা crash-এ process বন্ধ হলে timer-সহ কাজটা হারায়; queue-তে রাখা উচিত"
+      ],
+      "correctIndex": 3,
+      "explanation": "Process-এর ভেতরে অপেক্ষমাণ timer এক ধরনের লুকানো state। Process মরলে কাজ হারায়, কেউ জানেও না। Queue-তে delayed message বা scheduler-এ রাখলে process মরলেও কাজ থাকে।",
+      "whyWrong": {
+        "0": "একটা timer-এর CPU খরচ নগণ্য; সমস্যা হারিয়ে যাওয়া।",
+        "1": "Timer শুধু সেই process-এ, যেখানে order এসেছিল; duplicate মূল সমস্যা না।",
+        "2": "Timer health check-কে প্রভাবিত করে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q40",
+      "difficulty": "medium",
+      "question": "Stateful server থেকে stateless-এ সরানোর পরে team লক্ষ করল প্রতিটা request-এ ~০.৫ms বেশি সময় লাগছে। এটা কিভাবে দেখবেন?",
+      "options": [
+        "প্রত্যাশিত: প্রতি request-এ Redis-এর একটা network call; বিনিময়ে নির্ভয়ে scale",
+        "এটা bug, stateless server memory-র মতোই দ্রুত হওয়ার কথা",
+        "Load balancer-এর algorithm ভুল, least connections দিলে এই সময় শূন্য হবে",
+        "Redis-কে প্রতিটা app server-এর ভেতরে চালালে server stateless-ও থাকবে, আর সময়ও শূন্য হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "State বাইরে নেওয়ার দাম একটা network hop। একই data center-এ সাধারণত এক millisecond-এর কম, বেশিরভাগ app-এর জন্য নগণ্য, কিন্তু শূন্য না। বিনিময়ে crash, deploy আর autoscaling নির্ভয়।",
+      "whyWrong": {
+        "1": "Memory read আর network call এক না; এই বাড়তি সময় স্বাভাবিক।",
+        "2": "Algorithm বদলে Redis call-এর সময় যায় না।",
+        "3": "প্রতিটা server-এ নিজের Redis মানে আবার আলাদা আলাদা state, অর্থাৎ stateful।"
+      }
+    },
+    {
+      "id": "sd-day-014-q41",
+      "difficulty": "hard",
+      "question": "Redis primary-replica (async replication)-এ session রাখা। Primary হঠাৎ মরল, replica promote হলো। কী আশা করবেন?",
+      "options": [
+        "কোনো data হারাবে না, কারণ replica প্রতিটা write client-কে নিশ্চিত করার আগেই পেয়ে যায়",
+        "সব session হারাবে, কারণ replica শুধু read-এর জন্য, promote করা যায় না",
+        "Replica-তে পৌঁছানোর আগেই হারানো শেষ কয়েকটা write যাবে; কিছু user-কে আবার login",
+        "Replica নিজে থেকে primary-র disk থেকে বাকি write পড়ে নেবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Async replication-এ primary write নিয়ে সাথে সাথে client-কে 'ঠিক আছে' বলে, replica পরে পায়। Failover-এর মুহূর্তে না পৌঁছানো write হারায়। Session-এ এটা মেনে নেওয়া যায়, টাকা বা order-এ না।",
+      "whyWrong": {
+        "0": "এটা synchronous replication-এর বর্ণনা; Redis-এর default async।",
+        "1": "Sentinel/Cluster replica-কে primary বানাতেই রাখে।",
+        "3": "মরা primary-র disk replica পড়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q42",
+      "difficulty": "hard",
+      "question": "Kubernetes-এ graceful shutdown সত্ত্বেও প্রতিটা deploy-এর সময় কয়েকটা request 'connection refused' পাচ্ছে। App SIGTERM পেয়ে সাথে সাথে নতুন connection বন্ধ করে দেয়। সম্ভাব্য কারণ ও সমাধান কী?",
+      "options": [
+        "Grace period খুব বড়; ৩০ সেকেন্ড থেকে ১ সেকেন্ড করলে সমস্যা মিটবে",
+        "SIGTERM আর endpoint থেকে pod সরানো একসাথে ঘটে; preStop-এ কয়েক সেকেন্ড অপেক্ষা",
+        "App-এর SIGTERM handler মুছে দেওয়া উচিত, তাহলে Kubernetes নিজে request সরিয়ে নেবে",
+        "Readiness probe পুরো বন্ধ করে দেওয়া, তাহলে LB pod-কে আর বাদ দেবে না, তাই error কমবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Kubernetes-এ pod বন্ধের সময় SIGTERM পাঠানো আর endpoint তালিকা থেকে সরানো আলাদা পথে, প্রায় একসাথে হয়। তালিকা আপডেট হওয়ার আগেই app connection বন্ধ করলে সেই ফাঁকে আসা request fail করে। preStop-এ ছোট sleep দিয়ে তখনো request নিতে থাকলে সমস্যা মেটে।",
+      "whyWrong": {
+        "0": "Grace period ছোট করলে চলমান request আরও বেশি কাটবে।",
+        "2": "Handler না থাকলে app আরও আচমকা মরে, সমস্যা বাড়ে।",
+        "3": "Readiness বন্ধ করলে অসুস্থ pod-ও traffic পায়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q43",
+      "difficulty": "hard",
+      "question": "একটা bank-এর app JWT ব্যবহার করে, কিন্তু নিয়ম হলো 'password বদলালে সব device-এ সাথে সাথে logout'। কোন নকশা নিয়মটা মানে, সবচেয়ে কম খরচে?",
+      "options": [
+        "JWT-এর মেয়াদ ৩০ দিন রাখা আর password বদলালে সব device-কে নতুন token পাঠিয়ে দেওয়া",
+        "সব JWT payload-এ password hash রাখা, যাতে password বদলালে token মেলে না",
+        "User-এর token_version server-এ রাখা, token-এও থাকবে; প্রতি request-এ না মিললে বাতিল",
+        "Signing key বদলে দেওয়া, প্রতিবার কোনো user password বদলালে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Token-এ version নম্বর রেখে server-এ সেটার বর্তমান মান রাখলে, password বদলালে version বাড়ান, সব পুরনো token সাথে সাথে অচল। এটা প্রতি request-এ একটা ছোট lookup, অর্থাৎ কিছু state ফিরে আসে; তাৎক্ষণিক revocation আর পুরো stateless একসাথে পাওয়া যায় না।",
+      "whyWrong": {
+        "0": "নতুন token দিলেও পুরনো token-গুলো মেয়াদ পর্যন্ত বৈধ থাকে।",
+        "1": "Payload যে কেউ পড়তে পারে; password hash ফাঁস করা গুরুতর ভুল।",
+        "3": "একজনের জন্য key বদলালে সব user-এর token অচল, পুরো system logout।"
+      }
+    },
+    {
+      "id": "sd-day-014-q44",
+      "difficulty": "hard",
+      "question": "একটা API JWT verify করার সময় header-এর alg field যা বলে সেটাই মেনে নেয়। একজন attacker কী করতে পারে?",
+      "options": [
+        "কিছুই না, কারণ alg field শুধু তথ্যের জন্য, verify-এ ব্যবহার হয় না",
+        "Token-এর মেয়াদ বাড়াতে পারে, কিন্তু payload-এর role বা অন্য কোনো claim বদলাতে পারে না",
+        "শুধু token-টা decode করে পড়তে পারে, আর কিছু না",
+        "alg: none দিয়ে signature ছাড়া token, বা algorithm গুলিয়ে জাল token চালাতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "alg অন্ধভাবে মানলে attacker নিজেই ঠিক করে কিভাবে verify হবে। 'none' দিলে signature check বাদ, আর RS256/HS256 গুলিয়ে public key-কে HMAC secret বানিয়ে জাল token বানানো সম্ভব। তাই server-এ অনুমোদিত algorithm নির্দিষ্ট করে দিতে হয়।",
+      "whyWrong": {
+        "0": "অনেক library alg দেখে verify পদ্ধতি বাছে; তাই এটা ঝুঁকি।",
+        "1": "Signature ছাড়া গ্রহণ হলে payload-এর যেকোনো claim, role-সহ, বদলানো যায়।",
+        "2": "Payload পড়া এমনিতেই সম্ভব; আসল বিপদ জাল token গ্রহণ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q45",
+      "difficulty": "hard",
+      "question": "Signing key ফাঁস হয়েছে বলে সন্দেহ। নিয়মিত rotation-এর থেকে আপনার পদক্ষেপ কিভাবে আলাদা হবে?",
+      "options": [
+        "পুরনো key সাথে সাথে key-set থেকে বাদ; সব পুরনো token অচল, সবাইকে আবার login করতে হবে",
+        "নিয়মিত rotation-এর মতোই, পুরনো key token-গুলোর মেয়াদ শেষ হওয়া পর্যন্ত key-set-এ রেখে দেওয়া",
+        "শুধু নতুন key যোগ করা, পুরনো key রেখে দেওয়া যাতে কারও অসুবিধা না হয়",
+        "Token-এর মেয়াদ বাড়ানো, যাতে attacker-এর বানানো token দ্রুত শেষ না হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "ফাঁস হওয়া key যতক্ষণ বৈধ, attacker ততক্ষণ যেকোনো জাল token বানাতে পারে। তাই overlap-এর সুযোগ নেই: পুরনো key তখনই বাদ, দাম হিসেবে সবাই logout। নিয়মিত rotation-এ overlap রাখা যায় কারণ key নিরাপদ।",
+      "whyWrong": {
+        "1": "Overlap রাখলে attacker জাল token দিয়ে সেই পুরো সময় কাজ চালাবে।",
+        "2": "পুরনো key রাখা মানে জাল token গ্রহণ চালু রাখা।",
+        "3": "মেয়াদ বাড়ানো ঝুঁকিই বাড়ায়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q46",
+      "difficulty": "hard",
+      "question": "একটা app autoscaling-এ server ২ থেকে ১০টা করে। Sticky session চালু, session memory-তে। Traffic spike-এর সময় নতুন ৮টা server যোগ হলো। কেন p99 latency তেমন কমল না?",
+      "options": [
+        "নতুন server-গুলো ধীর, কারণ autoscaling সবসময় ছোট machine দেয়",
+        "চলমান user-রা পুরনো ২টা server-এ আটকে থাকে; শুধু নতুন user নতুন server-এ যায়",
+        "Load balancer নতুন server-কে health check পাস করার আগেই বাদ দেয়",
+        "Session memory-তে থাকায় নতুন server-গুলো পুরনো server থেকে session কপি করতে ব্যস্ত থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Stickiness চলমান user-দের তাদের প্রথম server-এ বেঁধে রাখে। Spike-এর সময় সক্রিয় user-রাই চাপ দিচ্ছে, তারা সরে না। তাই নতুন server ফাঁকা থাকে, পুরনো দুটো গরম। Stateless হলে LB সাথে সাথে ভার ভাগ করত।",
+      "whyWrong": {
+        "0": "Machine-এর আকার autoscaling নিয়মে ঠিক হয়; মূল সমস্যা ভার না সরা।",
+        "2": "Health check পাস করলে LB নতুন server-কে traffic দেয়; সমস্যা হলো পুরনো user আটকে থাকা।",
+        "3": "Server-গুলো একে অপরের থেকে session কপি করে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q47",
+      "difficulty": "hard",
+      "question": "একটা পুরনো monolith-এ session memory-তে, কাল থেকে ৩টা server লাগবে, কিন্তু code বদলাতে দুই সপ্তাহ। সবচেয়ে যুক্তিসংগত পরিকল্পনা কোনটা?",
+      "options": [
+        "Session code বদলানো শেষ না হওয়া পর্যন্ত scaling পিছিয়ে দেওয়া",
+        "সাথে সাথে পুরো session JWT-তে ভরে দেওয়া, test ছাড়াই, যাতে কালকের আগেই server stateless হয়",
+        "চিরকাল sticky session রাখা, কারণ এখন কাজ করছে",
+        "এখন cookie-ভিত্তিক sticky session দিয়ে scale, সাথে Redis-এ সরানো, পরে stickiness বন্ধ"
+      ],
+      "correctIndex": 3,
+      "explanation": "Sticky session এখানে সত্যিকারের stopgap: আজ cart বাঁচায়, যদিও deploy আর crash-এ ঝুঁকি থাকে। সমান্তরালে Redis-এ সরানোর কাজ শেষ হলে stickiness বন্ধ করে LB-কে স্বাধীন করা হয়। IP hash-এর চেয়ে cookie ভালো, CGNAT hot spot এড়াতে।",
+      "whyWrong": {
+        "0": "ব্যবসার চাহিদা উপেক্ষা করা; stopgap দিয়ে ঝুঁকি কমিয়ে এগোনো যায়।",
+        "1": "তাড়াহুড়োয় পুরো session token-এ নিলে size, revocation আর নিরাপত্তার ঝুঁকি।",
+        "2": "স্থায়ী sticky session deploy, crash আর scaling-এ বারবার সমস্যা দেবে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q48",
+      "difficulty": "hard",
+      "question": "Rate limit: প্রতি user মিনিটে ৬০ request, counter প্রতিটা server-এর memory-তে, LB-তে cookie-ভিত্তিক sticky session। ৪টা server। এক user-এর বাস্তব সর্বোচ্চ কত, আর কোন অবস্থায় সেটা ভাঙে?",
+      "options": [
+        "সবসময় ২৪০, কারণ চারটা server নিজের নিজের counter আলাদাভাবে গোনে, stickiness থাকুক বা না থাকুক",
+        "সবসময় ঠিক ৬০, কারণ sticky session counter-কে shared বানায়",
+        "সাধারণত ৬০; কিন্তু cookie ছাড়া পাঠালে বা server বদলালে প্রতিটায় নতুন ৬০, মোট ২৪০",
+        "১৫, কারণ ৬০ চার server-এ ভাগ হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Stickiness থাকায় সাধারণত সব request এক server-এ, তাই ৬০। কিন্তু attacker cookie না পাঠালে প্রতিটা request নতুন server-এ যেতে পারে, বা server বদলালে counter শূন্য থেকে শুরু। তাই সঠিকতার জন্য counter shared store-এ লাগে, stickiness-এর উপর ভরসা না।",
+      "whyWrong": {
+        "0": "Sticky session থাকায় সাধারণ ক্ষেত্রে user এক server-এ থাকে, তাই সবসময় ২৪০ না।",
+        "1": "Stickiness counter shared করে না, শুধু routing বাঁধে; বাঁধন ভাঙলে counter আলাদা।",
+        "3": "কোনো server নিজের limit ভাগ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q49",
+      "difficulty": "hard",
+      "question": "একটা e-commerce site-এ 'guest cart' (login ছাড়া) আর 'logged-in cart' দুটোই আছে। নিচের কোন storage সিদ্ধান্ত সবচেয়ে যুক্তিসংগত?",
+      "options": [
+        "দুটোই app server-এর memory-তে, কারণ cart অস্থায়ী",
+        "Guest cart Redis-এ TTL সহ; logged-in cart database-এ, login-এ দুটো মিশিয়ে",
+        "দুটো cart-ই JWT-এর payload-এ রাখা, যাতে server-কে কোথাও কিছু মনে রাখতে না হয়, কোনো store নয়",
+        "দুটোই object storage-এ, প্রতিটা item একটা আলাদা file"
+      ],
+      "correctIndex": 1,
+      "explanation": "Guest cart অস্থায়ী, তাই TTL-ওয়ালা Redis (বা খুব ছোট হলে signed cookie) ঠিক। Logged-in cart device বদলালেও থাকা উচিত, তাই টেকসই database-এ। Login-এর সময় দুটো মেশানো সাধারণ নকশা।",
+      "whyWrong": {
+        "0": "Memory-তে রাখলে server stateful, LB-র পেছনে cart হারায়।",
+        "2": "Cart বড় হয় আর বদলায়; token-এ রাখলে size আর stale data সমস্যা।",
+        "3": "Object storage বড় file-এর জন্য, ঘনঘন বদলানো ছোট data-র জন্য না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q50",
+      "difficulty": "hard",
+      "question": "Redis session store down। আপনার app কী করবে, সেই সিদ্ধান্ত কোনটা সাধারণত নিরাপদ?",
+      "options": [
+        "Fail closed: session পড়া না গেলে user-কে logged-out ধরা, আর Redis call-এ ছোট timeout",
+        "Fail open: session পড়া না গেলে request-এ আসা user id বিশ্বাস করে চালিয়ে যাওয়া",
+        "Redis ফেরা পর্যন্ত প্রতিটা request ৩০ সেকেন্ড ধরে retry করা",
+        "Redis-এর বদলে সাথে সাথে প্রতিটা server-এর memory-তে নতুন session তৈরি করা, চিরকালের জন্য"
+      ],
+      "correctIndex": 0,
+      "explanation": "Session যাচাই করা না গেলে পরিচয় ধরে নেওয়া মানে অন্যের account খুলে দেওয়ার ঝুঁকি, তাই fail closed। ছোট timeout না দিলে ধীর Redis সব request আটকে রাখবে। সমাধানের মূল অংশ অবশ্য Redis-কে replica আর failover দিয়ে HA রাখা।",
+      "whyWrong": {
+        "1": "Client-এর পাঠানো user id বিশ্বাস করা মানে যে কেউ যে কেউ হয়ে যেতে পারে।",
+        "2": "লম্বা retry-তে thread আর connection শেষ হয়ে পুরো site ধসে।",
+        "3": "আবার stateful হয়ে যাওয়া; Redis ফিরলে দুই জায়গায় দুই রকম session।"
+      }
+    },
+    {
+      "id": "sd-day-014-q51",
+      "difficulty": "hard",
+      "question": "WebSocket chat server-এর নতুন version deploy করবেন, প্রতিটা server-এ ২০,০০০ connection। কোন পদ্ধতি সবচেয়ে কম ক্ষতি করে?",
+      "options": [
+        "সব server একসাথে বন্ধ করে নতুনগুলো চালু করা, যাতে deploy দ্রুত শেষ হয়",
+        "প্রতিটা connection-এর স্বাভাবিকভাবে বন্ধ হওয়ার অপেক্ষা করা, তারপর server বন্ধ করে নতুনটা চালু করা",
+        "Connection-গুলো খোলা রেখে process-এর code চলমান অবস্থায় বদলে দেওয়া",
+        "এক এক করে server drain: নতুন connection বন্ধ, client-দের random দেরিতে reconnect করানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "WebSocket connection ঘণ্টার পর ঘণ্টা খোলা থাকে, তাই স্বাভাবিক বন্ধের অপেক্ষা অর্থহীন। ধাপে ধাপে, jitter দিয়ে reconnect করালে অন্য server-গুলো একসাথে বিশাল ভিড় পায় না। Message history database-এ থাকায় reconnect-এ কিছু হারায় না।",
+      "whyWrong": {
+        "0": "সবাইকে একসাথে কাটলে একসাথে reconnect storm আর পুরো downtime।",
+        "1": "লম্বা connection কখন বন্ধ হবে ঠিক নেই; deploy অনির্দিষ্টকাল আটকে থাকবে।",
+        "2": "চলমান process-এর code বদলে connection রাখা সাধারণ deploy পদ্ধতি না, আর ঝুঁকিপূর্ণ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q52",
+      "difficulty": "hard",
+      "question": "Microservice A login করায় আর JWT দেয়, B আর C সেটা verify করে। Team signing-এ HS256 (shared secret) ব্যবহার করছে। এই অবস্থায় প্রধান ঝুঁকি কী, আর ভালো বিকল্প কী?",
+      "options": [
+        "HS256 ধীর; RS256-এ গেলে token ছোট হবে",
+        "HS256 token-এর payload encrypt করে ফেলে, তাই B আর C token-এর ভেতরের claim পড়তেই পারে না",
+        "যে verify করতে পারে সে sign-ও পারে; RS256/ES256-এ private key শুধু A-র কাছে থাকুক",
+        "HS256-এ kid দেওয়া যায় না, তাই key rotation অসম্ভব"
+      ],
+      "correctIndex": 2,
+      "explanation": "Symmetric secret-এ verify আর sign একই key। B বা C-এর secret ফাঁস হলে যে কেউ জাল token বানাতে পারবে। Asymmetric algorithm-এ শুধু issuer-এর কাছে private key, verifier-রা public key (JWKS) দিয়ে শুধু যাচাই করে।",
+      "whyWrong": {
+        "0": "HS256 সাধারণত দ্রুত; আর RS256 signature সাধারণত বড়, ছোট না।",
+        "1": "HS256 শুধু sign করে, encrypt করে না; payload যে কেউ পড়তে পারে।",
+        "3": "HS256-এও header-এ kid দেওয়া আর rotation করা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q53",
+      "difficulty": "hard",
+      "question": "একটা image-processing service upload নেয়, /tmp-এ রেখে resize করে, ফল S3-এ রাখে, তারপর /tmp-এর file মুছে দেয়। এটা কি stateless-এর নিয়ম ভাঙে?",
+      "options": [
+        "হ্যাঁ, কারণ যেকোনো local disk ব্যবহার মানেই stateful",
+        "না, কারণ /tmp-এর file শুধু request-এর ভেতরে দরকার; request শেষে কিছু টিকে থাকে না",
+        "হ্যাঁ, কারণ S3-এ লেখা মানে service stateful হয়ে গেল",
+        "না, কারণ /tmp-এ রাখা file container restart বা নতুন container-এও নিরাপদে থেকে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Stateless-এর নিয়ম request-এর পরে কিছু server-এ থেকে যাওয়া নিয়ে। Request-এর ভেতরে temporary file ঠিক আছে; ফল টেকসই store-এ (S3) গেছে। Server মরলে শুধু চলমান কাজটা retry করতে হবে।",
+      "whyWrong": {
+        "0": "12-factor-ও বলে memory বা disk একটা request-এর ভেতরের কাজে ব্যবহার করা যায়।",
+        "2": "বাইরের store-এ লেখাই stateless design-এর উপায়।",
+        "3": "উপসংহার ঠিক হলেও কারণ ভুল; /tmp-এর file container নতুন হলে থাকে না, আর থাকার দরকারও নেই।"
+      }
+    },
+    {
+      "id": "sd-day-014-q54",
+      "difficulty": "hard",
+      "question": "একটা team বলছে: 'session replication চালু করব, প্রতিটা server নিজের session অন্য সব server-এ কপি করবে, তাহলে Redis লাগবে না।' ২০টা server-এ এর সমস্যা কী?",
+      "options": [
+        "সব change সব server-এ পাঠাতে network আর memory খরচ server সংখ্যার সাথে বাড়ে, কপিও অমিল হয়",
+        "Session replication শুধু ২টা server-এ কাজ করে, এর বেশি হলে protocol নিজে বন্ধ হয়ে যায়",
+        "Replication চালু হলে load balancer আর কোনো algorithm বদলাতে পারে না",
+        "কোনো সমস্যা নেই; প্রতিটা server-এ সব session থাকলে এটা Redis-এর চেয়ে সবসময়ই দ্রুত আর নির্ভরযোগ্য"
+      ],
+      "correctIndex": 0,
+      "explanation": "সব জায়গায় সব কপি মানে প্রতিটা server-এ সব session (memory ২০ গুণ), আর প্রতিটা বদলে ১৯টা server-এ বার্তা। Network partition বা দেরিতে কপিগুলো আলাদা হয়। ছোট cluster-এ চলে, বড় হলে একটা shared store সহজ আর নির্ভরযোগ্য।",
+      "whyWrong": {
+        "1": "এমন কোনো স্থির সীমা নেই; সমস্যা হলো খরচ আর জটিলতা বাড়া।",
+        "2": "Replication LB-র algorithm-কে আটকায় না।",
+        "3": "বড় cluster-এ খরচ আর অসংগতির কারণে সাধারণত shared store ভালো।"
+      }
+    },
+    {
+      "id": "sd-day-014-q55",
+      "difficulty": "hard",
+      "question": "Lab-এ session Redis-এ সরানোর পরে Redis container docker kill করা হলো, আবার চালু করার পরে cart খালি। এর থেকে সবচেয়ে ঠিক শিক্ষা কোনটা?",
+      "options": [
+        "Redis session রাখার জন্য অনুপযুক্ত, তাই memory-তে ফিরে যাওয়া উচিত",
+        "Stateless server ধারণাটাই ভুল, কারণ app server বদলানোর পরেও শেষ পর্যন্ত state হারিয়েই গেল",
+        "Docker-এ Redis চালানো যায় না, শুধু managed Redis কাজ করে",
+        "State উধাও হয়নি, store-এ জমেছে; সেই store-কে replica আর persistence দিয়ে চালাতে হবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "App server stateless হলে state কয়েকটা store-এ জমা হয়, আর ঝুঁকিও সেখানে সরে। Replica বা persistence (snapshot/AOF) ছাড়া হঠাৎ মৃত্যু data মুছে দেয়। Session-এ এটা কিছুটা মানা যায়, order-এ না, তাই সেগুলো database-এ।",
+      "whyWrong": {
+        "0": "Memory-তে ফেরা মানে প্রতিটা app crash-এ session হারানো, সমস্যা আরও বড়।",
+        "1": "App server crash-এ cart টিকেছিল; সমস্যা store-এর durability-তে।",
+        "2": "Docker-এ Redis ঠিকই চলে; persistence আর replica configure করতে হয়।"
+      }
+    },
+    {
+      "id": "sd-day-014-q56",
+      "difficulty": "hard",
+      "question": "একটা API-র সামনে LB, app stateless, session Redis-এ। একটা POST /payments request চলার সময় server crash, LB অন্য server-এ retry করল। কী নিশ্চিত না করলে বিপদ?",
+      "options": [
+        "Redis-এ session-এর TTL যথেষ্ট লম্বা কিনা",
+        "LB least connections ব্যবহার করছে কিনা",
+        "Payment endpoint idempotent কিনা (যেমন idempotency key), নইলে দুবার টাকা কাটতে পারে",
+        "নতুন server-এর কাছে একই session id-র cookie আছে কিনা, আর সেটা Redis-এ খুঁজে পাওয়া যায় কিনা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Stateless হওয়ায় অন্য server request নিতে পারে, কিন্তু প্রথম server হয়তো crash-এর আগে টাকা কেটে ফেলেছিল। Idempotency key দিয়ে দ্বিতীয় চেষ্টা আগের ফল ফেরত দেয়, নতুন payment করে না। Day 4-এর idempotency এখানেই লাগে।",
+      "whyWrong": {
+        "0": "TTL session-এর মেয়াদ ঠিক করে; duplicate payment আটকায় না।",
+        "1": "Algorithm বদলালে duplicate-এর ঝুঁকি যায় না।",
+        "3": "Cookie client পাঠায়, সব server-এ একই; এটা মূল ঝুঁকি না।"
+      }
+    },
+    {
+      "id": "sd-day-014-q57",
+      "difficulty": "hard",
+      "question": "আপনার Redis-এ session (TTL ৩০ মিনিট) আর একই instance-এ background job-এর lock, policy volatile-lru। Memory চাপে কোন key-গুলো মোছার ঝুঁকিতে, আর কেন এটা সূক্ষ্ম?",
+      "options": [
+        "একটা key-ও মুছবে না, কারণ volatile-lru কখনো কিছু মোছে না",
+        "শুধু TTL-ছাড়া key; তাই session নিরাপদ",
+        "সব key সমানভাবে, TTL থাকুক বা না থাকুক, শুধু কোনটা কম ব্যবহৃত সেটাই দেখা হয়",
+        "শুধু TTL-ওয়ালা key, তাই session মুছতে পারে, অথচ TTL-ছাড়া key থেকে যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "volatile-* policy শুধু যেসব key-তে expire আছে সেগুলো থেকে মোছে। Session-এ TTL থাকায় সেগুলোই প্রথম লক্ষ্য, আর TTL ছাড়া জমে থাকা জঞ্জাল অক্ষত থাকে। তাই session store-এর জন্য আলাদা instance আর noeviction + memory alert নিরাপদ।",
+      "whyWrong": {
+        "0": "volatile-lru memory সীমায় পৌঁছালে TTL-ওয়ালা key মোছে।",
+        "1": "উল্টো: volatile policy TTL-ওয়ালা key-ই মোছে।",
+        "2": "এটা allkeys-* policy-র আচরণ।"
+      }
+    },
+    {
+      "id": "sd-day-014-q58",
+      "difficulty": "hard",
+      "question": "একটা stateless service-এর প্রতিটা pod-এ ৫০০MB-র local cache (product catalog), চালু হতে catalog load করতে ৯০ সেকেন্ড লাগে। Autoscaling spike-এ নতুন pod যোগ করছে, কিন্তু spike সামলাতে দেরি হচ্ছে। সমস্যা আর সমাধান কী?",
+      "options": [
+        "Soft state হলেও বড় warm-up startup ধীর করে; lazy বা shared cache, আর আগে থেকে headroom",
+        "Local cache রাখা মানেই service stateful, তাই সেটা Deployment থেকে StatefulSet-এ সরাতে হবে আর disk দিতে হবে",
+        "Autoscaling-এ সমস্যা নেই, LB-র algorithm বদলালেই ৯০ সেকেন্ড শূন্য হবে",
+        "Cache-টা sticky session দিয়ে নির্দিষ্ট user-দের জন্য রাখলে startup দ্রুত হবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Soft state correctness ভাঙে না, কিন্তু 'দ্রুত চালু' (12-factor disposability) নষ্ট করে, তাই autoscaling দেরিতে কাজে আসে। Lazy loading, shared Redis cache, ছোট working set, বা আগে থেকে কিছু headroom রাখা সমাধান।",
+      "whyWrong": {
+        "1": "Cache হারালে শুধু ধীর হয়, data হারায় না; এটা stateful না, StatefulSet অপ্রয়োজনীয়।",
+        "2": "Algorithm pod-এর চালু হওয়ার সময় কমায় না।",
+        "3": "Stickiness startup-এর সময়ে প্রভাব ফেলে না, আর ভার অসমান করে।"
+      }
+    },
+    {
+      "id": "sd-day-014-q59",
+      "difficulty": "hard",
+      "question": "একজন interviewer জিজ্ঞেস করলেন: 'Stateless architecture-এ কি bottleneck সরে যায়, নাকি মিলিয়ে যায়?' সবচেয়ে ভালো উত্তর কোনটা?",
+      "options": [
+        "মিলিয়ে যায়, কারণ stateless server অসীমভাবে scale করে, তাই আর কোনো সীমা বা bottleneck থাকে না",
+        "সরে যায়: app tier সহজে scale হয়, কিন্তু চাপ জমে session store আর database-এ",
+        "কিছুই বদলায় না, কারণ bottleneck সবসময় load balancer",
+        "মিলিয়ে যায়, কারণ JWT ব্যবহার করলে কোনো store-ই লাগে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Stateless হলে app server যোগ করা সস্তা, কিন্তু সব server একই Redis আর database-এ যায়। তাই পরের সীমা আসে সেখানে: connection, write throughput, memory। এজন্য read replica, sharding, cache আর queue লাগে।",
+      "whyWrong": {
+        "0": "Shared store-এর সীমা থেকে যায়; অসীম scale দাবি ভুল।",
+        "2": "LB-ও scale করা যায় (Day 9); bottleneck সাধারণত stateful store-এ।",
+        "3": "JWT শুধু session lookup বাঁচায়; cart, order, file-এর store তো থাকেই।"
+      }
+    },
+    {
+      "id": "sd-day-014-q60",
+      "difficulty": "hard",
+      "question": "৪টা server, cookie-ভিত্তিক sticky session, session server-এর memory-তে। ২০,০০০ active session সমানভাবে ভাগ। এখন rolling deploy: একটা একটা করে চারটা server-ই restart হবে। Deploy শেষে মোট কতগুলো session হারাবে?",
+      "options": [
+        "৫,০০০, কারণ rolling deploy-এ একসাথে শুধু একটা server বন্ধ থাকে, বাকিদের session অক্ষত",
+        "শূন্য, কারণ rolling deploy-এ সবসময় অন্তত তিনটা server চালু থাকে",
+        "প্রায় ২০,০০০, কারণ প্রতিটা server একবার restart হয়ে নিজের সব session হারায়",
+        "১৫,০০০, কারণ শেষ server-এর session আগের server-গুলোতে সরে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা server-এ ৫,০০০ session। Rolling deploy-এ চারটাই একবার করে restart হয়, প্রতিবার ৫,০০০ হারায়, মোট প্রায় ২০,০০০ (মাঝে সরে যাওয়া user-রা আবার পরের restart-এ হারাতে পারে)। Session Redis-এ থাকলে এই সংখ্যা শূন্য।",
+      "whyWrong": {
+        "0": "এক মুহূর্তে একটা server বন্ধ, কিন্তু deploy শেষে চারটাই restart হয়েছে।",
+        "1": "Site চালু থাকে ঠিকই, কিন্তু restart হওয়া server-এর memory-র session হারায়।",
+        "3": "Memory-র session অন্য server-এ সরে না।"
+      }
+    }
+  ]
+}

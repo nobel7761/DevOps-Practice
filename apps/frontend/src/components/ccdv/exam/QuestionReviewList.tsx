@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/shared/shadcn";
 import { isAnswerCorrect } from "@/lib/ccdv/scoring";
-import { lessonContentId } from "@/lib/data/ccdv/schedule";
+import { chapterLabel, lessonContentId } from "@/lib/data/ccdv/schedule";
 import type { CcdvExam } from "@/lib/data/ccdv/types";
 import QuestionBody from "../question/QuestionBody";
 
@@ -44,7 +44,7 @@ export default function QuestionReviewList({
               className="underline"
               href={`/ccdv/lesson/${lessonContentId(question.chapterId, "lesson")}`}
             >
-              Revise {question.chapterId}
+              Revise: {chapterLabel(question.chapterId)}
             </Link>
           </p>
           <QuestionBody

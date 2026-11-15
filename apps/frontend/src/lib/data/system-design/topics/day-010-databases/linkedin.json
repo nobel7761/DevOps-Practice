@@ -1,0 +1,23 @@
+{
+  "type": "poll",
+  "text": "Server বলল \"টাকা পাঠানো সফল\"। ঠিক তার পরের মুহূর্তে বিদ্যুৎ চলে গেল।\nDay 10/100 · Databases\n\nআজ **Database** শিখতে গিয়ে একটা প্রশ্নে অনেকক্ষণ আটকে ছিলাম।\n\nধরুন রহিম করিমকে ৫০০ টাকা পাঠাল। App একটা **Transaction**-এ দুটো কাজ করল: রহিমের balance থেকে বাদ, করিমেরটায় যোগ। Database বলল **COMMIT** OK, app দেখাল \"সফল\"।\n\nএক millisecond পরে লোডশেডিং, server বন্ধ, কোনো UPS নেই।\n\nমজার ব্যাপার: database-এর মূল data file-এ তখনো পুরনো balance লেখা। নতুন balance ছিল শুধু memory-তে, data file-এ যাওয়ার কথা ছিল একটু পরে।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ কখনো crash বা হঠাৎ restart-এর পরে data হারিয়েছে, বা অর্ধেক লেখা অবস্থায় পেয়েছেন? কারণ কী ছিল?]\n\nServer আবার চালু হলে রহিম আর করিমের balance কী দেখাবে? আপনি কী মনে করেন? Poll-এ vote দিন, আর কেন বেছে নিলেন comment-এ লিখুন 👇\n\nউত্তর আর ব্যাখ্যা দেব কাল।",
+  "personalPrompt": "আপনার project-এ কখনো crash বা হঠাৎ restart-এর পরে data হারিয়েছে, বা অর্ধেক লেখা অবস্থায় পেয়েছেন? কারণ কী ছিল?",
+  "firstComment": "File বনাম database, table/primary key/foreign key, SQL-এর JOIN আর GROUP BY, ACID, WAL-এর ভেতরের যাত্রা, connection pool আর N+1, আর Docker-এ PostgreSQL-কে docker kill করে নিজের চোখে durability দেখার lab, পুরো lesson এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Database",
+    "#PostgreSQL",
+    "#BackendEngineering"
+  ],
+  "poll": {
+    "question": "Client \"COMMIT OK\" পেল, তার পরেই বিদ্যুৎ গেল; data file-এ তখনো পুরনো balance। Restart-এর পরে কী দেখবেন?",
+    "options": [
+      "পুরনো balance, transfer বাতিল",
+      "নতুন balance, transfer সফল",
+      "শুধু রহিমের টাকা কাটা",
+      "Database নষ্ট, backup লাগবে"
+    ],
+    "answerComment": "উত্তর: নতুন balance, transfer সফল ✅\n\nরহস্যটা হলো **Write-Ahead Log (WAL)**। Database কোনো বদল সরাসরি data file-এ লেখে না। আগে বদলের একটা ছোট বর্ণনা একটা append-only log-এ লেখে। COMMIT-এর সময় সেই log disk-এ fsync করে (OS-কে বলে \"সত্যিই disk-এ বসাও\"), আর তারপরই \"COMMIT OK\" বলে। Data file হালনাগাদ হয় পরে, ধীরে-সুস্থে (checkpoint)।\n\nতাই বিদ্যুৎ গেলে memory-র নতুন balance মুছে গেলেও log-এ লেখা আছে কী হয়েছিল। Restart-এ database শেষ checkpoint থেকে log replay করে, আর data file-কে committed অবস্থায় নিয়ে আসে। PostgreSQL-এর log-এ তখন দেখা যায় \"automatic recovery in progress\" আর \"redo starts at ...\"।\n\nকেন অন্যগুলো না:\n- পুরনো balance, transfer বাতিল: এটা হতো যদি crash COMMIT-এর আগে হতো, কারণ তখন log-এ commit record থাকত না। কিন্তু client OK পেয়ে গেছে, মানে commit record আগেই disk-এ।\n- শুধু রহিমের টাকা কাটা: Transaction-এর Atomicity এটাই ঠেকায়। হয় দুটো কাজই, নয় কোনোটাই না।\n- Database নষ্ট, backup লাগবে: Crash recovery ঠিক এই পরিস্থিতির জন্যই। (ব্যতিক্রম: কেউ গতির জন্য fsync বন্ধ করে রাখলে সত্যিই নষ্ট হতে পারে, তাই production-এ সেটা কখনো না।)\n\nএকটা সতর্কতা: কিছু setting durability-কে গতির বদলে কমায়, যেমন PostgreSQL-এর synchronous_commit = off বা InnoDB-র innodb_flush_log_at_trx_commit = 2। তখন crash-এ শেষ কয়েকশো millisecond থেকে প্রায় এক সেকেন্ডের commit হারাতে পারে। আর মনে রাখবেন, durability মানে backup না: ভুল করে চালানো DELETE-ও একইভাবে durable!"
+  }
+}

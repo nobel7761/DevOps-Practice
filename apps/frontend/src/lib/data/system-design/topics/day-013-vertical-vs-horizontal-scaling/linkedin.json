@@ -1,0 +1,14 @@
+{
+  "type": "story",
+  "text": "ইফতারের ভিড়ে পেঁয়াজুর দোকানে আরও বড় কড়াই কিনবেন, নাকি আরেকটা চুলা জ্বালাবেন?\nDay 13/100 · Vertical vs Horizontal Scaling\n\nধরুন রমজানে পুরান ঢাকার একটা ইফতারির দোকান। বিকেল থেকে লাইন, একটাই কড়াইয়ে ভাজা চলছে।\n\nমালিক ঠিক করলেন, বাজারের সবচেয়ে বড় কড়াইটা কিনবেন। দাম পড়ল দুটো সাধারণ কড়াইয়ের চেয়েও বেশি। আর আগুন পুরো কড়াইয়ে সমান পৌঁছায় না।\n\nতারপর ৫টায় হাতল ভেঙে কড়াই উল্টে গেল। ইফতারের এক ঘণ্টা আগে দোকান খালি।\n\nপরের দিন অন্য পথ: তিনটা মাঝারি কড়াই, তিনটা চুলা, তিনজন কারিগর, একই রেসিপি। একটায় সমস্যা হলেও বাকি দুটো চলে।\n\nআজ **Vertical vs Horizontal Scaling** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nSite ধীর হলে প্রথম চিন্তা আসে \"server বড় করো\":\n- 8 থেকে 32 vCPU\n- cloud-এ resize মানে প্রায়ই VM stop-start, অর্থাৎ downtime\n- আর app যদি একটাই Node.js process হয়, ৩২টা core-এর একটাই কাজ করে\n\nবড় machine সহজ, কিন্তু ছাদ আছে, ঝুঁকিও এক জায়গায়। এখানেই আসে Vertical vs Horizontal Scaling: কোন অংশ বড় করব, কোন অংশ সংখ্যায় বাড়াব।\n\n৩টা মূল ধারণা:\n1. **Scale Up**: একটা machine-এ বেশি CPU, RAM, disk। Database-এর প্রথম পদক্ষেপ প্রায়ই এটাই\n2. **Scale Out**: একই রকম অনেক machine, সামনে load balancer। শর্ত: app হতে হবে **Stateless**\n3. **N+1**: একটা machine মরলেও বাকিরা যেন পুরো ভার নিতে পারে। দুটো বড় machine-এ এর জন্য ১০০% বাড়তি লাগে, দশটা ছোটতে মাত্র ১১%\n\n[✍️ আপনার অভিজ্ঞতা: শেষ কবে আপনার project-এ machine বড় করে বা server বাড়িয়ে সমস্যা মিটিয়েছিলেন, আর সেই সমাধান কতদিন টিকেছিল?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম। বড় machine কি সবসময় বেশি কাজ দেয়? না। Lock, single thread আর **NUMA**-র খরচে 32 থেকে 64 core করলে অনেক সময় throughput প্রায় একই থাকে, শুধু bill দ্বিগুণ। তাই অনেক team করে **Diagonal Scaling**: আগে মাঝারি size বাছা, তারপর সংখ্যা বাড়ানো।\n\nVertical vs Horizontal Scaling = বড় machine নাকি বেশি machine, সেটা ঠিক হয় tier, state আর failure-এর দাম দেখে।\n\nআপনার system-এর কোন অংশ আপনি scale up করেন, আর কোনটা scale out? Comment-এ লিখুন 👇",
+  "personalPrompt": "শেষ কবে আপনার project-এ machine বড় করে বা server বাড়িয়ে সমস্যা মিটিয়েছিলেন, আর সেই সমাধান কতদিন টিকেছিল?",
+  "firstComment": "পুরো lesson, খরচ আর N+1-এর হিসাব, Load Balancer Lab-এ অসমান server-এর challenge, আর Docker দিয়ে নিজে scale up বনাম scale out মেপে দেখার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Scalability",
+    "#CloudComputing",
+    "#BackendEngineering"
+  ],
+  "visual": "day-013-main"
+}

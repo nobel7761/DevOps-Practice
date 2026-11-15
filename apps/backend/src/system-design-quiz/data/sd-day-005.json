@@ -1,0 +1,1040 @@
+{
+  "topicId": "sd-day-005",
+  "questions": [
+    {
+      "id": "sd-day-005-q01",
+      "difficulty": "easy",
+      "question": "Scalability বলতে system design-এ মূলত কী বোঝায়?",
+      "options": [
+        "Load বাড়লে resource যোগ করে system-কে বাড়ানো, যাতে performance আর খরচ যুক্তিসঙ্গত থাকে",
+        "একটা request যত কম সময়ে সম্ভব শেষ করা, যাতে প্রতিটা user সবচেয়ে দ্রুত উত্তর পায়",
+        "System যেন কখনো down না হয়, একটা machine মরলেও অন্যটা সাথে সাথে কাজ ধরে নেয় আর user কিছু টের পায় না",
+        "Code এমনভাবে লেখা যাতে নতুন feature যোগ করতে কম সময় লাগে আর bug কম হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Scalability মানে load (user, request, data) বাড়লে resource যোগ করে system-কে বাড়ানো যায় কিনা, পুরোটা নতুন করে না লিখে। শর্ত দুটো: performance গ্রহণযোগ্য থাকবে, আর খরচ load-এর সাথে যুক্তিসঙ্গত হারে বাড়বে।",
+      "whyWrong": {
+        "1": "এটা performance, এক request কত দ্রুত; ভিড়ে সেটা টিকবে কিনা সেটা scalability।",
+        "2": "এটা availability-র সংজ্ঞা (Day 6), scalability-র না।",
+        "3": "এটা maintainability, load সামলানোর ক্ষমতা না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q02",
+      "difficulty": "easy",
+      "question": "একটা app একজন user-এর জন্য ৮০ms-এ উত্তর দেয়, কিন্তু একসাথে ৫,০০০ user এলে ৯ সেকেন্ড লাগে। এটা মূলত কোন সমস্যা?",
+      "options": [
+        "Performance সমস্যা, কারণ ৮০ms একজনের জন্যও অনেক বেশি সময়, code optimize করা দরকার",
+        "Scalability সমস্যা, কারণ এক user-এ দ্রুত হলেও load বাড়লে সেই গতি টিকছে না",
+        "Network সমস্যা, কারণ user-দের internet ধীর হলে ভিড়ের সময় সব request দেরিতে পৌঁছায়",
+        "Availability সমস্যা, কারণ ৯ সেকেন্ড দেরি মানে server আসলে কিছুক্ষণের জন্য down ছিল"
+      ],
+      "correctIndex": 1,
+      "explanation": "একজন user-এ ৮০ms ভালো performance। কিন্তু ভিড়ে সেটা ৯ সেকেন্ড হয়ে যাওয়া মানে load বাড়লে system সেই performance ধরে রাখতে পারছে না, এটাই scalability-র সমস্যা।",
+      "whyWrong": {
+        "0": "এক user-এর জন্য ৮০ms ঠিকঠাক; সমস্যা শুধু ভিড়ে দেখা দিচ্ছে।",
+        "2": "User-দের network একই থাকলেও শুধু user সংখ্যা বাড়ায় দেরি হচ্ছে, তাই কারণ server-এর দিকে।",
+        "3": "Server উত্তর দিচ্ছে, শুধু দেরিতে; down থাকলে উত্তরই আসত না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q03",
+      "difficulty": "easy",
+      "question": "Vertical scaling (scale up) কোনটা?",
+      "options": [
+        "Database-এর data ভাগ করে দুটো আলাদা machine-এ রাখা, user id অনুযায়ী",
+        "একই রকম আরও তিনটা app server চালু করে সামনে একটা load balancer বসানো",
+        "Database server-এর RAM ১৬GB থেকে ৬৪GB আর CPU ৪ থেকে ১৬ core করা",
+        "ছবি আর JS file CDN-এ সরিয়ে দেওয়া, যাতে সেগুলো origin server-এ না আসে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Vertical scaling মানে একটা machine-কেই বড় করা: বেশি CPU, RAM, দ্রুত disk। Code সাধারণত বদলাতে হয় না, কিন্তু সবচেয়ে বড় machine-এর একটা ছাদ আছে।",
+      "whyWrong": {
+        "0": "এটা sharding, data ভাগ করে horizontal ভাবে ছড়ানো।",
+        "1": "এটা horizontal scaling: বেশি machine যোগ করা।",
+        "3": "CDN load সরায়, কিন্তু কোনো machine বড় করে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q04",
+      "difficulty": "easy",
+      "question": "Horizontal scaling (scale out)-এর সবচেয়ে বড় সুবিধা কোনটা?",
+      "options": [
+        "Code-এ কোনো পরিবর্তন লাগে না, আর server যত খুশি যোগ করলেও কোনো shared অংশ আটকায় না",
+        "সীমা অনেক দূরে থাকে আর একটা machine মরলেও বাকিরা চালিয়ে নেয়",
+        "Database-এর সব সমস্যা নিজে থেকে চলে যায়, কারণ প্রতিটা server নিজের আলাদা data রাখে",
+        "প্রতিটা request আগের চেয়ে দ্রুত শেষ হয়, কারণ একটা request কয়েকটা server মিলে একসাথে করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "বেশি machine যোগ করলে ক্ষমতা বাড়ানোর ছাদ অনেক দূরে চলে যায়, আর redundancy আসে: একটা মরলে বাকিরা কাজ চালায়। তবে এর জন্য server stateless হতে হয়, আর shared database তখনও সীমা হয়ে থাকতে পারে।",
+      "whyWrong": {
+        "0": "Stateless হওয়ার জন্য প্রায়ই code বদলাতে হয়, আর shared database একসময় আটকায়।",
+        "2": "App server-রা সাধারণত একই shared database ব্যবহার করে, তাই database-এর সমস্যা থেকেই যায়।",
+        "3": "সাধারণত একটা request একটা server-ই করে; server বাড়লে একসাথে বেশি request হয়, প্রতিটা দ্রুত হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q05",
+      "difficulty": "easy",
+      "question": "Load balancer-এর পেছনে একাধিক app server রাখতে হলে server-গুলোকে stateless হতে হয় কেন?",
+      "options": [
+        "যাতে প্রতিটা server নিজের আলাদা database রাখতে পারে আর অন্য server-এর উপর নির্ভর না করে",
+        "যাতে load balancer প্রতিটা request-এর body পড়ে ঠিক করতে পারে কোন server সবচেয়ে কম ব্যস্ত আর কোনটায় পাঠাবে",
+        "যাতে যে কোনো server যে কোনো request নিতে পারে; user-এর অবস্থা কোনো একটা server-এ জমা থাকে না",
+        "যাতে server-গুলো কোনো data-ই কোথাও না রাখে, database ছাড়াই সব কাজ memory-তে করে ফেলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Session বা upload করা file একটা server-এর memory বা disk-এ থাকলে পরের request অন্য server-এ গেলে সেটা পাবে না। State বাইরে (Redis, DB, object storage) রাখলে সব server সমান, তাই নতুন server যোগ করলেই ক্ষমতা বাড়ে।",
+      "whyWrong": {
+        "0": "Stateless মানে আলাদা database না; বরং সবাই একই shared জায়গা থেকে state পড়ে।",
+        "1": "Load balancer কোথায় পাঠাবে সেটা stateless হওয়ার কারণ না; সমস্যা হলো server-এ জমা থাকা user-state।",
+        "3": "Stateless server-ও database ব্যবহার করে; শুধু নিজের ভেতরে user-এর অবস্থা জমিয়ে রাখে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q06",
+      "difficulty": "easy",
+      "question": "System design-এ 'bottleneck' কাকে বলে?",
+      "options": [
+        "System-এর সবচেয়ে দামি component, যেটার খরচ কমালে পুরো system সস্তা হয়",
+        "যে resource load বাড়লে সবার আগে ফুরায় আর পুরো system-এর গতি আটকে দেয়",
+        "যে component সবচেয়ে বেশিবার crash করে আর restart করতে হয়",
+        "যে server-এ সবচেয়ে বেশি code লেখা আছে, তাই সেটা বুঝতে সবচেয়ে কঠিন"
+      ],
+      "correctIndex": 1,
+      "explanation": "Bottleneck হলো বোতলের সরু মুখের মতো: যত চাপই দিন, ওখান দিয়ে নির্দিষ্ট হারের বেশি যায় না। CPU, memory, disk, network, database বা একটা lock, যেটা আগে ফুরায় সেটাই ঠিক করে system কত load নিতে পারবে।",
+      "whyWrong": {
+        "0": "দামি হওয়া আর গতি আটকানো এক না; সস্তা একটা lock-ও bottleneck হতে পারে।",
+        "2": "বারবার crash করা reliability-র সমস্যা, throughput-এর সীমা না।",
+        "3": "Code-এর পরিমাণ বা জটিলতা load সামলানোর সীমা ঠিক করে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q07",
+      "difficulty": "easy",
+      "question": "Load বোঝাতে read:write ratio জানা কেন জরুরি?",
+      "options": [
+        "কারণ HTTP-তে read আর write আলাদা port-এ যায়, তাই firewall rule ঠিক করতে লাগে",
+        "কারণ write request সবসময় read-এর চেয়ে ছোট হয়, তাই bandwidth হিসাবে ratio লাগে",
+        "কারণ read আর write-কে scale করার উপায় আলাদা: read কপি দিয়ে বাড়ানো সহজ, write কঠিন",
+        "কারণ ratio জানলে কতজন user একসাথে online থাকে সেটা সরাসরি বের করা যায়, আলাদা মাপার দরকার হয় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "৯৫% read হলে cache, read replica, CDN দিয়ে অনেক দূর যাওয়া যায়। Write বেশি হলে প্রতিটা write primary-তে যায় আর সব কপিতে পৌঁছাতে হয়, তাই আরও কঠিন পথ (queue, sharding) লাগে। Ratio-ই design ঠিক করে দেয়।",
+      "whyWrong": {
+        "0": "GET আর POST একই port-এ যায়; ratio-র সাথে port-এর সম্পর্ক নেই।",
+        "1": "Write ছোট বা বড় দুটোই হতে পারে; ratio-র মূল্য scaling কৌশল বাছাইয়ে।",
+        "3": "Concurrent user আলাদা load parameter; read:write ratio থেকে সেটা বের হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q08",
+      "difficulty": "easy",
+      "question": "Capacity ঠিক করার সময় গড় QPS-এর বদলে peak QPS ধরে design করতে বলা হয় কেন?",
+      "options": [
+        "কারণ গড় QPS হিসাব করা কঠিন, আর peak সহজে এক নজরে বোঝা যায়",
+        "কারণ traffic সারাদিন সমান না, আর গড়ের জন্য বানালে ঠিক সবচেয়ে ব্যস্ত সময়েই system ভাঙবে",
+        "কারণ peak QPS সবসময় গড়ের ঠিক দ্বিগুণ হয়, তাই দ্বিগুণ server রাখলেই সব সময় নিরাপদ থাকা যায়",
+        "কারণ cloud provider গড়ের উপর না, শুধু peak QPS-এর উপর বিল করে"
+      ],
+      "correctIndex": 1,
+      "explanation": "সন্ধ্যায়, sale-এ বা ঈদের আগে load গড়ের কয়েক গুণ হয়। গড় দেখে server কিনলে ঠিক সেই সময়ে, যখন সবচেয়ে বেশি user আর বিক্রি, system ধীর হবে বা ভাঙবে।",
+      "whyWrong": {
+        "0": "গড় QPS হিসাব খুব সহজ (দৈনিক request ÷ ৮৬,৪০০); কারণটা ব্যস্ত সময়ের চাপ।",
+        "2": "Peak factor system অনুযায়ী আলাদা, প্রায়ই ৩ থেকে ১০ গুণ বা বেশি; দ্বিগুণ নির্দিষ্ট নিয়ম না।",
+        "3": "বিল সাধারণত resource বা ব্যবহার অনুযায়ী হয়; design-এর কারণ ব্যস্ত সময়ে টিকে থাকা।"
+      }
+    },
+    {
+      "id": "sd-day-005-q09",
+      "difficulty": "easy",
+      "question": "একটা app-এ দিনে ৮,৬৪,০০০টা request আসে। গড়ে সেকেন্ডে কয়টা request (গড় QPS)?",
+      "options": ["১০০", "১", "১০", "৮৬৪"],
+      "correctIndex": 2,
+      "explanation": "একদিনে ৮৬,৪০০ সেকেন্ড। ৮,৬৪,০০০ ÷ ৮৬,৪০০ = ১০। তাই গড় QPS ১০, যদিও peak-এ এর কয়েক গুণ হবে।",
+      "whyWrong": {
+        "0": "১০০ পেতে হলে দিনে ৮৬,৪০,০০০ request লাগত; এক শূন্য বেশি গোনা হয়েছে।",
+        "1": "১ হলে দিনে মাত্র ৮৬,৪০০ request হতো।",
+        "3": "৮৬৪ হলো request-কে ১,০০০ দিয়ে ভাগ, সেকেন্ড দিয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q10",
+      "difficulty": "easy",
+      "question": "Scalability আর elasticity-র পার্থক্য কোনটা ঠিকভাবে বলে?",
+      "options": [
+        "Scalability শুধু cloud-এ পাওয়া যায়, আর elasticity পাওয়া যায় নিজের data center-এর server-এ, যেখানে হাতে machine বসানো হয়",
+        "দুটো একই জিনিস, শুধু AWS একে elasticity আর বাকিরা scalability বলে ডাকে",
+        "Elasticity মানে একটা machine-কে বড় করা (বেশি CPU, RAM), আর scalability মানে একই রকম আরও machine যোগ করা",
+        "Scalability হলো resource যোগ করে বাড়ার ক্ষমতা; elasticity হলো load অনুযায়ী স্বয়ংক্রিয়ভাবে দ্রুত বাড়ানো-কমানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "Scalable system-এ server যোগ করলে ক্ষমতা বাড়ে। Elastic system সেটা নিজে থেকে করে: ভিড়ে মিনিটের মধ্যে server বাড়ে, ফাঁকা সময়ে কমে (auto-scaling)। Elasticity-র জন্য আগে scalable architecture লাগে।",
+      "whyWrong": {
+        "0": "দুটোই যে কোনো জায়গায় হতে পারে; cloud শুধু elasticity সহজ করে।",
+        "1": "দুটো আলাদা ধারণা: একটা ক্ষমতা, অন্যটা সেই ক্ষমতার স্বয়ংক্রিয় ও দ্রুত ব্যবহার।",
+        "2": "এটা vertical বনাম horizontal-এর পার্থক্য, elasticity-র না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q11",
+      "difficulty": "easy",
+      "question": "একটা news site-এর origin server-এর বেশিরভাগ bandwidth যাচ্ছে ছবি আর JS file পাঠাতে। কোনটা সবচেয়ে সরাসরি এই চাপ কমায়?",
+      "options": [
+        "Database-এর একটা read replica যোগ করা",
+        "App server-এর CPU core দ্বিগুণ করা",
+        "ছবি আর JS CDN থেকে দেওয়া",
+        "সব request-কে message queue-তে পাঠানো"
+      ],
+      "correctIndex": 2,
+      "explanation": "CDN static জিনিস user-এর কাছের server-এ রেখে দেয়, তাই সেই request-গুলো origin পর্যন্ত আসেই না। Origin-এর bandwidth আর load দুটোই কমে, user-ও দ্রুত পায়।",
+      "whyWrong": {
+        "0": "Replica database-এর read কমায়, ছবি পাঠানোর bandwidth না।",
+        "1": "সমস্যা bandwidth-এ, CPU বাড়ালে সেটা কমবে না।",
+        "3": "Queue ধীর background কাজের জন্য; ছবি দেখানোর request-এর উত্তর তখনই লাগে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q12",
+      "difficulty": "easy",
+      "question": "Order-এর পরে email আর invoice PDF বানানোর কাজ queue-তে পাঠালে scalability-তে কী লাভ হয়?",
+      "options": [
+        "Email আর PDF বানানোর মোট কাজ কমে যায়, কারণ queue একই রকম কাজগুলো জুড়ে দেয়, তাই অনেক কম worker-ই যথেষ্ট হয়",
+        "User-এর browser নিজেই PDF বানিয়ে নেয়, তাই server-এর CPU একদম খরচ হয় না",
+        "Database-এ আর কোনো write লাগে না, কারণ queue-ই order-এর data চিরকাল রেখে দেয়",
+        "Order request ধীর কাজের জন্য আটকে থাকে না, আর spike-এর সময় কাজ queue-তে জমে worker-রা নিজের গতিতে করে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Queue ধীর কাজকে request-এর বাইরে নিয়ে যায়, তাই app server দ্রুত পরের request নিতে পারে। Spike-এ কাজ queue-তে জমে, আর worker আলাদাভাবে বাড়ানো যায়। কাজ কমে না, শুধু সময় আর জায়গা সরে।",
+      "whyWrong": {
+        "0": "কাজের পরিমাণ একই থাকে, শুধু পরে আর অন্য জায়গায় হয়।",
+        "1": "PDF তখনও worker server-এই বানায়, browser না।",
+        "2": "Order database-এ লিখতেই হয়; queue স্থায়ী database না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q13",
+      "difficulty": "easy",
+      "question": "Read replica মূলত কোন সমস্যার সমাধান?",
+      "options": [
+        "Database-এর read-এর চাপ কপিতে সরিয়ে primary-কে হালকা রাখা",
+        "Write-এর চাপ ভাগ করা, যাতে প্রতিটা replica আলাদা order লিখতে পারে",
+        "Application server-কে stateless বানানো, যাতে session হারায় না",
+        "সব query দ্রুত করা, কারণ replica-তে index লাগে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Replica হলো primary-র কপি, যেখান থেকে read করা যায়। ৯৫% read-এর system-এ বেশিরভাগ চাপ replica-তে চলে যায়, primary শুধু write সামলায়। দাম: replica সামান্য পিছিয়ে থাকতে পারে।",
+      "whyWrong": {
+        "1": "সাধারণ replica-তে write যায় না; সব write primary-তে, তারপর কপি হয়।",
+        "2": "Stateless server আলাদা বিষয়; replica database-এর read ভাগ করে।",
+        "3": "Replica-তেও একই index আর query plan লাগে; সে শুধু চাপ ভাগ করে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q14",
+      "difficulty": "easy",
+      "question": "শুধু vertical scaling-এর উপর নির্ভর করা system-এ কোন ঝুঁকিটা থেকেই যায়?",
+      "options": [
+        "Load balancer-এর configuration ভুল হলে request ভুল server-এ যেতে পারে",
+        "অনেক machine-এর মধ্যে data মেলাতে গিয়ে network-এ অনেক খরচ হয়",
+        "প্রতিটা server-এ আলাদা session থাকায় user হঠাৎ logout হয়ে যেতে পারে, বিশেষ করে ভিড়ের সময়",
+        "একটা machine-এর ছাদ আছে, আর সেই একটা machine মরলে পুরো system বন্ধ হয়ে যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Vertical scaling একটা machine বড় করে। সবচেয়ে বড় machine-এর পরে আর যাওয়ার জায়গা নেই, আর machine একটাই বলে সেটা single point of failure।",
+      "whyWrong": {
+        "0": "শুধু vertical scaling-এ load balancer থাকেই না, তাই এই ঝুঁকি সেখানে প্রাসঙ্গিক না।",
+        "1": "Machine মেলানোর খরচ horizontal design-এর সমস্যা, vertical-এর না।",
+        "2": "আলাদা session-এর সমস্যা আসে একাধিক server-এ, এক machine-এ না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q15",
+      "difficulty": "easy",
+      "question": "Load balancer scalability-তে কী ভূমিকা রাখে?",
+      "options": [
+        "প্রতিটা request-এর data compress করে, যাতে server-এ কম byte পৌঁছায়",
+        "Request-গুলো কয়েকটা server-এর মধ্যে ভাগ করে, আর সাড়া না দেওয়া server-কে বাদ দেয়",
+        "Database-এর query-র ফল cache করে রাখে, যাতে app server-কে বারবার database-এ যেতে না হয়",
+        "নতুন server নিজে থেকে কিনে চালু করে, যখনই কোনো server-এর CPU ৮০% পার হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Load balancer সামনে বসে incoming request একাধিক server-এ ভাগ করে, তাই server যোগ করলে ক্ষমতা বাড়ে। মরা server-এ পাঠানো বন্ধ করে availability-ও বাড়ায়। বিস্তারিত Day 9-এ।",
+      "whyWrong": {
+        "0": "Compression কিছু proxy করতে পারে, কিন্তু load balancer-এর মূল কাজ ভাগ করা।",
+        "2": "Query cache করা cache layer-এর কাজ, load balancer-এর না।",
+        "3": "নতুন server চালু করা auto-scaling-এর কাজ, load balancer শুধু চালু server-এ ভাগ করে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q16",
+      "difficulty": "easy",
+      "question": "একটা chat app-এ প্রতিটা user সারাদিন connection খোলা রাখে, কিন্তু message পাঠায় খুব কম। Capacity হিসাবে কোন load parameter সবচেয়ে গুরুত্বপূর্ণ?",
+      "options": [
+        "Concurrent connection-এর সংখ্যা",
+        "Read:write ratio",
+        "প্রতি user-এর দৈনিক database storage",
+        "গড় response-এর আকার"
+      ],
+      "correctIndex": 0,
+      "explanation": "এখানে প্রতিটা খোলা connection memory আর file descriptor নেয়, কাজ কম হলেও। তাই একই মুহূর্তে কতগুলো connection খোলা, সেটাই server-এর সীমা ঠিক করে।",
+      "whyWrong": {
+        "1": "Message কম, তাই read:write এখানে মূল চাপ না।",
+        "2": "Storage গুরুত্বপূর্ণ, কিন্তু খোলা connection-এর সীমাই এখানে আগে আসে।",
+        "3": "Message ছোট আর কম; response-এর আকার মূল সমস্যা না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q17",
+      "difficulty": "easy",
+      "question": "Product page-এর একই data বারবার database থেকে পড়া হচ্ছে। Cache কিভাবে scalability বাড়ায়?",
+      "options": [
+        "বারবার পড়া data memory-তে রাখে, তাই অনেক request database পর্যন্ত যায়ই না",
+        "প্রতিটা write সাথে সাথে সব database-এ ছড়িয়ে দেয়, ফলে কোনো database-এ চাপ জমে না",
+        "Database-এর সব data স্থায়ীভাবে রাখে, ফলে আলাদা database-এর আর দরকার হয় না",
+        "User-এর browser-কে নির্দেশ দেয় একই page দ্বিতীয়বার আর না চাইতে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Cache (যেমন Redis) hot data memory-তে রাখে, তাই বেশিরভাগ read সেখান থেকেই উত্তর পায়। Database-এর চাপ কমে, আর memory থেকে পড়া অনেক দ্রুত। দাম: data কিছুক্ষণ পুরনো থাকতে পারে।",
+      "whyWrong": {
+        "1": "Write ছড়ানো replication-এর কাজ; cache read-এর চাপ কমায়।",
+        "2": "Cache সাধারণত অস্থায়ী, আসল data database-এই থাকে।",
+        "3": "Browser cache আলাদা জিনিস; server-side cache database-এর চাপ কমায়।"
+      }
+    },
+    {
+      "id": "sd-day-005-q18",
+      "difficulty": "easy",
+      "question": "একটা server ১০ MB/s হারে data পাঠাচ্ছে। Bit-এ হিসাব করলে এটা প্রায় কত?",
+      "options": ["১.২৫ Mbps", "১০ Mbps", "১০০ Mbps", "৮০ Mbps"],
+      "correctIndex": 3,
+      "explanation": "১ byte = ৮ bit। তাই ১০ MB/s × ৮ = ৮০ Mbps। Network-এর গতি সাধারণত bit-এ (Mbps, Gbps) বলা হয়, file-এর আকার byte-এ, তাই রূপান্তরটা জরুরি।",
+      "whyWrong": {
+        "0": "এখানে ৮ দিয়ে গুণের বদলে ভাগ করা হয়েছে।",
+        "1": "Byte আর bit-কে একই ধরা হয়েছে; পার্থক্য ৮ গুণ।",
+        "2": "১০০ পেতে ১০ দিয়ে গুণ করতে হতো, কিন্তু byte-এ ৮ bit।"
+      }
+    },
+    {
+      "id": "sd-day-005-q19",
+      "difficulty": "easy",
+      "question": "App server যোগ করা সহজ হলেও database সাধারণত প্রথম bottleneck হয় কেন?",
+      "options": [
+        "Database stateful আর সবার shared, তাই app server বাড়লে সবার চাপ গিয়ে পড়ে একই জায়গায়",
+        "Database একটা machine-এ চলতে পারে না, তাই শুরু থেকেই অনেক machine লাগে",
+        "Database software সবসময় app server-এর চেয়ে খারাপভাবে optimize করা থাকে, তাই একই load-এ সে আগে ধীর হয়ে যায়",
+        "Database শুধু read সামলাতে পারে, write এলে সে সাথে সাথে বন্ধ হয়ে যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "App server stateless, কপি বানানো সহজ। Database-এ আসল data থাকে আর সব app server একই data চায়, তাই server বাড়ালে connection, query আর lock-এর চাপ সব এক জায়গায় জমে।",
+      "whyWrong": {
+        "1": "বেশিরভাগ database একটা machine-এ দিব্যি চলে; সমস্যা শুধু চাপ বাড়লে।",
+        "2": "Database software সাধারণত খুব optimized; সমস্যা হলো সবার shared হওয়া।",
+        "3": "Database read আর write দুটোই করে; write scale করা কঠিন, অসম্ভব না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q20",
+      "difficulty": "easy",
+      "question": "একটা ভালোভাবে scale করা system-এ user দ্বিগুণ হলে খরচের ব্যাপারে কী আশা করা যায়?",
+      "options": [
+        "খরচ সবসময় একই থাকে, কারণ ভালো design-এ বাড়তি user বিনামূল্যে সামলানো যায়",
+        "খরচ চার গুণ হয়, কারণ প্রতিটা নতুন user আগের সব user-এর সাথে যোগাযোগ করে",
+        "খরচ কমে যায়, কারণ বেশি user মানে প্রতিটা server-এ বেশি request আর কম idle সময়",
+        "খরচ মোটামুটি দ্বিগুণ বা কম হয়, অর্থাৎ প্রতি user-এর খরচ স্থির থাকে বা কমে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Scalable design-এ resource load-এর সাথে মোটামুটি linear হারে বাড়ে, তাই প্রতি user বা প্রতি request-এর খরচ স্থির থাকে, অনেক সময় কিছুটা কমে। খরচ load-এর চেয়ে দ্রুত বাড়লে বুঝতে হবে কোথাও bottleneck বা অদক্ষতা আছে।",
+      "whyWrong": {
+        "0": "বাড়তি user-এর জন্য বাড়তি resource লাগেই; একদম বিনামূল্যে না।",
+        "1": "চার গুণ খরচ খারাপ design-এর লক্ষণ, যেখানে coordination খরচ load-এর চেয়ে দ্রুত বাড়ে।",
+        "2": "Utilization একটু বাড়তে পারে, কিন্তু user দ্বিগুণ হলে মোট খরচ সাধারণত কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q21",
+      "difficulty": "medium",
+      "question": "একটা app-এর ৫০ লাখ DAU, প্রত্যেকে দিনে গড়ে ২০টা request পাঠায়। গড় QPS মোটা দাগে কত?",
+      "options": [
+        "প্রায় ১১৬",
+        "প্রায় ১,১৬০",
+        "প্রায় ১১,৬০০",
+        "প্রায় ৫,৮০০"
+      ],
+      "correctIndex": 1,
+      "explanation": "দিনে মোট ৫০ লাখ × ২০ = ১০ কোটি request। ১০,০০,০০,০০০ ÷ ৮৬,৪০০ ≈ ১,১৫৭, মোটা দাগে ~১,১৬০ QPS। Peak এর কয়েক গুণ হবে।",
+      "whyWrong": {
+        "0": "এটা দশ গুণ কম; সম্ভবত দৈনিক request এক শূন্য কম ধরা হয়েছে।",
+        "2": "এটা দশ গুণ বেশি; ৮৬,৪০০-এর বদলে ৮,৬৪০ দিয়ে ভাগ করা হয়েছে।",
+        "3": "৫,৮০০ পেতে request ৫০ কোটি হতে হতো, বা peak factor গুণ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q22",
+      "difficulty": "medium",
+      "question": "গড় QPS ৪০০, peak factor ৬। Load test-এ একটা app server কাঙ্ক্ষিত latency রেখে ৩০০ QPS সামলায়। Headroom ছাড়া শুধু peak সামলাতে কমপক্ষে কয়টা server লাগবে?",
+      "options": ["৮টা", "৬টা", "২টা", "২৪টা"],
+      "correctIndex": 0,
+      "explanation": "Peak QPS = ৪০০ × ৬ = ২,৪০০। প্রতিটা server ৩০০ সামলায়, তাই ২,৪০০ ÷ ৩০০ = ৮টা। বাস্তবে knee-এর আগে চালাতে আর failure-এর জন্য এর চেয়ে বেশি রাখা হয়।",
+      "whyWrong": {
+        "1": "৬টা peak factor-কেই server সংখ্যা ধরে নিয়েছে।",
+        "2": "২টা শুধু গড় ৪০০ QPS-এর জন্য যথেষ্ট, peak-এর জন্য না।",
+        "3": "২৪টা পেতে প্রতিটা server-এর ক্ষমতা ১০০ ধরতে হতো।"
+      }
+    },
+    {
+      "id": "sd-day-005-q23",
+      "difficulty": "medium",
+      "question": "একটা app-এ দিনে ১ লাখ ছবি upload হয়, প্রতিটা গড়ে ২০০KB। এক বছরে শুধু ছবির জন্য মোটামুটি কত storage লাগবে (একটা কপি)?",
+      "options": ["প্রায় ৭৩০GB", "প্রায় ৭৩TB", "প্রায় ২০GB", "প্রায় ৭.৩TB"],
+      "correctIndex": 3,
+      "explanation": "দিনে ১,০০,০০০ × ২০০KB = ২,০০,০০,০০০KB = ২০GB। বছরে ২০GB × ৩৬৫ = ৭,৩০০GB ≈ ৭.৩TB। Durability-র জন্য কয়েকটা কপি রাখলে আরও বেশি।",
+      "whyWrong": {
+        "0": "৭৩০GB দশ গুণ কম; দৈনিক হিসাব ২GB ধরা হয়েছে।",
+        "1": "৭৩TB দশ গুণ বেশি; দৈনিক ২০০GB ধরা হয়েছে।",
+        "2": "২০GB শুধু একদিনের হিসাব, বছরের না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q24",
+      "difficulty": "medium",
+      "question": "Peak-এ ২,০০০ QPS, প্রতিটা response গড়ে ৫০KB। Server থেকে বের হওয়া bandwidth মোটামুটি কত?",
+      "options": [
+        "প্রায় ১০০ Mbps",
+        "প্রায় ১২.৫ Mbps",
+        "প্রায় ৮০০ Mbps",
+        "প্রায় ৮ Gbps"
+      ],
+      "correctIndex": 2,
+      "explanation": "২,০০০ × ৫০KB = ১,০০,০০০KB/s = ১০০MB/s। Bit-এ ১০০ × ৮ = ৮০০ Mbps। Byte থেকে bit-এ যেতে ৮ দিয়ে গুণ করতে হয়।",
+      "whyWrong": {
+        "0": "১০০ হলো MB/s, bit-এ রূপান্তর করা হয়নি।",
+        "1": "৮ দিয়ে গুণের বদলে ভাগ করা হয়েছে।",
+        "3": "এটা দশ গুণ বেশি; response ৫০০KB ধরা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q25",
+      "difficulty": "medium",
+      "question": "Login session app server-এর memory-তে রাখা হতো। Load balancer-এর পেছনে দ্বিতীয় server যোগ করার পর user-রা মাঝে মাঝে হঠাৎ logout হয়ে যাচ্ছে। মূল কারণ আর ঠিক সমাধান কোনটা?",
+      "options": [
+        "Load balancer ধীর, তাই session timeout হচ্ছে; load balancer-এর timeout বাড়ালেই হবে",
+        "অন্য server-এ গেলে session নেই; session Redis বা database-এর মতো shared জায়গায় রাখতে হবে",
+        "দুটো server-এর ঘড়ি মেলে না, তাই session expire হয়ে যায়; ঘড়ি মিলিয়ে দিলেই হবে",
+        "দ্বিতীয় server-এ memory কম, তাই session মুছে যাচ্ছে; দুটো server-এরই RAM বাড়িয়ে দিলেই ঠিক হয়ে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Session একটা server-এর memory-তে থাকলে পরের request অন্য server-এ গেলে সেই server user-কে চেনে না। Session shared store-এ রাখলে server stateless হয়, যে কোনো server যে কোনো request নিতে পারে।",
+      "whyWrong": {
+        "0": "Timeout বাড়ালে সমস্যা যায় না, কারণ অন্য server-এ session আসলে নেই-ই।",
+        "2": "ঘড়ির পার্থক্য এখানে মূল কারণ না; session অন্য server-এর memory-তেই নেই।",
+        "3": "RAM বাড়ালেও প্রতিটা server-এর session আলাদাই থাকবে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q26",
+      "difficulty": "medium",
+      "question": "Sale-এর সময় latency খুব বেশি। App server-গুলোর CPU মাত্র ২০%, কিন্তু database-এর connection pool পুরো ভরা আর অনেক query অপেক্ষায়। Manager বলছেন app server দ্বিগুণ করতে। কী বলবেন?",
+      "options": [
+        "রাজি হব, কারণ বেশি app server মানে বেশি request একসাথে চলবে আর latency কমবে",
+        "রাজি হব, তবে প্রতিটা নতুন server-এর connection pool দ্বিগুণ বড় রাখব, যাতে কোনো query-কে আর লাইনে অপেক্ষা করতে না হয়",
+        "App server-এর CPU কম, তাই কিছু server বন্ধ করে দেব, এতে database-এর চাপও আপনা থেকে কমে যাবে",
+        "Bottleneck database-এ, তাই app server বাড়ালে আরও connection চাপবে; আগে ধীর query, index, cache বা replica দেখব"
+      ],
+      "correctIndex": 3,
+      "explanation": "App server-এর CPU ফাঁকা, অপেক্ষা হচ্ছে database-এ। তাই আরও app server যোগ করলে database-এ আরও connection আর query যাবে, অবস্থা খারাপ হতে পারে। সমাধান database-এর দিকে: ধীর query, index, cache, read replica।",
+      "whyWrong": {
+        "0": "App server bottleneck না; বেশি server database-এর চাপ বাড়াবে।",
+        "1": "বড় pool মানে database-এ আরও বেশি connection, যেটা এখনই সমস্যা।",
+        "2": "App server কমালে database-এর query কমে না, শুধু app-এর ক্ষমতা কমে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q27",
+      "difficulty": "medium",
+      "question": "একটা product catalog-এ ৯৮% read, ২% write। Database-এর CPU ৯০% আর page ধীর। সবচেয়ে উপযুক্ত প্রথম পদক্ষেপ কোনটা?",
+      "options": [
+        "User id দিয়ে database-কে চারটা shard-এ ভাগ করা, যাতে প্রতিটা shard কম data রাখে",
+        "বারবার পড়া product data-র জন্য cache আর read replica যোগ করা",
+        "App server-এর সংখ্যা চার গুণ করা, যাতে database-এ request সমানভাবে ভাগ হয়",
+        "সব write একটা queue-তে পাঠানো, যাতে database-এ write-এর চাপ একদম না থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "চাপের প্রায় সবটাই read, আর read কপি থেকে দেওয়া সহজ। Cache hot product memory থেকে দেয়, replica বাকি read নেয়, primary হালকা হয়। Sharding অনেক জটিল, এখানে দরকার নেই।",
+      "whyWrong": {
+        "0": "Sharding write বা data size-এর জন্য শেষ উপায়; read-heavy চাপে আগে সহজ উপায় আছে।",
+        "2": "App server database-এর চাপ কমায় না, বরং বাড়ায়।",
+        "3": "Write মাত্র ২%, তাই queue দিলে প্রায় কিছুই বদলাবে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q28",
+      "difficulty": "medium",
+      "question": "২০টা app server, প্রতিটার database connection pool ৫০। Database সর্বোচ্চ ৫০০ connection নিতে পারে। Peak-এ কী হবে, আর ঠিক সমাধান কোনটা?",
+      "options": [
+        "কিছু হবে না, কারণ database প্রয়োজনে নিজে থেকে connection limit বাড়িয়ে নেয়",
+        "প্রতিটা server মাত্র ২৫টা connection পাবে, কারণ database সমানভাবে ভাগ করে দেয়, তাই চিন্তা নেই",
+        "Load balancer বাড়তি connection-গুলো আপনা থেকে অন্য একটা database-এ পাঠিয়ে দেবে, তাই কোনো user error দেখবে না",
+        "মোট ১,০০০ connection চাইবে, সীমা পার হয়ে error আসবে; pool ছোট করা বা connection pooler ব্যবহার করা উচিত"
+      ],
+      "correctIndex": 3,
+      "explanation": "মোট connection = server × pool = ২০ × ৫০ = ১,০০০, যেটা সীমার দ্বিগুণ। Peak-এ নতুন connection error পাবে। Pool ছোট রাখা বা PgBouncer-এর মতো pooler দিয়ে অল্প connection ভাগ করে ব্যবহার করা সমাধান।",
+      "whyWrong": {
+        "0": "Database নিজে থেকে limit বাড়ায় না; বাড়ালেও প্রতিটা connection memory খায়।",
+        "1": "Database আগে থেকে ভাগ করে দেয় না; যে আগে চায় পায়, বাকিরা error।",
+        "2": "App-এর load balancer database connection অন্য database-এ পাঠায় না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q29",
+      "difficulty": "medium",
+      "question": "Load test-এ ১টা server ৩০০ QPS দেয়, ৪টা server মিলে ১,০২০ QPS। Scaling efficiency কত?",
+      "options": ["প্রায় ২৯%", "প্রায় ৩৪০%", "প্রায় ৮৫%", "প্রায় ৭৫%"],
+      "correctIndex": 2,
+      "explanation": "Efficiency = throughput(N) ÷ (N × throughput(1)) = ১,০২০ ÷ (৪ × ৩০০) = ১,০২০ ÷ ১,২০০ = ৮৫%। অর্থাৎ প্রতিটা নতুন server তার ক্ষমতার বেশিরভাগটাই কাজে লাগাচ্ছে।",
+      "whyWrong": {
+        "0": "এটা ৩০০ ÷ ১,০২০, উল্টো ভাগ।",
+        "1": "৩৪০% হলো speed-up (১,০২০ ÷ ৩০০), efficiency না।",
+        "3": "৭৫% হতে ৯০০ QPS লাগত।"
+      }
+    },
+    {
+      "id": "sd-day-005-q30",
+      "difficulty": "medium",
+      "question": "এক developer নিজের laptop-এ server আর load testing tool দুটোই চালিয়ে বলল, 'server ২০০ QPS-এর বেশি পারে না।' এই ফলাফলে সন্দেহ করার মূল কারণ কী?",
+      "options": [
+        "Laptop-এ test করলে সবসময় production-এর চেয়ে বেশি QPS আসে, তাই আসল সংখ্যা কম",
+        "Load tool আর server একই CPU ভাগ করছে, তাই tool নিজেই bottleneck হতে পারে",
+        "Load testing tool শুধু GET request পাঠাতে পারে, তাই POST-এর হিসাব বাদ পড়ে যায়",
+        "Laptop-এ network থাকে না, তাই সব request শুধু memory-তে চলে আর ফল অর্থহীন হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Load generator-ও CPU আর memory খায়। একই machine-এ থাকলে সে server-এর resource কেড়ে নেয়, আর অনেক সময় tool নিজেই আগে সীমায় পৌঁছায়। তাই load generator আলাদা machine-এ চালানো উচিত।",
+      "whyWrong": {
+        "0": "Laptop-এ বেশি বা কম দুটোই আসতে পারে; মূল সমস্যা resource ভাগাভাগি।",
+        "2": "বেশিরভাগ tool POST-ও পাঠাতে পারে; সমস্যা সেটা না।",
+        "3": "Laptop-এও loopback network দিয়ে request যায়; ফল অর্থহীন না, শুধু বিকৃত।"
+      }
+    },
+    {
+      "id": "sd-day-005-q31",
+      "difficulty": "medium",
+      "question": "Load test-এ দেখা গেল capacity-র ৭৫% পর্যন্ত latency প্রায় ২০ms-এ স্থির, তারপর ৯০%-এ ১৫০ms। Production-এ server কোন utilization-এ চালানোর লক্ষ্য রাখা ভালো?",
+      "options": [
+        "৯৫-১০০%, কারণ যত বেশি ব্যবহার তত কম খরচ, আর latency পরে ঠিক করা যায়",
+        "৯০%, কারণ ওখানেও request সফল হচ্ছে, শুধু একটু ধীর",
+        "১০-১৫%, কারণ server যত ফাঁকা থাকে তত নিরাপদ",
+        "৬০-৭০%-এর আশেপাশে, knee-এর আগে, যাতে spike এলেও latency না লাফায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Utilization knee-এর কাছে গেলে request লাইনে জমে, latency খাড়া উপরে ওঠে। Knee-এর আগে চালালে হঠাৎ spike-এ বা একটা server মরলেও বাকিদের সামলানোর জায়গা থাকে।",
+      "whyWrong": {
+        "0": "১০০%-এর কাছে latency সবচেয়ে বেশি লাফায়, আর spike সামলানোর জায়গা থাকে না।",
+        "1": "৯০%-এ latency ইতিমধ্যে সাত গুণ, সামান্য বাড়তি load-এ আরও খারাপ হবে।",
+        "2": "এত ফাঁকা রাখলে খরচ অনেক বেশি, অথচ লাভ নেই।"
+      }
+    },
+    {
+      "id": "sd-day-005-q32",
+      "difficulty": "medium",
+      "question": "কোন system-টা scalable কিন্তু elastic না?",
+      "options": [
+        "একটা stateless app, যেটা load balancer-এর পেছনে বাড়ে, কিন্তু নতুন server হাতে বসাতে এক সপ্তাহ লাগে",
+        "একটা stateful app, যেটা এক server-এ চলে আর দ্বিতীয় server যোগ করলে দুই server-এর data না মেলায় ভুল ফল দেয়",
+        "একটা app, যেটা CPU ৭০% পার হলে দুই মিনিটে নিজে থেকে নতুন server চালু করে",
+        "একটা app, যেটা রাতে নিজে server কমায় আর সকালে নিজে আবার বাড়ায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Server যোগ করলে ক্ষমতা বাড়ে, তাই scalable। কিন্তু সেটা স্বয়ংক্রিয় বা দ্রুত না, তাই elastic না। Elastic হতে হলে load অনুযায়ী নিজে থেকে বাড়া-কমা লাগে।",
+      "whyWrong": {
+        "1": "দ্বিতীয় server নিতে না পারলে এটা scalable-ই না।",
+        "2": "নিজে থেকে দ্রুত server যোগ করা elasticity-র উদাহরণ।",
+        "3": "Load অনুযায়ী নিজে বাড়া-কমা elasticity।"
+      }
+    },
+    {
+      "id": "sd-day-005-q33",
+      "difficulty": "medium",
+      "question": "Lab-এর মতো: `docker compose up -d --scale app=3` চালানোর পরও nginx সব request একটাই container-এ পাঠাচ্ছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Nginx চালু হওয়ার সময় একবারই `app` নামের DNS দেখেছিল, তখন একটাই কপি ছিল; nginx reload/restart লাগবে",
+        "Nginx round robin বোঝে না, তাই সবসময় প্রথম server-এই request পাঠায়",
+        "নতুন দুটো container চালু হয়নি, কারণ Docker একসাথে তিনটা কপি চালাতে পারে না",
+        "তিনটা কপি একই port 8000 ব্যবহার করছে, তাই প্রথমটা ছাড়া বাকি দুটো container সব request প্রত্যাখ্যান করছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Nginx upstream-এর host নাম সাধারণত শুরুতেই resolve করে মনে রাখে। পরে কপি বাড়লে সে জানে না। Restart করলে নতুন DNS উত্তরে তিনটা IP পায়। এটা দেখায় নতুন server যোগ করলে load balancer-কে জানানো (service discovery) জরুরি।",
+      "whyWrong": {
+        "1": "Nginx upstream-এ default-ই round robin।",
+        "2": "Docker Compose সহজেই একাধিক কপি চালায়; `docker compose ps`-এ তিনটাই দেখা যায়।",
+        "3": "প্রতিটা container-এর নিজের IP আছে, তাই একই internal port-এ কোনো সংঘাত নেই।"
+      }
+    },
+    {
+      "id": "sd-day-005-q34",
+      "difficulty": "medium",
+      "question": "১০ হাজার user-এ একটা page ধীর হয়ে গেছে। দেখা গেল একটা query প্রতিবার পুরো orders table (২০ লাখ row) পড়ছে। কোনটা সবচেয়ে কার্যকর সমাধান?",
+      "options": [
+        "আরও দুটো app server যোগ করা",
+        "Database server-এর RAM দ্বিগুণ করা",
+        "Query-র column-এ index যোগ করা",
+        "Database-কে দুটো shard-এ ভাগ করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "সমস্যা load না, অদক্ষ query: প্রতিবার full table scan। Index দিলে database সরাসরি দরকারি row-এ যায়, query হাজার গুণ দ্রুত হতে পারে। নতুন machine-এর আগে সবসময় এটা দেখুন (Day 22)।",
+      "whyWrong": {
+        "0": "App server বাড়ালে একই ধীর query আরও বেশি চলবে।",
+        "1": "বেশি RAM কিছুটা সাহায্য করতে পারে, কিন্তু full scan রয়েই যায় আর data বাড়লে আবার ধীর হবে।",
+        "3": "Sharding অনেক জটিল, আর প্রতিটা shard-এ তখনও full scan হবে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q35",
+      "difficulty": "medium",
+      "question": "একটা app-এ user-এর upload করা ছবি app server-এর local disk-এ রাখা হয়। Auto-scaling চালু করার পর কী সমস্যা হবে?",
+      "options": [
+        "নতুন server-এ পুরনো ছবি নেই, আর scale-in-এ server মুছলে সেই ছবিও হারাবে",
+        "Auto-scaling শুধু CPU দেখে, তাই disk ভরে গেলে নতুন server চালু হবে না",
+        "Local disk সবসময় network storage-এর চেয়ে ধীর, তাই সব ছবি ধীরে লোড হবে",
+        "ছবি upload হলে load balancer নিজেই সব server-এ কপি করে দেবে, তাই disk দ্রুত ভরবে"
+      ],
+      "correctIndex": 0,
+      "explanation": "File একটা server-এর disk-এ থাকা মানে সেই server stateful। অন্য server-এ request গেলে ছবি পাওয়া যাবে না, আর auto-scaler server মুছে দিলে ছবি চিরতরে হারাবে। সমাধান: ছবি object storage-এ রাখা।",
+      "whyWrong": {
+        "1": "Scaling metric যাই হোক, মূল সমস্যা হলো ছবি একটা server-এর সাথে বাঁধা।",
+        "2": "গতির পার্থক্য এখানে মূল কথা না; data হারানো আর না পাওয়াই সমস্যা।",
+        "3": "Load balancer file কপি করে না; সে শুধু request পাঠায়।"
+      }
+    },
+    {
+      "id": "sd-day-005-q36",
+      "difficulty": "medium",
+      "question": "একটা ছোট startup-এর database CPU ৭০%, মাসে ৫% করে load বাড়ছে, আর cloud-এ বর্তমানের চার গুণ বড় machine পাওয়া যায়। এখনকার জন্য সবচেয়ে যুক্তিসঙ্গত পথ কোনটা?",
+      "options": [
+        "এখনই data ৮টা shard-এ ভাগ করে ফেলা, কারণ পরে data বড় হলে sharding আরও অনেক কঠিন হবে",
+        "আগে query/index দেখে বড় machine-এ যাওয়া (vertical), আর পরের ধাপ ধীরে পরিকল্পনা করা",
+        "Database বাদ দিয়ে সব data cache-এ রাখা, কারণ cache অনেক দ্রুত",
+        "প্রতিটা microservice-এর জন্য আলাদা database বানিয়ে এখনই সব ভাগ করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "মাসে ৫% বৃদ্ধিতে চার গুণ বড় machine কয়েক বছর সময় দেয়। Database-এ vertical scaling সহজ, code বদলায় না। Sharding-এর জটিলতা এখন অপ্রয়োজনীয়; সেই সময়ে read replica আর cache-এর পরিকল্পনা করা যায়।",
+      "whyWrong": {
+        "0": "Sharding-এর জটিলতা (join, transaction, resharding) এই load-এ অপ্রয়োজনীয়।",
+        "2": "Cache স্থায়ী database-এর বদলি না; data হারানোর ঝুঁকি।",
+        "3": "Architecture বদলানো অনেক বড় কাজ, আর database-এর চাপ তাতে কমবে এমন নিশ্চয়তা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-005-q37",
+      "difficulty": "medium",
+      "question": "ঈদ sale-এর রাতে traffic গড় ৫০০ QPS-এর ১০ গুণ হবে বলে আশা। প্রতিটা server ৪০০ QPS সামলায়, আর আপনি ৭০% utilization-এ চালাতে চান। মোটামুটি কয়টা server প্রস্তুত রাখবেন?",
+      "options": ["২টা", "১৩টা", "১৮টা", "৫০টা"],
+      "correctIndex": 2,
+      "explanation": "Peak = ৫০০ × ১০ = ৫,০০০ QPS। ৭০%-এ প্রতিটা server-এর কার্যকর ক্ষমতা ৪০০ × ০.৭ = ২৮০। ৫,০০০ ÷ ২৮০ ≈ ১৭.৯, তাই ~১৮টা (failure-এর জন্য আরও এক-দুটো)।",
+      "whyWrong": {
+        "0": "২টা শুধু গড় ৫০০ QPS-এর হিসাব, peak-এর না।",
+        "1": "১৩টা পেতে প্রতিটা server-কে ১০০%-এ (৪০০) ধরা হয়েছে, headroom ছাড়া।",
+        "3": "৫০টা পেতে প্রতিটা server-এর ক্ষমতা ১০০ ধরতে হতো।"
+      }
+    },
+    {
+      "id": "sd-day-005-q38",
+      "difficulty": "medium",
+      "question": "User review লিখে submit করল, page reload করে দেখে review নেই; কয়েক সেকেন্ড পরে আসে। Write primary-তে, read replica থেকে হয়। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Replication lag: replica তখনও primary-র নতুন write পায়নি",
+        "Browser cache পুরনো page দেখাচ্ছিল, server-এর এখানে কোনো ভূমিকা নেই",
+        "Write fail করেছিল, পরে নিজে থেকে retry হয়ে সফল হয়েছে",
+        "Load balancer request-টা ভুল region-এর server-এ পাঠিয়েছিল"
+      ],
+      "correctIndex": 0,
+      "explanation": "Primary থেকে replica-তে কপি হতে কিছুটা সময় লাগে। এর মধ্যে read replica থেকে হলে নতুন data দেখা যায় না। Read scale করতে replica ব্যবহারের এটাই দাম।",
+      "whyWrong": {
+        "1": "Browser cache-ও হতে পারে, কিন্তু এই setup-এ replica থেকে read-এর কারণে দেরিই সবচেয়ে সম্ভাব্য।",
+        "2": "Write সফল হয়েছিল, কারণ কয়েক সেকেন্ড পরে review দেখা যায়।",
+        "3": "Region-এর কথা এখানে নেই; read-write ভাগ করাই কারণ।"
+      }
+    },
+    {
+      "id": "sd-day-005-q39",
+      "difficulty": "medium",
+      "question": "একটা কাজের ৯০% parallel করা যায় (p = 0.9)। Amdahl's law অনুযায়ী ৯টা machine-এ কাজটা কত গুণ দ্রুত হবে?",
+      "options": ["৯ গুণ", "৮.১ গুণ", "১০ গুণ", "৫ গুণ"],
+      "correctIndex": 3,
+      "explanation": "Speed-up = 1 / ((1 − 0.9) + 0.9/9) = 1 / (0.1 + 0.1) = 1 / 0.2 = ৫ গুণ। ১০% serial অংশ থাকায় ৯টা machine-এ ৯ গুণের অর্ধেকের একটু বেশি।",
+      "whyWrong": {
+        "0": "৯ গুণ হতো পুরো কাজ parallel হলে; ১০% serial অংশ সেটা আটকায়।",
+        "1": "৮.১ হলো ৯ × ০.৯, যেটা serial অংশকে ঠিকভাবে হিসাব করে না।",
+        "2": "১০ গুণ হলো p = 0.9-এর সর্বোচ্চ সীমা, অসীম machine-এ, ৯টায় না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q40",
+      "difficulty": "medium",
+      "question": "`docker stats`-এ দেখা গেল database container-এর CPU মাত্র ১%, অথচ app server যতই বাড়ান throughput বাড়ছে না, আর সব request database-এর জন্য অপেক্ষা করছে। এটা কিভাবে সম্ভব?",
+      "options": [
+        "App server-গুলো আসলে database-এ request পাঠাচ্ছে না, শুধু নিজেরা ধীরে চলছে",
+        "docker stats ভুল দেখাচ্ছে, কারণ যে database bottleneck তার CPU কখনো ১%-এ থাকতে পারে না, ১০০% হওয়ার কথা",
+        "Database একবারে একটাই request নেয় (lock বা serial অংশ), তাই CPU ফাঁকা থাকলেও বাকিরা লাইনে",
+        "Database-এর CPU কম বলে সে ইচ্ছা করে request ধীরে নিচ্ছে, যাতে গরম না হয়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Bottleneck সবসময় CPU না। একটা lock, একটা single-threaded অংশ বা disk-এর অপেক্ষায় resource ফাঁকা দেখায়, কিন্তু একবারে একটার বেশি কাজ হয় না। তাই utilization-এর সাথে saturation (কতজন লাইনে) দেখাও জরুরি।",
+      "whyWrong": {
+        "0": "Request database-এর জন্য অপেক্ষা করছে, তাই সেখানেই যাচ্ছে।",
+        "1": "Lock বা I/O-র অপেক্ষায় CPU কম থাকা খুব স্বাভাবিক।",
+        "3": "Database এভাবে ইচ্ছা করে ধীর হয় না; ধীরতা আসে serial অংশ থেকে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q41",
+      "difficulty": "hard",
+      "question": "একটা batch job-এর ৯৫% parallel করা যায়। Amdahl's law অনুযায়ী machine যত খুশি বাড়ালেও সর্বোচ্চ কত গুণ দ্রুত হবে?",
+      "options": [
+        "৯৫ গুণ",
+        "১৯ গুণ",
+        "২০ গুণ",
+        "সীমা নেই, machine যত বাড়বে তত দ্রুত"
+      ],
+      "correctIndex": 2,
+      "explanation": "N অসীম হলে p/N শূন্যের দিকে যায়, তাই Speed-up = 1 / (1 − p) = 1 / 0.05 = ২০। মাত্র ৫% serial কাজই সর্বোচ্চ লাভের ছাদ।",
+      "whyWrong": {
+        "0": "৯৫ হলো parallel অংশের শতাংশ, speed-up না।",
+        "1": "১৯ হলো ০.৯৫ ÷ ০.০৫, সূত্রের ভুল প্রয়োগ।",
+        "3": "Serial অংশ থাকলে সীমা থাকবেই; শুধু সম্পূর্ণ parallel কাজে সীমা নেই।"
+      }
+    },
+    {
+      "id": "sd-day-005-q42",
+      "difficulty": "hard",
+      "question": "প্রতিটা order request-এ একটা shared database ২০ms ধরে একটা lock রাখে, আর lock একবারে একজনই নিতে পারে। App server ১০ থেকে ৩০টা করলে order throughput সর্বোচ্চ কত হবে?",
+      "options": [
+        "৫০০ order/s, কারণ ১০টা server প্রতিটা ৫০টা করে",
+        "১,৫০০ order/s, কারণ ৩০টা server প্রতিটা ৫০টা করে",
+        "২০ order/s, কারণ lock ২০ms",
+        "৫০ order/s, server সংখ্যা যাই হোক"
+      ],
+      "correctIndex": 3,
+      "explanation": "Lock একবারে একজন, প্রতিটা ২০ms, তাই সেকেন্ডে সর্বোচ্চ ১ ÷ ০.০২০ = ৫০টা। এটা serial অংশ, তাই app server বাড়িয়ে এই ছাদ ভাঙে না। Lab-এর `/order` পরীক্ষায় ঠিক এটাই দেখা যায়।",
+      "whyWrong": {
+        "0": "প্রতিটা server আলাদা ৫০টা পেত যদি প্রত্যেকের নিজের lock থাকত; এখানে lock সবার shared।",
+        "1": "Server বাড়ালে shared lock-এর হার বাড়ে না।",
+        "2": "২০ হলো millisecond-এর সংখ্যা; প্রতি সেকেন্ডে ২০ms-এর ৫০টা slot।"
+      }
+    },
+    {
+      "id": "sd-day-005-q43",
+      "difficulty": "hard",
+      "question": "Flash sale-এ একটা ফোনের stock একটাই database row-এ রাখা। প্রতিটা order row-টাকে ~৫ms lock করে। Order ২০০/s-এ আটকে আছে, অথচ app server আর database CPU-তে জায়গা আছে। কোন সমাধান মূল সমস্যাকে আঘাত করে?",
+      "options": [
+        "App server দ্বিগুণ করা, যাতে একসাথে আরও অনেক বেশি order request database পর্যন্ত পৌঁছাতে পারে",
+        "Database-এর CPU core দ্বিগুণ করা, যাতে প্রতিটা query দ্রুত শেষ হয়",
+        "Stock কয়েকটা আলাদা row/counter-এ ভাগ করা বা update-গুলো queue দিয়ে ক্রমে লেখা",
+        "Read replica যোগ করা, যাতে stock-এর update replica-তে ভাগ হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "এটা contention: একটা hot row-এর lock-ই serial অংশ, ১ ÷ ০.০০৫ = ২০০/s ছাদ। Stock ভাগ করলে (যেমন ১০টা counter, প্রতিটায় ১০%) একসাথে কয়েকটা lock চলে; অথবা queue দিয়ে একজন worker ক্রমে লিখলে lock-এর লড়াই থাকে না।",
+      "whyWrong": {
+        "0": "বেশি server একই lock-এর জন্য আরও লম্বা লাইন বানাবে।",
+        "1": "CPU ফাঁকাই আছে; সমস্যা lock-এর অপেক্ষা।",
+        "3": "Replica-তে write যায় না; stock update primary-তেই হয়।"
+      }
+    },
+    {
+      "id": "sd-day-005-q44",
+      "difficulty": "hard",
+      "question": "একটা cluster-এ node ১৬ থেকে ৩২ করার পর মোট throughput আগের চেয়ে কমে গেল। প্রতিটা node নিজের memory-তে cache রাখে আর প্রতিটা বদল বাকি সব node-কে broadcast করে। সবচেয়ে সম্ভাব্য ব্যাখ্যা কী?",
+      "options": [
+        "Amdahl's law: serial অংশ থাকায় throughput একটা ছাদে আটকে যায়, আর node বাড়লে সেই ছাদটাই নিচে নামে, তাই কমেছে",
+        "Coherency খরচ: node-দের মিলিয়ে রাখার বার্তা N×(N−1) হারে বাড়ে, তাই কাজের চেয়ে সমন্বয়ে বেশি সময় যায়",
+        "Load balancer ৩২টা node সামলাতে পারে না, তাই অর্ধেক node কোনো request পাচ্ছে না",
+        "নতুন node-গুলোর hardware পুরনোগুলোর চেয়ে ধীর, তাই গড় throughput কমেছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Amdahl বলে throughput একটা ছাদে থামে, কমে না। কমে যাওয়া (retrograde) আসে coherency খরচ থেকে: ১৬ node-এ জোড়া ২৪০, ৩২-এ ৯৯২। Universal Scalability Law এটাই ব্যাখ্যা করে। সমাধান: shared cache বা stateless node, broadcast কমানো।",
+      "whyWrong": {
+        "0": "Amdahl শুধু ছাদ দেয়, throughput কমে যাওয়া ব্যাখ্যা করে না।",
+        "2": "এরকম কোনো লক্ষণ বলা হয়নি; broadcast-এর বর্ণনাই মূল সূত্র।",
+        "3": "Hardware-এর পার্থক্য উল্লেখ নেই, আর তাতে মোট throughput কমার কথা না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q45",
+      "difficulty": "hard",
+      "question": "একটা write-heavy system-এ primary database-এর write latency বাড়ছে। Team আরও তিনটা read replica যোগ করার প্রস্তাব দিল। এর ফল কী হবে?",
+      "options": [
+        "Write চারটা database-এ ভাগ হয়ে যাবে, তাই primary-র চাপ এক-চতুর্থাংশ হবে",
+        "Write-এর চাপ কমবে না; বরং প্রতিটা write আরও বেশি কপিতে পাঠাতে হবে",
+        "Write latency সাথে সাথে কমবে, কারণ replica-রা primary-র query cache ভাগ করে নেয়",
+        "কোনো প্রভাব পড়বে না, কারণ replica-রা primary থেকে কোনো data নেয় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "সাধারণ replication-এ সব write primary-তে যায়, তারপর প্রতিটা replica-তে কপি হয়। Replica read ভাগ করে, write না। Write scale করতে লাগে batching, queue দিয়ে spike সমান করা, বা sharding।",
+      "whyWrong": {
+        "0": "সাধারণ replica write নেয় না; সব write primary-তে।",
+        "2": "Replica query cache ভাগ করে না, আর write-এর কাজ কমায় না।",
+        "3": "Replica-রা primary থেকেই data কপি করে, তাই primary-র কিছুটা কাজ বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q46",
+      "difficulty": "hard",
+      "question": "User id দিয়ে database চারটা shard-এ ভাগ করার পর কোন কাজটা সবচেয়ে কঠিন হয়ে যায়?",
+      "options": [
+        "দুই shard-এর user-দের মধ্যে টাকা পাঠানোর মতো এক transaction, বা সব user জুড়ে join/report",
+        "একজন user-এর নিজের সব order খুঁজে বের করা, কারণ sharding-এর পরে সেগুলো চারটা shard-এ ছড়িয়ে থাকে",
+        "নতুন user-এর জন্য row যোগ করা, কারণ কোন shard-এ যাবে সেটা আর হিসাব করা যায় না",
+        "একটা shard-এর ভেতরে index ব্যবহার করা, কারণ sharding-এর পরে index কাজ করে না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Sharding-এর পরে এক shard-এর ভেতরের কাজ সহজ থাকে, কিন্তু একাধিক shard জুড়ে transaction বা join-এ distributed coordination লাগে, যেটা ধীর আর জটিল। এটাই write scale করার বড় দাম।",
+      "whyWrong": {
+        "1": "User id-ই shard key, তাই একজন user-এর সব data সাধারণত একই shard-এ থাকে।",
+        "2": "Shard key থেকে shard সরাসরি হিসাব হয়; নতুন row যোগ করা সহজ।",
+        "3": "প্রতিটা shard একটা সাধারণ database, সেখানে index স্বাভাবিকভাবেই কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q47",
+      "difficulty": "hard",
+      "question": "একটা logging system তারিখ দিয়ে shard করা: প্রতিটা দিনের data আলাদা shard-এ। Write throughput বাড়ছে না, আর একটা shard ১০০% CPU-তে, বাকিরা প্রায় ফাঁকা। কারণ কী?",
+      "options": [
+        "আজকের সব write একটাই shard-এ যাচ্ছে (hot shard); write-এর জন্য ভালোভাবে ছড়ানো key লাগবে",
+        "পুরনো shard-গুলো ধীর disk-এ, তাই সেগুলো write নিতে পারছে না",
+        "Shard সংখ্যা কম; আরও কয়েকটা shard যোগ করলে আজকের write-গুলো নিজে থেকেই তাদের মধ্যে ভাগ হয়ে যাবে",
+        "Shard-গুলো একে অপরের সাথে replication করছে, তাই CPU এক জায়গায় জমে আছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "সব নতুন log আজকের তারিখের, তাই সব write একই shard-এ পড়ে। বাকি shard পুরনো data নিয়ে বসে থাকে। Write ছড়াতে hash-ভিত্তিক key বা তারিখের সাথে আরেকটা অংশ (যেমন source id) মিলিয়ে key বানাতে হয়।",
+      "whyWrong": {
+        "1": "পুরনো shard-এ write যাওয়ারই কথা না, কারণ key তারিখ।",
+        "2": "আরও shard যোগ করলেও আজকের সব write একটাতেই যাবে।",
+        "3": "Shard-রা সাধারণত একে অপরের কপি রাখে না; সমস্যা key-তে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q48",
+      "difficulty": "hard",
+      "question": "একটা ১০ মিনিটের job-এর মধ্যে ২ মিনিট serial (ভাগ করা যায় না), বাকি ৮ মিনিট পুরোপুরি parallel। ৮টা machine-এ job কত সময় নেবে, আর speed-up কত?",
+      "options": [
+        "৩ মিনিট, speed-up প্রায় ৩.৩ গুণ",
+        "২ মিনিট, speed-up ৫ গুণ",
+        "১.২৫ মিনিট, speed-up পুরোপুরি ৮ গুণ",
+        "৪ মিনিট, speed-up মাত্র ২.৫ গুণ"
+      ],
+      "correctIndex": 0,
+      "explanation": "Serial ২ মিনিট বদলায় না, parallel ৮ মিনিট ৮ ভাগে ১ মিনিট। মোট ৩ মিনিট, speed-up ১০ ÷ ৩ ≈ ৩.৩। Amdahl সূত্রেও: 1 / (0.2 + 0.8/8) = 1 / 0.3 ≈ ৩.৩।",
+      "whyWrong": {
+        "1": "২ মিনিট শুধু serial অংশ; parallel অংশের ১ মিনিট বাদ পড়েছে।",
+        "2": "পুরো ১০ মিনিটকে ৮ দিয়ে ভাগ করা হয়েছে, serial অংশ ভুলে।",
+        "3": "Parallel অংশকে ৪ ভাগ করা হয়েছে, ৮ না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q49",
+      "difficulty": "hard",
+      "question": "১ কোটি DAU, প্রতি user দিনে ১০ request, peak factor ৪। প্রতিটা server ৪০০ QPS পারে, কিন্তু আপনি ৬০% utilization-এ চালাতে চান। মোটামুটি কয়টা server লাগবে?",
+      "options": ["প্রায় ১২টা", "প্রায় ৪৮টা", "প্রায় ১১৬টা", "প্রায় ২০টা"],
+      "correctIndex": 3,
+      "explanation": "গড় = ১০ কোটি ÷ ৮৬,৪০০ ≈ ১,১৬০ QPS। Peak ≈ ১,১৬০ × ৪ ≈ ৪,৬৩০। প্রতিটা server-এর কার্যকর ক্ষমতা ৪০০ × ০.৬ = ২৪০। ৪,৬৩০ ÷ ২৪০ ≈ ১৯.৩, তাই ~২০টা।",
+      "whyWrong": {
+        "0": "১২টা পেতে প্রতিটা server-কে ১০০%-এ (৪০০) চালাতে হতো, headroom ছাড়া।",
+        "1": "৪৮টা পেতে প্রতি server-এর কার্যকর ক্ষমতা ~১০০ ধরতে হতো; ৪০০-র ৬০% হলো ২৪০।",
+        "2": "১১৬টা হলো গড় QPS (~১,১৬০)-কে ১০ দিয়ে ভাগ, server-এর ক্ষমতা দিয়ে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q50",
+      "difficulty": "hard",
+      "question": "১টা server-এ ৩০০ QPS, ৪টা server-এ মাত্র ৪৫০ QPS। আপনার পরবর্তী পদক্ষেপ কী হওয়া উচিত?",
+      "options": [
+        "আরও ৪টা server যোগ করা, কারণ server বাড়লে throughput বাড়ছেই",
+        "Server-গুলোর CPU core দ্বিগুণ করা, কারণ নিশ্চয়ই প্রতিটা server দুর্বল",
+        "Server কমিয়ে ১টায় ফিরে যাওয়া, কারণ horizontal scaling এই app-এ কাজ করে না",
+        "Efficiency ~৩৭.৫%, তাই server কেনা থামিয়ে shared bottleneck খোঁজা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Efficiency = ৪৫০ ÷ (৪ × ৩০০) = ৩৭.৫%। প্রতিটা নতুন server খুব সামান্য লাভ দিচ্ছে, মানে কোথাও একটা serial বা shared অংশ (database, lock, বাইরের API) ছাদ বানিয়েছে। সেটা খুঁজে ঠিক না করে server কেনা মানে টাকা নষ্ট।",
+      "whyWrong": {
+        "0": "৩৭.৫% efficiency-তে আরও server প্রায় কিছুই যোগ করবে না, শুধু খরচ বাড়াবে।",
+        "1": "১টা server ৩০০ ঠিকই দিচ্ছে; সমস্যা server জুড়ে shared অংশে।",
+        "2": "Bottleneck সরালে horizontal scaling কাজ করবে; ছেড়ে দেওয়ার আগে কারণ খুঁজুন।"
+      }
+    },
+    {
+      "id": "sd-day-005-q51",
+      "difficulty": "hard",
+      "question": "৪,০০০ read/s আসে, সামনে একটা cache। Cache hit ratio ৯০% থেকে ৯৯% করলে database-এ read কত থেকে কত হয়?",
+      "options": [
+        "৪০০/s থেকে ৩৬০/s",
+        "৩,৬০০/s থেকে ৩,৯৬০/s",
+        "৪০০/s থেকে ৪০/s",
+        "৪০/s থেকে ৪/s"
+      ],
+      "correctIndex": 2,
+      "explanation": "Miss-গুলোই database-এ যায়। ৯০% hit মানে ১০% miss: ৪,০০০ × ০.১ = ৪০০/s। ৯৯% hit মানে ১% miss: ৪০/s। Hit ratio ৯ শতাংশ বিন্দু বাড়ায় database-এর read দশ গুণ কমল।",
+      "whyWrong": {
+        "0": "৩৬০ হতো miss ৯% হলে; ৯৯% hit-এ miss ১%।",
+        "1": "এটা cache থেকে উত্তর পাওয়া request-এর সংখ্যা, database-এর না।",
+        "3": "এটা দশ গুণ কম; ১০% আর ১%-কে ১% আর ০.১% ধরা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-005-q52",
+      "difficulty": "hard",
+      "question": "দিনে ৫GB নতুন data আসে, আর durability-র জন্য প্রতিটা data ৩টা কপিতে রাখা হয়। এক বছরে মোট কাঁচা storage মোটামুটি কত?",
+      "options": ["প্রায় ১.৮TB", "প্রায় ৫৫TB", "প্রায় ১৫GB", "প্রায় ৫.৫TB"],
+      "correctIndex": 3,
+      "explanation": "দিনে ৫GB × ৩৬৫ = ১,৮২৫GB ≈ ১.৮TB এক কপিতে। ৩টা কপিতে ১.৮ × ৩ ≈ ৫.৫TB। Replication-এর গুণক ভুলে যাওয়া storage হিসাবের খুব প্রচলিত ভুল।",
+      "whyWrong": {
+        "0": "এটা শুধু এক কপি; ৩ গুণ করা হয়নি।",
+        "1": "এটা দশ গুণ বেশি; দৈনিক ৫০GB ধরা হয়েছে।",
+        "2": "১৫GB শুধু একদিনের তিন কপি।"
+      }
+    },
+    {
+      "id": "sd-day-005-q53",
+      "difficulty": "hard",
+      "question": "App server-এর CPU ৭০% পার হলে auto-scaling নতুন server যোগ করে। এক sale-এ database ধীর হয়ে গেল, app server-রা অপেক্ষায় বসে থাকায় request জমে গেল, auto-scaler ৫০টা নতুন server চালু করল, আর database পুরোপুরি ভেঙে পড়ল। মূল ভুল কোথায়?",
+      "options": [
+        "Auto-scaling-এর threshold ৭০% অনেক বেশি ছিল; ৩০% রাখলে আগেভাগে server বেড়ে যেত আর এই সমস্যা হতো না",
+        "প্রতিটা নতুন server DB connection খুলেছে; bottleneck DB-তে থাকলে app scale করলে চাপ আরও বাড়ে",
+        "Auto-scaling-এর জন্য server stateless হওয়া দরকার, আর এখানে server stateful ছিল",
+        "Database-এর auto-scaling চালু ছিল না, থাকলে database-ও নিজে থেকে ৫০টা কপি বানাত"
+      ],
+      "correctIndex": 1,
+      "explanation": "Bottleneck database হলে app server বাড়ানো কিছু সমাধান করে না; প্রতিটা নতুন server আরও connection আর query নিয়ে আসে। Auto-scaling-এর একটা সর্বোচ্চ সীমা, downstream-এর ক্ষমতা অনুযায়ী connection limit, আর আসল bottleneck-এর metric দেখা জরুরি।",
+      "whyWrong": {
+        "0": "Threshold কমালে আরও আগে আরও server আসত, database-এর চাপ আরও বাড়ত।",
+        "2": "Server stateful হওয়ার কোনো ইঙ্গিত নেই; সমস্যা downstream database।",
+        "3": "Database সাধারণত এভাবে মুহূর্তে write কপি বাড়াতে পারে না, আর write-এর চাপ কপিতে কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q54",
+      "difficulty": "hard",
+      "question": "WhatsApp ২০১২ সালে প্রকাশ্যে লিখেছিল যে তারা FreeBSD আর Erlang-এ tune করা একটা server-এ ২০ লাখের বেশি একসাথে চলা TCP connection রেখেছে। Scalability-র দিক থেকে এর মূল শিক্ষা কী?",
+      "options": [
+        "প্রতিটা machine-এর দক্ষতা বাড়ালে কম machine আর ছোট team-এ বিশাল load সামলানো যায়",
+        "Horizontal scaling সবসময় ভুল, সব system এক machine-এই চালানো উচিত",
+        "Erlang ছাড়া অন্য কোনো ভাষায় লক্ষ লক্ষ connection সামলানো অসম্ভব, তাই ভাষাই আসল বিষয়",
+        "TCP connection রাখতে কোনো memory লাগে না, তাই যে কোনো server-এ এটা সম্ভব"
+      ],
+      "correctIndex": 0,
+      "explanation": "Machine-প্রতি দক্ষতা (OS আর runtime tune করা) বাড়ালে একই load-এ অনেক কম machine লাগে, খরচ আর চালানোর জটিলতা কমে। এটা horizontal scaling বাতিল করে না; বরং প্রতিটা ধাপকে সস্তা করে।",
+      "whyWrong": {
+        "1": "WhatsApp-ও অনেক server চালাত; শিক্ষা হলো প্রতিটা থেকে সর্বোচ্চ বের করা।",
+        "2": "Erlang সাহায্য করেছিল, কিন্তু মূল শিক্ষা প্রতি machine-এর দক্ষতা, একটা ভাষার একচেটিয়া ক্ষমতা না।",
+        "3": "প্রতিটা connection memory আর file descriptor নেয়, তাই tuning লেগেছিল।"
+      }
+    },
+    {
+      "id": "sd-day-005-q55",
+      "difficulty": "hard",
+      "question": "Order write গড়ে ১৫০/s, কিন্তু sale শুরুর প্রথম ১ মিনিট ২,০০০/s। Database সর্বোচ্চ ৫০০ write/s নিতে পারে, তাই সামনে একটা queue। ১ মিনিট পরে load আবার ১৫০/s-এ ফিরলে backlog শেষ হতে মোটামুটি কত সময় লাগবে?",
+      "options": [
+        "প্রায় ৪ মিনিট ২০ সেকেন্ড",
+        "প্রায় ৩ মিনিট (১৮০ সেকেন্ড)",
+        "প্রায় ৪৫ সেকেন্ড",
+        "প্রায় ১০ মিনিট (৬০০ সেকেন্ড)"
+      ],
+      "correctIndex": 0,
+      "explanation": "Spike-এ প্রতি সেকেন্ডে (২,০০০ − ৫০০) = ১,৫০০ করে জমে, ৬০ সেকেন্ডে ৯০,০০০। পরে database-এর বাড়তি ক্ষমতা (৫০০ − ১৫০) = ৩৫০/s দিয়ে backlog কমে: ৯০,০০০ ÷ ৩৫০ ≈ ২৫৭ সেকেন্ড ≈ ৪ মিনিট ২০ সেকেন্ড।",
+      "whyWrong": {
+        "1": "৯০,০০০ ÷ ৫০০ = ১৮০ সেকেন্ড, কিন্তু চলমান ১৫০/s write-ও তো database-কে নিতে হচ্ছে।",
+        "2": "নতুন ১৫০/s write-এর কথা ভুলে পুরো ২,০০০/s ধরা হয়েছে, বা ভুল ভাগ।",
+        "3": "এটা অনেক বেশি; backlog ৯০,০০০ আর বাড়তি ক্ষমতা ৩৫০/s মিলিয়ে দেখুন।"
+      }
+    },
+    {
+      "id": "sd-day-005-q56",
+      "difficulty": "hard",
+      "question": "একটা server-এর গড় service time ১০ms। সাধারণ single-queue model-এ গড় latency ≈ service time ÷ (1 − utilization)। Utilization ৮০% থেকে ৯৫% হলে গড় latency কী হবে?",
+      "options": [
+        "৮ms থেকে ৯.৫ms, প্রায় একই",
+        "১২.৫ms থেকে ১০.৫ms, অর্থাৎ কিছুটা কম",
+        "৫০ms থেকে ২০০ms, অর্থাৎ চার গুণ",
+        "১৮ms থেকে ১৯.৫ms, সামান্য বেশি"
+      ],
+      "correctIndex": 2,
+      "explanation": "৮০%-এ: ১০ ÷ (১ − ০.৮) = ৫০ms। ৯৫%-এ: ১০ ÷ ০.০৫ = ২০০ms। Utilization মাত্র ১৫ শতাংশ বিন্দু বাড়ায় latency চার গুণ। এটাই knee, আর এজন্যই server-কে ১০০%-এর কাছে চালানো হয় না।",
+      "whyWrong": {
+        "0": "এটা service time × utilization, সূত্র না।",
+        "1": "এখানে ভাগের বদলে utilization দিয়ে ভাগ করা হয়েছে।",
+        "3": "এটা service time + utilization-এর মতো ভুল যোগফল।"
+      }
+    },
+    {
+      "id": "sd-day-005-q57",
+      "difficulty": "hard",
+      "question": "Load test-এ staging-এ ১০০ product আর ৫০ user-এর database দিয়ে চমৎকার ফল এলো, কিন্তু production-এ (২০ লাখ product) একই load-এ অনেক ধীর। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Production-এর network staging-এর চেয়ে সবসময় অনেক ধীর হয়, তাই এত বড় পার্থক্য একদম স্বাভাবিক ব্যাপার",
+        "Load testing tool production-এর URL-এ কম request পাঠিয়েছে, তাই ফল আলাদা",
+        "ছোট data পুরোটা memory-তে ধরে আর index ছাড়াও দ্রুত চলে; বড় data-তে disk I/O আর ধীর query সামনে আসে",
+        "Production-এ বেশি product মানে বেশি app server, আর বেশি server মানে বেশি ধীর"
+      ],
+      "correctIndex": 2,
+      "explanation": "Data size নিজেই একটা load parameter। ১০০ row-এর table পুরোটা cache-এ থাকে, full scan-ও দ্রুত। ২০ লাখ row-এ সেই query disk থেকে পড়ে আর অনেক ধীর। তাই load test বাস্তবের মতো data দিয়ে করা উচিত।",
+      "whyWrong": {
+        "0": "Network-এর পার্থক্য এত বড় ফারাক ব্যাখ্যা করে না; data size-এর পার্থক্যই মূল।",
+        "1": "Load একই বলা হয়েছে; পার্থক্য data-র আকারে।",
+        "3": "Product সংখ্যার সাথে app server সংখ্যার সরাসরি সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-005-q58",
+      "difficulty": "hard",
+      "question": "Read replica-র কারণে 'নিজের লেখা নিজে দেখতে না পাওয়া' সমস্যা হচ্ছে। Read scaling-এর লাভ বেশিরভাগ রেখে কোন সমাধানটা সবচেয়ে উপযুক্ত?",
+      "options": [
+        "সব read primary-তে পাঠানো, replica শুধু backup হিসেবে রাখা",
+        "Write-এর পরে কিছুক্ষণ ওই user-এর নিজের data primary থেকে পড়া, বাকি সব read replica থেকে",
+        "Replica বন্ধ করে বড় একটা primary machine কেনা",
+        "Write-এর পরে user-কে ১০ সেকেন্ড অপেক্ষা করতে বলা, তারপর page reload করে নিজের লেখা দেখতে বলা"
+      ],
+      "correctIndex": 1,
+      "explanation": "শুধু যে user এইমাত্র লিখেছে, তার নিজের data কিছুক্ষণ primary থেকে পড়লে সে নিজের লেখা দেখবে (read-your-writes)। বাকি সবার read replica-তেই যায়, তাই read scaling-এর লাভ থাকে।",
+      "whyWrong": {
+        "0": "সব read primary-তে নিলে replica-র পুরো লাভই চলে যায়।",
+        "2": "এতে read scaling পুরো বাদ, আর single machine-এর ঝুঁকি ফিরে আসে।",
+        "3": "এটা user-এর অভিজ্ঞতা নষ্ট করে, আর lag ১০ সেকেন্ডের বেশি হলে কাজও করে না।"
+      }
+    },
+    {
+      "id": "sd-day-005-q59",
+      "difficulty": "hard",
+      "question": "Stack Overflow-এর প্রকাশিত architecture (Nick Craver-এর ২০১৬ সালের লেখা) প্রায়ই উদাহরণ হিসেবে আসে। এটা scalability নিয়ে কোন ধারণাকে চ্যালেঞ্জ করে?",
+      "options": [
+        "Cache ব্যবহার করলে database-এর কোনো দরকারই থাকে না",
+        "SQL database বড় scale-এ কাজ করে না, NoSQL লাগবেই",
+        "Monolith code কখনো বড় traffic সামলাতে পারে না, তাই সবসময় ভাগ করতে হবে",
+        "বড় traffic মানেই শত শত ছোট server আর microservice লাগবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "তারা হাতে গোনা কয়েকটা web server আর অনেক RAM-ওয়ালা বড় SQL Server machine-এ, প্রচুর caching সহ, বিশাল traffic সামলাত। এটা দেখায় efficient code আর scale up-ও একটা বৈধ পথ; horizontal-ই একমাত্র উত্তর না।",
+      "whyWrong": {
+        "0": "তারা SQL Server-এর উপর ভারী নির্ভর করত; cache database-এর বদলি ছিল না।",
+        "1": "তারা SQL Server ব্যবহার করত, তাই এই দাবিকে তারা সমর্থন করে না।",
+        "2": "তাদের মূল app একটা monolith ছিল, তাই এটা আসলে এই ধারণার বিপক্ষেই প্রমাণ।"
+      }
+    },
+    {
+      "id": "sd-day-005-q60",
+      "difficulty": "hard",
+      "question": "Amdahl's law-এর ভিত্তিতে, একটা web app-এর throughput বাড়াতে কোন কাজটা সবচেয়ে বেশি লাভ দেবে, যখন app server ইতিমধ্যে অনেক আর প্রতিটা request একটা global lock-এ ১০ms কাটায়?",
+      "options": [
+        "App server আরও দ্বিগুণ করা, কারণ parallel অংশ এখনো বাড়ানো যায়",
+        "Lock-এর ভেতরের কাজ ছোট করা বা lock ভাগ করা, যাতে serial অংশ কমে",
+        "প্রতিটা app server-এর CPU core দ্বিগুণ করা, যাতে request-এর বাকি কাজ দ্রুত হয়",
+        "Load balancer-এর algorithm round robin থেকে least-connections করা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Global lock-এ ১০ms মানে ছাদ ১০০ request/s, server যতই থাকুক। Serial অংশ (lock-এর সময়) কমালে বা lock ভাগ করলেই ছাদ ওঠে। App server বা CPU বাড়ানো শুধু parallel অংশকে দ্রুত করে, যেটা ইতিমধ্যে যথেষ্ট।",
+      "whyWrong": {
+        "0": "Parallel অংশ যথেষ্ট; server বাড়ালে একই lock-এর লাইন লম্বা হবে।",
+        "2": "CPU দ্রুত হলে lock-এর বাইরের কাজ দ্রুত হয়, ছাদ একই থাকে।",
+        "3": "Load balancing algorithm বদলালে shared lock-এর ছাদ বদলায় না।"
+      }
+    }
+  ]
+}

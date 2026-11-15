@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-005",
+  "points": [
+    {
+      "term": "Scalability বনাম Performance",
+      "prompt": "Scalability আর performance-এর পার্থক্য কী? একটা উদাহরণ দিন যেখানে একটা ভালো, অন্যটা খারাপ।",
+      "answer": "Performance হলো এক user বা এক request-এর জন্য system কত দ্রুত; scalability হলো load বাড়লে resource যোগ করে সেই performance গ্রহণযোগ্য খরচে ধরে রাখা যায় কিনা। একটা stateful app এক machine-এ খুব দ্রুত হতে পারে, কিন্তু দ্বিতীয় machine নিতে না পারলে scale করে না।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Load Parameters",
+      "prompt": "'অনেক user' না বলে load কোন সংখ্যাগুলো দিয়ে বোঝাবেন, আর read:write ratio কেন জরুরি?",
+      "answer": "Peak requests/sec, read:write ratio, concurrent user বা connection, data size আর user কোথায় আছে। Read:write ratio design ঠিক করে দেয়: ৯৫% read হলে cache আর replica দিয়েই অনেক দূর যাওয়া যায়, write বেশি হলে আরও কঠিন পথ (sharding, queue) লাগে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Peak QPS Estimation",
+      "prompt": "২০ লাখ DAU, প্রতি user দিনে ২৫ request, peak factor ৫: peak QPS কত, আর কিভাবে হিসাব করলেন?",
+      "answer": "দিনে ৫ কোটি request ÷ ৮৬,৪০০ সেকেন্ড ≈ ৫৮০, মোটা দাগে ~৬০০ গড় QPS। Peak factor ৫ দিয়ে গুণ করে ~৩,০০০ QPS। Design করতে হয় peak-এর জন্য, আর server-কে ~৬০-৭০% utilization-এ রাখার মতো headroom সহ।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Bottleneck",
+      "prompt": "Bottleneck কী, আর load বাড়লে system সাধারণত কোন কোন জায়গায় প্রথম ভাঙে?",
+      "answer": "Bottleneck হলো সেই resource যেটা load বাড়লে সবার আগে ফুরায় আর পুরো system-এর গতি আটকে দেয়। প্রচলিত জায়গা: CPU, memory, disk I/O, network, database (connection, ধীর query) আর একটা lock। আগে মেপে bottleneck খুঁজতে হয়, তারপর শুধু সেটার সমাধান।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Vertical vs Horizontal Scaling",
+      "prompt": "Vertical আর horizontal scaling-এর মূল পার্থক্য আর প্রতিটার দাম কী?",
+      "answer": "Vertical মানে একটা machine বড় করা: code বদলাতে হয় না, কিন্তু ছাদ আছে, উপরের দিকে দাম লাফিয়ে বাড়ে আর machine একটাই। Horizontal মানে আরও machine যোগ করা: সীমা অনেক দূরে আর একটা মরলেও চলে, কিন্তু server stateless হতে হয় আর চালানোর জটিলতা বাড়ে।",
+      "lessonLink": "#trade-offs"
+    },
+    {
+      "term": "Stateless Server",
+      "prompt": "Horizontal scaling-এর জন্য app server-কে stateless হতে হয় কেন?",
+      "answer": "Stateless server session বা file নিজের memory/disk-এ রাখে না, তাই load balancer যে কোনো request যে কোনো server-এ পাঠাতে পারে, আর নতুন server যোগ করলেই ক্ষমতা বাড়ে। Session server-এ থাকলে অন্য server-এ গেলে user logout হয়ে যায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Amdahl's Law",
+      "prompt": "Amdahl's law কী বলে? ৯৫% parallel কাজে ১০টা machine দিলে কত গুণ দ্রুত হবে?",
+      "answer": "Speed-up = 1 / ((1 − p) + p/N): serial অংশটাই সর্বোচ্চ লাভ ঠিক করে দেয়। p = 0.95, N = 10 হলে 1 / (0.05 + 0.095) ≈ ৬.৯ গুণ, আর অসীম machine-এও ২০ গুণের বেশি না। Web system-এ shared database বা lock সেই serial অংশ।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Read vs Write Scaling",
+      "prompt": "Database-এ read scale করা সহজ কিন্তু write কঠিন কেন?",
+      "answer": "Read কপি থেকে দেওয়া যায় (cache, read replica, CDN), কপি যত বাড়ে read ক্ষমতা তত বাড়ে। কিন্তু প্রতিটা write প্রতিটা কপিতে লিখতে হয়, আর stock বা unique email-এর মতো সিদ্ধান্তে একটা সত্যের উৎস লাগে। Write ভাগ করতে sharding লাগে, যার দাম shard জুড়ে join/transaction-এর কষ্ট আর hot shard।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Contention ও Coordination",
+      "prompt": "Server বাড়ালে throughput কমতে পারে কিভাবে? Universal Scalability Law মূলত কী বলে?",
+      "answer": "Contention-এ সবাই একই lock বা row-এর জন্য লাইনে দাঁড়ায়, তাই throughput একটা ছাদে আটকায় (যেমন ৫ms lock মানে সর্বোচ্চ ২০০/s)। Coherency-তে প্রতিটা node সবার সাথে state মেলায়, জোড়া N×(N−1) হারে বাড়ে, তাই একসময় throughput নিচে নামে। USL এই দুটো খরচকে Amdahl-এর সাথে যোগ করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Elasticity",
+      "prompt": "Scalability আর elasticity-র পার্থক্য কী?",
+      "answer": "Scalability হলো resource যোগ করলে system বাড়তি load নিতে পারার ক্ষমতা; elasticity হলো load অনুযায়ী resource স্বয়ংক্রিয়ভাবে আর দ্রুত যোগ-বাদ করা (auto-scaling)। Elasticity-র জন্য scalable architecture লাগে, কিন্তু scalable system হাতে ধীরে বাড়ালে সেটা elastic না।",
+      "lessonLink": "#core"
+    }
+  ]
+}

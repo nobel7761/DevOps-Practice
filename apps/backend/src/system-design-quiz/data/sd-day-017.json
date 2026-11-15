@@ -1,0 +1,1080 @@
+{
+  "topicId": "sd-day-017",
+  "questions": [
+    {
+      "id": "sd-day-017-q01",
+      "difficulty": "easy",
+      "question": "Cache থাকার পরেও একটা request-কে database-এ যেতে হয় কখন?",
+      "options": [
+        "যখন key cache-এ পাওয়া যায় (cache hit), কারণ hit-এর মানে database থেকে যাচাই করা",
+        "প্রতিটা request-এ সবসময়, কারণ cache শুধু database-এর উত্তর দ্রুত পাঠানোর একটা পথ",
+        "শুধু write request-এ, কারণ read request কখনো database-এ যায় না একবার cache চালু হলে",
+        "যখন চাওয়া key cache-এ নেই (cache miss), তখন আসল উৎস থেকে আনতে হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cache miss মানে চাওয়া data cache-এ নেই, তাই app-কে database (আসল উৎস) থেকে আনতে হয়। Hit হলে database-এ যাওয়াই লাগে না, এটাই cache-এর লাভ।",
+      "whyWrong": {
+        "0": "Hit মানে cache-এই পাওয়া গেছে, database-এ যেতে হয় না।",
+        "1": "Cache-এর পুরো উদ্দেশ্যই হলো hit-এ database এড়ানো।",
+        "2": "নতুন বা মেয়াদোত্তীর্ণ key-র read-ও miss হয়ে database-এ যায়।"
+      }
+    },
+    {
+      "id": "sd-day-017-q02",
+      "difficulty": "easy",
+      "question": "Hit ratio কিভাবে হিসাব করা হয়?",
+      "options": [
+        "miss ÷ hit",
+        "hit ÷ মোট key-র সংখ্যা",
+        "hit ÷ (hit + miss)",
+        "(hit − miss) ÷ মোট request"
+      ],
+      "correctIndex": 2,
+      "explanation": "Hit ratio হলো মোট read-এর কত অংশ cache থেকে মিটেছে, তাই hit-কে মোট read (hit + miss) দিয়ে ভাগ। Redis-এ keyspace_hits আর keyspace_misses থেকে এটা বের করা যায়।",
+      "whyWrong": {
+        "0": "এটা miss আর hit-এর অনুপাত, শতাংশ না, আর উল্টো দিকের।",
+        "1": "Cache-এ কয়টা key আছে তার সাথে কয়টা read মিটল তার সম্পর্ক নেই।",
+        "3": "Hit থেকে miss বিয়োগ করার কোনো অর্থ এখানে নেই।"
+      }
+    },
+    {
+      "id": "sd-day-017-q03",
+      "difficulty": "easy",
+      "question": "Cache entry-তে TTL দেওয়ার মূল উদ্দেশ্য কী?",
+      "options": [
+        "Cache-এর data disk-এ কতক্ষণ পরে লেখা হবে তা ঠিক করা, যাতে restart-এ data না হারায়",
+        "Cache থেকে পড়তে সর্বোচ্চ কত millisecond লাগবে তা নির্ধারণ করা, timeout-এর মতো",
+        "একটা key কতবার পড়া যাবে তার সীমা ঠিক করা, তারপর key আর পড়া যায় না",
+        "কপিটা কতক্ষণ বৈধ তা ঠিক করা, যাতে পুরনো data বেশিক্ষণ না থাকে আর memory খালি হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "TTL (Time To Live) মানে entry-টার মেয়াদ। মেয়াদ শেষে cache নিজেই মোছে, ফলে stale data সর্বোচ্চ কতক্ষণ থাকবে তার সীমা থাকে আর memory-ও খালি হয়।",
+      "whyWrong": {
+        "0": "TTL persistence নিয়ন্ত্রণ করে না, মেয়াদ নিয়ন্ত্রণ করে।",
+        "1": "TTL পড়ার গতি বা timeout না, entry কতক্ষণ বাঁচবে তা।",
+        "2": "TTL সময়ভিত্তিক, কতবার পড়া হলো তার সাথে সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-017-q04",
+      "difficulty": "easy",
+      "question": "Cache-aside pattern-এ read-এ miss হলে কে database থেকে data এনে cache ভরে?",
+      "options": [
+        "Cache server নিজে database-এ connect করে data টেনে আনে",
+        "Database নিজে থেকে cache-এ data push করে প্রতিটা query-র পরে",
+        "Application নিজে: database থেকে পড়ে, তারপর cache-এ SET করে",
+        "Load balancer miss ধরে ফেলে database-এর দিকে route করে আর cache ভরে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cache-aside-এ cache একটা নিষ্ক্রিয় key-value store; সব সিদ্ধান্ত app-এর। Miss হলে app database থেকে পড়ে আর ফলটা TTL সহ cache-এ রাখে।",
+      "whyWrong": {
+        "0": "Cache নিজে database থেকে আনে read-through-এ, cache-aside-এ না।",
+        "1": "সাধারণ database cache-এ নিজে থেকে data পাঠায় না।",
+        "3": "Load balancer cache ভরার কাজ করে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q05",
+      "difficulty": "easy",
+      "question": "Redis-এ `TTL product:1` চালিয়ে উত্তর এলো -2। এর মানে কী?",
+      "options": [
+        "Key আছে কিন্তু তার কোনো মেয়াদ নেই, চিরকাল থাকবে",
+        "Key-টা আর নেই, মেয়াদ শেষে মুছে গেছে বা কখনো ছিলই না",
+        "Key-র মেয়াদ ২ সেকেন্ড আগে শেষ হয়েছে কিন্তু এখনো পড়া যায়",
+        "Key-টা আছে আর আর ২ সেকেন্ড পরে মুছে যাবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Redis-এ TTL -2 মানে key নেই। -1 মানে key আছে কিন্তু TTL নেই। ধনাত্মক সংখ্যা মানে বাকি সেকেন্ড।",
+      "whyWrong": {
+        "0": "সেটা -1-এর অর্থ।",
+        "2": "মেয়াদ শেষ হলে key পড়া যায় না, -2 মানে key নেই।",
+        "3": "ধনাত্মক ২ হলে সেটা বোঝাত, -2 না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q06",
+      "difficulty": "easy",
+      "question": "Cache কোন ধরনের data-র জন্য সবচেয়ে উপযুক্ত?",
+      "options": [
+        "প্রতিটা request-এ বদলায় এমন data, যেমন শেষ মুহূর্তের account balance যেখানে ভুল চলে না",
+        "একবারই পড়া হয় এমন data, যেমন একটা বার্ষিক report যেটা কেউ আর খোলে না",
+        "যে data সবচেয়ে বড় আকারের, কারণ বড় data database-এ রাখা সবচেয়ে ধীর আর দামি",
+        "বারবার পড়া হয়, কম বদলায়, আর বানাতে দামি এমন data, যেমন জনপ্রিয় product page"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cache-এর লাভ আসে পুনরাবৃত্ত read থেকে। কম বদলালে stale হওয়ার ঝুঁকি কম, আর দামি হলে প্রতিটা hit বেশি সময় আর load বাঁচায়।",
+      "whyWrong": {
+        "0": "প্রতিবার বদলালে hit ratio কম আর stale data-র ঝুঁকি বেশি।",
+        "1": "একবার পড়া data cache-এ রাখলে hit-ই হয় না।",
+        "2": "আকার না, পুনরাবৃত্তি আর দাম ঠিক করে cache লাভজনক কিনা।"
+      }
+    },
+    {
+      "id": "sd-day-017-q07",
+      "difficulty": "easy",
+      "question": "Database-এর নিজের buffer cache থাকার পরেও Redis-এর মতো application cache কেন লাগে?",
+      "options": [
+        "Buffer cache শুধু write-এর জন্য, read-এ database সবসময় সরাসরি disk থেকে page পড়ে আনে",
+        "Buffer cache প্রতিটা restart-এর পরে বন্ধ থাকে আর হাতে চালু করতে হয়",
+        "Buffer cache disk-এর page রাখে, query-র ফল না; তাই ভারী JOIN প্রতিবার আবার চলে",
+        "Buffer cache শুধু index রাখে, table-এর data কখনো memory-তে আনে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Shared buffers-এর মতো buffer cache disk page RAM-এ রাখে, তাই disk I/O বাঁচে। কিন্তু query-র পুরো কাজ (JOIN, aggregation) প্রতিবার হয়। Application cache তৈরি করা ফলটাই রেখে দেয়।",
+      "whyWrong": {
+        "0": "Buffer cache read-এও ব্যবহার হয়, এটাই তার মূল কাজের একটা।",
+        "1": "Buffer cache database চালু হলেই কাজ করে, হাতে চালু করতে হয় না।",
+        "3": "Table-এর data page-ও buffer cache-এ আসে, শুধু index না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q08",
+      "difficulty": "easy",
+      "question": "LRU eviction policy কোন key আগে মুছে দেয়?",
+      "options": [
+        "যে key সবচেয়ে বেশি সময় ধরে কেউ ব্যবহার করেনি",
+        "যে key সবচেয়ে কম বার ব্যবহার হয়েছে সারা জীবনে",
+        "যে key সবার আগে cache-এ ঢুকেছিল, ব্যবহার যাই হোক",
+        "যে key-র মান সবচেয়ে বড়, যাতে বেশি জায়গা খালি হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "LRU (Least Recently Used) দেখে শেষবার কখন ব্যবহার হয়েছে; সবচেয়ে পুরনো ব্যবহারের key আগে যায়। ধারণা হলো সম্প্রতি ব্যবহৃত জিনিস আবার লাগবে।",
+      "whyWrong": {
+        "1": "সেটা LFU-র নিয়ম।",
+        "2": "সেটা FIFO-র নিয়ম।",
+        "3": "আকার দেখে মোছা LRU-র নিয়ম না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q09",
+      "difficulty": "easy",
+      "question": "Redis-এর default `maxmemory-policy` কী, আর memory ভরলে কী হয়?",
+      "options": [
+        "allkeys-lru: সবচেয়ে কম ব্যবহৃত key মুছে জায়গা করে",
+        "noeviction: কিছু মোছে না, write-এ OOM error দেয়",
+        "volatile-ttl: যার মেয়াদ সবচেয়ে কাছে তাকে মুছে দেয়",
+        "allkeys-random: এলোমেলো একটা key মুছে নতুনটা রাখে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Redis-এর default noeviction। Memory সীমা ছুঁলে নতুন write OOM error পায়, পুরনো কিছু মোছা হয় না। Cache-এর জন্য তাই সাধারণত allkeys-lru বা allkeys-lfu দিতে হয়।",
+      "whyWrong": {
+        "0": "allkeys-lru জনপ্রিয় পছন্দ, কিন্তু default না।",
+        "2": "volatile-ttl একটা বিকল্প policy, default না।",
+        "3": "allkeys-random-ও বিকল্প, default না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q10",
+      "difficulty": "easy",
+      "question": "App server বাড়ানোর পরেও database-এর চাপ কমল না, বরং বাড়ল। Cache কেন এখানে সাহায্য করবে?",
+      "options": [
+        "একই query-র উত্তর মনে রেখে পুনরাবৃত্ত read database থেকে সরিয়ে নেয়",
+        "App server-এর CPU কমায়, তাই app server আর বাড়াতে হয় না আর database নিজেই দ্রুত হয়",
+        "Database-এর সব write cache-এ সরিয়ে নেয়, তাই database শুধু read সামলায় আর হালকা থাকে",
+        "Database-কে আরেকটা machine-এ কপি করে, তাই দুটো database ভাগ করে কাজ করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Bottleneck database, app না। বেশি app server মানে database-এ বেশি concurrent query। Cache পুনরাবৃত্ত read-গুলো মিটিয়ে দেয়, database পায় শুধু miss।",
+      "whyWrong": {
+        "1": "App server-এর CPU সমস্যা ছিল না, database ছিল।",
+        "2": "সাধারণ cache-aside write database-এই পাঠায়।",
+        "3": "সেটা replication-এর কাজ, cache-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q11",
+      "difficulty": "easy",
+      "question": "Cache-aside-এ product-এর দাম বদলানোর পরে সাধারণ নিয়ম কী?",
+      "options": [
+        "আগে database-এ নতুন দাম লেখো, তারপর cache থেকে ওই key delete করো",
+        "আগে cache থেকে key delete করো, তারপর database-এ নতুন দাম লেখো",
+        "শুধু cache-এ নতুন দাম SET করো, database পরে TTL শেষে নিজে বদলাবে",
+        "কিছু করো না, TTL শেষ হলে cache নিজেই নতুন দাম জেনে যাবে সাথে সাথে"
+      ],
+      "correctIndex": 0,
+      "explanation": "আগে database (source of truth) বদলাও, তারপর cache delete করো, যাতে পরের read তাজা মান আনে। উল্টো ক্রমে মাঝের ফাঁকে পুরনো মান আবার cache-এ ঢুকতে পারে।",
+      "whyWrong": {
+        "1": "আগে delete করলে database update-এর আগে একটা read পুরনো মান cache-এ ফিরিয়ে আনতে পারে।",
+        "2": "Cache-এ লেখা database বদলায় না; database-ই আসল উৎস।",
+        "3": "শুধু TTL-এর ভরসায় থাকলে পুরো TTL পর্যন্ত পুরনো দাম দেখাবে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q12",
+      "difficulty": "easy",
+      "question": "Write-behind (write-back) cache-এর প্রধান ঝুঁকি কী?",
+      "options": [
+        "প্রতিটা write দুই জায়গায় synchronously লেখা হয়, তাই write খুব ধীর হয়",
+        "সদ্য লেখা data-র প্রথম read সবসময় miss হয়, কারণ cache-এ লেখা হয় না",
+        "Database-এ পৌঁছানোর আগে cache node মরলে সেই write-গুলো হারিয়ে যেতে পারে",
+        "Cache-এ কখনো data থাকে না, তাই hit ratio সবসময় শূন্যের কাছে থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Write-behind-এ write শুধু cache-এ গিয়ে সাথে সাথে OK পায়; database-এ পরে যায়। মাঝের সময়ে cache হারালে ওই data কোথাও থাকে না।",
+      "whyWrong": {
+        "0": "সেটা write-through-এর বৈশিষ্ট্য।",
+        "1": "সেটা write-around-এর বৈশিষ্ট্য।",
+        "3": "Write-behind-এ write cache-এই যায়, তাই hit বেশিই হয়।"
+      }
+    },
+    {
+      "id": "sd-day-017-q13",
+      "difficulty": "easy",
+      "question": "Write-around pattern-এ write কোথায় যায়?",
+      "options": [
+        "শুধু cache-এ, database-এ পরে batch করে",
+        "Cache আর database দুটোতেই একসাথে, তারপর OK",
+        "একটা message queue-তে, যেখান থেকে cache নিজে পড়ে নেয় আর পরে database-এ লেখে",
+        "সরাসরি database-এ, cache-কে এড়িয়ে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Write-around-এ লেখা database-এ যায়, cache ভরে না। পরে কেউ পড়লে miss হয়ে cache ভরে, তাই একবার লেখা কিন্তু কম পড়া data cache নষ্ট করে না।",
+      "whyWrong": {
+        "0": "সেটা write-behind।",
+        "1": "সেটা write-through।",
+        "2": "Queue এই pattern-এর অংশ না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q14",
+      "difficulty": "easy",
+      "question": "Read-through cache-এর বৈশিষ্ট্য কোনটা?",
+      "options": [
+        "Miss হলে cache layer (বা library) নিজেই loader দিয়ে database থেকে এনে ভরে",
+        "App প্রতিটা miss-এ নিজে database-এ যায় আর নিজে cache-এ SET করে",
+        "সব read সরাসরি database-এ যায়, cache শুধু write ধরে রাখে",
+        "Cache কখনো miss দেয় না, কারণ চালুর সময়েই পুরো database একবারে memory-তে কপি করে রাখে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Read-through-এ app শুধু cache-কে চেনে। Caffeine বা Guava-র LoadingCache-এর মতো library-তে loader function দিলে miss-এ library নিজে data আনে।",
+      "whyWrong": {
+        "1": "সেটা cache-aside।",
+        "2": "সেটা cache-এর উল্টো আচরণ।",
+        "3": "পুরো database কপি করা read-through-এর অর্থ না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q15",
+      "difficulty": "easy",
+      "question": "Phil Karlton-এর নামে প্রচলিত বিখ্যাত উক্তিতে Computer Science-এর দুটো কঠিন কাজ কী?",
+      "options": [
+        "Cache invalidation আর distributed consensus",
+        "Naming things আর off-by-one error ঠিক করা",
+        "Cache invalidation আর naming things",
+        "Cache sizing আর database schema design"
+      ],
+      "correctIndex": 2,
+      "explanation": "উক্তিটা: \"There are only two hard things in Computer Science: cache invalidation and naming things.\" প্রথম অংশ সত্যি কারণ cache আর database একসাথে atomically বদলানো যায় না।",
+      "whyWrong": {
+        "0": "Consensus কঠিন, কিন্তু উক্তিতে নেই।",
+        "1": "Off-by-one নিয়ে আলাদা একটা রসিকতা আছে, মূল উক্তিতে না।",
+        "3": "Sizing বা schema উক্তিতে নেই।"
+      }
+    },
+    {
+      "id": "sd-day-017-q16",
+      "difficulty": "easy",
+      "question": "Cache stampede (thundering herd) বলতে কী বোঝায়?",
+      "options": [
+        "Cache-এর memory ভরে যাওয়ায় একসাথে অনেক key evict হয়ে database-এ চাপ বেড়ে যাওয়ার ঘটনা",
+        "জনপ্রিয় key-র মেয়াদ শেষে একসাথে অনেক miss, সবাই database-এ একই query চালায়",
+        "অনেক user একসাথে একই key-তে write করায় cache-এ data নষ্ট হয়ে যাওয়া",
+        "Database-এ নেই এমন key-র জন্য বারবার request আসায় cache কাজে না আসা"
+      ],
+      "correctIndex": 1,
+      "explanation": "Stampede-এ সমস্যা হলো একসাথে অনেক miss একই দামি কাজ করছে। প্রতিকার lock, stale-while-revalidate বা early expiration।",
+      "whyWrong": {
+        "0": "Eviction-এ key হারানো stampede-এর কারণ হতে পারে, কিন্তু সংজ্ঞা না।",
+        "2": "Concurrent write data নষ্ট করে না, সেটা stampede না।",
+        "3": "সেটা cache penetration।"
+      }
+    },
+    {
+      "id": "sd-day-017-q17",
+      "difficulty": "easy",
+      "question": "Cache penetration কী?",
+      "options": [
+        "Cache-এর ভেতরে কেউ ঢুকে অন্য user-এর data পড়ে ফেলার নিরাপত্তা ত্রুটি",
+        "একটা key এত জনপ্রিয় যে একটা cache node-ই সেটা সামলাতে পারে না",
+        "Cache cluster restart-এর পরে সব key একসাথে হারিয়ে সব request database-এ চাপ দেওয়া",
+        "Database-এও নেই এমন key, যা cache-এ ঢোকে না বলে প্রতিবার database-এ যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "যে data নেই, তা cache-aside-এ cache-এ বসে না, তাই প্রতিটা request database-এ যায়। Negative caching বা Bloom filter দিয়ে আটকানো যায়।",
+      "whyWrong": {
+        "0": "নাম শুনে নিরাপত্তা মনে হলেও এটা load-এর সমস্যা।",
+        "1": "সেটা hot key।",
+        "2": "সেটা cache avalanche।"
+      }
+    },
+    {
+      "id": "sd-day-017-q18",
+      "difficulty": "easy",
+      "question": "TTL jitter কোন সমস্যা কমাতে ব্যবহার হয়?",
+      "options": [
+        "দুটো concurrent write-এ cache-এ পুরনো মান থেকে যাওয়া (update race)",
+        "অনেক key-র একই মুহূর্তে মেয়াদ শেষ হয়ে database-এ ঢেউ ওঠা (avalanche)",
+        "Database-এ নেই এমন key-র request বারবার database-এ পৌঁছে যাওয়া (cache penetration)",
+        "একটা key-তে এত traffic যে একটা node ভেঙে পড়ে (hot key)"
+      ],
+      "correctIndex": 1,
+      "explanation": "TTL-এ একটু এলোমেলো সময় যোগ করলে একসাথে ভরা key-গুলোর মেয়াদ সময়জুড়ে ছড়িয়ে যায়, ফলে সবাই একসাথে miss হয় না।",
+      "whyWrong": {
+        "0": "Race-এর জন্য delete-on-write, double delete বা lease লাগে।",
+        "2": "Penetration-এর জন্য negative cache বা Bloom filter।",
+        "3": "Hot key-র জন্য local cache বা key replication।"
+      }
+    },
+    {
+      "id": "sd-day-017-q19",
+      "difficulty": "easy",
+      "question": "Local in-memory cache-এর তুলনায় Redis-এর মতো distributed cache-এর প্রধান সুবিধা কী?",
+      "options": [
+        "Network hop লাগে না বলে local cache-এর চেয়েও দ্রুত পড়া যায়",
+        "সব app server একটাই কপি দেখে, তাই একবার delete করলে সবার জন্য মুছে যায়",
+        "আলাদা কিছু চালাতে বা monitor করতে হয় না, app-এর সাথেই চলে",
+        "App process restart হলে data হারানোর ঝুঁকি app-এর নিজের memory-র মতোই একই থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Distributed cache সব server-এর জন্য shared, তাই invalidation সহজ আর deploy-এ cache থাকে। দাম: প্রতিটা read-এ network hop।",
+      "whyWrong": {
+        "0": "Local cache-ই বেশি দ্রুত, distributed-এ network hop লাগে।",
+        "2": "Distributed cache আলাদা একটা system, চালাতে আর monitor করতে হয়।",
+        "3": "এটা সুবিধা না; আসলে Redis app restart-এ টিকে থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q20",
+      "difficulty": "easy",
+      "question": "Memcached আর Redis-এর তুলনায় কোন কথাটা সঠিক?",
+      "options": [
+        "Memcached সরল key-value, persistence নেই; Redis-এ data structure ও ঐচ্ছিক persistence",
+        "Memcached-এ sorted set আর stream আছে, কিন্তু Redis-এ শুধু সরল string value-ই রাখা যায়",
+        "Redis কখনো disk-এ কিছু লেখে না, আর Memcached প্রতিটা write নিরাপদে disk-এ রাখে",
+        "দুটোই একই software, শুধু নাম আলাদা, তাই feature-এ কোনো পার্থক্য নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "Memcached সরল, multi-threaded, শুধু bytes রাখে, restart-এ খালি। Redis hash, list, set, sorted set-এর মতো structure, RDB/AOF persistence আর replication দেয়।",
+      "whyWrong": {
+        "1": "উল্টো: data structure Redis-এর বৈশিষ্ট্য।",
+        "2": "Redis ঐচ্ছিকভাবে RDB/AOF-এ disk-এ লেখে; Memcached লেখে না।",
+        "3": "দুটো আলাদা project, আলাদা feature।"
+      }
+    },
+    {
+      "id": "sd-day-017-q21",
+      "difficulty": "medium",
+      "question": "Cache থেকে পড়তে ১ms আর database-এ ৩০ms লাগে। Miss হলে আগে cache দেখে তারপর database-এ যায়। Hit ratio ৯৫% হলে গড় read latency কত?",
+      "options": ["প্রায় ১.৫ms", "প্রায় ২.৫ms", "প্রায় ৩১ms", "প্রায় ৫ms"],
+      "correctIndex": 1,
+      "explanation": "গড় = ১ + (১ − ০.৯৫) × ৩০ = ১ + ১.৫ = ২.৫ms। প্রতিটা read-এ cache দেখার ১ms লাগে, আর ৫% read-এ বাড়তি ৩০ms।",
+      "whyWrong": {
+        "0": "এটা ১ms-এর সাথে miss-এর খরচ ঠিকমতো যোগ করে না (০.০৫ × ৩০ = ১.৫ বাড়তি)।",
+        "2": "এটা প্রতিটা read-কে miss ধরে নেয়।",
+        "3": "হিসাবে miss-এর অংশ দ্বিগুণ ধরা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q22",
+      "difficulty": "medium",
+      "question": "সেকেন্ডে ১০,০০০ read আসে। Hit ratio ৯০% থেকে বেড়ে ৯৯% হলে database-এ সেকেন্ডে কয়টা query যাবে?",
+      "options": [
+        "৯,০০০ থেকে কমে ৯,৯০০",
+        "১,০০০ থেকে কমে ৯০০",
+        "১,০০০ থেকে কমে ১০০",
+        "১০০ থেকে কমে ১০"
+      ],
+      "correctIndex": 2,
+      "explanation": "Database-এ যায় শুধু miss। ৯০% hit-এ miss ১০% = ১,০০০; ৯৯% hit-এ miss ১% = ১০০। মাত্র ৯ শতাংশ পয়েন্টে database load দশ ভাগের এক ভাগ।",
+      "whyWrong": {
+        "0": "এগুলো hit-এর সংখ্যা, database-এ যাওয়া query না।",
+        "1": "Miss ১০% থেকে ১%-এ নামলে দশ গুণ কমে, ১০% না।",
+        "3": "৯০%-এ miss ১,০০০, ১০০ না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q23",
+      "difficulty": "medium",
+      "question": "Admin চালের দাম ৮০ থেকে ৭৫ করল। Database-এ ৭৫, কিন্তু customer-রা এখনো ৮০ দেখছে, আর একটু পরে ঠিক হয়ে যাচ্ছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Write-এর পরে cache থেকে key মোছা হয়নি, তাই TTL পর্যন্ত পুরনো কপি যাচ্ছে",
+        "Database-এর transaction commit হয়নি, তাই অন্য session পুরনো মান দেখছে",
+        "Redis-এর eviction policy noeviction, তাই নতুন মান cache-এ লেখা যাচ্ছে না",
+        "Browser-এর HTTP cache-এ পুরো page আটকে আছে, server-এর cache-এর এখানে কোনো ভূমিকা নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "Database ঠিক আছে, আর সমস্যা কিছুক্ষণ পরে নিজে মিটছে, মানে TTL শেষ হচ্ছে। এটা write-এ invalidation না থাকার লক্ষণ। ঠিক উপায়: database-এ লেখার পরে cache delete।",
+      "whyWrong": {
+        "1": "Database-এ ৭৫ দেখা যাচ্ছে, তাই commit হয়েছে।",
+        "2": "noeviction write আটকায় শুধু memory ভরলে, আর cache-aside write-এ cache-এ লেখেই না।",
+        "3": "সব customer একসাথে একই সময়ে ঠিক হয়ে যাওয়া server-side TTL-এর লক্ষণ, আলাদা browser cache-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q24",
+      "difficulty": "medium",
+      "question": "দুটো admin প্রায় একসাথে একই product-এর দাম বদলাল, আর দুজনেই write-এর পরে cache-এ নতুন মান SET করে। কী ভুল হতে পারে?",
+      "options": [
+        "দুটো SET একসাথে এলে Redis error দেয় আর key-টা চিরতরে lock হয়ে যায়",
+        "Database-এ দুটো write-ই হারিয়ে যাবে, কারণ cache-এ আগে লেখা হয়েছে",
+        "কোনো সমস্যা নেই, কারণ Redis নিজে থেকেই database-এর সর্বশেষ মান মিলিয়ে নিয়ে রাখে",
+        "দুটো SET উল্টো ক্রমে পৌঁছালে database-এ শেষ মান আর cache-এ আগের মান থাকবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Database আর cache-এ write পৌঁছানোর ক্রম আলাদা হতে পারে। Delete-এ ক্রমের কোনো প্রভাব নেই, তাই update-এর বদলে delete নিরাপদ।",
+      "whyWrong": {
+        "0": "Redis-এ একই key-তে দুটো SET স্বাভাবিক, শেষটা জেতে; lock হয় না।",
+        "1": "Database-এ write আলাদাভাবে হয়েছে, হারায়নি।",
+        "2": "Redis database-এর সাথে নিজে মিলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q25",
+      "difficulty": "medium",
+      "question": "এক developer write-এর সময় আগে cache থেকে key DELETE করে, তারপর database UPDATE করে। কোন সমস্যা হতে পারে?",
+      "options": [
+        "Delete-এর পরে database update হলে Redis নিজে থেকে নতুন মান টেনে নেয়, তাই কোনো সমস্যা নেই",
+        "Database update-এর সময় cache খালি থাকলে update fail করে, তাই data হারায়",
+        "Delete আগে দিলে পরের সব read চিরকাল miss হয়, কারণ key আর কখনো তৈরি হয় না",
+        "মাঝের ফাঁকে একটা read miss পেয়ে database থেকে পুরনো মান এনে cache-এ বসাতে পারে"
+      ],
+      "correctIndex": 3,
+      "explanation": "এই ফাঁকটা একটা পুরো database write-এর সময়, তাই race প্রায়ই ঘটে। পুরনো মান TTL পর্যন্ত থেকে যায়। আগে database, পরে delete এই ফাঁক অনেক ছোট করে।",
+      "whyWrong": {
+        "0": "সাধারণ Redis database থেকে কিছু টানে না।",
+        "1": "Database update cache-এর অবস্থার উপর নির্ভর করে না।",
+        "2": "পরের miss-এই app key আবার তৈরি করে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q26",
+      "difficulty": "medium",
+      "question": "Hit ratio বাড়াতে team সব key-র TTL ৫ মিনিট থেকে বাড়িয়ে ২৪ ঘণ্টা করল, write-এ কোনো invalidation নেই। কোন trade-off মেনে নিল?",
+      "options": [
+        "Hit ratio বাড়বে, কিন্তু দাম বদলালে পুরনো মান ২৪ ঘণ্টা পর্যন্ত থাকতে পারে",
+        "Hit ratio বাড়বে আর stale data-র ঝুঁকিও কমবে, কারণ বড় TTL-এ cache বেশি স্থির থাকে",
+        "Hit ratio কমবে, কারণ বড় TTL-এ key বেশিক্ষণ থাকায় নতুন key ঢোকার জায়গাই পায় না",
+        "কিছুই বদলাবে না, কারণ TTL শুধু memory-র ব্যাপার, পুরনো data-র সাথে এর সম্পর্ক নেই"
+      ],
+      "correctIndex": 0,
+      "explanation": "বড় TTL মানে কম মেয়াদ শেষ, তাই কম miss। কিন্তু invalidation না থাকলে TTL-ই একমাত্র উপায় পুরনো data সরানোর, তাই পুরনো মান পুরো TTL পর্যন্ত থাকতে পারে।",
+      "whyWrong": {
+        "1": "বড় TTL stale থাকার সম্ভাব্য সময় বাড়ায়, কমায় না।",
+        "2": "Memory ভরলে eviction জায়গা করে; সাধারণত বড় TTL hit ratio বাড়ায়।",
+        "3": "TTL-ই ঠিক করে কপি কতক্ষণ পুরনো থাকতে পারে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q27",
+      "difficulty": "medium",
+      "question": "Product page-এর TTL ১০ মিনিট। Business বলছে দাম বদলের পরে বড়জোর ৫ সেকেন্ড পুরনো দাম চলবে, আর write খুব কম। সবচেয়ে উপযুক্ত পরিবর্তন কী?",
+      "options": [
+        "TTL কমিয়ে ৫ সেকেন্ড করা, যাতে কোনো invalidation code লাগে না আর hit ratio একই থাকে",
+        "Cache পুরো বন্ধ করে দেওয়া, কারণ ৫ সেকেন্ডের শর্ত cache-এর সাথে মেলে না",
+        "Write-behind-এ চলে যাওয়া, যাতে cache সবসময় database-এর আগে নতুন মান পায়",
+        "Write-এর পরে cache delete যোগ করা, আর নিরাপত্তার জন্য TTL রেখে দেওয়া"
+      ],
+      "correctIndex": 3,
+      "explanation": "Write কম হলে delete-on-write খুব সস্তা আর দাম প্রায় সাথে সাথে তাজা হয়, অথচ বড় TTL-এর hit ratio থাকে। TTL থাকে শেষ রক্ষাকবচ হিসেবে।",
+      "whyWrong": {
+        "0": "৫ সেকেন্ড TTL শর্ত মেটায় কিন্তু miss অনেক বাড়ায়; hit ratio একই থাকে না।",
+        "1": "Cache বন্ধ করলে database-এর চাপ ফিরে আসে, অথচ delete দিয়ে শর্ত মেটানো যায়।",
+        "2": "Write-behind database-কে পিছিয়ে রাখে আর data হারানোর ঝুঁকি আনে; সমস্যাটা stale read।"
+      }
+    },
+    {
+      "id": "sd-day-017-q28",
+      "difficulty": "medium",
+      "question": "একটা Redis instance-এ cache আর user session দুটোই রাখা, policy allkeys-lru। Sale-এর দিন memory ভরে গেল। কোন অভিযোগ আসার সম্ভাবনা সবচেয়ে বেশি?",
+      "options": [
+        "Redis নতুন write-এ OOM error দিচ্ছে, তাই product page খুলছে না",
+        "User-রা হঠাৎ logout হয়ে যাচ্ছে, কারণ eviction session key-ও মুছে দিচ্ছে",
+        "Product-এর দাম ভুল দেখাচ্ছে, কারণ LRU পুরনো মান রেখে নতুন মান মুছে দেয়",
+        "Database-এর data মুছে যাচ্ছে, কারণ Redis eviction database-এও প্রভাব ফেলে"
+      ],
+      "correctIndex": 1,
+      "explanation": "allkeys-lru যেকোনো key মুছতে পারে, session-ও। Cache key মোছা ঠিক আছে (আবার আনা যায়), কিন্তু session হারালে user logout। তাই session আলাদা Redis-এ বা eviction ছাড়া রাখুন।",
+      "whyWrong": {
+        "0": "OOM error noeviction-এ হয়, allkeys-lru-তে না।",
+        "2": "LRU key মোছে, পুরনো মান বেছে রাখে না।",
+        "3": "Redis-এর eviction database-কে ছোঁয় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q29",
+      "difficulty": "medium",
+      "question": "একটা analytics job রাতে লাখ লাখ product একবার করে পড়ে। পরদিন সকালে cache-এর hit ratio অনেক নেমে গেছে। LRU cache-এ কী ঘটেছে?",
+      "options": [
+        "LRU একবার-পড়া key-গুলোকে সাথে সাথে বাদ দেয়, তাই job-এর কারণে cache-এর কোনো key-ই বদলায়নি",
+        "Analytics job database-এর data বদলে দিয়েছে, তাই সব cache entry invalid হয়ে গেছে",
+        "একবার-পড়া key-গুলো সাম্প্রতিক হওয়ায় আসল গরম key-গুলোকে evict করে দিয়েছে",
+        "Job-এর কারণে Redis-এর TTL সব key-তে শূন্য হয়ে গেছে আর সব একসাথে মুছেছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "LRU শুধু সাম্প্রতিকতা দেখে, তাই একবারের scan-এর key-রা গরম key-দের সরিয়ে দেয়। LFU বা W-TinyLFU-এর মতো policy, বা job-কে cache এড়িয়ে চালানো এর প্রতিকার।",
+      "whyWrong": {
+        "0": "LRU একবার-পড়া key-কে আলাদা করে চেনে না; এটাই তার দুর্বলতা।",
+        "1": "পড়ার job data বদলায় না।",
+        "3": "পড়া TTL বদলায় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q30",
+      "difficulty": "medium",
+      "question": "Redis-এ শুধু TTL-ওয়ালা key-রা evict হোক, TTL ছাড়া key-গুলো (যেমন কিছু config) কখনো না। কোন policy?",
+      "options": [
+        "allkeys-lru",
+        "noeviction",
+        "volatile-lru",
+        "allkeys-random বা allkeys-lfu"
+      ],
+      "correctIndex": 2,
+      "explanation": "volatile-* policy শুধু যেসব key-তে expire সেট আছে তাদের মধ্য থেকে মোছে। TTL ছাড়া key-রা বেঁচে থাকে। তবে TTL-ওয়ালা key না থাকলে এটা noeviction-এর মতো error দেয়।",
+      "whyWrong": {
+        "0": "allkeys-* TTL ছাড়া key-ও মোছে।",
+        "1": "noeviction কিছুই মোছে না, নতুন write fail করে।",
+        "3": "allkeys-random-ও সব key থেকে মোছে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q31",
+      "difficulty": "medium",
+      "question": "একটা জনপ্রিয় key-র মেয়াদ শেষ হতেই database CPU ঝটকা দিয়ে উঠছে, কারণ ৫০০টা request একসাথে একই query চালাচ্ছে। সবচেয়ে সরাসরি প্রতিকার কোনটা?",
+      "options": [
+        "Miss-এ per-key lock: একজন database থেকে আনবে, বাকিরা অপেক্ষা করে cache থেকে পাবে",
+        "TTL বাড়িয়ে দ্বিগুণ করা, যাতে মেয়াদ কম বার শেষ হয় আর প্রতিবারের ঢেউ অনেক ছোট হয়",
+        "Eviction policy LRU থেকে LFU-তে বদলানো, যাতে জনপ্রিয় key আর মুছে না যায়",
+        "আরও app server যোগ করা, যাতে ৫০০টা request আরও দ্রুত সামলানো যায়"
+      ],
+      "correctIndex": 0,
+      "explanation": "এটা cache stampede। Lock (single flight) দিয়ে একই key-র miss-গুলো এক database query-তে মেটে। Stale-while-revalidate বা early expiration-ও কাজ করে।",
+      "whyWrong": {
+        "1": "TTL বাড়ালে ঘটনা কম ঘটে, কিন্তু প্রতিবারের ৫০০টা query একই থাকে।",
+        "2": "সমস্যা eviction না, মেয়াদ শেষ; LFU মেয়াদ থামায় না।",
+        "3": "বেশি app server মানে database-এ আরও বেশি একসাথে query।"
+      }
+    },
+    {
+      "id": "sd-day-017-q32",
+      "difficulty": "medium",
+      "question": "Probabilistic early expiration (XFetch)-এর মূল ধারণা কী?",
+      "options": [
+        "মেয়াদ শেষ হলে সব request-কে এলোমেলো সময় অপেক্ষা করিয়ে তারপর database-এ পাঠানো",
+        "প্রতিটা key-র TTL এলোমেলোভাবে বাড়িয়ে-কমিয়ে দেওয়া, যাতে সবার মেয়াদ একসাথে না হয়",
+        "মেয়াদ শেষের আগেই, মেয়াদ যত কাছে তত বেশি সম্ভাবনায়, একটা request refresh করে",
+        "একটা নির্দিষ্ট সময় পরপর background job দিয়ে সব key একসাথে refresh করা"
+      ],
+      "correctIndex": 2,
+      "explanation": "প্রতিটা read-এ now − Δ·β·ln(rand()) হিসাব করে, মেয়াদ পেরোলে আগেভাগে refresh। মেয়াদের অনেক আগে প্রায় কেউ না, কাছে গেলে কেউ একজন, তাই সবাই একসাথে miss পায় না। Lock লাগে না।",
+      "whyWrong": {
+        "0": "অপেক্ষা করানো stampede-এর আরেক রকম প্রতিকার, XFetch না।",
+        "1": "সেটা TTL jitter, avalanche-এর প্রতিকার।",
+        "3": "সেটা background refresh।"
+      }
+    },
+    {
+      "id": "sd-day-017-q33",
+      "difficulty": "medium",
+      "question": "Bot-রা `/product/987654321`-এর মতো অস্তিত্বহীন id দিয়ে সেকেন্ডে হাজার request পাঠাচ্ছে; cache hit ratio ভালো হলেও database-এ চাপ। প্রথম কাজ কী?",
+      "options": [
+        "Eviction policy allkeys-lfu করা, যাতে অস্তিত্বহীন id-গুলো cache থেকে অন্য key-দের আগেই মুছে যায়",
+        "সব key-র TTL বাড়িয়ে এক দিন করা, যাতে database-এ কম request যায়",
+        "Write-through চালু করা, যাতে প্রতিটা নতুন id cache-এ আগে থেকেই থাকে",
+        "\"নেই\" উত্তরটাও ছোট TTL দিয়ে cache করা (negative caching), বা Bloom filter দিয়ে আটকানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা cache penetration: অস্তিত্বহীন data cache-এ কখনো বসে না। Negative caching দিয়ে 'নেই' মনে রাখা যায়, Bloom filter দিয়ে নিশ্চিতভাবে 'নেই' বলা id database-এ যেতেই দেয় না। Rate limiting-ও সাহায্য করে।",
+      "whyWrong": {
+        "0": "অস্তিত্বহীন id তো cache-এ নেই-ই, eviction-এর কিছু করার নেই।",
+        "1": "যে key cache-এ ঢোকে না, তার TTL বাড়ানো অর্থহীন।",
+        "2": "অস্তিত্বহীন id-তে write-ই হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q34",
+      "difficulty": "medium",
+      "question": "রাত ২টায় একটা job ৮০,০০০ product cache-এ ভরে, সবার TTL ঠিক ৩,৬০০ সেকেন্ড। প্রতি রাত ৩টায় database-এ spike। সবচেয়ে সহজ ঠিক উপায়?",
+      "options": [
+        "TTL বাড়িয়ে ৭,২০০ সেকেন্ড করা, যাতে spike রাত ৩টার বদলে ৪টায় হয়",
+        "Eviction policy volatile-ttl করা, যাতে মেয়াদ শেষের আগেই key মুছে যায়",
+        "Job-কে রাত ২টার বদলে রাত ৩টায় চালানো, যাতে spike-এর সময়েই cache ভরা হয়",
+        "TTL-এ jitter যোগ করা, যেমন ৩,৬০০ থেকে ৩,৯৬০ সেকেন্ডের মধ্যে এলোমেলো"
+      ],
+      "correctIndex": 3,
+      "explanation": "সব key একই মুহূর্তে ভরা আর একই TTL, তাই একসাথে মেয়াদ শেষ: cache avalanche। Jitter মেয়াদগুলো সময়জুড়ে ছড়ায়।",
+      "whyWrong": {
+        "0": "TTL বদলালে spike-এর সময় সরে, spike থাকে।",
+        "1": "volatile-ttl memory ভরলে কাকে মোছা হবে তা ঠিক করে, একসাথে মেয়াদ শেষ থামায় না।",
+        "2": "Job-এর সময় বদলালেও সবার মেয়াদ একসাথেই শেষ হবে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q35",
+      "difficulty": "medium",
+      "question": "Flash sale-এ একটা offer key-তে সেকেন্ডে লাখ read; Redis cluster-এর ১০টা node-এর একটার CPU 100%, বাকিগুলো অলস। কী করবেন?",
+      "options": [
+        "Cluster-এ আরও ১০টা Redis node যোগ করা, যাতে ওই key-র load স্বয়ংক্রিয়ভাবে সব node-এ ভাগ হয়ে যায়",
+        "Key-টা প্রতিটা app server-এর local cache-এ কয়েক সেকেন্ড রাখা, বা কয়েকটা কপিতে ভাগ করা",
+        "Key-টার TTL বাড়িয়ে দেওয়া, যাতে node-এর উপর read-এর চাপ কমে যায়",
+        "Eviction policy বদলে allkeys-lfu করা, যাতে key-টা আর কখনো evict না হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "এটা hot key: একটা key একটা node-এই থাকে, তাই node বাড়ালেও ওই key-র load ভাগ হয় না। Local L1 cache বা key replication load ছড়িয়ে দেয়।",
+      "whyWrong": {
+        "0": "একটা key সবসময় একটা node-এ hash হয়, node বাড়ালে তার load ভাগ হয় না।",
+        "2": "TTL read-এর সংখ্যা কমায় না।",
+        "3": "সমস্যা eviction না, একটা node-এর উপর read-এর চাপ।"
+      }
+    },
+    {
+      "id": "sd-day-017-q36",
+      "difficulty": "medium",
+      "question": "দশটা app server-এর প্রতিটায় local in-memory cache, TTL ১০ মিনিট। এক server-এ দাম বদলে নিজের cache মুছল। Customer refresh করলে কখনো নতুন, কখনো পুরনো দাম দেখছে। কেন?",
+      "options": [
+        "Database replication lag-এর কারণে একেক server একেক মান পড়ছে, local cache-এর কোনো ভূমিকা নেই",
+        "Load balancer নিজেই পুরনো response cache করে রেখেছে আর মাঝে মাঝে সেটা দিচ্ছে",
+        "বাকি নয়টা server-এর local cache-এ পুরনো দাম রয়ে গেছে, আর request ঘুরে ঘুরে যাচ্ছে",
+        "Local cache-এ LRU ঠিক কাজ করছে না, তাই নতুন মানটা বারবার evict হয়ে যাচ্ছে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Local cache প্রতিটা server-এর আলাদা কপি; এক জায়গায় মুছলে বাকিরা জানে না (cache coherence সমস্যা)। Shared cache, ছোট TTL বা pub/sub দিয়ে invalidation broadcast এর প্রতিকার।",
+      "whyWrong": {
+        "0": "Replication lag সম্ভব, কিন্তু এখানে বর্ণিত local cache-এর আচরণই সরাসরি কারণ।",
+        "1": "সাধারণ load balancer response cache করে না।",
+        "3": "Eviction নতুন মান বেছে মোছে না; পুরনো কপিগুলো অন্য server-এ।"
+      }
+    },
+    {
+      "id": "sd-day-017-q37",
+      "difficulty": "medium",
+      "question": "একটা like counter সেকেন্ডে হাজারবার বাড়ে; database-এ প্রতিটা increment লেখা ব্যয়বহুল, আর কয়েকটা like হারালে বড় ক্ষতি নেই। কোন pattern মানানসই?",
+      "options": [
+        "Write-through: প্রতিটা like Redis আর database দুটোতেই সাথে সাথে লেখা",
+        "Write-behind: Redis-এ INCR, আর কিছুক্ষণ পরপর batch করে database-এ লেখা",
+        "Write-around: প্রতিটা like সরাসরি database-এ, cache শুধু পড়ার জন্য",
+        "Cache-aside: database-এ লিখে প্রতিবার cache থেকে counter key মুছে দেওয়া যাতে তাজা থাকে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Write-behind অনেক write একত্র করে database-এ কম লেখে। ঝুঁকি (cache হারালে শেষ কয়েক সেকেন্ডের like হারানো) এখানে মেনে নেওয়া যায়। টাকা হলে চলত না।",
+      "whyWrong": {
+        "0": "Write-through প্রতিটা increment database-এ লেখে, যেটা এড়াতে চাইছি।",
+        "2": "Write-around database-এই সব write পাঠায়।",
+        "3": "সেকেন্ডে হাজার delete আর miss, database-এর চাপ কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q38",
+      "difficulty": "medium",
+      "question": "২ কোটি user, প্রতিটার profile cache-এ ~২KB। সক্রিয় ১০% user ৯০% request করে। শুরুতে মোটামুটি কত বড় cache যুক্তিসঙ্গত?",
+      "options": [
+        "প্রায় ৪০GB, কারণ সব user cache-এ না থাকলে hit ratio শূন্যের কাছে থাকে",
+        "প্রায় ৪GB (সক্রিয় ২০ লাখ × ২KB), কিছু overhead সহ",
+        "প্রায় ৪০০MB, কারণ cache-এ মোট data-র ১% রাখলেই সাধারণত যথেষ্ট",
+        "প্রায় ৪০MB, কারণ একসাথে কয়েক হাজারের বেশি user সক্রিয় থাকে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Working set হলো সক্রিয় অংশ: ২ কোটির ১০% = ২০ লাখ × ২KB ≈ ৪GB, যেটা ~৯০% request ধরবে। পুরো ৪০GB রাখলে hit ratio সামান্য বাড়ে, খরচ দশ গুণ।",
+      "whyWrong": {
+        "0": "সব রাখার দরকার নেই; চাহিদা অসমান, তাই working set যথেষ্ট।",
+        "2": "১% data-র নিয়ম নেই; এখানে সক্রিয় অংশ ১০%।",
+        "3": "সংখ্যাটা প্রশ্নের তথ্যের সাথে মেলে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q39",
+      "difficulty": "medium",
+      "question": "Redis-এ LRU eviction কিভাবে হয়?",
+      "options": [
+        "কয়েকটা key নমুনা নিয়ে তাদের মধ্যে সবচেয়ে বেশিদিন অব্যবহৃতটা মোছে",
+        "প্রতিটা key-র জন্য একটা doubly linked list রেখে list-এর লেজের key নিখুঁতভাবে মোছে",
+        "সব key-র শেষ ব্যবহারের সময় sort করে সবচেয়ে পুরনো ১০% একসাথে মোছে",
+        "শুধু যেসব key-তে TTL আছে তাদের মধ্যে সবচেয়ে আগে ঢোকা key মোছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "Memory বাঁচাতে Redis নিখুঁত LRU list রাখে না। maxmemory-samples (default 5) সংখ্যক key নমুনা নিয়ে সবচেয়ে পুরনোটা বাছে; ফল নিখুঁত LRU-র খুব কাছাকাছি।",
+      "whyWrong": {
+        "1": "এটা পাঠ্যবইয়ের LRU, Redis memory বাঁচাতে এটা করে না।",
+        "2": "প্রতিবার সব key sort করা খুব ব্যয়বহুল।",
+        "3": "TTL-ওয়ালা key থেকে বাছাই volatile-* policy-র কথা, আর সেটাও প্রবেশের ক্রমে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q40",
+      "difficulty": "medium",
+      "question": "Write-through cache-এর একটা অসুবিধা কী?",
+      "options": [
+        "প্রতিটা write দুই জায়গায় শেষ হওয়ার অপেক্ষা করে, আর অপ্রয়োজনীয় data-ও cache-এ ঢোকে",
+        "Database-এ পৌঁছানোর আগে cache মরলে write হারিয়ে যায়, কারণ database-এ লেখা হয় অনেক পরে",
+        "সদ্য লেখা data-র প্রথম read সবসময় miss হয়, কারণ write cache-কে এড়িয়ে যায়",
+        "Cache থেকে পড়া সম্ভব না, কারণ সব read সরাসরি database-এ পাঠানো হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Write-through cache-কে তাজা রাখে, কিন্তু write latency বাড়ে (দুটো লেখা) আর অপ্রয়োজনীয় data দিয়ে cache ভরতে পারে। তাই প্রায়ই TTL-এর সাথে ব্যবহার হয়।",
+      "whyWrong": {
+        "1": "সেটা write-behind-এর ঝুঁকি।",
+        "2": "সেটা write-around-এর আচরণ।",
+        "3": "Write-through-এ read cache থেকেই হয়।"
+      }
+    },
+    {
+      "id": "sd-day-017-q41",
+      "difficulty": "hard",
+      "question": "Cache-aside, write-এ আগে database তারপর delete। তবুও মাঝে মাঝে cache-এ পুরনো দাম পাওয়া যায়। কোন ক্রমে ঘটনা ঘটলে এটা সম্ভব?",
+      "options": [
+        "Writer delete করল, তারপর reader miss পেয়ে database থেকে নতুন মান পড়ে SET করল, তারপর writer database update করল",
+        "Reader miss-এ পুরনো মান পড়ল; writer update আর delete শেষ করল; তারপর reader পুরনো মান SET করল",
+        "Writer database update করল, reader hit পেয়ে পুরনো মান পড়ল, তারপর writer delete করল আর key মুছে গেল",
+        "দুটো reader একসাথে miss পেয়ে দুজনেই database থেকে নতুন মান পড়ে SET করল, শেষেরটা জিতল"
+      ],
+      "correctIndex": 1,
+      "explanation": "সঠিক ক্রমে delete-টা reader-এর SET-এর আগে হয়ে যায়, তাই কিছুই মোছে না, আর reader-এর পুরনো SET থেকে যায়। এর জন্য read-কে একটা পুরো write-এর চেয়ে বেশি আটকে থাকতে হয়, তাই বিরল কিন্তু সম্ভব।",
+      "whyWrong": {
+        "0": "এই ক্রমে writer আগে delete করছে, যেটা প্রশ্নের নিয়মের (আগে database) বিপরীত।",
+        "2": "শেষে delete হওয়ায় পুরনো মান cache-এ থাকে না; ওই hit শুধু update-এর মুহূর্তের।",
+        "3": "দুজনেই নতুন মান পড়লে cache-এ নতুন মানই বসে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q42",
+      "difficulty": "hard",
+      "question": "উপরের race-টা কমাতে একটা দল delayed double delete চালু করল: write-এর পরে delete, ৫০০ms পরে আবার delete। এই কৌশলের সীমাবদ্ধতা কী?",
+      "options": [
+        "দ্বিতীয় delete-এর কারণে নতুন মানও চিরতরে হারিয়ে যায়, তাই database থেকেও data মুছে যায়",
+        "দুটো delete Redis-এ একসাথে চললে deadlock হয়, তাই write path আটকে যায়",
+        "দ্বিতীয় delete-এর পরে সব read চিরকাল miss হয়, কারণ key আর কখনো তৈরি হয় না",
+        "Reader ৫০০ms-এর বেশি আটকে থাকলে তার পুরনো SET দ্বিতীয় delete-এর পরে এসে থেকে যাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Double delete সম্ভাবনা কমায়, নিশ্চয়তা দেয় না; সব নির্ভর করে delay কত আর reader কতক্ষণ আটকে থাকে। পুরো নিশ্চয়তার জন্য lease বা version check, আর TTL শেষ রক্ষাকবচ।",
+      "whyWrong": {
+        "0": "Delete শুধু cache-এর কপি মোছে; database-এ data থাকে, পরের miss আবার আনে।",
+        "1": "Redis-এ DEL atomic আর সরল, deadlock হয় না।",
+        "2": "পরের miss-এই app key আবার ভরে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q43",
+      "difficulty": "hard",
+      "question": "Facebook-এর memcache-এ lease কিভাবে stale set আটকায়?",
+      "options": [
+        "প্রতিটা key-তে একটা TTL থাকে যা delete-এর সময় শূন্য করা হয়, তাই পরের সব SET-ও শূন্য মেয়াদে লেখা হয়",
+        "Client SET করার আগে database-এ গিয়ে মানটা আবার যাচাই করে, মিললে তবেই লেখে",
+        "Memcache সব write একটা global lock দিয়ে ক্রমে চালায়, তাই কোনো race হতেই পারে না",
+        "Miss-এ client একটা token পায়; মাঝে key delete হলে token বাতিল, তাই দেরির SET প্রত্যাখ্যাত"
+      ],
+      "correctIndex": 3,
+      "explanation": "Lease token একটা miss আর তার পরের SET-কে জুড়ে দেয়। এর মধ্যে delete এলে token অকেজো হয়, ফলে ধীর reader-এর পুরনো SET cache-এ বসতে পারে না। Token দেওয়ার হার সীমিত রেখে একই ব্যবস্থা stampede-ও কমায়।",
+      "whyWrong": {
+        "0": "Paper-এ lease token দিয়ে কাজ হয়, TTL শূন্য করে না।",
+        "1": "প্রতিটা SET-এর আগে database যাচাই cache-এর উদ্দেশ্যই নষ্ট করে।",
+        "2": "Global lock এই scale-এ সম্ভব না, আর paper-এ নেই।"
+      }
+    },
+    {
+      "id": "sd-day-017-q44",
+      "difficulty": "hard",
+      "question": "Redis cache-এর hit ratio ৯৯%। Redis cluster restart হতেই database পড়ে গেল। মূল কারণ কোনটা?",
+      "options": [
+        "Redis restart-এর সময় database-এর connection pool বন্ধ হয়ে যায়, তাই database নিজেই crash করে",
+        "Restart-এর পরে Redis পুরনো সব data database-এ ফেরত লিখতে শুরু করে, তাই write load অনেক বাড়ে",
+        "Cache-এর TTL restart-এ শূন্য হয়ে যায়, তাই database-এর ভেতরের data-ও মেয়াদোত্তীর্ণ ধরা হয়",
+        "Database অভ্যস্ত ছিল ১% read-এ; cache খালি হতেই প্রায় ১০০ গুণ load আর stampede"
+      ],
+      "correctIndex": 3,
+      "explanation": "এটা cache avalanche: cache যত ভালো কাজ করে, database তত কম capacity রাখে। প্রতিকার replication/failover, miss-এ lock, database-এর সামনে limit বা circuit breaker, আর warmup বা ধীরে traffic ফেরানো।",
+      "whyWrong": {
+        "0": "Redis restart database-এর connection pool-কে প্রভাবিত করে না।",
+        "1": "Cache-aside-এ Redis database-এ কিছু লেখে না।",
+        "2": "Cache-এর TTL database-এর data-কে ছোঁয় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q45",
+      "difficulty": "hard",
+      "question": "XFetch সূত্রে প্রতিটা read-এ `now − Δ·β·ln(rand())` হিসাব করে মেয়াদের সাথে তুলনা করা হয়। β বাড়ালে কী হয়?",
+      "options": [
+        "Refresh গড়ে আরও আগে শুরু হয়: stampede-এর ঝুঁকি কমে, কিন্তু refresh বেশি হয়",
+        "Refresh আরও দেরিতে হয়, মেয়াদ শেষ হওয়ার পরেও কিছুক্ষণ পুরনো মান দেওয়া চলতে থাকে",
+        "Δ-এর প্রভাব শূন্য হয়ে যায়, তাই সব key একই সময়ে refresh হয় তাদের খরচ যাই হোক",
+        "সম্ভাবনা আর এলোমেলো থাকে না, প্রতিটা request-ই নির্দিষ্টভাবে refresh করে"
+      ],
+      "correctIndex": 0,
+      "explanation": "−ln(rand()) ধনাত্মক, আর Δ·β দিয়ে গুণ হয়ে 'এখন'-কে সামনে ঠেলে। β বড় মানে আরও বেশি সামনে, তাই মেয়াদের আরও আগে refresh-এর সম্ভাবনা। দাম: অপ্রয়োজনীয় আগাম refresh।",
+      "whyWrong": {
+        "1": "β বাড়ালে আগে হয়, দেরিতে না; মেয়াদের পরে মান দেওয়া stale-while-revalidate।",
+        "2": "Δ আর β গুণ হয়, β বাড়ালে Δ-এর প্রভাব বাড়ে, শূন্য হয় না।",
+        "3": "rand() থাকায় সিদ্ধান্ত এলোমেলোই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q46",
+      "difficulty": "hard",
+      "question": "Per-key lock-এ একজন request miss-এ `SET lock:k 1 NX PX 2000` নেয়। Lock-এ মেয়াদ (PX) না দিলে কোন বিপদ?",
+      "options": [
+        "NX ছাড়া PX দিলে দুজন একসাথে lock পাবে, কিন্তু PX ছাড়া NX ঠিকমতো কাজ করে, তাই বিপদ নেই",
+        "Lock-ধারী crash করলে lock চিরকাল থাকবে, আর ওই key-র বাকি request অনন্ত অপেক্ষা করবে",
+        "PX না দিলে Redis lock-টা disk-এ লেখে, তাই প্রতিটা lock অনেক ধীর হয়ে যায়",
+        "PX না দিলে lock key-টা allkeys-lru-তে কখনো evict হয় না, তাই memory ধীরে ধীরে ভরে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Lock-এর মেয়াদ হলো নিরাপত্তা জাল: lock-ধারী মরলে কিছুক্ষণ পরে lock নিজেই খুলে যায়। মেয়াদ কাজের সময়ের চেয়ে বেশি রাখতে হয়, আর মোছার আগে দেখতে হয় lock এখনো নিজের কিনা।",
+      "whyWrong": {
+        "0": "NX একা মেয়াদ দেয় না; crash-এ lock আটকে থাকার সমস্যা থাকেই।",
+        "2": "PX-এর সাথে persistence-এর সম্পর্ক নেই।",
+        "3": "Eviction policy TTL ছাড়া key-ও মুছতে পারে (allkeys-*), আর আসল বিপদ অপেক্ষা।"
+      }
+    },
+    {
+      "id": "sd-day-017-q47",
+      "difficulty": "hard",
+      "question": "Lab-এর মতো ২০টা concurrent request একটা মোছা key-তে এলো। Lock ছাড়া database query ১৮টা হলো, ২০টা না। কেন?",
+      "options": [
+        "Redis নিজে থেকেই একই key-র কয়েকটা miss একত্র করে, lock না থাকলেও request coalescing করে",
+        "PostgreSQL একই query-র ফল নিজের query result cache থেকে দুবার ফেরত দিয়েছে",
+        "শেষের দিকের কয়েকটা request প্রথম query cache ভরার পরে পৌঁছেছিল, তাই hit পেয়েছে",
+        "দুটো request timeout হয়ে হারিয়ে গেছে, কারণ database একসাথে ১৮টার বেশি query নেয় না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Concurrent মানে ঠিক এক মুহূর্তে না; ~৩০০ms-এর query শেষ হওয়ার আগে যারা miss পেয়েছে তারা সবাই database-এ গেছে, পরে যারা এসেছে তারা hit পেয়েছে।",
+      "whyWrong": {
+        "0": "সাধারণ Redis miss একত্র করে না; সেটা app বা proxy-র কাজ।",
+        "1": "PostgreSQL-এ query result cache নেই; buffer cache page রাখে।",
+        "3": "Query গোনা হয় app-এর ভেতরে, timeout-এর কোনো লক্ষণ ছিল না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q48",
+      "difficulty": "hard",
+      "question": "Cache-এ L1 (প্রতিটা server-এর local, TTL ৫ সেকেন্ড) আর L2 (Redis, TTL ১০ মিনিট)। দাম বদলে Redis-এ delete করা হলো। User সর্বোচ্চ কতক্ষণ পুরনো দাম দেখতে পারে, অন্য কোনো race না ধরে?",
+      "options": [
+        "প্রায় ১০ মিনিট, কারণ L2-এর TTL-ই সবসময় শেষ সীমা ঠিক করে",
+        "শূন্য, কারণ Redis-এ delete করলে সব server-এর L1-ও সাথে সাথে মুছে যায়",
+        "প্রায় ১০ মিনিট ৫ সেকেন্ড, কারণ দুটো TTL যোগ হয়ে যায়",
+        "প্রায় ৫ সেকেন্ড, কারণ L1-এর কপি নিজের TTL শেষ না হওয়া পর্যন্ত থাকে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Redis delete L2 মোছে, কিন্তু প্রতিটা server-এর L1 আলাদা, সে জানে না। তার কপি বড়জোর ৫ সেকেন্ড বাঁচে; তারপর L2-তে miss, database থেকে নতুন মান। দ্রুততর চাইলে pub/sub দিয়ে L1 invalidation।",
+      "whyWrong": {
+        "0": "L2 মোছা হয়েছে, তাই তার TTL আর প্রাসঙ্গিক না।",
+        "1": "L1 local memory; pub/sub বা client-side caching ছাড়া Redis delete তাকে ছোঁয় না।",
+        "2": "L1 মেয়াদ শেষে L2 দেখে, যেটা ইতিমধ্যে মোছা, তাই যোগ হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q49",
+      "difficulty": "hard",
+      "question": "একটা cache key `product:{id}`, কিন্তু response user-এর ভাষা (bn/en) অনুযায়ী বদলায়। কী সমস্যা হবে, আর ঠিক উপায় কী?",
+      "options": [
+        "কোনো সমস্যা নেই, কারণ Redis request-এর Accept-Language দেখে আলাদা কপি রাখে",
+        "প্রতিটা read miss হবে, কারণ ভাষা বদলালে key-এর hash বদলে যায়; TTL কমালে ঠিক হবে",
+        "প্রথম miss-এর ভাষাই সবাই পাবে; key-তে ভাষা যোগ করুন, যেমন product:{id}:lang:{lang}",
+        "দুই ভাষার data একই key-তে মিশে যাবে আর JSON নষ্ট হবে; value compress করলেই এটা ঠিক হবে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Cache key-তে সেই সব কিছু থাকতে হবে যা দিয়ে response বদলায়। না থাকলে একজনের রূপ আরেকজন পায়; personalised data হলে এটা privacy ভঙ্গ।",
+      "whyWrong": {
+        "0": "Redis HTTP header দেখে না; এটা Day 11-এর Vary header-এর ধারণা, app cache-এ নিজে করতে হয়।",
+        "1": "Key একই থাকায় miss না, ভুল hit হয়।",
+        "3": "একই key-তে শেষ SET জেতে, মিশে যায় না; সমস্যা ভুল ভাষা।"
+      }
+    },
+    {
+      "id": "sd-day-017-q50",
+      "difficulty": "hard",
+      "question": "একটা service-এ write-behind cache, প্রতি ৫ সেকেন্ডে database-এ flush। Team order-এর status এখানে রাখতে চায়। আপনার আপত্তি কী?",
+      "options": [
+        "Flush-এর আগে cache মরলে শেষ কয়েক সেকেন্ডের status হারাবে, আর database পিছিয়ে থাকবে",
+        "Write-behind-এ read ধীর হয়, কারণ প্রতিটা read-এ database থেকে যাচাই করতে হয়",
+        "৫ সেকেন্ড পরপর flush database-কে প্রতিবার lock করে, তাই order নেওয়া বন্ধ হয়ে যায়",
+        "Write-behind cache শুধু string রাখতে পারে, তাই order status-এর মতো structured data এখানে রাখা যায় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Order status হারালে টাকা আর ভরসা দুটোই যায়, আর database-ই source of truth হওয়ার কথা। এমন data আগে durable database-এ; cache শুধু কপি।",
+      "whyWrong": {
+        "1": "Write-behind-এ read cache থেকে, দ্রুত।",
+        "2": "Batch flush database lock করে order বন্ধ করে না।",
+        "3": "Data-র ধরনের সীমা pattern ঠিক করে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q51",
+      "difficulty": "hard",
+      "question": "দুটো policy তুলনা: allkeys-lru বনাম allkeys-lfu। কোন workload-এ LFU স্পষ্টভাবে ভালো?",
+      "options": [
+        "প্রতিদিন নতুন news article আসে, পুরনোগুলো কেউ আর পড়ে না, আর চাহিদা খুব দ্রুত বদলায়",
+        "সব key প্রায় সমান হারে পড়া হয়, কোনো key অন্যগুলোর চেয়ে বেশি জনপ্রিয় না",
+        "কিছু product সারাদিন স্থির জনপ্রিয়, আর মাঝে মাঝে একবারের scan অনেক key ছোঁয়",
+        "Cache-এ কখনো memory ভরে না, কারণ working set maxmemory-র চেয়ে ছোট"
+      ],
+      "correctIndex": 2,
+      "explanation": "LFU ব্যবহারের সংখ্যা দেখে, তাই একবারের scan স্থায়ী জনপ্রিয় key সরাতে পারে না। দ্রুত বদলানো চাহিদায় LRU প্রায়ই ভালো, কারণ LFU-র পুরনো counter কমতে সময় নেয়।",
+      "whyWrong": {
+        "0": "দ্রুত বদলানো চাহিদায় সাম্প্রতিকতা বেশি গুরুত্বপূর্ণ, LRU ভালো খাটে।",
+        "1": "সমান চাহিদায় কোনো policy-ই বিশেষ সুবিধা দেয় না।",
+        "3": "Memory না ভরলে eviction-ই হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q52",
+      "difficulty": "hard",
+      "question": "Database-এ write হলে একটা consumer change stream (CDC) পড়ে cache delete করে। App-এর delete code বাদ দিলে কী লাভ, আর কী নতুন ঝুঁকি?",
+      "options": [
+        "Invalidation সাথে সাথে আর নিশ্চিত হয়, তাই TTL আর রাখার দরকার নেই",
+        "অন্য service-এর write-ও ধরা পড়ে; কিন্তু stream-এর lag-এ পুরনো data থাকে, আর consumer থামলে invalidation থামে",
+        "Cache আর database-এর মধ্যে strong consistency পাওয়া যায়, কারণ stream database transaction-এরই অংশ হিসেবে চলে, তাই lag থাকে না",
+        "Write latency অনেক কমে যায়, কারণ database-এ লেখার দরকার হয় না, stream-এ লিখলেই হয়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Event-ভিত্তিক invalidation app-কে মুক্ত করে আর সব write পথ ধরে (Facebook-এর mcsqueal-এর মতো), কিন্তু এটা asynchronous। Lag আর consumer-এর ব্যর্থতা নজরে রাখতে হয়, আর TTL তবুও রাখতে হয়।",
+      "whyWrong": {
+        "0": "Stream asynchronous, তাই সাথে সাথে না; TTL শেষ রক্ষাকবচ হিসেবে থাকেই।",
+        "2": "Cache delete commit-এর পরে আলাদাভাবে হয়, তাই consistency eventual।",
+        "3": "CDC database-এর write থেকেই আসে, database-এ লেখা বাদ যায় না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q53",
+      "difficulty": "hard",
+      "question": "একটা endpoint-এ cache-aside চালু করার পরে p50 latency অনেক কমল, কিন্তু p99 প্রায় আগের মতোই থাকল। সবচেয়ে সম্ভাব্য ব্যাখ্যা?",
+      "options": [
+        "Redis-এর network latency database-এর চেয়েও বেশি, তাই cache আসলে সব request-কে ধীর করছে",
+        "Miss-গুলো এখনো আগের মতোই ধীর, আর সবচেয়ে ধীর ১% request বেশিরভাগই miss",
+        "p99 মাপা হয় শুধু write request-এ, তাই read cache-এর প্রভাব p99-এ দেখা যায় না",
+        "Cache hit ratio ১০০% হলেও p99 বদলায় না, কারণ percentile cache-এর উপর নির্ভর করে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "Hit ratio ৯৯%-এর কম হলে tail-এ miss থাকে, আর miss-এর খরচ কমেনি। p99 কমাতে hit ratio বাড়ানো, miss-এর query নিজেই দ্রুত করা, বা stale-while-revalidate দিয়ে user-কে miss-এর অপেক্ষা থেকে বাঁচাতে হয়।",
+      "whyWrong": {
+        "0": "তাহলে p50-ও খারাপ হতো, কিন্তু p50 কমেছে।",
+        "2": "Percentile সব request থেকেই মাপা হয়।",
+        "3": "১০০% hit হলে কোনো ধীর miss থাকত না, p99-ও কমত।"
+      }
+    },
+    {
+      "id": "sd-day-017-q54",
+      "difficulty": "hard",
+      "question": "Cache penetration ঠেকাতে Bloom filter-এ সব বৈধ product id রাখা হলো। Filter বলল \"হয়তো আছে\", কিন্তু database-এ id নেই। এটা কী, আর কী করবেন?",
+      "options": [
+        "এটা false negative, মানে filter-এর data নষ্ট হয়েছে, তাই পুরো filter আবার বানাতে হবে",
+        "Bloom filter কখনো ভুল বলে না, তাই নিশ্চয়ই database-এর replication lag; replica থেকে আবার পড়ুন",
+        "এটা false positive, Bloom filter-এ স্বাভাবিক; না পেলে negative cache-এ রেখে দিন",
+        "Filter-এর \"হয়তো আছে\" মানে নিশ্চিতভাবে আছে, তাই database-এর query-টাই ভুল লেখা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Bloom filter কখনো \"নেই\" ভুল বলে না (false negative হয় না), কিন্তু মাঝে মাঝে \"হয়তো আছে\" ভুল বলে (false positive)। তাই negative caching-এর সাথে মিলিয়ে ব্যবহার। Bloom filter-এর গভীরে Day 24-এ।",
+      "whyWrong": {
+        "0": "Bloom filter-এ false negative হয় না; এটা false positive।",
+        "1": "Bloom filter সম্ভাব্যতা-ভিত্তিক, false positive দিতে পারে।",
+        "3": "\"হয়তো আছে\" নিশ্চয়তা না, সেটাই এর নাম থেকে বোঝা যায়।"
+      }
+    },
+    {
+      "id": "sd-day-017-q55",
+      "difficulty": "hard",
+      "question": "নতুন region-এ খালি Redis cluster চালু করে সব traffic একবারে পাঠানো হলো, database ভেঙে পড়ল। Facebook-এর paper-এ বর্ণিত কোন কৌশল এখানে মানানসই?",
+      "options": [
+        "Cold cluster warmup: নতুন cluster-এর miss আগে গরম cluster থেকে পড়া, database থেকে না",
+        "Gutter pool: সব traffic কয়েকটা অলস server-এ পাঠানো, যতক্ষণ না database আবার ঠিক হয়ে ওঠে",
+        "Regional pool: সব data একটা pool-এ রেখে সব cluster-এর মধ্যে ভাগ করে নেওয়া",
+        "Lease: প্রতিটা key-তে token দিয়ে নতুন cluster-এর সব write বন্ধ রাখা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Paper-এ নতুন (cold) cluster-এর miss গরম cluster থেকে মেটানো হয়, ফলে cache গরম হয় database-এ চাপ না দিয়ে। বিকল্প হিসেবে ধীরে ধীরে traffic বাড়ানো।",
+      "whyWrong": {
+        "1": "Gutter মরা server-এর বদলি, নতুন cluster গরম করার জন্য না।",
+        "2": "Regional pool কম ব্যবহৃত data ভাগ করে রাখার জন্য।",
+        "3": "Lease stale set আর stampede-এর জন্য, warmup-এর জন্য না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q56",
+      "difficulty": "hard",
+      "question": "App-এর cache-এ সব key-র TTL ১ ঘণ্টা, কিন্তু Redis-এর memory সবসময় maxmemory ছুঁয়ে থাকে আর evicted_keys দ্রুত বাড়ছে, hit ratio ৬০%। প্রথম কোন তথ্যটা দেখবেন?",
+      "options": [
+        "Database-এর index ঠিক আছে কিনা, কারণ eviction সাধারণত database-এর ধীর query থেকেই শুরু হয়",
+        "Redis-এর persistence (AOF) চালু কিনা, কারণ AOF চালু থাকলে eviction বাড়ে",
+        "Working set কত বড়: সক্রিয় key-গুলো maxmemory-তে ধরে, নাকি গরম key-ও evict হচ্ছে",
+        "App server-এর CPU কত, কারণ eviction app server-এর load থেকে নির্ভর করে"
+      ],
+      "correctIndex": 2,
+      "explanation": "অনবরত eviction আর কম hit ratio মানে cache working set-এর চেয়ে ছোট: key মেয়াদের আগেই সরে যাচ্ছে। Memory বাড়ানো, value ছোট করা, বা কম মূল্যবান data cache থেকে বাদ দেওয়া উপায়।",
+      "whyWrong": {
+        "0": "Index database-এর গতি বদলায়, cache-এর eviction-এর কারণ না।",
+        "1": "AOF data কোথায় যায় ঠিক করে, eviction-এর হার না।",
+        "3": "Eviction Redis-এর memory সীমা থেকে হয়, app CPU থেকে না।"
+      }
+    },
+    {
+      "id": "sd-day-017-q57",
+      "difficulty": "hard",
+      "question": "Memcached-ভিত্তিক একটা cache-এ একটা server মরলে তার key-গুলোর সব request database-এ চলে যাচ্ছে। Facebook-এর \"gutter pool\" কিভাবে সাহায্য করে?",
+      "options": [
+        "মরা server-এর key-গুলো সাথে সাথে বাকি সব server-এ নতুন করে hash করে ছড়িয়ে দেয়",
+        "মরা server-এর request কয়েকটা অলস gutter server-এ যায়, যারা অল্প সময় data রাখে",
+        "মরা server-এর data disk থেকে পুনরুদ্ধার করে নতুন server-এ কপি করে দেয়",
+        "মরা server-এর সব key-কে negative cache-এ রেখে দেয়, যাতে database-এ কোনো request না যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Gutter একটা ছোট বদলি pool: miss সেখানে গিয়ে ভরে, অল্প সময় থাকে, database বাঁচে। বাকি server-এ key ছড়ালে তাদের hit ratio-ও নষ্ট হতে পারত, আর মরা server ফিরলে আবার সব সরত।",
+      "whyWrong": {
+        "0": "Paper-এ ইচ্ছা করে সব key rehash না করে gutter ব্যবহার করা হয়েছে।",
+        "2": "Memcached-এ persistence নেই, পুনরুদ্ধারের কিছু নেই।",
+        "3": "আসল data-কে negative cache-এ রাখলে user-রা ভুলভাবে 'নেই' দেখত।"
+      }
+    },
+    {
+      "id": "sd-day-017-q58",
+      "difficulty": "hard",
+      "question": "Python app-এ `functools.lru_cache(maxsize=10000)` দিয়ে product cache করা, ৮টা gunicorn worker process। কোন কথাটা ঠিক?",
+      "options": [
+        "প্রতিটা worker process-এর আলাদা cache, তাই একই product ৮বার miss হতে পারে",
+        "৮টা worker একই memory-তে একটা cache ভাগ করে, তাই মোট ১০,০০০ entry-ই থাকে",
+        "lru_cache নিজে TTL দেয়, তাই দাম বদলের পরে কয়েক মিনিটের মধ্যে নিজেই তাজা হয়ে যায়",
+        "lru_cache database-এর buffer cache ব্যবহার করে, তাই app-এর memory খরচ হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Process-এর memory আলাদা, তাই local cache প্রতি process-এ আলাদা কপি। তাছাড়া lru_cache-এ TTL নেই, তাই invalidation-ও নিজে করতে হয়। Shared data-র জন্য Redis বা TTL-ওয়ালা local cache ভালো।",
+      "whyWrong": {
+        "1": "আলাদা process memory ভাগ করে না।",
+        "2": "functools.lru_cache-এ কোনো মেয়াদ নেই, শুধু আকারের সীমা।",
+        "3": "এটা পুরোপুরি process-এর নিজের memory-তে।"
+      }
+    },
+    {
+      "id": "sd-day-017-q59",
+      "difficulty": "hard",
+      "question": "Write-through cache-এ app আগে Redis-এ লেখে, তারপর database-এ। Database write fail করল, app error ফেরত দিল। এখন কী অবস্থা?",
+      "options": [
+        "কিছু হয়নি, কারণ write-through-এ database fail করলে Redis নিজে থেকেই আগের মানে ফিরে যায় আর error লুকায়",
+        "Database আর cache দুটোতেই পুরনো মান, কারণ write-through একটা atomic transaction",
+        "Database-এ নতুন মান আছে কিন্তু cache-এ নেই, তাই পরের read-এ miss হয়ে ঠিক মান আসবে",
+        "Cache-এ নতুন মান আছে কিন্তু database-এ নেই; key মোছা বা TTL শেষ না হওয়া পর্যন্ত ভুল মান দেখাবে"
+      ],
+      "correctIndex": 3,
+      "explanation": "দুটো আলাদা system-এ লেখা atomic না। Database-এ আগে লেখা আর সফল হলে তবে cache, বা fail-এ cache key মুছে দেওয়া নিরাপদ। TTL ক্ষতির সময় সীমিত করে।",
+      "whyWrong": {
+        "0": "Redis database-এর ফলাফল জানে না, নিজে rollback করে না।",
+        "1": "Cache আর database মিলে কোনো transaction হয় না।",
+        "2": "Database write fail করেছে, তাই সেখানে নতুন মান নেই।"
+      }
+    },
+    {
+      "id": "sd-day-017-q60",
+      "difficulty": "hard",
+      "question": "Postgres-এর `shared_buffers` বাড়ানোর বদলে Redis cache যোগ করার পক্ষে সবচেয়ে শক্ত যুক্তি কোনটা?",
+      "options": [
+        "Redis query-র তৈরি ফল রাখে, তাই hit-এ JOIN চলেই না; shared_buffers শুধু disk I/O বাঁচায়",
+        "shared_buffers শুধু write-এর জন্য, read-এ কোনো কাজে আসে না, তাই বাড়ালে লাভ নেই",
+        "Redis-এর data কখনো stale হয় না, কিন্তু shared_buffers-এর page প্রায়ই পুরনো থাকে",
+        "shared_buffers বাড়ালে database-এর durability নষ্ট হয়, কারণ তখন data আর disk-এ লেখাই হয় না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Buffer cache page রাখে, তাই query-র CPU কাজ (JOIN, sort, aggregation) প্রতিবার হয়। Application cache ফলটাই রাখে। দাম: invalidation-এর দায় এখন আপনার।",
+      "whyWrong": {
+        "1": "shared_buffers read-এও কাজে আসে।",
+        "2": "উল্টো: buffer cache database নিজে সবসময় সঠিক রাখে, Redis-এর কপিই stale হতে পারে।",
+        "3": "WAL আর checkpoint durability রাখে; shared_buffers-এর আকার সেটা নষ্ট করে না।"
+      }
+    }
+  ]
+}

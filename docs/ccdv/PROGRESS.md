@@ -82,3 +82,18 @@ Not done / honest list (the chapter-audit bullet below is now partly outdated: c
 Done for Milestone 1: all 15 chapters + 10 mock exams (content), flashcard quiz with AI validation, saved practice MCQ / flashcards / sort-game answers with Reset, Ask AI tab, day dropdowns.
 Deliberately left for next week (Milestones 2–4, ch07+): the same flashcard quiz, submit-flow simulators and DB-saved practice for the other chapters (practice MCQ saving already works for ALL chapters),
 mock-exam attempts in the DB, and a real end-to-end check with OPENAI_API_KEY set.
+
+## Update: flashcard typing switched off (Milestone 1)
+
+`FLASHCARD_TYPED_ANSWERS = false` in `lib/data/ccdv/schedule.ts` hides the typed answer box, Validate button and AI verdict. The flashcards stay (colourful card, click to see the answer,
+Ager / Abar dekbo / Mone ache / Porer, remembered dots, Reset, saved to DB). Set the flag to `true` to bring the typing + AI grading back; the backend `/ccdv-flashcard/validate` endpoint is untouched.
+
+## Milestones 1–4 complete (2026-11-12)
+
+- All 15 chapters now use the same experience: flip-flashcard deck (typing off, `FLASHCARD_TYPED_ANSWERS = false`), submit-flow sort-game simulators, practice MCQ review/history/reset, Ask AI, Day dropdowns.
+  The Milestone-1-only gating (`hasInteractiveFlashcards`, `hasSubmitSimulators`) and the old plain flashcard deck were removed.
+- Mock-exam attempts are saved to the DB (`apps/backend/src/ccdv-exam-attempts`: `GET|POST /ccdv-exam-attempts`, idempotent by attempt id) and mirrored in localStorage (`lib/ccdv/attempts-api.ts`).
+  Each exam's intro page lists earlier attempts (score, time, PASS/FAIL) with "কোনটা ঠিক/ভুল দেখো" to reopen the full review with your answers; Analytics reads the same data.
+- Verified: unit/render tests (1049), tsc + eslint clean, real MongoDB for the attempts service (idempotency, ordering, per-user isolation, payload limits), and a headless-Chromium run
+  against a fake API: ch09 flashcards + sort-game save/restore, Mock Exam 5 submit → wipe browser storage → past attempt listed → review reopened → analytics.
+- Still NOT verified: a real grading call through `OPENAI_API_KEY` (typing is switched off anyway), and requests through the real login/cookie against a running backend.

@@ -4,6 +4,8 @@ import {
   EXAM_MINUTES,
   PASS_SCALED,
 } from "@/lib/data/ccdv/blueprint";
+import type { AttemptRecord } from "@/lib/ccdv/storage";
+import PastAttempts from "./PastAttempts";
 import { formatClock } from "./ExamTimer";
 
 const RULES = [
@@ -18,11 +20,16 @@ const RULES = [
 export default function ExamIntro({
   number,
   draftRemaining,
+  attempts,
+  onView,
   onStart,
   onResume,
 }: {
   number: number;
   draftRemaining: number | null;
+  /** Earlier submitted attempts of this exam, oldest first. */
+  attempts: AttemptRecord[];
+  onView: (attempt: AttemptRecord) => void;
   onStart: () => void;
   onResume: () => void;
 }) {
@@ -52,6 +59,7 @@ export default function ExamIntro({
             {draftRemaining !== null ? "নতুন করে শুরু করো" : "Start exam"}
           </Button>
         </div>
+        <PastAttempts attempts={attempts} onView={onView} />
       </CardContent>
     </Card>
   );

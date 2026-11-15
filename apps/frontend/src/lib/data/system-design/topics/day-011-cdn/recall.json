@@ -1,0 +1,65 @@
+{
+  "topicId": "sd-day-011",
+  "points": [
+    {
+      "term": "Edge Server / PoP",
+      "prompt": "Edge server আর PoP কী, আর user কিভাবে কাছের PoP-এ পৌঁছায়?",
+      "answer": "Edge server হলো CDN-এর server যে user-এর request নিয়ে cache থেকে উত্তর দেয়; একটা শহর বা data center-এ এদের দলকে বলে PoP (Point of Presence)। User কাছের PoP-এ পৌঁছায় DNS-based steering (CDN-এর DNS কাছের PoP-এর IP দেয়) বা anycast (একই IP অনেক PoP থেকে ঘোষণা, routing নিজেই কাছেরটায় নেয়) দিয়ে।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Origin",
+      "prompt": "Origin কী, আর CDN থাকার পরেও origin-এর ভূমিকা কী থাকে?",
+      "answer": "Origin হলো আপনার আসল server বা object storage, যেখানে file-এর মূল কপি থাকে আর যে Cache-Control দিয়ে ঠিক করে কী কতক্ষণ cache হবে। CDN-এ MISS হলে বা TTL শেষে revalidation লাগলে edge origin-কেই জিজ্ঞেস করে, তাই origin এখনো সত্যের উৎস, শুধু অনেক কম request পায়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Cache HIT, MISS ও TTL",
+      "prompt": "HIT আর MISS-এ edge কী করে, আর TTL কী ঠিক করে?",
+      "answer": "HIT মানে edge-এর কাছে তাজা কপি আছে, সাথে সাথে দেয়, origin কিছু জানে না। MISS মানে নেই, তাই edge origin থেকে এনে user-কে দেয় আর একটা কপি রেখে দেয়। TTL ঠিক করে কপিটা কতক্ষণ তাজা ধরা হবে; শেষ হলে আবার আনতে বা revalidate করতে হয়।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Cache-Control",
+      "prompt": "max-age আর s-maxage-এর পার্থক্য কী? no-cache আর no-store কি একই?",
+      "answer": "max-age browser আর CDN দুজনের জন্যই তাজা থাকার সময়, s-maxage শুধু shared cache-এর (CDN) জন্য আর থাকলে তারা সেটাই মানে; public মানে shared cache রাখতে পারে, private মানে শুধু browser। no-cache মানে রাখা যাবে কিন্তু প্রতিবার origin-কে জিজ্ঞেস করে দিতে হবে, আর no-store মানে কোথাও রাখাই যাবে না।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "ETag ও 304 Revalidation",
+      "prompt": "TTL শেষ হলে edge কিভাবে পুরো file না এনে যাচাই করে?",
+      "answer": "Origin প্রতিটা response-এর সাথে ETag (file-এর fingerprint) দেয়। মেয়াদ শেষে edge If-None-Match-এ সেই ETag পাঠিয়ে জিজ্ঞেস করে বদলেছে কিনা; না বদলালে origin body ছাড়া 304 Not Modified দেয়, আর edge কপির মেয়াদ বাড়িয়ে নেয়। এতে একটা round trip লাগে, কিন্তু file-এর bandwidth বাঁচে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Cache Key ও Vary",
+      "prompt": "Cache key কী দিয়ে তৈরি হয়, আর query string বা Vary: User-Agent কিভাবে hit ratio কমায়?",
+      "answer": "সাধারণত key = scheme + host + path + query string, আর Vary-তে বলা header অনুযায়ী আলাদা variant। utm-এর মতো query বদলালে একই file আলাদা key পায়, আবার MISS আর দুবার জায়গা নেয়; Vary: User-Agent দিলে হাজারো variant। তাই অপ্রয়োজনীয় query key থেকে বাদ দিন আর Vary শুধু দরকারি header-এ (যেমন Accept-Encoding)।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Cache Hit Ratio",
+      "prompt": "Hit ratio ৯৫% থেকে ৯৯% করলে origin-এর load কতটা বদলায়, আর কেন?",
+      "answer": "Origin পায় শুধু miss, তাই হিসাবটা miss ratio-তে: ৫% থেকে ১%, মানে origin-এর load পাঁচ ভাগের এক ভাগ। দিনে ১ কোটি request-এ origin-এর request ৫ লাখ থেকে ১ লাখে নামে, আর গড় latency-ও miss-ই ঠিক করে। Request hit ratio-র সাথে byte hit ratio-ও মাপা উচিত।",
+      "lessonLink": "#core"
+    },
+    {
+      "term": "Versioned File Name বনাম Purge",
+      "prompt": "Deploy-এর পরে পুরনো JS এড়াতে purge-এর চেয়ে app.3f9a.js-এর মতো নাম কেন ভালো?",
+      "answer": "Purge সব PoP-এ পৌঁছাতে সময় নেয়, user-এর browser cache ছুঁতে পারে না, আর পরে origin-এ ঢেউ আনে। Content hash দিয়ে নাম দিলে নতুন content মানে নতুন cache key, তাই purge ছাড়াই প্রথম request-এ নতুন file আসে, আর পুরনো নাম কখনো বদলায় না বলে max-age এক বছর ও immutable নিরাপদ; HTML-কে ছোট TTL দিতে হয়।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "Origin Shield ও Request Collapsing",
+      "prompt": "অনেক PoP আর জনপ্রিয় file-এর মেয়াদ একসাথে শেষ হলে origin-কে কিভাবে বাঁচাবেন?",
+      "answer": "Origin shield (tiered cache) সব PoP-এর miss একটা মাঝের cache-এ মেলায়, তাই ৫০টা PoP-এর miss origin-এ ৫০টা না গিয়ে একটা যায়। Request collapsing একই key-র একসাথে আসা অনেক miss-এর মধ্যে একটাকেই origin-এ পাঠায়, বাকিরা সেই উত্তর পায়, ফলে cache stampede ঠেকে; stale-while-revalidate-ও সাহায্য করে।",
+      "lessonLink": "#deep-dive"
+    },
+    {
+      "term": "ISP-embedded Cache",
+      "prompt": "Netflix Open Connect বা Google Global Cache ISP-র ভেতরে cache বসায় কেন, আর বাংলাদেশের জন্য এর লাভ কী?",
+      "answer": "জনপ্রিয় content ISP-র নিজের network-এ রাখলে প্রতিটা দর্শকের জন্য আলাদা কপি দামি ও সীমিত আন্তর্জাতিক link দিয়ে আসতে হয় না, শুধু cache ভরার সময় আসে। User কম latency ও buffering পায়, ISP-র আন্তর্জাতিক bandwidth বাঁচে, content company-র network খরচ কমে; Netflix যোগ্য ISP-দের এই appliance বিনা খরচে দেয়।",
+      "lessonLink": "#deep-dive"
+    }
+  ]
+}

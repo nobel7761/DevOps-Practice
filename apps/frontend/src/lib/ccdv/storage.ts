@@ -118,3 +118,8 @@ export function saveCardResults(
 ): void {
   write(cardResultsKey(chapterId), results);
 }
+
+/** Replaces the whole local attempt list (used after merging with the server copy). */
+export function saveAllAttempts(attempts: AttemptRecord[]): void {
+  write(ATTEMPTS_KEY, attempts);
+}

@@ -21,13 +21,21 @@ export default function ExamScreen({
       <ExamIntro
         number={exam.number}
         draftRemaining={session.draft?.remainingSec ?? null}
+        attempts={session.previous}
+        onView={session.viewAttempt}
         onStart={() => session.start(false)}
         onResume={() => session.start(true)}
       />
     );
   }
   if (session.phase === "result" && session.attempt) {
-    return <ExamResult exam={exam} attempt={session.attempt} />;
+    return (
+      <ExamResult
+        exam={exam}
+        attempt={session.attempt}
+        onBack={session.backToIntro}
+      />
+    );
   }
   if (session.phase === "review") {
     return (

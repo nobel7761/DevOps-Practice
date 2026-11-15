@@ -1,7 +1,5 @@
-import FlashcardDeck from "@/components/ccdv/flashcards/FlashcardDeck";
 import QuizDeck from "@/components/ccdv/flashcards/quiz/QuizDeck";
 import Markdown from "@/components/shared/Markdown";
-import { hasInteractiveFlashcards } from "@/lib/data/ccdv/schedule";
 import type { CcdvChapterContent } from "@/lib/data/ccdv/types";
 
 export default function NotesPanel({
@@ -19,11 +17,7 @@ export default function NotesPanel({
       </section>
       <section>
         <h3 className="mb-2 text-base font-semibold">🃏 Flashcards</h3>
-        {hasInteractiveFlashcards(chapterId) ? (
-          <QuizDeck chapterId={chapterId} cards={content.flashcards} />
-        ) : (
-          <FlashcardDeck chapterId={chapterId} cards={content.flashcards} />
-        )}
+        <QuizDeck chapterId={chapterId} cards={content.flashcards} />
       </section>
     </div>
   );

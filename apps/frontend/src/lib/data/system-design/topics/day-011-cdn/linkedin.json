@@ -1,0 +1,18 @@
+{
+  "type": "company",
+  "text": "Netflix-এ play চাপলে video-টা কি আমেরিকা থেকে আসে? অনেক সময় আসে আপনার ISP-র ভেতর থেকেই।\nDay 11/100 · CDN\n\nআজ CDN শিখতে গিয়ে পড়লাম Netflix-এর Open Connect site।\n\nসমস্যাটা সহজ: video ভারী, আর একই জনপ্রিয় সিরিজ একই সন্ধ্যায় এক শহরের হাজারো মানুষ দেখে। প্রত্যেকের জন্য আলাদা কপি দূর থেকে আনলে বড় বড় internet link ভরে যায়, আর buffering বাড়ে।\n\nNetflix যা করেছে (তাদের নিজের site অনুযায়ী):\n1. নিজের CDN বানিয়েছে, নাম **Open Connect**।\n2. নিজস্ব cache server, **Open Connect Appliance (OCA)**, বসানো হয় ISP-র network-এর ভেতরে বা **IXP**-তে (যেখানে অনেক network সরাসরি traffic বদল করে)।\n3. যোগ্য ISP-দের এই appliance বিনা খরচে দেওয়া হয়; ISP দেয় জায়গা, বিদ্যুৎ আর connectivity।\n4. Appliance-গুলো কম ব্যস্ত সময়ে আগে থেকেই ভরে রাখা হয়, সেই content দিয়ে যেটা ওই এলাকায় জনপ্রিয় হবে বলে আশা করা হয়।\n\nফলে কেউ play চাপলে জনপ্রিয় video-র byte অনেক সময় তার নিজের ISP-র network থেকেই আসে, দূরের link পেরিয়ে না।\n\nআমার জন্য শিক্ষা:\n- **CDN** শুধু দ্রুত করার জন্য না, কোন link দিয়ে byte যাবে সেটা ঠিক করার হাতিয়ারও।\n- কী জনপ্রিয় হবে আগে আন্দাজ করা গেলে, user চাওয়ার আগেই কপি কাছে রাখা (**push**) চাওয়ার পরে আনার (**pull**) চেয়ে ভালো।\n- বাংলাদেশের মতো দেশে আন্তর্জাতিক bandwidth দামি; ISP-র ভেতরে cache মানে user, ISP আর content company, তিনজনেরই লাভ।\n\nঅনেকটা বছরের শুরুতেই প্রতিটা উপজেলার স্কুলে পাঠ্যবই পৌঁছে রাখার মতো: ক্লাস শুরুর দিন সবাইকে ঢাকায় ছুটতে হয় না।\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ কোন file বা content বারবার দূরের server থেকে আসত, যেটা user-এর কাছে cache করা যেত?]\n\nআপনার মতে বাংলাদেশে কোন ধরনের app বা service-এর জন্য ISP-র ভেতরে cache সবচেয়ে বেশি কাজে আসবে? 👇",
+  "personalPrompt": "আপনার project-এ কোন file বা content বারবার দূরের server থেকে আসত, যেটা user-এর কাছে cache করা যেত?",
+  "firstComment": "পুরো lesson, Cache-Control আর hit ratio-র হিসাব, origin shield, আর NGINX দিয়ে নিজের mini CDN বানিয়ে MISS/HIT/304 দেখার lab এখানে: {link}\n\nউৎস: Netflix Open Connect (openconnect.netflix.com)",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#CDN",
+    "#Netflix",
+    "#WebPerformance"
+  ],
+  "visual": "day-011-main",
+  "sources": [
+    "Netflix Open Connect (openconnect.netflix.com), overview ও ISP partnership পাতা: Open Connect হলো Netflix-এর নিজস্ব CDN, যেটা Netflix-এর video content member-দের কাছে পৌঁছায়; Open Connect Appliance (OCA) নামের cache server ISP-র network-এর ভেতরে (embedded) বা Internet Exchange Point-এ বসানো হয়; যোগ্য (qualifying) ISP-দের embedded OCA বিনা খরচে দেওয়া হয়, ISP জায়গা, বিদ্যুৎ ও connectivity দেয়; ISP IXP-তে Netflix-এর সাথে settlement-free peering-ও করতে পারে।",
+    "Netflix Open Connect appliance/deployment documentation (openconnect.netflix.com): OCA-গুলো প্রতিদিন নির্দিষ্ট fill window-তে, সাধারণত কম ব্যস্ত (off-peak) সময়ে, যে content ওই অঞ্চলে জনপ্রিয় হবে বলে আশা করা হয় তা দিয়ে আগে থেকে ভরা হয় (proactive caching)।"
+  ]
+}

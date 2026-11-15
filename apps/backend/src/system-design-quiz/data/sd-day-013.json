@@ -1,0 +1,1040 @@
+{
+  "topicId": "sd-day-013",
+  "questions": [
+    {
+      "id": "sd-day-013-q01",
+      "difficulty": "easy",
+      "question": "Vertical scaling (scale up) বলতে কোনটা বোঝায়?",
+      "options": [
+        "একই রকম আরও কয়েকটা server যোগ করে সামনে load balancer বসানো",
+        "চলমান একটা machine-এ বেশি CPU, RAM বা দ্রুত disk দিয়ে তাকে বড় করা",
+        "Database-এর data কয়েকটা machine-এ ভাগ করে রাখা, যাতে প্রতিটায় কম চাপ পড়ে",
+        "Server-গুলোকে user-দের কাছাকাছি আলাদা আলাদা region-এ সরিয়ে নেওয়া"
+      ],
+      "correctIndex": 1,
+      "explanation": "Vertical scaling মানে একটা machine-এর resource বাড়ানো: বেশি core, বেশি RAM, বেশি IOPS বা network। Machine-এর সংখ্যা একই থাকে, তাই code সাধারণত বদলাতে হয় না।",
+      "whyWrong": {
+        "0": "এটা horizontal scaling (scale out), machine-এর সংখ্যা বাড়ানো।",
+        "2": "Data ভাগ করা হলো sharding, যেটা horizontal-এর একটা রূপ।",
+        "3": "Region-এ ছড়ানো latency আর availability-র কৌশল, machine বড় করা না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q02",
+      "difficulty": "easy",
+      "question": "Horizontal scaling (scale out)-এর মূল ধারণা কী?",
+      "options": [
+        "একই রকম আরও machine যোগ করে কাজ তাদের মধ্যে ভাগ করে দেওয়া",
+        "Machine-এর CPU-র clock speed বাড়িয়ে প্রতিটা request দ্রুত শেষ করা",
+        "একটা machine-এর RAM বাড়িয়ে database-এর বেশি data memory-তে রাখা",
+        "পুরনো server বাদ দিয়ে সবচেয়ে বড় একটা machine ভাড়া নেওয়া"
+      ],
+      "correctIndex": 0,
+      "explanation": "Scale out মানে machine-এর সংখ্যা বাড়ানো, আর load balancer বা queue দিয়ে কাজ তাদের মধ্যে ভাগ করা। একটা machine মরলে শুধু তার ভাগটুকু ক্ষমতা যায়।",
+      "whyWrong": {
+        "1": "Clock speed বা core বাড়ানো vertical scaling।",
+        "2": "RAM বাড়ানো একটা machine-কে বড় করা, অর্থাৎ vertical।",
+        "3": "সবচেয়ে বড় একটা machine নেওয়া পুরোপুরি scale up।"
+      }
+    },
+    {
+      "id": "sd-day-013-q03",
+      "difficulty": "easy",
+      "question": "App server-কে scale out করার আগে কেন stateless বানাতে হয়?",
+      "options": [
+        "কারণ stateless server-এ CPU কম লাগে, তাই একই machine-এ বেশি request ধরে",
+        "কারণ load balancer শুধু stateless server-এর IP address চিনতে পারে",
+        "কারণ তাহলে যেকোনো copy যেকোনো user-এর request নিতে পারে, কিছু হারায় না",
+        "কারণ stateless হলে database-এর আর কোনো দরকার থাকে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Session, timer বা cart কোনো copy-র memory-তে থাকলে, পরের request অন্য copy-তে গেলে সেটা পাওয়া যায় না। State বাইরে (Redis/DB) রাখলে সব copy সমান, তাই load balancer স্বাধীনভাবে ভাগ করতে পারে।",
+      "whyWrong": {
+        "0": "Stateless হওয়া CPU কমায় না; মূল লাভ যেকোনো copy-র request নিতে পারা।",
+        "1": "Load balancer যেকোনো server-এর ঠিকানা চেনে; সমস্যা state হারানো।",
+        "3": "State বাইরে সরানো হয়, প্রায়ই database বা Redis-এই; database লাগবেই।"
+      }
+    },
+    {
+      "id": "sd-day-013-q04",
+      "difficulty": "easy",
+      "question": "সব কিছু একটা বড় machine-এ চালানোর সবচেয়ে বড় ঝুঁকি কোনটা?",
+      "options": [
+        "বড় machine-এ network-এর latency ছোট machine-এর চেয়ে সবসময় অনেক বেশি থাকে",
+        "বড় machine-এ load balancer ছাড়া কোনো request ঢুকতে পারে না",
+        "বড় machine-এ database চালানো যায় না, আলাদা server লাগেই",
+        "Machine একটাই, তাই সেটা পড়লে বা restart হলে পুরো system বন্ধ হয়ে যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "একটা machine মানে single point of failure: hardware fault, OS update, ভুল config বা resize, যেকোনোটায় পুরো system থামে। বাঁচতে হলে সমান বড় একটা standby লাগে।",
+      "whyWrong": {
+        "0": "Machine-এর আকারের সাথে network latency-র এমন নিয়ম নেই।",
+        "1": "একটা machine-এ load balancer বাধ্যতামূলক না; সমস্যা হলো failure।",
+        "2": "বড় machine-এ database খুব ভালোভাবেই চলে; database সাধারণত আগে scale up হয়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q05",
+      "difficulty": "easy",
+      "question": "AWS EC2-তে EBS-backed একটা instance-এর type বদলাতে (যেমন 8 থেকে 32 vCPU) সাধারণত কী করতে হয়?",
+      "options": [
+        "চলন্ত অবস্থায়ই type বদলানো যায়, কোনো প্রভাব ছাড়া, কয়েক সেকেন্ডে",
+        "Instance মুছে ফেলে নতুন account-এ নতুন করে বানাতে হয়",
+        "Instance stop করে type বদলে আবার start করতে হয়, মাঝে downtime হয়",
+        "শুধু load balancer-এর weight বাড়ালেই instance বড় হয়ে যায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "AWS-এর documentation অনুযায়ী EBS-backed instance-এর type বদলাতে আগে stop করতে হয়। তাই cloud-এ vertical scaling মানে পরিকল্পিত downtime, বা replica আর failover দিয়ে সেটা কমানো।",
+      "whyWrong": {
+        "0": "EC2-তে চলন্ত instance-এর type সরাসরি বদলানো যায় না, stop করতে হয়।",
+        "1": "নতুন account বা instance মুছে ফেলার দরকার নেই; stop → বদল → start।",
+        "3": "LB-র weight traffic-এর ভাগ বদলায়, machine-এর আকার না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q06",
+      "difficulty": "easy",
+      "question": "একটা সাধারণ web app-এর কোন অংশ সবচেয়ে সহজে scale out করা যায়?",
+      "options": [
+        "Primary database, কারণ সেখানেই সবচেয়ে বেশি চাপ পড়ে",
+        "Stateless API server, কারণ প্রতিটা copy আলাদা কিছু মনে রাখে না",
+        "Session memory-তে রাখা app server, কারণ memory থেকে পড়া সবচেয়ে দ্রুত",
+        "Unique order number বানানোর একমাত্র counter service"
+      ],
+      "correctIndex": 1,
+      "explanation": "Stateless API server-এর নতুন copy মানেই নতুন ক্ষমতা, load balancer যেকোনো copy-তে পাঠাতে পারে। যে অংশ state রাখে, তাকে ভাগ করা কঠিন।",
+      "whyWrong": {
+        "0": "Primary database state রাখে, write ভাগ করা কঠিন; সাধারণত আগে scale up হয়।",
+        "2": "In-memory session থাকলে copy বাড়ালে user-এর session হারায়।",
+        "3": "একটাই counter একটা সত্যের উৎস; তাকে copy করলে duplicate number হবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q07",
+      "difficulty": "easy",
+      "question": "Database-কে সাধারণত আগে scale up করা হয় কেন?",
+      "options": [
+        "কারণ database software একাধিক machine-এ কখনোই চালানো যায় না",
+        "কারণ বড় একটা machine সবসময় অনেকগুলো ছোট machine-এর মোট দামের চেয়ে সস্তা",
+        "কারণ data ভাগ করলে join, transaction আর consistency কঠিন হয়ে যায়",
+        "কারণ load balancer database-এর সামনে বসতে পারে না"
+      ],
+      "correctIndex": 2,
+      "explanation": "Database state রাখে; data কয়েকটা machine-এ ভাগ করলে join আর transaction machine জুড়ে করতে হয়, আর একটা সত্যের উৎস রাখা কঠিন। তাই সবচেয়ে সহজ লাভ বড় machine, তারপর replica, শেষে sharding।",
+      "whyWrong": {
+        "0": "Replication আর sharding দিয়ে database একাধিক machine-এ চলে; শুধু কঠিন।",
+        "1": "সবচেয়ে বড় machine প্রায়ই প্রতি unit কাজে বেশি দামি; সস্তা বলে না, সহজ বলে আগে।",
+        "3": "Database-এর সামনে proxy বা LB বসানো যায়; মূল কারণ state ভাগ করার জটিলতা।"
+      }
+    },
+    {
+      "id": "sd-day-013-q08",
+      "difficulty": "easy",
+      "question": "Diagonal scaling বলতে কী বোঝায়?",
+      "options": [
+        "আগে প্রতিটা machine একটা সুবিধাজনক size পর্যন্ত বড় করা, তারপর সেই size সংখ্যায় বাড়ানো",
+        "একই সময়ে app tier scale down আর database tier scale out করা",
+        "দিনের বেলা scale up আর রাতে scale out করে খরচ কমানো",
+        "Server-গুলোকে কোনাকুনি দুটো data center-এ সমানভাবে ভাগ করে রাখা, যাতে একটা পড়লেও অন্যটা পুরো ভার নেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "Diagonal মানে vertical আর horizontal মেশানো: যেখানে প্রতি req/s-এর খরচ সবচেয়ে কম, সেই size বাছা, তারপর সংখ্যা বাড়ানো। বেশিরভাগ production app tier এভাবেই চলে।",
+      "whyWrong": {
+        "1": "এটা কোনো স্বীকৃত কৌশল না; diagonal মানে size আর সংখ্যা দুটোই বাড়ানো।",
+        "2": "সময় দেখে কৌশল বদলানো diagonal scaling না।",
+        "3": "Data center-এ ছড়ানো availability-র বিষয়, diagonal scaling না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q09",
+      "difficulty": "easy",
+      "question": "Cloud-এর memory-optimized instance family সাধারণত কোন কাজের জন্য বেছে নেওয়া হয়?",
+      "options": [
+        "অনেক image resize করার মতো CPU-ভারী background worker-এর জন্য",
+        "বড় working set-এর database বা in-memory cache-এর জন্য",
+        "অনেক local disk লাগে এমন log storage-এর জন্য",
+        "GPU লাগে এমন machine learning training-এর জন্য"
+      ],
+      "correctIndex": 1,
+      "explanation": "Memory-optimized family-তে প্রতি core-এ বেশি RAM, তাই database-এর working set বা বড় cache memory-তে ধরে। ঠিক family বাছাও vertical scaling-এর অংশ।",
+      "whyWrong": {
+        "0": "CPU-ভারী কাজে compute-optimized family মানায়।",
+        "2": "বেশি local disk লাগলে storage-optimized family।",
+        "3": "GPU-র কাজে accelerated computing family।"
+      }
+    },
+    {
+      "id": "sd-day-013-q10",
+      "difficulty": "easy",
+      "question": "একটা Node.js app একটাই process-এ চলে। Machine 8 থেকে 32 vCPU করার পরেও throughput বাড়ল না। কেন?",
+      "options": [
+        "কারণ 32 vCPU-র machine-এ network card ছোট থাকে",
+        "কারণ Node.js 8-এর বেশি core থাকলে নিজেকে বন্ধ করে দেয়",
+        "কারণ একটা process-এর JavaScript একটাই core ব্যবহার করে, বাকিরা অলস থাকে",
+        "কারণ বড় machine-এ operating system আর kernel নিজেরাই অনেক বেশি CPU আর memory খায়"
+      ],
+      "correctIndex": 2,
+      "explanation": "Node.js-এর JavaScript একটা event loop-এ চলে, তাই একটা process মোটামুটি এক core-এর কাজ পায়। বড় machine কাজে লাগাতে প্রতি core-এ একটা process (cluster, PM2) চালাতে হয়।",
+      "whyWrong": {
+        "0": "Network card-এর আকার এখানে সমস্যা না; top-এ একটা core 100% দেখাবে।",
+        "1": "Node.js core দেখে বন্ধ হয় না; সে শুধু একটা core ব্যবহার করে।",
+        "3": "OS-এর memory বড় machine-এ সামান্য বাড়ে, throughput আটকানোর কারণ না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q11",
+      "difficulty": "easy",
+      "question": "AWS Auto Scaling group-এর কাজ কোনটা?",
+      "options": [
+        "একটা instance-এর CPU আর RAM চলন্ত অবস্থায় load দেখে নিজে থেকে বড়-ছোট করা",
+        "Database-এর data নিজে থেকে কয়েকটা shard-এ ভাগ করে দেওয়া",
+        "সব request একটা নির্দিষ্ট instance-এ পাঠিয়ে session ঠিক রাখা",
+        "একই template থেকে min/max সীমার মধ্যে instance রাখা, অসুস্থটা বদলানো"
+      ],
+      "correctIndex": 3,
+      "explanation": "Auto Scaling group একই launch template থেকে একই রকম instance চালায়, desired সংখ্যা ধরে রাখে, health check-এ fail করাটা বদলে দেয়, আর policy অনুযায়ী সংখ্যা বাড়ায়-কমায়। এটা scale out-এর হাতিয়ার।",
+      "whyWrong": {
+        "0": "Auto Scaling group instance-এর সংখ্যা বদলায়, একটার আকার না।",
+        "1": "Data ভাগ করা database-এর sharding-এর কাজ।",
+        "2": "Session ধরে রাখা sticky session-এর কাজ, Auto Scaling group-এর না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q12",
+      "difficulty": "easy",
+      "question": "Capacity planning-এ N+1 বলতে কী বোঝায়?",
+      "options": [
+        "প্রতি বছর একটা করে নতুন server কেনার নিয়ম",
+        "প্রতিটা server-এ একটা বাড়তি CPU core সবসময় খালি রেখে দেওয়া, যাতে হঠাৎ ভিড়ে কাজে লাগে",
+        "Load balancer-এর পেছনে সবসময় বিজোড় সংখ্যক server রাখা",
+        "Peak সামলাতে যত machine লাগে, তার চেয়ে একটা বেশি রাখা, যাতে একটা মরলেও চলে"
+      ],
+      "correctIndex": 3,
+      "explanation": "N টা machine peak সামলায়, আর একটা বাড়তি রাখা হয় যাতে একটা পড়লেও বাকিরা পুরো ভার নিতে পারে। Deploy-এর সময়ও failure ধরলে অনেকে N+2 রাখে।",
+      "whyWrong": {
+        "0": "N+1 সময়ের নিয়ম না, failure সহ্য করার headroom।",
+        "1": "N+1 পুরো machine-এর হিসাব, প্রতি machine-এ একটা core না।",
+        "2": "বিজোড় সংখ্যা quorum-এর আলোচনা, N+1 না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q13",
+      "difficulty": "easy",
+      "question": "সমান ক্ষমতার ৪টা server-এর একটা মরে গেলে মোট ক্ষমতার কতটা হারায়?",
+      "options": ["২৫%", "৫০%", "১০%", "৭৫%"],
+      "correctIndex": 0,
+      "explanation": "N-টা সমান machine-এ একটা মরলে 1/N ক্ষমতা যায়: ১ ÷ ৪ = ২৫%। এটাই scale out-এর ছোট blast radius।",
+      "whyWrong": {
+        "1": "৫০% হতো যদি ২টা server থাকত।",
+        "2": "১০% হতো ১০টা server-এ।",
+        "3": "৭৫% মানে তিনটা মরেছে, একটা না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q14",
+      "difficulty": "easy",
+      "question": "Database-এর প্রসঙ্গে 'working set' মানে কী?",
+      "options": [
+        "Database-এর মোট data, পুরনো archive আর backup সহ সবকিছু, যা disk-এ জমা আছে",
+        "একসাথে চলা query-গুলোর সংখ্যা",
+        "যে data আর index নিয়মিত ব্যবহার হয়, যেটা memory-তে থাকা দরকার",
+        "Database server-এ চলা process-গুলোর তালিকা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Working set হলো নিয়মিত ছোঁয়া data আর index। এটা RAM-এ ধরলে বেশিরভাগ read memory থেকে হয়; না ধরলে disk-এ যেতে হয় আর latency হঠাৎ লাফ দেয়।",
+      "whyWrong": {
+        "0": "মোট data অনেক বড় হতে পারে; working set শুধু নিয়মিত ব্যবহৃত অংশ।",
+        "1": "একসাথে চলা query concurrency, working set না।",
+        "3": "Process-এর তালিকা working set না; এটা data-র কথা।"
+      }
+    },
+    {
+      "id": "sd-day-013-q15",
+      "difficulty": "easy",
+      "question": "'Cattle, not pets' দর্শনে server-কে কিভাবে দেখা হয়?",
+      "options": [
+        "প্রতিটা server-এর নাম আর হাতে করা setting থাকে, অসুস্থ হলে যত্ন করে সারানো হয়",
+        "শুধু on-premise server ব্যবহার করা হয়, cloud এড়িয়ে চলা হয়",
+        "একটাই বড় server রাখা হয়, যাতে দেখাশোনা সহজ হয়",
+        "সব server একই template থেকে, কোনোটায় সমস্যা হলে সারানোর বদলে বদলে ফেলা হয়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Cattle দর্শনে server নামহীন, একই image থেকে তৈরি, আর বদলযোগ্য। সমস্যা হলে মেরে নতুন চালানো হয়, Auto Scaling group-এর মতো tool দিয়ে। এর জন্য app stateless আর automated হতে হয়।",
+      "whyWrong": {
+        "0": "এটা উল্টো, 'pets'-এর বর্ণনা।",
+        "1": "এই দর্শন cloud-এই সবচেয়ে বেশি চলে, on-premise-এর শর্ত না।",
+        "2": "একটা বড় server যত্নে রাখা pets-এর কাছাকাছি।"
+      }
+    },
+    {
+      "id": "sd-day-013-q16",
+      "difficulty": "easy",
+      "question": "Server-এর CPU 95%, কিন্তু team বেশি RAM-ওয়ালা machine কিনল। কী সমস্যা হলো?",
+      "options": [
+        "কোনো সমস্যা নেই, বেশি RAM থাকলে cache বাড়ে, তাই CPU-র চাপও সবসময় কমে যায়",
+        "যে resource ফুরাচ্ছে সেটা বাড়েনি, তাই টাকা খরচ হলো কিন্তু লাভ প্রায় নেই",
+        "বেশি RAM থাকলে CPU আরও ধীর হয়ে যায়",
+        "RAM বাড়ালে machine-টা horizontal scaling হয়ে যায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Vertical scaling-এর আগে জানতে হয় কোন resource bottleneck। CPU ভরা থাকলে RAM বাড়ালে কাজ বাড়ে না; compute-optimized family বা বেশি core লাগত।",
+      "whyWrong": {
+        "0": "RAM বাড়ালে swap বা disk-এর চাপ কমে, কিন্তু CPU-ভরা হিসাবের কাজ কমে না।",
+        "2": "RAM বাড়ালে CPU ধীর হয় না; শুধু সমস্যার সমাধান হয় না।",
+        "3": "RAM বাড়ানো একটা machine বড় করা, vertical-ই থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q17",
+      "difficulty": "easy",
+      "question": "Scale out করা app tier-এর সামনে load balancer একটা থাকলে কী করা উচিত?",
+      "options": [
+        "কিছু না, load balancer কখনো fail করে না",
+        "Load balancer বাদ দিয়ে DNS-এ সব server-এর IP দিয়ে দেওয়া",
+        "Load balancer-কেও জোড়ায় রাখা, যাতে নিজেই single point of failure না হয়",
+        "সব app server একটা বড় machine-এ সরিয়ে load balancer-এর দরকারটাই পুরোপুরি মিটিয়ে ফেলা"
+      ],
+      "correctIndex": 2,
+      "explanation": "Load balancer-ও একটা machine বা process, সেটা পড়লে পুরো site বন্ধ। তাই active-passive বা active-active জোড়ায় রাখা হয় (Day 9)।",
+      "whyWrong": {
+        "0": "Load balancer-ও fail করে; তাই তার redundancy লাগে।",
+        "1": "শুধু DNS-এ IP দিলে মরা server ধরা পড়ে না, cache-এর কারণে failover ধীর।",
+        "3": "আবার এক machine-এ ফিরে গেলে single point of failure ফিরে আসে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q18",
+      "difficulty": "easy",
+      "question": "কিছু commercial database প্রতি CPU core-এ license নেয়। এতে scaling-এর সিদ্ধান্তে কী প্রভাব পড়ে?",
+      "options": [
+        "অলস core-এর জন্যও টাকা লাগে, তাই অপ্রয়োজনে বড় machine নিলে খরচ অনেক বাড়ে",
+        "License প্রতি core হলে machine বড় করা প্রায় বিনামূল্যে হয়ে যায়, কারণ license আগেই কেনা",
+        "Per-core license থাকলে database-কে আর scale up করা যায় না",
+        "এতে শুধু app server-এর খরচ বাড়ে, database-এর না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Per-core licensing-এ প্রতিটা core-এর জন্য license, ব্যবহার হোক বা না হোক। তাই core বাড়ানোর আগে দেখতে হয় সেগুলো সত্যিই কাজে লাগবে কিনা; অনেক সময় license-এর খরচ hardware-এর চেয়ে বড়।",
+      "whyWrong": {
+        "1": "Core বাড়লে license-এর খরচও বাড়ে, বিনামূল্যে না।",
+        "2": "Scale up করা যায়, শুধু খরচ বেশি; সিদ্ধান্তে সেটা হিসাবে আনতে হয়।",
+        "3": "Per-core license database-এর নিজের core-এর জন্য, তাই database-এর খরচই বাড়ে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q19",
+      "difficulty": "easy",
+      "question": "Lab-এ একটা single-process app-এর container-কে docker update দিয়ে 2 থেকে 4 CPU দেওয়ার পরেও req/s প্রায় একই থাকল। এটা কী দেখায়?",
+      "options": [
+        "docker update কাজ করে না, container restart না করলে CPU-র সীমা আসলে বদলায় না",
+        "4 CPU-তে Docker নিজে বেশি CPU খেয়ে নেয়",
+        "Load generator hey ৯০ req/s-এর বেশি পাঠাতে পারে না",
+        "Software একটাই core ব্যবহার করতে পারলে বাড়তি core কোনো কাজে আসে না"
+      ],
+      "correctIndex": 3,
+      "explanation": "docker stats-এ CPU প্রায় ১০০%-এ আটকে ছিল, সীমা ৪০০% হলেও। একটা process এক core-এর বেশি পায় না; WORKERS=4 দিয়ে চারটা process চালাতেই throughput কয়েক গুণ বাড়ল।",
+      "whyWrong": {
+        "0": "0.5 থেকে 2 CPU-তে throughput দ্বিগুণ হয়েছিল, তাই update কাজ করে।",
+        "1": "Docker-এর নিজের খরচ নগণ্য; আসল কারণ single process।",
+        "2": "একই hey পরে ৩০০ req/s মেপেছে, তাই সে সীমা না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q20",
+      "difficulty": "easy",
+      "question": "Background worker-দের scale out করতে সামনে সাধারণত কী থাকে?",
+      "options": [
+        "একটা queue, যেখান থেকে worker-রা নিজেরাই কাজ টেনে নেয়",
+        "প্রতিটা worker-এর জন্য আলাদা database",
+        "একটা বড় machine, যেখানে সব worker একসাথে একই process-এ চলে",
+        "DNS-এ প্রতিটা worker-এর আলাদা নাম"
+      ],
+      "correctIndex": 0,
+      "explanation": "Worker-রা queue থেকে কাজ টেনে নেয় (Day 12), তাই worker বাড়ালেই throughput বাড়ে, আর ব্যস্ত worker নতুন কাজ নেয় না। এজন্য worker tier সবচেয়ে সহজে scale out হয়।",
+      "whyWrong": {
+        "1": "প্রতি worker-এ আলাদা database লাগে না; কাজ ভাগ হয় queue দিয়ে।",
+        "2": "এক machine-এ সব worker রাখা scale up, scale out না।",
+        "3": "Worker-রা request গ্রহণ করে না, কাজ টানে; DNS নাম লাগে না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q21",
+      "difficulty": "medium",
+      "question": "৪টা app server প্রত্যেকে ৭০% CPU-তে চলছে। একটা crash করলে বাকি তিনটার প্রতিটা প্রায় কত CPU-তে যাবে?",
+      "options": [
+        "প্রায় ৭০%, কারণ load balancer চাপ কমিয়ে দেয়",
+        "প্রায় ৮০%",
+        "প্রায় ৯৩%",
+        "প্রায় ১৪০%"
+      ],
+      "correctIndex": 2,
+      "explanation": "মোট load = ৪ × ৭০ = ২৮০ (এক server-এর শতাংশে)। তিনটায় ভাগ হলে ২৮০ ÷ ৩ ≈ ৯৩%। এটা knee-এর অনেক উপরে, latency লাফ দেবে, আরেকটা পড়ার ঝুঁকি।",
+      "whyWrong": {
+        "0": "Load balancer load কমায় না, শুধু বাকিদের মধ্যে ভাগ করে।",
+        "1": "৮০% হতো যদি মোট load কম থাকত; ২৮০ ÷ ৩ প্রায় ৯৩।",
+        "3": "১৪০% হতো দুটো server থেকে একটা পড়লে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q22",
+      "difficulty": "medium",
+      "question": "৫টা সমান server-এ একটা failure সহ্য করতে (N+1) মোট ক্ষমতা peak-এর চেয়ে কত শতাংশ বেশি রাখতে হবে? (বাড়তি = k ÷ (N − k))",
+      "options": ["২০%", "১০০%", "৫০%", "২৫%"],
+      "correctIndex": 3,
+      "explanation": "k = ১, N = ৫: ১ ÷ (৫ − ১) = ২৫%। অর্থাৎ ৪টা server peak সামলায়, পঞ্চমটা বাড়তি; peak-এর তুলনায় ২৫% বেশি ক্ষমতা।",
+      "whyWrong": {
+        "0": "২০% হলো ১ ÷ ৫, মোট ক্ষমতার কত অংশ বাড়তি; peak-এর তুলনায় ১ ÷ ৪।",
+        "1": "১০০% লাগে দুটো server-এ একটা failure সহ্য করতে।",
+        "2": "৫০% লাগে তিনটা server-এ একটা failure-এ।"
+      }
+    },
+    {
+      "id": "sd-day-013-q23",
+      "difficulty": "medium",
+      "question": "Peak 4,000 req/s। প্রতিটা server নিরাপদে (knee-এর আগে) 500 req/s নেয়। একটা failure সহ্য করতে (N+1) কয়টা server লাগবে?",
+      "options": ["৮টা", "১০টা", "৯টা", "৫টা"],
+      "correctIndex": 2,
+      "explanation": "4,000 ÷ 500 = ৮টা peak সামলাতে (N)। একটা পড়লেও চলতে হবে, তাই N+1 = ৯টা।",
+      "whyWrong": {
+        "0": "৮টা শুধু peak সামলায়; একটা পড়লে ক্ষমতা কম পড়বে।",
+        "1": "১০টা হলো N+2; প্রশ্ন N+1 চেয়েছে।",
+        "3": "৫টা হতো server-এর সর্বোচ্চ ক্ষমতা ধরে, যা knee পেরিয়ে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q24",
+      "difficulty": "medium",
+      "question": "একটা machine-এর ভাড়া মাসে $320, আর load test-এ সে নিরাপদে 1,600 req/s সামলায়। প্রতি 1,000 req/s-এর মাসিক খরচ কত?",
+      "options": ["$320", "$160", "$512", "$200"],
+      "correctIndex": 3,
+      "explanation": "$320 ÷ 1.6 (হাজার req/s) = $200 প্রতি 1,000 req/s। বিভিন্ন size-এর machine এই এককে তুলনা করলেই বোঝা যায় কোনটা আসলে সস্তা।",
+      "whyWrong": {
+        "0": "$320 এক machine-এর দাম, প্রতি 1,000 req/s-এর না।",
+        "1": "$160 হতো 2,000 req/s সামলালে।",
+        "2": "$512 হলো 320 × 1.6, ভাগের বদলে গুণ করা হয়েছে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q25",
+      "difficulty": "medium",
+      "question": "পুরনো server load test-এ 900 req/s আর নতুন generation-এর server 2,000 req/s সামলায়। Weighted round robin-এ weight কেমন হওয়া উচিত?",
+      "options": [
+        "vCPU গুনে ১:২, কারণ নতুনটায় দ্বিগুণ vCPU",
+        "প্রায় ৯:২০, মাপা ক্ষমতার অনুপাতে",
+        "সমান ১:১, যাতে কেউ বঞ্চিত না হয়",
+        "২০:৯, যাতে পুরনোটা বেশি কাজ পায়"
+      ],
+      "correctIndex": 1,
+      "explanation": "Weight হওয়া উচিত আসল, মাপা ক্ষমতা অনুযায়ী: ৯০০:২০০০ = ৯:২০। vCPU গুনলে CPU generation আর software-এর প্রভাব বাদ পড়ে, ফলে পুরনোটা আগে knee-তে পৌঁছায়।",
+      "whyWrong": {
+        "0": "vCPU সংখ্যা আসল ক্ষমতা বলে না; মাপা সংখ্যা ৯:২০।",
+        "2": "সমান weight-এ পুরনোটা ডুববে আর নতুনটা অলস থাকবে।",
+        "3": "এটা উল্টো অনুপাত; দুর্বলটাকে বেশি দেওয়া হচ্ছে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q26",
+      "difficulty": "medium",
+      "question": "মিশ্র fleet-এর গড় CPU ৫৫%, তাই autoscaler কিছু করছে না, অথচ ছোট server-গুলো ৯০%-এ আর p99 খারাপ। কী করা উচিত?",
+      "options": [
+        "Autoscaling-এর লক্ষ্য গড় CPU ৩০%-এ নামিয়ে দেওয়া, তাহলে আগেভাগে নতুন server আসবে",
+        "Per-group metric দেখা আর weight বা least connections দিয়ে ভাগ ঠিক করা",
+        "বড় server-গুলো বাদ দিয়ে শুধু ছোট server রাখা",
+        "p99 না দেখে শুধু গড় latency দেখা, কারণ সেটা ঠিক আছে"
+      ],
+      "correctIndex": 1,
+      "explanation": "গড় CPU মিশ্র fleet-এ ভুল ছবি দেয়: বড়গুলো অলস, ছোটগুলো ডুবছে। আগে ভাগ ঠিক করুন (মাপা weight বা least connections), আর ছোট-বড় আলাদা group-এর metric দেখে সিদ্ধান্ত নিন।",
+      "whyWrong": {
+        "0": "লক্ষ্য কমালে অপ্রয়োজনে machine বাড়বে, অথচ অসম ভাগের সমস্যা থেকেই যাবে।",
+        "2": "বড়গুলো বাদ দিলে ক্ষমতা কমে; সমস্যা ভাগে, আকারে না।",
+        "3": "গড় দেখলে খারাপ অভিজ্ঞতার user-দের সমস্যা লুকিয়ে যায়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q27",
+      "difficulty": "medium",
+      "question": "App server ২ থেকে ৬টা করার পর user-রা অভিযোগ করছে বারবার logout হয়ে যাচ্ছে। সবচেয়ে সম্ভাব্য কারণ কী?",
+      "options": [
+        "Session server-এর memory-তে রাখা, আর পরের request অন্য copy-তে যাচ্ছে",
+        "৬টা server-এ HTTPS certificate কাজ করে না",
+        "বেশি server হলে database password বদলে যায়",
+        "Load balancer প্রতি ৬টা request পরপর নিজে থেকে user-এর session cookie মুছে দেয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "In-memory session এক copy-তেই থাকে। Load balancer পরের request অন্য copy-তে পাঠালে সে session চেনে না, তাই user logout। সমাধান session Redis/DB-তে রাখা, অর্থাৎ app stateless করা।",
+      "whyWrong": {
+        "1": "Certificate সমস্যা হলে connection-ই হতো না, logout না।",
+        "2": "Server সংখ্যার সাথে database password বদলায় না।",
+        "3": "Load balancer নিজে থেকে cookie মোছে না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q28",
+      "difficulty": "medium",
+      "question": "Database ৫০০GB, working set প্রায় ১৮০GB, machine-এ RAM ৬৪GB। Disk read অনেক বেশি আর latency খারাপ। প্রথম যুক্তিসঙ্গত পদক্ষেপ কী?",
+      "options": [
+        "সাথে সাথে database ৪টা shard-এ ভাগ করা",
+        "আরও app server যোগ করা, যাতে query অনেক server-এ ভাগ হয়ে যায়",
+        "২৫৬GB RAM-এর machine-এ গিয়ে working set memory-তে ধরানো",
+        "CPU বেশি এমন compute-optimized machine-এ যাওয়া"
+      ],
+      "correctIndex": 2,
+      "explanation": "সমস্যা working set RAM-এ ধরছে না বলে disk-এ যাওয়া। বেশি RAM-এ (memory-optimized) গেলে working set পুরোটা memory-তে আসে, latency এক লাফে নামে। এটা সবচেয়ে সস্তা আর সহজ ওষুধ; sharding অনেক পরের কথা।",
+      "whyWrong": {
+        "0": "Sharding অনেক জটিল; RAM বাড়িয়েই যখন সমাধান হয়, তখন এটা খুব আগে।",
+        "1": "App server বাড়ালে database-এ একই query আরও বেশি আসবে।",
+        "3": "CPU সমস্যা না; সমস্যা memory-তে data না ধরা।"
+      }
+    },
+    {
+      "id": "sd-day-013-q29",
+      "difficulty": "medium",
+      "question": "Database-কে বড় instance-এ নেওয়ার পরেও write latency একই রকম খারাপ, CPU মাত্র ৩০%। সবচেয়ে সম্ভাব্য বাধা কোথায়?",
+      "options": [
+        "Disk-এর provisioned IOPS বা throughput-এর সীমা, যেটা instance বদলালে বাড়ে না",
+        "CPU যথেষ্ট না, আরও বড় instance নিলে বেশি core পেয়ে write-গুলো নিজে থেকেই দ্রুত হয়ে যাবে",
+        "Load balancer write request আটকে রাখছে",
+        "Database-এ বেশি RAM থাকায় write ধীর হচ্ছে"
+      ],
+      "correctIndex": 0,
+      "explanation": "অনেক cloud-এ network disk-এর IOPS আর throughput আলাদা করে কেনা হয়, আর instance-এরও storage bandwidth-এর সীমা থাকে। CPU অলস অথচ write ধীর মানে disk-ই ছাদ। আগে মাপুন কোনটা ভরা।",
+      "whyWrong": {
+        "1": "CPU ৩০%, তাই আরও core দিলে কিছু বদলাবে না।",
+        "2": "Database write সাধারণত load balancer দিয়ে যায় না; সমস্যা storage-এ।",
+        "3": "বেশি RAM write ধীর করে না; বরং read-এ সাহায্য করে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q30",
+      "difficulty": "medium",
+      "question": "Production PostgreSQL-কে 16 থেকে 32 vCPU করতে হবে, downtime যত কম সম্ভব। কোন পরিকল্পনা ভালো?",
+      "options": [
+        "Peak সময়েই primary stop করে resize করা, যাতে সবাই সাথে সাথে বড় machine-এর লাভ পায়",
+        "প্রথমে replica বড় করা, lag শূন্যে এলে failover, তারপর পুরনোটা বড় করা",
+        "Primary আর replica একসাথে stop করে দুটোই বড় করা",
+        "Resize না করে app server দ্বিগুণ করা, তাহলে database-এর কাজ কমবে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Replica আগে বড় করলে primary চলতে থাকে। Replica ধরে ফেললে failover-এ মাত্র কয়েক সেকেন্ড write বন্ধ। তারপর পুরনো primary বড় করে replica হিসেবে ফেরানো হয়।",
+      "whyWrong": {
+        "0": "Peak-এ primary stop মানে কয়েক মিনিট সব write বন্ধ, তারপর ঠান্ডা cache।",
+        "2": "দুটো একসাথে বন্ধ করলে database পুরোপুরি unavailable।",
+        "3": "App server বাড়ালে database-এ চাপ বাড়ে, কমে না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q31",
+      "difficulty": "medium",
+      "question": "একটা Python (CPython) API-তে ১৬টা thread চালানো হচ্ছে 16 vCPU-র machine-এ, কিন্তু CPU-ভারী request-এ একটা core-এর বেশি ব্যবহার হচ্ছে না। কোন সমাধান কাজ করবে?",
+      "options": [
+        "Thread সংখ্যা ১৬ থেকে ৬৪ করা",
+        "Machine 32 vCPU-তে বড় করা, যাতে প্রতিটা thread নিজের আলাদা core পায়",
+        "Gunicorn-এর মতো একাধিক worker process চালানো, প্রতি core-এ একটা করে",
+        "Python-এর logging বন্ধ করে CPU বাঁচানো"
+      ],
+      "correctIndex": 2,
+      "explanation": "CPython-এর GIL একবারে একটা thread-কেই Python bytecode চালাতে দেয়, তাই CPU-ভারী কাজে thread বাড়ালে লাভ নেই। আলাদা process-এর আলাদা GIL, তাই worker process দিয়ে core কাজে লাগে।",
+      "whyWrong": {
+        "0": "Thread বাড়ালেও GIL একবারে একটাকেই Python চালাতে দেয়।",
+        "1": "বড় machine-এ বাড়তি core এখনো অলস থাকবে।",
+        "3": "Logging বন্ধ করে সামান্য CPU বাঁচে, কিন্তু single-core-এর ছাদ থাকে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q32",
+      "difficulty": "medium",
+      "question": "একটা Redis instance-এর CPU এক core-এ ১০০%, machine-এর বাকি core অলস, আর ops/s আর বাড়ছে না। কোন পদক্ষেপ সবচেয়ে কার্যকর?",
+      "options": [
+        "আরও বেশি core-এর বড় machine-এ Redis সরানো, যাতে command-গুলো core-এ ভাগ হয়",
+        "Redis-এর RAM দ্বিগুণ করা",
+        "App server-এর সংখ্যা বাড়ানো",
+        "Redis Cluster বা একাধিক instance-এ key ভাগ করে scale out করা"
+      ],
+      "correctIndex": 3,
+      "explanation": "Redis command একটা thread-এ চালায়, তাই বড় machine-এর বাড়তি core command-এর কাজে আসে না। Redis Cluster key-গুলোকে hash slot-এ ভাগ করে কয়েকটা node-এ ছড়ায়, প্রতিটা নিজের core-এ।",
+      "whyWrong": {
+        "0": "Single-threaded command execution-এ বাড়তি core অলস থাকবে।",
+        "1": "Memory সমস্যা না; CPU-র একটা core আটকে আছে।",
+        "2": "App server বাড়ালে Redis-এ আরও বেশি request আসবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q33",
+      "difficulty": "medium",
+      "question": "System তিনটা availability zone (AZ)-এ ছড়ানো, আর একটা পুরো AZ হারালেও peak সামলাতে হবে। মোট ক্ষমতা peak-এর কত হতে হবে?",
+      "options": ["১০০%", "১৩৩%", "১৫০%", "৩০০%"],
+      "correctIndex": 2,
+      "explanation": "একটা AZ হারালে বাকি দুটোকে পুরো peak নিতে হবে, তাই প্রতিটা AZ-এ peak-এর ৫০%। তিনটা মিলিয়ে ১৫০%।",
+      "whyWrong": {
+        "0": "১০০% হলে একটা AZ হারালে এক-তৃতীয়াংশ ক্ষমতা কম পড়বে।",
+        "1": "১৩৩% হলে প্রতিটা AZ-এ ৪৪%, দুটোয় মাত্র ৮৯%।",
+        "3": "৩০০% মানে প্রতিটা AZ একাই পুরো peak নেয়, দুটো AZ হারানোর জন্য।"
+      }
+    },
+    {
+      "id": "sd-day-013-q34",
+      "difficulty": "medium",
+      "question": "একই শর্তে system দুটো AZ-এ থাকলে (একটা AZ হারালেও চলতে হবে), মোট ক্ষমতা peak-এর কত লাগবে?",
+      "options": ["১৫০%", "২০০%", "১২৫%", "১০০%"],
+      "correctIndex": 1,
+      "explanation": "দুটো AZ-এ একটা হারালে বাকিটাকে একাই পুরো peak নিতে হবে, তাই প্রতিটায় ১০০%, মোট ২০০%। এজন্যই তিনটা AZ redundancy-র দিক থেকে সস্তা।",
+      "whyWrong": {
+        "0": "১৫০% হলো তিন AZ-এর হিসাব।",
+        "2": "১২৫% হলে একটা AZ হারালে মাত্র ৬২.৫% থাকবে।",
+        "3": "১০০% হলে একটা AZ হারালে অর্ধেক ক্ষমতা যাবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q35",
+      "difficulty": "medium",
+      "question": "Lab-এ একটা 4-CPU container-এ ৪টা process দিয়ে প্রায় ৩০০ req/s, আর চারটা 1-CPU container NGINX-এর পেছনে দিয়েও প্রায় একই। তাহলে দুটোর আসল পার্থক্য কোথায় ধরা পড়ল?",
+      "options": [
+        "NGINX-এর পেছনেরটা সবসময় দ্বিগুণ দ্রুত হয়, কারণ প্রতিটা container নিজের CPU পায়",
+        "4-CPU container-এ memory কম থাকে",
+        "চার container-এ log পড়া সহজ",
+        "একটা container মারলে: বড়টায় সব request fail, চারটায় শুধু ক্ষমতা ২৫% কমে"
+      ],
+      "correctIndex": 3,
+      "explanation": "Throughput প্রায় সমান ছিল। কিন্তু বড় container মারলে শত শত connection refused, আর scale out-এ একটা copy মারলে NGINX বাকিদের কাছে পাঠাল, error নেই, শুধু ক্ষমতা কমল। পার্থক্যটা blast radius-এ।",
+      "whyWrong": {
+        "0": "মাপা throughput প্রায় একই ছিল; NGINX-এর hop বরং সামান্য খরচ যোগ করে।",
+        "1": "দুটোর memory সীমা lab-এ একই রকম ছিল; পার্থক্য failure-এ।",
+        "2": "Log পড়ার সুবিধা এখানে মূল শিক্ষা না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q36",
+      "difficulty": "medium",
+      "question": "Least connections দেওয়া fleet-এ নতুন একটা server যোগ হওয়ার সাথে সাথে তার latency আকাশে উঠল। কারণ আর সমাধান কী?",
+      "options": [
+        "নতুনের cache ঠান্ডা, অথচ least connections তাকে একসাথে অনেক request দিল; slow start দিন",
+        "নতুন server-এর IP ভুল; DNS ঠিক করুন",
+        "Least connections নতুন server-কে কখনো request দেয় না, তাই অন্যরা ডোবে; round robin দিন",
+        "নতুন server বেশি শক্তিশালী, তাই তার JIT আর cache ধীরে কাজ করে; বরং ছোট server যোগ করুন"
+      ],
+      "correctIndex": 0,
+      "explanation": "নতুন server-এ connection শূন্য, তাই least connections তাকে 'সবচেয়ে কম ব্যস্ত' ভেবে এক ঝাঁক request পাঠায়, অথচ তার cache, JIT আর pool এখনো ঠান্ডা। Slow start ধীরে ধীরে weight বাড়ায় (HAProxy-র slowstart, ALB-র slow start duration)।",
+      "whyWrong": {
+        "1": "IP ভুল হলে request-ই পৌঁছাত না, latency বাড়ত না।",
+        "2": "উল্টো, least connections নতুন server-কেই সবচেয়ে বেশি দেয়।",
+        "3": "শক্তিশালী হওয়া ধীর হওয়ার কারণ না; ঠান্ডা অবস্থা আর হঠাৎ ভিড় কারণ।"
+      }
+    },
+    {
+      "id": "sd-day-013-q37",
+      "difficulty": "medium",
+      "question": "একটা ছোট startup-এর peak 1,500 req/s, একটা 8 vCPU machine নিরাপদে প্রায় 1,800 req/s নেয়। Failover সহ সবচেয়ে যুক্তিসঙ্গত design কোনটা?",
+      "options": [
+        "২০টা 1 vCPU-র machine, Auto Scaling সহ, কারণ scale out সবসময় ভালো",
+        "দুটো 8 vCPU machine (একটা চালু, একটা failover-এর জন্য), সরল রেখে",
+        "একটাই 96 vCPU machine, standby ছাড়া, যাতে অনেক বছর চিন্তা না থাকে",
+        "এখনই database shard করে চারটা region-এ ছড়ানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "এই scale-এ scale up আর scale out দুটোতেই প্রায় দুটো machine লাগে, তাই সরলতাই জেতে। খুব ছোট machine-এ প্রতি machine-এর স্থির খরচ খায়, আর standby ছাড়া বড় machine single point of failure।",
+      "whyWrong": {
+        "0": "২০টা 1 vCPU-তে স্থির খরচ (OS, agent, runtime) অনেকটা খেয়ে ফেলে, আর জটিলতা অকারণ।",
+        "2": "Standby নেই মানে একটা failure-এ সব বন্ধ; আর অপ্রয়োজনে দামি।",
+        "3": "১,৫০০ req/s-এ sharding আর multi-region অকারণ জটিলতা।"
+      }
+    },
+    {
+      "id": "sd-day-013-q38",
+      "difficulty": "medium",
+      "question": "Database primary আগেই বড় machine-এ, CPU-র বেশিরভাগ খরচ হচ্ছে read query-তে, write কম। পরের সবচেয়ে যুক্তিসঙ্গত পদক্ষেপ?",
+      "options": [
+        "Write ভাগ করতে সাথে সাথে sharding",
+        "Primary-কে আরও বড়, সবচেয়ে বড় পাওয়া যায় এমন machine-এ নেওয়া",
+        "Read replica যোগ করে read সেখানে পাঠানো, সাথে cache",
+        "App server-এর সংখ্যা কমিয়ে database-এর চাপ কমানো"
+      ],
+      "correctIndex": 2,
+      "explanation": "Read-heavy চাপের জন্য read replica আর cache সবচেয়ে সহজ: একই data-র কপি থেকে read হয়, primary শুধু write সামলায়। দাম replication lag (Day 28)।",
+      "whyWrong": {
+        "0": "সমস্যা read, write না; sharding অনেক বেশি জটিল সমাধান।",
+        "1": "উপরের দিকে প্রতি core-এর লাভ কমে, দাম বাড়ে, আর blast radius থেকে যায়।",
+        "3": "App server কমালে user-দের request-ই আটকাবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q39",
+      "difficulty": "medium",
+      "question": "Image resize করা worker-রা CPU-তে আটকে আছে, RAM অর্ধেকও লাগছে না। কোন instance family সবচেয়ে মানানসই?",
+      "options": [
+        "Compute-optimized, কারণ প্রতি GB RAM-এ বেশি CPU",
+        "Memory-optimized, কারণ বড় image memory-তে রাখতে হয়",
+        "Storage-optimized, কারণ image disk-এ লেখা হয়",
+        "General purpose-এর সবচেয়ে বড় size, কারণ বড়টাই নিরাপদ"
+      ],
+      "correctIndex": 0,
+      "explanation": "Bottleneck CPU, RAM অলস। Compute-optimized family-তে একই দামে বেশি CPU, অর্থাৎ ঠিক resource-টা কেনা। আর worker বলে সংখ্যায় বাড়ানোও সহজ।",
+      "whyWrong": {
+        "1": "RAM অর্ধেকও লাগছে না, তাই বেশি RAM-এর জন্য টাকা দেওয়া অপচয়।",
+        "2": "Disk bottleneck না; সমস্যা CPU।",
+        "3": "বড় general purpose-এ অপ্রয়োজনীয় RAM-এর জন্যও টাকা লাগবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q40",
+      "difficulty": "medium",
+      "question": "প্রতিটা machine-এ monitoring agent, log shipper আর runtime মিলে প্রায় আধা vCPU খায়। 1 vCPU-র ৫০টা machine-এ scale out করলে কী সমস্যা?",
+      "options": [
+        "কোনো সমস্যা নেই, ছোট machine-এর দাম কম বলে প্রতি req/s-এর খরচও সবসময় সবচেয়ে কম",
+        "প্রতিটার প্রায় অর্ধেক ক্ষমতা স্থির খরচে যায়, তাই প্রতি req/s-এর খরচ বেশি",
+        "Load balancer ৫০টার বেশি server সামলাতে পারে না",
+        "ছোট machine-এ network একেবারেই কাজ করে না"
+      ],
+      "correctIndex": 1,
+      "explanation": "স্থির খরচ machine প্রতি, আকার যাই হোক। 1 vCPU-তে সেটা ৫০%, 8 vCPU-তে মাত্র ~৬%। তাই খুব ছোট machine-এ প্রতি req/s দামি; মাঝারি size বেছে সংখ্যা বাড়ানো (diagonal) ভালো।",
+      "whyWrong": {
+        "0": "প্রতি machine-এর স্থির খরচের কারণে খুব ছোট machine প্রায়ই দামি।",
+        "2": "Load balancer সাধারণত ৫০টা server সহজেই সামলায়; সমস্যা খরচে।",
+        "3": "ছোট machine-এ network ঠিকই চলে; সমস্যা অপচয়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q41",
+      "difficulty": "hard",
+      "question": "একটা database-এর জন্য USL-এর মান σ = 0.03, κ = 0.0005 ধরা হলো। C(N) = N ÷ (1 + σ(N−1) + κN(N−1)) অনুযায়ী 32 core-এ ≈ ১৩.২ গুণ আর 64 core-এ ≈ ১৩.০ গুণ। এখান থেকে কী সিদ্ধান্ত নেবেন?",
+      "options": [
+        "দ্বিগুণ দাম, প্রায় শূন্য লাভ; contention কমানো বা read সরানোর দিকে নজর দিন",
+        "64 core-এ throughput দ্বিগুণ হবে, কারণ core দ্বিগুণ",
+        "128 core নিলে curve আবার উপরে উঠবে, তাই আরও বড় machine নিন",
+        "USL শুধু অনেক machine-এর cluster-এর জন্য খাটে, এক machine-এর core-এর জন্য না"
+      ],
+      "correctIndex": 0,
+      "explanation": "Contention আর coherency খরচের কারণে 32-এর পরে core যোগ করলে throughput প্রায় বাড়ে না, সামান্য কমে। তখন আরও বড় machine না কিনে lock/hot row কমানো, read replica বা cache-এ চাপ সরানো ভালো।",
+      "whyWrong": {
+        "1": "Linear বাড়া ধরা হচ্ছে, কিন্তু σ আর κ সেটা ঘটতে দেয় না।",
+        "2": "κ-এর কারণে চূড়ার পরে curve নামতেই থাকে, আর ওঠে না।",
+        "3": "একই সূত্র core-এর জন্যও খাটে: lock আর cache coherency box-এর ভেতরেও আছে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q42",
+      "difficulty": "hard",
+      "question": "USL-এ throughput-এর চূড়া মোটামুটি N ≈ √((1 − σ) ÷ κ)-এ। σ = 0.1, κ = 0.001 হলে কয়টা node-এর পরে নতুন node যোগ করা ক্ষতিকর হতে শুরু করে?",
+      "options": ["প্রায় ১০টা", "প্রায় ৯০টা", "প্রায় ৩০টা", "প্রায় ৯০০টা"],
+      "correctIndex": 2,
+      "explanation": "(1 − 0.1) ÷ 0.001 = 900, আর √900 = 30। প্রায় ৩০টা node-এর পরে coherency খরচ লাভকে ছাড়িয়ে যায়, throughput নামতে থাকে।",
+      "whyWrong": {
+        "0": "১০ হলো 1/σ, এখানে সূত্রটা ভিন্ন।",
+        "1": "৯০ পেতে ভুল করে κ-কে 0.0001 ধরতে হয়।",
+        "3": "৯০০ হলো বর্গমূলের আগের সংখ্যা, বর্গমূল নেওয়া হয়নি।"
+      }
+    },
+    {
+      "id": "sd-day-013-q43",
+      "difficulty": "hard",
+      "question": "একটা 2-socket, 96-core server-এ database চালানো হলো, কিন্তু প্রত্যাশার চেয়ে ধীর। Profiling-এ দেখা গেল অনেক memory access অন্য socket-এর RAM-এ যাচ্ছে। কোনটা সবচেয়ে প্রাসঙ্গিক পদক্ষেপ?",
+      "options": [
+        "Server-এর মোট RAM দ্বিগুণ করা, যাতে প্রতিটা socket-এর কাছে আরও অনেক বেশি memory জমা থাকে",
+        "Thread আর data NUMA-aware ভাবে একই socket-এ রাখা, বা single-socket ছোট machine নেওয়া",
+        "Disk-এর IOPS বাড়ানো",
+        "Load balancer-এ database-এর weight কমানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "Remote socket-এর memory পড়া local-এর চেয়ে ধীর (NUMA)। Thread আর তার data একই NUMA node-এ রাখা, NUMA-aware setting, বা কয়েকটা ছোট single-socket instance প্রায়ই বেশি কাজ দেয়।",
+      "whyWrong": {
+        "0": "RAM বাড়ালেও remote access থেকে যাবে; সমস্যা পরিমাণ না, অবস্থান।",
+        "2": "সমস্যা memory access-এ, disk-এ না।",
+        "3": "এক machine-এর ভেতরের সমস্যা load balancer-এর weight দিয়ে সমাধান হয় না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q44",
+      "difficulty": "hard",
+      "question": "Lesson-এর উদাহরণে 12,000 req/s, একটা failure সহ্য করতে হবে। 8 vCPU machine ($320, 1,819 req/s) দিয়ে N+1, বনাম 96 vCPU ($3,840, 14,803 req/s) আর সমান standby। মাসিক খরচ কত, আর অনুপাত?",
+      "options": [
+        "$2,240 বনাম $3,840; scale up প্রায় ১.৭ গুণ দামি",
+        "$2,560 বনাম $3,840; scale up দেড় গুণ দামি",
+        "$2,880 বনাম $7,680; প্রায় ২.৭ গুণ",
+        "$2,560 বনাম $7,680; scale up প্রায় তিন গুণ দামি"
+      ],
+      "correctIndex": 3,
+      "explanation": "12,000 ÷ 1,819 ≈ ৬.৬ → ৭টা, N+1 = ৮টা × $320 = $2,560। বড়টায় একটা machine আর সমান standby: ২ × $3,840 = $7,680। অনুপাত তিন গুণ; বড় machine-এ redundancy মানে পুরো একটা বাড়তি box।",
+      "whyWrong": {
+        "0": "$2,240 হলো ৭টা (N+1 ছাড়া), আর বড়টার standby বাদ পড়েছে।",
+        "1": "বড় machine-এর standby ধরা হয়নি, অথচ failure সহ্য করতে হবে।",
+        "2": "$2,880 হলো ৯টা machine; N+1-এ ৮টাই যথেষ্ট।"
+      }
+    },
+    {
+      "id": "sd-day-013-q45",
+      "difficulty": "hard",
+      "question": "১০টা server, ঠিক N+1 সাজানো। Rolling deploy একবারে একটা server সরিয়ে নেয়। Deploy চলার মাঝে আরেকটা server crash করল। কী হবে, আর কোন সাজানো এটা এড়াত?",
+      "options": [
+        "কিছু হবে না, N+1 থাকলে deploy আর crash একসাথে হলেও বাকিরা সব কিছু সামলে নেয়",
+        "Load balancer নিজেই deploy থামিয়ে দেবে, তাই সমস্যা হবে না",
+        "Rolling deploy-এ কোনো server সরে না, তাই এটা অসম্ভব পরিস্থিতি",
+        "দুটো server বাইরে, ক্ষমতা peak-এর চেয়ে কম পড়বে; N+2 রাখলে এড়ানো যেত"
+      ],
+      "correctIndex": 3,
+      "explanation": "N+1 মাত্র একটা অনুপস্থিতি সামলায়। Deploy একটা সরিয়েছে, crash আরেকটা, মোট দুটো বাইরে, তাই বাকিরা peak নিতে পারবে না। এজন্য অনেক team N+2 রাখে, বা deploy-এর batch ছোট আর peak-এর বাইরে করে।",
+      "whyWrong": {
+        "0": "N+1 সংজ্ঞা অনুযায়ী একটা failure সামলায়, দুটো না।",
+        "1": "সাধারণ load balancer deploy সম্পর্কে জানে না; সে শুধু server বাদ দেয়।",
+        "2": "Rolling deploy ঠিক এভাবেই একটা একটা করে server সরিয়ে কাজ করে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q46",
+      "difficulty": "hard",
+      "question": "Database 32 থেকে 64 core করা হলো, throughput প্রায় একই। Wait event-এ দেখা যাচ্ছে বেশিরভাগ সময় একটা জনপ্রিয় product-এর stock row-এর lock-এর অপেক্ষা। সবচেয়ে কার্যকর সমাধান?",
+      "options": [
+        "Hot row-এর contention কমানো: counter ভাগ, ছোট critical section, বা update queue-তে",
+        "আরও বড়, 128 core-এর machine নেওয়া",
+        "Read replica যোগ করা, যাতে stock update-গুলো replica-তে ভাগ হয়ে primary-র চাপ কমে",
+        "Disk দ্রুত SSD-তে বদলানো"
+      ],
+      "correctIndex": 0,
+      "explanation": "একটা row-এর lock serial অংশ (USL-এর σ): core যতই বাড়ুক, সবাই এক লাইনে। Hot জিনিস ভাগ করা, lock-এর ভেতরে কাজ কমানো, বা update queue দিয়ে ক্রমে করা contention কমায়।",
+      "whyWrong": {
+        "1": "Lock-এর লাইনে বাড়তি core শুধু অপেক্ষা বাড়ায়।",
+        "2": "Replica-তে write হয় না; stock update primary-তেই হবে।",
+        "3": "Bottleneck lock, disk না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q47",
+      "difficulty": "hard",
+      "question": "একটা Java service-কে 256GB heap-এর বিশাল machine-এ scale up করার পর মাঝে মাঝে লম্বা pause দেখা যাচ্ছে, p99 খারাপ। কোনটা যুক্তিসঙ্গত বিকল্প?",
+      "options": [
+        "Heap আরও বড় করে 512GB করা, যাতে GC কম ঘনঘন চলে আর pause-এর সংখ্যাও কমে যায়",
+        "কয়েকটা ছোট heap-এর instance-এ scale out, বা low-pause GC বিবেচনা করা",
+        "Thread সংখ্যা কমিয়ে একটা করা",
+        "Disk-এর IOPS বাড়ানো"
+      ],
+      "correctIndex": 1,
+      "explanation": "বিশাল heap-এ GC-র কাজ বেশি, আর কিছু collector-এ pause লম্বা হয়। কয়েকটা ছোট instance-এ ভাগ করলে প্রতিটার GC ছোট, অথবা ZGC/Shenandoah-এর মতো low-pause collector pause কমায়।",
+      "whyWrong": {
+        "0": "বড় heap-এ GC কম চললেও প্রতিবারের কাজ আর pause বড় হতে পারে।",
+        "2": "একটা thread-এ সব core অলস, throughput ধসে পড়বে।",
+        "3": "সমস্যা GC pause, disk না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q48",
+      "difficulty": "hard",
+      "question": "Peak 3,000 req/s, প্রতি server নিরাপদে 750 req/s। একসাথে দুটো server হারালেও চলতে হবে। ন্যূনতম কয়টা server লাগবে?",
+      "options": ["৬টা", "৫টা", "৪টা", "৮টা"],
+      "correctIndex": 0,
+      "explanation": "Peak সামলাতে 3,000 ÷ 750 = ৪টা চালু থাকা দরকার। দুটো হারালেও যেন ৪টা থাকে, তাই N = ৪ + ২ = ৬টা (N+2)।",
+      "whyWrong": {
+        "1": "৫টা থেকে দুটো গেলে ৩টা থাকে, 2,250 req/s, peak-এর কম।",
+        "2": "৪টা শুধু peak সামলায়, একটা failure-ও না।",
+        "3": "৮টা কাজ করবে, কিন্তু ন্যূনতম না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q49",
+      "difficulty": "hard",
+      "question": "নতুন server 16 vCPU আর পুরনো 8 vCPU, কিন্তু app একটা single-threaded process হিসেবে চলে। Weight কিভাবে ঠিক করবেন?",
+      "options": [
+        "vCPU অনুযায়ী ১:২, কারণ নতুনটায় দ্বিগুণ core আর বেশি memory আছে",
+        "Load test করে দেখা; single-threaded হলে দুটো প্রায় সমান, তাই weight প্রায় ১:১",
+        "Weight দরকার নেই, round robin সবসময় ঠিক ভাগ করে",
+        "নতুনটাকে ১:৪, যাতে সে দ্রুত পুরনো server-গুলোর জায়গা নিয়ে নেয় আর তাদের চাপ কমে"
+      ],
+      "correctIndex": 1,
+      "explanation": "Single process মোটামুটি এক core পায়, তাই ১৬ vCPU-ও ৮ vCPU-র মতো কাজ দিতে পারে (core-এর গতি আলাদা হলে একটু পার্থক্য)। Weight মাপা ক্ষমতা থেকে, vCPU গুনে না।",
+      "whyWrong": {
+        "0": "Single-threaded app বাড়তি core ব্যবহারই করে না, তাই ১:২ ভুল।",
+        "2": "অসমান ক্ষমতায় round robin ঠিক ভাগ করে না; এখানে কাকতালীয়ভাবে কাছাকাছি হতে পারে, কিন্তু মেপে নিশ্চিত হতে হয়।",
+        "3": "মাপা ক্ষমতার সাথে এই অনুপাতের কোনো সম্পর্ক নেই।"
+      }
+    },
+    {
+      "id": "sd-day-013-q50",
+      "difficulty": "hard",
+      "question": "EC2-তে একটা instance stop/start করে বড় করার পর দুটো জিনিস ভেঙে গেল: local scratch data নেই, আর বাইরের partner আর connect করতে পারছে না। সবচেয়ে সম্ভাব্য ব্যাখ্যা?",
+      "options": [
+        "Resize-এর পরে instance-এর OS নতুন করে install হয়, তাই সব setting আর local data মুছে যায়",
+        "বড় instance-এ বাইরের connection বন্ধ থাকে",
+        "EBS volume-এর সব data stop করলে মুছে যায়",
+        "Instance store-এর data stop-এ মুছে যায়, আর Elastic IP না থাকলে public IP বদলে যায়"
+      ],
+      "correctIndex": 3,
+      "explanation": "Stop করলে instance store (ephemeral disk)-এর data হারায়, আর Elastic IP ছাড়া public IPv4 নতুন হয়। Partner পুরনো IP-তে allowlist করে রাখলে connect করতে পারবে না।",
+      "whyWrong": {
+        "0": "Resize-এ OS বদলায় না; একই EBS root volume থেকে boot হয়।",
+        "1": "Instance-এর আকারের সাথে বাইরের connection বন্ধ হওয়ার নিয়ম নেই।",
+        "2": "EBS volume-এর data stop-এ থাকে; মোছে instance store।"
+      }
+    },
+    {
+      "id": "sd-day-013-q51",
+      "difficulty": "hard",
+      "question": "Replica বড় করে failover-এর মাধ্যমে database resize করছেন। Replica-কে primary বানানোর ঠিক আগে কোনটা নিশ্চিত করা সবচেয়ে জরুরি?",
+      "options": [
+        "Replica-র CPU ১০০% কিনা",
+        "Load balancer-এ replica-র weight সবচেয়ে বেশি দেওয়া আছে কিনা, যাতে traffic যায়",
+        "Replication lag প্রায় শূন্য, যাতে সাম্প্রতিক write হারিয়ে না যায়",
+        "Replica-তে কোনো index নেই, যাতে দ্রুত চলে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Lag থাকা অবস্থায় promote করলে primary-তে হওয়া শেষ কিছু write নতুন primary-তে থাকবে না, data হারাবে। তাই lag শূন্যে এনে, write থামিয়ে, তারপর switch।",
+      "whyWrong": {
+        "0": "Replica-র CPU ১০০% থাকা খারাপ লক্ষণ, নিশ্চিত করার বিষয় না।",
+        "1": "Database failover load balancer-এর weight দিয়ে হয় না।",
+        "3": "Index ছাড়া নতুন primary-তে query ধীর হবে; index থাকা দরকার।"
+      }
+    },
+    {
+      "id": "sd-day-013-q52",
+      "difficulty": "hard",
+      "question": "Lab-এ scale out করা app-এর একটা copy মারার পরেও GET request-এ কোনো error হয়নি, কারণ NGINX request-টা অন্য copy-তে আবার পাঠিয়েছে। Payment-এর POST request হলে কী আশা করবেন?",
+      "options": [
+        "Default-এ NGINX upstream-এ পাঠানো POST আর অন্য server-এ পাঠায় না, তাই কিছু error আসতে পারে",
+        "POST-ও একইভাবে অন্য copy-তে আবার পাঠানো হবে, আর সেটা সবসময় নিরাপদ, কারণ NGINX duplicate ধরে",
+        "POST request কখনো load balancer দিয়ে যেতে পারে না",
+        "POST হলে NGINX সব copy-তে একসাথে পাঠায়, যাতে একটা অন্তত সফল হয়"
+      ],
+      "correctIndex": 0,
+      "explanation": "NGINX POST-এর মতো non-idempotent request upstream-এ পাঠানো হয়ে গেলে default-এ পরের server-এ আবার পাঠায় না, কারণ দুবার payment হতে পারে। তাই blast radius ছোট হলেও in-flight non-idempotent request fail হতে পারে; client-side retry-র জন্য idempotency key লাগে (Day 57)।",
+      "whyWrong": {
+        "1": "POST আবার পাঠানো নিরাপদ না, duplicate payment হতে পারে; NGINX default-এ তা করে না।",
+        "2": "POST স্বাভাবিকভাবেই load balancer দিয়ে যায়।",
+        "3": "Load balancer এক request এক server-এই পাঠায়, সবাইকে না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q53",
+      "difficulty": "hard",
+      "question": "Server ৮ থেকে ১২টা করার পর throughput কমে গেল। প্রতিটা server নিজের local cache রাখে আর প্রতিটা বদলের খবর বাকি সবাইকে পাঠায়। কেন এমন হলো?",
+      "options": [
+        "১২টা server-এ load balancer-এর algorithm কাজ করে না",
+        "Server-জোড়ার মধ্যে বার্তা N(N−1) হারে বাড়ে, coherency খরচ লাভকে ছাড়িয়ে গেছে",
+        "Server বেশি হলে context switch বাড়ে, তাই প্রতিটা machine-এর নিজের CPU-ই ধীর হয়ে যায়",
+        "Local cache থাকলে database কখনো ব্যবহার হয় না"
+      ],
+      "correctIndex": 1,
+      "explanation": "প্রত্যেকে প্রত্যেককে খবর দিলে বার্তা N(N−1): ৮টায় ৫৬, ১২টায় ১৩২। এটা USL-এর κ: একসময় নতুন server কাজের বদলে মেলানোতেই বেশি সময় দেয়। সমাধান shared cache বা key ভাগ করা (একটা key একটা জায়গায়)।",
+      "whyWrong": {
+        "0": "Load balancer ১২টা server সহজেই সামলায়।",
+        "2": "অন্য machine-এর সংখ্যায় একটা machine-এর CPU ধীর হয় না; ব্যস্ততা বাড়ে মেলানোর কাজে।",
+        "3": "Local cache থাকলেও miss হলে database-এ যায়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q54",
+      "difficulty": "hard",
+      "question": "Database-এর working set এখন ২০০GB, machine-এ ২৫৬GB RAM। Working set প্রতি মাসে ১৫% বাড়ছে। মোটামুটি কত মাস পরে working set RAM ছাড়িয়ে যাবে?",
+      "options": [
+        "প্রায় ৬ মাস",
+        "প্রায় ১ মাস",
+        "প্রায় ১২ মাস",
+        "প্রায় ২ মাস"
+      ],
+      "correctIndex": 3,
+      "explanation": "২০০ × ১.১৫ = ২৩০GB (১ মাস), ২৩০ × ১.১৫ ≈ ২৬৪.৫GB (২ মাস)। তাই প্রায় দুই মাসে ছাড়িয়ে যাবে, এখনই পরের পদক্ষেপ (বড় machine, archive, বা replica/shard) পরিকল্পনা শুরু করা দরকার।",
+      "whyWrong": {
+        "0": "৬ মাসে working set ২০০ × ১.১৫⁶ ≈ ৪৬০GB হয়ে যাবে; সীমা অনেক আগেই পার।",
+        "1": "১ মাসে ২৩০GB, এখনো ২৫৬-এর নিচে।",
+        "2": "১২ মাস অনেক দেরি; ২ মাসেই সীমা পার।"
+      }
+    },
+    {
+      "id": "sd-day-013-q55",
+      "difficulty": "hard",
+      "question": "একটা CPU-ভারী API-তে প্রতিটা request একটাই thread-এ চলে, আর pod-এর CPU limit 0.5 core। Traffic কম, তবু প্রতিটা request ধীর। কোনটা প্রতিটা request-এর latency কমাবে?",
+      "options": [
+        "Pod-এর সংখ্যা ২ থেকে ১০ করা, যাতে কাজ অনেক pod-এ ভাগ হয়",
+        "Load balancer-এর algorithm বদলানো",
+        "Read replica যোগ করা",
+        "প্রতিটা pod-এর CPU limit 1 core করা (scale up)"
+      ],
+      "correctIndex": 3,
+      "explanation": "Traffic কম মানে লাইন নেই; প্রতিটা request নিজেই ধীর কারণ সে আধা core পাচ্ছে। Limit 1 core করলে single-thread কাজ প্রায় দ্বিগুণ দ্রুত হয়। Scale out throughput বাড়ায়, এক request-এর latency না।",
+      "whyWrong": {
+        "0": "বেশি pod বেশি request একসাথে নেয়, কিন্তু প্রতিটা request এখনো আধা core পায়।",
+        "1": "Algorithm ভাগ বদলায়; লাইন না থাকলে latency-তে লাভ নেই।",
+        "2": "Bottleneck app-এর CPU, database-এর read না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q56",
+      "difficulty": "hard",
+      "question": "একটা team-এর commercial database প্রতি core-এ দামি license নেয়, license-এর খরচ hardware-এর কয়েক গুণ। Throughput আরও বাড়াতে হবে। কোন কৌশল সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "আগে query, index আর cache দিয়ে কাজ কমানো; core লাগলে কম কিন্তু দ্রুত core",
+        "সবচেয়ে বেশি core-এর machine নেওয়া, কারণ বড় machine সবসময় সস্তা",
+        "Database-এর কয়েক ডজন replica, প্রতিটা অনেক core সহ, যাতে load সমানভাবে ছড়ায়",
+        "License-এর হিসাব বাদ দিয়ে শুধু hardware-এর দাম তুলনা করা"
+      ],
+      "correctIndex": 0,
+      "explanation": "Per-core license-এ প্রতিটা বাড়তি core-এর দাম বড়, অলস হলেও। তাই প্রথমে database-এর কাজ কমানো (query, index, cache), তারপর দরকারে কম সংখ্যক কিন্তু দ্রুত core। License ছাড়া stateless tier-কে scale out করা সস্তা।",
+      "whyWrong": {
+        "1": "Per-core license-এ বেশি core মানে বেশি license; সস্তা না।",
+        "2": "প্রতিটা replica-তেও core-এর license লাগে, খরচ বহুগুণ।",
+        "3": "License-ই এখানে সবচেয়ে বড় খরচ; বাদ দিলে সিদ্ধান্ত ভুল হবে।"
+      }
+    },
+    {
+      "id": "sd-day-013-q57",
+      "difficulty": "hard",
+      "question": "৫ জনের team, peak 2,000 req/s, একটা 8 vCPU PostgreSQL ৪০% CPU-তে, standby নেই। App একটা server-এ। পরের ধাপ হিসেবে কোনটা সবচেয়ে বিবেচনাপ্রসূত?",
+      "options": [
+        "এখনই database ৮টা shard-এ ভাগ করে ভবিষ্যতের জন্য তৈরি থাকা",
+        "সব কিছু ১০০টা microservice-এ ভাগ করে Kubernetes-এ নেওয়া",
+        "App stateless করে অন্তত দুটো copy, আর database-এর জন্য একটা replica/standby যোগ করা",
+        "Database-কে সবচেয়ে বড় 192 vCPU machine-এ নেওয়া, যাতে কয়েক বছর আর চিন্তা না থাকে"
+      ],
+      "correctIndex": 2,
+      "explanation": "Database-এ এখনো অনেক জায়গা (৪০%), তাই sharding বা বিশাল machine অকারণ। আসল ঝুঁকি single point of failure: app-এর দুটো copy আর database-এর standby/replica সেটা দূর করে, আর app stateless থাকলে পরে scale out শুধু একটা সিদ্ধান্ত।",
+      "whyWrong": {
+        "0": "৪০% CPU-তে sharding অকারণ জটিলতা: join, transaction, resharding।",
+        "1": "ছোট team-এর জন্য এটা বিশাল operational বোঝা, সমস্যার সমাধানও না।",
+        "3": "৪০%-এ বিশাল machine অপচয়, আর single point of failure থেকেই যায়।"
+      }
+    },
+    {
+      "id": "sd-day-013-q58",
+      "difficulty": "hard",
+      "question": "তিনটা AZ, প্রতিটায় সমান server, peak 6,000 req/s, প্রতি server নিরাপদে 700 req/s। একটা পুরো AZ হারালেও চলতে হবে। ন্যূনতম মোট কয়টা server?",
+      "options": ["৯টা", "১২টা", "১৫টা", "১০টা"],
+      "correctIndex": 2,
+      "explanation": "একটা AZ হারালে বাকি দুটোকে 6,000 নিতে হবে, তাই প্রতিটা AZ-এ 3,000 req/s। 3,000 ÷ 700 ≈ ৪.৩ → প্রতি AZ-এ ৫টা, মোট ১৫টা।",
+      "whyWrong": {
+        "0": "৯টা শুধু peak সামলায়, AZ হারানোর হিসাব নেই।",
+        "1": "১২টা মানে প্রতি AZ-এ ৪টা = 2,800, দুটো AZ-এ 5,600, peak-এর কম।",
+        "3": "১০টা হলো সাধারণ N+1, AZ-স্তরের failure না।"
+      }
+    },
+    {
+      "id": "sd-day-013-q59",
+      "difficulty": "hard",
+      "question": "Lesson-এর খরচের হিসাবে 2 vCPU-তে প্রতি 1,000 req/s $213, 8 vCPU-তে $176, 96 vCPU-তে $259। ছোট আর বড় দুই প্রান্ত দামি হওয়ার কারণ কোন জোড়া?",
+      "options": [
+        "ছোট machine-এ network ধীর থাকে, আর বড় machine-এ disk-এর আকার তুলনায় ছোট হয়",
+        "ছোটতে প্রতি machine-এর স্থির খরচ বড় অংশ, বড়তে efficiency কমে যায়",
+        "ছোটতে license বেশি, বড়তে load balancer লাগে না",
+        "ছোটতে RAM বেশি, বড়তে CPU কম"
+      ],
+      "correctIndex": 1,
+      "explanation": "আধা vCPU-র স্থির খরচ 2 vCPU-তে ২৫%, কিন্তু 16-তে ৩%। আর বড় box-এ lock, memory bandwidth আর single-threaded অংশে efficiency কমে। দুই প্রান্তে দুই কারণে U-আকারের বাঁক।",
+      "whyWrong": {
+        "0": "হিসাবে network বা disk-এর আকার ধরা হয়নি।",
+        "2": "License হিসাবের অংশ ছিল না, আর বড় machine-এর redundancy-তেও আলাদা ব্যবস্থা লাগে।",
+        "3": "RAM বা CPU-র অনুপাত না, স্থির খরচ আর efficiency-ই কারণ।"
+      }
+    },
+    {
+      "id": "sd-day-013-q60",
+      "difficulty": "hard",
+      "question": "একটা stateless API ৮টা 2 vCPU machine-এ চলছে, প্রতি req/s-এর খরচ বেশি আর machine-প্রতি agent অনেকটা CPU খায়। ক্ষমতা একই রেখে কোন বদল সবচেয়ে যুক্তিসঙ্গত?",
+      "options": [
+        "একটা 16 vCPU machine-এ সব সরিয়ে নেওয়া, standby ছাড়া",
+        "১৬টা 1 vCPU machine-এ ভাগ করা",
+        "Agent বন্ধ করে monitoring ছাড়া চালানো",
+        "৩টা 8 vCPU machine (N+1 সহ), diagonal scaling"
+      ],
+      "correctIndex": 3,
+      "explanation": "বড় machine-এ স্থির খরচের ভাগ কমে, আর কয়েকটা machine থাকায় একটা মরলেও চলে। ২টা peak-এর জন্য আর একটা বাড়তি; প্রতি req/s-এর খরচ কম, redundancy-ও থাকল।",
+      "whyWrong": {
+        "0": "এক machine-এ সব মানে single point of failure, আর resize-এ downtime।",
+        "1": "আরও ছোট machine-এ স্থির খরচের ভাগ আরও বাড়বে।",
+        "2": "Monitoring বাদ দিলে সমস্যা ধরাই যাবে না; এটা খরচ কমানোর ভুল জায়গা।"
+      }
+    }
+  ]
+}

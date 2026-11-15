@@ -1,0 +1,14 @@
+{
+  "type": "story",
+  "text": "অফিসে দিনে ৫০ জন একই প্রশ্ন করলে, প্রতিবার উত্তর খুঁজতে যাবেন?\nDay 17/100 · Caching\n\nধরুন অফিসের reception-এ সবাই এসে জিজ্ঞেস করে, \"Wi-Fi password কী?\" Receptionist প্রতিবার তিনতলায় IT রুমে গিয়ে জেনে আসেন।\n\nদিনে ৫০ বার সিঁড়ি। লাইন লম্বা হয়, আর IT-র লোকটা নিজের কাজই করতে পারেন না।\n\nতারপর একদিন তিনি password একটা sticky note-এ লিখে ডেস্কে লাগিয়ে দিলেন। এখন উত্তর ২ সেকেন্ডে, IT রুমে আর কেউ যায় না।\n\nআজ **Caching** শিখতে গিয়ে বুঝলাম, software system-এও প্রায় একই idea কাজ করে।\nএকটা online shop-এ product page খুললে প্রতিবার database-এ একই ভারী query চলে:\n- দাম\n- stock\n- review-এর গড় rating\nঅথচ জনপ্রিয় ২০০টা product-এর উত্তর দিনে হয়তো একবার বদলায়।\n\nSale-এর দিন database এই একই প্রশ্নের চাপে বসে যায়। এখানেই আসে Caching। উত্তরটা একবার এনে Redis-এর মতো memory-তে রাখি, পরের হাজারজনকে সেখান থেকেই দিই।\n\n৩টা মূল ধারণা:\n1. **Cache Hit/Miss**: পেলে hit (কয়েক ms), না পেলে miss, তখন database-এ যেতে হয়\n2. **TTL**: প্রতিটা কপির মেয়াদ, শেষ হলে নিজে থেকেই মুছে যায়\n3. **Eviction**: memory ভরলে কম ব্যবহৃত জিনিস সরানো, যেমন **LRU**\n\n[✍️ আপনার অভিজ্ঞতা: আপনার project-এ কোন data cache করেছিলেন, আর cache-এ পুরনো data থেকে যাওয়ার কোনো ঘটনা ঘটেছিল কি?]\n\nতবে একটা গুরুত্বপূর্ণ বিষয় শিখলাম। IT যদি password বদলায় আর sticky note-টা কেউ না বদলায়? সবাই ভুল password পাবে, কেউ টেরও পাবে না। Software-এ এটাই **stale data**। তাই database-এ লেখার পরে cache-এর কপিটা মুছে দিতে হয়, update না করে, কারণ দুটো update উল্টো ক্রমে পৌঁছালে পুরনো মানটাই থেকে যেতে পারে।\n\nআর জনপ্রিয় key-র মেয়াদ একসাথে শেষ হলে শত শত request একসাথে database-এ ছোটে (**Cache Stampede**)। একজনকে আনতে দিয়ে বাকিদের অপেক্ষা করানোই সমাধান।\n\nCaching = বারবার লাগে এমন উত্তর কাছে রেখে দেওয়া, আর মনে রাখা কখন সেটা পুরনো হয়ে যায়।\n\nআপনার project-এ cache-এর TTL কত রাখেন, আর কিভাবে ঠিক করেছিলেন? Comment-এ লিখুন 👇",
+  "personalPrompt": "আপনার project-এ কোন data cache করেছিলেন, আর cache-এ পুরনো data থেকে যাওয়ার কোনো ঘটনা ঘটেছিল কি?",
+  "firstComment": "পুরো lesson, diagram, update race-এর ধাপে ধাপে ছবি আর Redis দিয়ে নিজে চালিয়ে দেখার lab এখানে: {link}",
+  "hashtags": [
+    "#100DaysOfSystemDesign",
+    "#SystemDesign",
+    "#Caching",
+    "#Redis",
+    "#BackendEngineering"
+  ],
+  "visual": "day-017-main"
+}
