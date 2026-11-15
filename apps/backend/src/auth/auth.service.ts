@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
+import { canLogin } from '../users/access-rules';
 import { UsersService } from '../users/users.service';
 import {
   ForgotPasswordDto,
@@ -45,6 +47,10 @@ export class AuthService {
       lastName: dto.lastName,
       email: dto.email,
       passwordHash: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
+      role: 'user',
+      status: 'pending',
+      courseIds: [],
+      askAiEnabled: false,
     });
     return UsersService.toPublic(user);
   }
@@ -52,24 +58,33 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.users.findByEmailWithPassword(dto.email);
     const valid =
-      user?.isActive && (await bcrypt.compare(dto.password, user.passwordHash));
+      !!user && (await bcrypt.compare(dto.password, user.passwordHash));
     // Same message for unknown email and wrong password, so emails can't be probed.
     if (!user || !valid) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+    // Only revealed after the password is proven correct.
+    if (user.status === 'pending') {
+      throw new ForbiddenException(
+        'Your account is awaiting super admin approval.',
+      );
+    }
+    if (!canLogin(user)) {
+      throw new ForbiddenException('Your account has no access.');
     }
     return UsersService.toPublic(user);
   }
 
   async me(userId: string) {
     const user = await this.users.findById(userId);
-    if (!user || !user.isActive) throw new UnauthorizedException();
+    if (!user || !canLogin(user)) throw new UnauthorizedException();
     return UsersService.toPublic(user);
   }
 
   /** Always resolves the same way whether or not the email exists. */
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.users.findByEmail(dto.email);
-    if (!user || !user.isActive) return;
+    if (!user || !canLogin(user)) return;
 
     const token = randomBytes(32).toString('hex');
     await this.users.setResetToken(

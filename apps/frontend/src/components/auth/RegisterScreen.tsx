@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { z } from "zod";
 import {
   FormInput,
@@ -13,7 +14,6 @@ import AuthLink from "./AuthLink";
 import AuthMessage from "./AuthMessage";
 import NewPasswordFields from "./NewPasswordFields";
 import { useAuthSubmit } from "./useAuthSubmit";
-import { useFinishLogin } from "./useFinishLogin";
 
 const registerSchema = passwordsMatch(
   z.object({
@@ -44,12 +44,28 @@ function NameFields() {
   );
 }
 
+function RegisteredNotice({ message }: { message: string }) {
+  return (
+    <>
+      <AuthMessage message={message} tone="success" />
+      <p className="text-sm text-muted-foreground">
+        You can log in once a super admin approves your account.{" "}
+        <AuthLink href="/login">Go to login</AuthLink>
+      </p>
+    </>
+  );
+}
+
 function RegisterForm() {
-  const finishLogin = useFinishLogin();
+  const [registeredMessage, setRegisteredMessage] = useState<string | null>(
+    null,
+  );
   const { error, onSubmit } = useAuthSubmit(
     async ({ confirmPassword: _, ...input }: RegisterValues) =>
-      finishLogin(await authApi.register(input)),
+      setRegisteredMessage(await authApi.register(input)),
   );
+  if (registeredMessage)
+    return <RegisteredNotice message={registeredMessage} />;
   return (
     <>
       <AuthMessage message={error} />

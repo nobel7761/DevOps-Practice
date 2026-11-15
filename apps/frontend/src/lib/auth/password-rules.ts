@@ -1,31 +1,33 @@
 import { z } from "zod";
 
 /** Same rules as the backend (apps/backend/src/auth/password-policy.ts). */
+const count = (pw: string, re: RegExp) => (pw.match(re) ?? []).length;
+
 export const PASSWORD_RULES = [
   {
     id: "length",
-    label: "8-16 characters",
-    test: (pw: string) => pw.length >= 8 && pw.length <= 16,
+    label: "8-48 characters",
+    test: (pw: string) => pw.length >= 8 && pw.length <= 48,
   },
   {
     id: "upper",
-    label: "An uppercase letter (A-Z)",
-    test: (pw: string) => /[A-Z]/.test(pw),
+    label: "At least 2 uppercase letters (A-Z)",
+    test: (pw: string) => count(pw, /[A-Z]/g) >= 2,
   },
   {
     id: "lower",
-    label: "A lowercase letter (a-z)",
-    test: (pw: string) => /[a-z]/.test(pw),
+    label: "At least 2 lowercase letters (a-z)",
+    test: (pw: string) => count(pw, /[a-z]/g) >= 2,
   },
   {
     id: "number",
-    label: "A number (0-9)",
-    test: (pw: string) => /[0-9]/.test(pw),
+    label: "At least 2 numbers (0-9)",
+    test: (pw: string) => count(pw, /[0-9]/g) >= 2,
   },
   {
     id: "special",
-    label: "A special character (!@#$...)",
-    test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
+    label: "At least 2 special characters (!@#$...)",
+    test: (pw: string) => count(pw, /[^A-Za-z0-9]/g) >= 2,
   },
 ] as const;
 

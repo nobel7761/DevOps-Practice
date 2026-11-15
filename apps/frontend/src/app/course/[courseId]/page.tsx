@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import CourseAccessGate from "@/components/courses/CourseAccessGate";
 import CourseScreen from "@/components/modules/course-shell/CourseScreen";
 import { SdCourseScreen } from "@/components/system-design/shell/SdCourseScreen";
 import { SYSTEM_DESIGN_A_Z_COURSE_ID } from "@/lib/data/courses/system-design-a-z";
@@ -21,16 +22,22 @@ export default async function CoursePage({
 
   // System Design A-Z has its own sidebar layout (phases → days).
   if (entry.id === SYSTEM_DESIGN_A_Z_COURSE_ID) {
-    return <SdCourseScreen />;
+    return (
+      <CourseAccessGate courseId={entry.id}>
+        <SdCourseScreen />
+      </CourseAccessGate>
+    );
   }
 
   return (
-    <CourseScreen
-      courseId={entry.id}
-      course={entry.course}
-      externalUrl={entry.externalUrl}
-      milestoneId={milestone}
-      moduleId={module}
-    />
+    <CourseAccessGate courseId={entry.id}>
+      <CourseScreen
+        courseId={entry.id}
+        course={entry.course}
+        externalUrl={entry.externalUrl}
+        milestoneId={milestone}
+        moduleId={module}
+      />
+    </CourseAccessGate>
   );
 }

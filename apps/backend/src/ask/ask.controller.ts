@@ -1,18 +1,40 @@
-import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUserId } from '../auth/auth.decorators';
+import { canUseAskAi } from '../users/access-rules';
+import { UsersService } from '../users/users.service';
 import { AskService } from './ask.service';
 import { AskQuestionDto } from './dto/ask-question.dto';
 
 @Controller('ask')
 export class AskController {
-  constructor(private readonly askService: AskService) {}
+  constructor(
+    private readonly askService: AskService,
+    private readonly users: UsersService,
+  ) {}
+
+  /** Ask AI is switched on per user by the super admin. */
+  private async assertAskAiEnabled(userId: string) {
+    const user = await this.users.findById(userId);
+    if (!user || !canUseAskAi(user)) {
+      throw new ForbiddenException('Ask AI is not enabled for your account');
+    }
+  }
 
   @Get(':contentId/history')
-  getHistory(
+  async getHistory(
     @CurrentUserId() userId: string,
     @Param('contentId') contentId: string,
   ) {
+    await this.assertAskAiEnabled(userId);
     return this.askService.getHistory(userId, contentId);
   }
 
@@ -24,6 +46,7 @@ export class AskController {
     @Body() dto: AskQuestionDto,
     @Res() res: Response,
   ) {
+    await this.assertAskAiEnabled(userId);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');

@@ -5,31 +5,23 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/shared/shadcn";
 
+/** Light/dark switch — an inline icon button (positioning is up to the parent bar). */
 export default function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) {
-    return (
-      <Button
-        variant="outline"
-        size="icon"
-        aria-hidden
-        className="invisible fixed top-4 right-4 z-50"
-      />
-    );
-  }
-
-  const isDark = resolvedTheme === "dark";
+  const isDark = mounted && resolvedTheme === "dark";
+  const label = isDark ? "Switch to light theme" : "Switch to dark theme";
 
   return (
     <Button
-      variant="outline"
+      variant="ghost"
       size="icon"
-      className="fixed top-4 right-4 z-50"
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      className="size-9 rounded-full"
+      aria-label={label}
+      title={label}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       {isDark ? <Sun /> : <Moon />}

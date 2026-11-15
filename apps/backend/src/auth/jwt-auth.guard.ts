@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Response } from 'express';
+import { canLogin } from '../users/access-rules';
 import { UsersService } from '../users/users.service';
 import { IS_PUBLIC_KEY, type AuthenticatedRequest } from './auth.decorators';
 
@@ -48,7 +49,7 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const { sub } = await this.jwt.verifyAsync<{ sub: string }>(token);
       const user = await this.users.findById(sub);
-      return user?.isActive ? sub : null;
+      return user && canLogin(user) ? sub : null;
     } catch {
       return null;
     }

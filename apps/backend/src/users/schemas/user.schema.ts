@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
+export type UserRole = 'user' | 'superadmin';
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+
 export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true })
@@ -27,6 +30,21 @@ export class User {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ enum: ['user', 'superadmin'], default: 'user' })
+  role: UserRole;
+
+  /** New sign-ups wait for super admin approval before they can log in. */
+  @Prop({ enum: ['pending', 'approved', 'rejected'], default: 'pending' })
+  status: UserStatus;
+
+  /** Course ids (frontend course registry ids) the super admin granted. */
+  @Prop({ type: [String], default: [] })
+  courseIds: string[];
+
+  /** Super admin switches Ask AI on per user. */
+  @Prop({ default: false })
+  askAiEnabled: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

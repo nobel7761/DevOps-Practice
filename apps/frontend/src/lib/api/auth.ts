@@ -6,6 +6,10 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   email: string;
+  role: "user" | "superadmin";
+  status: "pending" | "approved" | "rejected";
+  courseIds: string[];
+  askAiEnabled: boolean;
 }
 
 export interface RegisterInput {
@@ -19,7 +23,9 @@ type UserResponse = { user: AuthUser };
 
 export const authApi = {
   register: (input: RegisterInput) =>
-    client.post<UserResponse>("/auth/register", input).then((r) => r.data.user),
+    client
+      .post<{ message: string }>("/auth/register", input)
+      .then((r) => r.data.message),
   login: (email: string, password: string) =>
     client
       .post<UserResponse>("/auth/login", { email, password })

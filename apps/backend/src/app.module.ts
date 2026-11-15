@@ -7,6 +7,7 @@ import { existsSync } from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { QuizModule } from './quiz/quiz.module';
 import { InterviewModule } from './interview/interview.module';
@@ -89,6 +90,7 @@ if (!existsSync(envPath)) {
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     UsersModule,
     AuthModule,
+    AdminModule,
     QuizModule,
     InterviewModule,
     NotesModule,

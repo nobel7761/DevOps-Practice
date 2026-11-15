@@ -1,14 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from './schemas/user.schema';
+import {
+  User,
+  UserDocument,
+  UserRole,
+  UserStatus,
+} from './schemas/user.schema';
 
 export interface PublicUser {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
+  role: UserRole;
+  status: UserStatus;
+  courseIds: string[];
+  askAiEnabled: boolean;
 }
+
+export type AccessUpdate = Partial<
+  Pick<User, 'status' | 'courseIds' | 'askAiEnabled' | 'role'>
+>;
+
+/**
+ * Accounts created before the approval feature have no `role`/`status` in MongoDB, and queries
+ * don't apply schema defaults — so legacy docs count as `pending` here, matching how they hydrate.
+ */
+const statusFilter = (status?: UserStatus): Record<string, unknown> => {
+  if (!status) return {};
+  return status === 'pending'
+    ? { status: { $in: ['pending', null] } }
+    : { status };
+};
 
 @Injectable()
 export class UsersService {
@@ -20,6 +44,10 @@ export class UsersService {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      role: user.role ?? 'user',
+      status: user.status,
+      courseIds: user.courseIds ?? [],
+      askAiEnabled: !!user.askAiEnabled,
     };
   }
 
@@ -39,9 +67,28 @@ export class UsersService {
   }
 
   create(
-    data: Pick<User, 'firstName' | 'lastName' | 'email' | 'passwordHash'>,
+    data: Pick<User, 'firstName' | 'lastName' | 'email' | 'passwordHash'> &
+      Partial<Pick<User, 'role' | 'status' | 'courseIds' | 'askAiEnabled'>>,
   ) {
     return this.userModel.create(data);
+  }
+
+  /** Non-superadmin accounts, newest first; optionally only one status. */
+  listMembers(status?: UserStatus) {
+    return this.userModel
+      .find({ role: { $ne: 'superadmin' }, ...statusFilter(status) })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  listByStatus(status: UserStatus) {
+    return this.listMembers(status);
+  }
+
+  updateAccess(userId: string, update: AccessUpdate) {
+    return this.userModel
+      .findByIdAndUpdate(userId, update, { new: true })
+      .exec();
   }
 
   async setResetToken(userId: string, tokenHash: string, expires: Date) {

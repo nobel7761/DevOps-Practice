@@ -5,6 +5,7 @@ import { Loader2, Send } from "lucide-react";
 import { Textarea } from "@/components/shared/shadcn";
 import AskChatMessage from "@/components/modules/video/AskChatMessage";
 import CustomButton from "@/components/shared/CustomButton";
+import AskAiGate from "@/components/modules/video/AskAiGate";
 import client, { getApiBaseUrl } from "@/lib/api/client";
 import type { RelatedLab } from "@/lib/data/video-ask-context";
 import { parseSseStream } from "@/lib/sse/parse-sse-stream";
@@ -19,7 +20,7 @@ interface InterviewSummary {
   questions: { title: string; scenario: string }[];
 }
 
-export default function AskAiPanel({
+function AskAiPanelInner({
   contentId,
   videoTitle,
   golpoMarkdown,
@@ -231,5 +232,16 @@ export default function AskAiPanel({
         </CustomButton>
       </div>
     </div>
+  );
+}
+
+type AskAiPanelProps = Parameters<typeof AskAiPanelInner>[0];
+
+/** Ask AI is switched on per user by the super admin; others see a notice instead. */
+export default function AskAiPanel(props: AskAiPanelProps) {
+  return (
+    <AskAiGate>
+      <AskAiPanelInner {...props} />
+    </AskAiGate>
   );
 }

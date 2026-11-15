@@ -1,39 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Languages } from "lucide-react";
-import { Button } from "@/components/shared/shadcn";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { Language } from "@/contexts/LanguageContext";
 
+const OPTIONS: { id: Language; label: string; title: string }[] = [
+  { id: "en", label: "EN", title: "English" },
+  { id: "bn", label: "বাং", title: "বাংলা" },
+];
+
+/** Two-option segmented switch (English / বাংলা). */
 export default function LanguageToggle() {
   const { language, toggle } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) {
-    return (
-      <Button
-        variant="outline"
-        size="icon"
-        aria-hidden
-        className="invisible fixed top-4 right-16 z-50"
-      />
-    );
-  }
-
-  const isBangla = language === "bn";
-
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="fixed top-4 right-16 z-50"
-      aria-label={isBangla ? "Switch to English" : "বাংলায় দেখুন"}
-      title={isBangla ? "Switch to English" : "বাংলায় দেখুন"}
-      onClick={toggle}
+    <div
+      role="group"
+      aria-label="Language"
+      className="flex rounded-full bg-muted p-0.5"
     >
-      {isBangla ? <span className="text-xs font-bold">EN</span> : <Languages />}
-    </Button>
+      {OPTIONS.map(({ id, label, title }) => {
+        const active = mounted && language === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            title={title}
+            aria-pressed={active}
+            onClick={() => language !== id && toggle()}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+              active
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

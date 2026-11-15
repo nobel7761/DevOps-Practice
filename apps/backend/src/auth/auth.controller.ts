@@ -48,13 +48,13 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  async register(
-    @Body() dto: RegisterDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async register(@Body() dto: RegisterDto) {
+    // No session: the account must be approved by a super admin first.
     const user = await this.auth.register(dto);
-    await this.startSession(res, user.id);
-    return { user };
+    return {
+      user,
+      message: 'Registered. Please wait for super admin approval to log in.',
+    };
   }
 
   @Public()
