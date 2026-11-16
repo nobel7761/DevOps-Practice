@@ -10,6 +10,7 @@ import ContinueLearning, { pickContinueRow } from "./ContinueLearning";
 import CourseFilters, { type PlatformFilter } from "./CourseFilters";
 import CourseGrid, { type CourseRow } from "./CourseGrid";
 import EmptyState from "./EmptyState";
+import ServerUnavailable from "./ServerUnavailable";
 import HomeHero from "./HomeHero";
 import HomeStats from "./HomeStats";
 import { useCompletedKeys } from "./useCompletedKeys";
@@ -78,6 +79,16 @@ function HomeBody({ rows }: { rows: CourseRow[] }) {
   );
 }
 
+function HomeContent({ rows }: { rows: CourseRow[] | null }) {
+  const { user, loading } = useAuth();
+  if (rows) return <HomeBody rows={rows} />;
+  // Auth finished but there is no user: a 401 would already have redirected to /login, so the API is down.
+  if (!loading && !user) {
+    return <ServerUnavailable onRetry={() => window.location.reload()} />;
+  }
+  return <Loader className="mx-auto mt-16" />;
+}
+
 export default function CourseHome() {
   const rows = useCourseRows();
   return (
@@ -85,7 +96,7 @@ export default function CourseHome() {
       <HomeHero courseCount={rows?.length ?? 0}>
         {rows && <HomeStats rows={rows} />}
       </HomeHero>
-      {rows ? <HomeBody rows={rows} /> : <Loader className="mx-auto mt-16" />}
+      <HomeContent rows={rows} />
     </main>
   );
 }
